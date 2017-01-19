@@ -1,7 +1,7 @@
-#include "slam/optimization/ceres/ba.hpp"
+#include "wavelib/optimization/ceres/ba.hpp"
 
 
-namespace slam {
+namespace wavelib {
 namespace ceres {
 
 BundleAdjustment::BundleAdjustment(void)
@@ -157,4 +157,4 @@ int BundleAdjustment::solve(MatX pts3d)
 }
 
 }  // end of ceres namespace
-}  // end of slam namespace
+}  // end of wavelib namespace

@@ -1,11 +1,11 @@
 #include <gtest/gtest.h>
 
-#include "slam/symmath/models.hpp"
+#include "wavelib/symmath/models.hpp"
 
 
 TEST(Models, bundle_adjustment_jacobian)
 {
-    slam::bundle_adjustment_jacobian("/tmp/model.dat");
+    wavelib::bundle_adjustment_jacobian("/tmp/model.dat");
 }
 
 int main(int argc, char* argv[])

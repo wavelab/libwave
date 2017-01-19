@@ -1,7 +1,7 @@
-#include "slam/viz/viz.hpp"
+#include "wavelib/viz/viz.hpp"
 
 
-namespace slam {
+namespace wavelib {
 
 // VIZ SETTINGS
 VizSettings::VizSettings(void)
@@ -9,7 +9,7 @@ VizSettings::VizSettings(void)
     this->window_width = 640;
     this->window_height = 480;
     this->window_bpp = 32;
-    this->window_title = "SLAM Vizualization";
+    this->window_title = "wavelib Vizualization";
 }
 
 
@@ -234,4 +234,4 @@ int Viz::run(void)
     return 0;
 }
 
-}  // end of slam namespace
+}  // end of wavelib namespace

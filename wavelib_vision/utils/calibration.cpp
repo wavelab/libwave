@@ -1,7 +1,7 @@
 #include <stdio.h>
 
-#include "slam/vision/camera.hpp"
-#include "slam/vision/calibration.hpp"
+#include "wavelib/vision/camera.hpp"
+#include "wavelib/vision/calibration.hpp"
 
 
 int main(void)
@@ -9,9 +9,9 @@ int main(void)
     int retval;
     char key_pressed;
     cv::Mat image;
-    slam::Camera camera;
-    slam::Chessboard chessboard;
-    slam::Calibration calibration;
+    wavelib::Camera camera;
+    wavelib::Chessboard chessboard;
+    wavelib::Calibration calibration;
     std::vector<cv::Point2f> corners;
     std::vector<std::vector<cv::Point2f>> image_points;
 

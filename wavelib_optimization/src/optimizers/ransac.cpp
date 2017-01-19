@@ -1,7 +1,7 @@
-#include "slam/optimization/optimizers/ransac.hpp"
+#include "wavelib/optimization/optimizers/ransac.hpp"
 
 
-namespace slam {
+namespace wavelib {
 
 RANSAC::RANSAC(void)
 {
@@ -161,4 +161,4 @@ int RANSAC::optimize(MatX &data)
     return 0;
 }
 
-}  // end of slam namespace
+}  // end of wavelib namespace

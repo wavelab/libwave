@@ -1,11 +1,11 @@
 #include <gtest/gtest.h>
 
-#include "slam/vision/chessboard.hpp"
+#include "wavelib/vision/chessboard.hpp"
 
 
 TEST(Chessboard, constructor)
 {
-    slam::Chessboard chessboard;
+    wavelib::Chessboard chessboard;
 
     ASSERT_EQ(false, chessboard.configured);
 
@@ -17,7 +17,7 @@ TEST(Chessboard, constructor)
 
 TEST(Chessboard, configure)
 {
-    slam::Chessboard chessboard;
+    wavelib::Chessboard chessboard;
 
     chessboard.configure(1, 2);
 

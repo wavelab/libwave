@@ -1,7 +1,7 @@
-#include "slam/vision/vo.hpp"
+#include "wavelib/vision/vo.hpp"
 
 
-namespace slam {
+namespace wavelib {
 
 VisualOdometry::VisualOdometry(void)
 {
@@ -156,4 +156,4 @@ int VisualOdometry::drawOpticalFlow(
     }
 }
 
-} // end of slam namespace
+} // end of wavelib namespace

@@ -1,7 +1,7 @@
-#include "slam/vision/chessboard.hpp"
+#include "wavelib/vision/chessboard.hpp"
 
 
-namespace slam {
+namespace wavelib {
 
 Chessboard::Chessboard(void)
 {
@@ -25,4 +25,4 @@ int Chessboard::configure(int nb_corners_columns, int nb_corners_rows)
     return 0;
 }
 
-} // end of slam namespace
+} // end of wavelib namespace

@@ -1,5 +1,5 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8.3)
-PROJECT(slam_kinematics)
+PROJECT(wavelib_kinematics)
 
 IF (CMAKE_COMPILER_IS_GNUCXX)
     ADD_DEFINITIONS(-std=gnu++0x)
@@ -23,7 +23,7 @@ LINK_DIRECTORIES(
 
 # LIBRARY
 ADD_LIBRARY(
-    slam_kinematics
+    wavelib_kinematics
     STATIC
     src/quadrotor.cpp
     src/twowheel.cpp

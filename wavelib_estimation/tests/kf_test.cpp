@@ -3,8 +3,8 @@
 
 #include <gtest/gtest.h>
 
-#include "slam/utils/utils.hpp"
-#include "slam/estimation/kf.hpp"
+#include "wavelib/utils/utils.hpp"
+#include "wavelib/estimation/kf.hpp"
 
 #define TEST_KF_OUTPUT_FILE "/tmp/estimation_kf_test.output"
 
@@ -14,8 +14,8 @@ int prepareOutputFile(std::ofstream &output_file, std::string output_path);
 void recordTimeStep(
     std::ofstream &output_file,
     int i,
-    slam::Vec3 mea,
-    slam::Vec3 est
+    wavelib::Vec3 mea,
+    wavelib::Vec3 est
 );
 int testKalmanFilter(void);
 
@@ -40,8 +40,8 @@ int prepareOutputFile(std::ofstream &output_file, std::string output_path)
 void recordTimeStep(
     std::ofstream &output_file,
     int i,
-    slam::Vec3 mea,
-    slam::Vec3 est
+    wavelib::Vec3 mea,
+    wavelib::Vec3 est
 )
 {
     // record true state x, y, z
@@ -60,20 +60,20 @@ TEST(KalmanFilter, estimate)
 {
     float dt;
 
-    slam::KalmanFilter kf;
-    slam::Vec3 pos;
-    slam::Vec3 vel;
-    slam::Vec3 acc;
-    slam::VecX state(9);
-    slam::VecX mu(9);
-    slam::MatX A(9, 9);
-    slam::MatX R(9, 9);
-    slam::MatX C(3, 9);
-    slam::MatX Q(3, 3);
-    slam::VecX y(3);
-    slam::VecX motion_noise(3);
-    slam::Vec3 mea;
-    slam::Vec3 est;
+    wavelib::KalmanFilter kf;
+    wavelib::Vec3 pos;
+    wavelib::Vec3 vel;
+    wavelib::Vec3 acc;
+    wavelib::VecX state(9);
+    wavelib::VecX mu(9);
+    wavelib::MatX A(9, 9);
+    wavelib::MatX R(9, 9);
+    wavelib::MatX C(3, 9);
+    wavelib::MatX Q(3, 3);
+    wavelib::VecX y(3);
+    wavelib::VecX motion_noise(3);
+    wavelib::Vec3 mea;
+    wavelib::Vec3 est;
     std::ofstream output_file;
     std::default_random_engine rgen;
     std::normal_distribution<float> norm_x(0, 0.5);

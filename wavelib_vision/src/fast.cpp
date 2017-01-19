@@ -1,7 +1,7 @@
-#include "slam/vision/fast.hpp"
+#include "wavelib/vision/fast.hpp"
 
 
-namespace slam {
+namespace wavelib {
 
 FastDetector::FastDetector(void)
 {
@@ -48,4 +48,4 @@ int FastDetector::detect(cv::Mat &image, MatX &points)
 
 
 
-}  // end of slam namespace
+}  // end of wavelib namespace

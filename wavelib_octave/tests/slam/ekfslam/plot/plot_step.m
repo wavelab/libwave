@@ -33,7 +33,7 @@ function [newfeature] = plot_step(fig_index, t, map, xr, mu, mu_S, S, y, newfeat
     end
     axis equal
     axis([-8 8 -5 10])
-    title('SLAM with Range & Bearing Measurements')
+    title('wavelib with Range & Bearing Measurements')
     
     subplot(2, 1, 2);
     image(10000 * S);

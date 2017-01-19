@@ -1,7 +1,7 @@
-#include "slam/estimation/kf.hpp"
+#include "wavelib/estimation/kf.hpp"
 
 
-namespace slam {
+namespace wavelib {
 
 KalmanFilter::KalmanFilter(void)
 {
@@ -46,4 +46,4 @@ int KalmanFilter::estimate(MatX A, VecX y)
     return 0;
 }
 
-}  // end of slam namespace
+}  // end of wavelib namespace

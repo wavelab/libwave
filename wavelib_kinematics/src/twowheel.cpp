@@ -1,7 +1,7 @@
-#include "slam/kinematics/twowheel.hpp"
+#include "wavelib/kinematics/twowheel.hpp"
 
 
-namespace slam {
+namespace wavelib {
 
 TwoWheelRobotModel::TwoWheelRobotModel(void)
 {
@@ -51,4 +51,4 @@ MatX TwoWheelRobotModel::HFunc(VecX y)
     return H;
 }
 
-} // end of slam namespace
+} // end of wavelib namespace

@@ -1,21 +1,21 @@
 #include <gtest/gtest.h>
 
-#include "slam/utils/math.hpp"
-#include "slam/optimization/optimizers/lls.hpp"
+#include "wavelib/utils/math.hpp"
+#include "wavelib/optimization/optimizers/lls.hpp"
 
 
 
 
 TEST(LLSSolver, constructor)
 {
-    slam::LLSSolver solver;
+    wavelib::LLSSolver solver;
 
     ASSERT_EQ(solver.configured, false);
 }
 
 TEST(LLSSolver, configure)
 {
-    slam::LLSSolver solver;
+    wavelib::LLSSolver solver;
 
     solver.configure();
     ASSERT_EQ(solver.configured, true);
@@ -23,10 +23,10 @@ TEST(LLSSolver, configure)
 
 TEST(LLSSolver, solve)
 {
-    slam::LLSSolver solver;
-    slam::MatX A(4, 2);
-    slam::VecX b(4);
-    slam::VecX x;
+    wavelib::LLSSolver solver;
+    wavelib::MatX A(4, 2);
+    wavelib::VecX b(4);
+    wavelib::VecX x;
 
     A << 1, 1,
          1, 2,

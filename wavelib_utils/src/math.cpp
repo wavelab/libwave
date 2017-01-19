@@ -1,7 +1,7 @@
-#include "slam/utils/math.hpp"
+#include "wavelib/utils/math.hpp"
 
 
-namespace slam {
+namespace wavelib {
 
 int sign(double x)
 {
@@ -152,4 +152,4 @@ int rotmatz(float angle, Mat4 &R)
 
 
 
-}  // end of slam namespace
+}  // end of wavelib namespace

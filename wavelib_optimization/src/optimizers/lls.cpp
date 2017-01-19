@@ -1,7 +1,7 @@
-#include "slam/optimization/optimizers/lls.hpp"
+#include "wavelib/optimization/optimizers/lls.hpp"
 
 
-namespace slam {
+namespace wavelib {
 
 LLSSolver::LLSSolver(void)
 {
@@ -28,4 +28,4 @@ int LLSSolver::solve(MatX A, MatX b, VecX &x)
     return 0;
 }
 
-}  // end of slam namespace
+}  // end of wavelib namespace

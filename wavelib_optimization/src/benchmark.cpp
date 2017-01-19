@@ -1,7 +1,7 @@
-#include "slam/optimization/benchmark.hpp"
+#include "wavelib/optimization/benchmark.hpp"
 
 
-namespace slam {
+namespace wavelib {
 
 double ackley(VecX x)
 {
@@ -64,7 +64,7 @@ VecX rosenbrock_jacobian(VecX x, VecX beta)
 {
     double a;
     double b;
-    slam::VecX J;
+    wavelib::VecX J;
 
     // setup
     a = beta(0);
@@ -78,4 +78,4 @@ VecX rosenbrock_jacobian(VecX x, VecX beta)
     return J;
 }
 
-}  // end of slam namespace
+}  // end of wavelib namespace

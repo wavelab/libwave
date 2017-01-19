@@ -3,8 +3,8 @@
 
 #include <gtest/gtest.h>
 
-#include "slam/utils/utils.hpp"
-#include "slam/estimation/ekf.hpp"
+#include "wavelib/utils/utils.hpp"
+#include "wavelib/estimation/ekf.hpp"
 
 #define TEST_EKF_OUTPUT_FILE "/tmp/estimation_ekf_test.output"
 
@@ -14,8 +14,8 @@ int prepareOutputFile(std::ofstream &output_file, std::string output_path);
 void recordTimeStep(
     std::ofstream &output_file,
     int i,
-    slam::Vec3 mea,
-    slam::Vec3 est
+    wavelib::Vec3 mea,
+    wavelib::Vec3 est
 );
 
 int prepareOutputFile(std::ofstream &output_file, std::string output_path)
@@ -38,8 +38,8 @@ int prepareOutputFile(std::ofstream &output_file, std::string output_path)
 void recordTimeStep(
     std::ofstream &output_file,
     int i,
-    slam::Vec3 mea,
-    slam::Vec3 est
+    wavelib::Vec3 mea,
+    wavelib::Vec3 est
 )
 {
     // record true state x, y, z
@@ -57,23 +57,23 @@ void recordTimeStep(
 TEST(ExtendedKalmanFilter, estimate)
 {
     float dt;
-    slam::VecX x(3);
-    slam::VecX y(3);
-    slam::VecX gaussian_noise(3);
-    slam::VecX mu(3);
-    slam::VecX u(3);
-    slam::MatX R(3, 3);
-    slam::MatX Q(3, 3);
-    slam::VecX g(3);
-    slam::MatX G(3, 3);
-    slam::VecX h(3);
-    slam::MatX H(3, 3);
-    slam::ExtendedKalmanFilter ekf;
+    wavelib::VecX x(3);
+    wavelib::VecX y(3);
+    wavelib::VecX gaussian_noise(3);
+    wavelib::VecX mu(3);
+    wavelib::VecX u(3);
+    wavelib::MatX R(3, 3);
+    wavelib::MatX Q(3, 3);
+    wavelib::VecX g(3);
+    wavelib::MatX G(3, 3);
+    wavelib::VecX h(3);
+    wavelib::MatX H(3, 3);
+    wavelib::ExtendedKalmanFilter ekf;
     std::ofstream output_file;
     std::default_random_engine rgen;
     std::normal_distribution<float> norm_x(0, pow(0.5, 2));
     std::normal_distribution<float> norm_y(0, pow(0.5, 2));
-    std::normal_distribution<float> norm_theta(0, pow(slam::deg2rad(0.5), 2));
+    std::normal_distribution<float> norm_theta(0, pow(wavelib::deg2rad(0.5), 2));
 
     // setup
     dt = 0.01;
@@ -81,10 +81,10 @@ TEST(ExtendedKalmanFilter, estimate)
     mu << 0, 0, 0;
     R << pow(0.05, 2), 0, 0,
          0, pow(0.05, 2), 0,
-         0, 0, pow(slam::deg2rad(0.5), 2);
+         0, 0, pow(wavelib::deg2rad(0.5), 2);
     Q << pow(0.5, 2), 0, 0,
          0, pow(0.5, 2), 0,
-         0, 0, pow(slam::deg2rad(10), 2);
+         0, 0, pow(wavelib::deg2rad(10), 2);
     u << -15.5, -10.5, 1.5;
     ekf.init(mu, R, Q);
     prepareOutputFile(output_file, TEST_EKF_OUTPUT_FILE);

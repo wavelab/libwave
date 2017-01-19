@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "slam/utils/utils.hpp"
+#include "wavelib/utils/utils.hpp"
 
 
 TEST(deg2rad, test)

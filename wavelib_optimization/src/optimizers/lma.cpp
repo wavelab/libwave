@@ -1,7 +1,7 @@
-#include "slam/optimization/optimizers/lma.hpp"
+#include "wavelib/optimization/optimizers/lma.hpp"
 
 
-namespace slam {
+namespace wavelib {
 
 LMASettings::LMASettings(void)
 {
@@ -178,4 +178,4 @@ int LMAOpt::optimize(void)
     return 0;
 }
 
-}  // end of slam namespace
+}  // end of wavelib namespace

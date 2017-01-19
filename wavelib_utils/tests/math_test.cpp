@@ -1,14 +1,14 @@
 #include <gtest/gtest.h>
 
-#include "slam/utils/math.hpp"
+#include "wavelib/utils/math.hpp"
 
 
 TEST(kronecker_product, test)
 {
-    slam::MatX A(2, 2);
-    slam::MatX B(2, 2);
-    slam::MatX expected(4, 4);
-    slam::MatX product;
+    wavelib::MatX A(2, 2);
+    wavelib::MatX B(2, 2);
+    wavelib::MatX expected(4, 4);
+    wavelib::MatX product;
 
     // setup
     A << 1, 2,
@@ -21,7 +21,7 @@ TEST(kronecker_product, test)
               18, 21, 24, 28;
 
     // test and assert
-    product = slam::kronecker_product(A, B);
+    product = wavelib::kronecker_product(A, B);
     std::cout << product << std::endl;
     ASSERT_EQ(expected, product);
     ASSERT_EQ(4, product.rows());

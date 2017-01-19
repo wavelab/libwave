@@ -1,7 +1,7 @@
-#include "slam/estimation/pf.hpp"
+#include "wavelib/estimation/pf.hpp"
 
 
-namespace slam {
+namespace wavelib {
 
 // ParticleFilter::ParticleFilter(void)
 // {
@@ -66,4 +66,4 @@ namespace slam {
 //     return 0;
 // }
 
-}  // end of slam namespace
+}  // end of wavelib namespace

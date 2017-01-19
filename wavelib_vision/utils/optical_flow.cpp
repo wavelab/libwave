@@ -3,9 +3,9 @@
 
 #include <Eigen/Dense>
 
-#include "slam/vision/vo.hpp"
-#include "slam/vision/fast.hpp"
-#include "slam/vision/eight_point.hpp"
+#include "wavelib/vision/vo.hpp"
+#include "wavelib/vision/fast.hpp"
+#include "wavelib/vision/eight_point.hpp"
 
 #define CALIB_FILE "utils/data/calibration.yaml"
 
@@ -54,7 +54,7 @@ void mouse_callback(int event, int x, int y, int flags, void *data)
     }
 }
 
-void extract_roi(slam::Camera &camera, cv::Mat &mask)
+void extract_roi(wavelib::Camera &camera, cv::Mat &mask)
 {
     cv::Mat frame;
     cv::Scalar rect_color;
@@ -91,7 +91,7 @@ void extract_roi(slam::Camera &camera, cv::Mat &mask)
 }
 
 void feature_extraction(
-    slam::FastDetector &fast,
+    wavelib::FastDetector &fast,
     cv::Mat &frame,
     std::vector<cv::Point2f> &points
 )
@@ -116,7 +116,7 @@ void feature_extraction(
     // cv::cornerSubPix(frame, points, win_size, zero_zone, criteria);
 }
 
-static void pts2mat(std::vector<cv::Point2f> points, slam::MatX &mat)
+static void pts2mat(std::vector<cv::Point2f> points, wavelib::MatX &mat)
 {
     cv::Point2f p;
 
@@ -142,9 +142,9 @@ int main(void)
     //
     // std::ofstream output_file;
     //
-    // slam::Camera camera;
-    // slam::VisualOdometry vo;
-    // slam::FastDetector fast;
+    // wavelib::Camera camera;
+    // wavelib::VisualOdometry vo;
+    // wavelib::FastDetector fast;
     //
     // // setup camera
     // camera.configure(0, CALIB_FILE);
@@ -171,13 +171,13 @@ int main(void)
     // cv::cvtColor(frame, img_1, cv::COLOR_BGR2GRAY);
     // feature_extraction(fast, img_1, pts_1);
     //
-    // slam::Mat3 K, E;
-    // slam::Vec3 pt1, pt2;
-    // slam::MatX pose;
-    // slam::MatX epts1;
-    // slam::MatX epts2;
-    // std::vector<slam::MatX> poses;
-    // slam::optimization::EightPoint estimator;
+    // wavelib::Mat3 K, E;
+    // wavelib::Vec3 pt1, pt2;
+    // wavelib::MatX pose;
+    // wavelib::MatX epts1;
+    // wavelib::MatX epts2;
+    // std::vector<wavelib::MatX> poses;
+    // wavelib::optimization::EightPoint estimator;
     // estimator.configure(320, 240);
     // K << camera.camera_mat.at<double>(0, 0), camera.camera_mat.at<double>(0, 1), camera.camera_mat.at<double>(0, 2),
     //      camera.camera_mat.at<double>(1, 0), camera.camera_mat.at<double>(1, 1), camera.camera_mat.at<double>(1, 2),

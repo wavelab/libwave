@@ -1,7 +1,7 @@
-#include "slam/utils/data.hpp"
+#include "wavelib/utils/data.hpp"
 
 
-namespace slam {
+namespace wavelib {
 
 int csvrows(std::string file_path)
 {
@@ -127,4 +127,4 @@ int mat2csv(std::string file_path, MatX data)
     return 0;
 }
 
-}  // end of slam namespace
+}  // end of wavelib namespace

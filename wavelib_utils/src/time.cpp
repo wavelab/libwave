@@ -1,7 +1,7 @@
-#include "slam/utils/utils.hpp"
+#include "wavelib/utils/utils.hpp"
 
 
-namespace slam {
+namespace wavelib {
 
 void tic(struct timespec *tic)
 {
@@ -25,4 +25,4 @@ float mtoc(struct timespec *tic)
     return toc(tic) * 1000.0;
 }
 
-} // end of slam namespace
+} // end of wavelib namespace

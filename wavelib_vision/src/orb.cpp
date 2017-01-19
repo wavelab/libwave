@@ -1,7 +1,7 @@
-#include "slam/vision/orb.hpp"
+#include "wavelib/vision/orb.hpp"
 
 
-namespace slam {
+namespace wavelib {
 
 // ORB DETECTOR
 ORB::ORB(void)
@@ -52,4 +52,4 @@ int ORB::compute(
     return 0;
 }
 
-} // end of slam namespace
+} // end of wavelib namespace

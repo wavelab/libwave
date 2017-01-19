@@ -1,5 +1,5 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8.3)
-PROJECT(slam_vision)
+PROJECT(wavelib_vision)
 
 IF (CMAKE_COMPILER_IS_GNUCXX)
     ADD_DEFINITIONS(-std=gnu++0x)
@@ -54,7 +54,7 @@ SET(
 
 # LIBRARY
 ADD_LIBRARY(
-    slam_vision
+    wavelib_vision
     STATIC
     src/calibration.cpp
     src/camera.cpp
@@ -69,8 +69,8 @@ ADD_LIBRARY(
 )
 SET(
     DEPS
-    slam_vision
-    slam_utils
+    wavelib_vision
+    wavelib_utils
     yaml-cpp
     ${GTEST_LIBRARIES}
     pthread

@@ -1,7 +1,7 @@
-#include "slam/viz/vizcamera.hpp"
+#include "wavelib/viz/vizcamera.hpp"
 
 
-namespace slam {
+namespace wavelib {
 
 // void VizCamera::setPosition(
 //     float pos_x,  float pos_y,  float pos_z,
@@ -25,4 +25,4 @@ namespace slam {
 //     mView.z = mView.z + vVector.z * speed;
 // }
 
-}  // end of slam namespace
+}  // end of wavelib namespace

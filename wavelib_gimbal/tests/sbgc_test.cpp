@@ -1,11 +1,11 @@
 #include <gtest/gtest.h>
 
-#include "slam/gimbal/sbgc.hpp"
+#include "wavelib/gimbal/sbgc.hpp"
 
 
 TEST(SBGC, connectAndDisconnect)
 {
-    slam::SBGC sbgc("/dev/ttyUSB0");
+    wavelib::SBGC sbgc("/dev/ttyUSB0");
     ASSERT_EQ(0, sbgc.connect());
     ASSERT_EQ(0, sbgc.disconnect());
 }
@@ -13,8 +13,8 @@ TEST(SBGC, connectAndDisconnect)
 TEST(SBGC, sendFrame)
 {
     int retval;
-    slam::SBGCFrame frame;
-    slam::SBGC sbgc("/dev/ttyUSB0");
+    wavelib::SBGCFrame frame;
+    wavelib::SBGC sbgc("/dev/ttyUSB0");
 
     // setup
     sbgc.connect();
@@ -35,8 +35,8 @@ TEST(SBGC, sendFrame)
 TEST(SBGC, readFrame)
 {
     int retval;
-    slam::SBGCFrame frame;
-    slam::SBGC sbgc("/dev/ttyUSB0");
+    wavelib::SBGCFrame frame;
+    wavelib::SBGC sbgc("/dev/ttyUSB0");
 
     // setup
     sbgc.connect();
@@ -53,7 +53,7 @@ TEST(SBGC, readFrame)
 
 TEST(SBGC, getBoardInfo)
 {
-    slam::SBGC sbgc("/dev/ttyUSB0");
+    wavelib::SBGC sbgc("/dev/ttyUSB0");
 
     // setup
     sbgc.connect();
@@ -72,7 +72,7 @@ TEST(SBGC, getBoardInfo)
 
 TEST(SBGC, getRealtimeData)
 {
-    slam::SBGC sbgc("/dev/ttyUSB0");
+    wavelib::SBGC sbgc("/dev/ttyUSB0");
 
     // setup
     sbgc.connect();
@@ -89,7 +89,7 @@ TEST(SBGC, getRealtimeData)
 
 TEST(SBGC, setAngle)
 {
-    slam::SBGC sbgc("/dev/ttyUSB0");
+    wavelib::SBGC sbgc("/dev/ttyUSB0");
 
     ASSERT_EQ(0, sbgc.connect());
     sbgc.on();
@@ -104,7 +104,7 @@ TEST(SBGC, setAngle)
 
 TEST(SBGC, setSpeedAngle)
 {
-    slam::SBGC sbgc("/dev/ttyUSB0");
+    wavelib::SBGC sbgc("/dev/ttyUSB0");
 
     ASSERT_EQ(0, sbgc.connect());
     sbgc.on();

@@ -1,7 +1,7 @@
-#include "slam/vision/eight_point.hpp"
+#include "wavelib/vision/eight_point.hpp"
 
 
-namespace slam {
+namespace wavelib {
 namespace optimization {
 
 EightPoint::EightPoint(void)
@@ -254,14 +254,14 @@ int EightPoint::obtainPose(
         w = x(2);
         T = p(3);
         out_norm = P1.block(2, 0, 1, 3).norm();
-        d1 = slam::sign(P1.block(0, 0, 3, 3).determinant()) * w / T * out_norm;
+        d1 = wavelib::sign(P1.block(0, 0, 3, 3).determinant()) * w / T * out_norm;
 
         // compute depth of 3D point from camera 2
         x = P2 * p;
         w = x(2);
         T = p(3);
         out_norm = P2.block(2, 0, 1, 3).norm();
-        d2 = slam::sign(P2.block(0, 0, 3, 3).determinant()) * w / T * out_norm;
+        d2 = wavelib::sign(P2.block(0, 0, 3, 3).determinant()) * w / T * out_norm;
 
         // return pose if both depths are non-zero
         if (d1 > 0 && d2 > 0) {
@@ -274,4 +274,4 @@ int EightPoint::obtainPose(
 
 
 }  // end of optimization namespace
-}  // end of slam namespace
+}  // end of wavelib namespace

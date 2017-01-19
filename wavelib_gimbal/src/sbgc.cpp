@@ -1,7 +1,7 @@
-#include "slam/gimbal/sbgc.hpp"
+#include "wavelib/gimbal/sbgc.hpp"
 
 
-namespace slam {
+namespace wavelib {
 
 static int set_interface_attribs(int fd, int speed, int parity)
 {
@@ -595,4 +595,4 @@ int SBGC::setSpeedAngle(
     return 0;
 }
 
-}  // end of slam namespace
+}  // end of wavelib namespace

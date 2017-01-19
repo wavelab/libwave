@@ -2,22 +2,22 @@
 
 #include <gtest/gtest.h>
 
-#include "slam/optimization/benchmark.hpp"
-#include "slam/optimization/optimizers/gd.hpp"
+#include "wavelib/optimization/benchmark.hpp"
+#include "wavelib/optimization/optimizers/gd.hpp"
 
 
 TEST(GDOpt, constructor)
 {
-    slam::GDOpt opt;
+    wavelib::GDOpt opt;
     ASSERT_EQ(opt.configured, false);
 }
 
 TEST(GDOpt, configure)
 {
     int max_iter;
-    slam::VecX eta(2);
-    slam::VecX x(2);
-    slam::GDOpt opt;
+    wavelib::VecX eta(2);
+    wavelib::VecX x(2);
+    wavelib::GDOpt opt;
 
     max_iter = 1000;
     eta << 1.0, 1.0;
@@ -27,7 +27,7 @@ TEST(GDOpt, configure)
         max_iter,
         eta,
         x,
-        std::bind(slam::beale, std::placeholders::_1)
+        std::bind(wavelib::beale, std::placeholders::_1)
     );
 
     ASSERT_EQ(true, opt.configured);
@@ -41,10 +41,10 @@ TEST(GDOpt, configure)
 TEST(GDOpt, calcGradient)
 {
     int max_iter;
-    slam::VecX eta(2);
-    slam::VecX x(2);
-    slam::VecX df(2, 1);
-    slam::GDOpt opt;
+    wavelib::VecX eta(2);
+    wavelib::VecX x(2);
+    wavelib::VecX df(2, 1);
+    wavelib::GDOpt opt;
 
     max_iter = 1000;
     eta << 1.0, 1.0;
@@ -54,7 +54,7 @@ TEST(GDOpt, calcGradient)
         max_iter,
         eta,
         x,
-        std::bind(slam::beale, std::placeholders::_1)
+        std::bind(wavelib::beale, std::placeholders::_1)
     );
     opt.calcGradient(df);
     // std::cout << df << std::endl;
@@ -66,9 +66,9 @@ TEST(GDOpt, calcGradient)
 TEST(GDOpt, optimize)
 {
     int max_iter;
-    slam::VecX eta(2);
-    slam::VecX x(2);
-    slam::GDOpt opt;
+    wavelib::VecX eta(2);
+    wavelib::VecX x(2);
+    wavelib::GDOpt opt;
 
     max_iter = 10000;
     eta << 0.006, 0.006;
@@ -78,7 +78,7 @@ TEST(GDOpt, optimize)
         max_iter,
         eta,
         x,
-        std::bind(slam::beale, std::placeholders::_1)
+        std::bind(wavelib::beale, std::placeholders::_1)
     );
     opt.optimize();
     // std::cout << opt.x << std::endl;

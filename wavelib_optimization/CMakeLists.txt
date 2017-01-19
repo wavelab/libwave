@@ -1,5 +1,5 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8.3)
-PROJECT(slam_optimization)
+PROJECT(wavelib_optimization)
 
 IF (CMAKE_COMPILER_IS_GNUCXX)
     ADD_DEFINITIONS(-std=gnu++0x)
@@ -29,7 +29,7 @@ LINK_DIRECTORIES(
 
 # LIBRARY
 ADD_LIBRARY(
-    slam_optimization
+    wavelib_optimization
     STATIC
     src/ceres/ba.cpp
     src/optimizers/gd.cpp
@@ -41,8 +41,8 @@ ADD_LIBRARY(
 )
 SET(
     DEPS
-    slam_optimization
-    slam_utils
+    wavelib_optimization
+    wavelib_utils
     ${CERES_LIBRARIES}
     ${GTEST_LIBRARIES}
     pthread

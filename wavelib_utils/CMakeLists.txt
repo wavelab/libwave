@@ -1,5 +1,5 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8.3)
-PROJECT(slam_utils)
+PROJECT(wavelib_utils)
 
 IF (CMAKE_COMPILER_IS_GNUCXX)
     ADD_DEFINITIONS(-std=gnu++0x)
@@ -28,7 +28,7 @@ LINK_DIRECTORIES(
 
 # LIBRARY
 ADD_LIBRARY(
-    slam_utils
+    wavelib_utils
     STATIC
     src/data.cpp
     src/math.cpp
@@ -37,7 +37,7 @@ ADD_LIBRARY(
 )
 SET(
     DEPS
-    slam_utils
+    wavelib_utils
     ${GTEST_LIBRARIES}
     pthread
 )

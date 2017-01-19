@@ -1,7 +1,7 @@
-#include "slam/vision/utils.hpp"
+#include "wavelib/vision/utils.hpp"
 
 
-namespace slam {
+namespace wavelib {
 
 void mat2cvmat(MatX A, cv::Mat &B)
 {
@@ -98,4 +98,4 @@ void normalize_2dpts(double image_width, double image_height, MatX &pts)
     }
 }
 
-} // end of slam namespace
+} // end of wavelib namespace

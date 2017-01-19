@@ -53,5 +53,5 @@ function plot_results(fig_index, t, xr, mu, map, y, meas_ind, newfeature, X, M, 
     % plot parameters
     axis equal
     axis([-8 8 -2 10])
-    title('FastSLAM with Range & Bearing Measurements')
+    title('Fastwavelib with Range & Bearing Measurements')
 end

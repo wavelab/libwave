@@ -1,9 +1,9 @@
-#include "slam/vision/camera.hpp"
+#include "wavelib/vision/camera.hpp"
 
 
 int main(void)
 {
-    slam::Camera camera;
+    wavelib::Camera camera;
     cv::Mat image;
 
     int fps;

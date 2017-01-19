@@ -1,13 +1,13 @@
 #include <gtest/gtest.h>
 
-#include "slam/vision/camera.hpp"
+#include "wavelib/vision/camera.hpp"
 
 #define CALIB_FILE "tests/data/calibration.yaml"
 
 
 TEST(Camera, constructor)
 {
-    slam::Camera camera;
+    wavelib::Camera camera;
 
     ASSERT_EQ(false, camera.configured);
     ASSERT_EQ(NULL, camera.capture);
@@ -20,7 +20,7 @@ TEST(Camera, configure)
 {
     int retval;
     cv::Mat image;
-    slam::Camera camera;
+    wavelib::Camera camera;
 
     // configure camera with index, image dimensions
     retval = camera.configure(0, 320, 240);
@@ -35,7 +35,7 @@ TEST(Camera, configure)
 
 TEST(Camera, getFrame)
 {
-    slam::Camera camera;
+    wavelib::Camera camera;
     cv::Mat image;
 
     // configure camera with index, image dimensions

@@ -1,5 +1,5 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8.3)
-PROJECT(slam_symmath)
+PROJECT(wavelib_symmath)
 
 IF (CMAKE_COMPILER_IS_GNUCXX)
     ADD_DEFINITIONS(-std=gnu++0x)
@@ -28,14 +28,14 @@ LINK_DIRECTORIES(
 
 # LIBRARY
 ADD_LIBRARY(
-    slam_symmath
+    wavelib_symmath
     STATIC
     src/models.cpp
     src/symmath.cpp
 )
 SET(
     DEPS
-    slam_symmath
+    wavelib_symmath
     ginac
     ${GTEST_LIBRARIES}
     pthread

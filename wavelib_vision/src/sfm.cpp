@@ -1,7 +1,7 @@
-#include "slam/vision/sfm.hpp"
+#include "wavelib/vision/sfm.hpp"
 
 
-namespace slam {
+namespace wavelib {
 
 SFMPose::SFMPose(void)
 {
@@ -81,4 +81,4 @@ int SFM::recoverPose(MatX pts1, MatX pts2, SFMPose &pose)
     return 0;
 }
 
-} // end of slam namespace
+} // end of wavelib namespace

@@ -1,7 +1,7 @@
-#include "slam/vision/good.hpp"
+#include "wavelib/vision/good.hpp"
 
 
-namespace slam {
+namespace wavelib {
 
 GoodDetector::GoodDetector(void)
 {
@@ -34,4 +34,4 @@ int GoodDetector::detect(cv::Mat &image, std::vector<cv::Point2f> &points)
     return 0;
 }
 
-}  // end of slam namespace
+}  // end of wavelib namespace

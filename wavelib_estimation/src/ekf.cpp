@@ -1,7 +1,7 @@
-#include "slam/estimation/ekf.hpp"
+#include "wavelib/estimation/ekf.hpp"
 
 
-namespace slam {
+namespace wavelib {
 
 ExtendedKalmanFilter::ExtendedKalmanFilter(void)
 {
@@ -46,4 +46,4 @@ int ExtendedKalmanFilter::measurementUpdate(VecX h, MatX H, VecX y)
     return 0;
 }
 
-}  // end of slam namespace
+}  // end of wavelib namespace

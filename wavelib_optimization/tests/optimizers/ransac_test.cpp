@@ -5,16 +5,16 @@
 
 #include <gtest/gtest.h>
 
-#include "slam/utils/math.hpp"
-#include "slam/utils/data.hpp"
-#include "slam/optimization/optimizers/ransac.hpp"
+#include "wavelib/utils/math.hpp"
+#include "wavelib/utils/data.hpp"
+#include "wavelib/optimization/optimizers/ransac.hpp"
 
 #define TEST_DATA "tests/data/ransac/ransac_sample.dat"
 
 
 TEST(RANSAC, constructor)
 {
-    slam::RANSAC ransac;
+    wavelib::RANSAC ransac;
 
     ASSERT_EQ(ransac.configured, false);
 
@@ -30,7 +30,7 @@ TEST(RANSAC, constructor)
 
 TEST(RANSAC, configure)
 {
-    slam::RANSAC ransac;
+    wavelib::RANSAC ransac;
 
     ransac.configure(10, 0.8, 0.1);
 
@@ -49,9 +49,9 @@ TEST(RANSAC, configure)
 TEST(RANSAC, RandomSample)
 {
     int retval;
-    slam::Vec2 sample;
-    slam::MatX data(2, 100);
-    slam::RANSAC ransac;
+    wavelib::Vec2 sample;
+    wavelib::MatX data(2, 100);
+    wavelib::RANSAC ransac;
 
     // setup
     for (int i = 0; i < 100; i++) {
@@ -72,11 +72,11 @@ TEST(RANSAC, RandomSample)
 TEST(RANSAC, computeDistances)
 {
     int retval;
-    slam::MatX data(2, 100);
-    slam::Vec2 p1;
-    slam::Vec2 p2;
-    slam::VecX dists;
-    slam::RANSAC ransac;
+    wavelib::MatX data(2, 100);
+    wavelib::Vec2 p1;
+    wavelib::Vec2 p2;
+    wavelib::VecX dists;
+    wavelib::RANSAC ransac;
 
     // setup
     for (int i = 0; i < 100; i++) {
@@ -96,8 +96,8 @@ TEST(RANSAC, computeDistances)
 TEST(RANSAC, computeInliers)
 {
     int retval;
-    slam::RANSAC ransac;
-    slam::VecX dists(10);
+    wavelib::RANSAC ransac;
+    wavelib::VecX dists(10);
 
     // setup
     dists << 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0;
@@ -117,9 +117,9 @@ TEST(RANSAC, computeInliers)
 TEST(RANSAC, update)
 {
     int retval;
-    slam::RANSAC ransac;
-    slam::Vec2 p1;
-    slam::Vec2 p2;
+    wavelib::RANSAC ransac;
+    wavelib::Vec2 p1;
+    wavelib::Vec2 p2;
 
     // setup
     ransac.configure(10, 0.8, 0.5);
@@ -141,12 +141,12 @@ TEST(RANSAC, update)
 
 TEST(RANSAC, optimize)
 {
-    slam::MatX data;
-    slam::MatX x;
-    slam::RANSAC ransac;
+    wavelib::MatX data;
+    wavelib::MatX x;
+    wavelib::RANSAC ransac;
 
     // setup
-    slam::csv2mat(TEST_DATA, true, data);
+    wavelib::csv2mat(TEST_DATA, true, data);
     x = data.transpose();
     ransac.configure(40, 0.5, 5);
 

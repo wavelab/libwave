@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
-#include "slam/utils/math.hpp"
-#include "slam/utils/data.hpp"
+#include "wavelib/utils/math.hpp"
+#include "wavelib/utils/data.hpp"
 
 
 #define TEST_DATA "tests/data/matrix.dat"
@@ -12,7 +12,7 @@ TEST(csvrows, test)
 {
     int rows;
 
-    rows = slam::csvrows(TEST_DATA);
+    rows = wavelib::csvrows(TEST_DATA);
     printf("rows: %d\n", rows);
     ASSERT_EQ(281, rows);
 }
@@ -21,16 +21,16 @@ TEST(csvcols, test)
 {
     int cols;
 
-    cols = slam::csvcols(TEST_DATA);
+    cols = wavelib::csvcols(TEST_DATA);
     printf("cols: %d\n", cols);
     ASSERT_EQ(2, cols);
 }
 
 TEST(csv2mat, test)
 {
-    slam::MatX data;
+    wavelib::MatX data;
 
-    slam::csv2mat(TEST_DATA, true, data);
+    wavelib::csv2mat(TEST_DATA, true, data);
 
     printf("rows: %d\n", (int) data.rows());
     printf("cols: %d\n", (int) data.cols());
@@ -45,12 +45,12 @@ TEST(csv2mat, test)
 
 TEST(mat2csv, test)
 {
-    slam::MatX x;
-    slam::MatX y;
+    wavelib::MatX x;
+    wavelib::MatX y;
 
-    slam::csv2mat(TEST_DATA, true, x);
-    slam::mat2csv(TEST_OUTPUT, x);
-    slam::csv2mat(TEST_OUTPUT, false, y);
+    wavelib::csv2mat(TEST_DATA, true, x);
+    wavelib::mat2csv(TEST_OUTPUT, x);
+    wavelib::csv2mat(TEST_OUTPUT, false, y);
 
     for (int i = 0; i < x.rows(); i++) {
         for (int j = 0; j < x.cols(); j++) {

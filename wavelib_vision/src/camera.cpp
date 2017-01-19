@@ -1,7 +1,7 @@
-#include "slam/vision/camera.hpp"
+#include "wavelib/vision/camera.hpp"
 
 
-namespace slam {
+namespace wavelib {
 
 Camera::Camera(void)
 {
@@ -145,4 +145,4 @@ void Camera::close(void)
     }
 }
 
-} // end of slam namespace
+} // end of wavelib namespace

@@ -1,7 +1,7 @@
-#include "slam/symmath/models.hpp"
+#include "wavelib/symmath/models.hpp"
 
 
-namespace slam {
+namespace wavelib {
 
 void quadrotor_jacobian(
     std::vector<GiNaC::ex> &model,
@@ -166,4 +166,4 @@ void bundle_adjustment_jacobian(std::string file_path)
 }
 
 
-} // end of slam namespace
+} // end of wavelib namespace

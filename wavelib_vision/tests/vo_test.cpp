@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
 
-#include "slam/vision/utils.hpp"
-#include "slam/vision/fast.hpp"
-#include "slam/vision/vo.hpp"
+#include "wavelib/vision/utils.hpp"
+#include "wavelib/vision/fast.hpp"
+#include "wavelib/vision/vo.hpp"
 
 #define TEST_IMAGE_1 "tests/data/vo/left.jpg"
 #define TEST_IMAGE_2 "tests/data/vo/right.jpg"
@@ -12,16 +12,16 @@
 
 TEST(VisualOdometry, constructor)
 {
-    slam::VisualOdometry vo;
+    wavelib::VisualOdometry vo;
 
     ASSERT_EQ(false, vo.configured);
 }
 
 TEST(VisualOdometry, configure)
 {
-    slam::Mat3 K;
-    slam::Camera camera;
-    slam::VisualOdometry vo;
+    wavelib::Mat3 K;
+    wavelib::Camera camera;
+    wavelib::VisualOdometry vo;
 
     K(0, 0) = 1.0;
     K(0, 2) = 2.0;
@@ -33,11 +33,11 @@ TEST(VisualOdometry, configure)
 
 TEST(VisualOdometry, featureTracking)
 {
-    slam::Mat3 K;
+    wavelib::Mat3 K;
     cv::Mat mask, frame;
     cv::Mat img_1, img_2, img_combined;
-    slam::FastDetector fast;
-    slam::VisualOdometry vo;
+    wavelib::FastDetector fast;
+    wavelib::VisualOdometry vo;
     std::vector<cv::Point2f> cvpts1, cvpts2;
     std::vector<float> errors;
     std::vector<uchar> status;
@@ -60,11 +60,11 @@ TEST(VisualOdometry, featureTracking)
     ASSERT_EQ(cvpts2.size(), status.size());
 
     // // record tracked points
-    // slam::MatX pts1, pts2;
-    // slam::convert_cvpts(cvpts1, pts1);
-    // slam::convert_cvpts(cvpts2, pts2);
-    // slam::mat2csv("/tmp/pts1.dat", pts1);
-    // slam::mat2csv("/tmp/pts2.dat", pts2);
+    // wavelib::MatX pts1, pts2;
+    // wavelib::convert_cvpts(cvpts1, pts1);
+    // wavelib::convert_cvpts(cvpts2, pts2);
+    // wavelib::mat2csv("/tmp/pts1.dat", pts1);
+    // wavelib::mat2csv("/tmp/pts2.dat", pts2);
 
     // // display tracked features
     // vo.drawOpticalFlow(img_1, img_2, cvpts1, cvpts2, img_combined);
@@ -79,8 +79,8 @@ TEST(VisualOdometry, featureTracking)
 //     cv::Mat frame;
 //     cv::Mat img_1;
 //     cv::Mat img_2;
-//     slam::FastDetector fast;
-//     slam::VisualOdometry vo;
+//     wavelib::FastDetector fast;
+//     wavelib::VisualOdometry vo;
 //     std::vector<cv::Point2f> pts_1;
 //     std::vector<cv::Point2f> pts_2;
 //     std::vector<float> errors;

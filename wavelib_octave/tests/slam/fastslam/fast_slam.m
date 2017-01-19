@@ -7,7 +7,7 @@ clc;
 % Create AVI object
 makemovie = 1;
 if(makemovie)
-    vidObj = VideoWriter('fastslam.avi');
+    vidObj = VideoWriter('fastwavelib.avi');
     vidObj.Quality = 100;
     vidObj.FrameRate = 5;
     open(vidObj);
@@ -88,7 +88,7 @@ for t = 2:length(T)
     end
     
     
-    %% Fast SLAM Filter Estimation
+    %% Fast wavelib Filter Estimation
     % Particle Filter Sampling
     for d = 1:D
         % Update full state
@@ -146,7 +146,7 @@ for t = 2:length(T)
     newfeature(meas_ind) = 0;
         
     % Resample and copy all data to new particle set
-    [X, mu, S] = fastslam_resample(w, Xp, mup, Sp, n, M, D);
+    [X, mu, S] = fastwavelib_resample(w, Xp, mup, Sp, n, M, D);
     muParticle = mean(transpose(X));
     mu_store(:, t) = muParticle;
 

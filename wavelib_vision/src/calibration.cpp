@@ -1,7 +1,7 @@
-#include "slam/vision/calibration.hpp"
+#include "wavelib/vision/calibration.hpp"
 
 
-namespace slam {
+namespace wavelib {
 
 Calibration::Calibration(void)
 {
@@ -233,4 +233,4 @@ int Calibration::saveCalibrationOutputs(void)
     return 0;
 }
 
-} // end of slam namespace
+} // end of wavelib namespace

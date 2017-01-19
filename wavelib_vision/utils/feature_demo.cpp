@@ -1,7 +1,7 @@
 #include <stdio.h>
 
-#include "slam/vision/camera.hpp"
-#include "slam/vision/orb.hpp"
+#include "wavelib/vision/camera.hpp"
+#include "wavelib/vision/orb.hpp"
 
 
 int main(void)
@@ -11,8 +11,8 @@ int main(void)
     cv::Mat image;
     std::vector<cv::KeyPoint> keypoints;
     cv::Mat descriptors;
-    slam::Camera camera;
-    slam::ORB orb;
+    wavelib::Camera camera;
+    wavelib::ORB orb;
 
     // setup
     retval = camera.configure(0, 320, 240);

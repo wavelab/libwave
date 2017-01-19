@@ -1,7 +1,7 @@
 #include <fstream>
 
 #include <gtest/gtest.h>
-#include "slam/vision/calibration.hpp"
+#include "wavelib/vision/calibration.hpp"
 
 
 #define TEST_IMAGE "tests/data/chessboard.jpg"
@@ -9,7 +9,7 @@
 
 TEST(Calibration, constructor)
 {
-    slam::Calibration calibration;
+    wavelib::Calibration calibration;
 
     ASSERT_EQ(false, calibration.configured);
     ASSERT_EQ(IDEL, calibration.state);
@@ -21,8 +21,8 @@ TEST(Calibration, constructor)
 
 TEST(Calibration, configure)
 {
-    slam::Calibration calib;
-    slam::Chessboard chess;
+    wavelib::Calibration calib;
+    wavelib::Chessboard chess;
 
     // setup
     system("rm -rf /tmp/test");
@@ -38,8 +38,8 @@ TEST(Calibration, findChessboardCorners)
 {
     bool retval;
     cv::Mat image;
-    slam::Calibration calib;
-    slam::Chessboard chess;
+    wavelib::Calibration calib;
+    wavelib::Chessboard chess;
     std::vector<cv::Point2f> corners;
 
     // setup
@@ -62,8 +62,8 @@ TEST(Calibration, saveImage)
 {
     std::ifstream image_file;
     cv::Mat image;
-    slam::Chessboard chess;
-    slam::Calibration calib;
+    wavelib::Chessboard chess;
+    wavelib::Calibration calib;
     std::vector<cv::Point2f> corners;
 
     // setup
@@ -86,8 +86,8 @@ TEST(Calibration, saveCalibrationOutputs)
     cv::Mat image;
     std::ifstream yaml_file;
     std::vector<cv::Point2f> corners;
-    slam::Calibration calib;
-    slam::Chessboard chess;
+    wavelib::Calibration calib;
+    wavelib::Chessboard chess;
 
     // setup
     system("rm -rf /tmp/test");

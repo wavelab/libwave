@@ -1,7 +1,7 @@
-#include "slam/optimization/optimizers/gd.hpp"
+#include "wavelib/optimization/optimizers/gd.hpp"
 
 
-namespace slam {
+namespace wavelib {
 
 GDOpt::GDOpt(void)
 {
@@ -90,4 +90,4 @@ int GDOpt::optimize(void)
     return 0;
 }
 
-}  // end of slam namespace
+}  // end of wavelib namespace

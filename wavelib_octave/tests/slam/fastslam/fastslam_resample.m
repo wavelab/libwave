@@ -1,4 +1,4 @@
-function [X, mu, S] = fastslam_resample(w, Xp, mup, Sp, n, M, D)
+function [X, mu, S] = fastwavelib_resample(w, Xp, mup, Sp, n, M, D)
     W = cumsum(w);
     X = zeros(n, D);  % Vehicle states
     mu = zeros(2, M, D);  % Feature means

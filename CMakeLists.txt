@@ -1,68 +1,68 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8.3)
-PROJECT(slam)
+PROJECT(wavelib)
 
 
 INCLUDE_DIRECTORIES(
-    slam_estimation/include
-    slam_gimbal/include
-    slam_kinematics/include
-    slam_optimization/include
-    slam_symmath/include
-    slam_vision/include
-    slam_utils/include
+    wavelib_estimation/include
+    wavelib_gimbal/include
+    wavelib_kinematics/include
+    wavelib_optimization/include
+    wavelib_symmath/include
+    wavelib_vision/include
+    wavelib_utils/include
 )
 
 
-# libslam_estimation.a
-ADD_SUBDIRECTORY(slam_estimation)
-ADD_DEPENDENCIES(slam_estimation slam_utils slam_kinematics)
+# libwavelib_estimation.a
+ADD_SUBDIRECTORY(wavelib_estimation)
+ADD_DEPENDENCIES(wavelib_estimation wavelib_utils wavelib_kinematics)
 
-# libslam_gimbal.a
-ADD_SUBDIRECTORY(slam_gimbal)
-ADD_DEPENDENCIES(slam_gimbal slam_utils)
+# libwavelib_gimbal.a
+ADD_SUBDIRECTORY(wavelib_gimbal)
+ADD_DEPENDENCIES(wavelib_gimbal wavelib_utils)
 
-# libslam_kinematics.a
-ADD_SUBDIRECTORY(slam_kinematics)
-ADD_DEPENDENCIES(slam_kinematics slam_utils)
+# libwavelib_kinematics.a
+ADD_SUBDIRECTORY(wavelib_kinematics)
+ADD_DEPENDENCIES(wavelib_kinematics wavelib_utils)
 
-# libslam_optimization.a
-ADD_SUBDIRECTORY(slam_optimization)
-ADD_DEPENDENCIES(slam_optimization slam_utils)
+# libwavelib_optimization.a
+ADD_SUBDIRECTORY(wavelib_optimization)
+ADD_DEPENDENCIES(wavelib_optimization wavelib_utils)
 
-# libslam_symath.a
-ADD_SUBDIRECTORY(slam_symmath)
-ADD_DEPENDENCIES(slam_symmath slam_utils)
+# libwavelib_symath.a
+ADD_SUBDIRECTORY(wavelib_symmath)
+ADD_DEPENDENCIES(wavelib_symmath wavelib_utils)
 
-# libslam_utils.a
-ADD_SUBDIRECTORY(slam_utils)
+# libwavelib_utils.a
+ADD_SUBDIRECTORY(wavelib_utils)
 
-# libslam_vision.a
-ADD_SUBDIRECTORY(slam_vision)
-ADD_DEPENDENCIES(slam_vision slam_utils)
+# libwavelib_vision.a
+ADD_SUBDIRECTORY(wavelib_vision)
+ADD_DEPENDENCIES(wavelib_vision wavelib_utils)
 
-# libslam_viz.a
-ADD_SUBDIRECTORY(slam_viz)
-ADD_DEPENDENCIES(slam_viz slam_utils)
+# libwavelib_viz.a
+ADD_SUBDIRECTORY(wavelib_viz)
+ADD_DEPENDENCIES(wavelib_viz wavelib_utils)
 
 
-# libslam.a
+# libwavelib.a
 ADD_CUSTOM_TARGET(
-    libslam ALL
+    libwavelib ALL
     COMMAND
-        ${CMAKE_AR} rc libslam.a
-            ${CMAKE_BINARY_DIR}/slam_estimation/libslam_estimation.a
-            ${CMAKE_BINARY_DIR}/slam_gimbal/libslam_gimbal.a
-            ${CMAKE_BINARY_DIR}/slam_kinematics/libslam_kinematics.a
-            ${CMAKE_BINARY_DIR}/slam_optimization/libslam_optimization.a
-            ${CMAKE_BINARY_DIR}/slam_symmath/libslam_symmath.a
-            ${CMAKE_BINARY_DIR}/slam_utils/libslam_utils.a
-            ${CMAKE_BINARY_DIR}/slam_vision/libslam_vision.a
+        ${CMAKE_AR} rc libwavelib.a
+            ${CMAKE_BINARY_DIR}/wavelib_estimation/libwavelib_estimation.a
+            ${CMAKE_BINARY_DIR}/wavelib_gimbal/libwavelib_gimbal.a
+            ${CMAKE_BINARY_DIR}/wavelib_kinematics/libwavelib_kinematics.a
+            ${CMAKE_BINARY_DIR}/wavelib_optimization/libwavelib_optimization.a
+            ${CMAKE_BINARY_DIR}/wavelib_symmath/libwavelib_symmath.a
+            ${CMAKE_BINARY_DIR}/wavelib_utils/libwavelib_utils.a
+            ${CMAKE_BINARY_DIR}/wavelib_vision/libwavelib_vision.a
     DEPENDS
-        slam_estimation
-        slam_gimbal
-        slam_kinematics
-        slam_optimization
-        slam_symmath
-        slam_vision
-        slam_utils
+        wavelib_estimation
+        wavelib_gimbal
+        wavelib_kinematics
+        wavelib_optimization
+        wavelib_symmath
+        wavelib_vision
+        wavelib_utils
 )

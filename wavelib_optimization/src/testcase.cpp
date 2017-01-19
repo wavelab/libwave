@@ -1,7 +1,7 @@
-#include "slam/optimization/testcase.hpp"
+#include "wavelib/optimization/testcase.hpp"
 
 
-namespace slam {
+namespace wavelib {
 
 TestRange::TestRange(void)
 {
@@ -80,7 +80,7 @@ void TestCase::createP(Mat3 K, Mat3 R, Vec3 t, MatX &P)
 void TestCase::generateRandom3DPoints(
     TestRange range,
     int nb_pts,
-    slam::MatX &pts
+    wavelib::MatX &pts
 )
 {
     std::default_random_engine generator;
@@ -168,4 +168,4 @@ void TestCase::generateTestCase(
     this->project3DTo2D(K, R, t, pts3d, pts2);
 }
 
-}  // end of slam namespace
+}  // end of wavelib namespace

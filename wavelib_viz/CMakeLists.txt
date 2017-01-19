@@ -1,5 +1,5 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8.3)
-PROJECT(slam_viz)
+PROJECT(wavelib_viz)
 
 IF (CMAKE_COMPILER_IS_GNUCXX)
     ADD_DEFINITIONS(-std=gnu++0x)
@@ -31,7 +31,7 @@ LINK_DIRECTORIES(
 
 # LIBRARY
 ADD_LIBRARY(
-    slam_viz
+    wavelib_viz
     STATIC
     src/viz.cpp
     src/vizcamera.cpp
@@ -40,8 +40,8 @@ SET(GL_DEPS GL GLU X11)
 SET(GTEST_DEPS ${GTEST_LIBRARIES} pthread)
 SET(
     DEPS
-    slam_viz
-    slam_utils
+    wavelib_viz
+    wavelib_utils
     yaml-cpp
     ${SDL2_LIBRARIES}
     ${GL_DEPS}

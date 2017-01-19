@@ -1,7 +1,7 @@
-#include "slam/symmath/symmath.hpp"
+#include "wavelib/symmath/symmath.hpp"
 
 
-namespace slam {
+namespace wavelib {
 
 void output_jacobian(
     std::string file_path,
@@ -36,4 +36,4 @@ void output_jacobian(
     output_file.close();
 }
 
-} // end of slam namespace
+} // end of wavelib namespace

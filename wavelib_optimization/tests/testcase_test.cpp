@@ -1,19 +1,19 @@
 #include <gtest/gtest.h>
 
-#include "slam/utils/utils.hpp"
-#include "slam/optimization/testcase.hpp"
+#include "wavelib/utils/utils.hpp"
+#include "wavelib/optimization/testcase.hpp"
 
 
 TEST(Testcase, constructor)
 {
-    slam::TestCase testcase;
+    wavelib::TestCase testcase;
 
     ASSERT_EQ(false, testcase.configured);
 }
 
 TEST(Testcase, configure)
 {
-    slam::TestCase testcase;
+    wavelib::TestCase testcase;
 
     testcase.configure();
     ASSERT_EQ(true, testcase.configured);
@@ -21,10 +21,10 @@ TEST(Testcase, configure)
 
 TEST(TestCase, createP)
 {
-    slam::TestCase testcase;
-    slam::Mat3 K, R;
-    slam::MatX P;
-    slam::Vec3 t;
+    wavelib::TestCase testcase;
+    wavelib::Mat3 K, R;
+    wavelib::MatX P;
+    wavelib::Vec3 t;
 
     // setup
     K << 1.0, 0.0, 0.0,
@@ -52,9 +52,9 @@ TEST(TestCase, createP)
 
 TEST(Testcase, generateRandom3DPoints)
 {
-    slam::TestCase testcase;
-    slam::TestRange range;
-    slam::MatX pts;
+    wavelib::TestCase testcase;
+    wavelib::TestRange range;
+    wavelib::MatX pts;
 
     range.x_min = 0.0;
     range.x_max = 1.0;
@@ -82,12 +82,12 @@ TEST(Testcase, generateRandom3DPoints)
 
 TEST(TestCase, project3DTo2D)
 {
-    slam::TestRange range;
-    slam::TestCase testcase;
-    slam::MatX pts_3d;
-    slam::MatX pts_2d;
-    slam::Mat3 K, R;
-    slam::Vec3 t;
+    wavelib::TestRange range;
+    wavelib::TestCase testcase;
+    wavelib::MatX pts_3d;
+    wavelib::MatX pts_2d;
+    wavelib::Mat3 K, R;
+    wavelib::Vec3 t;
 
     // setup
     range.x_min = -1.0;
@@ -115,9 +115,9 @@ TEST(TestCase, project3DTo2D)
 
 TEST(TestCase, generateTestCase)
 {
-    slam::TestRange range;
-    slam::TestCase testcase;
-    slam::MatX pts1, pts2, pts3d;
+    wavelib::TestRange range;
+    wavelib::TestCase testcase;
+    wavelib::MatX pts1, pts2, pts3d;
 
     // setup
     range.x_min = -1.0;
@@ -131,9 +131,9 @@ TEST(TestCase, generateTestCase)
 
     testcase.generateTestCase(range, pts1, pts2, pts3d);
 
-    slam::mat2csv("/tmp/pts1.dat", pts1);
-    slam::mat2csv("/tmp/pts2.dat", pts2);
-    slam::mat2csv("/tmp/pts3d.dat", pts3d);
+    wavelib::mat2csv("/tmp/pts1.dat", pts1);
+    wavelib::mat2csv("/tmp/pts2.dat", pts2);
+    wavelib::mat2csv("/tmp/pts3d.dat", pts3d);
 }
 
 int main(int argc, char* argv[])

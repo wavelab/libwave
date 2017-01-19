@@ -5,14 +5,14 @@
 
 #include <gtest/gtest.h>
 
-#include "slam/utils/utils.hpp"
-#include "slam/utils/math.hpp"
+#include "wavelib/utils/utils.hpp"
+#include "wavelib/utils/math.hpp"
 
-#include "slam/vision/vo.hpp"
-#include "slam/vision/good.hpp"
-#include "slam/vision/fast.hpp"
-#include "slam/vision/utils.hpp"
-#include "slam/vision/eight_point.hpp"
+#include "wavelib/vision/vo.hpp"
+#include "wavelib/vision/good.hpp"
+#include "wavelib/vision/fast.hpp"
+#include "wavelib/vision/utils.hpp"
+#include "wavelib/vision/eight_point.hpp"
 
 #define TEST_1_DATA "tests/data/eight_point/img_1.dat"
 #define TEST_2_DATA "tests/data/eight_point/img_2.dat"
@@ -20,7 +20,7 @@
 #define TEST_IMAGE_2 "tests/data/eight_point/right.jpg"
 
 
-slam::MatX load_data(std::string file_path)
+wavelib::MatX load_data(std::string file_path)
 {
     int line_no;
     int nb_lines;
@@ -29,7 +29,7 @@ slam::MatX load_data(std::string file_path)
     std::vector<double> vdata;
     std::string element;
     double value;
-    slam::MatX data;
+    wavelib::MatX data;
 
     // load file
     if (infile.good() != true) {
@@ -71,7 +71,7 @@ slam::MatX load_data(std::string file_path)
 
 TEST(EightPoint, constructor)
 {
-    slam::optimization::EightPoint estimator;
+    wavelib::optimization::EightPoint estimator;
 
     ASSERT_EQ(false, estimator.configured);
 
@@ -81,7 +81,7 @@ TEST(EightPoint, constructor)
 
 TEST(EightPoint, configure)
 {
-    slam::optimization::EightPoint estimator;
+    wavelib::optimization::EightPoint estimator;
 
     // setup
     estimator.configure(800, 600);
@@ -95,9 +95,9 @@ TEST(EightPoint, configure)
 
 TEST(EightPoint, normalizePoints)
 {
-    slam::MatX pts1;
-    slam::MatX pts2;
-    slam::optimization::EightPoint estimator;
+    wavelib::MatX pts1;
+    wavelib::MatX pts2;
+    wavelib::optimization::EightPoint estimator;
 
     // setup
     pts1 = load_data(TEST_1_DATA);
@@ -121,10 +121,10 @@ TEST(EightPoint, normalizePoints)
 
 TEST(EightPoint, formMatrixA)
 {
-    slam::MatX pts1;
-    slam::MatX pts2;
-    slam::MatX A;
-    slam::optimization::EightPoint estimator;
+    wavelib::MatX pts1;
+    wavelib::MatX pts2;
+    wavelib::MatX A;
+    wavelib::optimization::EightPoint estimator;
 
     // setup
     pts1 = load_data(TEST_1_DATA);
@@ -153,10 +153,10 @@ TEST(EightPoint, formMatrixA)
 
 TEST(EightPoint, approximateFundamentalMatrix)
 {
-    slam::MatX pts1;
-    slam::MatX pts2;
-    slam::MatX A, F;
-    slam::optimization::EightPoint estimator;
+    wavelib::MatX pts1;
+    wavelib::MatX pts2;
+    wavelib::MatX A, F;
+    wavelib::optimization::EightPoint estimator;
 
     // setup
     pts1 = load_data(TEST_1_DATA);
@@ -173,10 +173,10 @@ TEST(EightPoint, approximateFundamentalMatrix)
 
 TEST(EightPoint, refineFundamentalMatrix)
 {
-    slam::MatX pts1;
-    slam::MatX pts2;
-    slam::MatX A, F;
-    slam::optimization::EightPoint estimator;
+    wavelib::MatX pts1;
+    wavelib::MatX pts2;
+    wavelib::MatX A, F;
+    wavelib::optimization::EightPoint estimator;
 
     // setup
     pts1 = load_data(TEST_1_DATA);
@@ -194,10 +194,10 @@ TEST(EightPoint, refineFundamentalMatrix)
 
 TEST(EightPoint, denormalizeFundamentalMatrix)
 {
-    slam::MatX pts1;
-    slam::MatX pts2;
-    slam::MatX A, F;
-    slam::optimization::EightPoint estimator;
+    wavelib::MatX pts1;
+    wavelib::MatX pts2;
+    wavelib::MatX A, F;
+    wavelib::optimization::EightPoint estimator;
 
     // setup
     pts1 = load_data(TEST_1_DATA);
@@ -215,12 +215,12 @@ TEST(EightPoint, denormalizeFundamentalMatrix)
 TEST(EightPoint, estimate)
 {
     double result;
-    slam::MatX pts1;
-    slam::MatX pts2;
-    slam::MatX F;
-    slam::Mat3 K, E;
-    slam::Vec3 x;
-    slam::optimization::EightPoint estimator;
+    wavelib::MatX pts1;
+    wavelib::MatX pts2;
+    wavelib::MatX F;
+    wavelib::Mat3 K, E;
+    wavelib::Vec3 x;
+    wavelib::optimization::EightPoint estimator;
 
     // setup
     pts1 = load_data(TEST_1_DATA);
@@ -254,11 +254,11 @@ TEST(EightPoint, estimate)
 TEST(EightPoint, obtainPossiblePoses)
 {
     double result;
-    slam::MatX pts1;
-    slam::MatX pts2;
-    slam::Mat3 K, E;
-    slam::optimization::EightPoint estimator;
-    std::vector<slam::MatX> poses;
+    wavelib::MatX pts1;
+    wavelib::MatX pts2;
+    wavelib::Mat3 K, E;
+    wavelib::optimization::EightPoint estimator;
+    std::vector<wavelib::MatX> poses;
 
     // setup
     pts1 = load_data(TEST_1_DATA);
@@ -284,14 +284,14 @@ TEST(EightPoint, obtainPossiblePoses)
 TEST(EightPoint, obtainPose)
 {
     double result;
-    slam::MatX pts1;
-    slam::MatX pts2;
-    slam::Vec3 pt1;
-    slam::Vec3 pt2;
-    slam::Mat3 K, E;
-    slam::MatX pose;
-    slam::optimization::EightPoint estimator;
-    std::vector<slam::MatX> poses;
+    wavelib::MatX pts1;
+    wavelib::MatX pts2;
+    wavelib::Vec3 pt1;
+    wavelib::Vec3 pt2;
+    wavelib::Mat3 K, E;
+    wavelib::MatX pose;
+    wavelib::optimization::EightPoint estimator;
+    std::vector<wavelib::MatX> poses;
 
     // setup
     pts1 = load_data(TEST_1_DATA);
@@ -310,7 +310,7 @@ TEST(EightPoint, obtainPose)
     std::cout << "8 point: \n" << pose << std::endl << std::endl;
 
     // compare with opencv's 8 point
-    slam::VisualOdometry vo;
+    wavelib::VisualOdometry vo;
     vo.configure(K);
     std::vector<cv::Point2f> cvpts1;
     std::vector<cv::Point2f> cvpts2;
@@ -332,14 +332,14 @@ TEST(EightPoint, obtainPose2)
     std::vector<float> errors;
     std::vector<uchar> status;
 
-    slam::MatX pts1, pts2;
-    slam::Vec3 pt1, pt2;
-    slam::Mat3 K, E;
-    slam::MatX pose;
-    std::vector<slam::MatX> poses;
-    slam::optimization::EightPoint estimator;
-    slam::FastDetector fast;
-    slam::VisualOdometry vo;
+    wavelib::MatX pts1, pts2;
+    wavelib::Vec3 pt1, pt2;
+    wavelib::Mat3 K, E;
+    wavelib::MatX pose;
+    std::vector<wavelib::MatX> poses;
+    wavelib::optimization::EightPoint estimator;
+    wavelib::FastDetector fast;
+    wavelib::VisualOdometry vo;
 
     // setup
     K << 279.0161682343449, 0, 150.3072895826164,
@@ -355,8 +355,8 @@ TEST(EightPoint, obtainPose2)
     // detect and track features
     fast.detect(img_1, cvpts_1);
     vo.featureTracking(img_1, img_2, cvpts_1, cvpts_2, errors, status);
-    slam::cvpts2mat(cvpts_1, pts1);
-    slam::cvpts2mat(cvpts_2, pts2);
+    wavelib::cvpts2mat(cvpts_1, pts1);
+    wavelib::cvpts2mat(cvpts_2, pts2);
 
     // display tracked features
     vo.drawOpticalFlow(img_1, img_2, cvpts_1, cvpts_2, twin_img);

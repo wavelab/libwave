@@ -1,7 +1,7 @@
-#include "slam/utils/utils.hpp"
+#include "wavelib/utils/utils.hpp"
 
 
-namespace slam {
+namespace wavelib {
 
 
 void rmtrailslash(std::string &path)
@@ -15,4 +15,4 @@ void rmtrailslash(std::string &path)
     }
 }
 
-} // end of slam namespace
+} // end of wavelib namespace

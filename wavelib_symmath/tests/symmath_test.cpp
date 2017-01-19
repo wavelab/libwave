@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
-#include "slam/symmath/models.hpp"
-#include "slam/symmath/symmath.hpp"
+#include "wavelib/symmath/models.hpp"
+#include "wavelib/symmath/symmath.hpp"
 
 
 TEST(Symmath, output_jacobian)
@@ -9,8 +9,8 @@ TEST(Symmath, output_jacobian)
     std::vector<GiNaC::ex> model;
     std::vector<GiNaC::symbol> states;
 
-    slam::quadrotor_jacobian(model, states);
-    slam::output_jacobian("/tmp/model.dat", model, states);
+    wavelib::quadrotor_jacobian(model, states);
+    wavelib::output_jacobian("/tmp/model.dat", model, states);
 }
 
 int main(int argc, char* argv[])

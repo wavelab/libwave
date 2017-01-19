@@ -1,7 +1,7 @@
-#include "slam/kinematics/quadrotor.hpp"
+#include "wavelib/kinematics/quadrotor.hpp"
 
 
-namespace slam {
+namespace wavelib {
 
 QuadrotorModel::QuadrotorModel(void)
 {
@@ -236,4 +236,4 @@ MatX QuadrotorModel::GFunc(VecX x, VecX u, float dt)
     return G;
 }
 
-} // end of slam namespace
+} // end of wavelib namespace

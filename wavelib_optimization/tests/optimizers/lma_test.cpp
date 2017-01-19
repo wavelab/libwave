@@ -2,19 +2,19 @@
 
 #include <gtest/gtest.h>
 
-#include "slam/optimization/benchmark.hpp"
-#include "slam/optimization/optimizers/lma.hpp"
+#include "wavelib/optimization/benchmark.hpp"
+#include "wavelib/optimization/optimizers/lma.hpp"
 
 
-std::vector<slam::MatX> generate_data(void)
+std::vector<wavelib::MatX> generate_data(void)
 {
-    slam::VecX input;
-    slam::VecX beta;
+    wavelib::VecX input;
+    wavelib::VecX beta;
 
     std::vector<double> inputs;
     std::vector<double> outputs;
 
-    std::vector<slam::MatX> data;
+    std::vector<wavelib::MatX> data;
 
     // setup
     input.resize(2);
@@ -29,13 +29,13 @@ std::vector<slam::MatX> generate_data(void)
             input << x, y;
             inputs.push_back(input(0));
             inputs.push_back(input(1));
-            outputs.push_back(slam::rosenbrock(input, beta));
+            outputs.push_back(wavelib::rosenbrock(input, beta));
         }
     }
 
     // convert data to matrices and vectors
-    slam::MatX x;
-    slam::VecX y;
+    wavelib::MatX x;
+    wavelib::VecX y;
 
     y.resize(outputs.size());
     for (int i = 0; i < outputs.size(); i++) {
@@ -55,15 +55,15 @@ std::vector<slam::MatX> generate_data(void)
     return data;
 }
 
-void test_settings(slam::LMASettings &settings)
+void test_settings(wavelib::LMASettings &settings)
 {
-    std::vector<slam::MatX> data;
-    slam::MatX x;
+    std::vector<wavelib::MatX> data;
+    wavelib::MatX x;
 
     settings.max_iter = 100;
     settings.lambda = 0.01;
-    settings.function = LMA_BIND(slam::rosenbrock);
-    settings.jacobian = LMA_BIND(slam::rosenbrock_jacobian);
+    settings.function = LMA_BIND(wavelib::rosenbrock);
+    settings.jacobian = LMA_BIND(wavelib::rosenbrock_jacobian);
     settings.nb_inputs = 2;
     settings.nb_params = 2;
 
@@ -75,7 +75,7 @@ void test_settings(slam::LMASettings &settings)
 
 TEST(LMAOpt, constructor)
 {
-    slam::LMAOpt opt;
+    wavelib::LMAOpt opt;
 
     ASSERT_EQ(false, opt.configured);
     ASSERT_EQ(100, opt.max_iter);
@@ -100,8 +100,8 @@ TEST(LMAOpt, constructor)
 
 TEST(LMAOpt, configure)
 {
-    slam::LMAOpt opt;
-    slam::LMASettings settings;
+    wavelib::LMAOpt opt;
+    wavelib::LMASettings settings;
 
     test_settings(settings);
     opt.configure(settings);
@@ -129,8 +129,8 @@ TEST(LMAOpt, configure)
 
 TEST(LMAOpt, evalFunction)
 {
-    slam::LMAOpt opt;
-    slam::LMASettings settings;
+    wavelib::LMAOpt opt;
+    wavelib::LMASettings settings;
     double error;
 
     // configure
@@ -144,9 +144,9 @@ TEST(LMAOpt, evalFunction)
 
 TEST(LMAOpt, calcGradients)
 {
-    slam::LMAOpt opt;
-    slam::LMASettings settings;
-    slam::MatX J_before, H_before;
+    wavelib::LMAOpt opt;
+    wavelib::LMASettings settings;
+    wavelib::MatX J_before, H_before;
 
     // configure
     test_settings(settings);
@@ -163,11 +163,11 @@ TEST(LMAOpt, calcGradients)
 
 TEST(LMAOpt, iterate)
 {
-    slam::LMAOpt opt;
-    slam::LMASettings settings;
-    slam::VecX beta_before;
+    wavelib::LMAOpt opt;
+    wavelib::LMASettings settings;
+    wavelib::VecX beta_before;
     double error;
-    std::vector<slam::VecX> data;
+    std::vector<wavelib::VecX> data;
 
     // configure
     test_settings(settings);
@@ -189,10 +189,10 @@ TEST(LMAOpt, iterate)
 
 TEST(LMAOpt, optimize)
 {
-    slam::VecX beta;
-    slam::LMAOpt opt;
-    slam::LMASettings settings;
-    std::vector <slam::VecX> data;
+    wavelib::VecX beta;
+    wavelib::LMAOpt opt;
+    wavelib::LMASettings settings;
+    std::vector <wavelib::VecX> data;
 
     // configure
     test_settings(settings);

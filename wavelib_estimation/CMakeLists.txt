@@ -1,5 +1,5 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8.3)
-PROJECT(slam_estimation)
+PROJECT(wavelib_estimation)
 
 IF (CMAKE_COMPILER_IS_GNUCXX)
     ADD_DEFINITIONS(-std=gnu++0x)
@@ -27,7 +27,7 @@ LINK_DIRECTORIES(
 
 # LIBRARY
 ADD_LIBRARY(
-    slam_estimation
+    wavelib_estimation
     STATIC
     src/kf.cpp
     src/ekf.cpp
@@ -35,9 +35,9 @@ ADD_LIBRARY(
 )
 SET(
     DEPS
-    slam_estimation
-    slam_kinematics
-    slam_utils
+    wavelib_estimation
+    wavelib_kinematics
+    wavelib_utils
     ginac
     ${OPENCV3_LIBS}
     ${GTEST_LIBRARIES}
