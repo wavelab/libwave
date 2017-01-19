@@ -1,68 +1,68 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8.3)
-PROJECT(wavelib)
+PROJECT(wave)
 
 
 INCLUDE_DIRECTORIES(
-    wavelib_estimation/include
-    wavelib_gimbal/include
-    wavelib_kinematics/include
-    wavelib_optimization/include
-    wavelib_symmath/include
-    wavelib_vision/include
-    wavelib_utils/include
+    wave_estimation/include
+    wave_gimbal/include
+    wave_kinematics/include
+    wave_optimization/include
+    wave_symmath/include
+    wave_vision/include
+    wave_utils/include
 )
 
 
-# libwavelib_estimation.a
-ADD_SUBDIRECTORY(wavelib_estimation)
-ADD_DEPENDENCIES(wavelib_estimation wavelib_utils wavelib_kinematics)
+# libwave_estimation.a
+ADD_SUBDIRECTORY(wave_estimation)
+ADD_DEPENDENCIES(wave_estimation wave_utils wave_kinematics)
 
-# libwavelib_gimbal.a
-ADD_SUBDIRECTORY(wavelib_gimbal)
-ADD_DEPENDENCIES(wavelib_gimbal wavelib_utils)
+# libwave_gimbal.a
+ADD_SUBDIRECTORY(wave_gimbal)
+ADD_DEPENDENCIES(wave_gimbal wave_utils)
 
-# libwavelib_kinematics.a
-ADD_SUBDIRECTORY(wavelib_kinematics)
-ADD_DEPENDENCIES(wavelib_kinematics wavelib_utils)
+# libwave_kinematics.a
+ADD_SUBDIRECTORY(wave_kinematics)
+ADD_DEPENDENCIES(wave_kinematics wave_utils)
 
-# libwavelib_optimization.a
-ADD_SUBDIRECTORY(wavelib_optimization)
-ADD_DEPENDENCIES(wavelib_optimization wavelib_utils)
+# libwave_optimization.a
+ADD_SUBDIRECTORY(wave_optimization)
+ADD_DEPENDENCIES(wave_optimization wave_utils)
 
-# libwavelib_symath.a
-ADD_SUBDIRECTORY(wavelib_symmath)
-ADD_DEPENDENCIES(wavelib_symmath wavelib_utils)
+# libwave_symath.a
+ADD_SUBDIRECTORY(wave_symmath)
+ADD_DEPENDENCIES(wave_symmath wave_utils)
 
-# libwavelib_utils.a
-ADD_SUBDIRECTORY(wavelib_utils)
+# libwave_utils.a
+ADD_SUBDIRECTORY(wave_utils)
 
-# libwavelib_vision.a
-ADD_SUBDIRECTORY(wavelib_vision)
-ADD_DEPENDENCIES(wavelib_vision wavelib_utils)
+# libwave_vision.a
+ADD_SUBDIRECTORY(wave_vision)
+ADD_DEPENDENCIES(wave_vision wave_utils)
 
-# libwavelib_viz.a
-ADD_SUBDIRECTORY(wavelib_viz)
-ADD_DEPENDENCIES(wavelib_viz wavelib_utils)
+# libwave_viz.a
+ADD_SUBDIRECTORY(wave_viz)
+ADD_DEPENDENCIES(wave_viz wave_utils)
 
 
-# libwavelib.a
+# libwave.a
 ADD_CUSTOM_TARGET(
-    libwavelib ALL
+    libwave ALL
     COMMAND
-        ${CMAKE_AR} rc libwavelib.a
-            ${CMAKE_BINARY_DIR}/wavelib_estimation/libwavelib_estimation.a
-            ${CMAKE_BINARY_DIR}/wavelib_gimbal/libwavelib_gimbal.a
-            ${CMAKE_BINARY_DIR}/wavelib_kinematics/libwavelib_kinematics.a
-            ${CMAKE_BINARY_DIR}/wavelib_optimization/libwavelib_optimization.a
-            ${CMAKE_BINARY_DIR}/wavelib_symmath/libwavelib_symmath.a
-            ${CMAKE_BINARY_DIR}/wavelib_utils/libwavelib_utils.a
-            ${CMAKE_BINARY_DIR}/wavelib_vision/libwavelib_vision.a
+        ${CMAKE_AR} rc libwave.a
+            ${CMAKE_BINARY_DIR}/wave_estimation/libwave_estimation.a
+            ${CMAKE_BINARY_DIR}/wave_gimbal/libwave_gimbal.a
+            ${CMAKE_BINARY_DIR}/wave_kinematics/libwave_kinematics.a
+            ${CMAKE_BINARY_DIR}/wave_optimization/libwave_optimization.a
+            ${CMAKE_BINARY_DIR}/wave_symmath/libwave_symmath.a
+            ${CMAKE_BINARY_DIR}/wave_utils/libwave_utils.a
+            ${CMAKE_BINARY_DIR}/wave_vision/libwave_vision.a
     DEPENDS
-        wavelib_estimation
-        wavelib_gimbal
-        wavelib_kinematics
-        wavelib_optimization
-        wavelib_symmath
-        wavelib_vision
-        wavelib_utils
+        wave_estimation
+        wave_gimbal
+        wave_kinematics
+        wave_optimization
+        wave_symmath
+        wave_vision
+        wave_utils
 )
