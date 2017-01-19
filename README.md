@@ -1,8 +1,26 @@
-# wave
+# libwave
 
+This library contains reusable code for:
 
+- Estimation
+- Kinematics
+- Optimization
+- Vision
+- and more ..
 
-# LICENCE
+## Install
+
+    git clone https://github.com/wavelab/libwave.git
+    mkdir -p build
+    cmake ..
+    make
+
+## Dependencies
+
+- Eigen 3.0+
+- OpenCV 3.0+
+
+## LICENSE
 
 Copyright (c) <2017> <Wavelab>
 
