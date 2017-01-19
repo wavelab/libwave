@@ -7,10 +7,6 @@
 *.synctex.gz
 
 *~
-
-lib
-bin
-obj
 tags
 build
 
