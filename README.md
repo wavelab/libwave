@@ -1,0 +1,4 @@
+# wavelib
+
+# LICENCE
+MIT
