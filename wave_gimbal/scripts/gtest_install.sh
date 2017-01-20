@@ -1,1 +1,0 @@
-../../scripts/gtest_install.sh

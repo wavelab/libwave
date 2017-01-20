@@ -1,1 +1,0 @@
-../../scripts/ffmpeg_ubuntu_1404_install.sh

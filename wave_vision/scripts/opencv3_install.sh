@@ -1,1 +1,0 @@
-../../scripts/opencv3_install.sh
