@@ -1,54 +1,54 @@
 #include "wave/kinematics/twowheel.hpp"
 
-
 namespace wave {
+namespace twowheel {
 
-TwoWheelRobotModel::TwoWheelRobotModel(void)
-{
-    this->initialized = false;
+TwoWheelRobotModel::TwoWheelRobotModel(void) {
+  this->initialized = false;
 }
 
-VecX TwoWheelRobotModel::gFunc(VecX x, VecX u, float dt)
-{
-    VecX g;
+VecX TwoWheelRobotModel::gFunc(Vec3 x, Vec2 u, float dt) {
+  Vec3 g;
 
-    g << x(1) + u(1) * cos(x(3)) * dt,
-         x(2) + u(1) * sin(x(3)) * dt,
-         x(3) + u(2) * dt;
+  // clang-format off
+  g << x(0) + u(0) * cos(x(2)) * dt,
+       x(1) + u(0) * sin(x(2)) * dt,
+       x(2) + u(1) * dt;
+  // clang-format on
 
-    return g;
+  return g;
 }
 
-MatX TwoWheelRobotModel::GFunc(VecX x, VecX u, float dt)
-{
-    MatX G;
+MatX TwoWheelRobotModel::GFunc(Vec3 x, Vec2 u, float dt) {
+  MatX G;
 
-    G << 1.0, 0.0, (-u(1) * sin(x(3)) * dt),
-         0.0, 1.0, (u(1) * cos(x(3)) * dt),
-         0.0, 0.0, 1.0;
+  // clang-format off
+  G << 1.0, 0.0, (-u(0) * sin(x(2)) * dt),
+       0.0, 1.0, (u(0) * cos(x(2)) * dt),
+       0.0, 0.0, 1.0;
+  // clang-format on
 
-    return G;
+  return G;
 }
 
-VecX TwoWheelRobotModel::hFunc(VecX x)
-{
-    VecX h;
-    MatX H;
+VecX TwoWheelRobotModel::hFunc(VecX x) {
+  VecX h;
+  MatX H;
 
-    H = Eigen::MatrixXf::Identity(3, 3);
-    h = H * x;
+  H = MatX::Identity(3, 3);
+  h = H * x;
 
-    return h;
+  return h;
 }
 
-MatX TwoWheelRobotModel::HFunc(VecX y)
-{
-    MatX H;
-    UNUSED(y);
+MatX TwoWheelRobotModel::HFunc(VecX y) {
+  MatX H;
+  // UNUSED(y);
 
-    H = Eigen::MatrixXf::Identity(3, 3);
+  H = MatX::Identity(3, 3);
 
-    return H;
+  return H;
 }
 
-} // end of wave namespace
+}  // eof twowheel
+}  // eof wave

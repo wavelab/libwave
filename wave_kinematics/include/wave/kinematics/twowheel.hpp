@@ -1,22 +1,27 @@
-#ifndef __wave_KINEMATICS_TWOWHEEL_HPP__
-#define __wave_KINEMATICS_TWOWHEEL_HPP__
+#ifndef __WAVE_KINEMATICS_TWOWHEEL_HPP__
+#define __WAVE_KINEMATICS_TWOWHEEL_HPP__
+
+#include <float.h>
+#include <iostream>
 
 #include "wave/utils/utils.hpp"
 
 
 namespace wave {
+namespace twowheel {
 
-class TwoWheelRobotModel
-{
+class TwoWheelRobotModel {
 public:
-    bool initialized;
+  bool initialized;
+  Vec3 x;
 
-    TwoWheelRobotModel(void);
-    VecX gFunc(VecX x, VecX u, float dt);
-    MatX GFunc(VecX x, VecX u, float dt);
-    VecX hFunc(VecX x);
-    MatX HFunc(VecX y);
+  TwoWheelRobotModel(void);
+  VecX gFunc(Vec3 x, Vec2 u, float dt);
+  MatX GFunc(Vec3 x, Vec2 u, float dt);
+  VecX hFunc(VecX x);
+  MatX HFunc(VecX y);
 };
 
-} // end of wave namespace
+}  // end of twowheel namespace
+}  // end of wave namespace
 #endif

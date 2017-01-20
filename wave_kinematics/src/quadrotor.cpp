@@ -1,239 +1,549 @@
 #include "wave/kinematics/quadrotor.hpp"
 
-
 namespace wave {
+namespace quadrotor {
 
-QuadrotorModel::QuadrotorModel(void)
-{
-    this->initialized = false;
+// ATTITUDE CONTROLLER
+AttitudeController::AttitudeController(void) {
+  this->dt = 0.0;
+  this->outputs << 0.0, 0.0, 0.0, 0.0;
+
+  this->roll_controller = control::PID(50.0, 0.1, 3.0);
+  this->pitch_controller = control::PID(50.0, 0.1, 3.0);
+  this->yaw_controller = control::PID(40.0, 0.1, 3.0);
 }
 
-MatX QuadrotorModel::GFunc(VecX x, VecX u, float dt)
-{
-    MatX G(12, 12);
-    float ph, th, ps, p, q, r, px, py, pz, vx, vy, vz;  // states
-    float Ix, Iy, Iz;
-    float ktau, kt;
-    float tauf, taup, tauq, taur;
-    float m, g;
+Vec4 AttitudeController::calculate(Vec4 setpoints, Vec4 actual, double dt) {
+  double r, p, y, t;
+  Vec4 outputs;
+  double max_thrust;
 
-    // setup
-    UNUSED(u);
+  // check rate
+  this->dt += dt;
+  if (this->dt < 0.001) {
+    return this->outputs;
+  }
 
-    // states
-    ph = x(0);
-    th = x(1);
-    ps = x(2);
-    p = x(3);
-    q = x(4);
-    r = x(5);
-    px = x(6);
-    py = x(7);
-    pz = x(8);
-    vx = x(9);
-    vy = x(10);
-    vz = x(11);
+  // roll pitch yaw
+  r = this->roll_controller.calculate(setpoints(0), actual(0), this->dt);
+  p = this->pitch_controller.calculate(setpoints(1), actual(1), this->dt);
+  y = this->yaw_controller.calculate(setpoints(2), actual(2), this->dt);
 
-    // inertia
-    Ix = this->Ix;
-    Iy = this->Iy;
-    Iz = this->Iz;
+  // thrust
+  max_thrust = 5.0;
+  t = max_thrust * setpoints(3);  // convert relative thrust to true thrust
+  t /= fabs(cos(actual(0)) * cos(actual(1)));  // adjust for roll and pitch
+  t = (t > max_thrust) ? max_thrust : t;       // limit thrust
+  t = (t < 0) ? 0.0 : t;                       // limit thrust
 
-    // constants
-    ktau = this->ktau;
-    kt = this->kt;
+  // map roll, pitch, yaw and thrust to motor outputs
+  outputs(0) = -p - y + t;
+  outputs(1) = -r + y + t;
+  outputs(2) = p - y + t;
+  outputs(3) = r + y + t;
 
-    // torques
-    tauf = this->tauf;
-    taup = this->taup;
-    tauq = this->tauq;
-    taur = this->taur;
+  // limit outputs
+  for (int i = 0; i < 4; i++) {
+    if (outputs(i) > max_thrust) {
+      outputs(i) = max_thrust;
+    } else if (outputs(i) < 0.0) {
+      outputs(i) = 0.0;
+    }
+  }
 
-    // misc
-    m = this->m;
-    g = this->g;
+  // keep track of outputs
+  this->outputs = outputs;
+  this->dt = 0.0;
 
-    // un-used
-    UNUSED(px);
-    UNUSED(py);
-    UNUSED(pz);
-    UNUSED(vx);
-    UNUSED(vy);
-    UNUSED(vz);
-    UNUSED(taup);
-    UNUSED(tauq);
-    UNUSED(taur);
-    UNUSED(g);
-
-    // row 1
-    G(0, 0) =  dt*( tan(th)*cos(ph)*q-tan(th)*r*sin(ph))+1.0;
-    G(0, 1) = dt*( q*( pow(tan(th),2.0)+1.0)*sin(ph)+cos(ph)*( pow(tan(th),2.0)+1.0)*r);
-    G(0, 2) = 0.0;
-    G(0, 3) = dt;
-    G(0, 4) = dt*tan(th)*sin(ph);
-    G(0, 5) = dt*tan(th)*cos(ph);
-    G(0, 6) = 0.0;
-    G(0, 7) = 0.0;
-    G(0, 8) = 0.0;
-    G(0, 9) = 0.0;
-    G(0, 10) = 0.0;
-    G(0, 11) = 0.0;
-
-    // row 2
-    G(1, 0) = -dt*( sin(ph)+cos(ph)*r);
-    G(1, 1) = 1.0;
-    G(1, 2) = 0.0;
-    G(1, 3) = 0.0;
-    G(1, 4) = dt;
-    G(1, 5) = -dt*sin(ph);
-    G(1, 6) = 0.0;
-    G(1, 7) = 0.0;
-    G(1, 8) = 0.0;
-    G(1, 9) = 0.0;
-    G(1, 10) = 0.0;
-    G(1, 11) = 0.0;
-
-    // row 3
-    G(2, 0) = -dt*( r*sin(ph)-cos(ph)*q)/cos(th);
-    G(2, 1) = ( q*sin(ph)+cos(ph)*r)*dt*sin(th)/pow(cos(th),2.0);
-    G(2, 2) = 1.0;
-    G(2, 3) = 0.0;
-    G(2, 4) = dt/cos(th)*sin(ph);
-    G(2, 5) = dt*cos(ph)/cos(th);
-    G(2, 6) = 0.0;
-    G(2, 7) = 0.0;
-    G(2, 8) = 0.0;
-    G(2, 9) = 0.0;
-    G(2, 10) = 0.0;
-    G(2, 11) = 0.0;
-
-    // row 4
-    G(3, 0) = 0.0;
-    G(3, 1) = 0.0;
-    G(3, 2) = 0.0;
-    G(3, 3) = -dt*ktau/Ix+1.0;
-    G(3, 4) = -dt*r/Ix*( Iz-Iy);
-    G(3, 5) = -dt*q/Ix*( Iz-Iy);
-    G(3, 6) = 0.0;
-    G(3, 7) = 0.0;
-    G(3, 8) = 0.0;
-    G(3, 9) = 0.0;
-    G(3, 10) = 0.0;
-    G(3, 11) = 0.0;
-
-    // row 5
-    G(4, 0) = 0.0;
-    G(4, 1) = 0.0;
-    G(4, 2) = 0.0;
-    G(4, 3) = dt*( Iz-Ix)*r/Iy;
-    G(4, 4) = -dt*ktau/Iy+1.0;
-    G(4, 5) = dt*( Iz-Ix)*p/Iy;
-    G(4, 6) = 0.0;
-    G(4, 7) = 0.0;
-    G(4, 8) = 0.0;
-    G(4, 9) = 0.0;
-    G(4, 10) = 0.0;
-    G(4, 11) = 0.0;
-
-    // row 6
-    G(5, 0) = 0.0;
-    G(5, 1) = 0.0;
-    G(5, 2) = 0.0;
-    G(5, 3) = dt*q/Iz*( Ix-Iy);
-    G(5, 4) = dt/Iz*( Ix-Iy)*p;
-    G(5, 5) = -dt/Iz*ktau+1.0;
-    G(5, 6) = 0.0;
-    G(5, 7) = 0.0;
-    G(5, 8) = 0.0;
-    G(5, 9) = 0.0;
-    G(5, 10) = 0.0;
-    G(5, 11) = 0.0;
-
-    // row 7
-    G(6, 0) = 0.0;
-    G(6, 1) = 0.0;
-    G(6, 2) = 0.0;
-    G(6, 3) = 0.0;
-    G(6, 4) = 0.0;
-    G(6, 5) = 0.0;
-    G(6, 6) = 1.0;
-    G(6, 7) = 0.0;
-    G(6, 8) = 0.0;
-    G(6, 9) = dt;
-    G(6, 10) = 0.0;
-    G(6, 11) = 0.0;
-
-    // row 8
-    G(7, 0) = 0.0;
-    G(7, 1) = 0.0;
-    G(7, 2) = 0.0;
-    G(7, 3) = 0.0;
-    G(7, 4) = 0.0;
-    G(7, 5) = 0.0;
-    G(7, 6) = 0.0;
-    G(7, 7) = 1.0;
-    G(7, 8) = 0.0;
-    G(7, 9) = 0.0;
-    G(7, 10) = dt;
-    G(7, 11) = 0.0;
-
-    // row 9
-    G(8, 0) = 0.0;
-    G(8, 1) = 0.0;
-    G(8, 2) = 0.0;
-    G(8, 3) = 0.0;
-    G(8, 4) = 0.0;
-    G(8, 5) = 0.0;
-    G(8, 6) = 0.0;
-    G(8, 7) = 0.0;
-    G(8, 8) = 1.0;
-    G(8, 9) = 0.0;
-    G(8, 10) = 0.0;
-    G(8, 11) = dt;
-
-    // row 10
-    G(9, 0) = dt*( cos(ph)*sin(ps)-cos(ps)*sin(th)*sin(ph))*tauf/m;
-    G(9, 1) = dt*cos(ph)*tauf*cos(ps)/m*cos(th);
-    G(9, 2) = -dt*tauf*( cos(ph)*sin(th)*sin(ps)-cos(ps)*sin(ph))/m;
-    G(9, 3) = 0.0;
-    G(9, 4) = 0.0;
-    G(9, 5) = 0.0;
-    G(9, 6) = 0.0;
-    G(9, 7) = 0.0;
-    G(9, 8) = 0.0;
-    G(9, 9) = -dt/m*kt+1.0;
-    G(9, 10) = 0.0;
-    G(9, 11) = 0.0;
-
-    // row 11
-    G(10, 0) = -dt*( sin(th)*sin(ps)*sin(ph)+cos(ph)*cos(ps))*tauf/m;
-    G(10, 1) = dt*cos(ph)*tauf/m*cos(th)*sin(ps);
-    G(10, 2) = dt*tauf/m*( cos(ph)*cos(ps)*sin(th)+sin(ps)*sin(ph));
-    G(10, 3) = 0.0;
-    G(10, 4) = 0.0;
-    G(10, 5) = 0.0;
-    G(10, 6) = 0.0;
-    G(10, 7) = 0.0;
-    G(10, 8) = 0.0;
-    G(10, 9) = 1.0;
-    G(10, 10) = -dt/m*kt;
-    G(10, 11) = 0.0;
-
-    // row 12
-    G(11, 0) = -dt*tauf/m*cos(th)*sin(ph);
-    G(11, 1) = -dt*cos(ph)*tauf*sin(th)/m;
-    G(11, 2) = 0.0;
-    G(11, 3) = 0.0;
-    G(11, 4) = 0.0;
-    G(11, 5) = 0.0;
-    G(11, 6) = 0.0;
-    G(11, 7) = 0.0;
-    G(11, 8) = 0.0;
-    G(11, 9) = 1.0;
-    G(11, 10) = 0.0;
-    G(11, 11) = -dt/m*kt;
-
-    return G;
+  return outputs;
 }
 
-} // end of wave namespace
+Vec4 AttitudeController::calculate(Vec4 psetpoints,
+                                   Vec4 vsetpoints,
+                                   Vec4 actual,
+                                   double dt) {
+  Vec4 setpoints;
+  setpoints = psetpoints + vsetpoints;
+  return this->calculate(setpoints, actual, dt);
+}
+
+
+// POSITION CONTROLLER
+PositionController::PositionController(void) {
+  this->dt = 0.0;
+  this->outputs << 0.0, 0.0, 0.0, 0.0;
+
+  this->x_controller = control::PID(0.5, 0.0, 0.035);
+  this->y_controller = control::PID(0.5, 0.0, 0.035);
+  this->z_controller = control::PID(0.3, 0.0, 0.018);
+}
+
+Vec4 PositionController::calculate(Vec3 setpoints,
+                                   Vec4 actual,
+                                   double yaw,
+                                   double dt) {
+  double max_thrust;
+  double r, p, y, t;
+  Vec3 errors;
+  Vec4 outputs;
+  Mat3 R;
+
+  // check rate
+  this->dt += dt;
+  if (this->dt < 0.01) {
+    return this->outputs;
+  }
+
+  // calculate RPY errors relative to quadrotor by incorporating yaw
+  errors(0) = setpoints(0) - actual(0);
+  errors(1) = setpoints(1) - actual(1);
+  errors(2) = setpoints(2) - actual(2);
+  euler2rot(0.0, 0.0, actual(3), 123, R);
+  errors = R * errors;
+
+  // roll, pitch, yaw and thrust
+  r = -this->y_controller.calculate(errors(1), 0.0, dt);
+  p = this->x_controller.calculate(errors(0), 0.0, dt);
+  y = yaw;
+  t = 0.5 + this->z_controller.calculate(errors(2), 0.0, dt);
+  outputs << r, p, y, t;
+
+  // limit roll, pitch
+  for (int i = 0; i < 2; i++) {
+    if (outputs(i) > deg2rad(30.0)) {
+      outputs(i) = deg2rad(30.0);
+    } else if (outputs(i) < deg2rad(-30.0)) {
+      outputs(i) = deg2rad(-30.0);
+    }
+  }
+
+  // limit yaw
+  while (outputs(2) > deg2rad(360.0)) {
+    outputs(2) -= deg2rad(360.0);
+  }
+  while (outputs(2) < deg2rad(0.0)) {
+    outputs(2) += deg2rad(360.0);
+  }
+
+  // limit thrust
+  if (outputs(3) > 1.0) {
+    outputs(3) = 1.0;
+  } else if (outputs(3) < 0.0) {
+    outputs(3) = 0.0;
+  }
+
+  // yaw first if threshold reached
+  if (fabs(yaw - actual(3)) > deg2rad(2)) {
+    outputs(0) = 0.0;
+    outputs(1) = 0.0;
+  }
+
+  // keep track of outputs
+  this->outputs = outputs;
+  this->dt = 0.0;
+
+  return outputs;
+}
+
+
+// VELOCITY CONTROLLER
+VelocityController::VelocityController(void) {
+  this->vx_controller = control::PID(0.9, 0.0, 0.03);
+  this->vy_controller = control::PID(0.9, 0.0, 0.03);
+  this->vz_controller = control::PID(1.0, 0.0, 0.0);
+}
+
+VecX VelocityController::calculate(Vec3 setpoints,
+                                   Vec3 actual,
+                                   double yaw,
+                                   double dt) {
+  Vec4 outputs;
+  double r, p, y, t;
+
+  r = -this->vy_controller.calculate(setpoints(1), actual(1), dt);
+  p = this->vx_controller.calculate(setpoints(0), actual(0), dt);
+  y = yaw;
+  t = 0.5 + this->vz_controller.calculate(setpoints(2), actual(2), dt);
+  outputs << r, p, y, t;
+
+  // limit roll, pitch
+  for (int i = 0; i < 2; i++) {
+    if (outputs(i) > deg2rad(30.0)) {
+      outputs(i) = deg2rad(30.0);
+    } else if (outputs(i) < deg2rad(-30.0)) {
+      outputs(i) = deg2rad(-30.0);
+    }
+  }
+
+  // limit thrust
+  if (outputs(3) > 1.0) {
+    outputs(3) = 1.0;
+  } else if (outputs(3) < 0.0) {
+    outputs(3) = 0.0;
+  }
+
+  return outputs;
+}
+
+
+// QUADROTOR MODEL
+QuadrotorModel::QuadrotorModel(void) {
+  this->states = VecX(12);
+  this->states(0) = 0.0;   // roll
+  this->states(1) = 0.0;   // pitch
+  this->states(2) = 0.0;   // yaw
+  this->states(3) = 0.0;   // angular velocity x
+  this->states(4) = 0.0;   // angular velocity y
+  this->states(5) = 0.0;   // angular velocity z
+  this->states(6) = 0.0;   // x
+  this->states(7) = 0.0;   // y
+  this->states(8) = 0.0;   // z
+  this->states(9) = 0.0;   // linear velocity x
+  this->states(10) = 0.0;  // linear velocity y
+  this->states(11) = 0.0;  // linear velocity z
+
+  this->Ix = 0.0963;  // inertial x
+  this->Iy = 0.0963;  // inertial y
+  this->Iz = 0.1927;  // inertial z
+
+  this->kr = 0.0;      // rotation drag constant
+  this->kt = 1.95e-5;  // translation drag constant
+
+  this->l = 0.9;  // arm length
+  this->d = 1.0;  // drag
+
+  this->m = 1.0;   // mass of quad
+  this->g = 10.0;  // gravitational constant
+
+  this->attitude_setpoints = Vec4();
+  this->position_setpoints = VecX(3);
+  this->velocity_setpoints = VecX(3);
+
+  this->attitude_controller = AttitudeController();
+  this->position_controller = PositionController();
+  this->velocity_controller = VelocityController();
+}
+
+QuadrotorModel::QuadrotorModel(VecX pose) {
+  this->states = VecX(12);
+  this->states(0) = pose(3);  // roll
+  this->states(1) = pose(4);  // pitch
+  this->states(2) = pose(5);  // yaw
+  this->states(3) = 0.0;      // angular velocity x
+  this->states(4) = 0.0;      // angular velocity y
+  this->states(5) = 0.0;      // angular velocity z
+  this->states(6) = pose(0);  // x
+  this->states(7) = pose(1);  // y
+  this->states(8) = pose(2);  // z
+  this->states(9) = 0.0;      // linear velocity x
+  this->states(10) = 0.0;     // linear velocity y
+  this->states(11) = 0.0;     // linear velocity z
+
+  this->Ix = 0.0963;  // inertial x
+  this->Iy = 0.0963;  // inertial y
+  this->Iz = 0.1927;  // inertial z
+
+  this->kr = 1.95e-4;  // rotation drag constant
+  this->kt = 1.95e-4;  // translation drag constant;
+
+  this->l = 0.9;  // arm length
+  this->d = 1.0;  // drag
+
+  this->m = 1.0;   // mass of quad
+  this->g = 10.0;  // gravitational constant
+
+  this->attitude_setpoints = Vec4();
+  this->attitude_setpoints << 0.0, 0.0, 0.0, 0.5;
+
+  this->position_setpoints = VecX(3);
+  this->position_setpoints << pose(0), pose(1), pose(2);
+
+  this->velocity_setpoints = VecX(3);
+  this->velocity_setpoints << 0.0, 0.0, 0.0;
+
+  this->attitude_controller = AttitudeController();
+  this->position_controller = PositionController();
+  this->velocity_controller = VelocityController();
+}
+
+int QuadrotorModel::update(VecX motor_inputs, double dt) {
+  double ph, th, ps;
+  double p, q, r;
+  double x, y, z;
+  double vx, vy, vz;
+
+  double Ix, Iy, Iz;
+  double kr, kt;
+  double tauf, taup, tauq, taur;
+  double m, g;
+
+  Mat4 A;
+  Vec4 tau;
+
+  // setup
+  ph = this->states(0);
+  th = this->states(1);
+  ps = this->states(2);
+
+  p = this->states(3);
+  q = this->states(4);
+  r = this->states(5);
+
+  x = this->states(6);
+  y = this->states(7);
+  z = this->states(8);
+
+  vx = this->states(9);
+  vy = this->states(10);
+  vz = this->states(11);
+
+  Ix = this->Ix;
+  Iy = this->Iy;
+  Iz = this->Iz;
+
+  kr = this->kr;
+  kt = this->kt;
+
+  m = this->m;
+  g = this->g;
+
+  // convert motor inputs to angular p, q, r and total thrust
+  // clang-format off
+  A << 1.0, 1.0, 1.0, 1.0,
+       0.0, -this->l, 0.0, this->l,
+       -this->l, 0.0, this->l, 0.0,
+       -this->d, this->d, -this->d, this->d;
+  // clang-format on
+
+  tau = A * motor_inputs;
+  tauf = tau(0);
+  taup = tau(1);
+  tauq = tau(2);
+  taur = tau(3);
+
+  // update
+  // clang-format off
+  this->states(0) = ph + (p + q * sin(ph) * tan(th) + r * cos(ph) * tan(th)) * dt;
+  this->states(1) = th + (q * cos(ph) - r * sin(ph)) * dt;
+  this->states(2) = ps + ((1 / cos(th)) * (q * sin(ph) + r * cos(ph))) * dt;
+  this->states(3) = p + (-((Iz - Iy) / Ix) * q * r - (kr * p / Ix) + (1 / Ix) * taup) * dt;
+  this->states(4) = q + (-((Ix - Iz) / Iy) * p * r - (kr * q / Iy) + (1 / Iy) * tauq) * dt;
+  this->states(5) = r + (-((Iy - Ix) / Iz) * p * q - (kr * r / Iz) + (1 / Iz) * taur) * dt;
+  this->states(6) = x + vx * dt;
+  this->states(7) = y + vy * dt;
+  this->states(8) = z + vz * dt;
+  this->states(9) = vx + ((-kt * vx / m) + (1 / m) * (cos(ph) * sin(th) * cos(ps) + sin(ph) * sin(ps)) * tauf) * dt;
+  this->states(10) = vy + ((-kt * vy / m) + (1 / m) * (cos(ph) * sin(th) * sin(ps) - sin(ph) * cos(ps)) * tauf) * dt;
+  this->states(11) = vz + (-(kt * vz / m) + (1 / m) * (cos(ph) * cos(th)) * tauf - g) * dt;
+  // clang-format on
+
+  return 0;
+}
+
+VecX QuadrotorModel::attitudeControllerControl(double dt) {
+  Vec4 actual_attitude;
+  Vec4 motor_inputs;
+
+  // attitude controller
+  // clang-format off
+  actual_attitude << this->states(0),  // roll
+                     this->states(1),  // pitch
+                     this->states(2),  // yaw
+                     this->states(8);  // z
+  motor_inputs = this->attitude_controller.calculate(this->attitude_setpoints,
+                                                     actual_attitude,
+                                                     dt);
+  // clang-format on
+
+  return motor_inputs;
+}
+
+VecX QuadrotorModel::positionControllerControl(double dt) {
+  Vec4 motor_inputs;
+  Vec4 actual_position;
+  Vec4 actual_attitude;
+
+  // position controller
+  // clang-format off
+  actual_position(0) = this->states(6);  // x
+  actual_position(1) = this->states(7);  // y
+  actual_position(2) = this->states(8);  // z
+  actual_position(3) = this->states(2);  // yaw
+  this->attitude_setpoints = this->position_controller.calculate(
+    this->position_setpoints,
+    actual_position,
+    0.0,
+    dt
+  );
+
+  // attitude controller
+  actual_attitude(0) = this->states(0);  // roll
+  actual_attitude(1) = this->states(1);  // pitch
+  actual_attitude(2) = this->states(2);  // yaw
+  actual_attitude(3) = this->states(8);  // z
+  motor_inputs = this->attitude_controller.calculate(
+    this->attitude_setpoints,
+    actual_attitude,
+    dt
+  );
+  // clang-format on
+
+  return motor_inputs;
+}
+
+VecX QuadrotorModel::velocityControllerControl(double dt) {
+  Vec4 motor_inputs;
+  Vec3 actual_velocity;
+  Vec4 actual_attitude;
+
+  // velocity controller
+  // clang-format off
+  actual_velocity(0) = this->states(9);   // vx
+  actual_velocity(1) = this->states(10);  // vy
+  actual_velocity(2) = this->states(11);  // vz
+  this->attitude_setpoints = this->velocity_controller.calculate(
+    this->velocity_setpoints,
+    actual_velocity,
+    0.0,
+    dt
+  );
+
+  // attitude controller
+  actual_attitude(0) = this->states(0);  // roll
+  actual_attitude(1) = this->states(1);  // pitch
+  actual_attitude(2) = this->states(2);  // yaw
+  actual_attitude(3) = this->states(8);  // z
+  motor_inputs = this->attitude_controller.calculate(
+    this->attitude_setpoints,
+    actual_attitude,
+    dt
+  );
+  // clang-format on
+
+  return motor_inputs;
+}
+
+// VecX QuadrotorModel::trackerControllerControl(double dt) {
+//   VecX motor_inputs(4);
+//   VecX actual_position(3);
+//   VecX actual_velocity(3);
+//   VecX actual_attitude(4);
+//
+//   // clang-format off
+//   // position controller
+//   actual_position(0) = this->states(6);  // x
+//   actual_position(1) = this->states(7);  // y
+//   actual_position(2) = this->states(8);  // z
+//   this->attitude_setpoints = this->position_controller.calculate(
+//     this->position_setpoints,
+//     actual_position,
+//     0.0,
+//     dt
+//   );
+//
+//   // velocity controller
+//   actual_velocity(0) = this->states(9);   // vx
+//   actual_velocity(1) = this->states(10);  // vy
+//   actual_velocity(2) = this->states(11);  // vz
+//   this->attitude_setpoints += this->velocity_controller.calculate(
+//     this->velocity_setpoints,
+//     actual_velocity,
+//     0.0,
+//     dt
+//   );
+//
+//   // attitude controller
+//   actual_attitude(0) = this->states(0);
+//   actual_attitude(1) = this->states(1);
+//   actual_attitude(2) = this->states(2);
+//   actual_attitude(3) = this->states(8);
+//   motor_inputs = this->attitude_controller.calculate(
+//     this->attitude_setpoints,
+//     actual_attitude,
+//     dt
+//   );
+//   // clang-format on
+//
+//   return motor_inputs;
+// }
+
+void QuadrotorModel::setAttitude(double roll,
+                                 double pitch,
+                                 double yaw,
+                                 double z) {
+  this->attitude_setpoints(0) = roll;
+  this->attitude_setpoints(1) = pitch;
+  this->attitude_setpoints(2) = yaw;
+  this->attitude_setpoints(3) = z;
+}
+
+void QuadrotorModel::setPosition(double x, double y, double z) {
+  this->position_setpoints(0) = x;
+  this->position_setpoints(1) = y;
+  this->position_setpoints(2) = z;
+}
+
+void QuadrotorModel::setVelocity(double vx, double vy, double vz) {
+  this->velocity_setpoints(0) = vx;
+  this->velocity_setpoints(1) = vy;
+  this->velocity_setpoints(2) = vz;
+}
+
+VecX QuadrotorModel::getPose(void) {
+  VecX pose(6);
+
+  // x, y, z
+  pose(0) = this->states(6);
+  pose(1) = this->states(7);
+  pose(2) = this->states(8);
+
+  // phi, theta, psi
+  pose(3) = this->states(0);
+  pose(4) = this->states(1);
+  pose(5) = this->states(2);
+
+  return pose;
+}
+
+VecX QuadrotorModel::getVelocity(void) {
+  VecX velocities(6);
+
+  // vx, vy, vz
+  velocities(0) = this->states(9);
+  velocities(1) = this->states(10);
+  velocities(2) = this->states(11);
+
+  // phi_dot, theta_dot, psi_dot
+  velocities(3) = this->states(3);
+  velocities(4) = this->states(4);
+  velocities(5) = this->states(5);
+
+  return velocities;
+}
+
+void QuadrotorModel::printState(void) {
+  float x, y, z;
+  float phi, theta, psi;
+
+  // phi, theta, psi
+  phi = this->states(0);
+  theta = this->states(1);
+  psi = this->states(2);
+
+  // x, y, z
+  x = this->states(6);
+  y = this->states(7);
+  z = this->states(8);
+
+  // print states
+  printf("x: %f\t", x);
+  printf("y: %f\t", y);
+  printf("z: %f\t\t", z);
+
+  printf("phi: %f\t", phi);
+  printf("theta: %f\t", theta);
+  printf("psi: %f\n", psi);
+}
+
+}  // end of quadrotor namespace
+}  // end of wave namespace
