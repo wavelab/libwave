@@ -5,17 +5,14 @@
 #include <vector>
 #include <fstream>
 
-#include <sr/sr.h>
 #include <ginac/ginac.h>
 
 
 namespace wave {
 
-void output_jacobian(
-    std::string file_path,
-    std::vector<GiNaC::ex> model,
-    std::vector<GiNaC::symbol> states
-);
+void output_jacobian(std::string file_path,
+                     std::vector<GiNaC::ex> model,
+                     std::vector<GiNaC::symbol> states);
 
-} // end of wave namespace
+}  // end of wave namespace
 #endif

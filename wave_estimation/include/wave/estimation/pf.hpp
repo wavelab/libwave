@@ -9,25 +9,20 @@
 
 namespace wave {
 
-class ParticleFilter
-{
+class ParticleFilter {
 public:
-    bool initialized;
-    VecX mu;
+  bool initialized;
+  VecX mu;
 
-    int M;
+  int M;
 
-    // VecX mu_p;
-    // MatX S_p;
+  // VecX mu_p;
+  // MatX S_p;
 
-    ParticleFilter(void);
-    int init(int M, VecX mu);
-    int estimate(
-        std::vector<VecX> X_p,
-        std::vector<VecX> hX_p,
-        VecX y
-    );
+  ParticleFilter(void);
+  int init(int M, VecX mu);
+  int estimate(std::vector<VecX> X_p, std::vector<VecX> hX_p, VecX y);
 };
 
-} // end of wave namespace
+}  // end of wave namespace
 #endif

@@ -11,46 +11,43 @@
 
 namespace wave {
 
-class VizSettings
-{
+class VizSettings {
 public:
-    int window_width;
-    int window_height;
-    int window_bpp;
-    std::string window_title;
+  int window_width;
+  int window_height;
+  int window_bpp;
+  std::string window_title;
 
-    VizSettings(void);
+  VizSettings(void);
 };
 
-class VizCamera
-{
+class VizCamera {
 public:
-    Vec3 position;
-    Vec3 view;
-    Vec3 up;
+  Vec3 position;
+  Vec3 view;
+  Vec3 up;
 
-    VizCamera(void);
+  VizCamera(void);
 };
 
-class Viz
-{
+class Viz {
 public:
-    bool configured;
+  bool configured;
 
-    SDL_Window *window;
-    SDL_GLContext context;
-    VizSettings settings;
-    VizCamera camera;
+  SDL_Window *window;
+  SDL_GLContext context;
+  VizSettings settings;
+  VizCamera camera;
 
-    Viz(void);
-    ~Viz(void);
-    int initSDL(void);
-    int initGL(void);
-    int configure(void);
-    int updateView(void);
-    int renderScene(void);
-    int handleKeyboardEvent(void);
-    int run(void);
+  Viz(void);
+  ~Viz(void);
+  int initSDL(void);
+  int initGL(void);
+  int configure(void);
+  int updateView(void);
+  int renderScene(void);
+  int handleKeyboardEvent(void);
+  int run(void);
 };
 
 }  // end of wave namespace

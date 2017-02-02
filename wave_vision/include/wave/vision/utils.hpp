@@ -20,5 +20,5 @@ void cvmatconcat(cv::Mat img1, cv::Mat img2, cv::Mat &out);
 void projection_matrix(Mat3 K, Mat3 R, Vec3 t, MatX &P);
 void normalize_2dpts(double image_width, double image_height, MatX &pts);
 
-} // end of wave namespace
+}  // end of wave namespace
 #endif

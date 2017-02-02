@@ -12,19 +12,18 @@
 
 namespace wave {
 
-class FastDetector
-{
+class FastDetector {
 public:
-    bool configured;
+  bool configured;
 
-    int threshold;
-    bool nonmax_suppression;
+  int threshold;
+  bool nonmax_suppression;
 
-    FastDetector(void);
-    int configure(int threshold, bool nonmax_suppression);
-    int detect(cv::Mat &image, std::vector<cv::KeyPoint> &keypoints);
-    int detect(cv::Mat &image, std::vector<cv::Point2f> &points);
-    int detect(cv::Mat &image, MatX &points);
+  FastDetector(void);
+  int configure(int threshold, bool nonmax_suppression);
+  int detect(cv::Mat &image, std::vector<cv::KeyPoint> &keypoints);
+  int detect(cv::Mat &image, std::vector<cv::Point2f> &points);
+  int detect(cv::Mat &image, MatX &points);
 };
 
 }  // end of wave namespace

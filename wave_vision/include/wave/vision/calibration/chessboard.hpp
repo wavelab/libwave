@@ -13,19 +13,18 @@
 
 namespace wave {
 
-class Chessboard
-{
+class Chessboard {
 public:
-    bool configured;
+  bool configured;
 
-    int nb_corners_rows;
-    int nb_corners_columns;
-    int nb_corners_total;
-    cv::Size board_size;
+  int nb_corners_rows;
+  int nb_corners_columns;
+  int nb_corners_total;
+  cv::Size board_size;
 
-    Chessboard(void);
-    int configure(int nb_corners_columns, int nb_corners_rows);
+  Chessboard(void);
+  int configure(int nb_corners_columns, int nb_corners_rows);
 };
 
-} // end of wave namespace
+}  // end of wave namespace
 #endif

@@ -12,29 +12,28 @@
 
 namespace wave {
 
-class RANSAC
-{
+class RANSAC {
 public:
-    bool configured;
+  bool configured;
 
-    int max_iter;
-    double thresh_ratio;
-    double thresh_dist;
+  int max_iter;
+  double thresh_ratio;
+  double thresh_dist;
 
-    int iter;
-    std::vector<int> inliers;
-    double threshold;
-    int max_inliers;
-    double model_params[2];
+  int iter;
+  std::vector<int> inliers;
+  double threshold;
+  int max_inliers;
+  double model_params[2];
 
-    RANSAC(void);
-    int configure(int max_iter, double threshold_ratio, double threshold_dist);
-    int randomSample(MatX &data, Vec2 &sample);
-    int computeDistances(MatX &data, Vec2 &p1, Vec2 &p2, VecX &dists);
-    int computeInliers(VecX &dists);
-    int update(Vec2 &p1, Vec2 &p2);
-    int printStats(void);
-    int optimize(MatX &data);
+  RANSAC(void);
+  int configure(int max_iter, double threshold_ratio, double threshold_dist);
+  int randomSample(MatX &data, Vec2 &sample);
+  int computeDistances(MatX &data, Vec2 &p1, Vec2 &p2, VecX &dists);
+  int computeInliers(VecX &dists);
+  int update(Vec2 &p1, Vec2 &p2);
+  int printStats(void);
+  int optimize(MatX &data);
 };
 
 }  // end of wave namespace

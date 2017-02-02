@@ -15,25 +15,23 @@
 
 namespace wave {
 
-class SFMPose
-{
+class SFMPose {
 public:
-    Mat3 R;
-    Vec3 t;
+  Mat3 R;
+  Vec3 t;
 
-    SFMPose(void);
+  SFMPose(void);
 };
 
-class SFM
-{
+class SFM {
 public:
-    bool configured;
-    Mat3 K;
+  bool configured;
+  Mat3 K;
 
-    SFM(void);
-    int configure(Mat3 K);
-    int recoverPose(MatX pts1, MatX pts2, SFMPose &pose);
+  SFM(void);
+  int configure(Mat3 K);
+  int recoverPose(MatX pts1, MatX pts2, SFMPose &pose);
 };
 
-} // end of wave namespace
+}  // end of wave namespace
 #endif

@@ -9,5 +9,5 @@ void tic(struct timespec *tic);
 float toc(struct timespec *tic);
 float mtoc(struct timespec *tic);
 
-} // end of wave namespace
+}  // end of wave namespace
 #endif

@@ -192,9 +192,8 @@ void GimbalModel::trackTarget(Vec3 target_cf) {
   Vec3 target;
 
   // obtain target in body planar frame
-  target = this->getTargetInBPF(target_cf,
-                                this->frame_orientation,
-                                this->joint_orientation);
+  target = this->getTargetInBPF(
+    target_cf, this->frame_orientation, this->joint_orientation);
 
   // calculate gimbal setpoints
   dist = target.norm();

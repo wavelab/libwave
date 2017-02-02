@@ -5,10 +5,8 @@ IF (CMAKE_COMPILER_IS_GNUCXX)
     ADD_DEFINITIONS(-std=gnu++0x)
 ENDIF()
 
-
 # PACKAGES
 FIND_PACKAGE(GTest REQUIRED)
-
 
 # INCLUDES
 INCLUDE_DIRECTORIES(
@@ -17,7 +15,6 @@ INCLUDE_DIRECTORIES(
     /usr/local/include
     include
 )
-
 
 # LIBS
 LINK_DIRECTORIES(
@@ -34,7 +31,7 @@ ADD_LIBRARY(
     src/pf.cpp
 )
 SET(
-    DEPS
+    TEST_DEPS
     wave_estimation
     wave_kinematics
     wave_utils
@@ -49,7 +46,7 @@ SET(
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
 
 ADD_EXECUTABLE(kf_test tests/kf_test.cpp)
-TARGET_LINK_LIBRARIES(kf_test ${DEPS})
+TARGET_LINK_LIBRARIES(kf_test ${TEST_DEPS})
 
 ADD_EXECUTABLE(ekf_test tests/ekf_test.cpp)
-TARGET_LINK_LIBRARIES(ekf_test ${DEPS})
+TARGET_LINK_LIBRARIES(ekf_test ${TEST_DEPS})

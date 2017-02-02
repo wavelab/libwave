@@ -56,16 +56,16 @@ SET(
 ADD_LIBRARY(
     wave_vision
     STATIC
-    src/calibration.cpp
-    src/camera.cpp
-    src/chessboard.cpp
-    src/eight_point.cpp
-    src/fast.cpp
-    src/good.cpp
-    src/orb.cpp
-    src/sfm.cpp
+    src/calibration/calibration.cpp
+    src/calibration/chessboard.cpp
+    src/camera/camera.cpp
+    src/geometry/eight_point.cpp
+    src/geometry/sfm.cpp
+    src/features/fast.cpp
+    src/features/good.cpp
+    src/features/orb.cpp
+    src/vo/vo.cpp
     src/utils.cpp
-    src/vo.cpp
 )
 SET(
     DEPS
@@ -83,22 +83,22 @@ SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
 FILE(COPY tests/data DESTINATION ${PROJECT_BINARY_DIR}/tests)
 FILE(COPY scripts DESTINATION ${PROJECT_BINARY_DIR})
 
-ADD_EXECUTABLE(calibration_test tests/calibration_test.cpp)
+ADD_EXECUTABLE(calibration_test tests/calibration/calibration_test.cpp)
 TARGET_LINK_LIBRARIES(calibration_test ${DEPS})
 
-ADD_EXECUTABLE(camera_test tests/camera_test.cpp)
-TARGET_LINK_LIBRARIES(camera_test ${DEPS})
-
-ADD_EXECUTABLE(chessboard_test tests/chessboard_test.cpp)
+ADD_EXECUTABLE(chessboard_test tests/calibration/chessboard_test.cpp)
 TARGET_LINK_LIBRARIES(chessboard_test ${DEPS})
 
-ADD_EXECUTABLE(eight_point_test tests/eight_point_test.cpp)
+ADD_EXECUTABLE(camera_test tests/camera/camera_test.cpp)
+TARGET_LINK_LIBRARIES(camera_test ${DEPS})
+
+ADD_EXECUTABLE(eight_point_test tests/geometry/eight_point_test.cpp)
 TARGET_LINK_LIBRARIES(eight_point_test ${DEPS})
 
-ADD_EXECUTABLE(sfm_test tests/sfm_test.cpp)
+ADD_EXECUTABLE(sfm_test tests/geometry/sfm_test.cpp)
 TARGET_LINK_LIBRARIES(sfm_test ${DEPS})
 
-ADD_EXECUTABLE(vo_test tests/vo_test.cpp)
+ADD_EXECUTABLE(vo_test tests/vo/vo_test.cpp)
 TARGET_LINK_LIBRARIES(vo_test ${DEPS})
 
 

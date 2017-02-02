@@ -9,27 +9,26 @@
 
 namespace wave {
 
-class ExtendedKalmanFilter
-{
+class ExtendedKalmanFilter {
 public:
-    bool initialized;
-    VecX mu;
+  bool initialized;
+  VecX mu;
 
-    MatX R;
-    MatX Q;
+  MatX R;
+  MatX Q;
 
-    MatX S;
-    MatX I;
-    MatX K;
+  MatX S;
+  MatX I;
+  MatX K;
 
-    VecX mu_p;
-    MatX S_p;
+  VecX mu_p;
+  MatX S_p;
 
-    ExtendedKalmanFilter(void);
-    int init(VecX mu, MatX R, MatX Q);
-    int predictionUpdate(VecX g, MatX G);
-    int measurementUpdate(VecX h, MatX H, VecX y);
+  ExtendedKalmanFilter(void);
+  int init(VecX mu, MatX R, MatX Q);
+  int predictionUpdate(VecX g, MatX G);
+  int measurementUpdate(VecX h, MatX H, VecX y);
 };
 
-} // end of wave namespace
+}  // end of wave namespace
 #endif

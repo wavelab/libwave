@@ -6,14 +6,13 @@
 
 namespace wave {
 
-class LLSSolver
-{
+class LLSSolver {
 public:
-    bool configured;
+  bool configured;
 
-    LLSSolver(void);
-    int configure(void);
-    int solve(MatX A, MatX b, VecX &x);
+  LLSSolver(void);
+  int configure(void);
+  int solve(MatX A, MatX b, VecX &x);
 };
 
 }  // end of wave namespace

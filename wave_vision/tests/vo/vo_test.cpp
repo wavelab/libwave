@@ -10,66 +10,63 @@
 #define TEST_FRAME_2 "tests/data/vo/frame_2.jpg"
 
 
-TEST(VisualOdometry, constructor)
-{
-    wave::VisualOdometry vo;
+TEST(VisualOdometry, constructor) {
+  wave::VisualOdometry vo;
 
-    ASSERT_EQ(false, vo.configured);
+  ASSERT_EQ(false, vo.configured);
 }
 
-TEST(VisualOdometry, configure)
-{
-    wave::Mat3 K;
-    wave::Camera camera;
-    wave::VisualOdometry vo;
+TEST(VisualOdometry, configure) {
+  wave::Mat3 K;
+  wave::Camera camera;
+  wave::VisualOdometry vo;
 
-    K(0, 0) = 1.0;
-    K(0, 2) = 2.0;
-    K(1, 2) = 3.0;
+  K(0, 0) = 1.0;
+  K(0, 2) = 2.0;
+  K(1, 2) = 3.0;
 
-    vo.configure(K);
-    ASSERT_EQ(true, vo.configured);
+  vo.configure(K);
+  ASSERT_EQ(true, vo.configured);
 }
 
-TEST(VisualOdometry, featureTracking)
-{
-    wave::Mat3 K;
-    cv::Mat mask, frame;
-    cv::Mat img_1, img_2, img_combined;
-    wave::FastDetector fast;
-    wave::VisualOdometry vo;
-    std::vector<cv::Point2f> cvpts1, cvpts2;
-    std::vector<float> errors;
-    std::vector<uchar> status;
+TEST(VisualOdometry, featureTracking) {
+  wave::Mat3 K;
+  cv::Mat mask, frame;
+  cv::Mat img_1, img_2, img_combined;
+  wave::FastDetector fast;
+  wave::VisualOdometry vo;
+  std::vector<cv::Point2f> cvpts1, cvpts2;
+  std::vector<float> errors;
+  std::vector<uchar> status;
 
-    // setup
-    fast.configure(55, true);
-    K(0, 0) = 1.0;
-    K(0, 2) = 0.0;
-    K(1, 2) = 0.0;
-    vo.configure(K);
+  // setup
+  fast.configure(55, true);
+  K(0, 0) = 1.0;
+  K(0, 2) = 0.0;
+  K(1, 2) = 0.0;
+  vo.configure(K);
 
-    img_1 = cv::imread(TEST_IMAGE_1);
-    img_2 = cv::imread(TEST_IMAGE_2);
-    fast.detect(img_1, cvpts1);
+  img_1 = cv::imread(TEST_IMAGE_1);
+  img_2 = cv::imread(TEST_IMAGE_2);
+  fast.detect(img_1, cvpts1);
 
-    // test and assert
-    vo.featureTracking(img_1, img_2, cvpts1, cvpts2, errors, status);
-    ASSERT_EQ(cvpts2.size(), cvpts1.size());
-    ASSERT_EQ(cvpts2.size(), errors.size());
-    ASSERT_EQ(cvpts2.size(), status.size());
+  // test and assert
+  vo.featureTracking(img_1, img_2, cvpts1, cvpts2, errors, status);
+  ASSERT_EQ(cvpts2.size(), cvpts1.size());
+  ASSERT_EQ(cvpts2.size(), errors.size());
+  ASSERT_EQ(cvpts2.size(), status.size());
 
-    // // record tracked points
-    // wave::MatX pts1, pts2;
-    // wave::convert_cvpts(cvpts1, pts1);
-    // wave::convert_cvpts(cvpts2, pts2);
-    // wave::mat2csv("/tmp/pts1.dat", pts1);
-    // wave::mat2csv("/tmp/pts2.dat", pts2);
+  // // record tracked points
+  // wave::MatX pts1, pts2;
+  // wave::convert_cvpts(cvpts1, pts1);
+  // wave::convert_cvpts(cvpts2, pts2);
+  // wave::mat2csv("/tmp/pts1.dat", pts1);
+  // wave::mat2csv("/tmp/pts2.dat", pts2);
 
-    // // display tracked features
-    // vo.drawOpticalFlow(img_1, img_2, cvpts1, cvpts2, img_combined);
-    // cv::imshow("Test Feature Tracking", img_combined);
-    // cv::waitKey(2000);
+  // // display tracked features
+  // vo.drawOpticalFlow(img_1, img_2, cvpts1, cvpts2, img_combined);
+  // cv::imshow("Test Feature Tracking", img_combined);
+  // cv::waitKey(2000);
 }
 
 // TEST(VisualOdometry, measure)
@@ -161,9 +158,12 @@ TEST(VisualOdometry, featureTracking)
 //     //      0.0, 0.0, 1.0;
 //     //
 //     // Eigen::Matrix3d F;
-//     // F << Fun.at<double>(0, 0), Fun.at<double>(0, 1), Fun.at<double>(0, 2),
-//     //      Fun.at<double>(1, 0), Fun.at<double>(1, 1), Fun.at<double>(1, 2),
-//     //      Fun.at<double>(2, 0), Fun.at<double>(2, 1), Fun.at<double>(2, 2);
+//     // F << Fun.at<double>(0, 0), Fun.at<double>(0, 1), Fun.at<double>(0,
+//     2),
+//     //      Fun.at<double>(1, 0), Fun.at<double>(1, 1), Fun.at<double>(1,
+//     2),
+//     //      Fun.at<double>(2, 0), Fun.at<double>(2, 1), Fun.at<double>(2,
+//     2);
 //     // Eigen::Matrix3d result = (K.transpose() * F * K);
 //     //
 //     // std::cout << std::endl;
@@ -217,8 +217,7 @@ TEST(VisualOdometry, featureTracking)
 //     // cv::waitKey(0);
 // }
 
-int main(int argc, char* argv[])
-{
-    testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
+int main(int argc, char *argv[]) {
+  testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }

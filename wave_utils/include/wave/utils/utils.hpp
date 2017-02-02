@@ -16,11 +16,14 @@
 namespace wave {
 
 // MACROS
-#define UNUSED(expr) do { (void)(expr); } while (0)
+#define UNUSED(expr) \
+  do {               \
+    (void) (expr);   \
+  } while (0)
 
 
 // FUNCTIONS
 void rmtrailslash(std::string &path);
 
-} // end of wave namespace
+}  // end of wave namespace
 #endif

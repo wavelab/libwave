@@ -8,12 +8,10 @@
 
 namespace wave {
 
-void quadrotor_jacobian(
-    std::vector<GiNaC::ex> &model,
-    std::vector<GiNaC::symbol> &states
-);
+void quadrotor_jacobian(std::vector<GiNaC::ex> &model,
+                        std::vector<GiNaC::symbol> &states);
 
 void bundle_adjustment_jacobian(std::string file_path);
 
-} // end of wave namespace
+}  // end of wave namespace
 #endif
