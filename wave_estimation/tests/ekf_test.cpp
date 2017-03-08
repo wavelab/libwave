@@ -67,13 +67,18 @@ TEST(ExtendedKalmanFilter, estimate) {
   std::normal_distribution<float> norm_theta(0, pow(wave::deg2rad(0.5), 2));
 
   // setup
+  // clang-format off
   dt = 0.01;
   x << 0, 0, 0;
   mu << 0, 0, 0;
-  R << pow(0.05, 2), 0, 0, 0, pow(0.05, 2), 0, 0, 0,
-    pow(wave::deg2rad(0.5), 2);
-  Q << pow(0.5, 2), 0, 0, 0, pow(0.5, 2), 0, 0, 0, pow(wave::deg2rad(10), 2);
+  R << pow(0.05, 2), 0, 0,
+       0, pow(0.05, 2), 0,
+       0, 0, pow(wave::deg2rad(0.5), 2);
+  Q << pow(0.5, 2), 0, 0,
+       0, pow(0.5, 2), 0,
+       0, 0, pow(wave::deg2rad(10), 2);
   u << -15.5, -10.5, 1.5;
+  // clang-format on
   ekf.init(mu, R, Q);
   prepareOutputFile(output_file, TEST_EKF_OUTPUT_FILE);
 
@@ -91,10 +96,14 @@ TEST(ExtendedKalmanFilter, estimate) {
     y = x + gaussian_noise;
 
     // propagate motion model
+    // clang-format off
     g << ekf.mu(0) + u(0) * cos(ekf.mu(2)) * dt,
-      ekf.mu(1) + u(0) * sin(ekf.mu(2)) * dt, ekf.mu(2) + u(1) * dt;
-    G << 1, 0, (-u(0) * sin(ekf.mu(2)) * dt), 0, 1,
-      (u(0) * cos(ekf.mu(2)) * dt), 0, 0, 1;
+         ekf.mu(1) + u(0) * sin(ekf.mu(2)) * dt,
+         ekf.mu(2) + u(1) * dt;
+    G << 1, 0, (-u(0) * sin(ekf.mu(2)) * dt),
+         0, 1, (u(0) * cos(ekf.mu(2)) * dt),
+         0, 0, 1;
+    // clang-format on
     ekf.predictionUpdate(g, G);
 
     // propagate measurement
