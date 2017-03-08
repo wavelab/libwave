@@ -7,6 +7,9 @@ INCLUDE_DIRECTORIES(
     wave_utils/include
 )
 
+# gtest
+ADD_SUBDIRECTORY(deps/googletest)
+INCLUDE_DIRECTORIES(${gtest_SOURCE_DIR}/include/)
 
 # libwave_estimation.a
 ADD_SUBDIRECTORY(wave_estimation)

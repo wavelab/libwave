@@ -5,11 +5,6 @@ IF (CMAKE_COMPILER_IS_GNUCXX)
   ADD_DEFINITIONS(-std=gnu++0x)
 ENDIF()
 
-
-# PACKAGES
-FIND_PACKAGE(GTest REQUIRED)
-
-
 # INCLUDES
 INCLUDE_DIRECTORIES(
   /usr/include
@@ -17,7 +12,6 @@ INCLUDE_DIRECTORIES(
   /usr/local/include
   include
 )
-
 
 # LIBS
 LINK_DIRECTORIES(
@@ -38,7 +32,7 @@ ADD_LIBRARY(
 SET(
   DEPS
   wave_utils
-  ${GTEST_LIBRARIES}
+  gtest
   pthread
 )
 
@@ -47,14 +41,14 @@ SET(
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
 FILE(COPY tests/data DESTINATION ${PROJECT_BINARY_DIR}/tests)
 
-# ADD_EXECUTABLE(data_test tests/data_test.cpp)
-# TARGET_LINK_LIBRARIES(data_test ${DEPS})
+ADD_EXECUTABLE(data_test tests/data_test.cpp)
+TARGET_LINK_LIBRARIES(data_test ${DEPS})
 
-# ADD_EXECUTABLE(math_test tests/math_test.cpp)
-# TARGET_LINK_LIBRARIES(math_test ${DEPS})
+ADD_EXECUTABLE(math_test tests/math_test.cpp)
+TARGET_LINK_LIBRARIES(math_test ${DEPS})
 
 # ADD_EXECUTABLE(time_test tests/time_test.cpp)
 # TARGET_LINK_LIBRARIES(time_test ${DEPS})
 
-# ADD_EXECUTABLE(utils_test tests/utils_test.cpp)
-# TARGET_LINK_LIBRARIES(utils_test ${DEPS})
+ADD_EXECUTABLE(utils_test tests/utils_test.cpp)
+TARGET_LINK_LIBRARIES(utils_test ${DEPS})

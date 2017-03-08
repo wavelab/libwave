@@ -5,9 +5,6 @@ IF (CMAKE_COMPILER_IS_GNUCXX)
     ADD_DEFINITIONS(-std=gnu++0x)
 ENDIF()
 
-# PACKAGES
-FIND_PACKAGE(GTest REQUIRED)
-
 # INCLUDES
 INCLUDE_DIRECTORIES(
     /usr/include/
@@ -33,7 +30,7 @@ SET(
     TEST_DEPS
     wave_estimation
     wave_utils
-    ${GTEST_LIBRARIES}
+    gtest
     pthread
 )
 
