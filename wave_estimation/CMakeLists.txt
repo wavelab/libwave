@@ -28,25 +28,21 @@ ADD_LIBRARY(
     STATIC
     src/kf.cpp
     src/ekf.cpp
-    src/pf.cpp
 )
 SET(
     TEST_DEPS
     wave_estimation
-    wave_kinematics
     wave_utils
-    ginac
-    ${OPENCV3_LIBS}
     ${GTEST_LIBRARIES}
     pthread
 )
 
 
 # UNIT TESTS
-SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
-
-ADD_EXECUTABLE(kf_test tests/kf_test.cpp)
-TARGET_LINK_LIBRARIES(kf_test ${TEST_DEPS})
-
-ADD_EXECUTABLE(ekf_test tests/ekf_test.cpp)
-TARGET_LINK_LIBRARIES(ekf_test ${TEST_DEPS})
+# SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
+#
+# ADD_EXECUTABLE(kf_test tests/kf_test.cpp)
+# TARGET_LINK_LIBRARIES(kf_test ${TEST_DEPS})
+#
+# ADD_EXECUTABLE(ekf_test tests/ekf_test.cpp)
+# TARGET_LINK_LIBRARIES(ekf_test ${TEST_DEPS})

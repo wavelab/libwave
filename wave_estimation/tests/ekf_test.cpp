@@ -19,20 +19,12 @@ void recordTimeStep(std::ofstream &output_file,
 int prepareOutputFile(std::ofstream &output_file, std::string output_path) {
   output_file.open(output_path);
 
-  output_file << "time_step"
-              << ",";
-
-  output_file << "x"
-              << ",";
-  output_file << "y"
-              << ",";
-  output_file << "z"
-              << ",";
-
-  output_file << "bx"
-              << ",";
-  output_file << "by"
-              << ",";
+  output_file << "time_step" << ",";
+  output_file << "x" << ",";
+  output_file << "y" << ",";
+  output_file << "z" << ",";
+  output_file << "bx" << ",";
+  output_file << "by" << ",";
   output_file << "bz" << std::endl;
 
   return 0;
@@ -88,8 +80,11 @@ TEST(ExtendedKalmanFilter, estimate) {
   // loop
   for (int i = 0; i < 100; i++) {
     // update true state
-    x << x(0) + u(0) * cos(x(2)) * dt, x(1) + u(0) * sin(x(2)) * dt,
-      x(2) + u(1) * dt;
+    // clang-format off
+    x << x(0) + u(0) * cos(x(2)) * dt,
+         x(1) + u(0) * sin(x(2)) * dt,
+         x(2) + u(1) * dt;
+    // clang-format on
 
     // take measurement
     gaussian_noise << norm_x(rgen), norm_y(rgen), norm_theta(rgen);

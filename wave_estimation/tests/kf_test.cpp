@@ -21,20 +21,12 @@ int testKalmanFilter(void);
 int prepareOutputFile(std::ofstream &output_file, std::string output_path) {
   output_file.open(output_path);
 
-  output_file << "time_step"
-              << ",";
-
-  output_file << "x"
-              << ",";
-  output_file << "y"
-              << ",";
-  output_file << "z"
-              << ",";
-
-  output_file << "bx"
-              << ",";
-  output_file << "by"
-              << ",";
+  output_file << "time_step" << ",";
+  output_file << "x" << ",";
+  output_file << "y" << ",";
+  output_file << "z" << ",";
+  output_file << "bx" << ",";
+  output_file << "by" << ",";
   output_file << "bz" << std::endl;
 
   return 0;
@@ -80,6 +72,7 @@ TEST(KalmanFilter, estimate) {
   std::normal_distribution<float> norm_z(0, 0.5);
 
   // setup
+  // clang-format off
   dt = 0.1;
   pos << 0, 0, 0;
   vel << 9, 30, 0;
@@ -87,34 +80,50 @@ TEST(KalmanFilter, estimate) {
   mu << 0.0, 0.0, 0.0,  // x, y, z
     9.0, 30.0, 0.0,     // x_dot, y_dot, z_dot
     0.0, -10.0, 0.0;    // x_ddot, y_ddot, z_ddot
-  R << 0.5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0.5, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 1.0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1.0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 1.0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1.0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 1.0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1.0;
-  C << 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0,
-    0, 0, 0;
+  R << 0.5, 0, 0, 0, 0, 0, 0, 0, 0,
+       0, 0.5, 0, 0, 0, 0, 0, 0, 0,
+       0, 0, 0.5, 0, 0, 0, 0, 0, 0,
+       0, 0, 0, 1.0, 0, 0, 0, 0, 0,
+       0, 0, 0, 0, 1.0, 0, 0, 0, 0,
+       0, 0, 0, 0, 0, 1.0, 0, 0, 0,
+       0, 0, 0, 0, 0, 0, 1.0, 0, 0,
+       0, 0, 0, 0, 0, 0, 0, 1.0, 0,
+       0, 0, 0, 0, 0, 0, 0, 0, 1.0;
+  C << 1, 0, 0, 0, 0, 0, 0, 0, 0,
+       0, 1, 0, 0, 0, 0, 0, 0, 0,
+       0, 0, 1, 0, 0, 0, 0, 0, 0;
   Q << 20, 0, 0, 0, 20, 0, 0, 0, 20;
+  // clang-format on
   kf.init(mu, R, C, Q);
   prepareOutputFile(output_file, TEST_KF_OUTPUT_FILE);
 
   // estimate
   for (int i = 0; i < 20; i++) {
     // update true state
+    // clang-format off
     vel = vel + acc * dt;
     pos = pos + vel * dt;
-    state << pos(0), pos(1), pos(2), vel(0), vel(1), vel(2), acc(0), acc(1),
-      acc(2);
+    state << pos(0), pos(1), pos(2),
+             vel(0), vel(1), vel(2),
+             acc(0), acc(1), acc(2);
+    // clang-format on
 
     // perform measurement
     motion_noise << norm_x(rgen), norm_y(rgen), norm_z(rgen);
     y = kf.C * state + motion_noise;
 
     // estimate
-    A << 1.0, 0, 0, dt, 0, 0, pow(dt, 2) / 2.0, 0, 0, 0, 1.0, 0, 0, dt, 0, 0,
-      pow(dt, 2) / 2.0, 0, 0, 0, 1.0, 0, 0, dt, 0, 0, pow(dt, 2) / 2.0, 0, 0,
-      0, 1.0, 0, 0, dt, 0, 0, 0, 0, 0, 0, 1.0, 0, 0, dt, 0, 0, 0, 0, 0, 0,
-      1.0, 0, 0, dt, 0, 0, 0, 0, 0, 0, 1.0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1.0, 0,
-      0, 0, 0, 0, 0, 0, 0, 0, 1.0;
+    // clang-format off
+    A << 1.0, 0, 0, dt, 0, 0, pow(dt, 2) / 2.0, 0, 0,
+         0, 1.0, 0, 0, dt, 0, 0, pow(dt, 2) / 2.0, 0,
+         0, 0, 1.0, 0, 0, dt, 0, 0, pow(dt, 2) / 2.0,
+         0, 0, 0, 1.0, 0, 0, dt, 0, 0,
+         0, 0, 0, 0, 1.0, 0, 0, dt, 0,
+         0, 0, 0, 0, 0, 1.0, 0, 0, dt,
+         0, 0, 0, 0, 0, 0, 1.0, 0, 0,
+         0, 0, 0, 0, 0, 0, 0, 1.0, 0,
+         0, 0, 0, 0, 0, 0, 0, 0, 1.0;
+    // clang-format on
     kf.estimate(A, y);
 
     // record

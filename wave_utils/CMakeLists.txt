@@ -44,17 +44,17 @@ SET(
 
 
 # UNIT TESTS
-SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
-FILE(COPY tests/data DESTINATION ${PROJECT_BINARY_DIR}/tests)
-
-ADD_EXECUTABLE(data_test tests/data_test.cpp)
-TARGET_LINK_LIBRARIES(data_test ${DEPS})
-
-ADD_EXECUTABLE(math_test tests/math_test.cpp)
-TARGET_LINK_LIBRARIES(math_test ${DEPS})
-
+# SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
+# FILE(COPY tests/data DESTINATION ${PROJECT_BINARY_DIR}/tests)
+#
+# ADD_EXECUTABLE(data_test tests/data_test.cpp)
+# TARGET_LINK_LIBRARIES(data_test ${DEPS})
+#
+# ADD_EXECUTABLE(math_test tests/math_test.cpp)
+# TARGET_LINK_LIBRARIES(math_test ${DEPS})
+#
 # ADD_EXECUTABLE(time_test tests/time_test.cpp)
 # TARGET_LINK_LIBRARIES(time_test ${DEPS})
 
-ADD_EXECUTABLE(utils_test tests/utils_test.cpp)
-TARGET_LINK_LIBRARIES(utils_test ${DEPS})
+# ADD_EXECUTABLE(utils_test tests/utils_test.cpp)
+# TARGET_LINK_LIBRARIES(utils_test ${DEPS})
