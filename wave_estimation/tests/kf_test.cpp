@@ -15,7 +15,6 @@ void recordTimeStep(std::ofstream &output_file,
                     int i,
                     wave::Vec3 mea,
                     wave::Vec3 est);
-int testKalmanFilter(void);
 
 
 int prepareOutputFile(std::ofstream &output_file, std::string output_path) {

@@ -2,36 +2,36 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.8.3)
 PROJECT(wave_estimation)
 
 IF (CMAKE_COMPILER_IS_GNUCXX)
-    ADD_DEFINITIONS(-std=gnu++0x)
+  ADD_DEFINITIONS(-std=gnu++0x)
 ENDIF()
 
 # INCLUDES
 INCLUDE_DIRECTORIES(
-    /usr/include/
-    /usr/include/eigen3
-    /usr/local/include
-    include
+  /usr/include/
+  /usr/include/eigen3
+  /usr/local/include
+  include
 )
 
 # LIBS
 LINK_DIRECTORIES(
-    /usr/lib
-    /usr/local/lib
+  /usr/lib
+  /usr/local/lib
 )
 
 # LIBRARY
 ADD_LIBRARY(
-    wave_estimation
-    STATIC
-    src/kf.cpp
-    src/ekf.cpp
+  wave_estimation
+  STATIC
+  src/kf.cpp
+  src/ekf.cpp
 )
 SET(
-    TEST_DEPS
-    wave_estimation
-    wave_utils
-    gtest
-    pthread
+  TEST_DEPS
+  wave_estimation
+  wave_utils
+  gtest
+  pthread
 )
 
 
