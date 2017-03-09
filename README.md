@@ -15,6 +15,22 @@ This library contains reusable code for:
     cmake ..
     make
 
+## How to view docs?
+
+We are currently using `ditto` to document the project, to see the docs perform
+the following:
+
+    sudo pip install livereload
+    cd <path of libwave>
+    livereload
+    # the docs are now served on 127.0.0.1:35729
+    # open up a web-browser and type in the above IP address to view docs
+
+LiveReload is a python app that serves the project documentation locally, it
+updates itself when you update the docs. For more information on how to edit
+docs see [this][edit_docs].
+
+
 ## Dependencies
 
 - Eigen 3.0+
@@ -41,3 +57,6 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+
+[edit_docs]: http://chutsu.github.io/ditto/#docs/how_do_i_use_ditto
