@@ -1,11 +1,11 @@
 # [libwave](https://github.com/wavelab/libwave)
 
 ## API
-- [estimation](#docs/estimation)
-- [kinematics](#docs/kinematics)
-- [optimization](#docs/optimization)
-- [utils](#docs/utils)
+- [estimation](#api/estimation)
+- [kinematics](#api/kinematics)
+- [optimization](#api/optimization)
+- [utils](#api/utils)
 
 ## Reference
-- [Fundamentals](#docs/ref/fundamentals)
-- [Papers](#docs/ref/papers)
+- [Fundamentals](#ref/fundamentals)
+- [Papers](#ref/papers)
