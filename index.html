@@ -38,6 +38,27 @@
     <!-- DITTO CSS -->
     <link rel="stylesheet" href="//chutsu.github.io/ditto/ver/latest/ditto.css">
     <script src="//chutsu.github.io/ditto/ver/latest/ditto.js"></script>
+    <style>
+      pre {
+        font-size: 0.9em;
+      }
+
+      #content ul {
+        list-style-type: square;
+      }
+
+      #content ul li::before {
+        content: none;
+      }
+
+      #content ul li {
+        text-indent: 0;
+      }
+
+      #content pre code {
+        font-size: 0.8em;
+      }
+    </style>
 </head>
 <body>
     <!-- ESSENTIAL -->
@@ -56,10 +77,10 @@
         $(function($) {
           // essential settings
           ditto.index = "README.md",
-          ditto.sidebar_file = "sidebar.md",
+          ditto.sidebar_file = "docs/sidebar.md",
 
           // optional settings if you want github search
-          ditto.github_username = wave;   // <------- EDIT ME!!
+          ditto.github_username = null;   // <------- EDIT ME!!
           ditto.github_repo = null;       // <------- EDIT ME!!
           ditto.highlight_code = false;    // <------- EDIT ME!!
 

@@ -1,11 +1,11 @@
 # [libwave](https://github.com/wavelab/libwave)
 
-- [API](#docs/api)
-  - [estimation](#docs/estimation)
-  - [gimbal](#docs/gimbal)
-  - [kinematics](#docs/kinematics)
-  - [octave](#docs/octave)
-  - [optimization](#docs/optimization)
-  - [symmath](#docs/symmath)
-  - [utils](#docs/utils)
-  - [viz](#docs/viz)
+## API
+- [estimation](#docs/estimation)
+- [kinematics](#docs/kinematics)
+- [optimization](#docs/optimization)
+- [utils](#docs/utils)
+
+## Reference
+- [Fundamentals](#docs/ref/fundamentals)
+- [Papers](#docs/ref/papers)
