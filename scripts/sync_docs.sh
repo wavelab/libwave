@@ -2,6 +2,7 @@
 
 # checkout gh-pages branch
 git checkout gh-pages
+rm -rf *
 
 # get docs folder from master branch and move contents out
 git checkout master -- docs
@@ -12,7 +13,8 @@ rm -rf docs
 git checkout master -- README.md
 
 # commit updated docs
-git add *
+git add --ignore-errors *
+git add -u
 git commit -m "Update gh-pages"
 git push
 
