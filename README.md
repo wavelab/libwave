@@ -21,7 +21,7 @@ We are currently using `ditto` to document the project, to see the docs perform
 the following:
 
     sudo pip install livereload
-    cd <path of libwave>
+    cd <path of libwave>/docs
     livereload
     # the docs are now served on 127.0.0.1:35729
     # open up a web-browser and type in the above IP address to view docs
@@ -30,11 +30,6 @@ LiveReload is a python app that serves the project documentation locally, it
 updates itself when you update the docs. For more information on how to edit
 docs see [this][edit_docs].
 
-
-## Dependencies
-
-- Eigen 3.0+
-- OpenCV 3.0+
 
 ## LICENSE
 
