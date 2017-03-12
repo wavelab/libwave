@@ -2,7 +2,16 @@
 set -e  # exit on first error
 
 clone_libwave() {
-    git clone https://github.com/wavelab/libwave
+    if [ ! -d libwave ]
+    then
+        echo "Clonging libwave to current directory"
+        git clone https://github.com/wavelab/libwave
+    else
+        echo "Updating libwave to latest"
+        cd libwave
+        git pull
+        cd -
+    fi
 }
 
 initialize_gitsubmodules() {
@@ -14,7 +23,7 @@ initialize_gitsubmodules() {
 
 install_deps() {
     cd libwave
-    bash scripts/install_deps.bash
+    bash scripts/install/install_deps.bash
     cd -
 }
 
