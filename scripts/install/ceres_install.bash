@@ -11,6 +11,6 @@ sudo apt-get install cmake \
                     libceres \
                     libceres-dev
 
-sudo add-apt-repository ppa:bzindovic/suitesparse-bugfix-1319687
+sudo add-apt-repository ppa:bzindovic/suitesparse-bugfix-1319687 -y
 sudo apt-get update
 sudo apt-get install libsuitesparse-dev
