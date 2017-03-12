@@ -8,7 +8,7 @@ cache:
     - apt
 
 install:
-    - sudo sh scripts/install/install_deps.bash
+    - sudo bash scripts/install/install_deps.bash
 
 script:
     - mkdir -p build

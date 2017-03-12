@@ -11,7 +11,11 @@ This library contains reusable code for:
 ## Install
 
     git clone https://github.com/wavelab/libwave.git
+    cd libwave
     mkdir -p build
+    git submodule init    # you only have to do this once
+    git submodule update  # you only have to do this once
+    cd build
     cmake ..
     make
 
