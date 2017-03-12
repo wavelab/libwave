@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 set -e  # exit on first error
 OPENCV_URL=https://github.com/Itseez/opencv/archive/3.0.0-alpha.zip
 

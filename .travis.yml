@@ -1,0 +1,24 @@
+dist: trusty
+sudo: required
+
+language:
+    - c++
+
+cache:
+    - apt
+
+install:
+    - sudo sh scripts/install/install_deps.bash
+
+script:
+    - mkdir -p build
+    - cd build
+    - cmake ..
+    - make
+
+notifications:
+    recipients:
+        - chutsu@gmail.com
+    email:
+        on_success: change
+        on_failure: always
