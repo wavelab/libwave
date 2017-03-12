@@ -1,4 +1,5 @@
 #!/bin/sh
+set -e  # exit on first error
 
 # checkout gh-pages branch
 git checkout gh-pages
