@@ -11,6 +11,12 @@ This library contains reusable code for:
 
 ## Install
 
+Execute the following in the terminal where you want libwave to reside:
+
+    curl -L https://git.io/vyKXR > install.bash && bash install.bash
+
+**Or** you can perform the following manually which does the same thing as above:
+
     # clone repo
     git clone https://github.com/wavelab/libwave.git
     cd libwave
@@ -27,12 +33,6 @@ This library contains reusable code for:
     cd build
     cmake ..
     make
-
-**Or** if you're feeling lazy you can copy this into your terminal
-
-    curl -L https://git.io/vyKXR > install.bash && bash install.bash
-
-Which does exactly the same thing.
 
 
 ## How to view docs?
