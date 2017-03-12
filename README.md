@@ -1,4 +1,4 @@
-# libwave [![Build Status](https://api.travis-ci.org/wavelab/libwave.svg?branch=master)](https://travis-ci.org/wavelab/awesomo)
+# libwave [![Build Status](https://api.travis-ci.org/wavelab/libwave.svg?branch=master)](https://travis-ci.org/wavelab/libwave)
 
 This library contains reusable code for:
 
