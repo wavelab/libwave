@@ -30,7 +30,7 @@ This library contains reusable code for:
 
 **Or** if you're feeling lazy you can copy this into your terminal
 
-    curl -L https://git.io/vyKPS > install.bash && bash install.bash
+    curl -L https://git.io/vyKXR > install.bash && bash install.bash
 
 Which does exactly the same thing.
 
