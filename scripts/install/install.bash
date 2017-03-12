@@ -5,17 +5,22 @@ clone_libwave() {
     git clone https://github.com/wavelab/libwave
 }
 
+initialize_gitsubmodules() {
+    cd libwave
+    git submodule init
+    git submodule update
+    cd -
+}
+
 install_deps() {
     cd libwave
-    bash scripts/install.bash
+    bash scripts/install_deps.bash
     cd -
 }
 
 compile_libwave() {
     cd libwave
     mkdir -p build
-    git submodule init
-    git submodule update
     cd build
     cmake ..
     make
@@ -35,6 +40,7 @@ do
         n|N) break;;
         y|Y)
             clone_libwave
+            initialize_gitsubmodules
             install_deps
             compile_libwave
         break

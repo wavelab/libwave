@@ -1,4 +1,4 @@
-# libwave
+# libwave [![Build Status](https://api.travis-ci.org/wavelab/libwave.svg?branch=master)](https://travis-ci.org/wavelab/awesomo)
 
 This library contains reusable code for:
 
@@ -8,16 +8,32 @@ This library contains reusable code for:
 - Vision
 - and more ..
 
+
 ## Install
 
+    # clone repo
     git clone https://github.com/wavelab/libwave.git
     cd libwave
+
+    # initialize git submodules
+    git submodule init
+    git submodule update
+
+    # install dependencies
+    bash scripts/install_deps.bash
+
+    # compile libwave
     mkdir -p build
-    git submodule init    # you only have to do this once
-    git submodule update  # you only have to do this once
     cd build
     cmake ..
     make
+
+**Or** if you're feeling lazy you can copy this into your terminal
+
+    curl -L https://git.io/vyKPS > install.bash && bash install.bash
+
+Which does exactly the same thing.
+
 
 ## How to view docs?
 
