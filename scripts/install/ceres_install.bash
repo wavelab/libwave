@@ -3,7 +3,7 @@ set -e  # exit on first error
 
 sudo apt-get update
 
-sudo apt-get install cmake \
+sudo apt-get install -qq cmake \
                     libgoogle-glog-dev \
                     libatlas-base-dev \
                     libeigen3-dev \
@@ -13,4 +13,4 @@ sudo apt-get install cmake \
 
 sudo add-apt-repository ppa:bzindovic/suitesparse-bugfix-1319687 -y
 sudo apt-get update
-sudo apt-get install libsuitesparse-dev
+sudo apt-get install -qq libsuitesparse-dev

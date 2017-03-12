@@ -5,7 +5,7 @@ OPENCV_URL=https://github.com/Itseez/opencv/archive/3.0.0-alpha.zip
 
 install_dependencies()
 {
-    sudo apt-get -y install \
+    sudo apt-get -y install -qq \
         libopencv-dev \
         build-essential \
         cmake \

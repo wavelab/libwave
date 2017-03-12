@@ -1,3 +1,4 @@
+# tex output
 *.aux
 *.bbl
 *.blg
@@ -6,16 +7,17 @@
 *.out
 *.synctex.gz
 
+# gedit
 *~
+
+# vim
 tags
-build
+.ropeproject
 
 # scripts and folders
 run.sh
+build
 
 # matlab / octave
 *.mat
 octave-workspace
-
-# misc
-.ropeproject
