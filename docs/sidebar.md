@@ -1,6 +1,6 @@
 # [libwave]()
 
-- [git repo](https://github.com/wavelab/libwave)
+[git repo](https://github.com/wavelab/libwave)
 
 
 ## API
