@@ -15,7 +15,7 @@ Execute the following in the terminal where you want libwave to reside:
 
     curl -L https://git.io/vyKXR > install.bash && bash install.bash
 
-**Or** you can perform the following manually which does the same thing as above:
+**Or** you can perform the installation manually:
 
     # clone repo
     git clone https://github.com/wavelab/libwave.git
