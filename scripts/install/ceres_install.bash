@@ -1,8 +1,6 @@
 #!/bin/bash
 set -e  # exit on first error
 
-sudo apt-get update
-
 sudo apt-get install -qq cmake \
                     libgoogle-glog-dev \
                     libatlas-base-dev \
