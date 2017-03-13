@@ -1,4 +1,38 @@
-# Slam Papers
+## Rotations, Lie Groups, Manifold operators
+ * Good reference on Lie Algebra for SO(3) and SE(3), goes into a lot of nice detail for derivatives and such.  [Eathan Eade Link](http://www.ethaneade.org/lie.pdf), [ Ivancevic Link] (https://arxiv.org/pdf/1104.1106.pdf)
+ * Prof Daniel Cremers course, videos on youtube (Initially, skim through lectures 3 and 4, though everything will be pretty useful as we progress).  [Link](https://www.youtube.com/watch?v=khLM8VV8LuM&list=PLTBdjV_4f-EJn6udZ34tht9EVIW7lbeo4&index=3)
+ * Box operators. [Link](https://pdfs.semanticscholar.org/4613/727ef686c6186cab69e6b8be8cb1fa3ba800.pdf)
+
+## ICP and Scan Matching
+  * Arun's Master's Thesis, which has descriptions and references for the major scan registration algorithms (ICP, G-ICP, NDT). [Link](https://uwspace.uwaterloo.ca/bitstream/handle/10012/7431/Das_Arun_2013.pdf?sequence=3)
+  * The Point Cloud Library (PCL). [Link](http://www.pointclouds.org/documentation/tutorials/#registration-tutorial)
+
+## Factor Graphs and MAP estimation
+* Factor Graphs and Maximum-Liklihood (ML) estimation from GTSAM tutorial (ignore the code aspects for now, and focus on concepts). [Link](https://research.cc.gatech.edu/borg/sites/edu.borg/files/downloads/gtsam.pdf)
+* MAP from wikipedia [Link] (https://en.wikipedia.org/wiki/Maximum_likelihood_estimation)
+* Putting ML estimation and Box operators together: SLAM on Manifolds, from the g2o documentation. (Again, ignore the code for now, and focus on the concepts). [Link] (https://github.com/RainerKuemmerle/g2o/blob/master/doc/g2o.pdf)
+
+## SLAM Surveys
+* 2006 Famous Hugh Durrant-Whyte Survey, claiming SLAM is solved [Part I - State of the art](http://ieeexplore.ieee.org/abstract/document/1638022/), [Part II- Recursive Bayesian Formulation and open issues] (http://ieeexplore.ieee.org/abstract/document/1678144/)
+    * Excellent summary of the filter and graph approaches with point features and Bayesian inference over Gaussians
+    * Part I Abstract: This paper describes the simultaneous localization and mapping (SLAM) problem and the essential methods for solving the SLAM problem and summarizes key implementations and demonstrations of the method. While there are still many practical issues to overcome, especially in more complex outdoor environments, the general SLAM method is now a well understood and established part of robotics. Another part of the tutorial summarized more recent works in addressing some of the remaining issues in SLAM, including computation, feature representation, and data association. 
+    * Part II Abstract: This paper discusses the recursive Bayesian formulation of the simultaneous localization and mapping (SLAM) problem in which probability distributions or estimates of absolute or relative locations of landmarks and vehicle pose are obtained. The paper focuses on three key areas: computational complexity; data association; and environment representation.
+* 2016 Young guys + Scaramuzza, Neira, Reid and Leonard [SLAM Survey Paper](https://arxiv.org/pdf/1606.05830.pdf)
+    * Excellent survey of SLAM today, updating the hard parts that remain.  
+    * Nice summary of MAP Factor Graph SLAM
+    * Defines three epochs: Classical SLAM (up to 2006), Algorithmic Analysis (up to today), Robustification (going forward)
+    * Do robots need SLAM? yes, Is SLAM solved? Basic yes, but not for in demanding environments or for demanding applications
+    * Major open areas:
+        * Robustness: backend recovery, hw failure recovery, relocalization, deformable, time-varying environment
+        * Scalability: sparsification, parallelization, multi-robot, learning-forgetting, resource constraint aware
+        * Metric Reasoning (map representations): solved in 2D, harder in 3D.  Progression of map representations - features, raw-dense, direct methods, boundaries (edges), surfaces, planes, object based, semantic.  High level representations that remain expressive, optimal representations and automatic adaptation of representations triggered by environment, task.
+        * Semantic reasoning: Identify spaces, objects and relationships between them.  Not just classification, much more needed to properly define tasks.
+        * Theoretical Tools: convergence guarantees, failure prediction with spurious measurements, convexity argument - solving primal and dual problems to provide an optimality bound, outlier resiliency theory.
+        * Active SLAM: Needs fast, accurate measurement predictions, exploration/exploitation trade off not clear, when is it necessary/useful? Performance guarantees through active perception.
+        * New sensors: can lead to different paradigms, such as event triggered cameras. 
+
+
+# Uncategorized Slam Papers
 
 - [Durrant-Whyte, H., & Bailey, T. (2006). Simultaneous localization and
   mapping: part I. IEEE robotics & automation magazine, 13(2),
