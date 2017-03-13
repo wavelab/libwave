@@ -26,7 +26,7 @@ Execute the following in the terminal where you want libwave to reside:
     git submodule update
 
     # install dependencies
-    bash scripts/install_deps.bash
+    bash scripts/install/install_deps.bash
 
     # compile libwave
     mkdir -p build
