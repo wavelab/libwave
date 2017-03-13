@@ -1,22 +1,16 @@
-#ifndef __wave_UTILS_LOGGING_HPP__
-#define __wave_UTILS_LOGGING_HPP__
+#ifndef __WAVE_UTILS_LOGGING_HPP__
+#define __WAVE_UTILS_LOGGING_HPP__
 
-#include <stdio.h>
-#include <iostream>
-#include <cstdarg>
+#define __FILENAME__ \
+  (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
 
+#define log_err(M, ...)              \
+  fprintf(stderr,                    \
+          "[ERROR] [%s:%d] " M "\n", \
+          __FILENAME__,              \
+          __LINE__,                  \
+          ##__VA_ARGS__)
 
-namespace wave {
+#define log_info(M, ...) fprintf(stdout, "[INFO] " M "\n", ##__VA_ARGS__)
 
-#define ERROR_FORMAT "[ERROR] (%s:%d) "
-#define WARN_FORMAT "[WARN] (%s:%d) "
-#define INFO_FORMAT "[INFO] "
-
-#define LOG_ERROR(M, ...) \
-  fprintf(stderr, ERROR_FORMAT M "\n", __func__, __LINE__, ##__VA_ARGS__)
-#define LOG_WARN(M, ...) \
-  fprintf(stderr, WARN_FORMAT M "\n", __func__, __LINE__, ##__VA_ARGS__)
-#define LOG_INFO(M, ...) fprintf(stderr, INFO_FORMAT M "\n", ##__VA_ARGS__)
-
-}  // end of wave namespace
 #endif

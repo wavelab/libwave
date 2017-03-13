@@ -3,19 +3,16 @@
 
 namespace wave {
 
-int sign(double x) {
-  return (x < 0) ? -1 : 1;
+int randi(int ub, int lb) {
+  return rand() % lb + ub;
 }
 
-float deg2rad(float d) {
-  return d * (M_PI / 180);
+double randf(double ub, double lb) {
+  double f = (double) rand() / RAND_MAX;
+  return lb + f * (ub - lb);
 }
 
-float rad2deg(float r) {
-  return r * (180 / M_PI);
-}
-
-int fltcmp(float f1, float f2) {
+int fltcmp(double f1, double f2) {
   if (fabs(f1 - f2) <= 0.0001) {
     return 0;
   } else if (f1 > f2) {
@@ -25,92 +22,31 @@ int fltcmp(float f1, float f2) {
   }
 }
 
-MatX kronecker_product(MatX A, MatX B) {
-  MatX C;
-  double a;
+double median(std::vector<double> v) {
+  double a, b;
 
-  // setup
-  C.resize((A.rows() * B.rows()), (A.cols() * B.cols()));
+  // sort values
+  std::sort(v.begin(), v.end());
 
-  // calculate kronecker product
-  for (int i = 0; i < A.rows(); i++) {
-    for (int j = 0; j < A.cols(); j++) {
-      a = A(i, j);
-      C.block(i * B.rows(), j * B.cols(), B.rows(), B.cols()) = a * B;
-    }
+  // obtain median
+  if (v.size() % 2 == 1) {
+    // return middle value
+    return v[v.size() / 2];
+
+  } else {
+    // grab middle two values and calc mean
+    a = v[v.size() / 2];
+    b = v[(v.size() / 2) - 1];
+    return (a + b) / 2.0;
   }
-
-  return C;
 }
 
-bool isposdef(MatX A) {
-  // cholesky decomposition of A
-  Eigen::LLT<MatX> llt(A);
-
-  if (llt.info() == Eigen::NumericalIssue) {
-    return false;
-  }
-
-  return true;
+double deg2rad(double d) {
+  return d * (M_PI / 180);
 }
 
-Mat3 rotmat(Vec4 q) {
-  Mat3 R;
-
-  // rotation matrix from quaternion q = (x, y, z, w)
-  R(0, 0) = 1.0 - 2.0 * pow(q(1), 2) - 2.0 * pow(q(2), 2);
-  R(0, 1) = 2.0 * q(0) * q(1) + 2.0 * q[3] * q(2);
-  R(0, 2) = 2.0 * q(0) * q(2) - 2.0 * q[3] * q(1);
-
-  R(1, 0) = 2.0 * q(0) * q(1) - 2.0 * q[3] * q(2);
-  R(1, 1) = 1.0 - 2.0 * pow(q(0), 2) - 2.0 * pow(q(2), 2);
-  R(1, 2) = 2.0 * q(1) * q(2) + 2.0 * q[3] * q(2);
-
-  R(2, 0) = 2.0 * q(0) * q(2) - 2.0 * q[3] * q(1);
-  R(2, 1) = 2.0 * q(1) * q(2) - 2.0 * q[3] * q(0);
-  R(2, 2) = 1.0 - 2.0 * pow(q(0), 2) - 2.0 * pow(q(1), 2);
-}
-
-int rotmatx(float angle, Mat3 &R) {
-  R << 1.0f, 0.0f, 0.0f, 0.0f, cos(angle), sin(angle), 0.0f, -sin(angle),
-    cos(angle);
-
-  return 0;
-}
-
-int rotmaty(float angle, Mat3 &R) {
-  R << cos(angle), 0.0f, -sin(angle), 0.0f, 1.0f, 0.0f, sin(angle), 0.0f,
-    cos(angle);
-
-  return 0;
-}
-
-int rotmatz(float angle, Mat3 &R) {
-  R << cos(angle), -sin(angle), 0.0f, sin(angle), cos(angle), 0.0f, 0.0f,
-    0.0f, 1.0f;
-
-  return 0;
-}
-
-int rotmatx(float angle, Mat4 &R) {
-  R << 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, cos(angle), sin(angle), 0.0f, 0.0f,
-    -sin(angle), cos(angle), 0.0f, 0.0f, 0.0f, 0.0f, 1.0f;
-
-  return 0;
-}
-
-int rotmaty(float angle, Mat4 &R) {
-  R << cos(angle), 0.0f, -sin(angle), 0.0f, 0.0f, 1.0f, 0.0f, 0.0f,
-    sin(angle), 0.0f, cos(angle), 0.0f, 0.0f, 0.0f, 0.0f, 1.0f;
-
-  return 0;
-}
-
-int rotmatz(float angle, Mat4 &R) {
-  R << cos(angle), -sin(angle), 0.0f, 0.0f, sin(angle), cos(angle), 0.0f,
-    0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f;
-
-  return 0;
+double rad2deg(double r) {
+  return r * (180 / M_PI);
 }
 
 void load_matrix(std::vector<double> x, int rows, int cols, MatX &y) {
@@ -206,7 +142,7 @@ int euler2rot(Vec3 euler, int euler_seq, Mat3 &R) {
     R32 = sin(phi) * cos(theta);
     R33 = cos(phi) * cos(theta);
 
-  } else if (euler_seq = 123) {
+  } else if (euler_seq == 123) {
     // euler 1-2-3
     R11 = cos(theta) * cos(psi);
     R12 = cos(theta) * sin(psi);
@@ -326,14 +262,6 @@ void cf2nwu(Vec3 cf, Vec3 &nwu) {
   nwu(2) = -cf(1);
 }
 
-void nwu2enu(Vec3 nwu, Vec3 &enu) {
-  // NWU frame:  (x - forward, y - left, z - up)
-  // ENU frame:  (x - right, y - forward, z - up)
-  enu(0) = -nwu(1);
-  enu(1) = nwu(0);
-  enu(2) = nwu(2);
-}
-
 void cf2enu(Vec3 cf, Vec3 &enu) {
   // camera frame:  (x - right, y - down, z - forward)
   // ENU frame:  (x - right, y - forward, z - up)
@@ -342,4 +270,274 @@ void cf2enu(Vec3 cf, Vec3 &enu) {
   enu(2) = -cf(1);
 }
 
-}  // end of wave namespace
+void nwu2enu(Vec3 nwu, Vec3 &enu) {
+  // NWU frame:  (x - forward, y - left, z - up)
+  // ENU frame:  (x - right, y - forward, z - up)
+  enu(0) = -nwu(1);
+  enu(1) = nwu(0);
+  enu(2) = nwu(2);
+}
+
+void ned2enu(Vec3 ned, Vec3 &enu) {
+  // NED frame:  (x - forward, y - right, z - down)
+  // ENU frame:  (x - right, y - forward, z - up)
+  enu(0) = ned(1);
+  enu(1) = ned(0);
+  enu(2) = -ned(2);
+}
+
+void nwu2ned(Quaternion nwu, Quaternion &ned) {
+  ned.w() = nwu.w();
+  ned.x() = nwu.x();
+  ned.y() = -nwu.y();
+  ned.z() = -nwu.z();
+}
+
+void ned2nwu(Quaternion ned, Quaternion &nwu) {
+  nwu.w() = ned.w();
+  nwu.x() = ned.x();
+  nwu.y() = -ned.y();
+  nwu.z() = -ned.z();
+}
+
+void target2body(Vec3 target_pos_if,
+                 Vec3 body_pos_if,
+                 Quaternion body_orientation_if,
+                 Vec3 &target_pos_bf) {
+  Mat3 R;
+  Vec3 pos_enu, pos_nwu;
+
+  // convert quaternion to rotation matrix
+  R = body_orientation_if.toRotationMatrix().inverse();
+
+  // calculate position difference and convert to body frame
+  pos_enu = target_pos_if - body_pos_if;  // assumes inertial frame is ENU
+  enu2nwu(pos_enu, pos_nwu);
+
+  // compensate for body orientation by rotating
+  target_pos_bf = R * pos_nwu;
+}
+
+void target2body(Vec3 target_pos_if,
+                 Vec3 body_pos_if,
+                 Vec3 body_orientation_if,
+                 Vec3 &target_pos_bf) {
+  Mat3 R;
+  Vec3 pos_enu, pos_nwu;
+
+  // convert euler to rotation matrix
+  euler2rot(body_orientation_if, 123, R);
+
+  // calculate position difference and convert to body frame
+  pos_enu = target_pos_if - body_pos_if;  // assumes inertial frame is ENU
+  enu2nwu(pos_enu, pos_nwu);
+
+  // compensate for body orientation by rotating
+  target_pos_bf = R * pos_nwu;
+}
+
+void target2bodyplanar(Vec3 target_pos_if,
+                       Vec3 body_pos_if,
+                       Quaternion body_orientation_if,
+                       Vec3 &target_pos_bf) {
+  Vec3 euler;
+
+  // convert quaternion to euler
+  quat2euler(body_orientation_if, 321, euler);
+
+  // filtering out roll and pitch since we are in body planar frame
+  euler << 0.0, 0.0, euler(2);
+
+  // calculate setpoint relative to quadrotor
+  target2body(target_pos_if, body_pos_if, euler, target_pos_bf);
+}
+
+void target2bodyplanar(Vec3 target_pos_if,
+                       Vec3 body_pos_if,
+                       Vec3 body_orientation_if,
+                       Vec3 &target_pos_bf) {
+  Vec3 euler;
+
+  // filtering out roll and pitch since we are in body planar frame
+  euler << 0.0, 0.0, body_orientation_if(2);
+
+  // calculate setpoint relative to quadrotor
+  target2body(target_pos_if, body_pos_if, euler, target_pos_bf);
+}
+
+void target2inertial(Vec3 target_pos_bf,
+                     Vec3 body_pos_if,
+                     Vec3 body_orientation_if,
+                     Vec3 &target_pos_if) {
+  Mat3 R;
+  Vec3 target_enu;
+
+  // construct rotation matrix from euler
+  euler2rot(body_orientation_if, 321, R);
+
+  // convert target body position from NWU to ENU
+  nwu2enu(target_pos_bf, target_enu);
+
+  // transform target from body to inertial frame
+  target_pos_if = (R * target_enu) + body_pos_if;
+}
+
+void target2inertial(Vec3 target_pos_bf,
+                     Vec3 body_pos_if,
+                     Quaternion body_orientation_if,
+                     Vec3 &target_pos_if) {
+  Mat3 R;
+  Vec3 target_enu;
+
+  // convert quaternion to rotation matrix
+  R = body_orientation_if.toRotationMatrix();
+
+  // convert target body position from NWU to ENU
+  nwu2enu(target_pos_bf, target_enu);
+
+  // transform target from body to inertial frame
+  target_pos_if = (R * target_enu) + body_pos_if;
+}
+
+void inertial2body(Vec3 enu_if,
+                   Quaternion orientation_if,
+                   Vec3 &nwu_bf) {
+  Mat3 R;
+  Vec3 euler, nwu_if;
+
+  // create rotation matrix
+  quat2euler(orientation_if, 321, euler);
+  euler2rot(euler, 123, R);
+
+  // convert inertial ENU to NWU
+  nwu_if(0) = enu_if(1);
+  nwu_if(1) = -enu_if(0);
+  nwu_if(2) = enu_if(2);
+
+  // transform inertal to body
+  nwu_bf = R * nwu_if;
+}
+
+void inertial2body(Vec3 enu_if,
+                   Vec3 orientation_if,
+                   Vec3 &nwu_bf) {
+  Mat3 R;
+  Vec3 nwu_if;
+
+  // create rotation matrix
+  euler2rot(orientation_if, 123, R);
+
+  // convert inertial ENU to NWU
+  nwu_if(0) = enu_if(1);
+  nwu_if(1) = -enu_if(0);
+  nwu_if(2) = enu_if(2);
+
+  // transform inertal to body
+  nwu_bf = R * nwu_if;
+}
+
+double wrapTo180(double euler_angle) {
+  return fmod((euler_angle + 180.0), 360.0) - 180.0;
+}
+
+double wrapTo360(double euler_angle) {
+  if (euler_angle > 0) {
+    return fmod(euler_angle, 360.0);
+  } else {
+    euler_angle += 360.0;
+    return fmod(euler_angle, 360.0);
+  }
+}
+
+double cross_track_error(Vec2 p1, Vec2 p2, Vec2 pos) {
+  double x0, y0;
+  double x1, y1;
+  double x2, y2;
+  double numerator, denominator;
+
+  // setup
+  x0 = pos(0);
+  y0 = pos(1);
+
+  x1 = p1(0);
+  y1 = p1(0);
+
+  x2 = p2(0);
+  y2 = p2(0);
+
+  // calculate perpendicular distance between line (p1, p2) and point (pos)
+  numerator = ((y2 - y1) * x0 - (x2 - x1) * y0 + x2 * y1 - y2 * x1);
+  denominator = sqrt(pow(y2 - y1, 2) + pow(x2 - x1, 2));
+  return fabs(numerator) / denominator;
+}
+
+int point_left_right(Vec2 a, Vec2 b, Vec2 c) {
+  double x;
+
+  x = (b(0) - a(0)) * (c(1) - a(1)) - (b(1) - a(1)) * (c(0) - a(0));
+  if (x > 0) {
+    return 1;  // left
+  } else if (x < 0) {
+    return 2;  // right
+  } else if (x == 0) {
+    return 0;  // parallel
+  }
+
+  return -1;
+}
+
+// int closest_point(Vec2 a, Vec2 b, Vec2 p, Vec2 &closest, bool limit) {
+//   Vec2 v1, v2, result;
+//   double t;
+//
+//   // pre-check
+//   if ((a - b).norm() == 0) {
+//     closest = a;
+//     return -1;
+//   }
+//
+//   // calculate closest point
+//   v1 = p - a;
+//   v2 = b - a;
+//   t = v1.dot(v2) / v2.squaredNorm();
+//
+//   // check if point p is:
+//   // 1. before point a
+//   // 2. after point b
+//   // 3. middle of point a, b
+//   if (t < 0) {
+//     closest = (limit) ? a : a + t * v2;
+//     return 1;
+//   } else if (t > 1) {
+//     closest = (limit) ? b : a + t * v2;
+//     return 2;
+//   } else {
+//     closest = a + t * v2;
+//     return 0;
+//   }
+// }
+
+double closest_point(Vec2 a, Vec2 b, Vec2 p, Vec2 &closest) {
+  double t;
+  Vec2 v1, v2;
+
+  // pre-check
+  if ((a - b).norm() == 0) {
+    closest = a;
+    return -1;
+  }
+
+  // calculate closest point
+  v1 = p - a;
+  v2 = b - a;
+  t = v1.dot(v2) / v2.squaredNorm();
+  closest = a + t * v2;
+
+  return t;
+}
+
+Vec2 linear_interpolation(Vec2 a, Vec2 b, double mu) {
+   return a * (1 - mu) + b * mu;
+}
+
+}  // eof wave
