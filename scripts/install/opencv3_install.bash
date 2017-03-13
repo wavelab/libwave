@@ -3,8 +3,7 @@ set -e  # exit on first error
 OPENCV_URL=https://github.com/Itseez/opencv/archive/3.0.0-alpha.zip
 
 
-install_dependencies()
-{
+install_dependencies() {
     sudo apt-get -y install -qq \
         libopencv-dev \
         build-essential \
@@ -41,8 +40,7 @@ install_dependencies()
         unzip
 }
 
-download_opencv()
-{
+download_opencv() {
     mkdir -p /usr/local/src/opencv
     cd /usr/local/src/opencv
     wget $OPENCV_URL -O opencv-3.0.0-alpha.zip
@@ -50,8 +48,7 @@ download_opencv()
     cd -
 }
 
-install_opencv()
-{
+install_opencv() {
     # compile and install opencv
     cd /usr/local/src/opencv
     cd opencv-3.0.0-alpha
@@ -66,12 +63,10 @@ install_opencv()
         -D WITH_OPENGL=ON ..
     make -j 4
 
-    # sudo make install
+    sudo make install
 }
-
-
 
 # MAIN
 install_dependencies
-#download_opencv
+download_opencv
 install_opencv
