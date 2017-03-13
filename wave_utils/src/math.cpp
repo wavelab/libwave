@@ -49,7 +49,7 @@ double rad2deg(double r) {
   return r * (180 / M_PI);
 }
 
-void load_matrix(std::vector<double> x, int rows, int cols, MatX &y) {
+void vec2mat(std::vector<double> x, int rows, int cols, MatX &y) {
   int idx;
 
   // setup
@@ -65,7 +65,7 @@ void load_matrix(std::vector<double> x, int rows, int cols, MatX &y) {
   }
 }
 
-void load_matrix(MatX A, std::vector<double> &x) {
+void mat2vec(MatX A, std::vector<double> &x) {
   for (int i = 0; i < A.cols(); i++) {
     for (int j = 0; j < A.rows(); j++) {
       x.push_back(A(j, i));
@@ -311,28 +311,6 @@ double wrapTo360(double euler_angle) {
     euler_angle += 360.0;
     return fmod(euler_angle, 360.0);
   }
-}
-
-double cross_track_error(Vec2 p1, Vec2 p2, Vec2 pos) {
-  double x0, y0;
-  double x1, y1;
-  double x2, y2;
-  double numerator, denominator;
-
-  // setup
-  x0 = pos(0);
-  y0 = pos(1);
-
-  x1 = p1(0);
-  y1 = p1(0);
-
-  x2 = p2(0);
-  y2 = p2(0);
-
-  // calculate perpendicular distance between line (p1, p2) and point (pos)
-  numerator = ((y2 - y1) * x0 - (x2 - x1) * y0 + x2 * y1 - y2 * x1);
-  denominator = sqrt(pow(y2 - y1, 2) + pow(x2 - x1, 2));
-  return fabs(numerator) / denominator;
 }
 
 }  // eof wave
