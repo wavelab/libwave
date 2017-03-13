@@ -8,6 +8,8 @@ cache:
     - apt
 
 install:
+    - sudo apt-get clean
+    - sudo apt-get update
     - sudo bash scripts/install/install_deps.bash
 
 script:
