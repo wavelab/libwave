@@ -2,4 +2,4 @@
 set -e  # exit on first error
 
 echo "Installing Boost ..."
-sudo apt-get install -qq libboost-* -y
+sudo apt-get install -qq libboost-dev -y
