@@ -30,6 +30,23 @@
         * Theoretical Tools: convergence guarantees, failure prediction with spurious measurements, convexity argument - solving primal and dual problems to provide an optimality bound, outlier resiliency theory.
         * Active SLAM: Needs fast, accurate measurement predictions, exploration/exploitation trade off not clear, when is it necessary/useful? Performance guarantees through active perception.
         * New sensors: can lead to different paradigms, such as event triggered cameras. 
+* 2015 Arthur Huletski, Dmitriy Kartashov, Kirill Krinkin [Evaluation of the Modern Visual SLAM Methods] (http://ieeexplore.ieee.org/document/7382963/)
+    This paper evaluates 2013-mid to 2015 ORB, LSD, L, OpenRat visual slam algorithms on the TUM RGB-D benchmark. One of the important questions they mention is: What assumptions and approximations were made while creating the SLAM algorithm ? This will help us know our limitations. 
+    Metrics that decide whether a SLAM algorithm is suitable for a particular task:
+    * Localization accuracy (RMSE between predicted positions and ground truth)
+    * CPU usage for computational effectiveness
+    * Peak memory consumption allows to estimate memory requirements. Important for limited resources
+    * Camera FPS
+    * Map quality (occupancy grid outputs a different map from ground truth)
+    * Robustness [results over multiple runs] and Convergence [time necessary for Minimization of localization error] 
+    Conclusion: While the algorithms above can show good performance, they don’t show stable tracking and low error. Robust results aren’t available out of the box. Parameters need to be tuned. 
+    * RatSLAM needs the video to be slowed down by a factor of 2. 
+    * ORB SLAM and LSD SLAM require tweaking of parameters. 
+    * FOV can also play an important factor.
+    Drawbacks:
+    * Method that estimates camera transformation should have at least medium level on noise (RatSLAM draw­ back);
+    * An algorithm should be scale-aware (ORB-SLAM drawback);
+    * In case of tracking loss an algorithm should use some fallback strategy instead of giving up (LSD-SLAM drawback).
 
 
 # Uncategorized Slam Papers
