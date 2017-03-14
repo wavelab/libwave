@@ -17,12 +17,12 @@ install_dependencies() {
         libdc1394-22-dev \
         libjpeg-dev \
         libpng12-dev \
-        libtiff4-dev \
+        libtiff*-dev \
         libjasper-dev \
         libavcodec-dev \
         libavformat-dev \
         libswscale-dev \
-        libxine-dev \
+        libxine*-dev \
         libgstreamer0.10-dev \
         libgstreamer-plugins-base0.10-dev \
         libv4l-dev \
