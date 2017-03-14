@@ -16,36 +16,36 @@ namespace wave {
 
 class Pose {
 public:
-  Vec3 position;
-  Quaternion orientation;
+    Vec3 position;
+    Quaternion orientation;
 
-  Pose(void);
-  Pose(Vec3 position, Quaternion orientation);
-  Pose(double roll, double pitch, double yaw, double x, double y, double z);
-  Mat3 rotationMatrix(void);
-  void printPosition(void);
-  void printOrientation(void);
-  void print(void);
+    Pose(void);
+    Pose(Vec3 position, Quaternion orientation);
+    Pose(double roll, double pitch, double yaw, double x, double y, double z);
+    Mat3 rotationMatrix(void);
+    void printPosition(void);
+    void printOrientation(void);
+    void print(void);
 };
 
 class Velocity {
 public:
-  double linear_x;
-  double linear_y;
-  double linear_z;
+    double linear_x;
+    double linear_y;
+    double linear_z;
 
-  double angular_x;
-  double angular_y;
-  double angular_z;
+    double angular_x;
+    double angular_y;
+    double angular_z;
 
-  Velocity(void) {
-    this->linear_x = 0;
-    this->linear_y = 0;
-    this->linear_z = 0;
-    this->angular_x = 0;
-    this->angular_y = 0;
-    this->angular_z = 0;
-  }
+    Velocity(void) {
+        this->linear_x = 0;
+        this->linear_y = 0;
+        this->linear_z = 0;
+        this->angular_x = 0;
+        this->angular_y = 0;
+        this->angular_z = 0;
+    }
 };
 
 int csvrows(std::string file_path);
