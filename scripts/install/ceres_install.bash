@@ -1,6 +1,7 @@
 #!/bin/bash
 set -e  # exit on first error
 
+echo "Installing Ceres ..."
 sudo apt-get install -qq cmake \
                     libgoogle-glog-dev \
                     libatlas-base-dev \
