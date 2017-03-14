@@ -36,9 +36,9 @@ SET(
   TEST_DEPS
   wave_utils
   yaml-cpp
-  ${OpenCV_LIBS}
   gtest
   pthread
+  ${OpenCV_LIBS}
 )
 
 # UNIT TESTS
