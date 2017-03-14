@@ -8,4 +8,4 @@ cmake ..
 make
 
 # run tests
-cd wave_utils && ./tests/wave_utils_tests && cd -
+cd wave_utils && ./tests/wave_utils_tests --silence-stdcout && cd -
