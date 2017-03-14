@@ -22,7 +22,7 @@ install_dependencies() {
         libavcodec-dev \
         libavformat-dev \
         libswscale-dev \
-        libxine*-dev \
+        libxine2-dev \
         libgstreamer0.10-dev \
         libgstreamer-plugins-base0.10-dev \
         libv4l-dev \
