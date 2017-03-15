@@ -107,7 +107,7 @@ TEST(Utils_config_ConfigParser, getYamlNode) {
     ASSERT_EQ(3, node1.as<int>());
 
     parser.getYamlNode("float", node2);
-    ASSERT_FLOAT_EQ(2.0, node2.as<float>());
+    ASSERT_FLOAT_EQ(2.2, node2.as<float>());
 }
 
 TEST(Utils_config_ConfigParser, loadPrimitive) {
@@ -135,7 +135,7 @@ TEST(Utils_config_ConfigParser, loadPrimitive) {
     param.key = "float";
     param.f = &f;
     parser.loadPrimitive(param);
-    ASSERT_FLOAT_EQ(2.0, f);
+    ASSERT_FLOAT_EQ(2.2, f);
 
     // DOUBLE
     param.optional = false;
@@ -143,7 +143,7 @@ TEST(Utils_config_ConfigParser, loadPrimitive) {
     param.key = "double";
     param.d = &d;
     parser.loadPrimitive(param);
-    ASSERT_FLOAT_EQ(3.0, d);
+    ASSERT_FLOAT_EQ(3.3, d);
 
     // STRING
     param.optional = false;
@@ -197,7 +197,7 @@ TEST(Utils_config_ConfigParser, loadArray) {
     parser.loadArray(param);
 
     for (int i = 0; i < 4; i++) {
-        ASSERT_FLOAT_EQ((float) i + 1.0, f_array[i]);
+        ASSERT_FLOAT_EQ((i + 1) * 1.1, f_array[i]);
     }
 
     // DOUBLE
@@ -208,7 +208,7 @@ TEST(Utils_config_ConfigParser, loadArray) {
     parser.loadArray(param);
 
     for (int i = 0; i < 4; i++) {
-        ASSERT_FLOAT_EQ((double) i + 1.0, d_array[i]);
+        ASSERT_FLOAT_EQ((i + 1) * 1.1, d_array[i]);
     }
 
     // STRING
@@ -218,10 +218,10 @@ TEST(Utils_config_ConfigParser, loadArray) {
     param.s_array = &s_array;
     parser.loadArray(param);
 
-    ASSERT_EQ("1.0", s_array[0]);
-    ASSERT_EQ("2.0", s_array[1]);
-    ASSERT_EQ("3.0", s_array[2]);
-    ASSERT_EQ("4.0", s_array[3]);
+    ASSERT_EQ("1.1", s_array[0]);
+    ASSERT_EQ("2.2", s_array[1]);
+    ASSERT_EQ("3.3", s_array[2]);
+    ASSERT_EQ("4.4", s_array[3]);
 }
 
 TEST(Utils_config_ConfigParser, loadVector) {
@@ -242,8 +242,8 @@ TEST(Utils_config_ConfigParser, loadVector) {
     param.vec2 = &vec2;
     parser.loadVector(param);
 
-    ASSERT_FLOAT_EQ(1.0, vec2(0));
-    ASSERT_FLOAT_EQ(2.0, vec2(1));
+    ASSERT_FLOAT_EQ(1.1, vec2(0));
+    ASSERT_FLOAT_EQ(2.2, vec2(1));
 
     // VECTOR 3
     param.optional = false;
@@ -252,9 +252,9 @@ TEST(Utils_config_ConfigParser, loadVector) {
     param.vec3 = &vec3;
     parser.loadVector(param);
 
-    ASSERT_FLOAT_EQ(1.0, vec3(0));
-    ASSERT_FLOAT_EQ(2.0, vec3(1));
-    ASSERT_FLOAT_EQ(3.0, vec3(2));
+    ASSERT_FLOAT_EQ(1.1, vec3(0));
+    ASSERT_FLOAT_EQ(2.2, vec3(1));
+    ASSERT_FLOAT_EQ(3.3, vec3(2));
 
     // VECTOR 4
     param.optional = false;
@@ -263,10 +263,10 @@ TEST(Utils_config_ConfigParser, loadVector) {
     param.vec4 = &vec4;
     parser.loadVector(param);
 
-    ASSERT_FLOAT_EQ(1.0, vec4(0));
-    ASSERT_FLOAT_EQ(2.0, vec4(1));
-    ASSERT_FLOAT_EQ(3.0, vec4(2));
-    ASSERT_FLOAT_EQ(4.0, vec4(3));
+    ASSERT_FLOAT_EQ(1.1, vec4(0));
+    ASSERT_FLOAT_EQ(2.2, vec4(1));
+    ASSERT_FLOAT_EQ(3.3, vec4(2));
+    ASSERT_FLOAT_EQ(4.4, vec4(3));
 
     // VECTOR X
     param.optional = false;
@@ -275,8 +275,8 @@ TEST(Utils_config_ConfigParser, loadVector) {
     param.vecx = &vecx;
     parser.loadVector(param);
 
-    for (int i = 0; i < 10; i++) {
-        ASSERT_FLOAT_EQ((double) i + 1.0, vecx(i));
+    for (int i = 0; i < 9; i++) {
+        ASSERT_FLOAT_EQ((i + 1) * 1.1, vecx(i));
     }
 }
 
@@ -300,10 +300,10 @@ TEST(Utils_config_ConfigParser, loadMatrix) {
     param.mat2 = &mat2;
     parser.loadMatrix(param);
 
-    ASSERT_FLOAT_EQ(1.0, mat2(0, 0));
-    ASSERT_FLOAT_EQ(2.0, mat2(0, 1));
-    ASSERT_FLOAT_EQ(3.0, mat2(1, 0));
-    ASSERT_FLOAT_EQ(4.0, mat2(1, 1));
+    ASSERT_FLOAT_EQ(1.1, mat2(0, 0));
+    ASSERT_FLOAT_EQ(2.2, mat2(0, 1));
+    ASSERT_FLOAT_EQ(3.3, mat2(1, 0));
+    ASSERT_FLOAT_EQ(4.4, mat2(1, 1));
 
     // MATRIX 3
     param.optional = false;
@@ -315,7 +315,7 @@ TEST(Utils_config_ConfigParser, loadMatrix) {
     index = 0;
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {
-            ASSERT_FLOAT_EQ(index + 1.0, mat3(i, j));
+            ASSERT_FLOAT_EQ((index + 1) * 1.1, mat3(i, j));
             index++;
         }
     }
@@ -330,7 +330,7 @@ TEST(Utils_config_ConfigParser, loadMatrix) {
     index = 0;
     for (int i = 0; i < 4; i++) {
         for (int j = 0; j < 4; j++) {
-            ASSERT_FLOAT_EQ(index + 1.0, mat4(i, j));
+            ASSERT_FLOAT_EQ((index + 1) * 1.1, mat4(i, j));
             index++;
         }
     }
@@ -345,7 +345,7 @@ TEST(Utils_config_ConfigParser, loadMatrix) {
     index = 0;
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 4; j++) {
-            ASSERT_FLOAT_EQ(index + 1.0, matx(i, j));
+            ASSERT_FLOAT_EQ((index + 1) * 1.1, matx(i, j));
             index++;
         }
     }
@@ -360,7 +360,7 @@ TEST(Utils_config_ConfigParser, loadMatrix) {
     index = 0;
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 4; j++) {
-            ASSERT_FLOAT_EQ(index + 1.0, cvmat.at<double>(i, j));
+            ASSERT_FLOAT_EQ((index + 1) * 1.1, cvmat.at<double>(i, j));
             index++;
         }
     }
