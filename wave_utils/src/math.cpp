@@ -12,8 +12,8 @@ double randf(double ub, double lb) {
     return lb + f * (ub - lb);
 }
 
-int fltcmp(double f1, double f2) {
-    if (fabs(f1 - f2) <= 0.0001) {
+int fltcmp(double f1, double f2, double threshold) {
+    if (fabs(f1 - f2) <= threshold) {
         return 0;
     } else if (f1 > f2) {
         return 1;

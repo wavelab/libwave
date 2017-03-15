@@ -26,7 +26,7 @@ typedef Eigen::Quaterniond Quaternion;
 
 int randi(int ub, int lb);
 double randf(double ub, double lb);
-int fltcmp(double f1, double f2);
+int fltcmp(double f1, double f2, double threshold = 0.0001);
 double median(std::vector<double> v);
 double deg2rad(double d);
 double rad2deg(double r);
