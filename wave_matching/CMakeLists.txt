@@ -29,7 +29,15 @@ link_directories(${PCL_LIBRARY_DIRS}
 set(DEPS
     ${PCL_COMMON_LIBRARIES}
     ${PCL_REGISTRATION_LIBRARIES}
-    ${PCL_POINT_TYPES_LIBRARIES})
+    ${PCL_POINT_TYPES_LIBRARIES}
+    ${PCL_IO_LIBRARIES})
 
-add_library(wave_matching SHARED src/ICP.cpp)
+add_library(wave_matching STATIC src/ICP.cpp)
 target_link_libraries(wave_matching ${DEPS})
+
+# Unit tests
+add_executable(icp_tests tests/icp_tests.cpp)
+target_link_libraries(icp_tests
+        wave_matching
+        ${GTEST_LIBRARIES}
+        ${CMAKE_THREAD_LIBS_INIT})

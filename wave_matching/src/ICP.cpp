@@ -4,23 +4,31 @@ namespace wave {
 namespace matching {
 
 ICP_Matcher::ICP_Matcher(float res) {
-    resolution = res;
-    filter.setLeafSize(res, res, res);
+    this->ref = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
+    this->target = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
+    this->final = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
+    if (res > 0) {
+        this->resolution = res;
+        this->filter.setLeafSize(res, res, res);
+    } else {
+        this->resolution = -1;
+    }
+
 
     // Set the max correspondence distance
-    icp.setMaxCorrespondenceDistance (1);
+    this->icp.setMaxCorrespondenceDistance (3);
     // Set the maximum number of iterations (criterion 1)
-    icp.setMaximumIterations (50);
+    this->icp.setMaximumIterations (100);
     // Set the transformation epsilon (criterion 2)
-    icp.setTransformationEpsilon (1e-8);
+    this->icp.setTransformationEpsilon (1e-8);
     // Set the euclidean distance difference epsilon (criterion 3)
-    icp.setEuclideanFitnessEpsilon (1);
+    this->icp.setEuclideanFitnessEpsilon (1e-2);
 }
 
 void ICP_Matcher::setRef(const PCLPointCloud &ref) {
-    if(resolution > 0) {
-        filter.setInputCloud(ref);
-        filter.filter(*(this->ref));
+    if(this->resolution > 0) {
+        this->filter.setInputCloud(ref);
+        this->filter.filter(*(this->ref));
     } else {
         this->ref = ref;
     }
@@ -29,17 +37,21 @@ void ICP_Matcher::setRef(const PCLPointCloud &ref) {
 
 void ICP_Matcher::setTarget(const PCLPointCloud &target) {
     if(resolution > 0) {
-        filter.setInputCloud(target);
-        filter.filter(*(this->target));
+        this->filter.setInputCloud(target);
+        this->filter.filter(*(this->target));
     } else {
         this->target = target;
     }
-    this->icp.setInputSource(this->target);
+    this->icp.setInputTarget(this->target);
 }
 
 bool ICP_Matcher::match() {
-    icp.align(*(this->final));
-    this->result.matrix() = icp.getFinalTransformation().cast<double>();
+    this->icp.align(*(this->final));
+    if(this->icp.hasConverged()) {
+        this->result.matrix() = icp.getFinalTransformation().cast<double>();
+        return true;
+    }
+    return false;
 }
 }
 }
