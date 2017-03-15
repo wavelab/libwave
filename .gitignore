@@ -21,3 +21,7 @@ build
 # matlab / octave
 *.mat
 octave-workspace
+
+#clion
+.idea/
+cmake-build-*/
