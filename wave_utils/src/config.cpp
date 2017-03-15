@@ -44,7 +44,7 @@ int ConfigParser::checkKey(std::string key, bool optional) {
 
     this->getYamlNode(key, node);
     if (!node && optional == false) {
-        log_err("Opps [%s] missing in yaml file!", key.c_str());
+        LOG_ERROR("Opps [%s] missing in yaml file!", key.c_str());
         return -1;
     } else if (!node && optional == true) {
         return 1;
@@ -77,11 +77,11 @@ int ConfigParser::checkVector(std::string key,
     // check number of values
     if (this->root[key].size() != vector_size) {
         // clang-format off
-    log_err("Vector [%s] should have %d values but config has %d!",
-      key.c_str(),
-      vector_size,
-      (int) this->root[key].size()
-    );
+        LOG_ERROR("Vector [%s] should have %d values but config has %d!",
+          key.c_str(),
+          vector_size,
+          (int) this->root[key].size()
+        );
         // clang-format on
         return -3;
     }
@@ -102,9 +102,9 @@ int ConfigParser::checkMatrix(std::string key, bool optional) {
     // check fields
     for (int i = 0; i < 3; i++) {
         if (!this->root[key][targets[i]]) {
-            log_err("Key [%s] is missing for matrix [%s]!",
-                    targets[i].c_str(),
-                    key.c_str());
+            LOG_ERROR("Key [%s] is missing for matrix [%s]!",
+                      targets[i].c_str(),
+                      key.c_str());
             return -2;
         }
     }
@@ -309,7 +309,7 @@ int ConfigParser::load(std::string config_file) {
 
     // pre-check
     if (file_exists(config_file) == false) {
-        log_err("File not found: %s", config_file.c_str());
+        LOG_ERROR("File not found: %s", config_file.c_str());
         return -1;
     }
 

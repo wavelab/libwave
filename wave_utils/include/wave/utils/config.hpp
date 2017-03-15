@@ -191,8 +191,8 @@ public:
 
         // add params
         if (param.type == TYPE_NOT_SET) {
-            log_err("TYPE [%s] HAS NOT BEEN IMPLEMENTED YET!",
-                    typeid(T).name());
+            LOG_ERROR("TYPE [%s] HAS NOT BEEN IMPLEMENTED YET!",
+                      typeid(T).name());
         } else {
             this->params.push_back(param);
         }
