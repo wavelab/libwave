@@ -1,5 +1,5 @@
-#ifndef __WAVE_UTILS_DATA_HPP__
-#define __WAVE_UTILS_DATA_HPP__
+#ifndef WAVE_UTILS_DATA_HPP
+#define WAVE_UTILS_DATA_HPP
 
 #include <iostream>
 #include <fstream>

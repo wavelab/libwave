@@ -1,15 +1,15 @@
-#ifndef __WAVE_UTILS_LOGGING_HPP__
-#define __WAVE_UTILS_LOGGING_HPP__
+#ifndef WAVE_UTILS_LOGGING_HPP
+#define WAVE_UTILS_LOGGING_HPP
 
 namespace wave {
 
-#define __FILENAME__ \
+#define FILENAME \
     (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
 
 #define LOG_ERROR(M, ...)              \
     fprintf(stderr,                    \
             "[ERROR] [%s:%d] " M "\n", \
-            __FILENAME__,              \
+            FILENAME,              \
             __LINE__,                  \
             ##__VA_ARGS__)
 

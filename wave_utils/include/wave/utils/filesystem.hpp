@@ -1,5 +1,5 @@
-#ifndef __WAVE_UTILS_FILESYSTEM_HPP__
-#define __WAVE_UTILS_FILESYSTEM_HPP__
+#ifndef WAVE_UTILS_FILESYSTEM_HPP
+#define WAVE_UTILS_FILESYSTEM_HPP
 
 #include <stdio.h>
 

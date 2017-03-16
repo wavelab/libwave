@@ -1,5 +1,5 @@
-#ifndef __WAVE_UTILS_MATH_HPP__
-#define __WAVE_UTILS_MATH_HPP__
+#ifndef WAVE_UTILS_MATH_HPP
+#define WAVE_UTILS_MATH_HPP
 
 #include <iostream>
 
@@ -9,8 +9,8 @@
 
 namespace wave {
 
-#ifndef __EIGEN_TYPEDEF__
-#define __EIGEN_TYPEDEF__
+#ifndef EIGEN_TYPEDEF
+#define EIGEN_TYPEDEF
 typedef Eigen::Vector2d Vec2;
 typedef Eigen::Vector3d Vec3;
 typedef Eigen::Vector4d Vec4;

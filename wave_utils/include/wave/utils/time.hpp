@@ -1,5 +1,5 @@
-#ifndef __WAVE_UTILS_TIME_HPP__
-#define __WAVE_UTILS_TIME_HPP__
+#ifndef WAVE_UTILS_TIME_HPP
+#define WAVE_UTILS_TIME_HPP
 
 #include <time.h>
 #include <sys/time.h>

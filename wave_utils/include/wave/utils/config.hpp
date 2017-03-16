@@ -1,5 +1,5 @@
-#ifndef __WAVE_UTILS_CONFIG_HPP__
-#define __WAVE_UTILS_CONFIG_HPP__
+#ifndef WAVE_UTILS_CONFIG_HPP
+#define WAVE_UTILS_CONFIG_HPP
 
 #include <type_traits>
 

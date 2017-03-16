@@ -1,5 +1,5 @@
-#ifndef __WAVE_ESTIMATION_KF_HPP__
-#define __WAVE_ESTIMATION_KF_HPP__
+#ifndef WAVE_ESTIMATION_KF_HPP
+#define WAVE_ESTIMATION_KF_HPP
 
 #include <iostream>
 #include <functional>
