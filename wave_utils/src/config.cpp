@@ -23,9 +23,9 @@ int ConfigParser::getYamlNode(std::string key, YAML::Node &node) {
     //
     //    yaml_node = yaml_node["some_level_deeper"];
     //
-    // Destroys the parsed yaml tree/graph, to avoid this problem
-    // we store the YAML::Node traversed into a std::vector
-    // and return the last visited YAML::Node
+    // YAML::Node is mutable, by doing the above it destroys the parsed yaml
+    // tree/graph, to avoid this problem we store the visited YAML::Node into
+    // a std::vector and return the last visited YAML::Node
 
     return 0;
 }
