@@ -1,5 +1,5 @@
-#ifndef __WAVE_UTILS_UTILS_HPP__
-#define __WAVE_UTILS_UTILS_HPP__
+#ifndef WAVE_UTILS_UTILS_HPP
+#define WAVE_UTILS_UTILS_HPP
 
 #include "wave/utils/config.hpp"
 #include "wave/utils/data.hpp"

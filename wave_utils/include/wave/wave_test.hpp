@@ -1,5 +1,5 @@
-#ifndef __WAVE_TEST_HPP__
-#define __WAVE_TEST_HPP__
+#ifndef WAVE_TEST_HPP
+#define WAVE_TEST_HPP
 
 #include <random>
 #include <fstream>
