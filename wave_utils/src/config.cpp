@@ -9,32 +9,23 @@ ConfigParser::ConfigParser(void) {
 }
 
 int ConfigParser::getYamlNode(std::string key, YAML::Node &node) {
-    int end;
-    std::string s;
-    std::vector<std::string> elements;
+    std::string element;
+    std::istringstream iss(key);
     std::vector<YAML::Node> traversal;
-
-    // split key into elements
-    s = "";
-    for (int i = 0; i < key.length(); i++) {
-        if (key[i] == '.') {
-            elements.push_back(s);
-            s = "";
-        } else {
-            s += key[i];
-        }
-    }
-    elements.push_back(s);
 
     // recurse down config key
     traversal.push_back(this->root);
-    for (int i = 0; i < elements.size(); i++) {
-        end = (traversal.size() - 1);
-        s = elements[i];
-        traversal.push_back(traversal[end][s]);
+    while (std::getline(iss, element, '.')) {
+        traversal.push_back(traversal.back()[element]);
     }
-    end = (traversal.size() - 1);
-    node = traversal[end];
+    node = traversal.back();
+    // Note:
+    //
+    //    yaml_node = yaml_node["some_level_deeper"];
+    //
+    // Destroys the parsed yaml tree/graph, to avoid this problem
+    // we store the YAML::Node traversed into a std::vector
+    // and return the last visited YAML::Node
 
     return 0;
 }

@@ -1,6 +1,9 @@
 #ifndef WAVE_UTILS_CONFIG_HPP
 #define WAVE_UTILS_CONFIG_HPP
 
+#include <iostream>
+#include <string>
+#include <sstream>
 #include <type_traits>
 
 #include <yaml-cpp/yaml.h>
