@@ -33,9 +33,12 @@ set(DEPS
     ${PCL_COMMON_LIBRARIES}
     ${PCL_POINT_TYPES_LIBRARIES})
 
-add_library(wave_matching SHARED src/Correlation.cpp)
+add_library(wave_matching src/correlation.cpp src/fast_correlation.cpp)
 target_link_libraries(wave_matching ${DEPS})
 
 # unit tests
-add_executable(cart_tests tests/cart_tests.cpp)
-target_link_libraries(cart_tests wave_matching ${PCL_IO_LIBRARIES} ${GTEST_LIBRARIES})
+add_executable(corr_tests tests/corr_tests.cpp)
+target_link_libraries(corr_tests wave_matching ${PCL_IO_LIBRARIES} ${GTEST_LIBRARIES})
+
+add_executable(fast_corr_tests tests/fast_corr_tests.cpp)
+target_link_libraries(fast_corr_tests wave_matching ${PCL_IO_LIBRARIES} ${GTEST_LIBRARIES})
