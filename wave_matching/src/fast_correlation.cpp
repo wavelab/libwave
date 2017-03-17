@@ -8,7 +8,7 @@ namespace wave {
 namespace matching {
 
 DEFINE_string(configuration_directory, "../config", "Where to search for config files");
-DEFINE_string(configuration_basename, "config.lua", "What the config file is named");
+DEFINE_string(configuration_basename, "fast_config.lua", "What the config file is named");
 
 FastCorrelationMatcher::FastCorrelationMatcher(float resolution) :
     hybrid_grid(resolution,

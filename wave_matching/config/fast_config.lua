@@ -1,5 +1,5 @@
 
-CONFIG = {
+FAST_CONFIG = {
     branch_and_bound_depth = 5,
     full_resolution_depth = 5,
     rotational_histogram_size = 30,
@@ -12,4 +12,4 @@ CONFIG = {
     num_free_space_voxels = 5,
 }
 
-return CONFIG
+return FAST_CONFIG

@@ -27,6 +27,7 @@ class CorrelationMatcher : public wave::matching::Matcher<CartPointCloud> {
     CartPointCloud target;
     std::unique_ptr<cartographer::mapping_3d::scan_matching::RealTimeCorrelativeScanMatcher>
             real_time_correlative_scan_matcher;
+    std::unique_ptr<cartographer::common::LuaParameterDictionary> dict;
 };
 
 }  // namespace matching

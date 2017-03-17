@@ -9,10 +9,7 @@
 #include <cartographer/mapping_3d/scan_matching/fast_correlative_scan_matcher.h>
 #include <cartographer/mapping_3d/laser_fan_inserter.h>
 #include "wave/matching/cart_common.hpp"
-#include "cartographer/common/configuration_file_resolver.h"
-#include "cartographer/common/lua_parameter_dictionary.h"
 #include "wave/matching/matcher.hpp"
-#include "gflags/gflags.h"
 
 namespace wave {
 namespace matching {
