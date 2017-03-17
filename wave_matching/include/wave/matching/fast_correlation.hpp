@@ -34,7 +34,8 @@ class FastCorrelationMatcher : public wave::matching::Matcher<CartPointCloud> {
     //some kind of criteria. no docs so who knows.
     const float kMinScore = 0.1f;
 };
-}
-}
+
+}  // namespace matching
+}  // namespace wave
 
 #endif //WAVE_MATCHING_FAST_CORRELATION_HPP

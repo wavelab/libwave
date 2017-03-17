@@ -59,5 +59,6 @@ bool FastCorrelationMatcher::match() {
     }
     return false;
 }
-}
-}
+
+}  // namespace matching
+}  // namespace wave

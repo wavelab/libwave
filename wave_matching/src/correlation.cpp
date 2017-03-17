@@ -51,5 +51,6 @@ bool CorrelationMatcher::match() {
     }
     return false;
 }
-}
-}
+
+}  // namespace matching
+}  // namespace wave

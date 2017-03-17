@@ -28,7 +28,8 @@ class CorrelationMatcher : public wave::matching::Matcher<CartPointCloud> {
     std::unique_ptr<cartographer::mapping_3d::scan_matching::RealTimeCorrelativeScanMatcher>
             real_time_correlative_scan_matcher;
 };
-}
-}
+
+}  // namespace matching
+}  // namespace wave
 
 #endif //WAVE_MATCHING_CORRELATION_HPP
