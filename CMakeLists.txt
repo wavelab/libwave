@@ -7,11 +7,12 @@ INCLUDE_DIRECTORIES(
   wave_kinematics/include
   wave_optimization/include
   wave_utils/include
+  wave_matching/include
 )
 
 # gtest
-ADD_SUBDIRECTORY(deps/googletest)
-INCLUDE_DIRECTORIES(${gtest_SOURCE_DIR}/include/)
+# ADD_SUBDIRECTORY(deps/googletest)
+# INCLUDE_DIRECTORIES(${gtest_SOURCE_DIR}/include/)
 
 # libwave_estimation.a
 ADD_SUBDIRECTORY(wave_estimation)
@@ -25,6 +26,9 @@ ADD_DEPENDENCIES(wave_estimation wave_utils)
 # ADD_SUBDIRECTORY(wave_optimization)
 # ADD_DEPENDENCIES(wave_optimization wave_utils)
 
+# libwave_matching.a
+ADD_SUBDIRECTORY(wave_matching)
+
 # libwave_utils.a
 ADD_SUBDIRECTORY(wave_utils)
 
@@ -37,7 +41,9 @@ ADD_CUSTOM_TARGET(
       # ${CMAKE_BINARY_DIR}/wave_estimation/libwave_kinematics.a
       # ${CMAKE_BINARY_DIR}/wave_estimation/libwave_optimization.a
       ${CMAKE_BINARY_DIR}/wave_utils/libwave_utils.a
+      ${CMAKE_BINARY_DIR}/wave_matching/libwave_matching.a
   DEPENDS
     wave_estimation
     wave_utils
+    wave_matching
 )
