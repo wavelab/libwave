@@ -28,7 +28,7 @@ LINK_DIRECTORIES(
 ADD_LIBRARY(
   wave_optimization
   STATIC
-  src/
+  src/ceres/bundle_adjustment.cpp
 )
 SET(
   DEPS
@@ -43,6 +43,7 @@ SET(
 # UNIT TESTS
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
 FILE(COPY tests/data DESTINATION ${PROJECT_BINARY_DIR}/tests)
+FILE(COPY scripts DESTINATION ${PROJECT_BINARY_DIR})
 
-# ADD_EXECUTABLE(data_test tests/data_test.cpp)
-# TARGET_LINK_LIBRARIES(data_test ${DEPS})
+ADD_EXECUTABLE(bundle_adjustment_test tests/ceres/bundle_adjustment_test.cpp)
+TARGET_LINK_LIBRARIES(bundle_adjustment_test ${DEPS})

@@ -19,12 +19,18 @@ void recordTimeStep(std::ofstream &output_file,
 int prepareOutputFile(std::ofstream &output_file, std::string output_path) {
   output_file.open(output_path);
 
-  output_file << "time_step" << ",";
-  output_file << "x" << ",";
-  output_file << "y" << ",";
-  output_file << "z" << ",";
-  output_file << "bx" << ",";
-  output_file << "by" << ",";
+  output_file << "time_step"
+              << ",";
+  output_file << "x"
+              << ",";
+  output_file << "y"
+              << ",";
+  output_file << "z"
+              << ",";
+  output_file << "bx"
+              << ",";
+  output_file << "by"
+              << ",";
   output_file << "bz" << std::endl;
 
   return 0;

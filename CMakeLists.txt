@@ -14,8 +14,8 @@ ADD_SUBDIRECTORY(deps/googletest)
 INCLUDE_DIRECTORIES(${gtest_SOURCE_DIR}/include/)
 
 # libwave_estimation.a
-ADD_SUBDIRECTORY(wave_estimation)
-ADD_DEPENDENCIES(wave_estimation wave_utils)
+# ADD_SUBDIRECTORY(wave_estimation)
+# ADD_DEPENDENCIES(wave_estimation wave_utils)
 
 # # libwave_kinematics.a
 # ADD_SUBDIRECTORY(wave_kinematics)
@@ -33,7 +33,7 @@ ADD_CUSTOM_TARGET(
   libwave ALL
   COMMAND
     ${CMAKE_AR} rc libwave.a
-      ${CMAKE_BINARY_DIR}/wave_estimation/libwave_estimation.a
+      # ${CMAKE_BINARY_DIR}/wave_estimation/libwave_estimation.a
       # ${CMAKE_BINARY_DIR}/wave_estimation/libwave_kinematics.a
       # ${CMAKE_BINARY_DIR}/wave_estimation/libwave_optimization.a
       ${CMAKE_BINARY_DIR}/wave_utils/libwave_utils.a
