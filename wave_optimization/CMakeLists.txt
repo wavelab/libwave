@@ -30,7 +30,7 @@ ADD_LIBRARY(
 		src/ceres/bundle_adjustment.cpp
 )
 SET(
-		DEPS
+    TEST_DEPS
 		wave_optimization
 		wave_utils
 		${CERES_LIBRARIES}
@@ -43,5 +43,12 @@ SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
 FILE(COPY tests/data DESTINATION ${PROJECT_BINARY_DIR}/tests)
 FILE(COPY scripts DESTINATION ${PROJECT_BINARY_DIR})
 
-ADD_EXECUTABLE(bundle_adjustment_test tests/ceres/bundle_adjustment_test.cpp)
-TARGET_LINK_LIBRARIES(bundle_adjustment_test ${DEPS})
+ADD_EXECUTABLE(
+  # TARGET
+  wave_optimization_tests
+  # TESTS
+  tests/ceres/bundle_adjustment_test.cpp
+  # TEST RUNNER
+  tests/test_runner.cpp
+)
+TARGET_LINK_LIBRARIES(wave_optimization_tests ${TEST_DEPS})

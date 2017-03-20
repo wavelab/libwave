@@ -118,9 +118,3 @@ TEST(BundleAdjustment, solve) {
            ba.c[1][1] * 0.00001,
            ba.c[1][2] * 0.00001);
 }
-
-int main(int argc, char *argv[]) {
-    google::InitGoogleLogging(argv[0]);
-    testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
-}
