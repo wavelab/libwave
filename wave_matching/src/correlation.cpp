@@ -7,8 +7,8 @@
 namespace wave {
 namespace matching {
 
-DEFINE_string(configuration_directory, "../config", "Where to search for config files");
-DEFINE_string(configuration_basename, "corr_config.lua", "What the config file is named");
+DEFINE_string(dir_corr, "../config", "Where to search for config files");
+DEFINE_string(config_corr, "corr_config.lua", "What the config file is named");
 
 CorrelationMatcher::CorrelationMatcher(float resolution) :
     hybrid_grid(resolution,
@@ -17,9 +17,9 @@ CorrelationMatcher::CorrelationMatcher(float resolution) :
                  Eigen::Quaterniond::Identity()){
 
     auto file_resolver = cartographer::common::make_unique<cartographer::common::ConfigurationFileResolver>(
-            std::vector<string>{FLAGS_configuration_directory});
+            std::vector<string>{FLAGS_dir_corr});
     const string code =
-            file_resolver->GetFileContentOrDie(FLAGS_configuration_basename);
+            file_resolver->GetFileContentOrDie(FLAGS_config_corr);
     this->dict.reset(new cartographer::common::LuaParameterDictionary(code, std::move(file_resolver)));
 
     this->real_time_correlative_scan_matcher.reset(

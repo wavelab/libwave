@@ -7,8 +7,8 @@
 namespace wave {
 namespace matching {
 
-DEFINE_string(configuration_directory, "../config", "Where to search for config files");
-DEFINE_string(configuration_basename, "ceres_config.lua", "What the config file is named");
+DEFINE_string(dir_ceres, "../config", "Where to search for config files");
+DEFINE_string(config_ceres, "ceres_config.lua", "What the config file is named");
 
 CeresMatcher::CeresMatcher(float resolution) :
     hybrid_grid(resolution,
@@ -17,9 +17,9 @@ CeresMatcher::CeresMatcher(float resolution) :
                  Eigen::Quaterniond::Identity()){
 
     auto file_resolver = cartographer::common::make_unique<cartographer::common::ConfigurationFileResolver>(
-            std::vector<string>{FLAGS_configuration_directory});
+            std::vector<string>{FLAGS_dir_ceres});
     const string code =
-            file_resolver->GetFileContentOrDie(FLAGS_configuration_basename);
+            file_resolver->GetFileContentOrDie(FLAGS_config_ceres);
     this->dict.reset(new cartographer::common::LuaParameterDictionary(code, std::move(file_resolver)));
 
     this->ceres_matcher.reset(

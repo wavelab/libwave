@@ -65,7 +65,8 @@ TEST(fast_corr_tests, SmallDisplacement) {
     Eigen::Quaternionf q(mat);
     cartographer::transform::Rigid3f perturb_c(perturb.translation().cast<float>(), q);
     dupe = cartographer::sensor::TransformPointCloud(point_cloud, perturb_c);
-    matcher.setup(point_cloud, dupe);
+    matcher.setRef(point_cloud);
+    matcher.setTarget(dupe);
     //Run Matcher
     EXPECT_TRUE(matcher.match());
     Eigen::Affine3d result = matcher.get_result();
@@ -91,7 +92,8 @@ TEST(fast_corr_tests, LargePointCloud) {
     Eigen::Quaternionf q(mat);
     cartographer::transform::Rigid3f perturb_c(perturb.translation().cast<float>(), q);
     dupe = cartographer::sensor::TransformPointCloud(point_cloud, perturb_c);
-    matcher.setup(point_cloud, dupe);
+    matcher.setRef(point_cloud);
+    matcher.setTarget(dupe);
     //Run Matcher
     EXPECT_TRUE(matcher.match());
     Eigen::Affine3d result = matcher.get_result();

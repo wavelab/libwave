@@ -34,9 +34,10 @@ set(DEPS
     ${PCL_POINT_TYPES_LIBRARIES})
 
 add_library(wave_matching
-        src/correlation.cpp
-        src/fast_correlation.cpp
-        src/ceres_matcher.cpp)
+    STATIC
+    src/correlation.cpp
+    src/fast_correlation.cpp
+    src/ceres_matcher.cpp)
 
 target_link_libraries(wave_matching ${DEPS})
 

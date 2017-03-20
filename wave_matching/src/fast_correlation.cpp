@@ -7,8 +7,8 @@
 namespace wave {
 namespace matching {
 
-DEFINE_string(configuration_directory, "../config", "Where to search for config files");
-DEFINE_string(configuration_basename, "fast_config.lua", "What the config file is named");
+DEFINE_string(dir_fast, "../config", "Where to search for config files");
+DEFINE_string(config_fast, "fast_config.lua", "What the config file is named");
 
 FastCorrelationMatcher::FastCorrelationMatcher(float resolution) :
     hybrid_grid(resolution,
@@ -20,9 +20,9 @@ FastCorrelationMatcher::FastCorrelationMatcher(float resolution) :
 
 void FastCorrelationMatcher::setRef(const CartPointCloud &ref) {
     auto file_resolver = cartographer::common::make_unique<cartographer::common::ConfigurationFileResolver>(
-            std::vector<string>{FLAGS_configuration_directory});
+            std::vector<string>{FLAGS_dir_fast});
     const string code =
-            file_resolver->GetFileContentOrDie(FLAGS_configuration_basename);
+            file_resolver->GetFileContentOrDie(FLAGS_config_fast);
     this->dict.reset(new cartographer::common::LuaParameterDictionary(code, std::move(file_resolver)));
     cartographer::mapping_3d::LaserFanInserter laser_fan(
             cartographer::mapping_3d::CreateLaserFanInserterOptions(this->dict.get()));
