@@ -5,23 +5,23 @@ SRC_PREFIX_PATH="/usr/local/src/"
 
 
 install_dependencies() {
-    sudo apt-get update
-    sudo apt-get install -qq -y cmake \
-                        libgoogle-glog-dev \
-                        libatlas-base-dev \
-                        libeigen3-dev \
-                        libsuitesparse-dev
+    apt-get update -qq
+    apt-get install -qq -y cmake \
+                           libgoogle-glog-dev \
+                           libatlas-base-dev \
+                           libeigen3-dev \
+                           libsuitesparse-dev
 }
 
 install_suitesparse_fix() {
-  sudo add-apt-repository ppa:bzindovic/suitesparse-bugfix-1319687 -y
-  sudo apt-get update
-  sudo apt-get install -qq libsuitesparse-dev
+    add-apt-repository ppa:bzindovic/suitesparse-bugfix-1319687 -y
+    apt-get update -qq
+    apt-get install -qq libsuitesparse-dev
 }
 
-install_ceres_solve() {
+install_ceres_solver() {
     # clone ceres solver
-    sudo mkdir -p $SRC_PREFIX_PATH
+    mkdir -p $SRC_PREFIX_PATH
     cd $SRC_PREFIX_PATH
     git clone https://github.com/ceres-solver/ceres-solver.git
 
@@ -45,6 +45,6 @@ if [ $UBUNTU_VERSION == "16.04" ]; then
 
 elif [ $UBUNTU_VERSION == "14.04" ]; then
     install_dependencies
-    install_suitsparse_fix
+    install_suitesparse_fix
     install_ceres_solver
 fi
