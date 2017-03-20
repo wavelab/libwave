@@ -1,14 +1,16 @@
-#ifndef __WAVE_UTILS_MATH_HPP__
-#define __WAVE_UTILS_MATH_HPP__
+#ifndef WAVE_UTILS_MATH_HPP
+#define WAVE_UTILS_MATH_HPP
 
-#include <Eigen/SVD>
+#include <iostream>
+
+#include <Eigen/Dense>
 #include <Eigen/Geometry>
 
 
 namespace wave {
 
-#ifndef __EIGEN_TYPEDEF__
-#define __EIGEN_TYPEDEF__
+#ifndef EIGEN_TYPEDEF
+#define EIGEN_TYPEDEF
 typedef Eigen::Vector2d Vec2;
 typedef Eigen::Vector3d Vec3;
 typedef Eigen::Vector4d Vec4;
@@ -23,24 +25,15 @@ typedef Eigen::Quaterniond Quaternion;
 #endif
 
 int randi(int ub, int lb);
-int randf(double ub, double lb);
-int sign(double x);
-float deg2rad(float d);
-float rad2deg(float r);
-int fltcmp(float f1, float f2);
-MatX kronecker_product(MatX A, MatX B);
-bool isposdef(MatX A);
-Mat3 rotmat(Vec4 q);
-void load_matrix(std::vector<double> x, int rows, int cols, MatX &y);
-void load_matrix(MatX A, std::vector<double> &x);
-int euler2rot(Vec3 euler, int euler_seq, Mat3 &R);
-int euler2quat(Vec3 euler, int euler_seq, Quaternion &q);
-int quat2euler(Quaternion q, int euler_seq, Vec3 &euler);
-int quat2rot(Quaternion q, Mat3 &R);
-void enu2nwu(Vec3 enu, Vec3 &nwu);
-void cf2nwu(Vec3 cf, Vec3 &nwu);
-void nwu2enu(Vec3 nwu, Vec3 &enu);
-void cf2enu(Vec3 cf, Vec3 &nwu);
+double randf(double ub, double lb);
+int fltcmp(double f1, double f2, double threshold = 0.0001);
+double median(std::vector<double> v);
+double deg2rad(double d);
+double rad2deg(double r);
+void vec2mat(std::vector<double> x, int rows, int cols, MatX &y);
+void mat2vec(MatX A, std::vector<double> &x);
+double wrapTo180(double euler_angle);
+double wrapTo360(double euler_angle);
 
 }  // end of wave namespace
 #endif
