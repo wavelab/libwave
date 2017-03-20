@@ -1,19 +1,26 @@
 #!/bin/bash
-set -e  # exit on first error
 SCRIPT_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 sudo apt-get clean > /dev/null
 sudo apt-get update > /dev/null
 
-INSTALL_ARRAY=(
-    "sudo bash $SCRIPT_PATH/boost_install.bash >install.log"
-    "sudo bash $SCRIPT_PATH/ceres_install.bash >install.log"
-    "sudo bash $SCRIPT_PATH/eigen_install.bash >install.log"
-    "sudo bash $SCRIPT_PATH/yaml_cpp_install.bash >install.log"
-    "sudo bash $SCRIPT_PATH/opencv3_install.bash >install.log"
-)
+install_dependency() {
+    echo "Installing $1 ..."
+    sudo bash $2 &>install.log
 
-for CMD in "${INSTALL_ARRAY[@]}"
-do
-    bash -c "$CMD"
-done
+    if [[ $? -ne 0 ]]; then
+        echo "Failed to install [$1]"
+        echo ""
+        echo "Error Log:"
+        echo "--------------------------------------------------"
+        cat install.log
+        echo ""
+        exit -1
+    fi
+}
+
+install_dependency "Boost" $SCRIPT_PATH/boost_install.bash
+install_dependency "Ceres" $SCRIPT_PATH/ceres_install.bash
+install_dependency "Eigen" $SCRIPT_PATH/eigen_install.bash
+install_dependency "Yaml-CPP" $SCRIPT_PATH/yaml_cpp_install.bash
+install_dependency "OpenCV 3.0" $SCRIPT_PATH/opencv3_install.bash
