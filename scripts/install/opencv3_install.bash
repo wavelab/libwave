@@ -44,7 +44,7 @@ download_opencv() {
     mkdir -p /usr/local/src/opencv
     cd /usr/local/src/opencv
     wget $OPENCV_URL -O opencv-3.0.0-alpha.zip
-    unzip opencv-3.0.0-alpha.zip
+    unzip -qq opencv-3.0.0-alpha.zip
     cd -
 }
 
