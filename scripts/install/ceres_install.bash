@@ -39,6 +39,7 @@ install_ceres_solver() {
 
 
 # MAIN
+echo "Installing Ceres-Solver ..."
 if [ $UBUNTU_VERSION == "16.04" ]; then
     install_dependencies
     install_ceres_solver

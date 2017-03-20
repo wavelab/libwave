@@ -3,10 +3,10 @@ PROJECT(wave)
 
 
 INCLUDE_DIRECTORIES(
-  wave_estimation/include
-  wave_kinematics/include
-  wave_optimization/include
-  wave_utils/include
+    wave_estimation/include
+    wave_kinematics/include
+    wave_optimization/include
+    wave_utils/include
 )
 
 # gtest
@@ -22,12 +22,12 @@ ADD_SUBDIRECTORY(wave_utils)
 
 # libwave.a
 ADD_CUSTOM_TARGET(
-  libwave ALL
-  COMMAND
-    ${CMAKE_AR} rc libwave.a
-      ${CMAKE_BINARY_DIR}/wave_optimization/libwave_optimization.a
-      ${CMAKE_BINARY_DIR}/wave_utils/libwave_utils.a
-  DEPENDS
-    wave_optimization
-    wave_utils
+    libwave ALL
+    COMMAND
+        ${CMAKE_AR} rc libwave.a
+            ${CMAKE_BINARY_DIR}/wave_optimization/libwave_optimization.a
+            ${CMAKE_BINARY_DIR}/wave_utils/libwave_utils.a
+    DEPENDS
+        wave_optimization
+        wave_utils
 )
