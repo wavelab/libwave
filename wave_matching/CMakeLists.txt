@@ -32,7 +32,7 @@ set(DEPS
     ${PCL_POINT_TYPES_LIBRARIES}
     ${PCL_IO_LIBRARIES})
 
-add_library(wave_matching STATIC src/ICP.cpp)
+add_library(wave_matching STATIC src/ICP.cpp src/NDT.cpp)
 target_link_libraries(wave_matching ${DEPS})
 
 # Unit tests
@@ -41,3 +41,9 @@ target_link_libraries(icp_tests
         wave_matching
         ${GTEST_LIBRARIES}
         ${CMAKE_THREAD_LIBS_INIT})
+
+add_executable(ndt_tests tests/ndt_tests.cpp)
+target_link_libraries(ndt_tests
+    wave_matching
+    ${GTEST_LIBRARIES}
+    ${CMAKE_THREAD_LIBS_INIT})
