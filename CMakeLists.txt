@@ -21,9 +21,9 @@ ADD_DEPENDENCIES(wave_estimation wave_utils)
 # ADD_SUBDIRECTORY(wave_kinematics)
 # ADD_DEPENDENCIES(wave_kinematics wave_utils)
 
-# # libwave_optimization.a
-# ADD_SUBDIRECTORY(wave_optimization)
-# ADD_DEPENDENCIES(wave_optimization wave_utils)
+# libwave_optimization.a
+ADD_SUBDIRECTORY(wave_optimization)
+ADD_DEPENDENCIES(wave_optimization wave_utils)
 
 # libwave_utils.a
 ADD_SUBDIRECTORY(wave_utils)

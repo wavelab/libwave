@@ -5,10 +5,14 @@ IF (CMAKE_COMPILER_IS_GNUCXX)
   ADD_DEFINITIONS(-std=gnu++0x)
 ENDIF()
 
+# PACKAGES
+FIND_PACKAGE(Ceres REQUIRED)
+
 # INCLUDES
 INCLUDE_DIRECTORIES(
   /usr/include
   /usr/include/eigen3
+  ${CERES_INCLUDE_DIRS}
   /usr/local/include
   include
 )
@@ -21,14 +25,16 @@ LINK_DIRECTORIES(
 
 
 # LIBRARY
-# ADD_LIBRARY(
-#   wave_optimization
-#   STATIC
-#   src/
-# )
+ADD_LIBRARY(
+  wave_optimization
+  STATIC
+  src/
+)
 SET(
   DEPS
+  wave_optimization
   wave_utils
+  ${CERES_LIBRARIES}
   gtest
   pthread
 )

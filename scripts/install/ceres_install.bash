@@ -39,11 +39,11 @@ install_ceres_solve() {
 
 
 # MAIN
-if [ UBUNTU_VERSION == "16.04" ]; then
+if [ $UBUNTU_VERSION == "16.04" ]; then
     install_dependencies
     install_ceres_solver
 
-elif [ UBUNTU_VERSION == "14.04" ]; then
+elif [ $UBUNTU_VERSION == "14.04" ]; then
     install_dependencies
     install_suitsparse_fix
     install_ceres_solver
