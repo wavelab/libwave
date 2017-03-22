@@ -111,10 +111,14 @@ TEST(BundleAdjustment, solve) {
     ba.solve(pts3d);
     std::cout << wave::mtoc(&t) << " ms" << std::endl << std::endl;
 
-    printf(
-      "q: %f %f %f %f\n", ba.q[1][0], ba.q[1][1], ba.q[1][2], ba.q[1][3]);
-    printf("c: %f %f %f \n",
-           ba.c[1][0] * 0.00001,
-           ba.c[1][1] * 0.00001,
-           ba.c[1][2] * 0.00001);
+    std::cout << "q: (";
+    std::cout << ba.q[1][0] << ", ";
+    std::cout << ba.q[1][1] << ", ";
+    std::cout << ba.q[1][2] << ", ";
+    std::cout << ba.q[1][3] << ")" << std::endl;
+
+    std::cout << "c: (";
+    std::cout << ba.c[1][0] * 0.00001 << ", ";
+    std::cout << ba.c[1][1] * 0.00001 << ", ";
+    std::cout << ba.c[1][2] * 0.00001 << ")" << std::endl;
 }
