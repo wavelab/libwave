@@ -66,7 +66,7 @@ int ConfigParser::checkVector(std::string key,
     // clang-format on
 
     // check number of values
-    if (this->root[key].size() != vector_size) {
+    if (this->root[key].size() != (size_t) vector_size) {
         // clang-format off
         LOG_ERROR("Vector [%s] should have %d values but config has %d!",
           key.c_str(),
@@ -122,6 +122,7 @@ int ConfigParser::loadPrimitive(ConfigParam param) {
         case FLOAT: *param.f = node.as<float>(); break;
         case DOUBLE: *param.d = node.as<double>(); break;
         case STRING: *param.s = node.as<std::string>(); break;
+        default: return -3;
     }
     // clang-format on
 
@@ -142,30 +143,32 @@ int ConfigParser::loadArray(ConfigParam param) {
     this->getYamlNode(param.key, node);
     switch (param.type) {
         case BOOL_ARRAY:
-            for (int i = 0; i < node.size(); i++) {
+            for (size_t i = 0; i < node.size(); i++) {
                 param.b_array->push_back(node[i].as<bool>());
             }
             break;
         case INT_ARRAY:
-            for (int i = 0; i < node.size(); i++) {
+            for (size_t i = 0; i < node.size(); i++) {
                 param.i_array->push_back(node[i].as<int>());
             }
             break;
         case FLOAT_ARRAY:
-            for (int i = 0; i < node.size(); i++) {
+            for (size_t i = 0; i < node.size(); i++) {
                 param.f_array->push_back(node[i].as<float>());
             }
             break;
         case DOUBLE_ARRAY:
-            for (int i = 0; i < node.size(); i++) {
+            for (size_t i = 0; i < node.size(); i++) {
                 param.d_array->push_back(node[i].as<double>());
             }
             break;
         case STRING_ARRAY:
-            for (int i = 0; i < node.size(); i++) {
+            for (size_t i = 0; i < node.size(); i++) {
                 param.s_array->push_back(node[i].as<std::string>());
             }
             break;
+        default:
+            return -3;
     }
 
     return 0;
@@ -208,10 +211,12 @@ int ConfigParser::loadVector(ConfigParam param) {
             break;
         case VECX:
             vecx = VecX((int) node.size());
-            for (int i = 0; i < node.size(); i++) {
+            for (size_t i = 0; i < node.size(); i++) {
                 vecx(i) = node[i].as<double>();
             }
             break;
+        default:
+            return -3;
     }
 
     return 0;
@@ -227,7 +232,7 @@ int ConfigParser::loadMatrix(ConfigParam param) {
     // pre-check
     retval = this->checkMatrix(param.key, param.optional);
     if (retval != 0) {
-        return retval;
+        return -2;
     }
 
     // setup
@@ -290,6 +295,8 @@ int ConfigParser::loadMatrix(ConfigParam param) {
                 }
             }
             break;
+        default:
+            return -3;
     }
 
     return 0;
@@ -307,7 +314,7 @@ int ConfigParser::load(std::string config_file) {
     // load and parse file
     this->root = YAML::LoadFile(config_file);
 
-    for (int i = 0; i < this->params.size(); i++) {
+    for (size_t i = 0; i < this->params.size(); i++) {
         switch (this->params[i].type) {
             // PRIMITIVE
             case BOOL:
@@ -340,6 +347,8 @@ int ConfigParser::load(std::string config_file) {
             case CVMAT:
                 retval = this->loadMatrix(this->params[i]);
                 break;
+            default:
+                return -1;
         }
 
         if (retval != 0) {
