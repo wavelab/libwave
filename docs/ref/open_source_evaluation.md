@@ -178,15 +178,15 @@ Licence: ?
 
 Laser SLAM is a package that was initially developed for the NASA Sample return challenge, where it was used to perform 3D localization using our 32 beam Velodyne:
 
-[Video of NASA Lidar SLAM](https://www.youtube.com/watch?v=PUmX5g_AHIs)
+[![Video of NASA Lidar SLAM](images/NASA_map.jpg)](https://www.youtube.com/watch?v=PUmX5g_AHIs)
 
 Since then we have also used it for planetary mapping:
 
-[Video of Mars Yard SLAM](https://www.youtube.com/watch?v=LVV88RZq0YQ)
+[![Video of Mars Yard SLAM](images/MarsYard_map.jpg)](https://www.youtube.com/watch?v=LVV88RZq0YQ)
 
 More recently, we have used the package to create off-line localization maps for self driving:
 
-[Video of WRESTRC test track SLAM](https://www.youtube.com/watch?v=1-e2eD8y4E8)
+[![Video of WRESTRC test track SLAM](images/WRESTRC_map.jpg)](https://www.youtube.com/watch?v=1-e2eD8y4E8)
 
 ### Technical Summary
 The Laser SLAM code is split into two processes: A scan server which loads laser scans from a source (bag file, csv, etc), and feeds them to the second part, the mapper, which performs scan registration and graph optimization to construct the map.  The scan server is fairly simple, thus our focus will be on the operation of the mapper.  Note that the package does not yet perform motion compensation as part of the optimization pipeline at this time, so motion compensation must be performed prior to sending the scans to the mapper.
