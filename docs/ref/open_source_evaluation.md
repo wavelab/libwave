@@ -1,18 +1,18 @@
-##Math
+## Math
 
-##Vision
+## Vision
 
-##Calibration
+## Calibration
 
 ### [Kalibr](https://github.com/ethz-asl/kalibr/wiki)
 
 License: BSD
 
-####Validator: Arun
+#### Validator: Arun
 
 Work in progress, see: [[Kalibr Test Log]]
 
-####Steve's Comments:  Kalibr is actually three separate calibration packages, and new features are still being added 
+#### Steve's Comments:  Kalibr is actually three separate calibration packages, and new features are still being added
 
 * Camera-IMU calibration, the original and what Kalibr is known for, with continuous time batch estimation that calibrates spatial (extrinsic) and temporal parameters.
 * Multi-camera calibration, requiring overlap between pairs of cameras but operating in pre-mapped outdoor environments without targets
@@ -21,7 +21,7 @@ Work in progress, see: [[Kalibr Test Log]]
 
 ##### Camera-IMU calibration
 
-The Camera-IMU calibration takes Furgale's work from UTIAS with Tim Barfoot on Continuous time SLAM and applies it to the vision IMU calibration process.  The advantage of working in the continuous domain is that it is possible to shift the alignment of measurements during the calibration process, and therefore simultaneously calibrate both the extrinsic transformation between camera and IMU, and the time offset between measurements.  The checkerboard is left static and the camera-IMU pair are moved with large, aggressive motions near the target, exciting the accelerometers and gyroscopes in the IMU. 
+The Camera-IMU calibration takes Furgale's work from UTIAS with Tim Barfoot on Continuous time SLAM and applies it to the vision IMU calibration process.  The advantage of working in the continuous domain is that it is possible to shift the alignment of measurements during the calibration process, and therefore simultaneously calibrate both the extrinsic transformation between camera and IMU, and the time offset between measurements.  The checkerboard is left static and the camera-IMU pair are moved with large, aggressive motions near the target, exciting the accelerometers and gyroscopes in the IMU.
 
 The calibration process involves estimating the following quantities
 * Static gravity vector
@@ -30,13 +30,13 @@ The calibration process involves estimating the following quantities
 * Dynamic Pose trajectory of IMU
 * Dynamic gyroscope and accelerometer biases
 
-The pose states are defined as parametrized b-splines, for which velocity and acceleration equations can be found through differentiation.  The biases are modeled as a random walk, i.e. driven by Gaussian noise. The optimization is performed over small batches of measurements, and uses weighted quadratic error terms on the innovation for visual feature measurements, accelerometer and gyroscope measurements.  Since the target size is known, the map points are fixed in the environment, and related to the IMU frame through the gravity vector estimate.  This ensures scale is resolved on the image measurements. 
+The pose states are defined as parametrized b-splines, for which velocity and acceleration equations can be found through differentiation.  The biases are modeled as a random walk, i.e. driven by Gaussian noise. The optimization is performed over small batches of measurements, and uses weighted quadratic error terms on the innovation for visual feature measurements, accelerometer and gyroscope measurements.  Since the target size is known, the map points are fixed in the environment, and related to the IMU frame through the gravity vector estimate.  This ensures scale is resolved on the image measurements.
 
 This is a very nice approach, in that it simultaneously resolves temporal and spatial calibration.  It suffers from a discontinuity at knot points on the splines (the points that parametrize the spline curvature). If a measurement slips from one side of a knot point to another, it can lead to instability in the optimization, and numerical inaccuracy.  2016 work extends kalibr to multi-IMU.
 
 
 
-##### Multi-camera calibration 
+##### Multi-camera calibration
 
 In addition to the continuous time batch estimation process, kalibr also contains a process in which it evaluates the data collected and the motions observed, and computes a numerical observability of the parameters to ensure parameters are not updated based on noise alone.  Degenerate motions are possible, which do not sufficiently excite the modes of the calibration optimization and lead to parameters being updated based on noise in the measurements, even though they are really unobservable in the motions captured.  The formulation for this aspect of the calibration toolbox does not match the continuous-time batch optimization, it appears to be discrete with known temporal offset.  The requirement for overlap between cameras resolves scale for them without the IMU.
 
@@ -60,7 +60,7 @@ Unified projection model (C. Mei, and P. Rives, Single View Point Omnidirectiona
 
 2. They then run  monocular VO with sliding window bundle adjustment for each camera, from driving around and collecting synchronized images and odometry measurements.  The trajectories are slow and curved, and each camera ultimately generates its own scale and transform to the odometry measurement point.
 
-3. They then triangulate feature correspondences in individual camera maps and in 3D using the monocular VO solution, and perform bundle adjustment to improve each map.  The actual poses are held fixed, and only the feature points and camera odometry transformations are optimized. 
+3. They then triangulate feature correspondences in individual camera maps and in 3D using the monocular VO solution, and perform bundle adjustment to improve each map.  The actual poses are held fixed, and only the feature points and camera odometry transformations are optimized.
 
 4. Then they go for full-scale map fusion and look for feature correspondences between cameras in the separate maps.  They have no real-time constraint though, so they rectify image pairs to a common viewpoint (not just the patches around features as in MCPTAM), and search for all corresponding points between maps painstakingly.  Loop closures are also detected using a vocabulary tree (dbow2) over all images from all cameras allowing further correspondences.  Finally,  they run another bundle adjustment similar to that described earlier, but which also optimizes all intrinsic camera parameters and odometry poses, to obtain a set of intrinsic parameters for each camera, a set of camera-odometry transforms, and a globally- consistent sparse map of landmarks. I'm amazed this is observable, but likely only because of the extensive initialization and the quality of those early estimates for all the parameters.
 
@@ -69,7 +69,7 @@ The end result takes 2+ hours to run for their demo sequence in a highly structu
 
 The code relies on a lot of common elements, may be worth a look. BLAS, Boost, Cuda, Eigen3, OpenCV, SuiteSparse, Ceres, (glog, OpenMP too).   Looks like pure OpenCV feature detection, description and matching. Reminded me of Jason's code.  Nicely decomposed VO though, temporal, sliding window, could be a helpful readthrough before we code up our own. Finished in 2014, it's been maintained and should install on 16.05 kinetic. Recent commits.
 
-##SLAM
+## SLAM
 
 ### [ORB SLAM](https://github.com/raulmur/ORB_SLAM2)
 
@@ -79,7 +79,7 @@ Licence: GPLv3
 
 [Technical Summary slides](https://github.com/wavelab/wavelab.github.io/blob/master/documents/slam-core/ORBSLAM%20summary.pdf)
 
-##Visual Odometry
+## Visual Odometry
 
 
 
@@ -90,17 +90,17 @@ Validator: Arun, Stan
 Licence: GPLv3
 Ranking on documentation, code quality, implementation, etc.
 
-####Arun's Comments:
+#### Arun's Comments:
  Tried in room with limited lighting and rolling shutter camera.  Initial tests show poor results, as initialization failed readily, and tracking was lost with only modest angular rate. Additional testing with global shutter camera and various environmental conditions required.
 
-####Stan's Comments:
-I tried it a few weeks ago with a Ximea camera and a 120 FOV lens. Calibrated it using PTAM's ATAN calibration tool as they recommend in the documentation. SVO seems to work with moving forward and backward motions only. Any rotation lead to it it failing. Despite hours of effort at the time, I never once saw the edge lets they add to the scene in the youtube videos and discussed in the paper. I suspect it is related to some of the parameters you can set when launching program, but there are over 30 of those. 
+#### Stan's Comments:
+I tried it a few weeks ago with a Ximea camera and a 120 FOV lens. Calibrated it using PTAM's ATAN calibration tool as they recommend in the documentation. SVO seems to work with moving forward and backward motions only. Any rotation lead to it it failing. Despite hours of effort at the time, I never once saw the edge lets they add to the scene in the youtube videos and discussed in the paper. I suspect it is related to some of the parameters you can set when launching program, but there are over 30 of those.
 
-Installation: Bit of a pain. Most ETH packages I find more difficult then required to install. Usually require extra packages and often you need to alter the CMAKE files as they do not test them on other machines. If you have errors related to Eigen, just remove the line find_package(Eigen) as Eigen is just a header library and you only need to include that directory. 
+Installation: Bit of a pain. Most ETH packages I find more difficult then required to install. Usually require extra packages and often you need to alter the CMAKE files as they do not test them on other machines. If you have errors related to Eigen, just remove the line find_package(Eigen) as Eigen is just a header library and you only need to include that directory.
 
 On a side note, it appears that you can add imu information if you provide a calibration file kalibre. Perhaps we should look at making our own bags? If provided a camera and an IMU, I can attach it to my quadrotor and collect a few aerial data sets.   
 
-####Chris's comments
+#### Chris's comments
 From a code perspective there are some external components worth mentioning:
 
 -  `vikit`: vision utility library containing generic C++ classes for pinhole camera model, atan camera, omni camera model, calculations for homography. Some of the code are GPL code from PTAM, som from DVO (Dense Visual Slam from TUM university), but it has some interesting SSE2 SSE3 optimizations for calculating Shi-Tomasi score and others worth looking at.
@@ -139,16 +139,16 @@ Licence: BSD (just not labelled as such)
 
 Ranking on documentation, code quality, implementation, etc.
 
-The code looks promising based on the videos / paper. However, installing is tedious, again you must follow a block of instructions and add extra packages on the way that are not directly stated in the wiki. (This is why install scripts + travis are great). Once you have done that, launch the code is straight forward. 
+The code looks promising based on the videos / paper. However, installing is tedious, again you must follow a block of instructions and add extra packages on the way that are not directly stated in the wiki. (This is why install scripts + travis are great). Once you have done that, launch the code is straight forward.
 
-###Running on bags: 
-When run on the provided bags the code starts to be a disappointment. Even on the bags, the code clearly does not work in real time with the provided parameters from the author. So either the parameters are wrong, or it is post processed in some way. I tried several bags and had the same issue. The solver took to long on each frame to provide a reliable estimate and it clearly did not work in real time. Skimming the paper there was no mention of frame rate, or recommended image size, or the computer that was used to test the code / create the video. 
+### Running on bags:
+When run on the provided bags the code starts to be a disappointment. Even on the bags, the code clearly does not work in real time with the provided parameters from the author. So either the parameters are wrong, or it is post processed in some way. I tried several bags and had the same issue. The solver took to long on each frame to provide a reliable estimate and it clearly did not work in real time. Skimming the paper there was no mention of frame rate, or recommended image size, or the computer that was used to test the code / create the video.
 
-###Running live:
-I also attempted to run the code live using a point grey chameleon 3 with a 120 fov lens and a MPU6500 imu connected through the gimbal. I also had similar findings to the bag data. Further, feature tuning is likely required to get better results as I feel that this package was tuned for aerial vehicles and not indoor environments. 
+### Running live:
+I also attempted to run the code live using a point grey chameleon 3 with a 120 fov lens and a MPU6500 imu connected through the gimbal. I also had similar findings to the bag data. Further, feature tuning is likely required to get better results as I feel that this package was tuned for aerial vehicles and not indoor environments.
 
 
-##[LIBVISO2](http://www.cvlibs.net/software/libviso/)
+## [LIBVISO2](http://www.cvlibs.net/software/libviso/)
 See [LibVISO2 Summary](LibVISO2-summary)
 
 ## Other visual odometry libraries
@@ -159,7 +159,7 @@ See [LibVISO2 Summary](LibVISO2-summary)
 
 #### Non-GPL
 * [bvpo](https://github.com/halismai/bpvo) Uses eigen, OpenCV, C++11. LGPL. Uses raw intensity for real-time speed, or [bit-planes](https://arxiv.org/abs/1604.00990) for low light conditions. Worth looking into?
-* [mono-vo](https://github.com/avisingh599/mono-vo) MIT license. The one in [Avi Singh's blog post](http://avisingh599.github.io/vision/monocular-vo/). "Uses Nister's Five Point Algorithm for Essential Matrix estimation, and FAST features, with a KLT tracker." 
+* [mono-vo](https://github.com/avisingh599/mono-vo) MIT license. The one in [Avi Singh's blog post](http://avisingh599.github.io/vision/monocular-vo/). "Uses Nister's Five Point Algorithm for Essential Matrix estimation, and FAST features, with a KLT tracker."
 * [Photoconsistency VO](https://github.com/mylxiaoyi/photoconsistency-visual-odometry). BSD. "Photoconsistency error." 5 years old.
 
 #### GPL
@@ -178,15 +178,15 @@ Licence: ?
 
 Laser SLAM is a package that was initially developed for the NASA Sample return challenge, where it was used to perform 3D localization using our 32 beam Velodyne:
 
-[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/PUmX5g_AHIs/0.jpg)](https://www.youtube.com/watch?v=PUmX5g_AHIs)
+[Video of NASA Lidar SLAM](https://www.youtube.com/watch?v=PUmX5g_AHIs)
 
 Since then we have also used it for planetary mapping:
 
-[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/LVV88RZq0YQ/0.jpg)](https://www.youtube.com/watch?v=LVV88RZq0YQ)
+[Video of Mars Yard SLAM](https://www.youtube.com/watch?v=LVV88RZq0YQ)
 
 More recently, we have used the package to create off-line localization maps for self driving:
 
-[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/1-e2eD8y4E8/0.jpg)](https://www.youtube.com/watch?v=1-e2eD8y4E8)
+[Video of WRESTRC test track SLAM](https://www.youtube.com/watch?v=1-e2eD8y4E8)
 
 ### Technical Summary
 The Laser SLAM code is split into two processes: A scan server which loads laser scans from a source (bag file, csv, etc), and feeds them to the second part, the mapper, which performs scan registration and graph optimization to construct the map.  The scan server is fairly simple, thus our focus will be on the operation of the mapper.  Note that the package does not yet perform motion compensation as part of the optimization pipeline at this time, so motion compensation must be performed prior to sending the scans to the mapper.
@@ -194,7 +194,7 @@ The Laser SLAM code is split into two processes: A scan server which loads laser
 At a high level, the mapper works by inserting each scan as a key-frame into a pose graph optimization.  Residuals between key-frames associated with overlapping scans are computed using ICP, which are then fed to a nonlinear least squares optimizer. The residuals in this case are simply the error between nodes and their relative pose estimates, similar to an odometry residual.  At each insertion, the pose graph is optimized.  By aggregating the scans from their optimized poses, the high quality, point-cloud based map is formed.  
 
 Upon receiving a scan and its initialization pose, in the local map frame, from the server, the mapper performs the following steps:
-*  Preprocessing is performed on the scan, which at this time is Gaussian Process based ground segmentation.  See [here](https://uwspace.uwaterloo.ca/bitstream/handle/10012/7431/Das_Arun_2013.pdf) for more details on how the ground segmentation is performed. 
+*  Preprocessing is performed on the scan, which at this time is Gaussian Process based ground segmentation.  See [here](https://uwspace.uwaterloo.ca/bitstream/handle/10012/7431/Das_Arun_2013.pdf) for more details on how the ground segmentation is performed.
 * The scan is transformed into the local map frame using the initialization pose.
 * From the initialization pose, the K nearest neighbor key-frames are found, then:
 * (1) Using an initial voxel based down-sampling, ICP is performed between the down sampled scans of the K nearest neighbours key-frames, generating residuals (graph edges) between these estimation states.  The associated information matrix for each residual is computed using the Lu and Milios (LUM) [method](http://kos.informatik.uni-osnabrueck.de/download/ras2007.pdf)
