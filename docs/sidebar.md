@@ -14,3 +14,4 @@
 - [Fundamentals](#ref/fundamentals)
 - [Open Source Package Evaluation](#ref/open_source_evaluation)
 - [Reading Course](#ref/2017_reading_course)
+- [Ceres Tutorial](#ref/optimizers/ceres_tutorial)
