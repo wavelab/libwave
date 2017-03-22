@@ -67,6 +67,7 @@ install_opencv() {
 }
 
 # MAIN
+echo "Installing OpenCV 3.0 ..."
 install_dependencies
 download_opencv
 install_opencv
