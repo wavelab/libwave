@@ -172,21 +172,21 @@ We can implement the cost functor for the above cost function as:
 
     struct ExponentialResidual {
       ExponentialResidual(double x, double y)
-          : x_(x), y_(y) {}
+          : x(x), y(y) {}
 
       template <typename T>
       bool operator()(const T* const m, const T* const c, T* residual) const {
-        residual[0] = T(y_) - exp(m[0] * T(x_) + c[0]);
+        residual[0] = T(this->y) - exp(m[0] * T(this->x) + c[0]);
         return true;
       }
 
     private:
       // Observations for a sample.
-      const double x_;
-      const double y_;
+      const double x;
+      const double y;
     };
 
-The key-point to note is we are using the private `x_` and `y_` member variables to store an observation. Assuming the observations are in a `2n` sized array called `data` the problem construction is a simple matter of creating a `ceres::CostFunction` for every observation.
+The key-point to note is we are using the private `x` and `y` member variables to store an observation. Assuming the observations are in a `2n` sized array called `data` the problem construction is a simple matter of creating a `ceres::CostFunction` for every observation.
 
     double m = 0.0;
     double c = 0.0;
