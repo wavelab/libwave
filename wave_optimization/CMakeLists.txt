@@ -27,7 +27,6 @@ LINK_DIRECTORIES(
 ADD_LIBRARY(
 		wave_optimization
 		STATIC
-		src/ceres/bundle_adjustment.cpp
 		src/ceres/ceres_examples.cpp
 )
 SET(
@@ -48,7 +47,6 @@ ADD_EXECUTABLE(
   # TARGET
   wave_optimization_tests
   # TESTS
-  tests/ceres/bundle_adjustment_test.cpp
   tests/ceres/ceres_examples_test.cpp
   # TEST RUNNER
   tests/test_runner.cpp
