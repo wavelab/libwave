@@ -10,4 +10,4 @@ sudo bash $SCRIPT_PATH/boost_install.bash
 sudo bash $SCRIPT_PATH/eigen_install.bash
 sudo bash $SCRIPT_PATH/yaml_cpp_install.bash
 sudo bash $SCRIPT_PATH/kindr_install.bash
-sudo bash $SCRIPT_PATH/opencv3_install.bash
+sudo bash $SCRIPT_PATH/opencv2_install.bash

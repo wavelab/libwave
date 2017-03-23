@@ -91,7 +91,7 @@ TEST(Utils_config_ConfigParser, addParam) {
     parser.addParam<wave::MatX>("matrix", &matx);
     parser.addParam<cv::Mat>("matrix", &cvmat);
 
-    ASSERT_EQ(19, parser.params.size());
+    ASSERT_EQ(19, (int) parser.params.size());
     ASSERT_EQ(wave::BOOL, parser.params[0].type);
     ASSERT_EQ("bool", parser.params[0].key);
     ASSERT_TRUE(parser.params[0].b != NULL);
