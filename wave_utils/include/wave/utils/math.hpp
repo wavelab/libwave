@@ -34,6 +34,7 @@ void vec2mat(std::vector<double> x, int rows, int cols, MatX &y);
 void mat2vec(MatX A, std::vector<double> &x);
 double wrapTo180(double euler_angle);
 double wrapTo360(double euler_angle);
+Mat3 skew_symmetric_matrix(Vec3 a);
 
 }  // end of wave namespace
 #endif
