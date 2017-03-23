@@ -13,7 +13,7 @@ TEST(Utils_filesystem, path_split) {
     std::vector<std::string> splits;
 
     splits = path_split("/a/b/c.yaml");
-    ASSERT_EQ(3, splits.size());
+    ASSERT_EQ(3, (int) splits.size());
     ASSERT_EQ("a", splits[0]);
     ASSERT_EQ("b", splits[1]);
     ASSERT_EQ("c.yaml", splits[2]);
