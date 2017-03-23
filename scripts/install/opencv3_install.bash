@@ -63,7 +63,10 @@ install_opencv() {
         -D WITH_OPENGL=ON ..
     make -j 4
 
-    sudo make install
+    # DO NOT ACTUALLY INSTALL THIS WILL CAUSE PROBLEMS WITH
+    # BUILDS THAT DEPEND ON OPENCV 2
+    # THE REASON IS /usr/local/lib has precedence over /usr/lib
+    # sudo make install
 }
 
 # MAIN

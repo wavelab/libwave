@@ -41,7 +41,7 @@ int csvcols(std::string file_path) {
 
     // obtain number of commas
     std::getline(infile, line);
-    for (int i = 0; i < line.length(); i++) {
+    for (size_t i = 0; i < line.length(); i++) {
         if (line[i] == ',') {
             found_separator = true;
             nb_elements++;
