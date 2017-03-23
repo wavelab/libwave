@@ -5,6 +5,9 @@ IF (CMAKE_COMPILER_IS_GNUCXX)
   ADD_DEFINITIONS(-std=gnu++0x)
 ENDIF()
 
+# EXTERNAL PACKAGES
+find_package(kindr) 
+
 # INCLUDES
 INCLUDE_DIRECTORIES(
   /usr/include
@@ -20,14 +23,15 @@ LINK_DIRECTORIES(
 )
 
 
-# LIBRARY
-# ADD_LIBRARY(
-#   wave_kinematics
-#   STATIC
-#   src/
-# )
+#LIBRARY
+ADD_LIBRARY(
+   wave_kinematics
+   STATIC
+   src/rotation.cpp
+ )
 SET(
-  DEPS
+  TEST_DEPS
+  wave_kinematics
   wave_utils
   gtest
   pthread
@@ -36,7 +40,6 @@ SET(
 
 # UNIT TESTS
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
-FILE(COPY tests/data DESTINATION ${PROJECT_BINARY_DIR}/tests)
 
-# ADD_EXECUTABLE(data_test tests/data_test.cpp)
-# TARGET_LINK_LIBRARIES(data_test ${DEPS})
+ADD_EXECUTABLE(rotation_tests tests/rotation_test.cpp)
+TARGET_LINK_LIBRARIES(rotation_tests ${TEST_DEPS})
