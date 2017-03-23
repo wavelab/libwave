@@ -66,12 +66,12 @@ int ConfigParser::checkVector(std::string key,
     // clang-format on
 
     // check number of values
-    if (this->root[key].size() != (size_t) vector_size) {
+    if (this->root[key].size() != static_cast<size_t>(vector_size)) {
         // clang-format off
         LOG_ERROR("Vector [%s] should have %d values but config has %d!",
           key.c_str(),
           vector_size,
-          (int) this->root[key].size()
+          static_cast<int>(this->root[key].size())
         );
         // clang-format on
         return -3;
@@ -143,28 +143,28 @@ int ConfigParser::loadArray(ConfigParam param) {
     this->getYamlNode(param.key, node);
     switch (param.type) {
         case BOOL_ARRAY:
-            for (size_t i = 0; i < node.size(); i++) {
-                param.b_array->push_back(node[i].as<bool>());
+            for (auto n : node) {
+                param.b_array->push_back(n.as<bool>());
             }
             break;
         case INT_ARRAY:
-            for (size_t i = 0; i < node.size(); i++) {
-                param.i_array->push_back(node[i].as<int>());
+            for (auto n : node) {
+                param.i_array->push_back(n.as<int>());
             }
             break;
         case FLOAT_ARRAY:
-            for (size_t i = 0; i < node.size(); i++) {
-                param.f_array->push_back(node[i].as<float>());
+            for (auto n : node) {
+                param.f_array->push_back(n.as<float>());
             }
             break;
         case DOUBLE_ARRAY:
-            for (size_t i = 0; i < node.size(); i++) {
-                param.d_array->push_back(node[i].as<double>());
+            for (auto n : node) {
+                param.d_array->push_back(n.as<double>());
             }
             break;
         case STRING_ARRAY:
-            for (size_t i = 0; i < node.size(); i++) {
-                param.s_array->push_back(node[i].as<std::string>());
+            for (auto n : node) {
+                param.s_array->push_back(n.as<std::string>());
             }
             break;
         default:
