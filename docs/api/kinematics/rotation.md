@@ -1,6 +1,6 @@
 # wave.kinematics.rotation
 
-Our rotation library component interally uses the Kindr library's rotation class to perform elementary operations. For more information on the Kindr library rotations, see their documentation [here](http://docs.leggedrobotics.com/kindr/page_rotations.html).
+Our rotation library component internally uses the Kindr library's rotation class to perform elementary operations. For more information on the Kindr library rotations, see their documentation [here](http://docs.leggedrobotics.com/kindr/page_rotations.html).
 
 **Class member variables**
 
@@ -29,7 +29,7 @@ Creates a rotation object using a X-Y-Z Euler rotation order, such that
 \[
 R = R_z R_y R_x,
 \]
-where $R_x$,$R_y$, and $R_z$, are rotation matricies constructed using the rotation about $x$, $y$, and $z$, respectivley. 
+where $R_x$,$R_y$, and $R_z$, are rotation matrices constructed using the rotation about $x$, $y$, and $z$, respectively. 
 
 ```
 Input:
