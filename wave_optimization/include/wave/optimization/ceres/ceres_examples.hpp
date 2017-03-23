@@ -5,8 +5,6 @@
 
 
 namespace wave {
-namespace ceres {
-namespace examples {
 
 struct AutoDiffCostFunctor {
     template <typename T>
@@ -24,7 +22,7 @@ struct NumericalDiffCostFunctor {
     }
 };
 
-class AnalyticalCostFunction : public ::ceres::SizedCostFunction<1, 1> {
+class AnalyticalCostFunction : public ceres::SizedCostFunction<1, 1> {
 public:
     virtual ~AnalyticalCostFunction() {}
     virtual bool Evaluate(double const *const *parameters,
@@ -45,7 +43,5 @@ void runAutoDiffExample(void);
 void runNumericalDiffExample(void);
 void runAnalyticalDiffExample(void);
 
-}  // end of examples namespace
-}  // end of ceres namespace
 }  // end of wave namespace
 #endif

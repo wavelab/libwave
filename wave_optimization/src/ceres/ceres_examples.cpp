@@ -1,8 +1,6 @@
 #include "wave/optimization/ceres/ceres_examples.hpp"
 
 namespace wave {
-namespace ceres {
-namespace examples {
 
 void runAutoDiffExample(void) {
     // The variable to solve for with its initial value.
@@ -10,20 +8,20 @@ void runAutoDiffExample(void) {
     double initial_x = x;
 
     // Build the problem.
-    ::ceres::Problem problem;
+    ceres::Problem problem;
 
     // Set up cost function (also known as residual)
-    ::ceres::CostFunction *cost_function =
-      new ::ceres::AutoDiffCostFunction<AutoDiffCostFunctor, 1, 1>(
+    ceres::CostFunction *cost_function =
+      new ceres::AutoDiffCostFunction<AutoDiffCostFunctor, 1, 1>(
         new AutoDiffCostFunctor);
     problem.AddResidualBlock(cost_function, NULL, &x);
 
     // Run the solver!
-    ::ceres::Solver::Options options;
-    options.linear_solver_type = ::ceres::DENSE_QR;
+    ceres::Solver::Options options;
+    options.linear_solver_type = ceres::DENSE_QR;
     options.minimizer_progress_to_stdout = true;
-    ::ceres::Solver::Summary summary;
-    ::ceres::Solve(options, &problem, &summary);
+    ceres::Solver::Summary summary;
+    ceres::Solve(options, &problem, &summary);
 
     std::cout << summary.BriefReport() << "\n";
     std::cout << "x : " << initial_x << " -> " << x << "\n";
@@ -35,23 +33,21 @@ void runNumericalDiffExample(void) {
     double initial_x = x;
 
     // Build the problem.
-    ::ceres::Problem problem;
+    ceres::Problem problem;
 
     // Set up cost function (also known as residual)
-    ::ceres::CostFunction *cost_function =
-      new ::ceres::NumericDiffCostFunction<NumericalDiffCostFunctor,
-                                           ::ceres::CENTRAL,
-                                           1,
-                                           1>(new NumericalDiffCostFunctor);
+    ceres::CostFunction *cost_function = new ceres::
+      NumericDiffCostFunction<NumericalDiffCostFunctor, ceres::CENTRAL, 1, 1>(
+        new NumericalDiffCostFunctor);
     problem.AddResidualBlock(cost_function, NULL, &x);
 
     // Run the solver!
-    ::ceres::Solver::Options options;
-    ::ceres::Solver::Summary summary;
+    ceres::Solver::Options options;
+    ceres::Solver::Summary summary;
 
-    options.linear_solver_type = ::ceres::DENSE_QR;
+    options.linear_solver_type = ceres::DENSE_QR;
     options.minimizer_progress_to_stdout = true;
-    ::ceres::Solve(options, &problem, &summary);
+    ceres::Solve(options, &problem, &summary);
 
     std::cout << summary.BriefReport() << "\n";
     std::cout << "x : " << initial_x << " -> " << x << "\n";
@@ -64,23 +60,21 @@ void runAnalyticalDiffExample(void) {
     const double initial_x = x;
 
     // Build the problem.
-    ::ceres::Problem problem;
+    ceres::Problem problem;
 
     // Set up cost function (also known as residual).
-    ::ceres::CostFunction *cost_function = new AnalyticalCostFunction;
+    ceres::CostFunction *cost_function = new AnalyticalCostFunction;
     problem.AddResidualBlock(cost_function, NULL, &x);
 
     // Run the solver!
-    ::ceres::Solver::Options options;
-    ::ceres::Solver::Summary summary;
+    ceres::Solver::Options options;
+    ceres::Solver::Summary summary;
 
     options.minimizer_progress_to_stdout = true;
-    ::ceres::Solve(options, &problem, &summary);
+    ceres::Solve(options, &problem, &summary);
 
     std::cout << summary.BriefReport() << "\n";
     std::cout << "x : " << initial_x << " -> " << x << "\n";
 }
 
-}  // end of examples namespace
-}  // end of ceres namespace
 }  // end of wave namespace
