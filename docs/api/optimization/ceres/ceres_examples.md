@@ -1,6 +1,6 @@
 # wave.ceres.ceres_examples
 
-This module contains code examples on how to use [Ceres-Solver][ceres-solver], in particular it contains exampls for how to implement a:
+This module contains code examples on how to use [Ceres-Solver][ceres-solver], in particular it contains examples for how to implement a:
 
 - Cost function with automatic differentiation
 - Cost function with numerical differentiation
@@ -27,7 +27,7 @@ For more information on how to implement your own cost function see this [tutori
         }
     };
 
-    class AnalyticalCostFunction : public ::ceres::SizedCostFunction<1, 1> {
+    class AnalyticalCostFunction : public ceres::SizedCostFunction<1, 1> {
     public:
         virtual ~AnalyticalCostFunction() {}
         virtual bool Evaluate(double const *const *parameters,

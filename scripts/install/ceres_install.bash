@@ -32,7 +32,7 @@ install_ceres_solver() {
     cmake ..
 
     # compile and install
-    make -j3
+    make
     make test
     make install
 }

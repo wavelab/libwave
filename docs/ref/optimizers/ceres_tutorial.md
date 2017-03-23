@@ -9,7 +9,7 @@ As with all nonlinear-optimizers they can be difficult to master, in the followi
 
 
 ## How to define a cost function?
-Ceres an solve bounds constrained robustified non-linear least squares problems of the form:
+Ceres can solve bounds constrained robustified non-linear least squares problems of the form:
 
 \begin{equation}
   \min_{x} \dfrac{1}{2} \sum_{i} \rho_{i} (|| f_{i} (x_{i}, \dots, x_{i_{k}}) ||^{2})
@@ -42,7 +42,8 @@ is to write a functor that will evaluate this function:
 
 Keypoints to the example code:
 
-- In Ceres a cost function has to be a functor (function objects: a plain old C++ object plus the `()` operator), this is essentially so that the ceres solver can call your cost function with the overridded `()` operator you implemented, this is where you will add your custom cost function, for more information on functors see [this][stack_overflow-functors].
+- In Ceres a cost function has to be a functor (function objects: a plain old C++ object plus the `()` operator), this is essentially so that the ceres solver can call your cost function with the overridded `()` operator you implemented. This is where you will add your custom cost function, for more information on functors see [this][stack_overflow-functors].
+- It is **important to note in Ceres we only define the residual** when implementing the cost functor, because the cost function always is constructed the same way ($\text{cost} = \sum \text{residuals}^{2}$).
 - The output of your cost function is written to `residual[0]`, in all cases `residual` is always an array of type `T`, further in this example we are only writing to `residual[0]` because the output dimension for our scalar cost function is 1.
 - `x[0]` is of size 1 for this problem because the dimension of `x` is 1.
 - The `operator()` is a templated method, which assumes that all its inputs and outputs are of some type `T`. The use of templating here allows Ceres to call `CostFunctor::operator<T>()`, with `T=double` when just the value of the residual is needed, and with a special type `T=Jet` when the Jacobians are needed.
@@ -118,11 +119,11 @@ Defining a numerical cost function is just a matter of using `ceres::NumericDiff
 ## How do I define an analytical cost function?
 The implementation for an analytical cost function is more involving compared to a numerical or automatic differentiated cost function. First we have to implement the analytical cost function using `ceres::SizedCostFunction`:
 
-    class QuadraticCostFunction
+    class AnalyticalCostFunction
       : public SizedCostFunction<1 /* number of residuals */,
                                  1 /* size of first parameter */> {
     public:
-      virtual ~QuadraticCostFunction() {}
+      virtual ~AnalyticalCostFunction() {}
       virtual bool Evaluate(double const * const * parameters,
                             double *residuals,
                             double **jacobians) const {
