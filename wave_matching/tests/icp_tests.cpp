@@ -45,7 +45,7 @@ TEST(icp_tests, initialization) {
 }
 
 // Zero displacement without downsampling
-TEST_F(ICPTest, full_res_null_match) {
+TEST_F(ICPTest, fullResNullMatch) {
     Eigen::Affine3d perturb = Eigen::Affine3d::Identity();
     perturb.translation() << 0, 0, 0;
     setparams(-1, perturb);
@@ -55,7 +55,7 @@ TEST_F(ICPTest, full_res_null_match) {
 }
 
 // Zero displacement using voxel downsampling
-TEST_F(ICPTest, NullDisplacement) {
+TEST_F(ICPTest, nullDisplacement) {
     Eigen::Affine3d perturb = Eigen::Affine3d::Identity();
     perturb.translation() << 0, 0, 0;
     setparams(0.05f, perturb);
@@ -65,7 +65,7 @@ TEST_F(ICPTest, NullDisplacement) {
 }
 
 // Small displacement using voxel downsampling
-TEST_F(ICPTest, SmallDisplacement) {
+TEST_F(ICPTest, smallDisplacement) {
     Eigen::Affine3d perturb = Eigen::Affine3d::Identity();
     perturb.translation() << 0.2, 0, 0;
     setparams(0.05f, perturb);
