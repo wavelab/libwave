@@ -14,8 +14,8 @@ if [ -e "/usr/local/lib/libpcl_2d.so.$PCL_VERSION" ]; then
     echo "PCL version $PCL_VERSION already installed"
 else
     echo "Installing PCL version $PCL_VERSION ..."
-    mkdir -p "$DEPS_DIR"
-    cd "$DEPS_DIR"
+    mkdir -p "$SRC_DIR"
+    cd "$SRC_DIR"
     if [[ ! -d "$PCL_DIR" ]]; then
         wget "$PCL_URL"
         tar -xf "$PCL_FILE.tar.gz"
