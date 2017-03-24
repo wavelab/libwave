@@ -21,55 +21,58 @@ bool isApprox(const Eigen::Affine3d& first,
     return false;
 }
 
+// Fixture to load same pointcloud all the time
+class ICPTest : public testing::Test {
+  protected:
+    ICPTest() {}
+    virtual ~ICPTest() {}
+    virtual void SetUp() {
+        ref = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
+        target = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
+        pcl::io::loadPCDFile("../../wave_matching/tests/testscan.pcd", *ref);
+    }
+    void setparams(const float res, const Eigen::Affine3d perturb) {
+        matcher = new wave::matching::ICP_Matcher(res);
+        pcl::transformPointCloud(*ref, *target, perturb);
+        matcher->setup(ref, target);
+    }
+    pcl::PointCloud<pcl::PointXYZ>::Ptr ref, target;
+    wave::matching::ICP_Matcher *matcher;
+};
+
 TEST(icp_tests, initialization) {
     wave::matching::ICP_Matcher matcher(0.1f);
 }
 
-TEST(icp_tests, full_res_null_match) {
-    wave::matching::ICP_Matcher matcher(-1.0);
-    pcl::PointCloud<pcl::PointXYZ>::Ptr point_cloud(new pcl::PointCloud<pcl::PointXYZ>);
-    pcl::PointCloud<pcl::PointXYZ>::Ptr dupe(new pcl::PointCloud<pcl::PointXYZ>);
-    pcl::io::loadPCDFile("../tests/testscan.pcd", *point_cloud);
+// Zero displacement without downsampling
+TEST_F(ICPTest, full_res_null_match) {
     Eigen::Affine3d perturb = Eigen::Affine3d::Identity();
     perturb.translation() << 0, 0, 0;
-    pcl::transformPointCloud(*point_cloud, *dupe, perturb);
-    matcher.setup(point_cloud, dupe);
-    EXPECT_TRUE(matcher.match());
-    Eigen::Affine3d result = matcher.get_result();
+    setparams(-1, perturb);
+    EXPECT_TRUE(matcher->match());
+    Eigen::Affine3d result = matcher->get_result();
     EXPECT_TRUE(isApprox(result, perturb, 0.1));
 }
 
-// Should return identity (or close to) for no perturbation
-TEST(icp_tests, NullDisplacement) {
-    wave::matching::ICP_Matcher matcher(0.05f);
-    pcl::PointCloud<pcl::PointXYZ>::Ptr point_cloud(new pcl::PointCloud<pcl::PointXYZ>);
-    pcl::PointCloud<pcl::PointXYZ>::Ptr dupe(new pcl::PointCloud<pcl::PointXYZ>);
-    pcl::io::loadPCDFile("../tests/testscan.pcd", *point_cloud);
+// Zero displacement using voxel downsampling
+TEST_F(ICPTest, NullDisplacement) {
     Eigen::Affine3d perturb = Eigen::Affine3d::Identity();
     perturb.translation() << 0, 0, 0;
-    pcl::transformPointCloud(*point_cloud, *dupe, perturb);
-    matcher.setup(point_cloud, dupe);
-    EXPECT_TRUE(matcher.match());
-    Eigen::Affine3d result = matcher.get_result();
-//    std::cerr << result.matrix() << std::endl << perturb.matrix();
+    setparams(0.05f, perturb);
+    EXPECT_TRUE(matcher->match());
+    Eigen::Affine3d result = matcher->get_result();
     EXPECT_TRUE(isApprox(result, perturb, 0.1));
 }
 
-TEST(icp_tests, SmallDisplacement) {
-    wave::matching::ICP_Matcher matcher(0.05f);
-    pcl::PointCloud<pcl::PointXYZ>::Ptr point_cloud(new pcl::PointCloud<pcl::PointXYZ>);
-    pcl::PointCloud<pcl::PointXYZ>::Ptr dupe(new pcl::PointCloud<pcl::PointXYZ>);
-    pcl::io::loadPCDFile("../tests/testscan.pcd", *point_cloud);
+// Small displacement using voxel downsampling
+TEST_F(ICPTest, SmallDisplacement) {
     Eigen::Affine3d perturb = Eigen::Affine3d::Identity();
     perturb.translation() << 0.2, 0, 0;
-    pcl::transformPointCloud(*point_cloud, *dupe, perturb);
-    matcher.setup(point_cloud, dupe);
-    EXPECT_TRUE(matcher.match());
-    Eigen::Affine3d result = matcher.get_result();
-//    std::cerr << result.matrix() << std::endl << perturb.matrix();
+    setparams(0.05f, perturb);
+    EXPECT_TRUE(matcher->match());
+    Eigen::Affine3d result = matcher->get_result();
     EXPECT_TRUE(isApprox(result, perturb, 0.1));
 }
-
 
 int main(int argc, char *argv[]) {
     testing::InitGoogleTest(&argc, argv);

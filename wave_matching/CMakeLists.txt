@@ -37,5 +37,5 @@ target_link_libraries(wave_matching ${DEPS})
 add_executable(icp_tests tests/icp_tests.cpp)
 target_link_libraries(icp_tests
         wave_matching
-        ${GTEST_LIBRARIES}
+        gtest
         ${CMAKE_THREAD_LIBS_INIT})
