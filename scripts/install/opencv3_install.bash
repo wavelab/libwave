@@ -3,8 +3,7 @@ set -e  # exit on first error
 OPENCV_URL=https://github.com/Itseez/opencv/archive/3.0.0-alpha.zip
 
 
-install_dependencies()
-{
+install_dependencies() {
     sudo apt-get -y install -qq \
         libopencv-dev \
         build-essential \
@@ -18,12 +17,12 @@ install_dependencies()
         libdc1394-22-dev \
         libjpeg-dev \
         libpng12-dev \
-        libtiff4-dev \
+        libtiff*-dev \
         libjasper-dev \
         libavcodec-dev \
         libavformat-dev \
         libswscale-dev \
-        libxine-dev \
+        libxine2-dev \
         libgstreamer0.10-dev \
         libgstreamer-plugins-base0.10-dev \
         libv4l-dev \
@@ -41,8 +40,7 @@ install_dependencies()
         unzip
 }
 
-download_opencv()
-{
+download_opencv() {
     mkdir -p /usr/local/src/opencv
     cd /usr/local/src/opencv
     wget $OPENCV_URL -O opencv-3.0.0-alpha.zip
@@ -50,8 +48,7 @@ download_opencv()
     cd -
 }
 
-install_opencv()
-{
+install_opencv() {
     # compile and install opencv
     cd /usr/local/src/opencv
     cd opencv-3.0.0-alpha
@@ -66,12 +63,14 @@ install_opencv()
         -D WITH_OPENGL=ON ..
     make -j 4
 
+    # DO NOT ACTUALLY INSTALL THIS WILL CAUSE PROBLEMS WITH
+    # BUILDS THAT DEPEND ON OPENCV 2
+    # THE REASON IS /usr/local/lib has precedence over /usr/lib
     # sudo make install
 }
 
-
-
 # MAIN
+echo "Installing OpenCV 3.0 ..."
 install_dependencies
-#download_opencv
+download_opencv
 install_opencv
