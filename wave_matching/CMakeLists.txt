@@ -5,11 +5,9 @@ IF (CMAKE_COMPILER_IS_GNUCXX)
     ADD_DEFINITIONS(-std=gnu++11)
 ENDIF()
 
-find_package(PCL 1.8 REQUIRED common registration point_types io)
+find_package(PCL REQUIRED common registration point_types io)
 find_package(Eigen3 REQUIRED core)
 find_package(GTest REQUIRED)
-
-set(Eigen3_INCLUDE_DIRS /usr/include/eigen3)
 
 add_definitions(${EIGEN_DEFINITIONS}
         ${PCL_DEFINITIONS})
