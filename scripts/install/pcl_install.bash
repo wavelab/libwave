@@ -5,7 +5,9 @@ install_dependencies() {
     sudo apt-get -y install -qq \
         libboost-all-dev \
         libflann-dev \
-        libvtk6-dev
+        libvtk6-dev \
+        libeigen3-dev \
+        libusb-1-0-dev
 }
 
 echo "Installing PCL ..."
@@ -49,7 +51,7 @@ else
     cmake .. ${PCL_CMAKE_ARGS} > /dev/null
 
     echo "Building $PCL_FILE"
-    make_with_progress -j4
+    make
 
     sudo make install > /dev/null
     echo "PCL installed successfully"
