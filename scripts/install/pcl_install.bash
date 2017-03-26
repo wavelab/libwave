@@ -3,6 +3,7 @@ set -e  # exit on first error
 
 install_dependencies() {
     sudo apt-get -y install -qq \
+        libboost-all-dev \
         libflann-dev \
         libvtk6-dev
 }
