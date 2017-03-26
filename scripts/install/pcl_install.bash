@@ -44,8 +44,8 @@ else
         -DWITH_LIBUSB=OFF -DWITH_OPENGL=OFF -DWITH_OPENNI=OFF \
         -DWITH_OPENNI2=OFF -DWITH_QT=OFF -DWITH_RSSDK=OFF -DWITH_VTK=OFF \
         -DBUILD_CUDA=OFF -DBUILD_GPU=OFF -DBUILD_surface=OFF \
-        -DBUILD_ml=OFF -DBUILD_io=OFF -DBUILD_geometry=OFF \
-        -DBUILD_tracking=OFF"
+        -DBUILD_ml=OFF -DBUILD_io=ON -DBUILD_geometry=OFF \
+        -DBUILD_tracking=OFF -DBUILD_registration=ON -DBUILD_filters=ON"
     fi
 
     cmake .. ${PCL_CMAKE_ARGS} > /dev/null

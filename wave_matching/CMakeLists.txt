@@ -6,7 +6,6 @@ IF (CMAKE_COMPILER_IS_GNUCXX)
 ENDIF()
 
 find_package(PCL REQUIRED common registration point_types io)
-find_package(Eigen3 REQUIRED core)
 find_package(GTest REQUIRED)
 
 add_definitions(${EIGEN_DEFINITIONS}
@@ -15,6 +14,7 @@ add_definitions(${EIGEN_DEFINITIONS}
 include_directories(${PCL_INCLUDE_DIRS}
         ${EIGEN_INCLUDE_DIRS}
         /usr/include
+        /usr/include/eigen3
         /usr/local/include
         include
         )
