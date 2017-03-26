@@ -7,7 +7,7 @@ install_dependencies() {
         libflann-dev \
         libvtk6-dev \
         libeigen3-dev \
-        libusb-1-0-dev
+        libusb-1.0-0-dev
 }
 
 echo "Installing PCL ..."
