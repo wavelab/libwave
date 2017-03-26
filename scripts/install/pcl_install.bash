@@ -1,6 +1,12 @@
 #!/bin/bash
 set -e  # exit on first error
 
+install_dependencies() {
+    sudo apt-get -y install -qq \
+        libflann-dev \
+        libvtk6-dev
+}
+
 echo "Installing PCL ..."
 
 SRC_DIR="/usr/local/src"
@@ -9,6 +15,7 @@ PCL_FILE="pcl-$PCL_VERSION"
 PCL_DIR="pcl-$PCL_FILE"
 PCL_URL="https://github.com/PointCloudLibrary/pcl/archive/pcl-$PCL_VERSION.tar.gz"
 
+install_dependencies
 # TODO: find a better way to check if already installed from source
 if [ -e "/usr/local/lib/libpcl_2d.so.$PCL_VERSION" ]; then
     echo "PCL version $PCL_VERSION already installed"
