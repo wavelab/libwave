@@ -10,16 +10,20 @@ namespace wave {
 namespace ceres {
 namespace examples {
 
-TEST(CeresExamples, AutoDiffExample) {
+TEST(CeresExamples, runAutoDiffExample) {
     runAutoDiffExample();
 }
 
-TEST(CeresExamples, NumericalDiffExample) {
+TEST(CeresExamples, runNumericalDiffExample) {
     runNumericalDiffExample();
 }
 
-TEST(CeresExamples, AnalyticalDiffExample) {
+TEST(CeresExamples, runAnalyticalDiffExample) {
     runAnalyticalDiffExample();
+}
+
+TEST(CeresExamples, runCurveFittingExample) {
+    runCurveFittingExample();
 }
 
 }  // end of examples namespace
