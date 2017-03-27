@@ -229,7 +229,7 @@ Running the above code would yeild:
     Initial m: 0 c: 0
     Final   m: 0.291861 c: 0.131439
 
-Ceres finds a solution $m=0.291861,c=0.131439$with an objective function value of $1.05675$. These values are a bit different than the parameters of the original model $m=0.3,c=0.1$, but this is expected. When reconstructing a curve from noisy data, we expect to see such deviations. Indeed, if you were to evaluate the objective function for $m=0.3,c=0.1$, the fit is worse with an objective function value of $1.082425$. The figure below illustrates the fit.
+Ceres finds a solution $m=0.291861,c=0.131439$with an objective function value of $1.05675$. These values are a bit different than the parameters of the original model $m=0.3,c=0.1$, but this is expected. When reconstructing a curve from noisy data, we expect to see such deviations. To verify the results run the `runCurveFittingExample()` in `wave_optimization/src/ceres/ceres_examples.cpp` and then input the values for $m$ and $c$ while executing the python script `scripts/plot/ceres_curve_fitting_example.py` to plot something similar to the figure below.
 
 ![Least Squares Curve Fitting Plot](images/least_squares_fit.png)
 
