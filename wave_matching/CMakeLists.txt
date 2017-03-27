@@ -6,7 +6,6 @@ IF (CMAKE_COMPILER_IS_GNUCXX)
 ENDIF()
 
 find_package(PCL REQUIRED common registration point_types io)
-find_package(GTest REQUIRED)
 
 add_definitions(${EIGEN_DEFINITIONS}
         ${PCL_DEFINITIONS})
