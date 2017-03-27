@@ -1,36 +1,36 @@
 # Ceres Tutorial
 As with all nonlinear-optimizers they can be difficult to master, in the following we give examples on how to effectively implement custom cost functions in Ceres-Solver. In particular we will cover several different topics:
 
-- How to define a cost function?
-- How to define the optimization problem?
+- How do I define a cost function?
+- How do I define the optimization problem?
 - How do I define a numerical cost function?
 - How do I define an analytical cost function?
 - How do I load the optimization data?
 
 
-## How to define a cost function?
-Ceres can solve bounds constrained robustified non-linear least squares problems of the form:
+## How do I define a cost function?
+Ceres solves non-linear least squares problems of the form:
 
 \begin{equation}
-  \min_{x} \dfrac{1}{2} \sum_{i} \rho_{i} (|| f_{i} (x_{i}, \dots, x_{i_{k}}) ||^{2})
+  \min_{\vec{\beta}} \dfrac{1}{2} \sum_{i = 1}^{m} r_{i}^{2} \\
+  r_{i} = d_{i} - f(x_{i}, \vec{\beta})
 \end{equation}
 
-The expression $\rho_{i} (|| f_{i} (x_{i}, \dots, x_{i_{k}}) ||^{2})$ is known in ceres as a **`ResidualBlock`**, where $f_{i}(\cdot)$ is a cost function that depends on the parameter blocks $[x_{i}, \dots, x_{i_{k}}]$.
+Where $m$ is a set of data points, and function $f(x, \vec{\beta})$ that takes in input variable $x$ and $n$ parameters $\vec{\beta} = (\beta_1, \beta_2, \dots, \beta_n)$ with $m \geq n$. In the nonlinear least squares problem we seek to find the vector $\vec{\beta}$ that minimizes the residual $r$ between function $f(\cdot)$ output and desired output $d$ for every data point $i$.
 
-To get started, consider the problem of finding the minimum of the function
+**Example** consider the problem of finding the minimum of the function:
 
 \begin{equation}
   \dfrac{1}{2} (10 - x)^{2}
 \end{equation}
 
-The cost function in this case is:
+**Important**: In Ceres a cost function is not really a cost function in the mathematical sense, what you as the user is implementing is infact the residual because the cost function is always contructed the same way ($\text{cost} = \sum \text{residuals}^{2}$), in this case it is:
 
 \begin{equation}
-  f(x) = (10 - x)
+  r = (10 - x)
 \end{equation}
 
-This is a trivial problem, whose minimum is located at $x = 10$. The first step
-is to write a functor that will evaluate this function:
+The minimum is located at $x = 10$ and in Ceres **this is what you are going to implement**, like so:
 
     struct CostFunctor {
       template <typename T>
@@ -42,7 +42,7 @@ is to write a functor that will evaluate this function:
 
 Keypoints to the example code:
 
-- In Ceres a cost function has to be a functor (function objects: a plain old C++ object plus the `()` operator), this is essentially so that the ceres solver can call your cost function with the overridded `()` operator you implemented. This is where you will add your custom cost function, for more information on functors see [this][stack_overflow-functors].
+- In Ceres a cost function implementation is a functor (function objects: a plain old C++ object plus the `()` operator), this is essentially so that the ceres solver can call your cost function with the overridded `()` operator you implemented. This is where you will add your custom residual function, for more information on functors see [this][stack_overflow-functors].
 - It is **important to note in Ceres we only define the residual** when implementing the cost functor, because the cost function always is constructed the same way ($\text{cost} = \sum \text{residuals}^{2}$).
 - The output of your cost function is written to `residual[0]`, in all cases `residual` is always an array of type `T`, further in this example we are only writing to `residual[0]` because the output dimension for our scalar cost function is 1.
 - `x[0]` is of size 1 for this problem because the dimension of `x` is 1.
@@ -52,7 +52,7 @@ Keypoints to the example code:
 - Since the cost function contains template code it has to reside in a header file.
 
 
-## How to define the optimization problem?
+## How do I define the optimization problem?
 In the previous section we have showed how one defines a cost function, here we will describe how one uses the cost function by setting up the optimization problem in Ceres.
 
     // The variable to solve for with its initial value.
@@ -90,6 +90,8 @@ Note that:
     Dimension of residual -----------------------------+  |
     Dimension of x ---------------------------------------+
 
+**Important**: In Ceres a cost function is not really a cost function in the mathematical sense, what you as the user is implementing is infact the residual because the cost function is always contructed the same way ($\text{cost} = \sum \text{residuals}^{2}$) (see "How do I define a cost function?" above).
+
 The `ceres::AutoDiffCostFunction` takes our `CostFunctor` previously defined as input, automatically differentiates it and gives it a `ceres::CostFunction` interface.
 
 Running the above code example gives us:
@@ -115,9 +117,13 @@ Defining a numerical cost function is just a matter of using `ceres::NumericDiff
                                   Dimension of x -----------------------------+  |
                                   Dimension of y --------------------------------+
 
+**Important**: In Ceres a cost function is not really a cost function in the mathematical sense, what you as the user is implementing is infact the residual because the cost function is always contructed the same way ($\text{cost} = \sum \text{residuals}^{2}$) (see "How do I define a cost function?" above).
+
+
 
 ## How do I define an analytical cost function?
-The implementation for an analytical cost function is more involving compared to a numerical or automatic differentiated cost function. First we have to implement the analytical cost function using `ceres::SizedCostFunction`:
+The implementation for an analytical cost function is more involving compared to a numerical or automatic differentiated cost function. First we have to implement the analytical cost function using `ceres::SizedCostFunction`. **
+
 
     class AnalyticalCostFunction
       : public SizedCostFunction<1 /* number of residuals */,
@@ -149,6 +155,8 @@ The implementation for an analytical cost function is more involving compared to
         return true;
       }
     };
+
+**Important**: In Ceres a cost function is not really a cost function in the mathematical sense, what you as the user is implementing is infact the residual because the cost function is always contructed the same way ($\text{cost} = \sum \text{residuals}^{2}$) (see "How do I define a cost function?" above).
 
 Keypoints:
 
