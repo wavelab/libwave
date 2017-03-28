@@ -9,14 +9,23 @@ As with all nonlinear-optimizers they can be difficult to master, in the followi
 
 
 ## How do I define a cost function?
-Ceres solves non-linear least squares problems of the form:
+Ceres can solve bounds constrained robustified non-linear least squares problems of the form
+
+\begin{align}
+  \min_{\mathbf{x}} &\quad \frac{1}{2}\sum_{i} \rho_i\left(\left\|f_i\left(x_{i_1}, ... ,x_{i_k}\right)\right\|^2\right) \\
+    \text{s.t.} &\quad l_j \le x_j \le u_j
+\end{align}
+
+The expression
+$\rho_i\left(\left\|f_i\left(x_{i_1},...,x_{i_k}\right)\right\|^2\right)$ is known as a `ResidualBlock`, where $f_i(\cdot)$ is a `CostFunction` that depends on the parameter blocks $\left[x_{i_1},... , x_{i_k}\right]$. In most optimization problems small groups of scalars occur together. For example the three components of a translation vector and the four components of the quaternion that define the pose of a camera. We refer to such a group of small scalars as a `ParameterBlock`. Of course a `ParameterBlock` can just be a single parameter. $l_j$ and $u_j$ are bounds on the parameter block $x_j$.
+
+$\rho_i$ is a `LossFunction`. A `LossFunction` is a scalar function that is used to reduce the influence of outliers on the solution of non-linear least squares problems.
+
+As a special case, when $\rho_i(x) = x$, i.e., the identity function, and $l_j = -\infty$ and $u_j = \infty$ we get the more familiar `non-linear least squares problem:
 
 \begin{equation}
-  \min_{\vec{\beta}} \dfrac{1}{2} \sum_{i = 1}^{m} r_{i}^{2} \\
-  r_{i} = d_{i} - f(x_{i}, \vec{\beta})
+  \frac{1}{2}\sum_{i} \left\|f_i\left(x_{i_1}, ... ,x_{i_k}\right)\right\|^2
 \end{equation}
-
-Where $m$ is a set of data points, and function $f(x, \vec{\beta})$ that takes in input variable $x$ and $n$ parameters $\vec{\beta} = (\beta_1, \beta_2, \dots, \beta_n)$ with $m \geq n$. In the nonlinear least squares problem we seek to find the vector $\vec{\beta}$ that minimizes the residual $r$ between function $f(\cdot)$ output and desired output $d$ for every data point $i$.
 
 **Example** consider the problem of finding the minimum of the function:
 
@@ -24,7 +33,7 @@ Where $m$ is a set of data points, and function $f(x, \vec{\beta})$ that takes i
   \dfrac{1}{2} (10 - x)^{2}
 \end{equation}
 
-**Important**: In Ceres a cost function is not really a cost function in the mathematical sense, what you as the user is implementing is infact the residual because the cost function is always contructed the same way ($\text{cost} = \sum \text{residuals}^{2}$), in this case it is:
+**Important**: In Ceres while implenting the `CostFunction` you as the user are expected to implement the **residual only** because the cost function is always contructed the same way ($\text{cost} = \sum \text{residuals}^{2}$), in this case it is:
 
 \begin{equation}
   r = (10 - x)
@@ -90,7 +99,7 @@ Note that:
     Dimension of residual -----------------------------+  |
     Dimension of x ---------------------------------------+
 
-**Important**: In Ceres a cost function is not really a cost function in the mathematical sense, what you as the user is implementing is infact the residual because the cost function is always contructed the same way ($\text{cost} = \sum \text{residuals}^{2}$) (see "How do I define a cost function?" above).
+**Important**: In Ceres while implenting the `CostFunction` you as the user are expected to implement the **residual only** because the cost function is always contructed the same way ($\text{cost} = \sum \text{residuals}^{2}$) (see "How do I define a cost function?" above).
 
 The `ceres::AutoDiffCostFunction` takes our `CostFunctor` previously defined as input, automatically differentiates it and gives it a `ceres::CostFunction` interface.
 
@@ -117,7 +126,7 @@ Defining a numerical cost function is just a matter of using `ceres::NumericDiff
                                   Dimension of x -----------------------------+  |
                                   Dimension of y --------------------------------+
 
-**Important**: In Ceres a cost function is not really a cost function in the mathematical sense, what you as the user is implementing is infact the residual because the cost function is always contructed the same way ($\text{cost} = \sum \text{residuals}^{2}$) (see "How do I define a cost function?" above).
+**Important**: In Ceres while implenting the `CostFunction` you as the user are expected to implement the **residual only** because the cost function is always contructed the same way ($\text{cost} = \sum \text{residuals}^{2}$) (see "How do I define a cost function?" above).
 
 
 
@@ -156,7 +165,7 @@ The implementation for an analytical cost function is more involving compared to
       }
     };
 
-**Important**: In Ceres a cost function is not really a cost function in the mathematical sense, what you as the user is implementing is infact the residual because the cost function is always contructed the same way ($\text{cost} = \sum \text{residuals}^{2}$) (see "How do I define a cost function?" above).
+**Important**: In Ceres while implenting the `CostFunction` you as the user are expected to implement the **residual only** because the cost function is always contructed the same way ($\text{cost} = \sum \text{residuals}^{2}$) (see "How do I define a cost function?" above).
 
 Keypoints:
 
