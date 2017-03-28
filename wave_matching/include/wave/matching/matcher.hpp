@@ -23,7 +23,7 @@ class Matcher {
     const Eigen::MatrixXd &getInfo() {
         return this->information;
     };
-    const float &getRes() {
+    float getRes() {
         return this->resolution;
     };
     // intended to put sensor data into matcher class
