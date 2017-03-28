@@ -33,7 +33,7 @@ As a special case, when $\rho_i(x) = x$, i.e., the identity function, and $l_j =
   \dfrac{1}{2} (10 - x)^{2}
 \end{equation}
 
-**Important**: In Ceres while implementing the `CostFunction` you as the user are expected to implement the **residual only** because the cost function is always contructed the same way ($\text{cost} = \sum \text{residuals}^{2}$), in this case it is:
+**Important**: In Ceres while implementing the `CostFunction` you as the user are expected to implement the **residual only** because the cost function is always contructed the same way ($\text{cost} = \sum \text{residuals}^{2}$).
 
 \begin{equation}
   r = (10 - x)
@@ -127,7 +127,7 @@ Defining a numerical cost function is just a matter of using `ceres::NumericDiff
 
 
 ## How do I define an analytical cost function?
-The implementation for an analytical cost function is more involving compared to a numerical or automatic differentiated cost function. First we have to implement the analytical cost function using `ceres::SizedCostFunction`. **
+The implementation for an analytical cost function is more involving compared to a numerical or automatic differentiated cost function. First we have to implement the analytical cost function using `ceres::SizedCostFunction`. In this example, we implement the `CostFunction` by calculating the residual between $x$ and $10$, and the loss function is the identity, for definitions of residuals, cost and loss functions, see "How do I define a cost function?" above.
 
 
     class AnalyticalCostFunction
@@ -174,13 +174,13 @@ After defining the cost function to use it you simply do:
 
 
 ## How do I load the optimization data?
-The examples we have seen until now are simple optimization problems with no data. The original purpose of least squares and non-linear least squares analysis was fitting curves to data. It is only appropriate that we now consider an example of such a problem. Lets consider a new cost function:
+The examples we have seen until now are simple optimization problems with no data. The original purpose of least squares and non-linear least squares analysis was fitting curves to data. It is only appropriate that we now consider an example of such a problem. Lets consider a curve fitting problem of the form:
 
 \begin{equation}
     y = e^{mx + c}
 \end{equation}
 
-We can implement the cost functor for the above cost function as:
+We begin by defining a templated object to evaluate the residual, for specific definitions of residual, cost and loss functions see "How do I define a cost function?" above. Implementing the residual for $y = e^{mx + c}$ we obtain a cost functor that looks something like this:
 
     struct CurveFittingResidual {
       CurveFittingResidual(double x, double y)
@@ -198,7 +198,7 @@ We can implement the cost functor for the above cost function as:
       const double y;
     };
 
-The key-point to note is we are using the private `x` and `y` member variables to store an observation. Assuming the observations are in a `2n` sized array called `data` the problem construction is a simple matter of creating a `ceres::CostFunction` for every observation.
+where we are calculating the residual between $y$ and $e^{mx + c}$. The key-point to note is we are using the private `x` and `y` member variables to store an observation. Assuming the observations are in a `2n` sized array called `data` the problem construction is a simple matter of creating a `ceres::CostFunction` for every observation.
 
     double m = 0.0;
     double c = 0.0;
