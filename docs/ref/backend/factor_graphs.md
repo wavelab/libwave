@@ -5,6 +5,7 @@
 * Factor Graphs and Maximum-Liklihood (ML) estimation from GTSAM tutorial (ignore the code aspects for now, and focus on concepts)[[1][Dellaert2012]].
 * MAP from wikipedia [[2][MAP-wiki]].
 * Putting ML estimation and Box operators together: SLAM on Manifolds, from the g2o documentation. (Again, ignore the code for now, and focus on the concepts) [[3][g2o]].
+
 ## Introduction
 
 Factor graphs are a graphical modelling method which excel in optimizing
