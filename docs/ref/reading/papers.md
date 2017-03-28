@@ -1,24 +1,12 @@
-## Rotations, Lie Groups, Manifold operators
- * Good reference on Lie Algebra for SO(3) and SE(3), goes into a lot of nice detail for derivatives and such.  [Eathan Eade Link](http://www.ethaneade.org/lie.pdf), [ Ivancevic Link] (https://arxiv.org/pdf/1104.1106.pdf)
- * Prof Daniel Cremers course, videos on youtube (Initially, skim through lectures 3 and 4, though everything will be pretty useful as we progress).  [Link](https://www.youtube.com/watch?v=khLM8VV8LuM&list=PLTBdjV_4f-EJn6udZ34tht9EVIW7lbeo4&index=3)
- * Box operators. [Link](https://pdfs.semanticscholar.org/4613/727ef686c6186cab69e6b8be8cb1fa3ba800.pdf)
-
-## ICP and Scan Matching
-  * Arun's Master's Thesis, which has descriptions and references for the major scan registration algorithms (ICP, G-ICP, NDT). [Link](https://uwspace.uwaterloo.ca/bitstream/handle/10012/7431/Das_Arun_2013.pdf?sequence=3)
-  * The Point Cloud Library (PCL). [Link](http://www.pointclouds.org/documentation/tutorials/#registration-tutorial)
-
-## Factor Graphs and MAP estimation
-* Factor Graphs and Maximum-Liklihood (ML) estimation from GTSAM tutorial (ignore the code aspects for now, and focus on concepts). [Link](https://research.cc.gatech.edu/borg/sites/edu.borg/files/downloads/gtsam.pdf)
-* MAP from wikipedia [Link] (https://en.wikipedia.org/wiki/Maximum_likelihood_estimation)
-* Putting ML estimation and Box operators together: SLAM on Manifolds, from the g2o documentation. (Again, ignore the code for now, and focus on the concepts). [Link] (https://github.com/RainerKuemmerle/g2o/blob/master/doc/g2o.pdf)
+# Great SLAM Papers
 
 ## SLAM Surveys
-* 2006 Famous Hugh Durrant-Whyte Survey, claiming SLAM is solved [Part I - State of the art](http://ieeexplore.ieee.org/abstract/document/1638022/), [Part II- Recursive Bayesian Formulation and open issues] (http://ieeexplore.ieee.org/abstract/document/1678144/)
+* 2006 Famous Hugh Durrant-Whyte Survey, claiming SLAM is solved [[Part I - State of the art][DurrantBailey2006]], [[Part II- Recursive Bayesian Formulation and open issues][BaileyDurrant2006]]
     * Excellent summary of the filter and graph approaches with point features and Bayesian inference over Gaussians
-    * Part I Abstract: This paper describes the simultaneous localization and mapping (SLAM) problem and the essential methods for solving the SLAM problem and summarizes key implementations and demonstrations of the method. While there are still many practical issues to overcome, especially in more complex outdoor environments, the general SLAM method is now a well understood and established part of robotics. Another part of the tutorial summarized more recent works in addressing some of the remaining issues in SLAM, including computation, feature representation, and data association. 
+    * Part I Abstract: This paper describes the simultaneous localization and mapping (SLAM) problem and the essential methods for solving the SLAM problem and summarizes key implementations and demonstrations of the method. While there are still many practical issues to overcome, especially in more complex outdoor environments, the general SLAM method is now a well understood and established part of robotics. Another part of the tutorial summarized more recent works in addressing some of the remaining issues in SLAM, including computation, feature representation, and data association.
     * Part II Abstract: This paper discusses the recursive Bayesian formulation of the simultaneous localization and mapping (SLAM) problem in which probability distributions or estimates of absolute or relative locations of landmarks and vehicle pose are obtained. The paper focuses on three key areas: computational complexity; data association; and environment representation.
-* 2016 Young guys + Scaramuzza, Neira, Reid and Leonard [SLAM Survey Paper](https://arxiv.org/pdf/1606.05830.pdf)
-    * Excellent survey of SLAM today, updating the hard parts that remain.  
+* 2016 Young guys + Scaramuzza, Neira, Reid and Leonard [[SLAM Survey Paper][CadenaEtAl2016]]
+    * Excellent survey of SLAM today, updating the hard parts that remain.
     * Nice summary of MAP Factor Graph SLAM
     * Defines three epochs: Classical SLAM (up to 2006), Algorithmic Analysis (up to today), Robustification (going forward)
     * Do robots need SLAM? yes, Is SLAM solved? Basic yes, but not for in demanding environments or for demanding applications
@@ -29,27 +17,47 @@
         * Semantic reasoning: Identify spaces, objects and relationships between them.  Not just classification, much more needed to properly define tasks.
         * Theoretical Tools: convergence guarantees, failure prediction with spurious measurements, convexity argument - solving primal and dual problems to provide an optimality bound, outlier resiliency theory.
         * Active SLAM: Needs fast, accurate measurement predictions, exploration/exploitation trade off not clear, when is it necessary/useful? Performance guarantees through active perception.
-        * New sensors: can lead to different paradigms, such as event triggered cameras. 
-* 2015 Arthur Huletski, Dmitriy Kartashov, Kirill Krinkin [Evaluation of the Modern Visual SLAM Methods] (http://ieeexplore.ieee.org/document/7382963/)
-    This paper evaluates 2013-mid to 2015 ORB, LSD, L, OpenRat visual slam algorithms on the TUM RGB-D benchmark. One of the important questions they mention is: What assumptions and approximations were made while creating the SLAM algorithm ? This will help us know our limitations. 
+        * New sensors: can lead to different paradigms, such as event triggered cameras.
+* 2015 Arthur Huletski, Dmitriy Kartashov, Kirill Krinkin [[Evaluation of the Modern Visual SLAM Methods][HuletskiEtAl2015]]
+    This paper evaluates 2013-mid to 2015 ORB, LSD, L, OpenRat visual SLAM algorithms on the TUM RGB-D benchmark. One of the important questions they mention is: What assumptions and approximations were made while creating the SLAM algorithm ? This will help us know our limitations.
     Metrics that decide whether a SLAM algorithm is suitable for a particular task:
     * Localization accuracy (RMSE between predicted positions and ground truth)
     * CPU usage for computational effectiveness
     * Peak memory consumption allows to estimate memory requirements. Important for limited resources
     * Camera FPS
     * Map quality (occupancy grid outputs a different map from ground truth)
-    * Robustness [results over multiple runs] and Convergence [time necessary for Minimization of localization error] 
-    Conclusion: While the algorithms above can show good performance, they don’t show stable tracking and low error. Robust results aren’t available out of the box. Parameters need to be tuned. 
-    * RatSLAM needs the video to be slowed down by a factor of 2. 
-    * ORB SLAM and LSD SLAM require tweaking of parameters. 
+    * Robustness [results over multiple runs] and Convergence [time necessary for Minimization of localization error]
+    Conclusion: While the algorithms above can show good performance, they don’t show stable tracking and low error. Robust results aren’t available out of the box. Parameters need to be tuned.
+    * RatSLAM needs the video to be slowed down by a factor of 2.
+    * ORB SLAM and LSD SLAM require tweaking of parameters.
     * FOV can also play an important factor.
     Drawbacks:
     * Method that estimates camera transformation should have at least medium level on noise (RatSLAM draw­ back);
     * An algorithm should be scale-aware (ORB-SLAM drawback);
     * In case of tracking loss an algorithm should use some fallback strategy instead of giving up (LSD-SLAM drawback).
 
+## Seminal works
 
-# Uncategorized Slam Papers
+* Thrun's early EKF SLAM
+* EIF SLAM
+* Rao-Blackwellized Particle SLAM, Montemerlo et al.
+* [[2007 - Parallel Tracking and Mapping][KleinMurray2007]]: The case for separate mapping and localization threads.
+* [[2010 - Why Filter?][StrasdatEtAl2010]] The case for bundle adjustments over continuous filtering.
+* KinectFusion
+* LSD-SLAM
+* SVO
+* DSO
+
+## Our work
+
+* NASA Sample Return Robot Challenge: [[NASA paper][DasEtAl2014]] 
+* Multi-camera parallel tracking and mapping: [[MCPTAM Main][TribouEtAl2015]] and [[Degeneracy Analysis][TribouEtAl2016]]
+
+## Courses and other online resources
+
+TBD
+
+## References
 
 - [Durrant-Whyte, H., & Bailey, T. (2006). Simultaneous localization and
   mapping: part I. IEEE robotics & automation magazine, 13(2),
@@ -59,14 +67,15 @@
   mapping (SLAM): Part II. IEEE Robotics & Automation Magazine, 13(3),
   108-117.][BaileyDurrant2006]
 
+- [Cadena, C., Carlone, L., Carrillo, H., Latif, Y., Scaramuzza, D., Neira, J.,
+  ... & Leonard, J. J.  (2016). Simultaneous Localization And Mapping: Present,
+  Future, and the Robust-Perception Age.  arXiv preprint
+  arXiv:1606.05830.][CadenaEtAl2016]
+
 - [Klein, G., & Murray, D. (2007, November). Parallel tracking and mapping for
   small AR workspaces.  In Mixed and Augmented Reality, 2007. ISMAR 2007. 6th
   IEEE and ACM International Symposium on (pp. 225-234).
   IEEE.][KleinMurray2007]
-
-- [Grisetti, G., Kummerle, R., Stachniss, C., & Burgard, W. (2010). A tutorial
-  on graph-based SLAM. IEEE Intelligent Transportation Systems Magazine, 2(4),
-  31-43.][GrisettiEtAl2010]
 
 - [Strasdat, H., Montiel, J. M. M., & Davison, A. J. (2010, May). Real-time
   monocular SLAM: Why filter?. In Robotics and Automation (ICRA), 2010 IEEE
@@ -81,19 +90,21 @@
 
 - [Leutenegger, S., Lynen, S., Bosse, M., Siegwart, R., & Furgale, P. (2015).
   Keyframe-based visual–inertial odometry using nonlinear optimization. The
-  International Journal of Robotics Research, 34(3),
-  314-334.][LuteneggerEtAl2015]
-
-- [Cadena, C., Carlone, L., Carrillo, H., Latif, Y., Scaramuzza, D., Neira, J.,
-  ... & Leonard, J. J.  (2016). Simultaneous Localization And Mapping: Present,
-  Future, and the Robust-Perception Age.  arXiv preprint
-  arXiv:1606.05830.][CadenaEtAl2016]
+  International Journal of Robotics Research, 34(3), 314-334.][LuteneggerEtAl2015]
 
 - [Nardi, L., Bodin, B., Saeedi, S., Vespa, E., Davison, A. J., & Kelly, P. H.
   (2017). Algorithmic Performance-Accuracy Trade-off in 3D Vision Applications
-  Using HyperMapper. arXiv preprint arXiv:1702.00505.
-  Chicago][NardiEtAl2017]
+  Using HyperMapper. arXiv preprint arXiv:1702.00505.][NardiEtAl2017]
 
+- [Das, A., Diu, M., Mathew, N., Scharfenberger, C., Servos, J., Wong, A., ... 
+   & Waslander, S. L. (2014). Mapping, planning, and sample detection strategies 
+   for autonomous exploration. Journal of Field Robotics, 31(1), 75-106.][DasEtAl2014]
+
+- [Tribou, M. J., et al. (2015). Multi-camera parallel tracking and mapping with
+  non-overlapping fields of view. The International Journal of Robotics Research 34.12:1480-1500][TribouEtAl2015]
+
+- [Tribou, M. J., Wang, D. W., & Waslander, S. L. (2016). Degenerate motions in
+  multicamera cluster SLAM with non-overlapping fields of view. Image and Vision Computing, 50, 27-41.][TribouEtAl2016]
 
 [DurrantBailey2006]: https://people.eecs.berkeley.edu/~pabbeel/cs287-fa09/readings/Durrant-Whyte_Bailey_SLAM-tutorial-I.pdf
 [BaileyDurrant2006]: http://www-personal.acfr.usyd.edu.au/tbailey/papers/slamtute2.pdf
@@ -102,6 +113,10 @@
 [StrasdatEtAl2010]: https://www.doc.ic.ac.uk/~ajd/Publications/strasdat_etal_icra2010.pdf
 [StrasdatEtAl2012]: https://www.doc.ic.ac.uk/~ajd/Publications/strasdat_etal_ivc2012.pdf
 [EngelEtAl2014]: https://vision.in.tum.de/_media/spezial/bib/engel14eccv.pdf
+[HuletskiEtAl2015]: http://ieeexplore.ieee.org/document/7382963/
 [LuteneggerEtAl2015]: http://www.roboticsproceedings.org/rss09/p37.pdf
 [CadenaEtAl2016]: http://www.arxiv.org/pdf/1606.05830v2.pdf
 [NardiEtAl2017]: https://arxiv.org/pdf/1702.00505.pdf
+[DasEtAl2014]: http://onlinelibrary.wiley.com/doi/10.1002/rob.21490/full 
+[TribouEtAl2015]: http://journals.sagepub.com/doi/abs/10.1177/0278364915571429
+[TribouEtAl2016]: http://www.sciencedirect.com/science/article/pii/S0262885616300038
