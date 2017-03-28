@@ -11,3 +11,4 @@
 ## Reference
 - [Fundamentals](#ref/fundamentals)
 - [Required Reading](#ref/reading)
+- [Tutorials](#ref/tutorials)
