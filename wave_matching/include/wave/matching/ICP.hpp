@@ -10,10 +10,9 @@
 #include "wave/matching/matcher.hpp"
 
 namespace wave {
-namespace matching {
 
 typedef pcl::PointCloud<pcl::PointXYZ>::Ptr PCLPointCloud;
-class ICP_Matcher : public wave::matching::Matcher<PCLPointCloud> {
+class ICP_Matcher : public wave::Matcher<PCLPointCloud> {
   public:
     explicit ICP_Matcher(float resolution);
     void setRef(const PCLPointCloud& ref);
@@ -24,7 +23,7 @@ class ICP_Matcher : public wave::matching::Matcher<PCLPointCloud> {
     pcl::VoxelGrid<pcl::PointXYZ> filter;
     PCLPointCloud ref, target, final;
 };
-}
-}
+
+}  // end of wave namespace
 
 #endif //WAVE_MATCHING_ICP_HPP

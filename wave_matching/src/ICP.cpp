@@ -1,7 +1,6 @@
 #include "wave/matching/ICP.hpp"
 
 namespace wave {
-namespace matching {
 
 ICP_Matcher::ICP_Matcher(float res) {
     this->ref = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
@@ -14,14 +13,9 @@ ICP_Matcher::ICP_Matcher(float res) {
         this->resolution = -1;
     }
 
-
-    // Set the max correspondence distance
     this->icp.setMaxCorrespondenceDistance (3);
-    // Set the maximum number of iterations (criterion 1)
     this->icp.setMaximumIterations (100);
-    // Set the transformation epsilon (criterion 2)
     this->icp.setTransformationEpsilon (1e-8);
-    // Set the euclidean distance difference epsilon (criterion 3)
     this->icp.setEuclideanFitnessEpsilon (1e-2);
 }
 
@@ -36,7 +30,7 @@ void ICP_Matcher::setRef(const PCLPointCloud &ref) {
 }
 
 void ICP_Matcher::setTarget(const PCLPointCloud &target) {
-    if(resolution > 0) {
+    if(this->resolution > 0) {
         this->filter.setInputCloud(target);
         this->filter.filter(*(this->target));
     } else {
@@ -53,5 +47,5 @@ bool ICP_Matcher::match() {
     }
     return false;
 }
-}
-}
+
+}  // end of wave namespace
