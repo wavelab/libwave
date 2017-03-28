@@ -8,6 +8,84 @@ ConfigParser::ConfigParser(void) {
     this->loaded = false;
 }
 
+// clang-format off
+void ConfigParser::addParam(std::string key, bool *out, bool optional) {
+    CONFIG_PARSER_ADD_PARAM(BOOL, key, out, optional);
+}
+
+void ConfigParser::addParam(std::string key, int *out, bool optional) {
+    CONFIG_PARSER_ADD_PARAM(INT, key, out, optional);
+}
+
+void ConfigParser::addParam(std::string key, float *out, bool optional) {
+    CONFIG_PARSER_ADD_PARAM(FLOAT, key, out, optional);
+}
+
+void ConfigParser::addParam(std::string key, double *out, bool optional) {
+    CONFIG_PARSER_ADD_PARAM(DOUBLE, key, out, optional);
+}
+
+void ConfigParser::addParam(std::string key, std::string *out, bool optional) {
+    CONFIG_PARSER_ADD_PARAM(STRING, key, out, optional);
+}
+
+void ConfigParser::addParam(std::string key, std::vector<bool> *out, bool optional) {
+    CONFIG_PARSER_ADD_PARAM(BOOL_ARRAY, key, out, optional);
+}
+
+void ConfigParser::addParam(std::string key, std::vector<int> *out, bool optional) {
+    CONFIG_PARSER_ADD_PARAM(INT_ARRAY, key, out, optional);
+}
+
+void ConfigParser::addParam(std::string key, std::vector<float> *out, bool optional) {
+    CONFIG_PARSER_ADD_PARAM(FLOAT_ARRAY, key, out, optional);
+}
+
+void ConfigParser::addParam(std::string key, std::vector<double> *out, bool optional) {
+    CONFIG_PARSER_ADD_PARAM(DOUBLE_ARRAY, key, out, optional);
+}
+
+void ConfigParser::addParam(std::string key, std::vector<std::string> *out, bool optional) {
+    CONFIG_PARSER_ADD_PARAM(STRING_ARRAY, key, out, optional);
+}
+
+void ConfigParser::addParam(std::string key, Vec2 *out, bool optional) {
+    CONFIG_PARSER_ADD_PARAM(VEC2, key, out, optional);
+}
+
+void ConfigParser::addParam(std::string key, Vec3 *out, bool optional) {
+    CONFIG_PARSER_ADD_PARAM(VEC3, key, out, optional);
+}
+
+void ConfigParser::addParam(std::string key, Vec4 *out, bool optional) {
+    CONFIG_PARSER_ADD_PARAM(VEC4, key, out, optional);
+}
+
+void ConfigParser::addParam(std::string key, VecX *out, bool optional) {
+    CONFIG_PARSER_ADD_PARAM(VECX, key, out, optional);
+}
+
+void ConfigParser::addParam(std::string key, Mat2 *out, bool optional) {
+    CONFIG_PARSER_ADD_PARAM(MAT2, key, out, optional);
+}
+
+void ConfigParser::addParam(std::string key, Mat3 *out, bool optional) {
+    CONFIG_PARSER_ADD_PARAM(MAT3, key, out, optional);
+}
+
+void ConfigParser::addParam(std::string key, Mat4 *out, bool optional) {
+    CONFIG_PARSER_ADD_PARAM(MAT4, key, out, optional);
+}
+
+void ConfigParser::addParam(std::string key, MatX *out, bool optional) {
+    CONFIG_PARSER_ADD_PARAM(MATX, key, out, optional);
+}
+
+void ConfigParser::addParam(std::string key, cv::Mat *out, bool optional) {
+    CONFIG_PARSER_ADD_PARAM(CVMAT, key, out, optional);
+}
+// clang-format on
+
 int ConfigParser::getYamlNode(std::string key, YAML::Node &node) {
     std::string element;
     std::istringstream iss(key);
@@ -117,11 +195,11 @@ int ConfigParser::loadPrimitive(ConfigParam param) {
     this->getYamlNode(param.key, node);
     // clang-format off
     switch (param.type) {
-        case BOOL: *param.b = node.as<bool>(); break;
-        case INT: *param.i = node.as<int>(); break;
-        case FLOAT: *param.f = node.as<float>(); break;
-        case DOUBLE: *param.d = node.as<double>(); break;
-        case STRING: *param.s = node.as<std::string>(); break;
+        case BOOL: *(bool *) param.data = node.as<bool>(); break;
+        case INT: *(int *) param.data = node.as<int>(); break;
+        case FLOAT: *(float *) param.data = node.as<float>(); break;
+        case DOUBLE: *(double *) param.data = node.as<double>(); break;
+        case STRING: *(std::string *) param.data = node.as<std::string>(); break;
         default: return -3;
     }
     // clang-format on
@@ -142,33 +220,34 @@ int ConfigParser::loadArray(ConfigParam param) {
     // parse
     this->getYamlNode(param.key, node);
     switch (param.type) {
-        case BOOL_ARRAY:
-            for (auto n : node) {
-                param.b_array->push_back(n.as<bool>());
-            }
-            break;
-        case INT_ARRAY:
-            for (auto n : node) {
-                param.i_array->push_back(n.as<int>());
-            }
-            break;
-        case FLOAT_ARRAY:
-            for (auto n : node) {
-                param.f_array->push_back(n.as<float>());
-            }
-            break;
-        case DOUBLE_ARRAY:
-            for (auto n : node) {
-                param.d_array->push_back(n.as<double>());
-            }
-            break;
-        case STRING_ARRAY:
-            for (auto n : node) {
-                param.s_array->push_back(n.as<std::string>());
-            }
-            break;
-        default:
-            return -3;
+    case BOOL_ARRAY:
+        for (auto n : node) {
+            ((std::vector<bool> *) param.data)->push_back(n.as<bool>());
+        }
+        break;
+    case INT_ARRAY:
+        for (auto n : node) {
+            ((std::vector<int> *) param.data)->push_back(n.as<int>());
+        }
+        break;
+    case FLOAT_ARRAY:
+        for (auto n : node) {
+            ((std::vector<float> *) param.data)->push_back(n.as<float>());
+        }
+        break;
+    case DOUBLE_ARRAY:
+        for (auto n : node) {
+            ((std::vector<double> *) param.data)->push_back(n.as<double>());
+        }
+        break;
+    case STRING_ARRAY:
+        for (auto n : node) {
+            ((std::vector<std::string> *) param.data)
+              ->push_back(n.as<std::string>());
+        }
+        break;
+    default:
+        return -3;
     }
 
     return 0;
@@ -184,40 +263,41 @@ int ConfigParser::loadVector(ConfigParam param) {
         return retval;
     }
 
-    // setup
-    Vec2 &vec2 = *param.vec2;
-    Vec3 &vec3 = *param.vec3;
-    Vec4 &vec4 = *param.vec4;
-    VecX &vecx = *param.vecx;
-
     // parse
     this->getYamlNode(param.key, node);
-
+    // clang-format off
     switch (param.type) {
-        case VEC2:
-            vec2(0) = node[0].as<double>();
-            vec2(1) = node[1].as<double>();
-            break;
-        case VEC3:
-            vec3(0) = node[0].as<double>();
-            vec3(1) = node[1].as<double>();
-            vec3(2) = node[2].as<double>();
-            break;
-        case VEC4:
-            vec4(0) = node[0].as<double>();
-            vec4(1) = node[1].as<double>();
-            vec4(2) = node[2].as<double>();
-            vec4(3) = node[3].as<double>();
-            break;
-        case VECX:
+    case VEC2:
+        *((Vec2 *) param.data) << node[0].as<double>(),
+                                  node[1].as<double>();
+        break;
+
+    case VEC3:
+        *((Vec3 *) param.data) << node[0].as<double>(),
+                                  node[1].as<double>(),
+                                  node[2].as<double>();
+        break;
+
+    case VEC4:
+        *((Vec4 *) param.data) << node[0].as<double>(),
+                                  node[1].as<double>(),
+                                  node[2].as<double>(),
+                                  node[3].as<double>();
+        break;
+
+    case VECX: {
+            VecX &vecx = *(VecX *) param.data;
             vecx = VecX((int) node.size());
             for (size_t i = 0; i < node.size(); i++) {
                 vecx(i) = node[i].as<double>();
             }
-            break;
-        default:
-            return -3;
+    } break;
+
+    default:
+        return -3;
+        break;
     }
+    // clang-format on
 
     return 0;
 }
@@ -235,13 +315,6 @@ int ConfigParser::loadMatrix(ConfigParam param) {
         return -2;
     }
 
-    // setup
-    Mat2 &mat2 = *param.mat2;
-    Mat3 &mat3 = *param.mat3;
-    Mat4 &mat4 = *param.mat4;
-    MatX &matx = *param.matx;
-    cv::Mat &cvmat = *param.cvmat;
-
     // parse
     this->getYamlNode(param.key, node);
     index = 0;
@@ -249,54 +322,63 @@ int ConfigParser::loadMatrix(ConfigParam param) {
     cols = node["cols"].as<int>();
 
     switch (param.type) {
-        case MAT2:
-            mat2(0, 0) = node["data"][0].as<double>();
-            mat2(0, 1) = node["data"][1].as<double>();
+    case MAT2: {
+        Mat2 &mat2 = *(Mat2 *) param.data;
+        mat2(0, 0) = node["data"][0].as<double>();
+        mat2(0, 1) = node["data"][1].as<double>();
 
-            mat2(1, 0) = node["data"][2].as<double>();
-            mat2(1, 1) = node["data"][3].as<double>();
-            break;
-        case MAT3:
-            mat3(0, 0) = node["data"][0].as<double>();
-            mat3(0, 1) = node["data"][1].as<double>();
-            mat3(0, 2) = node["data"][2].as<double>();
+        mat2(1, 0) = node["data"][2].as<double>();
+        mat2(1, 1) = node["data"][3].as<double>();
+    } break;
 
-            mat3(1, 0) = node["data"][3].as<double>();
-            mat3(1, 1) = node["data"][4].as<double>();
-            mat3(1, 2) = node["data"][5].as<double>();
+    case MAT3: {
+        Mat3 &mat3 = *(Mat3 *) param.data;
+        mat3(0, 0) = node["data"][0].as<double>();
+        mat3(0, 1) = node["data"][1].as<double>();
+        mat3(0, 2) = node["data"][2].as<double>();
 
-            mat3(2, 0) = node["data"][6].as<double>();
-            mat3(2, 1) = node["data"][7].as<double>();
-            mat3(2, 2) = node["data"][8].as<double>();
-            break;
-        case MAT4:
-            for (int i = 0; i < rows; i++) {
-                for (int j = 0; j < cols; j++) {
-                    mat4(i, j) = node["data"][index].as<double>();
-                    index++;
-                }
+        mat3(1, 0) = node["data"][3].as<double>();
+        mat3(1, 1) = node["data"][4].as<double>();
+        mat3(1, 2) = node["data"][5].as<double>();
+
+        mat3(2, 0) = node["data"][6].as<double>();
+        mat3(2, 1) = node["data"][7].as<double>();
+        mat3(2, 2) = node["data"][8].as<double>();
+    } break;
+
+    case MAT4: {
+        Mat4 &mat4 = *(Mat4 *) param.data;
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                mat4(i, j) = node["data"][index].as<double>();
+                index++;
             }
-            break;
-        case MATX:
-            matx.resize(rows, cols);
-            for (int i = 0; i < rows; i++) {
-                for (int j = 0; j < cols; j++) {
-                    matx(i, j) = node["data"][index].as<double>();
-                    index++;
-                }
+        }
+    } break;
+
+    case MATX: {
+        MatX &matx = *(MatX *) param.data;
+        matx.resize(rows, cols);
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                matx(i, j) = node["data"][index].as<double>();
+                index++;
             }
-            break;
-        case CVMAT:
-            cvmat = cv::Mat(rows, cols, CV_64F);
-            for (int i = 0; i < rows; i++) {
-                for (int j = 0; j < cols; j++) {
-                    cvmat.at<double>(i, j) = node["data"][index].as<double>();
-                    index++;
-                }
+        }
+    } break;
+
+    case CVMAT: {
+        cv::Mat &cvmat = *(cv::Mat *) param.data;
+        cvmat = cv::Mat(rows, cols, CV_64F);
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                cvmat.at<double>(i, j) = node["data"][index].as<double>();
+                index++;
             }
-            break;
-        default:
-            return -3;
+        }
+    } break;
+    default:
+        return -3;
     }
 
     return 0;
@@ -316,39 +398,39 @@ int ConfigParser::load(std::string config_file) {
 
     for (size_t i = 0; i < this->params.size(); i++) {
         switch (this->params[i].type) {
-            // PRIMITIVE
-            case BOOL:
-            case INT:
-            case FLOAT:
-            case DOUBLE:
-            case STRING:
-                retval = this->loadPrimitive(this->params[i]);
-                break;
-            // ARRAY
-            case BOOL_ARRAY:
-            case INT_ARRAY:
-            case FLOAT_ARRAY:
-            case DOUBLE_ARRAY:
-            case STRING_ARRAY:
-                retval = this->loadArray(this->params[i]);
-                break;
-            // VECTOR
-            case VEC2:
-            case VEC3:
-            case VEC4:
-            case VECX:
-                retval = this->loadVector(this->params[i]);
-                break;
-            // MAT
-            case MAT2:
-            case MAT3:
-            case MAT4:
-            case MATX:
-            case CVMAT:
-                retval = this->loadMatrix(this->params[i]);
-                break;
-            default:
-                return -1;
+        // PRIMITIVE
+        case BOOL:
+        case INT:
+        case FLOAT:
+        case DOUBLE:
+        case STRING:
+            retval = this->loadPrimitive(this->params[i]);
+            break;
+        // ARRAY
+        case BOOL_ARRAY:
+        case INT_ARRAY:
+        case FLOAT_ARRAY:
+        case DOUBLE_ARRAY:
+        case STRING_ARRAY:
+            retval = this->loadArray(this->params[i]);
+            break;
+        // VECTOR
+        case VEC2:
+        case VEC3:
+        case VEC4:
+        case VECX:
+            // retval = this->loadVector(this->params[i]);
+            break;
+        // MAT
+        case MAT2:
+        case MAT3:
+        case MAT4:
+        case MATX:
+        case CVMAT:
+            // retval = this->loadMatrix(this->params[i]);
+            break;
+        default:
+            return -1;
         }
 
         if (retval != 0) {
