@@ -33,7 +33,7 @@ As a special case, when $\rho_i(x) = x$, i.e., the identity function, and $l_j =
   \dfrac{1}{2} (10 - x)^{2}
 \end{equation}
 
-**Important**: In Ceres while implenting the `CostFunction` you as the user are expected to implement the **residual only** because the cost function is always contructed the same way ($\text{cost} = \sum \text{residuals}^{2}$), in this case it is:
+**Important**: In Ceres while implementing the `CostFunction` you as the user are expected to implement the **residual only** because the cost function is always contructed the same way ($\text{cost} = \sum \text{residuals}^{2}$), in this case it is:
 
 \begin{equation}
   r = (10 - x)
@@ -99,8 +99,6 @@ Note that:
     Dimension of residual -----------------------------+  |
     Dimension of x ---------------------------------------+
 
-**Important**: In Ceres while implenting the `CostFunction` you as the user are expected to implement the **residual only** because the cost function is always contructed the same way ($\text{cost} = \sum \text{residuals}^{2}$) (see "How do I define a cost function?" above).
-
 The `ceres::AutoDiffCostFunction` takes our `CostFunctor` previously defined as input, automatically differentiates it and gives it a `ceres::CostFunction` interface.
 
 Running the above code example gives us:
@@ -125,8 +123,6 @@ Defining a numerical cost function is just a matter of using `ceres::NumericDiff
                                   Dimension of residual -------------------+  |  |
                                   Dimension of x -----------------------------+  |
                                   Dimension of y --------------------------------+
-
-**Important**: In Ceres while implenting the `CostFunction` you as the user are expected to implement the **residual only** because the cost function is always contructed the same way ($\text{cost} = \sum \text{residuals}^{2}$) (see "How do I define a cost function?" above).
 
 
 
@@ -164,8 +160,6 @@ The implementation for an analytical cost function is more involving compared to
         return true;
       }
     };
-
-**Important**: In Ceres while implenting the `CostFunction` you as the user are expected to implement the **residual only** because the cost function is always contructed the same way ($\text{cost} = \sum \text{residuals}^{2}$) (see "How do I define a cost function?" above).
 
 Keypoints:
 
