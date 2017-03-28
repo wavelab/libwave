@@ -345,78 +345,78 @@ TEST(Utils_config_ConfigParser, loadMatrix) {
     }
 }
 
-// TEST(Utils_config_ConfigParser, load) {
-//     int retval;
-//     bool b;
-//     int i;
-//     float f;
-//     double d;
-//     std::string s;
-//
-//     std::vector<bool> b_array;
-//     std::vector<int> i_array;
-//     std::vector<float> f_array;
-//     std::vector<double> d_array;
-//     std::vector<std::string> s_array;
-//
-//     wave::Vec2 vec2;
-//     wave::Vec3 vec3;
-//     wave::Vec4 vec4;
-//     wave::VecX vecx;
-//
-//     wave::Mat2 mat2;
-//     wave::Mat3 mat3;
-//     wave::Mat4 mat4;
-//     wave::MatX matx;
-//     cv::Mat cvmat;
-//
-//     wave::ConfigParser parser;
-//
-//     parser.addParam<bool>("bool", &b);
-//     parser.addParam<int>("int", &i);
-//     parser.addParam<float>("float", &f);
-//     parser.addParam<double>("double", &d);
-//     parser.addParam<std::string>("string", &s);
-//
-//     parser.addParam<std::vector<bool>>("bool_array", &b_array);
-//     parser.addParam<std::vector<int>>("int_array", &i_array);
-//     parser.addParam<std::vector<float>>("float_array", &f_array);
-//     parser.addParam<std::vector<double>>("double_array", &d_array);
-//     parser.addParam<std::vector<std::string>>("string_array", &s_array);
-//
-//     parser.addParam<wave::Vec2>("vector2", &vec2);
-//     parser.addParam<wave::Vec3>("vector3", &vec3);
-//     parser.addParam<wave::Vec4>("vector4", &vec4);
-//     parser.addParam<wave::VecX>("vector", &vecx);
-//
-//     parser.addParam<wave::Mat2>("matrix2", &mat2);
-//     parser.addParam<wave::Mat3>("matrix3", &mat3);
-//     parser.addParam<wave::Mat4>("matrix4", &mat4);
-//     parser.addParam<wave::MatX>("matrix", &matx);
-//     parser.addParam<cv::Mat>("matrix", &cvmat);
-//
-//     retval = parser.load(TEST_CONFIG);
-//     if (retval != 0) {
-//         FAIL();
-//     }
-//
-//     std::cout << "bool: " << b << std::endl;
-//     std::cout << "int: " << i << std::endl;
-//     std::cout << "float: " << f << std::endl;
-//     std::cout << "double: " << d << std::endl;
-//     std::cout << "string: " << s << std::endl;
-//     std::cout << std::endl;
-//
-//     std::cout << "vector2: " << vec2.transpose() << std::endl;
-//     std::cout << "vector3: " << vec3.transpose() << std::endl;
-//     std::cout << "vector4: " << vec4.transpose() << std::endl;
-//     std::cout << "vector: " << vecx.transpose() << std::endl;
-//     std::cout << std::endl;
-//
-//     std::cout << "matrix2: \n" << mat2 << std::endl;
-//     std::cout << "matrix3: \n" << mat3 << std::endl;
-//     std::cout << "matrix4: \n" << mat4 << std::endl;
-//     std::cout << "matrix: \n" << matx << std::endl;
-//     std::cout << "cvmatrix: \n" << cvmat << std::endl;
-//     std::cout << std::endl;
-// }
+TEST(Utils_config_ConfigParser, load) {
+    int retval;
+    bool b;
+    int i;
+    float f;
+    double d;
+    std::string s;
+
+    std::vector<bool> b_array;
+    std::vector<int> i_array;
+    std::vector<float> f_array;
+    std::vector<double> d_array;
+    std::vector<std::string> s_array;
+
+    wave::Vec2 vec2;
+    wave::Vec3 vec3;
+    wave::Vec4 vec4;
+    wave::VecX vecx;
+
+    wave::Mat2 mat2;
+    wave::Mat3 mat3;
+    wave::Mat4 mat4;
+    wave::MatX matx;
+    cv::Mat cvmat;
+
+    wave::ConfigParser parser;
+
+    parser.addParam("bool", &b);
+    parser.addParam("int", &i);
+    parser.addParam("float", &f);
+    parser.addParam("double", &d);
+    parser.addParam("string", &s);
+
+    parser.addParam("bool_array", &b_array);
+    parser.addParam("int_array", &i_array);
+    parser.addParam("float_array", &f_array);
+    parser.addParam("double_array", &d_array);
+    parser.addParam("string_array", &s_array);
+
+    parser.addParam("vector2", &vec2);
+    parser.addParam("vector3", &vec3);
+    parser.addParam("vector4", &vec4);
+    parser.addParam("vector", &vecx);
+
+    parser.addParam("matrix2", &mat2);
+    parser.addParam("matrix3", &mat3);
+    parser.addParam("matrix4", &mat4);
+    parser.addParam("matrix", &matx);
+    parser.addParam("matrix", &cvmat);
+
+    retval = parser.load(TEST_CONFIG);
+    if (retval != 0) {
+        FAIL();
+    }
+
+    std::cout << "bool: " << b << std::endl;
+    std::cout << "int: " << i << std::endl;
+    std::cout << "float: " << f << std::endl;
+    std::cout << "double: " << d << std::endl;
+    std::cout << "string: " << s << std::endl;
+    std::cout << std::endl;
+
+    std::cout << "vector2: " << vec2.transpose() << std::endl;
+    std::cout << "vector3: " << vec3.transpose() << std::endl;
+    std::cout << "vector4: " << vec4.transpose() << std::endl;
+    std::cout << "vector: " << vecx.transpose() << std::endl;
+    std::cout << std::endl;
+
+    std::cout << "matrix2: \n" << mat2 << std::endl;
+    std::cout << "matrix3: \n" << mat3 << std::endl;
+    std::cout << "matrix4: \n" << mat4 << std::endl;
+    std::cout << "matrix: \n" << matx << std::endl;
+    std::cout << "cvmatrix: \n" << cvmat << std::endl;
+    std::cout << std::endl;
+}
