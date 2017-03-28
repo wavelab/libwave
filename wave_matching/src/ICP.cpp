@@ -13,14 +13,14 @@ ICP_Matcher::ICP_Matcher(float res) {
         this->resolution = -1;
     }
 
-    this->icp.setMaxCorrespondenceDistance (3);
-    this->icp.setMaximumIterations (100);
-    this->icp.setTransformationEpsilon (1e-8);
-    this->icp.setEuclideanFitnessEpsilon (1e-2);
+    this->icp.setMaxCorrespondenceDistance(3);
+    this->icp.setMaximumIterations(100);
+    this->icp.setTransformationEpsilon(1e-8);
+    this->icp.setEuclideanFitnessEpsilon(1e-2);
 }
 
 void ICP_Matcher::setRef(const PCLPointCloud &ref) {
-    if(this->resolution > 0) {
+    if (this->resolution > 0) {
         this->filter.setInputCloud(ref);
         this->filter.filter(*(this->ref));
     } else {
@@ -30,7 +30,7 @@ void ICP_Matcher::setRef(const PCLPointCloud &ref) {
 }
 
 void ICP_Matcher::setTarget(const PCLPointCloud &target) {
-    if(this->resolution > 0) {
+    if (this->resolution > 0) {
         this->filter.setInputCloud(target);
         this->filter.filter(*(this->target));
     } else {
@@ -41,7 +41,7 @@ void ICP_Matcher::setTarget(const PCLPointCloud &target) {
 
 bool ICP_Matcher::match() {
     this->icp.align(*(this->final));
-    if(this->icp.hasConverged()) {
+    if (this->icp.hasConverged()) {
         this->result.matrix() = icp.getFinalTransformation().cast<double>();
         return true;
     }

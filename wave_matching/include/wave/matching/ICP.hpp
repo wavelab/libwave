@@ -13,12 +13,13 @@ namespace wave {
 
 typedef pcl::PointCloud<pcl::PointXYZ>::Ptr PCLPointCloud;
 class ICP_Matcher : public wave::Matcher<PCLPointCloud> {
-  public:
+ public:
     explicit ICP_Matcher(float resolution);
-    void setRef(const PCLPointCloud& ref);
-    void setTarget(const PCLPointCloud& target);
+    void setRef(const PCLPointCloud &ref);
+    void setTarget(const PCLPointCloud &target);
     bool match();
-  private:
+
+ private:
     pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
     pcl::VoxelGrid<pcl::PointXYZ> filter;
     PCLPointCloud ref, target, final;
@@ -26,4 +27,4 @@ class ICP_Matcher : public wave::Matcher<PCLPointCloud> {
 
 }  // end of wave namespace
 
-#endif //WAVE_MATCHING_ICP_HPP
+#endif  // WAVE_MATCHING_ICP_HPP

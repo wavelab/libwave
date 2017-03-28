@@ -7,12 +7,12 @@
 
 #include "wave/matching/ICP.hpp"
 
-bool isApprox(const Eigen::Affine3d& first,
-              const Eigen::Affine3d& second,
+bool isApprox(const Eigen::Affine3d &first,
+              const Eigen::Affine3d &second,
               double tolerance) {
     for (uint8_t iii = 0; iii < 4; ++iii) {
-        for(uint8_t jjj = 0; jjj < 4; ++jjj) {
-            tolerance -= std::abs(first(iii,jjj) - second(iii,jjj));
+        for (uint8_t jjj = 0; jjj < 4; ++jjj) {
+            tolerance -= std::abs(first(iii, jjj) - second(iii, jjj));
         }
     }
     if (tolerance > 0) {
@@ -23,17 +23,18 @@ bool isApprox(const Eigen::Affine3d& first,
 
 // Fixture to load same pointcloud all the time
 class ICPTest : public testing::Test {
-  protected:
+protected:
     ICPTest() {}
     virtual ~ICPTest() {
-        if(matcher) {
+        if (matcher) {
             delete matcher;
         }
     }
     virtual void SetUp() {
         this->ref = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
         this->target = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
-        pcl::io::loadPCDFile("../../wave_matching/tests/testscan.pcd", *(this->ref));
+        pcl::io::loadPCDFile("../../wave_matching/tests/testscan.pcd",
+                             *(this->ref));
     }
     void setParams(const float res, const Eigen::Affine3d perturb) {
         this->matcher = new wave::ICP_Matcher(res);
