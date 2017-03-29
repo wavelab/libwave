@@ -5,7 +5,7 @@
 #include <pcl/io/pcd_io.h>
 #include <Eigen/Dense>
 
-#include "wave/matching/ICP.hpp"
+#include "wave/matching/icp.hpp"
 
 namespace wave {
 
@@ -29,30 +29,29 @@ class ICPTest : public testing::Test {
     ICPTest() {}
 
     virtual ~ICPTest() {
-        if (matcher) {
-            delete matcher;
+        if (this->matcher) {
+            delete this->matcher;
         }
     }
 
     virtual void SetUp() {
         this->ref = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
         this->target = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
-        pcl::io::loadPCDFile("../../wave_matching/tests/testscan.pcd",
-                             *(this->ref));
+        pcl::io::loadPCDFile("data/testscan.pcd", *(this->ref));
     }
 
     void setParams(const float res, const Eigen::Affine3d perturb) {
-        this->matcher = new ICP_Matcher(res);
+        this->matcher = new ICPMatcher(res);
         pcl::transformPointCloud(*(this->ref), *(this->target), perturb);
         this->matcher->setup(this->ref, this->target);
     }
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr ref, target;
-    ICP_Matcher *matcher;
+    ICPMatcher *matcher;
 };
 
 TEST(ICPTests, initialization) {
-    ICP_Matcher matcher(0.1f);
+    ICPMatcher matcher(0.1f);
 }
 
 // Zero displacement without downsampling
@@ -63,7 +62,7 @@ TEST_F(ICPTest, fullResNullMatch) {
     // Setup
     perturb = Eigen::Affine3d::Identity();
     perturb.translation() << 0, 0, 0;
-    setParams(-1, perturb);
+    this->setParams(-1, perturb);
     // test and assert
     match_success = matcher->match();
     result = matcher->getResult();
@@ -79,7 +78,7 @@ TEST_F(ICPTest, nullDisplacement) {
     // Setup
     perturb = Eigen::Affine3d::Identity();
     perturb.translation() << 0, 0, 0;
-    setParams(0.05f, perturb);
+    this->setParams(0.05f, perturb);
     // test and assert
     match_success = matcher->match();
     result = matcher->getResult();
@@ -95,7 +94,7 @@ TEST_F(ICPTest, smallDisplacement) {
     // Setup
     perturb = Eigen::Affine3d::Identity();
     perturb.translation() << 0.2, 0, 0;
-    setParams(0.05f, perturb);
+    this->setParams(0.05f, perturb);
     // test and assert
     match_success = matcher->match();
     result = matcher->getResult();
@@ -104,8 +103,3 @@ TEST_F(ICPTest, smallDisplacement) {
 }
 
 }  // end of namespace wave
-
-int main(int argc, char *argv[]) {
-    testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
-}

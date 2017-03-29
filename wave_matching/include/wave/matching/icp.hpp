@@ -12,9 +12,9 @@
 namespace wave {
 
 typedef pcl::PointCloud<pcl::PointXYZ>::Ptr PCLPointCloud;
-class ICP_Matcher : public wave::Matcher<PCLPointCloud> {
+class ICPMatcher : public Matcher<PCLPointCloud> {
  public:
-    explicit ICP_Matcher(float resolution);
+    explicit ICPMatcher(float resolution);
     void setRef(const PCLPointCloud &ref);
     void setTarget(const PCLPointCloud &target);
     bool match();

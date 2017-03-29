@@ -1,8 +1,8 @@
-#include "wave/matching/ICP.hpp"
+#include "wave/matching/icp.hpp"
 
 namespace wave {
 
-ICP_Matcher::ICP_Matcher(float res) {
+ICPMatcher::ICPMatcher(float res) {
     this->ref = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
     this->target = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
     this->final = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
@@ -19,7 +19,7 @@ ICP_Matcher::ICP_Matcher(float res) {
     this->icp.setEuclideanFitnessEpsilon(1e-2);
 }
 
-void ICP_Matcher::setRef(const PCLPointCloud &ref) {
+void ICPMatcher::setRef(const PCLPointCloud &ref) {
     if (this->resolution > 0) {
         this->filter.setInputCloud(ref);
         this->filter.filter(*(this->ref));
@@ -29,7 +29,7 @@ void ICP_Matcher::setRef(const PCLPointCloud &ref) {
     this->icp.setInputSource(this->ref);
 }
 
-void ICP_Matcher::setTarget(const PCLPointCloud &target) {
+void ICPMatcher::setTarget(const PCLPointCloud &target) {
     if (this->resolution > 0) {
         this->filter.setInputCloud(target);
         this->filter.filter(*(this->target));
@@ -39,7 +39,7 @@ void ICP_Matcher::setTarget(const PCLPointCloud &target) {
     this->icp.setInputTarget(this->target);
 }
 
-bool ICP_Matcher::match() {
+bool ICPMatcher::match() {
     this->icp.align(*(this->final));
     if (this->icp.hasConverged()) {
         this->result.matrix() = icp.getFinalTransformation().cast<double>();
