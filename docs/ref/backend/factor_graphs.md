@@ -1,5 +1,11 @@
 # Factor Graphs
 
+## Good References
+
+* Factor Graphs and Maximum-Liklihood (ML) estimation from GTSAM tutorial (ignore the code aspects for now, and focus on concepts)[[1][Dellaert2012]].
+* MAP from wikipedia [[2][MAP-wiki]].
+* Putting ML estimation and Box operators together: SLAM on Manifolds, from the g2o documentation. (Again, ignore the code for now, and focus on the concepts) [[3][g2o]].
+
 ## Introduction
 
 Factor graphs are a graphical modelling method which excel in optimizing
@@ -15,11 +21,11 @@ A graphical model is a probabilistic model which illustrates the conditional
 dependence between random variables. A factor graph is a model that employs a
 *bipartite* graph; a graph consisting of two distinct nodes.The two nodes in
 a factor graph are *variables* and *factors*, which are connected together by
-*edges* [[2][Eckford2010]]. Illustrated below is an example factor graph,
-with 3 variables X1, X2, X3, and four factors f1, f2, f3, and f4 [[3][Wiki]].
-As a convention, variables are usually denoted by circles [[2][Eckford2010]].
+*edges* [[4][Eckford2010]]. Illustrated below is an example factor graph,
+with 3 variables X1, X2, X3, and four factors f1, f2, f3, and f4 [[5][FG-wiki]].
+As a convention, variables are usually denoted by circles [[4][Eckford2010]].
 
-![Factor Graph](images/factor_graph.jpg)
+![Factor Graph](factor_graph.jpg)
 
 The edges illustrate the relationship between the factors and the variables. If
 the variable appears in the factor, we can connect an edge between the two.
@@ -32,7 +38,7 @@ Factors are probability statements illustrating the conditional dependencies
 between the variables. These are usually derived from measurements or
 mathematical fundamentals [[1][Dellaert2012]]. As we know from probability
 theory, any joint probability model with any number of variables can be broken
-down into factors [[2][Eckford2010]].
+down into factors [[4][Eckford2010]].
 
 For example, we can state that the probability of two variables, *a*, and *b*,
 can be expressed as: **f(a, b) = f(a | b)\*f(b)**; a factor of the two
@@ -54,7 +60,7 @@ odometry and GPS measurements. The variables *x1, x2*, and *x3* denote 3 poses
 of the robot over time while *z1, z2*, and *z3* denote the measurement of that
 pose. The factor graph can be derived as follows:
 
-![Factor Graph 2](images/factor_graph_2.jpg)
+![Factor Graph 2](factor_graph_2.jpg)
 
 The GPS measurements are illustrated by **f1(x1; z1), f2(x2; z2)**, and
 **f3(x3; z3)**. As measurements only depend on the one state they are
@@ -85,19 +91,22 @@ increases constantly as the robot continues to move over time. However,
 although there are more variables, each odometry and GPS factor is still only
 binary or unary, respectively. This structure in combination with breakthroughs
 in solving sparse linear alegbra equations has led to computationally
-efficient, accurate SLAM algorithms [[5][Grisetti2010]].
+efficient, accurate SLAM algorithms [[7][Grisetti2010]].
 
 
 ## References and Resources
 1.  [Dellaert, F. (2012). Factor Graphs and GTSAM: A Hands-on Introduction][Dellaert2012]
-2.  [Eckford, A. (2010). Factor Graphs and the Sum-Product Algorithm, *Video Series*][Eckford2010]
-3.  [Wikipedia. Factor Graph][Wiki]
-4.  [Grisetti, G., Kümmerle, R., Stachniss, C., Burgard, W. (2010). A Tutorial on Graph-Based SLAM][Grisetti2010]
-5.  [Koller, D (2012). Probabilistic Graphical Models, *Video Series*][Koller2012]
+2.  [Wikipedia, Maximum A Posteriori estimation][MAP-wiki]
+3.  [Grisetti, G., Kummerle, R., Strastdat, H., Konolige, K.,Burgard, W. (2011) "g2o: A general framework for (Hyper) Graph Optimization][g2o]
+4.  [Eckford, A. (2010). Factor Graphs and the Sum-Product Algorithm, *Video Series*][Eckford2010]
+5.  [Wikipedia. Factor Graph][FG-wiki]
+6.  [Grisetti, G., Kümmerle, R., Stachniss, C., Burgard, W. (2010). A Tutorial on Graph-Based SLAM", ICRA][Grisetti2010]
+7.  [Koller, D (2012). Probabilistic Graphical Models, *Video Series*][Koller2012]
 
 [Dellaert2012]: https://research.cc.gatech.edu/borg/sites/edu.borg/files/downloads/gtsam.pdf
+[MAP-wiki]: https://en.wikipedia.org/wiki/Maximum_likelihood_estimation
 [Eckford2010]: https://www.youtube.com/watch?v=8H5LJVgtzsg
-[Wiki]: https://en.wikipedia.org/wiki/Factor_graph
+[FG-wiki]: https://en.wikipedia.org/wiki/Factor_graph
+[g2o]: https://github.com/RainerKuemmerle/g2o/blob/master/doc/g2o.pdf
 [Grisetti2010]: http://www2.informatik.uni-freiburg.de/~stachnis/pdf/grisetti10titsmag.pdf
 [Koller2012]: https://www.youtube.com/watch?v=6ODl1rxoT14&list=PL50E6E80E8525B59C&index=5
-

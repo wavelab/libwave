@@ -5,7 +5,7 @@ language:
     - c++
 
 install:
-    - sudo bash scripts/install/install_deps.bash
+    - travis_wait sudo bash scripts/install/install_deps.bash
 
 script:
     - bash scripts/ci_run.bash

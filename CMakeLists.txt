@@ -4,7 +4,7 @@ PROJECT(wave)
 # COMPILER SETTINGS
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
 IF (CMAKE_COMPILER_IS_GNUCXX)
-  ADD_DEFINITIONS(-std=gnu++11)
+    ADD_DEFINITIONS(-std=gnu++11)
 ENDIF()
 
 # INCLUDES
@@ -20,17 +20,9 @@ INCLUDE_DIRECTORIES(
 ADD_SUBDIRECTORY(deps/googletest)
 INCLUDE_DIRECTORIES(${gtest_SOURCE_DIR}/include/)
 
-# libwave_estimation.a
-ADD_SUBDIRECTORY(wave_estimation)
-ADD_DEPENDENCIES(wave_estimation wave_utils)
-
-# # libwave_kinematics.a
-# ADD_SUBDIRECTORY(wave_kinematics)
-# ADD_DEPENDENCIES(wave_kinematics wave_utils)
-
-# # libwave_optimization.a
-# ADD_SUBDIRECTORY(wave_optimization)
-# ADD_DEPENDENCIES(wave_optimization wave_utils)
+# libwave_optimization.a
+ADD_SUBDIRECTORY(wave_optimization)
+ADD_DEPENDENCIES(wave_optimization wave_utils)
 
 # libwave_utils.a
 ADD_SUBDIRECTORY(wave_utils)
@@ -40,16 +32,14 @@ ADD_SUBDIRECTORY(wave_matching)
 
 # libwave.a
 ADD_CUSTOM_TARGET(
-  libwave ALL
-  COMMAND
-    ${CMAKE_AR} rc libwave.a
-      ${CMAKE_BINARY_DIR}/wave_estimation/libwave_estimation.a
-      # ${CMAKE_BINARY_DIR}/wave_estimation/libwave_kinematics.a
-      # ${CMAKE_BINARY_DIR}/wave_estimation/libwave_optimization.a
-      ${CMAKE_BINARY_DIR}/wave_utils/libwave_utils.a
-      ${CMAKE_BINARY_DIR}/wave_matching/libwave_matching.a
-  DEPENDS
-    wave_estimation
-    wave_utils
-    wave_matching
+    libwave ALL
+    COMMAND
+        ${CMAKE_AR} rc libwave.a
+            ${CMAKE_BINARY_DIR}/wave_optimization/libwave_optimization.a
+            ${CMAKE_BINARY_DIR}/wave_utils/libwave_utils.a
+            ${CMAKE_BINARY_DIR}/wave_matching/libwave_matching.a
+    DEPENDS
+        wave_optimization
+        wave_utils
+        wave_matching
 )

@@ -1,6 +1,4 @@
-## Math
-
-## Vision
+# Open Source Package Evaluation
 
 ## Calibration
 
@@ -12,7 +10,9 @@ License: BSD
 
 Work in progress, see: [[Kalibr Test Log]]
 
-#### Steve's Comments:  Kalibr is actually three separate calibration packages, and new features are still being added
+#### Steve's Comments
+
+Kalibr is actually three separate calibration packages, and new features are still being added
 
 * Camera-IMU calibration, the original and what Kalibr is known for, with continuous time batch estimation that calibrates spatial (extrinsic) and temporal parameters.
 * Multi-camera calibration, requiring overlap between pairs of cameras but operating in pre-mapped outdoor environments without targets
@@ -206,6 +206,7 @@ Upon receiving a scan and its initialization pose, in the local map frame, from 
 *  The above steps are repeated for all scans inserted into the pose graph.
 * Note that the aggregated point cloud can be optionally converted into a multi level surface (MLS) representation, which allows for obstacle and drivability analysis of the point cloud.
 
+
 ### Future Work
 We've identified the following improvements for this code:
 * Better modularity, should be improved once once absorbed into libwave
@@ -213,21 +214,6 @@ We've identified the following improvements for this code:
 * Inclusion of kinematic models / pre-integrated IMU measurements
 * Add additional laser based feature/landmark states
 * Strategies for improving the basin of convergence of the scan registrations.
-
-## General Topics
-
-### Viewpoint Invariance
-* Needed for Relocalization, loop closing, multi-agent SLAM. Descriptors look the same upto 30-35 degrees.
-* Use multiple descriptors from different views and retain only most informative descriptors (PCA, KPCA, angle>25 etc)
-* Use of range sensor or/and IMU to estimate viewpoints
-* Active Vision: Position camera in different positions
-* A single descriptor to characterize multiple descriptors. Could use branch and bound technique to find most similar descriptor.
-* Salient features to better estimate viewpoint
-* Locate features based on semantic understanding of objects. Grouping of features
-* Storing multiple features on objects. Allow certain parameters to vary. Match only on stable features (Lines etc.)
-
-### A Framework for Evaluating Visual SLAM [paper](http://www.bmva.org/bmvc/2009/Papers/Paper396/Paper396.pdf) (http://vslam.inf.tu-dresden.de/)
-Their main point is that there is no performance measures for visual SLAM. Recorded sequences lack ground truth and simulated environments aren’t true reflections of what we might see in the real world. Hence by using rendered scenes, not only do we get ground truth but also can recreate real world scenes. High-quality rendered images are close enough to real-world images to violate many of the assumptions usually made in the image processing part of VSLAM. Some papers give quantitative results on restricted scene types. Framework consists of four components: a repository, a rendering system, an interface for VSLAM systems and an evaluation system. Able to generate motion blur.
 
 ## Laser Odometry and Mapping [LOAM](https://github.com/laboshinl/loam_velodyne)
 
@@ -249,8 +235,8 @@ The features used by this method are extracted using a smoothness term. The smoo
 * Store IMU data while a scan is in progress.
 * One a scan is received, transform it for non-linear motion using IMU data, and extract features from each scan line. The scan lines are broken into subregions to distribute the features over the entire scan. Using the smoothness criteria, edge points are selected as high-scoring points and planar areas selected as low scoring points.
 * Take the extracted features and match them against the closest features in the previous scans, using the initial estimate of the motion between scans to transform them (provided by integrating the IMU and adding the previous scan's velocity)
-    *For edge points, the closest edge point in the previous scan is found along with the closest edge point in the neighbouring scan lines. The point-to-line distance is then used as a residual.
-    *For planar points, the closest planar point in the previous scan is found along with the closest planar points both on the same scan line and the neighbouring line. These three points are used to form a plane and then the point-to-plane distance is used as a residual.
+    * For edge points, the closest edge point in the previous scan is found along with the closest edge point in the neighbouring scan lines. The point-to-line distance is then used as a residual.
+    * For planar points, the closest planar point in the previous scan is found along with the closest planar points both on the same scan line and the neighbouring line. These three points are used to form a plane and then the point-to-plane distance is used as a residual.
 * Once all the residuals have been calculated, an optimization to minimize the distances is performed. Bisquare weighting is applied to discount large correspondences.
 * Transform the pointcloud using recovered motion and match against aggregated map. The same feature matching is applied, only this time the matching is between the local aggregate map and the undistorted pointcloud with more features being used.
 
