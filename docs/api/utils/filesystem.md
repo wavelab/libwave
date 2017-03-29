@@ -1,5 +1,7 @@
 # wave/utils/filesystem.hpp
 
+This module contains file system functions that C++ did not come with, for example `file_exists()` checks if a file exists at a certain path.
+
 
 ## Functions
 
