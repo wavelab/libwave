@@ -1,5 +1,5 @@
 BasedOnStyle: Chromium
-AccessModifierOffset: -4
+AccessModifierOffset: -3
 AlignAfterOpenBracket: true
 AlignEscapedNewlinesLeft: true
 AlignOperands: true
