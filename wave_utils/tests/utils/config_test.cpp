@@ -17,8 +17,7 @@ TEST(Utils_config_ConfigParam, constructor) {
 TEST(Utils_config_ConfigParser, constructor) {
     wave::ConfigParser parser;
 
-    ASSERT_FALSE(parser.configured);
-    ASSERT_FALSE(parser.loaded);
+    ASSERT_FALSE(parser.config_loaded);
 }
 
 TEST(Utils_config_ConfigParser, addParam) {
@@ -99,6 +98,7 @@ TEST(Utils_config_ConfigParser, loadPrimitive) {
 
     // setup
     parser.root = YAML::LoadFile(TEST_CONFIG);
+    parser.config_loaded = true;
 
     // INTEGER
     param.optional = false;
@@ -144,6 +144,7 @@ TEST(Utils_config_ConfigParser, loadArray) {
 
     // setup
     parser.root = YAML::LoadFile(TEST_CONFIG);
+    parser.config_loaded = true;
 
     // BOOL ARRAY
     param.optional = false;
@@ -213,6 +214,7 @@ TEST(Utils_config_ConfigParser, loadVector) {
 
     // setup
     parser.root = YAML::LoadFile(TEST_CONFIG);
+    parser.config_loaded = true;
 
     // VECTOR 2
     param.optional = false;
@@ -271,6 +273,7 @@ TEST(Utils_config_ConfigParser, loadMatrix) {
 
     // setup
     parser.root = YAML::LoadFile(TEST_CONFIG);
+    parser.config_loaded = true;
 
     // MATRIX 2
     param.optional = false;

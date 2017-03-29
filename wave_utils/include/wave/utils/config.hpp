@@ -72,14 +72,12 @@ public:
 
 class ConfigParser {
 public:
-    bool configured;
-    bool loaded;
+    bool config_loaded;
 
     YAML::Node root;
     std::vector<ConfigParam> params;
 
     ConfigParser(void);
-
     // clang-format off
     void addParam(std::string key, bool *out, bool optional = false);
     void addParam(std::string key, int *out, bool optional = false);
@@ -101,7 +99,6 @@ public:
     void addParam(std::string key, MatX *out, bool optional = false);
     void addParam(std::string key, cv::Mat *out, bool optional = false);
     // clang-format on
-
     int getYamlNode(std::string key, YAML::Node &node);
     int checkKey(std::string key, bool optional);
     int checkVector(std::string key, enum ConfigDataType type, bool optional);
