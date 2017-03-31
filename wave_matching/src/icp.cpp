@@ -1,3 +1,4 @@
+#include "wave/utils/config.hpp"
 #include "wave/matching/icp.hpp"
 
 namespace wave {
@@ -12,11 +13,22 @@ ICPMatcher::ICPMatcher(float res) {
     } else {
         this->resolution = -1;
     }
+    wave::ConfigParser parser;
 
-    this->icp.setMaxCorrespondenceDistance(3);
-    this->icp.setMaximumIterations(100);
-    this->icp.setTransformationEpsilon(1e-8);
-    this->icp.setEuclideanFitnessEpsilon(1e-2);
+    double max_corr = 3, t_eps = 1e-8, fit_eps = 1e-2;
+    int max_iter = 100;
+
+    parser.addParam("icp.maxCorrespondence", &max_corr);
+    parser.addParam("icp.maxIterations", &max_iter);
+    parser.addParam("icp.transformationEpsilon", &t_eps);
+    parser.addParam("icp.euclideanFitnessEpsilon", &fit_eps);
+
+    parser.load("config/icp.yaml");
+
+    this->icp.setMaxCorrespondenceDistance(max_corr);
+    this->icp.setMaximumIterations(max_iter);
+    this->icp.setTransformationEpsilon(t_eps);
+    this->icp.setEuclideanFitnessEpsilon(fit_eps);
 }
 
 void ICPMatcher::setRef(const PCLPointCloud &ref) {

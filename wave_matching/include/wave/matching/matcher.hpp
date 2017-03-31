@@ -10,13 +10,11 @@ namespace wave {
 template <typename T>
 class Matcher {
  public:
-    // Constructor with resolution
     Matcher(float res) : resolution(res) {}
     Matcher() {
         resolution = -1;
     }
 
-    // generic accessors
     const Eigen::Affine3d &getResult() {
         return this->result;
     };
@@ -26,7 +24,7 @@ class Matcher {
     float getRes() {
         return this->resolution;
     };
-    // intended to put sensor data into matcher class
+
     virtual void setRef(const T &ref) = 0;
     virtual void setTarget(const T &target) = 0;
     void setup(const T &ref, const T &target) {
@@ -34,9 +32,6 @@ class Matcher {
         this->setTarget(target);
     };
 
-    // intended to actually perform the matching, and
-    // then populate the private variables.
-    // should return true if successful
     virtual bool match() {
         return 0;
     }
