@@ -1,23 +1,23 @@
 // Class to wrap PCL ICP matcher
 
-#ifndef WAVE_MATCHING_ICP_HPP
-#define WAVE_MATCHING_ICP_HPP
+#ifndef WAVE_MATCHING_GICP_HPP
+#define WAVE_MATCHING_GICP_HPP
 
-#include <pcl/registration/icp.h>
+#include <pcl/registration/gicp.h>
 #include "wave/matching/pcl_common.hpp"
 #include "wave/matching/matcher.hpp"
 
 namespace wave {
 
-class ICPMatcher : public Matcher<PCLPointCloud> {
+class GICPMatcher : public Matcher<PCLPointCloud> {
  public:
-    explicit ICPMatcher(float resolution);
+    explicit GICPMatcher(float resolution);
     void setRef(const PCLPointCloud &ref);
     void setTarget(const PCLPointCloud &target);
     bool match();
 
  private:
-    pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
+    pcl::GeneralizedIterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> gicp;
     pcl::VoxelGrid<pcl::PointXYZ> filter;
     PCLPointCloud ref, target, final;
 };

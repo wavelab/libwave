@@ -1,0 +1,5 @@
+g_icp:
+  correspondenceRandomness: 10
+  maxIterations: 100
+  rotationEpsilon: 1e-8
+  euclideanFitnessEpsilon: 1e-2

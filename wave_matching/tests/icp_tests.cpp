@@ -9,20 +9,6 @@
 
 namespace wave {
 
-bool isApprox(const Eigen::Affine3d &first,
-              const Eigen::Affine3d &second,
-              double tolerance) {
-    for (int i = 0; i < 4; ++i) {
-        for (int j = 0; j < 4; ++j) {
-            tolerance -= std::abs(first(i, j) - second(i, j));
-        }
-    }
-    if (tolerance > 0) {
-        return true;
-    }
-    return false;
-}
-
 // Fixture to load same pointcloud all the time
 class ICPTest : public testing::Test {
  protected:
@@ -35,8 +21,8 @@ class ICPTest : public testing::Test {
     }
 
     virtual void SetUp() {
-        this->ref = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
-        this->target = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
+        this->ref = boost::make_shared < pcl::PointCloud < pcl::PointXYZ > > ();
+        this->target = boost::make_shared < pcl::PointCloud < pcl::PointXYZ > > ();
         pcl::io::loadPCDFile("data/testscan.pcd", *(this->ref));
     }
 
@@ -65,9 +51,9 @@ TEST_F(ICPTest, fullResNullMatch) {
     this->setParams(-1, perturb);
     // test and assert
     match_success = matcher->match();
-    result = matcher->getResult();
+    double diff = (matcher->getResult().matrix() - perturb.matrix()).norm();
     EXPECT_TRUE(match_success);
-    EXPECT_TRUE(isApprox(result, perturb, 0.1));
+    EXPECT_LT(diff, 0.1);
 }
 
 // Zero displacement using voxel downsampling
@@ -81,9 +67,9 @@ TEST_F(ICPTest, nullDisplacement) {
     this->setParams(0.05f, perturb);
     // test and assert
     match_success = matcher->match();
-    result = matcher->getResult();
+    double diff = (matcher->getResult().matrix() - perturb.matrix()).norm();
     EXPECT_TRUE(match_success);
-    EXPECT_TRUE(isApprox(result, perturb, 0.1));
+    EXPECT_LT(diff, 0.1);
 }
 
 // Small displacement using voxel downsampling
@@ -97,9 +83,9 @@ TEST_F(ICPTest, smallDisplacement) {
     this->setParams(0.05f, perturb);
     // test and assert
     match_success = matcher->match();
-    result = matcher->getResult();
+    double diff = (matcher->getResult().matrix() - perturb.matrix()).norm();
     EXPECT_TRUE(match_success);
-    EXPECT_TRUE(isApprox(result, perturb, 0.1));
+    EXPECT_LT(diff, 0.1);
 }
 
 }  // end of namespace wave
