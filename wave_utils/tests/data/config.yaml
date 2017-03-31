@@ -1,0 +1,49 @@
+bool: true
+int: 1
+float: 2.2
+double: 3.3
+string: "hello world!"
+
+bool_array: [true, false, true, false]
+int_array: [1, 2, 3, 4, 5]
+float_array: [1.1, 2.2, 3.3, 4.4, 5.5]
+double_array: [1.1, 2.2, 3.3, 4.4, 5.5]
+string_array: ["1.1", "2.2", "3.3", "4.4", "5.5"]
+
+vector2: [1.1, 2.2]
+vector3: [1.1, 2.2, 3.3]
+vector4: [1.1, 2.2, 3.3, 4.4]
+vector: [1.1, 2.2, 3.3, 4.4, 5.5, 6.6, 7.7, 8.8, 9.9]
+
+matrix2:
+  rows: 2
+  cols: 2
+  data: [1.1, 2.2,
+         3.3, 4.4]
+
+matrix3:
+  rows: 3
+  cols: 3
+  data: [1.1, 2.2, 3.3,
+         4.4, 5.5, 6.6,
+         7.7, 8.8, 9.9]
+
+matrix4:
+  rows: 4
+  cols: 4
+  data: [1.1, 2.2, 3.3, 4.4,
+         5.5, 6.6, 7.7, 8.8,
+         9.9, 11.0, 12.1, 13.2,
+         14.3, 15.4, 16.5, 17.6]
+
+matrix:
+  rows: 3
+  cols: 4
+  data: [1.1, 2.2, 3.3, 4.4,
+         5.5, 6.6, 7.7, 8.8,
+         9.9, 11.0, 12.1, 13.2]
+
+level3:
+    a:
+        b:
+            c: 3
