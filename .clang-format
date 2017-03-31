@@ -1,5 +1,5 @@
 BasedOnStyle: Chromium
-AccessModifierOffset: -2
+AccessModifierOffset: -3
 AlignAfterOpenBracket: true
 AlignEscapedNewlinesLeft: true
 AlignOperands: true
@@ -30,7 +30,7 @@ DerivePointerAlignment: false
 DisableFormat: false
 ExperimentalAutoDetectBinPacking: true
 IndentCaseLabels: true
-IndentWidth: 2
+IndentWidth: 4
 IndentWrappedFunctionNames: false
 KeepEmptyLinesAtTheStartOfBlocks: false
 Language: Cpp
@@ -57,5 +57,5 @@ SpacesInContainerLiterals: true
 SpacesInParentheses: false
 SpacesInSquareBrackets: false
 Standard: Auto
-TabWidth: 8
+TabWidth: 4
 UseTab: Never

@@ -4,17 +4,11 @@ sudo: required
 language:
     - c++
 
-cache:
-    - apt
-
 install:
-    - sudo bash scripts/install/install_deps.bash
+    - travis_wait sudo bash scripts/install/install_deps.bash
 
 script:
-    - mkdir -p build
-    - cd build
-    - cmake ..
-    - make
+    - bash scripts/ci_run.bash
 
 notifications:
     recipients:
