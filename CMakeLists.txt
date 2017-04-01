@@ -9,10 +9,11 @@ ENDIF()
 
 # INCLUDES
 INCLUDE_DIRECTORIES(
-    wave_estimation/include
-    wave_kinematics/include
-    wave_optimization/include
-    wave_utils/include
+  wave_estimation/include
+  wave_kinematics/include
+  wave_optimization/include
+  wave_utils/include
+  wave_matching/include
 )
 
 # gtest
@@ -26,6 +27,9 @@ ADD_DEPENDENCIES(wave_optimization wave_utils)
 # libwave_utils.a
 ADD_SUBDIRECTORY(wave_utils)
 
+# libwave_matching.a
+ADD_SUBDIRECTORY(wave_matching)
+
 # libwave.a
 ADD_CUSTOM_TARGET(
     libwave ALL
@@ -33,7 +37,9 @@ ADD_CUSTOM_TARGET(
         ${CMAKE_AR} rc libwave.a
             ${CMAKE_BINARY_DIR}/wave_optimization/libwave_optimization.a
             ${CMAKE_BINARY_DIR}/wave_utils/libwave_utils.a
+            ${CMAKE_BINARY_DIR}/wave_matching/libwave_matching.a
     DEPENDS
         wave_optimization
         wave_utils
+        wave_matching
 )
