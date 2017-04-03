@@ -11,7 +11,7 @@ namespace wave {
 
 class GICPMatcher : public Matcher<PCLPointCloud> {
  public:
-    explicit GICPMatcher(float resolution);
+    explicit GICPMatcher(float resolution, const std::string& config_path);
     void setRef(const PCLPointCloud &ref);
     void setTarget(const PCLPointCloud &target);
     bool match();

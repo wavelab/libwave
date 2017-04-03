@@ -3,7 +3,7 @@
 
 namespace wave {
 
-GICPMatcher::GICPMatcher(float res) {
+GICPMatcher::GICPMatcher(float res, const std::string& config_path) {
     this->ref = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
     this->target = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
     this->final = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
@@ -14,17 +14,20 @@ GICPMatcher::GICPMatcher(float res) {
         this->resolution = -1;
     }
 
-    wave::ConfigParser parser;
+    ConfigParser parser;
 
     double r_eps = 1e-8, fit_eps = 1e-2;
     int corr_rand = 10, max_iter = 100;
 
-    parser.addParam("g_icp.correspondenceRandomness", &corr_rand);
-    parser.addParam("g_icp.maxIterations", &max_iter);
-    parser.addParam("g_icp.rotationEpsilon", &r_eps);
-    parser.addParam("g_icp.euclideanFitnessEpsilon", &fit_eps);
+    parser.addParam("g_icp.corr_rand", &corr_rand);
+    parser.addParam("g_icp.max_iter", &max_iter);
+    parser.addParam("g_icp.r_eps", &r_eps);
+    parser.addParam("g_icp.fit_eps", &fit_eps);
 
-    parser.load("config/g_icp.yaml");
+    if (parser.load(config_path) != 0) {
+        ConfigException config_exception;
+        throw config_exception;
+    }
 
     this->gicp.setCorrespondenceRandomness(corr_rand);
     this->gicp.setMaximumIterations(max_iter);

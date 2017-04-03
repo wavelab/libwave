@@ -27,7 +27,7 @@ class ICPTest : public testing::Test {
     }
 
     void setParams(const float res, const Eigen::Affine3d perturb) {
-        this->matcher = new ICPMatcher(res);
+        this->matcher = new ICPMatcher(res, "config/icp.yaml");
         pcl::transformPointCloud(*(this->ref), *(this->target), perturb);
         this->matcher->setup(this->ref, this->target);
     }
@@ -37,7 +37,7 @@ class ICPTest : public testing::Test {
 };
 
 TEST(ICPTests, initialization) {
-    ICPMatcher matcher(0.1f);
+    ICPMatcher matcher(0.1f, "config/icp.yaml");
 }
 
 // Zero displacement without downsampling

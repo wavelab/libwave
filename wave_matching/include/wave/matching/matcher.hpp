@@ -1,10 +1,17 @@
 #ifndef WAVE_MATCHING_MATCHER_HPP
 #define WAVE_MATCHING_MATCHER_HPP
 
+#include <exception>
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
 namespace wave {
+// define exception
+class ConfigException : public __exception {
+    virtual const char* what() const throw() {
+        return "Failed to Load Matcher Config";
+    }
+};
 
 // sensor data type
 template <typename T>

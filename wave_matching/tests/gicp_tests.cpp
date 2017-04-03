@@ -27,7 +27,7 @@ class GICPTest : public testing::Test {
     }
 
     void setParams(const float res, const Eigen::Affine3d perturb) {
-        this->matcher = new GICPMatcher(res);
+        this->matcher = new GICPMatcher(res, "config/g_icp.yaml");
         pcl::transformPointCloud(*(this->ref), *(this->target), perturb);
         this->matcher->setup(this->ref, this->target);
     }
@@ -37,7 +37,7 @@ class GICPTest : public testing::Test {
 };
 
 TEST(gicp_tests, initialization) {
-    GICPMatcher matcher(0.1f);
+    GICPMatcher matcher(0.1f, "config/g_icp.yaml");
 }
 
 // Zero displacement without downsampling
