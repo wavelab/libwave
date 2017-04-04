@@ -53,7 +53,7 @@ TEST_F(NDTTest, fullResNullMatch) {
     match_success = matcher->match();
     double diff = (matcher->getResult().matrix() - perturb.matrix()).norm();
     EXPECT_TRUE(match_success);
-    EXPECT_LT(diff, 0.1);
+    EXPECT_LT(diff, 0.12);
 }
 
 // Zero displacement using resolution set by constructor
@@ -64,7 +64,7 @@ TEST_F(NDTTest, nullDisplacement) {
     // Setup
     perturb = Eigen::Affine3d::Identity();
     perturb.translation() << 0, 0, 0;
-    this->setParams(1.0f, perturb);
+    this->setParams(2.5f, perturb);
     // test and assert
     match_success = matcher->match();
     double diff = (matcher->getResult().matrix() - perturb.matrix()).norm();
@@ -80,7 +80,7 @@ TEST_F(NDTTest, smallDisplacement) {
     // Setup
     perturb = Eigen::Affine3d::Identity();
     perturb.translation() << 0.2, 0, 0;
-    this->setParams(1.0f, perturb);
+    this->setParams(2.5f, perturb);
     // test and assert
     match_success = matcher->match();
     double diff = (matcher->getResult().matrix() - perturb.matrix()).norm();

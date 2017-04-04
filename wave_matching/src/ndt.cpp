@@ -29,14 +29,15 @@ NDTMatcher::NDTMatcher(float res, const std::string &config_path) {
             LOG_ERROR("Invalid resolution given, using minimum");
             config_res = this->min_res;
         } else {
-            config_res = res;
+            this->resolution = config_res;
         }
+    } else {
+        this->resolution = res;
     }
-    this->resolution = config_res;
 
     this->ndt.setTransformationEpsilon(t_eps);
     this->ndt.setStepSize(step_size);
-    this->ndt.setResolution(config_res);
+    this->ndt.setResolution(this->resolution);
     this->ndt.setMaximumIterations(max_iter);
 }
 
