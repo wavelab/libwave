@@ -36,7 +36,7 @@ set(TEST_DEPS
     gtest
     ${CMAKE_THREAD_LIBS_INIT})
 
-add_library(wave_matching STATIC src/icp.cpp)
+add_library(wave_matching STATIC src/icp.cpp src/ndt.cpp)
 target_link_libraries(wave_matching ${DEPS})
 
 # Unit tests
@@ -46,11 +46,12 @@ FILE(COPY config DESTINATION ${PROJECT_BINARY_DIR}/tests)
 
 ADD_EXECUTABLE(
     # TARGET
-    icp_tests
+    registration_tests
     # TESTS
     tests/icp_tests.cpp
+    tests/ndt_tests.cpp
     # TEST RUNNER
     tests/test_runner.cpp
 )
-TARGET_LINK_LIBRARIES(icp_tests
+TARGET_LINK_LIBRARIES(registration_tests
     ${TEST_DEPS})

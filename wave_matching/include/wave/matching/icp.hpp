@@ -3,18 +3,15 @@
 #ifndef WAVE_MATCHING_ICP_HPP
 #define WAVE_MATCHING_ICP_HPP
 
-#include <pcl/point_types.h>
-#include <pcl/point_cloud.h>
 #include <pcl/registration/icp.h>
-#include <pcl/filters/voxel_grid.h>
+#include "wave/matching/pcl_common.hpp"
 #include "wave/matching/matcher.hpp"
 
 namespace wave {
 
-typedef pcl::PointCloud<pcl::PointXYZ>::Ptr PCLPointCloud;
 class ICPMatcher : public Matcher<PCLPointCloud> {
  public:
-    explicit ICPMatcher(float resolution);
+    explicit ICPMatcher(float resolution, const std::string& config_path);
     void setRef(const PCLPointCloud &ref);
     void setTarget(const PCLPointCloud &target);
     bool match();

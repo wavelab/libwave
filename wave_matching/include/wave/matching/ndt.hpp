@@ -8,23 +8,22 @@
 #include <pcl/registration/ndt.h>
 #include <pcl/filters/approximate_voxel_grid.h>
 #include "wave/matching/matcher.hpp"
+#include "wave/matching/pcl_common.hpp"
 
 namespace wave {
-namespace matching {
 
-typedef pcl::PointCloud<pcl::PointXYZ>::Ptr PCLPointCloud;
-class NDT_Matcher : public wave::matching::Matcher<PCLPointCloud> {
-  public:
-    explicit NDT_Matcher(float resolution);
+class NDTMatcher : public Matcher<PCLPointCloud> {
+ public:
+    explicit NDTMatcher(float resolution, const std::string& config_path);
     void setRef(const PCLPointCloud& ref);
     void setTarget(const PCLPointCloud& target);
     bool match();
-  private:
+ private:
     pcl::NormalDistributionsTransform<pcl::PointXYZ, pcl::PointXYZ> ndt;
     pcl::ApproximateVoxelGrid<pcl::PointXYZ> filter;
     PCLPointCloud ref, target, final;
 };
-}
-}
+
+}  // end of namespace wave
 
 #endif //WAVE_MATCHING_ICP_HPP

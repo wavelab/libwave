@@ -5,74 +5,87 @@
 #include <Eigen/Dense>
 #include <iostream>
 
-#include "wave/matching/NDT.hpp"
+#include "wave/matching/ndt.hpp"
 
-bool isApprox(const Eigen::Affine3d& first,
-              const Eigen::Affine3d& second,
-              double TOL) {
-    for (uint8_t iii = 0; iii < 4; ++iii) {
-        for(uint8_t jjj = 0; jjj < 4; ++jjj) {
-            TOL -= std::abs(first(iii,jjj) - second(iii,jjj));
+namespace wave {
+
+// Fixture to load same pointcloud all the time
+class NDTTest : public testing::Test {
+ protected:
+    NDTTest() {}
+
+    virtual ~NDTTest() {
+        if (this->matcher) {
+            delete this->matcher;
         }
     }
-    if (TOL > 0) {
-        return true;
+
+    virtual void SetUp() {
+        this->ref = boost::make_shared < pcl::PointCloud < pcl::PointXYZ > > ();
+        this->target = boost::make_shared < pcl::PointCloud < pcl::PointXYZ > > ();
+        pcl::io::loadPCDFile("data/testscan.pcd", *(this->ref));
     }
-    return false;
+
+    void setParams(const float res, const Eigen::Affine3d perturb) {
+        this->matcher = new NDTMatcher(res, "config/ndt.yaml");
+        pcl::transformPointCloud(*(this->ref), *(this->target), perturb);
+        this->matcher->setup(this->ref, this->target);
+    }
+
+    pcl::PointCloud<pcl::PointXYZ>::Ptr ref, target;
+    NDTMatcher *matcher;
+};
+
+TEST(NDTTests, initialization) {
+    NDTMatcher matcher(1.0f, "config/ndt.yaml");
 }
 
-TEST(ndt_tests, initialization) {
-    wave::matching::NDT_Matcher matcher(0.1f);
-}
-
-// NDT is apparently too slow for full res
-//TEST(ndt_tests, full_res_null_match) {
-//    wave::matching::NDT_Matcher matcher(-1.0);
-//    pcl::PointCloud<pcl::PointXYZ>::Ptr point_cloud(new pcl::PointCloud<pcl::PointXYZ>);
-//    pcl::PointCloud<pcl::PointXYZ>::Ptr dupe(new pcl::PointCloud<pcl::PointXYZ>);
-//    pcl::io::loadPCDFile("../tests/testscan.pcd", *point_cloud);
-//    Eigen::Affine3d perturb = Eigen::Affine3d::Identity();
-//    perturb.translation() << 0, 0, 0;
-//    pcl::transformPointCloud(*point_cloud, *dupe, perturb);
-//    matcher.setup(point_cloud, dupe);
-//    EXPECT_TRUE(matcher.match());
-//    Eigen::Affine3d result = matcher.get_result();
-//    EXPECT_TRUE(isApprox(result, perturb, 0.1));
-//}
-
-// Should return identity (or close to) for no perturbation
-TEST(ndt_tests, NullDisplacement) {
-    wave::matching::NDT_Matcher matcher(0.5);
-    pcl::PointCloud<pcl::PointXYZ>::Ptr point_cloud(new pcl::PointCloud<pcl::PointXYZ>);
-    pcl::PointCloud<pcl::PointXYZ>::Ptr dupe(new pcl::PointCloud<pcl::PointXYZ>);
-    pcl::io::loadPCDFile("../tests/testscan.pcd", *point_cloud);
-    Eigen::Affine3d perturb = Eigen::Affine3d::Identity();
+// Zero displacement using resolution from config
+TEST_F(NDTTest, fullResNullMatch) {
+    Eigen::Affine3d perturb;
+    Eigen::Affine3d result;
+    bool match_success = false;
+    // Setup
+    perturb = Eigen::Affine3d::Identity();
     perturb.translation() << 0, 0, 0;
-    pcl::transformPointCloud(*point_cloud, *dupe, perturb);
-    matcher.setup(point_cloud, dupe);
-    EXPECT_TRUE(matcher.match());
-    Eigen::Affine3d result = matcher.get_result();
-//    std::cerr << result.matrix() << std::endl << perturb.matrix();
-    EXPECT_TRUE(isApprox(result, perturb, 0.1));
+    this->setParams(-1, perturb);
+    // test and assert
+    match_success = matcher->match();
+    double diff = (matcher->getResult().matrix() - perturb.matrix()).norm();
+    EXPECT_TRUE(match_success);
+    EXPECT_LT(diff, 0.1);
 }
 
-TEST(ndt_tests, SmallDisplacement) {
-    wave::matching::NDT_Matcher matcher(0.5);
-    pcl::PointCloud<pcl::PointXYZ>::Ptr point_cloud(new pcl::PointCloud<pcl::PointXYZ>);
-    pcl::PointCloud<pcl::PointXYZ>::Ptr dupe(new pcl::PointCloud<pcl::PointXYZ>);
-    pcl::io::loadPCDFile("../tests/testscan.pcd", *point_cloud);
-    Eigen::Affine3d perturb = Eigen::Affine3d::Identity();
+// Zero displacement using resolution set by constructor
+TEST_F(NDTTest, nullDisplacement) {
+    Eigen::Affine3d perturb;
+    Eigen::Affine3d result;
+    bool match_success = false;
+    // Setup
+    perturb = Eigen::Affine3d::Identity();
+    perturb.translation() << 0, 0, 0;
+    this->setParams(1.0f, perturb);
+    // test and assert
+    match_success = matcher->match();
+    double diff = (matcher->getResult().matrix() - perturb.matrix()).norm();
+    EXPECT_TRUE(match_success);
+    EXPECT_LT(diff, 0.1);
+}
+
+// Small displacement using resolution set by constructor
+TEST_F(NDTTest, smallDisplacement) {
+    Eigen::Affine3d perturb;
+    Eigen::Affine3d result;
+    bool match_success = false;
+    // Setup
+    perturb = Eigen::Affine3d::Identity();
     perturb.translation() << 0.2, 0, 0;
-    pcl::transformPointCloud(*point_cloud, *dupe, perturb);
-    matcher.setup(point_cloud, dupe);
-    EXPECT_TRUE(matcher.match());
-    Eigen::Affine3d result = matcher.get_result();
-//    std::cerr << result.matrix() << std::endl << perturb.matrix();
-    EXPECT_TRUE(isApprox(result, perturb, 0.1));
+    this->setParams(1.0f, perturb);
+    // test and assert
+    match_success = matcher->match();
+    double diff = (matcher->getResult().matrix() - perturb.matrix()).norm();
+    EXPECT_TRUE(match_success);
+    EXPECT_LT(diff, 0.1);
 }
 
-
-int main(int argc, char *argv[]) {
-    testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
-}
+}  // end of namespace wave
