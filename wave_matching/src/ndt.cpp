@@ -1,4 +1,5 @@
 #include "wave/utils/config.hpp"
+#include "wave/utils/logging.hpp"
 #include "wave/matching/ndt.hpp"
 
 namespace wave {
@@ -23,8 +24,13 @@ NDTMatcher::NDTMatcher(float res, const std::string &config_path) {
         throw config_exception;
     }
 
-    if (res > 0) {  // override resolution in yaml config
-        config_res = res;
+    if (res < this->min_res) {
+        if(config_res < this->min_res) {
+            LOG_ERROR("Invalid resolution given, using minimum");
+            config_res = this->min_res;
+        } else {
+            config_res = res;
+        }
     }
     this->resolution = config_res;
 
@@ -35,22 +41,12 @@ NDTMatcher::NDTMatcher(float res, const std::string &config_path) {
 }
 
 void NDTMatcher::setRef(const PCLPointCloud &ref) {
-    if (this->resolution > 0) {
-        this->filter.setInputCloud(ref);
-        this->filter.filter(*(this->ref));
-    } else {
-        this->ref = ref;
-    }
+    this->ref = ref;
     this->ndt.setInputSource(this->ref);
 }
 
 void NDTMatcher::setTarget(const PCLPointCloud &target) {
-    if (resolution > 0) {
-        this->filter.setInputCloud(target);
-        this->filter.filter(*(this->target));
-    } else {
-        this->target = target;
-    }
+    this->target = target;
     this->ndt.setInputTarget(this->target);
 }
 

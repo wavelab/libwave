@@ -6,7 +6,6 @@
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 #include <pcl/registration/ndt.h>
-#include <pcl/filters/approximate_voxel_grid.h>
 #include "wave/matching/matcher.hpp"
 #include "wave/matching/pcl_common.hpp"
 
@@ -21,8 +20,8 @@ class NDTMatcher : public Matcher<PCLPointCloud> {
 
  private:
     pcl::NormalDistributionsTransform<pcl::PointXYZ, pcl::PointXYZ> ndt;
-    pcl::ApproximateVoxelGrid<pcl::PointXYZ> filter;
     PCLPointCloud ref, target, final;
+    const float min_res = 0.05f;
 };
 
 }  // end of namespace wave
