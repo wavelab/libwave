@@ -7,7 +7,7 @@ This document serves as a brainstorming page for our notation standard.  Once th
 * mitigate ambiguity regarding vector quantities (position, linear velocity, angular velocity, etc), with respect to the vector head-tail relationships, and what frame the vector is expressed in.
 
 ## Usage of Pre-scripts?
-* prescripts are awkward to some, though allow for "cancellation" of frames when performing multiplication, for example
+* pre-scripts are awkward to some, though allow for "cancellation" of frames when performing multiplication, for example
 
 ```
 B_wx_B_C //angular velocity of frame C, wrt B, expressed in frame B
