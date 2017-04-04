@@ -14,10 +14,11 @@ namespace wave {
 
 class NDTMatcher : public Matcher<PCLPointCloud> {
  public:
-    explicit NDTMatcher(float resolution, const std::string& config_path);
-    void setRef(const PCLPointCloud& ref);
-    void setTarget(const PCLPointCloud& target);
+    explicit NDTMatcher(float resolution, const std::string &config_path);
+    void setRef(const PCLPointCloud &ref);
+    void setTarget(const PCLPointCloud &target);
     bool match();
+
  private:
     pcl::NormalDistributionsTransform<pcl::PointXYZ, pcl::PointXYZ> ndt;
     pcl::ApproximateVoxelGrid<pcl::PointXYZ> filter;
@@ -26,4 +27,4 @@ class NDTMatcher : public Matcher<PCLPointCloud> {
 
 }  // end of namespace wave
 
-#endif //WAVE_MATCHING_ICP_HPP
+#endif  // WAVE_MATCHING_ICP_HPP
