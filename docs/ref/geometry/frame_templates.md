@@ -66,6 +66,8 @@ class FramedRotation {
 };
 ```
 
+### Defining the rotation
+
 A `FramedRotation` transforms a `FramedVector` from its `From` frame to its `To` frame. We have a rule that 
 this operation is _only_ allowed if the `Frame` of the vector matches the `From` frame of the Rotation.
 
@@ -73,7 +75,7 @@ Here's where it gets interesting. Let's implement the rotation as the multiplica
 
 ```cpp
 template<typename To, typename From>
-const FramedVector<To> operator*(const FramedRotation<To, From> R,
+const FramedVector<To> operator*(const FramedRotation<To, From> &R,
                                  const FramedVector<From> &v) {
     return FramedVector<To>{R.value() * v.value()};
 };
@@ -85,14 +87,14 @@ FramedRotation<A, B> * FramedVector<B>
 ```
 Anything else won't compile.
 
-Here's a usage example.
+### Usage example
 
 ```cpp
 #include <iostream>
 int main() {
     // Define some frames (for now, they are just types)
     struct A;
-    struct B;# 
+    struct B;
     struct C;
 
     // Define an arbitrary rotation matrix to wrap in our class
@@ -109,7 +111,7 @@ int main() {
 
     std::cout << "result: " << result.value().format(CommaFormat) << std::endl;
     
-    // Make sure the type of the result is FramedVector<B>
+    // Prove that the type of the result is FramedVector<B>
     static_assert(std::is_same<FramedVector<B>, decltype(result)>::value, "!");
 }
 ```
@@ -121,7 +123,7 @@ The following won't compile:
 ```
 
 ### But how are the error messages?
-They might be. For the above incorrect example, gcc spits out
+For the above incorrect example, gcc spits out
 ```
 main.cpp: In function ‘int main()’:
 main.cpp:81:26: error: no match for ‘operator*’ (operand types are ‘FramedRotation<main()::B, main()::A>’ and ‘FramedVector<main()::C>’)
@@ -178,3 +180,30 @@ Yes, you can do something weird, but only if you're explicit about it. We add a 
 In the above example, they are just any type. So, technically you could define something silly like `Rotation<int, char>`. It is possible to give the reference frame types some additional meaning, but that would make things more complicated.
 
 
+### What do we need for actual implementation?
+
+In a real implementation we would want
+- Vectors to have 3 designators, not 1
+- More operations defined
+- Integration with an actual Vector class
+
+While the behind-the-scenes implementation will necessarily be more complex than the example, the usage should not be. Remember the goal for the usage is to write something like `Vector<ImuFrame, ImuFrame, CameraFrame> p` instead of `Vector3d I_p_I_C`.
+
+The implementation questions are
+
+- What operations are allowed?
+- What syntax is desired?
+    - Are three designators always needed?
+    - How to deal with, e.g. time indexes? (Several options)
+- How to enforce correctness and produce errors? (specialization or static_assert?)
+- How to integrate into geometry classes? Inherit or wrap? _Since we already have a wrapper Rotation class, can conveniently just add it into the wrapper_
+- Simple template implementation as above, or fancy-pants Boost.MPL or Boost.Units-based library? _Probably simple implementation_
+- Automatic conversion? A `tf`-like transform tree? _No_
+
+### Possible frustrations
+
+- If you know that the A Frame and the B frame are oriented the same way, you may normally just add vectors between them
+ `A_p_CA = A_p_BA + B_p_CB`. But that's not true in general, and the system won't allow that. You would need to define a rotation. But this may not be a bad thing, as it requires explicity stating the assumption that there is no rotation between the frames. Some helpers may be desired, like IdentityRotation<B,A>.
+ - Some people may want the decorators present on _all_ appearances of the variable (e.g. in a variable name like `A_p_CA`). My system by design puts the reference frame information in the type, not (necessarily) the name. (Note most IDEs will readily show the type for any apperanance of a variable)
+ 
+ 
