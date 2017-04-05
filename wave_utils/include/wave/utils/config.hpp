@@ -55,10 +55,7 @@ class ConfigParam {
 
     ConfigParam() {}
 
-    ConfigParam(ConfigDataType type,
-                std::string key,
-                void *out,
-                bool optional)
+    ConfigParam(ConfigDataType type, std::string key, void *out, bool optional)
         : type{type}, key{key}, data{out}, optional{optional} {};
 };
 

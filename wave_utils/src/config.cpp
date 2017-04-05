@@ -23,9 +23,7 @@ void ConfigParser::addParam(std::string key, double *out, bool optional) {
     this->params.emplace_back(DOUBLE, key, out, optional);
 }
 
-void ConfigParser::addParam(std::string key,
-                            std::string *out,
-                            bool optional) {
+void ConfigParser::addParam(std::string key, std::string *out, bool optional) {
     this->params.emplace_back(STRING, key, out, optional);
 }
 
@@ -160,17 +158,10 @@ int ConfigParser::checkVector(std::string key,
     }
 
     switch (type) {
-        case VEC2:
-            vector_size = 2;
-            break;
-        case VEC3:
-            vector_size = 3;
-            break;
-        case VEC4:
-            vector_size = 4;
-            break;
-        default:
-            return 0;
+        case VEC2: vector_size = 2; break;
+        case VEC3: vector_size = 3; break;
+        case VEC4: vector_size = 4; break;
+        default: return 0;
     }
 
     // check number of values
@@ -229,23 +220,16 @@ int ConfigParser::loadPrimitive(ConfigParam param) {
     // parse
     this->getYamlNode(param.key, node);
     switch (param.type) {
-        case BOOL:
-            *(bool *) param.data = node.as<bool>();
-            break;
-        case INT:
-            *(int *) param.data = node.as<int>();
-            break;
-        case FLOAT:
-            *(float *) param.data = node.as<float>();
-            break;
+        case BOOL: *static_cast<bool *>(param.data) = node.as<bool>(); break;
+        case INT: *static_cast<int *>(param.data) = node.as<int>(); break;
+        case FLOAT: *static_cast<float *>(param.data) = node.as<float>(); break;
         case DOUBLE:
-            *(double *) param.data = node.as<double>();
+            *static_cast<double *>(param.data) = node.as<double>();
             break;
         case STRING:
-            *(std::string *) param.data = node.as<std::string>();
+            *static_cast<std::string *>(param.data) = node.as<std::string>();
             break;
-        default:
-            return -6;
+        default: return -6;
     }
 
     return 0;
@@ -271,33 +255,35 @@ int ConfigParser::loadArray(ConfigParam param) {
     switch (param.type) {
         case BOOL_ARRAY:
             for (auto n : node) {
-                ((std::vector<bool> *) param.data)->push_back(n.as<bool>());
+                static_cast<std::vector<bool> *>(param.data)
+                  ->push_back(n.as<bool>());
             }
             break;
         case INT_ARRAY:
             for (auto n : node) {
-                ((std::vector<int> *) param.data)->push_back(n.as<int>());
+                static_cast<std::vector<int> *>(param.data)
+                  ->push_back(n.as<int>());
             }
             break;
         case FLOAT_ARRAY:
             for (auto n : node) {
-                ((std::vector<float> *) param.data)->push_back(n.as<float>());
+                static_cast<std::vector<float> *>(param.data)
+                  ->push_back(n.as<float>());
             }
             break;
         case DOUBLE_ARRAY:
             for (auto n : node) {
-                ((std::vector<double> *) param.data)
+                static_cast<std::vector<double> *>(param.data)
                   ->push_back(n.as<double>());
             }
             break;
         case STRING_ARRAY:
             for (auto n : node) {
-                ((std::vector<std::string> *) param.data)
+                static_cast<std::vector<std::string> *>(param.data)
                   ->push_back(n.as<std::string>());
             }
             break;
-        default:
-            return -6;
+        default: return -6;
     }
 
     return 0;
@@ -323,29 +309,29 @@ int ConfigParser::loadVector(ConfigParam param) {
     // clang-format off
     switch (param.type) {
         case VEC2:
-            *((Vec2 *) param.data) << node[0].as<double>(),
-                                      node[1].as<double>();
+            *static_cast<Vec2 *>(param.data) << node[0].as<double>(),
+                                                node[1].as<double>();
             break;
 
         case VEC3:
-            *((Vec3 *) param.data) << node[0].as<double>(),
-                                      node[1].as<double>(),
-                                      node[2].as<double>();
+            *static_cast<Vec3 *>(param.data) << node[0].as<double>(),
+                                                node[1].as<double>(),
+                                                node[2].as<double>();
             break;
 
         case VEC4:
-            *((Vec4 *) param.data) << node[0].as<double>(),
-                                      node[1].as<double>(),
-                                      node[2].as<double>(),
-                                      node[3].as<double>();
+            *static_cast<Vec4 *>(param.data) << node[0].as<double>(),
+                                                node[1].as<double>(),
+                                                node[2].as<double>(),
+                                                node[3].as<double>();
             break;
 
         case VECX: {
-                VecX &vecx = *(VecX *) param.data;
-                vecx = VecX((int) node.size());
-                for (size_t i = 0; i < node.size(); i++) {
-                    vecx(i) = node[i].as<double>();
-                }
+            VecX &vecx = *static_cast<VecX *>(param.data);
+            vecx = VecX((int) node.size());
+            for (size_t i = 0; i < node.size(); i++) {
+                vecx(i) = node[i].as<double>();
+            }
         } break;
 
         default:
@@ -382,7 +368,7 @@ int ConfigParser::loadMatrix(ConfigParam param) {
 
     switch (param.type) {
         case MAT2: {
-            Mat2 &mat2 = *(Mat2 *) param.data;
+            Mat2 &mat2 = *static_cast<Mat2 *>(param.data);
             mat2(0, 0) = node["data"][0].as<double>();
             mat2(0, 1) = node["data"][1].as<double>();
 
@@ -391,7 +377,7 @@ int ConfigParser::loadMatrix(ConfigParam param) {
         } break;
 
         case MAT3: {
-            Mat3 &mat3 = *(Mat3 *) param.data;
+            Mat3 &mat3 = *static_cast<Mat3 *>(param.data);
             mat3(0, 0) = node["data"][0].as<double>();
             mat3(0, 1) = node["data"][1].as<double>();
             mat3(0, 2) = node["data"][2].as<double>();
@@ -406,7 +392,7 @@ int ConfigParser::loadMatrix(ConfigParam param) {
         } break;
 
         case MAT4: {
-            Mat4 &mat4 = *(Mat4 *) param.data;
+            Mat4 &mat4 = *static_cast<Mat4 *>(param.data);
             for (int i = 0; i < rows; i++) {
                 for (int j = 0; j < cols; j++) {
                     mat4(i, j) = node["data"][index].as<double>();
@@ -416,7 +402,7 @@ int ConfigParser::loadMatrix(ConfigParam param) {
         } break;
 
         case MATX: {
-            MatX &matx = *(MatX *) param.data;
+            MatX &matx = *static_cast<MatX *>(param.data);
             matx.resize(rows, cols);
             for (int i = 0; i < rows; i++) {
                 for (int j = 0; j < cols; j++) {
@@ -427,7 +413,7 @@ int ConfigParser::loadMatrix(ConfigParam param) {
         } break;
 
         case CVMAT: {
-            cv::Mat &cvmat = *(cv::Mat *) param.data;
+            cv::Mat &cvmat = *static_cast<cv::Mat *>(param.data);
             cvmat = cv::Mat(rows, cols, CV_64F);
             for (int i = 0; i < rows; i++) {
                 for (int j = 0; j < cols; j++) {
@@ -436,8 +422,7 @@ int ConfigParser::loadMatrix(ConfigParam param) {
                 }
             }
         } break;
-        default:
-            return -6;
+        default: return -6;
     }
 
     return 0;
@@ -486,11 +471,8 @@ int ConfigParser::load(std::string config_file) {
             case MAT3:
             case MAT4:
             case MATX:
-            case CVMAT:
-                retval = this->loadMatrix(this->params[i]);
-                break;
-            default:
-                return -6;
+            case CVMAT: retval = this->loadMatrix(this->params[i]); break;
+            default: return -6;
         }
 
         if (retval != 0 && retval != -3) {
