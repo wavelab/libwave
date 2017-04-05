@@ -55,8 +55,11 @@ class ConfigParam {
 
     ConfigParam() {}
 
-    ConfigParam(ConfigDataType type, std::string key, void *out, bool optional)
-            : type{type}, key{key}, data{out}, optional{optional} {};
+    ConfigParam(ConfigDataType type,
+                std::string key,
+                void *out,
+                bool optional)
+        : type{type}, key{key}, data{out}, optional{optional} {};
 };
 
 class ConfigParser {
@@ -67,17 +70,26 @@ class ConfigParser {
     std::vector<ConfigParam> params;
 
     ConfigParser(void);
-    // clang-format off
     void addParam(std::string key, bool *out, bool optional = false);
     void addParam(std::string key, int *out, bool optional = false);
     void addParam(std::string key, float *out, bool optional = false);
     void addParam(std::string key, double *out, bool optional = false);
     void addParam(std::string key, std::string *out, bool optional = false);
-    void addParam(std::string key, std::vector<bool> *out, bool optional = false);
-    void addParam(std::string key, std::vector<int> *out, bool optional = false);
-    void addParam(std::string key, std::vector<float> *out, bool optional = false);
-    void addParam(std::string key, std::vector<double> *out, bool optional = false);
-    void addParam(std::string key, std::vector<std::string> *out, bool optional = false);
+    void addParam(std::string key,
+                  std::vector<bool> *out,
+                  bool optional = false);
+    void addParam(std::string key,
+                  std::vector<int> *out,
+                  bool optional = false);
+    void addParam(std::string key,
+                  std::vector<float> *out,
+                  bool optional = false);
+    void addParam(std::string key,
+                  std::vector<double> *out,
+                  bool optional = false);
+    void addParam(std::string key,
+                  std::vector<std::string> *out,
+                  bool optional = false);
     void addParam(std::string key, Vec2 *out, bool optional = false);
     void addParam(std::string key, Vec3 *out, bool optional = false);
     void addParam(std::string key, Vec4 *out, bool optional = false);
@@ -87,7 +99,6 @@ class ConfigParser {
     void addParam(std::string key, Mat4 *out, bool optional = false);
     void addParam(std::string key, MatX *out, bool optional = false);
     void addParam(std::string key, cv::Mat *out, bool optional = false);
-    // clang-format on
     int getYamlNode(std::string key, YAML::Node &node);
     int checkKey(std::string key, bool optional);
     int checkVector(std::string key, enum ConfigDataType type, bool optional);

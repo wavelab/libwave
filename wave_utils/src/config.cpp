@@ -7,7 +7,6 @@ ConfigParser::ConfigParser(void) {
     this->config_loaded = false;
 }
 
-// clang-format off
 void ConfigParser::addParam(std::string key, bool *out, bool optional) {
     this->params.emplace_back(BOOL, key, out, optional);
 }
@@ -24,27 +23,39 @@ void ConfigParser::addParam(std::string key, double *out, bool optional) {
     this->params.emplace_back(DOUBLE, key, out, optional);
 }
 
-void ConfigParser::addParam(std::string key, std::string *out, bool optional) {
+void ConfigParser::addParam(std::string key,
+                            std::string *out,
+                            bool optional) {
     this->params.emplace_back(STRING, key, out, optional);
 }
 
-void ConfigParser::addParam(std::string key, std::vector<bool> *out, bool optional) {
+void ConfigParser::addParam(std::string key,
+                            std::vector<bool> *out,
+                            bool optional) {
     this->params.emplace_back(BOOL_ARRAY, key, out, optional);
 }
 
-void ConfigParser::addParam(std::string key, std::vector<int> *out, bool optional) {
+void ConfigParser::addParam(std::string key,
+                            std::vector<int> *out,
+                            bool optional) {
     this->params.emplace_back(INT_ARRAY, key, out, optional);
 }
 
-void ConfigParser::addParam(std::string key, std::vector<float> *out, bool optional) {
+void ConfigParser::addParam(std::string key,
+                            std::vector<float> *out,
+                            bool optional) {
     this->params.emplace_back(FLOAT_ARRAY, key, out, optional);
 }
 
-void ConfigParser::addParam(std::string key, std::vector<double> *out, bool optional) {
+void ConfigParser::addParam(std::string key,
+                            std::vector<double> *out,
+                            bool optional) {
     this->params.emplace_back(DOUBLE_ARRAY, key, out, optional);
 }
 
-void ConfigParser::addParam(std::string key, std::vector<std::string> *out, bool optional) {
+void ConfigParser::addParam(std::string key,
+                            std::vector<std::string> *out,
+                            bool optional) {
     this->params.emplace_back(STRING_ARRAY, key, out, optional);
 }
 
@@ -83,7 +94,6 @@ void ConfigParser::addParam(std::string key, MatX *out, bool optional) {
 void ConfigParser::addParam(std::string key, cv::Mat *out, bool optional) {
     this->params.emplace_back(CVMAT, key, out, optional);
 }
-// clang-format on
 
 int ConfigParser::getYamlNode(std::string key, YAML::Node &node) {
     std::string element;
@@ -149,14 +159,19 @@ int ConfigParser::checkVector(std::string key,
         return retval;
     }
 
-    // clang-format off
     switch (type) {
-        case VEC2: vector_size = 2; break;
-        case VEC3: vector_size = 3; break;
-        case VEC4: vector_size = 4; break;
-        default: return 0;
+        case VEC2:
+            vector_size = 2;
+            break;
+        case VEC3:
+            vector_size = 3;
+            break;
+        case VEC4:
+            vector_size = 4;
+            break;
+        default:
+            return 0;
     }
-    // clang-format on
 
     // check number of values
     if (this->root[key].size() != static_cast<size_t>(vector_size)) {
@@ -213,16 +228,25 @@ int ConfigParser::loadPrimitive(ConfigParam param) {
 
     // parse
     this->getYamlNode(param.key, node);
-    // clang-format off
     switch (param.type) {
-        case BOOL: *(bool *) param.data = node.as<bool>(); break;
-        case INT: *(int *) param.data = node.as<int>(); break;
-        case FLOAT: *(float *) param.data = node.as<float>(); break;
-        case DOUBLE: *(double *) param.data = node.as<double>(); break;
-        case STRING: *(std::string *) param.data = node.as<std::string>(); break;
-        default: return -6;
+        case BOOL:
+            *(bool *) param.data = node.as<bool>();
+            break;
+        case INT:
+            *(int *) param.data = node.as<int>();
+            break;
+        case FLOAT:
+            *(float *) param.data = node.as<float>();
+            break;
+        case DOUBLE:
+            *(double *) param.data = node.as<double>();
+            break;
+        case STRING:
+            *(std::string *) param.data = node.as<std::string>();
+            break;
+        default:
+            return -6;
     }
-    // clang-format on
 
     return 0;
 }
