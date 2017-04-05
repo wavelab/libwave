@@ -26,7 +26,7 @@ In the above example, the B frame "cancels" when writing out the expression for 
     * I think it is possible to maintain a consistent list. Just having the list will be so valuable. (SLW)
 
 ## Templating Types Based on Frames
-* Leo to fill in more detail, including an example.
+See [frame_templates.md](frame_templates.md)
 
 
 ## Example use cases
