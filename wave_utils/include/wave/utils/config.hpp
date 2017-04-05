@@ -19,15 +19,6 @@
 
 namespace wave {
 
-#define CONFIG_PARSER_ADD_PARAM(TYPE, KEY, OUT, OPTIONAL) \
-    ConfigParam param;                                    \
-    param.type = TYPE;                                    \
-    param.key = KEY;                                      \
-    param.data = OUT;                                     \
-    param.optional = OPTIONAL;                            \
-    this->params.push_back(param);
-
-
 enum ConfigDataType {
     TYPE_NOT_SET = 0,
     // PRIMITIVES
@@ -57,17 +48,15 @@ enum ConfigDataType {
 
 class ConfigParam {
  public:
-    enum ConfigDataType type;
+    enum ConfigDataType type = TYPE_NOT_SET;
     std::string key;
-    bool optional;
-    void *data;
+    void *data = nullptr;
+    bool optional = false;
 
-    ConfigParam(void) {
-        this->type = TYPE_NOT_SET;
-        this->key = "";
-        this->optional = false;
-        this->data = NULL;
-    }
+    ConfigParam() {}
+
+    ConfigParam(ConfigDataType type, std::string key, void *out, bool optional)
+            : type{type}, key{key}, data{out}, optional{optional} {};
 };
 
 class ConfigParser {

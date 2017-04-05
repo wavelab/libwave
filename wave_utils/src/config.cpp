@@ -9,79 +9,79 @@ ConfigParser::ConfigParser(void) {
 
 // clang-format off
 void ConfigParser::addParam(std::string key, bool *out, bool optional) {
-    CONFIG_PARSER_ADD_PARAM(BOOL, key, out, optional);
+    this->params.emplace_back(BOOL, key, out, optional);
 }
 
 void ConfigParser::addParam(std::string key, int *out, bool optional) {
-    CONFIG_PARSER_ADD_PARAM(INT, key, out, optional);
+    this->params.emplace_back(INT, key, out, optional);
 }
 
 void ConfigParser::addParam(std::string key, float *out, bool optional) {
-    CONFIG_PARSER_ADD_PARAM(FLOAT, key, out, optional);
+    this->params.emplace_back(FLOAT, key, out, optional);
 }
 
 void ConfigParser::addParam(std::string key, double *out, bool optional) {
-    CONFIG_PARSER_ADD_PARAM(DOUBLE, key, out, optional);
+    this->params.emplace_back(DOUBLE, key, out, optional);
 }
 
 void ConfigParser::addParam(std::string key, std::string *out, bool optional) {
-    CONFIG_PARSER_ADD_PARAM(STRING, key, out, optional);
+    this->params.emplace_back(STRING, key, out, optional);
 }
 
 void ConfigParser::addParam(std::string key, std::vector<bool> *out, bool optional) {
-    CONFIG_PARSER_ADD_PARAM(BOOL_ARRAY, key, out, optional);
+    this->params.emplace_back(BOOL_ARRAY, key, out, optional);
 }
 
 void ConfigParser::addParam(std::string key, std::vector<int> *out, bool optional) {
-    CONFIG_PARSER_ADD_PARAM(INT_ARRAY, key, out, optional);
+    this->params.emplace_back(INT_ARRAY, key, out, optional);
 }
 
 void ConfigParser::addParam(std::string key, std::vector<float> *out, bool optional) {
-    CONFIG_PARSER_ADD_PARAM(FLOAT_ARRAY, key, out, optional);
+    this->params.emplace_back(FLOAT_ARRAY, key, out, optional);
 }
 
 void ConfigParser::addParam(std::string key, std::vector<double> *out, bool optional) {
-    CONFIG_PARSER_ADD_PARAM(DOUBLE_ARRAY, key, out, optional);
+    this->params.emplace_back(DOUBLE_ARRAY, key, out, optional);
 }
 
 void ConfigParser::addParam(std::string key, std::vector<std::string> *out, bool optional) {
-    CONFIG_PARSER_ADD_PARAM(STRING_ARRAY, key, out, optional);
+    this->params.emplace_back(STRING_ARRAY, key, out, optional);
 }
 
 void ConfigParser::addParam(std::string key, Vec2 *out, bool optional) {
-    CONFIG_PARSER_ADD_PARAM(VEC2, key, out, optional);
+    this->params.emplace_back(VEC2, key, out, optional);
 }
 
 void ConfigParser::addParam(std::string key, Vec3 *out, bool optional) {
-    CONFIG_PARSER_ADD_PARAM(VEC3, key, out, optional);
+    this->params.emplace_back(VEC3, key, out, optional);
 }
 
 void ConfigParser::addParam(std::string key, Vec4 *out, bool optional) {
-    CONFIG_PARSER_ADD_PARAM(VEC4, key, out, optional);
+    this->params.emplace_back(VEC4, key, out, optional);
 }
 
 void ConfigParser::addParam(std::string key, VecX *out, bool optional) {
-    CONFIG_PARSER_ADD_PARAM(VECX, key, out, optional);
+    this->params.emplace_back(VECX, key, out, optional);
 }
 
 void ConfigParser::addParam(std::string key, Mat2 *out, bool optional) {
-    CONFIG_PARSER_ADD_PARAM(MAT2, key, out, optional);
+    this->params.emplace_back(MAT2, key, out, optional);
 }
 
 void ConfigParser::addParam(std::string key, Mat3 *out, bool optional) {
-    CONFIG_PARSER_ADD_PARAM(MAT3, key, out, optional);
+    this->params.emplace_back(MAT3, key, out, optional);
 }
 
 void ConfigParser::addParam(std::string key, Mat4 *out, bool optional) {
-    CONFIG_PARSER_ADD_PARAM(MAT4, key, out, optional);
+    this->params.emplace_back(MAT4, key, out, optional);
 }
 
 void ConfigParser::addParam(std::string key, MatX *out, bool optional) {
-    CONFIG_PARSER_ADD_PARAM(MATX, key, out, optional);
+    this->params.emplace_back(MATX, key, out, optional);
 }
 
 void ConfigParser::addParam(std::string key, cv::Mat *out, bool optional) {
-    CONFIG_PARSER_ADD_PARAM(CVMAT, key, out, optional);
+    this->params.emplace_back(CVMAT, key, out, optional);
 }
 // clang-format on
 
