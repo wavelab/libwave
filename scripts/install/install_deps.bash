@@ -3,6 +3,7 @@ SCRIPT_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 sudo apt-get clean > /dev/null
 sudo apt-get update > /dev/null
+sudo apt-get install cmake g++ > /dev/null
 
 install_dependency() {
     echo "Installing $1 ..."
