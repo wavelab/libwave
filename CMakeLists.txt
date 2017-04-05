@@ -18,7 +18,7 @@ INCLUDE_DIRECTORIES(
 
 # gtest
 ADD_SUBDIRECTORY(deps/googletest)
-INCLUDE_DIRECTORIES(${gtest_SOURCE_DIR}/include/)
+INCLUDE_DIRECTORIES(${gtest_SOURCE_DIR}/include/ ${gtest_SOURCE_DIR})
 
 # libwave_optimization.a
 ADD_SUBDIRECTORY(wave_optimization)
@@ -29,6 +29,7 @@ ADD_SUBDIRECTORY(wave_utils)
 
 # libwave_matching.a
 ADD_SUBDIRECTORY(wave_matching)
+ADD_DEPENDENCIES(wave_matching wave_utils)
 
 # libwave.a
 ADD_CUSTOM_TARGET(
