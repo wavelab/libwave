@@ -164,7 +164,17 @@ main.cpp:81:26: note: in instantiation of function template specialization 'oper
                          ^
 ```
 
+### But what if I want to do something weird?
 
+Yes, you can do something weird, but only if you're explicit about it. We add a small piece of code, an explicit conversion operator, to the `FramedVector` class. Then you could write
 
+```cpp
+    // R transforms from A to B, but vec_c is in frame C
+    // Pretend vec_c is in frame A
+    auto allowed = R * static_cast<FramedVector<A>>(vec_c);
+```
+
+### What are the reference frame types?
+In the above example, they are just any type. So, technically you could define something silly like `Rotation<int, char>`. It is possible to give the reference frame types some additional meaning, but that would make things more complicated.
 
 
