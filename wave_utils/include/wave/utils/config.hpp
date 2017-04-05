@@ -47,7 +47,7 @@ enum ConfigDataType {
 };
 
 class ConfigParam {
-public:
+ public:
     enum ConfigDataType type;
     std::string key;
     bool optional;
@@ -106,7 +106,7 @@ public:
 };
 
 class ConfigParser {
-public:
+ public:
     bool configured;
     bool loaded;
 
