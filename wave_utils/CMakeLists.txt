@@ -39,6 +39,7 @@ ADD_EXECUTABLE(
     tests/utils/filesystem_test.cpp
     tests/utils/math_test.cpp
     tests/utils/time_test.cpp
+    tests/utils/measurement_test.cpp
     # TEST RUNNER
     tests/test_runner.cpp
 )
