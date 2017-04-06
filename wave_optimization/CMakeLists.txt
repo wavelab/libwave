@@ -7,31 +7,31 @@ FIND_PACKAGE(Ceres REQUIRED)
 # INCLUDES
 INCLUDE_DIRECTORIES(
     /usr/include
-	/usr/include/eigen3
-	${CERES_INCLUDE_DIRS}
-	/usr/local/include
-	include
+    /usr/include/eigen3
+    ${CERES_INCLUDE_DIRS}
+    /usr/local/include
+    include
 )
 
 # LIBS
 LINK_DIRECTORIES(
-	/usr/lib
-	/usr/local/lib
+    /usr/lib
+    /usr/local/lib
 )
 
 # LIBRARY
 ADD_LIBRARY(
-	wave_optimization
-	STATIC
-	src/ceres/ceres_examples.cpp
+    wave_optimization
+    STATIC
+    src/ceres/ceres_examples.cpp
 )
 SET(
     TEST_DEPS
-	wave_optimization
-	wave_utils
-	${CERES_LIBRARIES}
-	gtest
-	pthread
+    wave_optimization
+    wave_utils
+    ${CERES_LIBRARIES}
+    gtest
+    pthread
 )
 
 # UNIT TESTS
