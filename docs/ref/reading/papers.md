@@ -41,6 +41,7 @@
 * [[1987 - The original EKF SLAM from Cheeseman, Smith and Self][CheesemanEtAl87]]: the original, a beautiful paper formulating SLAM using Gaussian uncertainty for the first time.
 * [1997 - Lu and Milios Scan Registration Graph SLAM][LuMilios97]: York University shows up big with 2D lidar scan registration in hallways, includes ICP and graphSLAM foundations.
 * [[2002 - Rao-Blackwellized Particle SLAM][MontemerloEtAl2002]]: Thrun and Montemerlo show how particle filters can handle extreme nonlinearities, but run into a lot of problems in implementation.
+* [[2003 - MonoSLAM][]]: The first real monocular camera only SLAM paper, courtesy of Andy Davison.
 * [[2007 - Parallel Tracking and Mapping][KleinMurray2007]]: The case for separate mapping and localization threads, shows how maps don't need to be simultaneously updated at all.
 * [[2010 - Why Filter?][StrasdatEtAl2010]] The case for bundle adjustments over continuous filtering, allowing the optimization to go back and correct past linearization mistakes.
 * [[2011 - KinectFusion][NewcombeEtAl2011]]  The first dense rgbd SLAM, showing us a path to merging of the offline reconstruction methods with online SLAM (same problem different timescales).
@@ -63,17 +64,19 @@
 
 ## References
 
+- [Durrant-Whyte, H., & Bailey, T. (2006). Simultaneous localization and mapping: part I. IEEE robotics & automation magazine, 13(2), 99-110.][DurrantBailey2006]
+
+- [Bailey, T., & Durrant-Whyte, H. (2006). Simultaneous localization and mapping (SLAM): Part II. IEEE Robotics & Automation Magazine, 13(3), 108-117.][BaileyDurrant2006]
+
+- [Cadena, C., Carlone, L., Carrillo, H., Latif, Y., Scaramuzza, D., Neira, J., & Leonard, J. J.  (2016). Simultaneous Localization And Mapping: Present, Future, and the Robust-Perception Age.  arXiv preprint   arXiv:1606.05830.][CadenaEtAl2016]
+
 - [Cheeseman, P., Smith, R., & Self, M. (1987). A stochastic map for uncertain spatial relationships. In 4th International Symposium on Robotic Research (pp. 467-474).][CheesemanEtAl87]
 
 - [F. Lu and E. Milios. Globally consistent range scan alignment for environment mapping. Autonomous Robots (AR), 4(4):333–349, 1997][LuMilios97]
 
 - [Montemerlo, M., Thrun, S., Koller, D., and Wegbreit, B. (2002) FastSLAM: A factored solution to the simultaneous localization and mapping problem. Proceedings of the AAAI National Conference on Artificial Intelligence, Edmonton, Canada, pp.593–598.][MontemerloEtAl2002]
 
-- [Durrant-Whyte, H., & Bailey, T. (2006). Simultaneous localization and mapping: part I. IEEE robotics & automation magazine, 13(2), 99-110.][DurrantBailey2006]
-
-- [Bailey, T., & Durrant-Whyte, H. (2006). Simultaneous localization and mapping (SLAM): Part II. IEEE Robotics & Automation Magazine, 13(3), 108-117.][BaileyDurrant2006]
-
-- [Cadena, C., Carlone, L., Carrillo, H., Latif, Y., Scaramuzza, D., Neira, J., & Leonard, J. J.  (2016). Simultaneous Localization And Mapping: Present, Future, and the Robust-Perception Age.  arXiv preprint   arXiv:1606.05830.][CadenaEtAl2016]
+- [Davison, A. J., Reid, I. D., Molton, N. D., & Stasse, O. (2007). MonoSLAM: Real-time single camera SLAM. IEEE transactions on pattern analysis and machine intelligence, 29(6).][DavisonEtAl2007]
 
 - [Klein, G., & Murray, D. (2007, November). Parallel tracking and mapping for  small AR workspaces.  In Mixed and Augmented Reality, 2007. ISMAR 2007. 6th IEEE and ACM International Symposium on (pp. 225-234). IEEE.][KleinMurray2007]
 
@@ -107,6 +110,7 @@
 [MontemerloEtAl2002]: http://www.aaai.org/Papers/AAAI/2002/AAAI02-089.pdf
 [DurrantBailey2006]: https://people.eecs.berkeley.edu/~pabbeel/cs287-fa09/readings/Durrant-Whyte_Bailey_SLAM-tutorial-I.pdf
 [BaileyDurrant2006]: http://www-personal.acfr.usyd.edu.au/tbailey/papers/slamtute2.pdf
+[DavisonEtAl2007]: https://spiral.imperial.ac.uk/bitstream/10044/1/695/1/MonoSLAM%20Real-Time%20Single%20Camera%20SLAM.pdf
 [KleinMurray2007]: http://www.robots.ox.ac.uk/~gk/publications/KleinMurray2007ISMAR.pdf
 [GrisettiEtAl2010]: http://www2.informatik.uni-freiburg.de/~stachnis/pdf/grisetti10titsmag.pdf
 [StrasdatEtAl2010]: https://www.doc.ic.ac.uk/~ajd/Publications/strasdat_etal_icra2010.pdf
@@ -121,5 +125,5 @@
 [TribouEtAl2015]: http://journals.sagepub.com/doi/abs/10.1177/0278364915571429
 [TribouEtAl2016]: http://www.sciencedirect.com/science/article/pii/S0262885616300038
 [MurArtalEtAl15]: http://webdiis.unizar.es/~raulmur/orbslam/
-[VSLAMList]: https://github.com/tzutalin/awesome-visual-slam
 [DasWaslander2016]: http://ieeexplore.ieee.org/abstract/document/7759682/
+[VSLAMList]: https://github.com/tzutalin/awesome-visual-slam
