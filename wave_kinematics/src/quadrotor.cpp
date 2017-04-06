@@ -1,4 +1,4 @@
-#include "wave/quadrotor/quadrotor.hpp"
+#include "wave/kinematics/quadrotor.hpp"
 
 namespace wave {
 
@@ -12,7 +12,7 @@ AttitudeController::AttitudeController(void) {
     this->yaw_controller = PID(200.0, 0.5, 10.0);
 }
 
-Vec4 AttitudeController::calculate(Vec4 setpoints, Vec4 actual, double dt) {
+Vec4 AttitudeController::update(Vec4 setpoints, Vec4 actual, double dt) {
     double r, p, y, t;
     Vec4 outputs;
     double actual_yaw, setpoint_yaw, error_yaw;
@@ -36,9 +36,9 @@ Vec4 AttitudeController::calculate(Vec4 setpoints, Vec4 actual, double dt) {
     error_yaw = deg2rad(error_yaw);
 
     // roll pitch yaw
-    r = this->roll_controller.calculate(setpoints(0), actual(0), this->dt);
-    p = this->pitch_controller.calculate(setpoints(1), actual(1), this->dt);
-    y = this->yaw_controller.calculate(error_yaw, 0.0, this->dt);
+    r = this->roll_controller.update(setpoints(0), actual(0), this->dt);
+    p = this->pitch_controller.update(setpoints(1), actual(1), this->dt);
+    y = this->yaw_controller.update(error_yaw, 0.0, this->dt);
 
     // thrust
     max_thrust = 5.0;
@@ -68,13 +68,13 @@ Vec4 AttitudeController::calculate(Vec4 setpoints, Vec4 actual, double dt) {
     return outputs;
 }
 
-Vec4 AttitudeController::calculate(Vec4 psetpoints,
+Vec4 AttitudeController::update(Vec4 psetpoints,
                                    Vec4 vsetpoints,
                                    Vec4 actual,
                                    double dt) {
     Vec4 setpoints;
     setpoints = psetpoints + vsetpoints;
-    return this->calculate(setpoints, actual, dt);
+    return this->update(setpoints, actual, dt);
 }
 
 
@@ -88,7 +88,7 @@ PositionController::PositionController(void) {
     this->z_controller = PID(0.3, 0.0, 0.018);
 }
 
-Vec4 PositionController::calculate(Vec3 setpoints,
+Vec4 PositionController::update(Vec3 setpoints,
                                    Vec4 actual,
                                    double yaw,
                                    double dt) {
@@ -112,10 +112,10 @@ Vec4 PositionController::calculate(Vec3 setpoints,
     errors = R * errors;
 
     // roll, pitch, yaw and thrust
-    r = -this->y_controller.calculate(errors(1), 0.0, dt);
-    p = this->x_controller.calculate(errors(0), 0.0, dt);
+    r = -this->y_controller.update(errors(1), 0.0, dt);
+    p = this->x_controller.update(errors(0), 0.0, dt);
     y = yaw;
-    t = 0.5 + this->z_controller.calculate(errors(2), 0.0, dt);
+    t = 0.5 + this->z_controller.update(errors(2), 0.0, dt);
     outputs << r, p, y, t;
 
     // limit roll, pitch
@@ -319,7 +319,7 @@ VecX QuadrotorModel::attitudeControllerControl(double dt) {
                      this->states(1),  // pitch
                      this->states(2),  // yaw
                      this->states(8);  // z
-  motor_inputs = this->attitude_controller.calculate(this->attitude_setpoints,
+  motor_inputs = this->attitude_controller.update(this->attitude_setpoints,
                                                      actual_attitude,
                                                      dt);
     // clang-format on
@@ -338,7 +338,7 @@ VecX QuadrotorModel::positionControllerControl(double dt) {
   actual_position(1) = this->states(7);  // y
   actual_position(2) = this->states(8);  // z
   actual_position(3) = this->states(2);  // yaw
-  this->attitude_setpoints = this->position_controller.calculate(
+  this->attitude_setpoints = this->position_controller.update(
     this->position_setpoints,
     actual_position,
     0.0,
@@ -350,7 +350,7 @@ VecX QuadrotorModel::positionControllerControl(double dt) {
   actual_attitude(1) = this->states(1);  // pitch
   actual_attitude(2) = this->states(2);  // yaw
   actual_attitude(3) = this->states(8);  // z
-  motor_inputs = this->attitude_controller.calculate(
+  motor_inputs = this->attitude_controller.update(
     this->attitude_setpoints,
     actual_attitude,
     dt

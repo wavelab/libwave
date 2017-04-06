@@ -5,7 +5,7 @@
 #include <iostream>
 
 #include "wave/utils/utils.hpp"
-#include "wave/quadrotor/pid.hpp"
+#include "wave/controls/pid.hpp"
 
 namespace wave {
 
@@ -19,8 +19,8 @@ class AttitudeController {
     PID yaw_controller;
 
     AttitudeController(void);
-    Vec4 calculate(Vec4 setpoints, Vec4 actual, double dt);
-    Vec4 calculate(Vec4 psetpoints, Vec4 vsetpoints, Vec4 actual, double dt);
+    Vec4 update(Vec4 setpoints, Vec4 actual, double dt);
+    Vec4 update(Vec4 psetpoints, Vec4 vsetpoints, Vec4 actual, double dt);
 };
 
 class PositionController {
@@ -33,19 +33,19 @@ class PositionController {
     PID z_controller;
 
     PositionController(void);
-    Vec4 calculate(Vec3 setpoints, Vec4 actual, double yaw, double dt);
+    Vec4 update(Vec3 setpoints, Vec4 actual, double yaw, double dt);
 };
 
-class VelocityController {
+/*class VelocityController {
  public:
     PID vx_controller;
     PID vy_controller;
     PID vz_controller;
 
     VelocityController(void);
-    VecX calculate(Vec3 setpoints, Vec3 actual, double yaw, double dt);
+    VecX update(Vec3 setpoints, Vec3 actual, double yaw, double dt);
 };
-
+*/
 class QuadrotorModel {
  public:
     VecX states;

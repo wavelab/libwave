@@ -11,6 +11,7 @@ ENDIF()
 INCLUDE_DIRECTORIES(
   wave_estimation/include
   wave_kinematics/include
+  wave_controls/include
   wave_optimization/include
   wave_utils/include
   wave_matching/include
@@ -20,6 +21,18 @@ INCLUDE_DIRECTORIES(
 ADD_SUBDIRECTORY(deps/googletest)
 INCLUDE_DIRECTORIES(${gtest_SOURCE_DIR}/include/ ${gtest_SOURCE_DIR})
 
+# libwave_kinematics.a
+ADD_SUBDIRECTORY(wave_kinematics)
+ADD_DEPENDENCIES(wave_kinematics wave_utils)
+
+# libwave_controls.a
+ADD_SUBDIRECTORY(wave_controls)
+ADD_DEPENDENCIES(wave_controls wave_utils)
+
+# libwave_matching.a
+ADD_SUBDIRECTORY(wave_matching)
+ADD_DEPENDENCIES(wave_matching wave_utils)
+
 # libwave_optimization.a
 ADD_SUBDIRECTORY(wave_optimization)
 ADD_DEPENDENCIES(wave_optimization wave_utils)
@@ -27,20 +40,20 @@ ADD_DEPENDENCIES(wave_optimization wave_utils)
 # libwave_utils.a
 ADD_SUBDIRECTORY(wave_utils)
 
-# libwave_matching.a
-ADD_SUBDIRECTORY(wave_matching)
-ADD_DEPENDENCIES(wave_matching wave_utils)
-
 # libwave.a
 ADD_CUSTOM_TARGET(
     libwave ALL
     COMMAND
         ${CMAKE_AR} rc libwave.a
+            ${CMAKE_BINARY_DIR}/wave_kinematics/libwave_kinematics.a
+            ${CMAKE_BINARY_DIR}/wave_controls/libwave_controls.a
+            ${CMAKE_BINARY_DIR}/wave_matching/libwave_matching.a
             ${CMAKE_BINARY_DIR}/wave_optimization/libwave_optimization.a
             ${CMAKE_BINARY_DIR}/wave_utils/libwave_utils.a
-            ${CMAKE_BINARY_DIR}/wave_matching/libwave_matching.a
     DEPENDS
+        wave_kinematics
+        wave_controls
+        wave_matching
         wave_optimization
         wave_utils
-        wave_matching
 )

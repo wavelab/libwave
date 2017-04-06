@@ -1,5 +1,5 @@
-#ifndef WAVE_QUADROTOR_PID_HPP
-#define WAVE_QUADROTOR_PID_HPP
+#ifndef WAVE_PID_HPP
+#define WAVE_PID_HPP
 
 #include <float.h>
 #include <math.h>
@@ -21,7 +21,7 @@ class PID {
 
     PID(void);
     PID(double k_p, double k_i, double k_d);
-    double calculate(double setpoint, double input, double dt);
+    double update(double setpoint, double actual, double dt);
 };
 
 }  // end of wave namespace

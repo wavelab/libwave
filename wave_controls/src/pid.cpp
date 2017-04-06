@@ -1,4 +1,4 @@
-#include "wave/quadrotor/control.hpp"
+#include "wave/controls/pid.hpp"
 
 namespace wave {
 
@@ -28,7 +28,7 @@ PID::PID(double k_p, double k_i, double k_d) {
     this->k_d = k_d;
 }
 
-double PID::calculate(double setpoint, double actual, double dt) {
+double PID::update(double setpoint, double actual, double dt) {
     double error;
     double output;
 

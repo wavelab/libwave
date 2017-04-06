@@ -1,5 +1,6 @@
 #include "wave/wave_test.hpp"
-#include "wave/quadrotor/quadrotor.hpp"
+#include "wave/kinematics/quadrotor.hpp"
+#include "wave/controls/pid.hpp"
 
 namespace wave {
 
@@ -7,7 +8,7 @@ namespace wave {
 #define POSITION_CONTROLLER_OUTPUT "/tmp/quadrotor_position_controller.dat"
 #define VELOCITY_CONTROLLER_OUTPUT "/tmp/quadrotor_velocity_controller.dat"
 
-TEST(AttitudeController, calculate) {
+TEST(AttitudeController, update) {
     double t, dt;
     FILE *output_file;
     QuadrotorModel quad;
@@ -27,7 +28,7 @@ TEST(AttitudeController, calculate) {
     for (int i = 0; i < 1000; i++) {
         actual << quad.states(0), quad.states(1), quad.states(2),
           quad.states(8);
-        motor_inputs = controller.calculate(setpoints, actual, dt);
+        motor_inputs = controller.update(setpoints, actual, dt);
         quad.update(motor_inputs, dt);
 
         fprintf(output_file, "%f, ", t);
@@ -41,7 +42,7 @@ TEST(AttitudeController, calculate) {
     fclose(output_file);
 }
 
-TEST(PositionController, calculate) {
+TEST(PositionController, update) {
     double t, dt;
     FILE *output_file;
     QuadrotorModel quad;
@@ -69,7 +70,7 @@ TEST(PositionController, calculate) {
                            quad.states(7),
                            quad.states(8),
                            quad.states(2);
-        att_setpoints = pos_controller.calculate(
+        att_setpoints = pos_controller.update(
             pos_setpoints,
             actual_position,
             deg2rad(10.0),
@@ -83,7 +84,7 @@ TEST(PositionController, calculate) {
                            quad.states(1),
                            quad.states(2),
                            quad.states(8);
-        motor_inputs = att_controller.calculate(
+        motor_inputs = att_controller.update(
             att_setpoints,
             actual_attitude,
             dt
@@ -105,7 +106,7 @@ TEST(PositionController, calculate) {
     fclose(output_file);
 }
 
-TEST(VelocityController, calculate) {
+/*TEST(VelocityController, update) {
     double t;
     FILE *output_file;
     QuadrotorModel quad;
@@ -134,11 +135,11 @@ TEST(VelocityController, calculate) {
 
         // position controller
         att_setpoints =
-          vel_controller.calculate(vel_setpoints, actual_velocity, 0.0, 0.01);
+          vel_controller.update(vel_setpoints, actual_velocity, 0.0, 0.01);
 
         // position controller
         // clang-format off
-        // att_setpoints = pos_controller.calculate(
+        // att_setpoints = pos_controller.update(
         //   pos_setpoints,
         //   actual_position,
         //   0.0,
@@ -152,7 +153,7 @@ TEST(VelocityController, calculate) {
                           quad.states(1),
                           quad.states(2),
                           quad.states(8);
-        motor_inputs = att_controller.calculate(
+        motor_inputs = att_controller.update(
           att_setpoints,
           actual_attitude,
           0.01
@@ -175,6 +176,5 @@ TEST(VelocityController, calculate) {
     }
 
     fclose(output_file);
-}
-
+}*/
 }  // end of wave namespace
