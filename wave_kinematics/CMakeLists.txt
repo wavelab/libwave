@@ -6,22 +6,10 @@ IF (CMAKE_COMPILER_IS_GNUCXX)
 ENDIF()
 
 # EXTERNAL PACKAGES
-find_package(kindr) 
+FIND_PACKAGE(Kindr)
 
 # INCLUDES
-INCLUDE_DIRECTORIES(
-  /usr/include
-  /usr/include/eigen3
-  /usr/local/include
-  include
-)
-
-# LIBS
-LINK_DIRECTORIES(
-  /usr/lib
-  /usr/local/lib
-)
-
+INCLUDE_DIRECTORIES(/usr/include/eigen3)
 
 #LIBRARY
 ADD_LIBRARY(
@@ -36,7 +24,6 @@ SET(
   gtest
   pthread
 )
-
 
 # UNIT TESTS
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)

@@ -5,19 +5,9 @@ PROJECT(wave_optimization)
 FIND_PACKAGE(Ceres REQUIRED)
 
 # INCLUDES
-INCLUDE_DIRECTORIES(
-    /usr/include
-    /usr/include/eigen3
-    ${CERES_INCLUDE_DIRS}
-    /usr/local/include
-    include
-)
-
-# LIBS
-LINK_DIRECTORIES(
-    /usr/lib
-    /usr/local/lib
-)
+INCLUDE_DIRECTORIES(include)
+INCLUDE_DIRECTORIES(/usr/include/eigen3)
+INCLUDE_DIRECTORIES(${CERES_INCLUDE_DIRS})
 
 # LIBRARY
 ADD_LIBRARY(

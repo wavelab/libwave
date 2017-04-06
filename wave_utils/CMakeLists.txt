@@ -6,18 +6,7 @@ FIND_PACKAGE(OpenCV REQUIRED)
 FIND_PACKAGE(Eigen3 REQUIRED)
 
 # INCLUDES
-INCLUDE_DIRECTORIES(
-    /usr/include
-    /usr/include/eigen3
-    /usr/local/include
-    include
-)
-
-# LIBS
-LINK_DIRECTORIES(
-    /usr/lib
-    /usr/local/lib
-)
+INCLUDE_DIRECTORIES(/usr/include/eigen3)
 
 # LIBRARY
 ADD_LIBRARY(
