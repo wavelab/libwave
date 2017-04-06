@@ -2,6 +2,8 @@
 set -e  # exit on first error
 KINDR_VER="1.0.4"
 KINDR_URL="https://github.com/ethz-asl/kindr/archive/$KINDR_VER.zip"
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}" )" && pwd)"
+CMAKE_CONFIG_DIR="../../cmake"  # cmake folder relative to this script
 
 download_kindr() {
     mkdir -p /usr/local/src/kindr
@@ -17,7 +19,7 @@ install_kindr() {
     cd kindr-$KINDR_VER
     mkdir -p build
     cd build
-    cmake ..
+    cmake .. -DCMAKE_MODULE_PATH=$DIR/$CMAKE_CONFIG_DIR
     sudo make install
     cd -
 }
