@@ -23,7 +23,7 @@ struct NumericalDiffCostFunctor {
 };
 
 class AnalyticalCostFunction : public ceres::SizedCostFunction<1, 1> {
-public:
+ public:
     virtual ~AnalyticalCostFunction() {}
     virtual bool Evaluate(double const *const *parameters,
                           double *residuals,
@@ -47,7 +47,7 @@ struct CurveFittingResidual {
         return true;
     }
 
-private:
+ private:
     const double x;
     const double y;
 };
