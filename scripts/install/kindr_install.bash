@@ -5,6 +5,10 @@ KINDR_URL="https://github.com/ethz-asl/kindr/archive/$KINDR_VER.zip"
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}" )" && pwd)"
 CMAKE_CONFIG_DIR="../../cmake"  # cmake folder relative to this script
 
+install_dependencies() {
+    apt-get install -qq -y doxygen
+}
+
 download_kindr() {
     mkdir -p /usr/local/src/kindr
     cd /usr/local/src/kindr
@@ -26,5 +30,6 @@ install_kindr() {
 
 # MAIN
 echo "Installing Kindr ..."
+install_dependencies
 download_kindr
 install_kindr
