@@ -5,7 +5,6 @@ language:
     - c++
 
 install:
-    - echo $CMAKE_MODULE_PATH
     - travis_wait sudo bash scripts/install/install_deps.bash
 
 script:
