@@ -17,7 +17,7 @@ double speed = distance + time; // oops
 Unfortunately, the language does not enforce this. The compiler only knows that they are all `doubles`, and enforcing correctness is left to the humans (the worst place to leave it!)
 But what if we could get the compiler to check the units for us? We can, and with no runtime overhead.
 
-Scott Meyers' notes on [Dimensional Analysis in C++](https://pdfs.semanticscholar.org/f344/a75cf1ce5897d42f60811504732bce6995c7.pdf) introduce how this works for dimensional analysis.
+For an introduction to how this works, see Scott Meyers' notes on [Dimensional Analysis in C++](https://pdfs.semanticscholar.org/f344/a75cf1ce5897d42f60811504732bce6995c7.pdf).
 
 ### How far to go?
 
@@ -192,10 +192,11 @@ While the behind-the-scenes implementation will necessarily be more complex than
 The implementation questions are
 
 - What operations are allowed?
+    - Are there just Vector quantities, or different ones for, say, translation and anugular velocity?
 - What syntax is desired?
     - Are three designators always needed?
     - How to deal with, e.g. time indexes? (Several options)
-- How to enforce correctness and produce errors? (specialization or static_assert?)
+- How to enforce correctness and produce errors? Implicit (specialization) or explicit (static_assert)?
 - How to integrate into geometry classes? Inherit or wrap? _Since we already have a wrapper Rotation class, can conveniently just add it into the wrapper_
 - Simple template implementation as above, or fancy-pants Boost.MPL or Boost.Units-based library? _Probably simple implementation_
 - Automatic conversion? A `tf`-like transform tree? _No_
@@ -204,6 +205,5 @@ The implementation questions are
 
 - If you know that the A Frame and the B frame are oriented the same way, you may normally just add vectors between them
  `A_p_CA = A_p_BA + B_p_CB`. But that's not true in general, and the system won't allow that. You would need to define a rotation. But this may not be a bad thing, as it requires explicity stating the assumption that there is no rotation between the frames. Some helpers may be desired, like IdentityRotation<B,A>.
- - Some people may want the decorators present on _all_ appearances of the variable (e.g. in a variable name like `A_p_CA`). My system by design puts the reference frame information in the type, not (necessarily) the name. (Note most IDEs will readily show the type for any apperanance of a variable)
- 
+ - Some people may want the decorators present on _all_ appearances of the variable (e.g. in a variable name like `A_p_CA`). My system by design puts the reference frame information in the type, not (necessarily) the name. (Note most IDEs will readily show the type for any appearance of a variable)
  
