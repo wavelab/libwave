@@ -1,12 +1,12 @@
 #!/bin/bash
 set -e  # exit on first error
 
-install_dependencies() {
+install_dependencies_14() {
     sudo apt-get -y install -qq \
-        libboost-all-dev \
-        libflann-dev \
-        libeigen3-dev \
-        libusb-1.0-0-dev \
+    libboost-all-dev \
+    libflann-dev \
+    libeigen3-dev \
+    libusb-1.0-0-dev \
 	libvtk6 \
 	libvtk6-java \
 	python-vtk6 \
@@ -14,50 +14,29 @@ install_dependencies() {
 	libqt5opengl5
 }
 
+install_dependencies_16() {
+    sudo apt-get -y install -qq \
+    libboost-all-dev \
+    libeigen3-dev \
+    libflann-dev \
+    libopenni-dev \
+    libpcl1.7 \
+    libqhull-dev \
+    libvtk6-dev \
+    libvtk6-qt-dev
+}
+
 echo "Installing PCL ..."
 
-install_dependencies
+UBUNTU_VERSION=`lsb_release --release | cut -f2`
 
-DEPS_DIR="/tmp/libwave_deps"
-PCL_VERSION='1.8.0'
-PCL_FILE="pcl-$PCL_VERSION"
-PCL_DIR="pcl-$PCL_FILE"
-PCL_URL="https://github.com/PointCloudLibrary/pcl/archive/pcl-$PCL_VERSION.tar.gz"
+if [ $UBUNTU_VERSION == "16.04" ]; then
+    install_dependencies_16
+    sudo apt-get -y install -qq libpcl-dev
 
-# TODO: find a better way to check if already installed from source
-if [ -e "/usr/local/lib/libpcl_2d.so.$PCL_VERSION" ]; then
-    echo "PCL version $PCL_VERSION already installed"
-else
-    echo "Installing PCL version $PCL_VERSION ..."
-    mkdir -p "$DEPS_DIR"
-    cd "$DEPS_DIR"
-    if [[ ! -d "$PCL_DIR" ]]; then
-        wget "$PCL_URL"
-        tar -xf "$PCL_FILE.tar.gz"
-        rm -rf "$PCL_FILE.tar.gz"
-    fi
-    cd "$PCL_DIR"
-    mkdir -p build
-    cd build
-
-    PCL_CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS=-std=c++11"
-    #if [ -n "$CONTINUOUS_INTEGRATION" ]; then
-        # Disable everything unneeded for a faster build
-        PCL_CMAKE_ARGS="${PCL_CMAKE_ARGS} \
-        -DWITH_CUDA=OFF -DWITH_DAVIDSDK=OFF -DWITH_DOCS=OFF \
-        -DWITH_DSSDK=OFF -DWITH_ENSENSO=OFF -DWITH_FZAPI=OFF \
-        -DWITH_LIBUSB=OFF -DWITH_OPENGL=OFF -DWITH_OPENNI=OFF \
-        -DWITH_OPENNI2=OFF -DWITH_QT=OFF -DWITH_RSSDK=OFF -DWITH_VTK=OFF \
-        -DBUILD_CUDA=OFF -DBUILD_GPU=OFF -DBUILD_surface=OFF \
-        -DBUILD_ml=OFF -DBUILD_io=OFF -DBUILD_geometry=OFF \
-        -DBUILD_tracking=OFF"
-    #fi
-
-    cmake .. ${PCL_CMAKE_ARGS} > /dev/null
-
-    echo "Building $PCL_FILE"
-    make
-
-    sudo make install > /dev/null
-    echo "PCL installed successfully"
+elif [ $UBUNTU_VERSION == "14.04" ]; then
+    install_dependencies_14
+    sudo add-apt-repository -y ppa:v-launchpad-jochen-sprickerhof-de/pcl
+    sudo apt-get -y update
+    sudo apt-get -y install -qq libpcl-all
 fi
