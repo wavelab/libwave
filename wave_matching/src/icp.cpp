@@ -31,6 +31,18 @@ ICPMatcher::ICPMatcher(float res) {
     this->icp.setEuclideanFitnessEpsilon(fit_eps);
 }
 
+ICPMatcher::~ICPMatcher() {
+    if (this->ref) {
+        this->ref.reset();
+    }
+    if (this->target) {
+        this->target.reset();
+    }
+    if (this->final) {
+        this->final.reset();
+    }
+}
+
 void ICPMatcher::setRef(const PCLPointCloud &ref) {
     if (this->resolution > 0) {
         this->filter.setInputCloud(ref);
