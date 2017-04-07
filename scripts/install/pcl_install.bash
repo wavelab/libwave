@@ -5,18 +5,20 @@ install_dependencies() {
     sudo apt-get -y install -qq \
         libboost-all-dev \
         libflann-dev \
-        libvtk6-dev \
         libeigen3-dev \
         libusb-1.0-0-dev \
-        tcl-vtk \
-        python-vtk \
-        libvtk-java
+	libvtk6 \
+	libvtk6-java \
+	python-vtk6 \
+	tcl-vtk6 \
+	libqt5opengl5
 }
 
 echo "Installing PCL ..."
 
 install_dependencies
 
+DEPS_DIR="/tmp/libwave_deps"
 PCL_VERSION='1.8.0'
 PCL_FILE="pcl-$PCL_VERSION"
 PCL_DIR="pcl-$PCL_FILE"
@@ -39,7 +41,7 @@ else
     cd build
 
     PCL_CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS=-std=c++11"
-    if [ -n "$CONTINUOUS_INTEGRATION" ]; then
+    #if [ -n "$CONTINUOUS_INTEGRATION" ]; then
         # Disable everything unneeded for a faster build
         PCL_CMAKE_ARGS="${PCL_CMAKE_ARGS} \
         -DWITH_CUDA=OFF -DWITH_DAVIDSDK=OFF -DWITH_DOCS=OFF \
@@ -49,12 +51,12 @@ else
         -DBUILD_CUDA=OFF -DBUILD_GPU=OFF -DBUILD_surface=OFF \
         -DBUILD_ml=OFF -DBUILD_io=OFF -DBUILD_geometry=OFF \
         -DBUILD_tracking=OFF"
-    fi
+    #fi
 
     cmake .. ${PCL_CMAKE_ARGS} > /dev/null
 
     echo "Building $PCL_FILE"
-    make_with_progress -j4
+    make
 
     sudo make install > /dev/null
     echo "PCL installed successfully"
