@@ -5,6 +5,7 @@
 #include <boost/multi_index/member.hpp>
 #include <boost/multi_index/ordered_index.hpp>
 #include <boost/multi_index/composite_key.hpp>
+#include <boost/version.hpp>
 #include <iterator>
 #include <chrono>
 
@@ -27,7 +28,7 @@ struct Measurement {
     S sensor_id;
     T value;
 
-    Measurement(TimeType t, S s, T v) :
+    Measurement(const TimeType &t, const S &s, const T &v) :
             time_point{t},
             sensor_id{s},
             value{v} {}
@@ -106,7 +107,6 @@ class MeasurementContainer {
      */
     std::pair<iterator, bool> insert(const MeasurementType &);
 
-
     /** Insert a Measurement constructed from the arguments if a measurement for
      * the same time and sensor does not already exist.
      *
@@ -177,7 +177,13 @@ template<typename T, typename S>
 template<typename... Args>
 std::pair<typename MeasurementContainer<T, S>::iterator, bool>
 MeasurementContainer<T, S>::emplace(Args &&... args) {
+    // Support Boost.MultiIndex <= 1.54, which does not have emplace()
+#if BOOST_VERSION < 105500
+    return this->composite().insert(
+            MeasurementType{std::forward<Args>(args)...});
+#else
     return this->composite().emplace(std::forward<Args>(args)...);
+#endif
 }
 
 template<typename T, typename S>
