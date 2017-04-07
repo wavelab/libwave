@@ -56,25 +56,30 @@ class MeasurementContainer {
     struct composite_index {};
 
     // Define a container able to index by time, sensor id, or both
-    using time_member = member<MeasurementType,
-                               TimeType,
-                               &MeasurementType::time_point>;
-    using sensor_id_member = member<MeasurementType,
-                                    SensorIdType,
-                                    &MeasurementType::sensor_id>;
+    struct time_member : member<MeasurementType,
+                                TimeType,
+                                &MeasurementType::time_point> {
+    };
+    struct sensor_id_member : member<MeasurementType,
+                                     SensorIdType,
+                                     &MeasurementType::sensor_id> {
+    };
     // Note the composite index is sorted by sensor id first, then time
-    using composite_key_type = composite_key<MeasurementType,
-                                             sensor_id_member,
-                                             time_member>;
+    struct composite_key_type : composite_key<MeasurementType,
+                                              sensor_id_member,
+                                              time_member> {
+    };
+    struct storage_type_indices : indexed_by<
+            ordered_non_unique<tag<time_index>, time_member>,
+            ordered_non_unique<tag<sensor_index>, sensor_id_member>,
+            ordered_unique<tag<composite_index>, composite_key_type>> {
+    };
+    // Finally, define actual multi_index_container type. The separate struct
+    // definitions above reduce the length of the name printed by the compiler
     using storage_type = boost::multi_index_container<
             MeasurementType,
-            indexed_by<
-                    ordered_non_unique<tag<time_index>, time_member>,
-                    ordered_non_unique<tag<sensor_index>, sensor_id_member>,
-                    ordered_unique<tag<composite_index>, composite_key_type>
-            >,
-            std::allocator<MeasurementType>
-    >;
+            storage_type_indices,
+            std::allocator<MeasurementType>>;
     using composite_type = typename storage_type::template index<composite_index>::type;
 
  public:
