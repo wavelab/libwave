@@ -34,18 +34,37 @@ struct Measurement {
             value{v} {}
 };
 
-/** Container which stores and transparently interpolates measurements */
-template<typename T, typename S>
+/** Perform linear interpolation between two measurements
+ *
+ * This template can be specialized for measurement types requiring a
+ * different calculation
+ */
+template<typename T>
+decltype(T::value) interpolate(const T &m1, const T &m2, const TimeType &t) {
+    auto w2 = 1.0 * (t - m1.time_point) / (m2.time_point - m1.time_point);
+    return (1 - w2) * m1.value + w2 * m2.value;
+};
+
+/** Container which stores and transparently interpolates measurements.
+ *
+ * @tparam T is the measurement type which must have the fields time_point (of
+ * type TimeType), sensor_id (of any type), and value (of any type).
+ *
+ * The function interpolate(const T&, const T&, const TimeType&) must be defined
+ * for type T.
+ */
+template<typename T>
 class MeasurementContainer {
  public:
     // Types
-    /** Alias for template parameter giving the type of the measurement's value.
+    /** Alias for the template parameter, giving the type of Measurement stored
+     * in this container */
+    using MeasurementType = T;
+    /** Alias for the measurement's value.
      * Note this does *not* correspond to a typical container's value_type. */
-    using ValueType = T;
+    using ValueType = decltype(MeasurementType::value);
     /** Alias for template parameter giving the type of the sensor id */
-    using SensorIdType = S;
-    /** Alias for the type of Measurment stored in this container */
-    using MeasurementType = Measurement<ValueType, SensorIdType>;
+    using SensorIdType = decltype(MeasurementType::sensor_id);
 
  private:
     /* For now, some types used in the public interface are derived from the
@@ -153,35 +172,21 @@ class MeasurementContainer {
     storage_type storage;
 };
 
-/** Perform linear interpolation between two measurements
- *
- * This template can be specialized for measurement types requiring a
- * different calculation
- */
-template<typename T, typename S>
-T interpolate(const Measurement<T, S> &m1,
-              const Measurement<T, S> &m2,
-              const TimeType &t
-) {
-    auto w2 = 1.0 * (t - m1.time_point) / (m2.time_point - m1.time_point);
-    return (1 - w2) * m1.value + w2 * m2.value;
-};
-
-template<typename T, typename S>
-MeasurementContainer<T, S>::MeasurementContainer() {
+template<typename T>
+MeasurementContainer<T>::MeasurementContainer() {
 
 }
 
-template<typename T, typename S>
-std::pair<typename MeasurementContainer<T, S>::iterator, bool>
-MeasurementContainer<T, S>::insert(const MeasurementType &m) {
+template<typename T>
+std::pair<typename MeasurementContainer<T>::iterator, bool>
+MeasurementContainer<T>::insert(const MeasurementType &m) {
     return this->composite().insert(m);
 }
 
-template<typename T, typename S>
+template<typename T>
 template<typename... Args>
-std::pair<typename MeasurementContainer<T, S>::iterator, bool>
-MeasurementContainer<T, S>::emplace(Args &&... args) {
+std::pair<typename MeasurementContainer<T>::iterator, bool>
+MeasurementContainer<T>::emplace(Args &&... args) {
     // Support Boost.MultiIndex <= 1.54, which does not have emplace()
 #if BOOST_VERSION < 105500
     return this->composite().insert(
@@ -191,9 +196,9 @@ MeasurementContainer<T, S>::emplace(Args &&... args) {
 #endif
 }
 
-template<typename T, typename S>
-typename MeasurementContainer<T, S>::size_type
-MeasurementContainer<T, S>::erase(const TimeType &t, const SensorIdType &s) {
+template<typename T>
+typename MeasurementContainer<T>::size_type
+MeasurementContainer<T>::erase(const TimeType &t, const SensorIdType &s) {
     auto &composite = this->composite();
     auto it = composite.find(std::make_tuple(s, t));
     if (it == composite.end()) {
@@ -203,9 +208,9 @@ MeasurementContainer<T, S>::erase(const TimeType &t, const SensorIdType &s) {
     return 1;
 }
 
-template<typename T, typename S>
-const T MeasurementContainer<T, S>::get(const TimeType &t,
-                                        const SensorIdType &s) const {
+template<typename T>
+const typename MeasurementContainer<T>::ValueType
+MeasurementContainer<T>::get(const TimeType &t, const SensorIdType &s) const {
     const auto &composite = this->composite();
 
     // lower_bound is pointer to the first element >= key
@@ -231,67 +236,67 @@ const T MeasurementContainer<T, S>::get(const TimeType &t,
     return interpolate(*i_prev, *i_next, t);
 }
 
-template<typename T, typename S>
-bool MeasurementContainer<T, S>::empty() const noexcept {
+template<typename T>
+bool MeasurementContainer<T>::empty() const noexcept {
     return this->composite().empty();
 }
 
-template<typename T, typename S>
-typename MeasurementContainer<T, S>::size_type
-MeasurementContainer<T, S>::size() const noexcept {
+template<typename T>
+typename MeasurementContainer<T>::size_type
+MeasurementContainer<T>::size() const noexcept {
     return this->composite().size();
 }
 
-template<typename T, typename S>
-void MeasurementContainer<T, S>::clear() noexcept {
+template<typename T>
+void MeasurementContainer<T>::clear() noexcept {
     return this->composite().clear();
 }
 
-template<typename T, typename S>
-typename MeasurementContainer<T, S>::iterator
-MeasurementContainer<T, S>::begin() noexcept {
+template<typename T>
+typename MeasurementContainer<T>::iterator
+MeasurementContainer<T>::begin() noexcept {
     return this->composite().begin();
 }
 
-template<typename T, typename S>
-typename MeasurementContainer<T, S>::iterator
-MeasurementContainer<T, S>::end() noexcept {
+template<typename T>
+typename MeasurementContainer<T>::iterator
+MeasurementContainer<T>::end() noexcept {
     return this->composite().end();
 }
 
-template<typename T, typename S>
-typename MeasurementContainer<T, S>::const_iterator
-MeasurementContainer<T, S>::begin() const noexcept {
+template<typename T>
+typename MeasurementContainer<T>::const_iterator
+MeasurementContainer<T>::begin() const noexcept {
     return this->composite().begin();
 }
 
-template<typename T, typename S>
-typename MeasurementContainer<T, S>::const_iterator
-MeasurementContainer<T, S>::end() const noexcept {
+template<typename T>
+typename MeasurementContainer<T>::const_iterator
+MeasurementContainer<T>::end() const noexcept {
     return this->composite().end();
 }
 
-template<typename T, typename S>
-typename MeasurementContainer<T, S>::const_iterator
-MeasurementContainer<T, S>::cbegin() const noexcept {
+template<typename T>
+typename MeasurementContainer<T>::const_iterator
+MeasurementContainer<T>::cbegin() const noexcept {
     return this->composite().cbegin();
 }
 
-template<typename T, typename S>
-typename MeasurementContainer<T, S>::const_iterator
-MeasurementContainer<T, S>::cend() const noexcept {
+template<typename T>
+typename MeasurementContainer<T>::const_iterator
+MeasurementContainer<T>::cend() const noexcept {
     return this->composite().cend();
 }
 
-template<typename T, typename S>
-typename MeasurementContainer<T, S>::composite_type &
-MeasurementContainer<T, S>::composite() noexcept {
+template<typename T>
+typename MeasurementContainer<T>::composite_type &
+MeasurementContainer<T>::composite() noexcept {
     return this->storage.template get<composite_index>();
 }
 
-template<typename T, typename S>
-const typename MeasurementContainer<T, S>::composite_type &
-MeasurementContainer<T, S>::composite() const noexcept {
+template<typename T>
+const typename MeasurementContainer<T>::composite_type &
+MeasurementContainer<T>::composite() const noexcept {
     return this->storage.template get<composite_index>();
 }
 

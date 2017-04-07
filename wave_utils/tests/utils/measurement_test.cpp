@@ -5,8 +5,11 @@ namespace wave {
 
 enum class SomeSensors { S1, S2, S3 };
 
+// This is the measurement type used in these tests
+using TestMeasurement = Measurement<double, SomeSensors>;
+
 TEST(Utils_measurement, insert) {
-    MeasurementContainer<double, SomeSensors> m;
+    MeasurementContainer<TestMeasurement> m;
     auto now = std::chrono::steady_clock::now();
 
     const auto
@@ -24,7 +27,7 @@ TEST(Utils_measurement, insert) {
 }
 
 TEST(Utils_measurement, emplace) {
-    MeasurementContainer<double, SomeSensors> m;
+    MeasurementContainer<TestMeasurement> m;
     auto now = std::chrono::steady_clock::now();
 
     auto res = m.emplace(now, SomeSensors::S1, 2.5);
@@ -41,7 +44,7 @@ TEST(Utils_measurement, emplace) {
 }
 
 TEST(Utils_measurement, capacity) {
-    MeasurementContainer<double, SomeSensors> m;
+    MeasurementContainer<TestMeasurement> m;
     EXPECT_EQ(0ul, m.size());
     EXPECT_TRUE(m.empty());
 
@@ -51,7 +54,7 @@ TEST(Utils_measurement, capacity) {
 }
 
 TEST(Utils_measurement, erase) {
-    MeasurementContainer<double, SomeSensors> m;
+    MeasurementContainer<TestMeasurement> m;
 
     auto now = std::chrono::steady_clock::now();
     m.emplace(now, SomeSensors::S1, 2.5);
@@ -67,7 +70,7 @@ TEST(Utils_measurement, erase) {
 }
 
 TEST(Utils_measurement, get) {
-    MeasurementContainer<double, SomeSensors> m;
+    MeasurementContainer<TestMeasurement> m;
 
     auto now = std::chrono::steady_clock::now();
     auto value_in = 3.5;
@@ -80,7 +83,7 @@ TEST(Utils_measurement, get) {
 
 
 TEST(Utils_measurement, get_interpolated) {
-    MeasurementContainer<double, SomeSensors> m;
+    MeasurementContainer<TestMeasurement> m;
     auto t1 = std::chrono::steady_clock::now();
     auto t2 = t1 + std::chrono::seconds(10);
     auto tmid = t1 + std::chrono::seconds(5);
@@ -103,7 +106,7 @@ TEST(Utils_measurement, get_interpolated) {
 TEST(Utils_measurement, get_interpolated_other_sensors) {
     // Verify measurements from other sensors are NOT interpolated
 
-    MeasurementContainer<double, SomeSensors> m;
+    MeasurementContainer<TestMeasurement> m;
     auto t1 = std::chrono::steady_clock::now();
     auto t2 = t1 + std::chrono::seconds(10);
     auto tmid = t1 + std::chrono::seconds(5);
@@ -120,7 +123,7 @@ TEST(Utils_measurement, get_interpolated_other_sensors) {
 TEST(Utils_measurement, iterators) {
     // Todo: not sure how to check that all iterator functionality works
     // Since I'm just wrapping internal iterators, just do a simple sanity check
-    MeasurementContainer<double, SomeSensors> m;
+    MeasurementContainer<TestMeasurement> m;
 
     EXPECT_EQ(m.begin(), m.end());
     EXPECT_EQ(m.cbegin(), m.cend());
@@ -142,12 +145,12 @@ TEST(Utils_measurement, iterators) {
         expected += 1.1;
     }
 
-    const MeasurementContainer<double, SomeSensors> cm;
+    const MeasurementContainer<TestMeasurement> cm;
     EXPECT_EQ(cm.begin(), cm.end());
 }
 
 TEST(Utils_measurement, clear) {
-    MeasurementContainer<double, SomeSensors> m;
+    MeasurementContainer<TestMeasurement> m;
     auto now = std::chrono::steady_clock::now();
     for (auto i = 0; i < 5; ++i) {
         m.emplace(now + std::chrono::seconds(i), SomeSensors::S1, 2.5);
