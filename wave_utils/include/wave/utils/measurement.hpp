@@ -11,14 +11,6 @@
 
 namespace wave {
 
-using boost::multi_index::member;
-using boost::multi_index::indexed_by;
-using boost::multi_index::ordered_unique;
-using boost::multi_index::ordered_non_unique;
-using boost::multi_index::composite_key;
-using boost::multi_index::composite_key_compare;
-using boost::multi_index::tag;
-
 using TimeType = std::chrono::steady_clock::time_point;
 
 /** Measurement type to store in the container */
@@ -45,18 +37,64 @@ decltype(T::value) interpolate(const T &m1, const T &m2, const TimeType &t) {
     return (1 - w2) * m1.value + w2 * m2.value;
 };
 
+namespace internal {
+
+using boost::multi_index::member;
+using boost::multi_index::indexed_by;
+using boost::multi_index::ordered_unique;
+using boost::multi_index::ordered_non_unique;
+using boost::multi_index::composite_key;
+using boost::multi_index::tag;
+
+// This template sets up the internal boost_multi_index type for a given
+// measurement type T.
+template<typename T>
+struct measurement_container {
+    // Tags for accessing indices in the multi_index_container
+    struct time_index {};
+    struct sensor_index {};
+    struct composite_index {};
+
+    using SensorIdType = decltype(T::sensor_id);
+
+    // Define a container able to index by time, sensor id, or both
+    // First, define which members of the Measurement object are used as keys
+    struct time_key : member<T, TimeType, &T::time_point> {};
+    struct sensor_key : member<T, SensorIdType, &T::sensor_id> {};
+    // Define a composite key combining the above two keys
+    // Note the composite index is sorted by sensor id first, then time
+    struct sensor_and_time_key : composite_key<T, sensor_key, time_key> {};
+
+    // Define an index for each key. Each index will be accessible via its tag
+    struct indices : indexed_by<
+            ordered_non_unique<tag<time_index>, time_key>,
+            ordered_non_unique<tag<sensor_index>, sensor_key>,
+            ordered_unique<tag<composite_index>, sensor_and_time_key>> {
+    };
+    // Note we use separate struct definitions above, instead of typedefs, to
+    // reduce the length of the name printed by the compiler.
+
+    // Finally, define the multi_index_container type.
+    using type = boost::multi_index_container<T, indices, std::allocator<T>>;
+
+    // Get the type of the composite index, using its tag
+    using composite_type = typename type::template index<composite_index>::type;
+};
+}  // namespace internal
+
 /** Container which stores and transparently interpolates measurements.
  *
  * @tparam T is the measurement type which must have the fields time_point (of
  * type TimeType), sensor_id (of any type), and value (of any type).
  *
  * The function interpolate(const T&, const T&, const TimeType&) must be defined
- * for type T.
+ * for type T. By default, it is an arithmetic mean.
  */
 template<typename T>
 class MeasurementContainer {
  public:
     // Types
+
     /** Alias for the template parameter, giving the type of Measurement stored
      * in this container */
     using MeasurementType = T;
@@ -66,46 +104,10 @@ class MeasurementContainer {
     /** Alias for template parameter giving the type of the sensor id */
     using SensorIdType = decltype(MeasurementType::sensor_id);
 
- private:
-    /* For now, some types used in the public interface are derived from the
-     * private storage_type. That's why this private block appears here */
-    // Tags for accessing indices in the multi_index_container
-    struct time_index {};
-    struct sensor_index {};
-    struct composite_index {};
-
-    // Define a container able to index by time, sensor id, or both
-    struct time_member : member<MeasurementType,
-                                TimeType,
-                                &MeasurementType::time_point> {
-    };
-    struct sensor_id_member : member<MeasurementType,
-                                     SensorIdType,
-                                     &MeasurementType::sensor_id> {
-    };
-    // Note the composite index is sorted by sensor id first, then time
-    struct composite_key_type : composite_key<MeasurementType,
-                                              sensor_id_member,
-                                              time_member> {
-    };
-    struct storage_type_indices : indexed_by<
-            ordered_non_unique<tag<time_index>, time_member>,
-            ordered_non_unique<tag<sensor_index>, sensor_id_member>,
-            ordered_unique<tag<composite_index>, composite_key_type>> {
-    };
-    // Finally, define actual multi_index_container type. The separate struct
-    // definitions above reduce the length of the name printed by the compiler
-    using storage_type = boost::multi_index_container<
-            MeasurementType,
-            storage_type_indices,
-            std::allocator<MeasurementType>>;
-    using composite_type = typename storage_type::template index<composite_index>::type;
-
- public:
-    // More types
-
-    using iterator = typename composite_type::iterator;
-    using const_iterator = typename composite_type::const_iterator;
+    using iterator = typename
+    internal::measurement_container<T>::composite_type::iterator;
+    using const_iterator = typename
+    internal::measurement_container<T>::composite_type::const_iterator;
     using size_type = std::size_t;
 
     // Constructors
@@ -164,12 +166,15 @@ class MeasurementContainer {
     const_iterator cend() const noexcept;
 
  private:
+    using composite_type = typename
+    internal::measurement_container<T>::composite_type;
+
     // Helper to get the composite index
     composite_type &composite() noexcept;
     const composite_type &composite() const noexcept;
 
     // Internal multi_index_container
-    storage_type storage;
+    typename internal::measurement_container<T>::type storage;
 };
 
 template<typename T>
@@ -291,13 +296,15 @@ MeasurementContainer<T>::cend() const noexcept {
 template<typename T>
 typename MeasurementContainer<T>::composite_type &
 MeasurementContainer<T>::composite() noexcept {
-    return this->storage.template get<composite_index>();
+    return this->storage.template
+            get<typename internal::measurement_container<T>::composite_index>();
 }
 
 template<typename T>
 const typename MeasurementContainer<T>::composite_type &
 MeasurementContainer<T>::composite() const noexcept {
-    return this->storage.template get<composite_index>();
+    return this->storage.template
+            get<typename internal::measurement_container<T>::composite_index>();
 }
 
 }  // namespace wave
