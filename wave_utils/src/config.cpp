@@ -4,14 +4,104 @@
 namespace wave {
 
 ConfigParser::ConfigParser(void) {
-    this->configured = false;
-    this->loaded = false;
+    this->config_loaded = false;
+}
+
+void ConfigParser::addParam(std::string key, bool *out, bool optional) {
+    this->params.emplace_back(BOOL, key, out, optional);
+}
+
+void ConfigParser::addParam(std::string key, int *out, bool optional) {
+    this->params.emplace_back(INT, key, out, optional);
+}
+
+void ConfigParser::addParam(std::string key, float *out, bool optional) {
+    this->params.emplace_back(FLOAT, key, out, optional);
+}
+
+void ConfigParser::addParam(std::string key, double *out, bool optional) {
+    this->params.emplace_back(DOUBLE, key, out, optional);
+}
+
+void ConfigParser::addParam(std::string key, std::string *out, bool optional) {
+    this->params.emplace_back(STRING, key, out, optional);
+}
+
+void ConfigParser::addParam(std::string key,
+                            std::vector<bool> *out,
+                            bool optional) {
+    this->params.emplace_back(BOOL_ARRAY, key, out, optional);
+}
+
+void ConfigParser::addParam(std::string key,
+                            std::vector<int> *out,
+                            bool optional) {
+    this->params.emplace_back(INT_ARRAY, key, out, optional);
+}
+
+void ConfigParser::addParam(std::string key,
+                            std::vector<float> *out,
+                            bool optional) {
+    this->params.emplace_back(FLOAT_ARRAY, key, out, optional);
+}
+
+void ConfigParser::addParam(std::string key,
+                            std::vector<double> *out,
+                            bool optional) {
+    this->params.emplace_back(DOUBLE_ARRAY, key, out, optional);
+}
+
+void ConfigParser::addParam(std::string key,
+                            std::vector<std::string> *out,
+                            bool optional) {
+    this->params.emplace_back(STRING_ARRAY, key, out, optional);
+}
+
+void ConfigParser::addParam(std::string key, Vec2 *out, bool optional) {
+    this->params.emplace_back(VEC2, key, out, optional);
+}
+
+void ConfigParser::addParam(std::string key, Vec3 *out, bool optional) {
+    this->params.emplace_back(VEC3, key, out, optional);
+}
+
+void ConfigParser::addParam(std::string key, Vec4 *out, bool optional) {
+    this->params.emplace_back(VEC4, key, out, optional);
+}
+
+void ConfigParser::addParam(std::string key, VecX *out, bool optional) {
+    this->params.emplace_back(VECX, key, out, optional);
+}
+
+void ConfigParser::addParam(std::string key, Mat2 *out, bool optional) {
+    this->params.emplace_back(MAT2, key, out, optional);
+}
+
+void ConfigParser::addParam(std::string key, Mat3 *out, bool optional) {
+    this->params.emplace_back(MAT3, key, out, optional);
+}
+
+void ConfigParser::addParam(std::string key, Mat4 *out, bool optional) {
+    this->params.emplace_back(MAT4, key, out, optional);
+}
+
+void ConfigParser::addParam(std::string key, MatX *out, bool optional) {
+    this->params.emplace_back(MATX, key, out, optional);
+}
+
+void ConfigParser::addParam(std::string key, cv::Mat *out, bool optional) {
+    this->params.emplace_back(CVMAT, key, out, optional);
 }
 
 int ConfigParser::getYamlNode(std::string key, YAML::Node &node) {
     std::string element;
     std::istringstream iss(key);
     std::vector<YAML::Node> traversal;
+
+    // pre-check
+    if (this->config_loaded == false) {
+        return -1;
+    }
 
     // recurse down config key
     traversal.push_back(this->root);
@@ -33,12 +123,18 @@ int ConfigParser::getYamlNode(std::string key, YAML::Node &node) {
 int ConfigParser::checkKey(std::string key, bool optional) {
     YAML::Node node;
 
+    // pre-check
+    if (this->config_loaded == false) {
+        return -1;
+    }
+
+    // check key
     this->getYamlNode(key, node);
     if (!node && optional == false) {
         LOG_ERROR("Opps [%s] missing in yaml file!", key.c_str());
-        return -1;
+        return -2;
     } else if (!node && optional == true) {
-        return 1;
+        return -3;
     }
 
     return 0;
@@ -50,20 +146,23 @@ int ConfigParser::checkVector(std::string key,
     int retval;
     int vector_size;
 
+    // pre-check
+    if (this->config_loaded == false) {
+        return -1;
+    }
+
     // check key
     retval = this->checkKey(key, optional);
     if (retval != 0) {
         return retval;
     }
 
-    // clang-format off
     switch (type) {
         case VEC2: vector_size = 2; break;
         case VEC3: vector_size = 3; break;
         case VEC4: vector_size = 4; break;
         default: return 0;
     }
-    // clang-format on
 
     // check number of values
     if (this->root[key].size() != static_cast<size_t>(vector_size)) {
@@ -74,7 +173,7 @@ int ConfigParser::checkVector(std::string key,
           static_cast<int>(this->root[key].size())
         );
         // clang-format on
-        return -3;
+        return -4;
     }
 
     return 0;
@@ -83,6 +182,11 @@ int ConfigParser::checkVector(std::string key,
 int ConfigParser::checkMatrix(std::string key, bool optional) {
     int retval;
     const std::string targets[3] = {"rows", "cols", "data"};
+
+    // pre-check
+    if (this->config_loaded == false) {
+        return -1;
+    }
 
     // check key
     retval = this->checkKey(key, optional);
@@ -96,7 +200,7 @@ int ConfigParser::checkMatrix(std::string key, bool optional) {
             LOG_ERROR("Key [%s] is missing for matrix [%s]!",
                       targets[i].c_str(),
                       key.c_str());
-            return -2;
+            return -5;
         }
     }
 
@@ -115,16 +219,18 @@ int ConfigParser::loadPrimitive(ConfigParam param) {
 
     // parse
     this->getYamlNode(param.key, node);
-    // clang-format off
     switch (param.type) {
-        case BOOL: *param.b = node.as<bool>(); break;
-        case INT: *param.i = node.as<int>(); break;
-        case FLOAT: *param.f = node.as<float>(); break;
-        case DOUBLE: *param.d = node.as<double>(); break;
-        case STRING: *param.s = node.as<std::string>(); break;
-        default: return -3;
+        case BOOL: *static_cast<bool *>(param.data) = node.as<bool>(); break;
+        case INT: *static_cast<int *>(param.data) = node.as<int>(); break;
+        case FLOAT: *static_cast<float *>(param.data) = node.as<float>(); break;
+        case DOUBLE:
+            *static_cast<double *>(param.data) = node.as<double>();
+            break;
+        case STRING:
+            *static_cast<std::string *>(param.data) = node.as<std::string>();
+            break;
+        default: return -6;
     }
-    // clang-format on
 
     return 0;
 }
@@ -134,6 +240,11 @@ int ConfigParser::loadArray(ConfigParam param) {
     YAML::Node node;
 
     // pre-check
+    if (this->config_loaded == false) {
+        return -1;
+    }
+
+    // check parameters
     retval = this->checkKey(param.key, param.optional);
     if (retval != 0) {
         return retval;
@@ -144,31 +255,35 @@ int ConfigParser::loadArray(ConfigParam param) {
     switch (param.type) {
         case BOOL_ARRAY:
             for (auto n : node) {
-                param.b_array->push_back(n.as<bool>());
+                static_cast<std::vector<bool> *>(param.data)
+                  ->push_back(n.as<bool>());
             }
             break;
         case INT_ARRAY:
             for (auto n : node) {
-                param.i_array->push_back(n.as<int>());
+                static_cast<std::vector<int> *>(param.data)
+                  ->push_back(n.as<int>());
             }
             break;
         case FLOAT_ARRAY:
             for (auto n : node) {
-                param.f_array->push_back(n.as<float>());
+                static_cast<std::vector<float> *>(param.data)
+                  ->push_back(n.as<float>());
             }
             break;
         case DOUBLE_ARRAY:
             for (auto n : node) {
-                param.d_array->push_back(n.as<double>());
+                static_cast<std::vector<double> *>(param.data)
+                  ->push_back(n.as<double>());
             }
             break;
         case STRING_ARRAY:
             for (auto n : node) {
-                param.s_array->push_back(n.as<std::string>());
+                static_cast<std::vector<std::string> *>(param.data)
+                  ->push_back(n.as<std::string>());
             }
             break;
-        default:
-            return -3;
+        default: return -6;
     }
 
     return 0;
@@ -178,46 +293,51 @@ int ConfigParser::loadVector(ConfigParam param) {
     int retval;
     YAML::Node node;
 
-    // check
+    // pre-check
+    if (this->config_loaded == false) {
+        return -1;
+    }
+
+    // check parameter
     retval = this->checkVector(param.key, param.type, param.optional);
     if (retval != 0) {
         return retval;
     }
 
-    // setup
-    Vec2 &vec2 = *param.vec2;
-    Vec3 &vec3 = *param.vec3;
-    Vec4 &vec4 = *param.vec4;
-    VecX &vecx = *param.vecx;
-
     // parse
     this->getYamlNode(param.key, node);
-
+    // clang-format off
     switch (param.type) {
         case VEC2:
-            vec2(0) = node[0].as<double>();
-            vec2(1) = node[1].as<double>();
+            *static_cast<Vec2 *>(param.data) << node[0].as<double>(),
+                                                node[1].as<double>();
             break;
+
         case VEC3:
-            vec3(0) = node[0].as<double>();
-            vec3(1) = node[1].as<double>();
-            vec3(2) = node[2].as<double>();
+            *static_cast<Vec3 *>(param.data) << node[0].as<double>(),
+                                                node[1].as<double>(),
+                                                node[2].as<double>();
             break;
+
         case VEC4:
-            vec4(0) = node[0].as<double>();
-            vec4(1) = node[1].as<double>();
-            vec4(2) = node[2].as<double>();
-            vec4(3) = node[3].as<double>();
+            *static_cast<Vec4 *>(param.data) << node[0].as<double>(),
+                                                node[1].as<double>(),
+                                                node[2].as<double>(),
+                                                node[3].as<double>();
             break;
-        case VECX:
+
+        case VECX: {
+            VecX &vecx = *static_cast<VecX *>(param.data);
             vecx = VecX((int) node.size());
             for (size_t i = 0; i < node.size(); i++) {
                 vecx(i) = node[i].as<double>();
             }
-            break;
+        } break;
+
         default:
-            return -3;
+            return -6;
     }
+    // clang-format on
 
     return 0;
 }
@@ -230,17 +350,15 @@ int ConfigParser::loadMatrix(ConfigParam param) {
     YAML::Node node;
 
     // pre-check
-    retval = this->checkMatrix(param.key, param.optional);
-    if (retval != 0) {
-        return -2;
+    if (this->config_loaded == false) {
+        return -1;
     }
 
-    // setup
-    Mat2 &mat2 = *param.mat2;
-    Mat3 &mat3 = *param.mat3;
-    Mat4 &mat4 = *param.mat4;
-    MatX &matx = *param.matx;
-    cv::Mat &cvmat = *param.cvmat;
+    // check parameter
+    retval = this->checkMatrix(param.key, param.optional);
+    if (retval != 0) {
+        return retval;
+    }
 
     // parse
     this->getYamlNode(param.key, node);
@@ -249,14 +367,17 @@ int ConfigParser::loadMatrix(ConfigParam param) {
     cols = node["cols"].as<int>();
 
     switch (param.type) {
-        case MAT2:
+        case MAT2: {
+            Mat2 &mat2 = *static_cast<Mat2 *>(param.data);
             mat2(0, 0) = node["data"][0].as<double>();
             mat2(0, 1) = node["data"][1].as<double>();
 
             mat2(1, 0) = node["data"][2].as<double>();
             mat2(1, 1) = node["data"][3].as<double>();
-            break;
-        case MAT3:
+        } break;
+
+        case MAT3: {
+            Mat3 &mat3 = *static_cast<Mat3 *>(param.data);
             mat3(0, 0) = node["data"][0].as<double>();
             mat3(0, 1) = node["data"][1].as<double>();
             mat3(0, 2) = node["data"][2].as<double>();
@@ -268,16 +389,20 @@ int ConfigParser::loadMatrix(ConfigParam param) {
             mat3(2, 0) = node["data"][6].as<double>();
             mat3(2, 1) = node["data"][7].as<double>();
             mat3(2, 2) = node["data"][8].as<double>();
-            break;
-        case MAT4:
+        } break;
+
+        case MAT4: {
+            Mat4 &mat4 = *static_cast<Mat4 *>(param.data);
             for (int i = 0; i < rows; i++) {
                 for (int j = 0; j < cols; j++) {
                     mat4(i, j) = node["data"][index].as<double>();
                     index++;
                 }
             }
-            break;
-        case MATX:
+        } break;
+
+        case MATX: {
+            MatX &matx = *static_cast<MatX *>(param.data);
             matx.resize(rows, cols);
             for (int i = 0; i < rows; i++) {
                 for (int j = 0; j < cols; j++) {
@@ -285,8 +410,10 @@ int ConfigParser::loadMatrix(ConfigParam param) {
                     index++;
                 }
             }
-            break;
-        case CVMAT:
+        } break;
+
+        case CVMAT: {
+            cv::Mat &cvmat = *static_cast<cv::Mat *>(param.data);
             cvmat = cv::Mat(rows, cols, CV_64F);
             for (int i = 0; i < rows; i++) {
                 for (int j = 0; j < cols; j++) {
@@ -294,9 +421,8 @@ int ConfigParser::loadMatrix(ConfigParam param) {
                     index++;
                 }
             }
-            break;
-        default:
-            return -3;
+        } break;
+        default: return -6;
     }
 
     return 0;
@@ -308,11 +434,12 @@ int ConfigParser::load(std::string config_file) {
     // pre-check
     if (file_exists(config_file) == false) {
         LOG_ERROR("File not found: %s", config_file.c_str());
-        return -1;
+        return 1;
     }
 
     // load and parse file
     this->root = YAML::LoadFile(config_file);
+    this->config_loaded = true;
 
     for (size_t i = 0; i < this->params.size(); i++) {
         switch (this->params[i].type) {
@@ -344,14 +471,11 @@ int ConfigParser::load(std::string config_file) {
             case MAT3:
             case MAT4:
             case MATX:
-            case CVMAT:
-                retval = this->loadMatrix(this->params[i]);
-                break;
-            default:
-                return -1;
+            case CVMAT: retval = this->loadMatrix(this->params[i]); break;
+            default: return -6;
         }
 
-        if (retval != 0) {
+        if (retval != 0 && retval != -3) {
             return retval;
         }
     }
