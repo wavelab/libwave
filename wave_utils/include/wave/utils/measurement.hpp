@@ -200,7 +200,7 @@ template<typename T>
 typename MeasurementContainer<T>::size_type
 MeasurementContainer<T>::erase(const TimeType &t, const SensorIdType &s) {
     auto &composite = this->composite();
-    auto it = composite.find(std::make_tuple(s, t));
+    auto it = composite.find(boost::make_tuple(s, t));
     if (it == composite.end()) {
         return 0;
     }
@@ -214,7 +214,7 @@ MeasurementContainer<T>::get(const TimeType &t, const SensorIdType &s) const {
     const auto &composite = this->composite();
 
     // lower_bound is pointer to the first element >= key
-    auto i_next = composite.lower_bound(std::make_tuple(s, t));
+    auto i_next = composite.lower_bound(boost::make_tuple(s, t));
 
     // Pointer to the first element < key (since keys are unique)
     auto i_prev = i_next;
