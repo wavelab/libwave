@@ -86,10 +86,4 @@ double wrapTo360(double euler_angle) {
     }
 }
 
-Mat3 skew_symmetric_matrix(Vec3 a) {
-    Mat3 skew_matrix;
-    skew_matrix << 0, -a(2), a(1), a(2), 0, -a(0), -a(1), a(0), 0;
-    return skew_matrix;
-}
-
 }  // eof wave

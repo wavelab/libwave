@@ -27,6 +27,14 @@ SET(
 
 # UNIT TESTS
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
+FILE(COPY tests/data DESTINATION ${PROJECT_BINARY_DIR}/tests)
 
-ADD_EXECUTABLE(rotation_tests tests/rotation_test.cpp)
-TARGET_LINK_LIBRARIES(rotation_tests ${TEST_DEPS})
+ADD_EXECUTABLE(
+    # TARGET
+    wave_kinematics_tests
+    # TESTS
+    tests/rotation/rotation_test.cpp
+    # TEST RUNNER
+    tests/test_runner.cpp
+)
+TARGET_LINK_LIBRARIES(wave_kinematics_tests ${TEST_DEPS})

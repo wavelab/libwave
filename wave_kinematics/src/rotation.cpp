@@ -1,99 +1,114 @@
 #include "wave/kinematics/rotation.hpp"
 #include "wave/utils/utils.hpp"
 
-double wave::Rotation::comparision_threshold = 1e-8;
+namespace wave {
 
-wave::Rotation::Rotation() {}
+// Default constructor.
+Rotation::Rotation() {}
 
-void wave::Rotation::setToIdentity() {
+// Constructor taking Euler angles.
+Rotation::Rotation(const Vec3 &input_vector) {
+    this->setFromEulerXYZ(input_vector);
+}
+
+// Constructor taking in an angle magnitude and rotation axis.
+Rotation::Rotation(const double angle_magnitude, const Vec3 rotation_axis) {
+    this->setFromAngleAxis(angle_magnitude, rotation_axis);
+}
+
+Rotation &Rotation::setIdentity() {
     this->rotation_object.setIdentity();
+    return *this;
 }
 
-void wave::Rotation::compose(const Rotation &R) {
-    this->rotation_object = this->rotation_object * R.rotation_object;
-}
-
-wave::Mat3 wave::Rotation::invert() {
+void Rotation::invert() {
     this->rotation_object.invert();
 }
 
-wave::Vec3 wave::Rotation::rotate(const Vec3 &input_vector) {
+Vec3 Rotation::rotate(const Vec3 &input_vector) const {
     return this->rotation_object.rotate(input_vector);
 }
 
-wave::Vec3 wave::Rotation::inverseRotate(const Vec3 &input_vector) {
+Vec3 Rotation::inverseRotate(const Vec3 &input_vector) const {
     return this->rotation_object.inverseRotate(input_vector);
 }
 
-wave::Vec3 wave::Rotation::rotateAndJacobian(const Vec3 &input_vector,
-                                             Mat3 &Jpoint,
-                                             Mat3 &Jparam) {
+Vec3 Rotation::rotateAndJacobian(const Vec3 &input_vector,
+                                 Mat3 &Jpoint,
+                                 Mat3 &Jparam) const {
     // Calculate the Jacobian quantities.
     // Jacobian wrt the point is simply the rotation matrix.
-    Jpoint = this->rotation_object.matrix();
+    Jpoint = this->toRotationMatrix();
 
     // Jacobian wrt to the lie algebra parameters is the rotated vector
     // in skew symmetric form.
-    Vec3 point_rotated = this->rotation_object.rotate(input_vector);
-    Jparam = -1.0 * skew_symmetric_matrix(point_rotated);
+    Vec3 point_rotated = this->rotate(input_vector);
+    Jparam = -1.0 * kindr::getSkewMatrixFromVector(point_rotated);
 
     return point_rotated;
 }
 
-bool wave::Rotation::fromEulerXYZ(const double rotation_x,
-                                  const double rotation_y,
-                                  const double rotation_z,
-                                  Rotation &R) {
-    double sx = sin(rotation_x);
-    double cx = cos(rotation_x);
-    double sy = sin(rotation_y);
-    double cy = cos(rotation_y);
-    double sz = sin(rotation_z);
-    double cz = cos(rotation_z);
+Rotation &Rotation::setFromEulerXYZ(const Vec3 &input_vector) {
+    // Rotate about X, then Y, then Z, by input_vector[0],input_vector[1],
+    // input_vector[2], respectively.
 
-    double r00 = cz * cy;
-    double r01 = cz * sy * sx - sz * cx;
-    double r02 = cz * sy * cx + sz * sx;
-    double r10 = sz * cy;
-    double r11 = sz * sy * sx + cz * cx;
-    double r12 = sz * sy * cx - cz * sx;
-    double r20 = -sy;
-    double r21 = cy * sx;
-    double r22 = cy * cx;
+    Mat3 rotation_matrix;
+    rotation_matrix =
+      Eigen::AngleAxisd(input_vector[2], Eigen::Vector3d::UnitZ()) *
+      Eigen::AngleAxisd(input_vector[1], Eigen::Vector3d::UnitY()) *
+      Eigen::AngleAxisd(input_vector[0], Eigen::Vector3d::UnitX());
 
 
-    R.rotation_object.setMatrix(r00, r01, r02, r10, r11, r12, r20, r21, r22);
+    this->rotation_object.setMatrix(rotation_matrix);
 
-    return true;
+    return *this;
 }
 
-bool wave::Rotation::fromAngleAxis(const double angle_magnitude,
-                                   const Vec3 rotation_axis,
-                                   Rotation &R) {
+Rotation &Rotation::setFromAngleAxis(const double angle_magnitude,
+                                     const Vec3 rotation_axis) {
     kindr::AngleAxisD angle_axis(angle_magnitude, rotation_axis);
-    R.rotation_object = angle_axis;
-
-    return true;
+    this->rotation_object = angle_axis;
+    return *this;
 }
 
-bool wave::Rotation::fromExpMap(const Vec3 se3_vector, Rotation &R) {
-    R.rotation_object = R.rotation_object.exponentialMap(se3_vector);
-    return true;
+Rotation &Rotation::setFromExpMap(const Vec3 se3_vector) {
+    this->rotation_object = this->rotation_object.exponentialMap(se3_vector);
+    return *this;
 }
 
-wave::Vec3 wave::Rotation::logMap() {
+Rotation &Rotation::setFromMatrix(const Mat3 input_matrix) {
+    this->rotation_object.setMatrix(input_matrix);
+    return *this;
+}
+
+Vec3 Rotation::logMap() const {
     return this->rotation_object.logarithmicMap();
 }
 
-void wave::Rotation::manifoldPlus(const wave::Vec3 omega) {
+Rotation &Rotation::manifoldPlus(const Vec3 &omega) {
     this->rotation_object = this->rotation_object.boxPlus(omega);
+    return *this;
 }
 
-bool wave::Rotation::isNear(const Rotation &R) {
+bool Rotation::isNear(const Rotation &R,
+                      const double comparison_threshold) const {
     return this->rotation_object.isNear(R.rotation_object,
-                                        this->comparision_threshold);
+                                        comparison_threshold);
 }
 
-wave::Mat3 wave::Rotation::getRotationMatrix() {
+Mat3 Rotation::toRotationMatrix() const {
     return this->rotation_object.matrix();
 }
+
+Rotation Rotation::operator*(const Rotation &R) const {
+    Rotation composed;
+    composed.rotation_object = this->rotation_object * R.rotation_object;
+    return composed;
+}
+
+std::ostream &operator<<(std::ostream &stream, const Rotation &R) {
+    stream << R.rotation_object;
+    return stream;
+}
+
+}  // end of wave namespace
