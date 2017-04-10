@@ -32,8 +32,7 @@ class RotateAndJacobianJparamFunctor {
  public:
     Rotation R;
     Vec3 P;
-    RotateAndJacobianJparamFunctor(Rotation input_rotation,
-                                   Vec3 input_point) {
+    RotateAndJacobianJparamFunctor(Rotation input_rotation, Vec3 input_point) {
         this->R = input_rotation;
         this->P = input_point;
     }

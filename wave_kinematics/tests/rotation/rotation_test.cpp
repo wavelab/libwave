@@ -36,8 +36,8 @@ class RotationTestFixture : public ::testing::Test {
 // Test that fromEulerXYZ returns the correct matrix.
 TEST_F(RotationTestFixture, testFromEulerXyz) {
     Rotation rotation1(Vec3(0.1, 0.2, 0.3));
-    ASSERT_TRUE(this->rotation1_expected.isNear(rotation1,
-                                                this->comparision_threshold));
+    ASSERT_TRUE(
+      this->rotation1_expected.isNear(rotation1, this->comparision_threshold));
 }
 
 
@@ -47,9 +47,8 @@ TEST_F(RotationTestFixture, testFromAngleAxis) {
     Vec3 rotation1_angleaxis_params(
       0.068924613882066, 0.213225926957886, 0.288748939228675);
 
-    Rotation rotation_from_angle_axis(
-      rotation1_angleaxis_params.norm(),
-      rotation1_angleaxis_params.normalized());
+    Rotation rotation_from_angle_axis(rotation1_angleaxis_params.norm(),
+                                      rotation1_angleaxis_params.normalized());
     ASSERT_TRUE(rotation1_expected.isNear(rotation_from_angle_axis,
                                           this->comparision_threshold));
 }
