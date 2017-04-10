@@ -5,12 +5,8 @@ PROJECT(wave_utils)
 FIND_PACKAGE(OpenCV REQUIRED)
 
 # INCLUDES
-INCLUDE_DIRECTORIES(
-    /usr/include
-    /usr/include/eigen3
-    /usr/local/include
-    include
-)
+INCLUDE_DIRECTORIES(include)
+INCLUDE_DIRECTORIES(/usr/include/eigen3)
 
 # LIBS
 LINK_DIRECTORIES(
