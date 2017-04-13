@@ -12,7 +12,7 @@ Rotation::Rotation(const Vec3 &input_vector) {
 }
 
 // Constructor taking in an angle magnitude and rotation axis.
-Rotation::Rotation(const double angle_magnitude, const Vec3 rotation_axis) {
+Rotation::Rotation(const double angle_magnitude, const Vec3 &rotation_axis) {
     this->setFromAngleAxis(angle_magnitude, rotation_axis);
 }
 
@@ -65,18 +65,18 @@ Rotation &Rotation::setFromEulerXYZ(const Vec3 &input_vector) {
 }
 
 Rotation &Rotation::setFromAngleAxis(const double angle_magnitude,
-                                     const Vec3 rotation_axis) {
+                                     const Vec3 &rotation_axis) {
     kindr::AngleAxisD angle_axis(angle_magnitude, rotation_axis);
     this->rotation_object = angle_axis;
     return *this;
 }
 
-Rotation &Rotation::setFromExpMap(const Vec3 se3_vector) {
+Rotation &Rotation::setFromExpMap(const Vec3 &se3_vector) {
     this->rotation_object = this->rotation_object.exponentialMap(se3_vector);
     return *this;
 }
 
-Rotation &Rotation::setFromMatrix(const Mat3 input_matrix) {
+Rotation &Rotation::setFromMatrix(const Mat3 &input_matrix) {
     this->rotation_object.setMatrix(input_matrix);
     return *this;
 }
