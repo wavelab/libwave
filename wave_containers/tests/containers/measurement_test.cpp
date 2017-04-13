@@ -1,6 +1,6 @@
 #include "wave/wave_test.hpp"
 
-#include "wave/utils/measurement.hpp"
+#include "wave/containers/measurement.hpp"
 namespace wave {
 
 enum class SomeSensors { S1, S2, S3 };

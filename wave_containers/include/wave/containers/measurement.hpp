@@ -1,5 +1,5 @@
-#ifndef WAVE_UTILS_MEASUREMENT_HPP
-#define WAVE_UTILS_MEASUREMENT_HPP
+#ifndef WAVE_CONTAINERS_MEASUREMENT_HPP
+#define WAVE_CONTAINERS_MEASUREMENT_HPP
 
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/member.hpp>
@@ -309,4 +309,4 @@ MeasurementContainer<T>::composite() const noexcept {
 
 }  // namespace wave
 
-#endif  // WAVE_MEASUREMENT_HPP
+#endif  // WAVE_CONTAINERS_MEASUREMENT_HPP
