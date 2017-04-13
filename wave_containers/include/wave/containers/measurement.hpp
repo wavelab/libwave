@@ -7,7 +7,8 @@ namespace wave {
 
 using TimeType = std::chrono::steady_clock::time_point;
 
-/** Measurement type to store in the container */
+/** Generic measurement storage type designed to be used with
+ * MeasurementContainer. */
 template<typename T, typename S>
 struct Measurement {
     TimeType time_point;
@@ -20,10 +21,11 @@ struct Measurement {
             value{v} {}
 };
 
-/** Perform linear interpolation between two measurements
+/** Perform linear interpolation (or extrapolation) between two measurements.
  *
- * This template can be specialized for measurement types requiring a
- * different calculation
+ * This is the default interpolation function for generic Measurement types.
+ * For measurements requiring non-linear interpolation, you may provide your own
+ * specialization.
  */
 template<typename T>
 decltype(T::value) interpolate(const T &m1, const T &m2, const TimeType &t) {

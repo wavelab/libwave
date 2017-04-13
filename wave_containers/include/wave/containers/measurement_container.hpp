@@ -13,6 +13,7 @@ namespace wave {
 
 using TimeType = std::chrono::steady_clock::time_point;
 
+/** Internal implementation details - for developers only */
 namespace internal {
 
 using boost::multi_index::member;
@@ -22,24 +23,38 @@ using boost::multi_index::ordered_non_unique;
 using boost::multi_index::composite_key;
 using boost::multi_index::tag;
 
-// This template sets up the internal boost_multi_index type for a given
-// measurement type T.
+/** To easily accomplish this container's goal - provide access to measurements
+ * sorted by time, by sensor, or both - we wrap a Boost.MultiIndex container.
+ *
+ * The multi_index_container template generates code allowing us to index the
+ * stored elements in different ways. Because these indices are specified at
+ * compile-time, the multi_index_container is configured using template
+ * parameters, which are defined here.
+ *
+ * See http://www.boost.org/doc/libs/1_63_0/libs/multi_index/doc/index.html for
+ * details on Boost.MultiIndex.
+ *
+ * The internal::measurement_container<T> holds all the type definitions
+ * required for a multi_index_container holding measurements of type T. Note
+ * this template is for convenience only, no objects are constructed.
+ */
 template<typename T>
 struct measurement_container {
-    // Tags for accessing indices in the multi_index_container
+    // First, define which members of the Measurement object are used as keys
+    // Specify that the time key corresponds to the time_point member
+    struct time_key : member<T, TimeType, &T::time_point> {};
+    // Specify that the sensor key corresponds to the sensor_id member
+    struct sensor_key : member<T, decltype(T::sensor_id), &T::sensor_id> {};
+
+    // Define a composite key which combines the above two keys
+    // This lets us search elements sorted by sensor id first, then time
+    struct sensor_and_time_key : composite_key<T, sensor_key, time_key> {};
+
+    // These types are used as tags to retrieve each index after the
+    // multi_index_container is generated
     struct time_index {};
     struct sensor_index {};
     struct composite_index {};
-
-    using SensorIdType = decltype(T::sensor_id);
-
-    // Define a container able to index by time, sensor id, or both
-    // First, define which members of the Measurement object are used as keys
-    struct time_key : member<T, TimeType, &T::time_point> {};
-    struct sensor_key : member<T, SensorIdType, &T::sensor_id> {};
-    // Define a composite key combining the above two keys
-    // Note the composite index is sorted by sensor id first, then time
-    struct sensor_and_time_key : composite_key<T, sensor_key, time_key> {};
 
     // Define an index for each key. Each index will be accessible via its tag
     struct indices : indexed_by<
@@ -47,24 +62,34 @@ struct measurement_container {
             ordered_non_unique<tag<sensor_index>, sensor_key>,
             ordered_unique<tag<composite_index>, sensor_and_time_key>> {
     };
+
     // Note we use separate struct definitions above, instead of typedefs, to
     // reduce the length of the name printed by the compiler.
 
     // Finally, define the multi_index_container type.
+    // This is the container type which can actually be used to make objects
     using type = boost::multi_index_container<T, indices, std::allocator<T>>;
 
-    // Get the type of the composite index, using its tag
+    // For convenience, get the type of the composite index, using its tag
     using composite_type = typename type::template index<composite_index>::type;
 };
 }  // namespace internal
 
 /** Container which stores and transparently interpolates measurements.
  *
- * @tparam T is the measurement type which must have the fields time_point (of
- * type TimeType), sensor_id (of any type), and value (of any type).
+ * @tparam T is the stored measurement type. The Measurement class template
+ * in wave/containers/measurement.hpp is designed to be used here.
  *
- * The function interpolate(const T&, const T&, const TimeType&) must be defined
- * for type T. By default, it is an arithmetic mean.
+ * However, any class can be used that has the following public members:
+ *   \li \c  time_point (of type \c wave::TimeType)
+ *   \li \c sensor_id (any type sortable by \c std::less)
+ *   \li \c value (any type)
+ *
+ * Additionally, the non-member function
+ *   \code{.cpp}
+ *   interpolate(const T&, const T&, const TimeType&)
+ *   \endcode
+ * must be defined for type \c T.
  */
 template<typename T>
 class MeasurementContainer {
