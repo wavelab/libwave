@@ -2,6 +2,7 @@
 set -e  # exit on first error
 UBUNTU_VERSION=`lsb_release --release | cut -f2`
 SRC_PREFIX_PATH="/usr/local/src/"
+CERES_VERSION=1.12.0
 
 
 install_dependencies() {
@@ -27,6 +28,7 @@ install_ceres_solver() {
 
     # go into ceres-solver repo and prepare for build
     cd ceres-solver
+    git checkout tags/${CERES_VERSION}
     mkdir build
     cd build
     cmake ..
