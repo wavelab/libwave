@@ -16,8 +16,8 @@ script:
     - bash scripts/ci_run.bash
 
 notifications:
-    recipients:
-        - chutsu@gmail.com
     email:
+        recipients:
+            - chutsu@gmail.com
         on_success: change
         on_failure: always
