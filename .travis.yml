@@ -4,6 +4,11 @@ sudo: required
 language:
     - c++
 
+cache:
+    ccache: true
+    directories:
+        - /usr/local/src
+
 install:
     - travis_wait sudo bash scripts/install/install_deps.bash
 
