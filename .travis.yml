@@ -10,7 +10,7 @@ cache:
         - /usr/local/src
 
 install:
-    - travis_wait sudo bash scripts/install/install_deps.bash
+    - sudo bash scripts/install/install_deps.bash
 
 script:
     - bash scripts/ci_run.bash
