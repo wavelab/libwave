@@ -21,15 +21,20 @@ install_suitesparse_fix() {
 }
 
 install_ceres_solver() {
-    # clone ceres solver
     mkdir -p $SRC_PREFIX_PATH
     cd $SRC_PREFIX_PATH
-    git clone https://github.com/ceres-solver/ceres-solver.git
+
+    # clone ceres-solver if directory does not already exist, or pull
+    if [ ! -d ceres-solver ]; then
+       git clone https://github.com/ceres-solver/ceres-solver.git
+    else
+       git -C ceres-solver pull
+    fi
 
     # go into ceres-solver repo and prepare for build
     cd ceres-solver
     git checkout tags/${CERES_VERSION}
-    mkdir build
+    mkdir -p build
     cd build
     cmake ..
 
