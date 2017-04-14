@@ -43,8 +43,11 @@ install_dependencies() {
 download_opencv() {
     mkdir -p /usr/local/src/opencv
     cd /usr/local/src/opencv
-    wget $OPENCV_URL -O opencv-3.0.0-alpha.zip
-    unzip -qq opencv-3.0.0-alpha.zip
+    if [ ! -d opencv-3.0.0-alpha ]; then
+        wget $OPENCV_URL -O opencv-3.0.0-alpha.zip
+        unzip -qq opencv-3.0.0-alpha.zip
+        rm opencv-3.0.0-alpha.zip
+    fi
     cd -
 }
 
