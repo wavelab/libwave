@@ -64,7 +64,7 @@ install_opencv() {
         -D WITH_V4L=ON \
         -D WITH_QT=ON \
         -D WITH_OPENGL=ON ..
-    make -j 4
+    make -j$(nproc)
 
     # DO NOT ACTUALLY INSTALL THIS WILL CAUSE PROBLEMS WITH
     # BUILDS THAT DEPEND ON OPENCV 2

@@ -39,11 +39,10 @@ install_ceres_solver() {
     cmake ..
 
     # compile and install
-    make
+    make -j$(nproc)
     make test
     make install
 }
-
 
 # MAIN
 if [ $UBUNTU_VERSION == "16.04" ]; then
