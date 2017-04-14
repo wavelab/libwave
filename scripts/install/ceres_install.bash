@@ -40,7 +40,8 @@ install_ceres_solver() {
 
     # compile and install
     make -j$(nproc)
-    make test
+    # Test, but skip the slowest tests
+    make test ARGS="-E 'bundle_adjustment|covariance|rotation'"
     make install
 }
 
