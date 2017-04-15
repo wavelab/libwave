@@ -7,6 +7,9 @@ IF (CMAKE_COMPILER_IS_GNUCXX)
     ADD_DEFINITIONS(-std=gnu++11)
 ENDIF()
 
+# CMAKE SETTINGS
+LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
+
 # INCLUDES
 INCLUDE_DIRECTORIES(
   wave_estimation/include
@@ -19,6 +22,10 @@ INCLUDE_DIRECTORIES(
 # gtest
 ADD_SUBDIRECTORY(deps/googletest)
 INCLUDE_DIRECTORIES(${gtest_SOURCE_DIR}/include/)
+
+# libwave_kinematics.a
+ADD_SUBDIRECTORY(wave_kinematics)
+ADD_DEPENDENCIES(wave_kinematics wave_utils)
 
 # libwave_optimization.a
 ADD_SUBDIRECTORY(wave_optimization)
@@ -35,10 +42,12 @@ ADD_CUSTOM_TARGET(
     libwave ALL
     COMMAND
         ${CMAKE_AR} rc libwave.a
+            ${CMAKE_BINARY_DIR}/wave_kinematics/libwave_kinematics.a
             ${CMAKE_BINARY_DIR}/wave_optimization/libwave_optimization.a
             ${CMAKE_BINARY_DIR}/wave_utils/libwave_utils.a
             ${CMAKE_BINARY_DIR}/wave_matching/libwave_matching.a
     DEPENDS
+        wave_kinematics
         wave_optimization
         wave_utils
         wave_matching
