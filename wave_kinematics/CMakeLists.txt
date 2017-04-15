@@ -33,7 +33,7 @@ ADD_EXECUTABLE(
     # TARGET
     wave_kinematics_tests
     # TESTS
-    tests/rotation/rotation_test.cpp
+    tests/rotation_test.cpp
     tests/quadrotor_test.cpp
     # TEST RUNNER
     tests/test_runner.cpp
