@@ -1,9 +1,6 @@
 #ifndef WAVE_PID_HPP
 #define WAVE_PID_HPP
 
-#include <float.h>
-#include <math.h>
-
 namespace wave {
 
 class PID {

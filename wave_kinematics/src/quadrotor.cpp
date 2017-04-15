@@ -13,11 +13,6 @@ AttitudeController::AttitudeController(void) {
 }
 
 Vec4 AttitudeController::update(Vec4 setpoints, Vec4 actual, double dt) {
-    double r, p, y, t;
-    Vec4 outputs;
-    double actual_yaw, setpoint_yaw, error_yaw;
-    double max_thrust;
-
     // check rate
     this->dt += dt;
     if (this->dt < 0.001) {
@@ -25,9 +20,9 @@ Vec4 AttitudeController::update(Vec4 setpoints, Vec4 actual, double dt) {
     }
 
     // calculate yaw error
-    actual_yaw = rad2deg(actual(2));
-    setpoint_yaw = rad2deg(setpoints(2));
-    error_yaw = setpoint_yaw - actual_yaw;
+    double actual_yaw = rad2deg(actual(2));
+    double setpoint_yaw = rad2deg(setpoints(2));
+    double error_yaw = setpoint_yaw - actual_yaw;
     if (error_yaw > 180.0) {
         error_yaw -= 360.0;
     } else if (error_yaw < -180.0) {
@@ -36,17 +31,18 @@ Vec4 AttitudeController::update(Vec4 setpoints, Vec4 actual, double dt) {
     error_yaw = deg2rad(error_yaw);
 
     // roll pitch yaw
-    r = this->roll_controller.update(setpoints(0), actual(0), this->dt);
-    p = this->pitch_controller.update(setpoints(1), actual(1), this->dt);
-    y = this->yaw_controller.update(error_yaw, 0.0, this->dt);
+    double r = this->roll_controller.update(setpoints(0), actual(0), this->dt);
+    double p = this->pitch_controller.update(setpoints(1), actual(1), this->dt);
+    double y = this->yaw_controller.update(error_yaw, 0.0, this->dt);
 
     // thrust
-    max_thrust = 5.0;
-    t = max_thrust * setpoints(3);  // convert relative thrust to true thrust
+    double max_thrust = 5.0;
+    double t = max_thrust * setpoints(3);   // convert relative to true thrust
     t = (t > max_thrust) ? max_thrust : t;  // limit thrust
     t = (t < 0) ? 0.0 : t;                  // limit thrust
 
     // map roll, pitch, yaw and thrust to motor outputs
+    Vec4 outputs;
     outputs(0) = -p - y + t;
     outputs(1) = -r + y + t;
     outputs(2) = p - y + t;
@@ -92,11 +88,6 @@ Vec4 PositionController::update(Vec3 setpoints,
                                 Vec4 actual,
                                 double yaw,
                                 double dt) {
-    double r, p, y, t;
-    Vec3 errors, euler;
-    Vec4 outputs;
-    Mat3 R;
-
     // check rate
     this->dt += dt;
     if (this->dt < 0.01) {
@@ -104,18 +95,22 @@ Vec4 PositionController::update(Vec3 setpoints,
     }
 
     // calculate RPY errors relative to quadrotor by incorporating yaw
+    Vec3 errors;
     errors(0) = setpoints(0) - actual(0);
     errors(1) = setpoints(1) - actual(1);
     errors(2) = setpoints(2) - actual(2);
+
+    Vec3 euler;
+    Mat3 R;
     euler << 0.0, 0.0, actual(3);
     euler2rot(euler, 123, R);
     errors = R * errors;
 
     // roll, pitch, yaw and thrust
-    r = -this->y_controller.update(errors(1), 0.0, dt);
-    p = this->x_controller.update(errors(0), 0.0, dt);
-    y = yaw;
-    t = 0.5 + this->z_controller.update(errors(2), 0.0, dt);
+    double r = -this->y_controller.update(errors(1), 0.0, dt);
+    double p = this->x_controller.update(errors(0), 0.0, dt);
+    double y = yaw;
+    double t = 0.5 + this->z_controller.update(errors(2), 0.0, dt);
     outputs << r, p, y, t;
 
     // limit roll, pitch
@@ -231,74 +226,61 @@ QuadrotorModel::QuadrotorModel(VecX pose) {
 }
 
 int QuadrotorModel::update(VecX motor_inputs, double dt) {
-    double ph, th, ps;
-    double p, q, r;
-    double x, y, z;
-    double vx, vy, vz;
+    double ph = this->states(0);
+    double th = this->states(1);
+    double ps = this->states(2);
 
-    double Ix, Iy, Iz;
-    double kr, kt;
-    double tauf, taup, tauq, taur;
-    double m, g;
+    double p = this->states(3);
+    double q = this->states(4);
+    double r = this->states(5);
 
-    Mat4 A;
-    Vec4 tau;
+    double x = this->states(6);
+    double y = this->states(7);
+    double z = this->states(8);
 
-    // setup
-    ph = this->states(0);
-    th = this->states(1);
-    ps = this->states(2);
+    double vx = this->states(9);
+    double vy = this->states(10);
+    double vz = this->states(11);
 
-    p = this->states(3);
-    q = this->states(4);
-    r = this->states(5);
+    double Ix = this->Ix;
+    double Iy = this->Iy;
+    double Iz = this->Iz;
 
-    x = this->states(6);
-    y = this->states(7);
-    z = this->states(8);
+    double kr = this->kr;
+    double kt = this->kt;
 
-    vx = this->states(9);
-    vy = this->states(10);
-    vz = this->states(11);
-
-    Ix = this->Ix;
-    Iy = this->Iy;
-    Iz = this->Iz;
-
-    kr = this->kr;
-    kt = this->kt;
-
-    m = this->m;
-    g = this->g;
+    double m = this->m;
+    double g = this->g;
 
     // convert motor inputs to angular p, q, r and total thrust
     // clang-format off
-  A << 1.0, 1.0, 1.0, 1.0,
-       0.0, -this->l, 0.0, this->l,
-       -this->l, 0.0, this->l, 0.0,
-       -this->d, this->d, -this->d, this->d;
+    Mat4 A;
+    A << 1.0, 1.0, 1.0, 1.0,
+         0.0, -this->l, 0.0, this->l,
+         -this->l, 0.0, this->l, 0.0,
+         -this->d, this->d, -this->d, this->d;
     // clang-format on
 
-    tau = A * motor_inputs;
-    tauf = tau(0);
-    taup = tau(1);
-    tauq = tau(2);
-    taur = tau(3);
+    Vec4 tau = A * motor_inputs;
+    double tauf = tau(0);
+    double taup = tau(1);
+    double tauq = tau(2);
+    double taur = tau(3);
 
     // update
     // clang-format off
-  this->states(0) = ph + (p + q * sin(ph) * tan(th) + r * cos(ph) * tan(th)) * dt;
-  this->states(1) = th + (q * cos(ph) - r * sin(ph)) * dt;
-  this->states(2) = ps + ((1 / cos(th)) * (q * sin(ph) + r * cos(ph))) * dt;
-  this->states(3) = p + (-((Iz - Iy) / Ix) * q * r - (kr * p / Ix) + (1 / Ix) * taup) * dt;
-  this->states(4) = q + (-((Ix - Iz) / Iy) * p * r - (kr * q / Iy) + (1 / Iy) * tauq) * dt;
-  this->states(5) = r + (-((Iy - Ix) / Iz) * p * q - (kr * r / Iz) + (1 / Iz) * taur) * dt;
-  this->states(6) = x + vx * dt;
-  this->states(7) = y + vy * dt;
-  this->states(8) = z + vz * dt;
-  this->states(9) = vx + ((-kt * vx / m) + (1 / m) * (cos(ph) * sin(th) * cos(ps) + sin(ph) * sin(ps)) * tauf) * dt;
-  this->states(10) = vy + ((-kt * vy / m) + (1 / m) * (cos(ph) * sin(th) * sin(ps) - sin(ph) * cos(ps)) * tauf) * dt;
-  this->states(11) = vz + (-(kt * vz / m) + (1 / m) * (cos(ph) * cos(th)) * tauf - g) * dt;
+    this->states(0) = ph + (p + q * sin(ph) * tan(th) + r * cos(ph) * tan(th)) * dt;
+    this->states(1) = th + (q * cos(ph) - r * sin(ph)) * dt;
+    this->states(2) = ps + ((1 / cos(th)) * (q * sin(ph) + r * cos(ph))) * dt;
+    this->states(3) = p + (-((Iz - Iy) / Ix) * q * r - (kr * p / Ix) + (1 / Ix) * taup) * dt;
+    this->states(4) = q + (-((Ix - Iz) / Iy) * p * r - (kr * q / Iy) + (1 / Iy) * tauq) * dt;
+    this->states(5) = r + (-((Iy - Ix) / Iz) * p * q - (kr * r / Iz) + (1 / Iz) * taur) * dt;
+    this->states(6) = x + vx * dt;
+    this->states(7) = y + vy * dt;
+    this->states(8) = z + vz * dt;
+    this->states(9) = vx + ((-kt * vx / m) + (1 / m) * (cos(ph) * sin(th) * cos(ps) + sin(ph) * sin(ps)) * tauf) * dt;
+    this->states(10) = vy + ((-kt * vy / m) + (1 / m) * (cos(ph) * sin(th) * sin(ps) - sin(ph) * cos(ps)) * tauf) * dt;
+    this->states(11) = vz + (-(kt * vz / m) + (1 / m) * (cos(ph) * cos(th)) * tauf - g) * dt;
     // clang-format on
 
     // constrain yaw to be [-180, 180]
@@ -315,46 +297,45 @@ VecX QuadrotorModel::attitudeControllerControl(double dt) {
 
     // attitude controller
     // clang-format off
-  actual_attitude << this->states(0),  // roll
-                     this->states(1),  // pitch
-                     this->states(2),  // yaw
-                     this->states(8);  // z
-  motor_inputs = this->attitude_controller.update(this->attitude_setpoints,
-                                                     actual_attitude,
-                                                     dt);
+    actual_attitude << this->states(0),  // roll
+                       this->states(1),  // pitch
+                       this->states(2),  // yaw
+                       this->states(8);  // z
+    motor_inputs = this->attitude_controller.update(this->attitude_setpoints,
+                                                    actual_attitude,
+                                                    dt);
     // clang-format on
 
     return motor_inputs;
 }
 
 VecX QuadrotorModel::positionControllerControl(double dt) {
-    Vec4 motor_inputs;
-    Vec4 actual_position;
-    Vec4 actual_attitude;
-
     // position controller
     // clang-format off
-  actual_position(0) = this->states(6);  // x
-  actual_position(1) = this->states(7);  // y
-  actual_position(2) = this->states(8);  // z
-  actual_position(3) = this->states(2);  // yaw
-  this->attitude_setpoints = this->position_controller.update(
-    this->position_setpoints,
-    actual_position,
-    0.0,
-    dt
-  );
+    Vec4 actual_position;
+    actual_position(0) = this->states(6);  // x
+    actual_position(1) = this->states(7);  // y
+    actual_position(2) = this->states(8);  // z
+    actual_position(3) = this->states(2);  // yaw
+    this->attitude_setpoints = this->position_controller.update(
+        this->position_setpoints,
+        actual_position,
+        0.0,
+        dt
+    );
 
-  // attitude controller
-  actual_attitude(0) = this->states(0);  // roll
-  actual_attitude(1) = this->states(1);  // pitch
-  actual_attitude(2) = this->states(2);  // yaw
-  actual_attitude(3) = this->states(8);  // z
-  motor_inputs = this->attitude_controller.update(
-    this->attitude_setpoints,
-    actual_attitude,
-    dt
-  );
+    // attitude controller
+    Vec4 actual_attitude;
+    Vec4 motor_inputs;
+    actual_attitude(0) = this->states(0);  // roll
+    actual_attitude(1) = this->states(1);  // pitch
+    actual_attitude(2) = this->states(2);  // yaw
+    actual_attitude(3) = this->states(8);  // z
+    motor_inputs = this->attitude_controller.update(
+        this->attitude_setpoints,
+        actual_attitude,
+        dt
+    );
     // clang-format on
 
     return motor_inputs;
@@ -409,18 +390,15 @@ VecX QuadrotorModel::getVelocity(void) {
 }
 
 void QuadrotorModel::printState(void) {
-    float x, y, z;
-    float phi, theta, psi;
-
     // phi, theta, psi
-    phi = this->states(0);
-    theta = this->states(1);
-    psi = this->states(2);
+    float phi = this->states(0);
+    float theta = this->states(1);
+    float psi = this->states(2);
 
     // x, y, z
-    x = this->states(6);
-    y = this->states(7);
-    z = this->states(8);
+    float x = this->states(6);
+    float y = this->states(7);
+    float z = this->states(8);
 
     // print states
     printf("x: %f\t", x);
