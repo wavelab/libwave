@@ -69,9 +69,9 @@ Vec4 AttitudeController::update(Vec4 setpoints, Vec4 actual, double dt) {
 }
 
 Vec4 AttitudeController::update(Vec4 psetpoints,
-                                   Vec4 vsetpoints,
-                                   Vec4 actual,
-                                   double dt) {
+                                Vec4 vsetpoints,
+                                Vec4 actual,
+                                double dt) {
     Vec4 setpoints;
     setpoints = psetpoints + vsetpoints;
     return this->update(setpoints, actual, dt);
@@ -89,9 +89,9 @@ PositionController::PositionController(void) {
 }
 
 Vec4 PositionController::update(Vec3 setpoints,
-                                   Vec4 actual,
-                                   double yaw,
-                                   double dt) {
+                                Vec4 actual,
+                                double yaw,
+                                double dt) {
     double r, p, y, t;
     Vec3 errors, euler;
     Vec4 outputs;

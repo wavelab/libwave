@@ -57,7 +57,6 @@ TEST(PID, update) {
     ASSERT_FLOAT_EQ(0.0, controller.error_d);
     ASSERT_FLOAT_EQ(10.0, controller.error_prev);
     ASSERT_FLOAT_EQ(12.0, output);
-
 }
 
 }  // end of wave namespace

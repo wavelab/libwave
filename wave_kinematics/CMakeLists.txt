@@ -1,40 +1,41 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8.8)
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8.3)
 PROJECT(wave_kinematics)
 
-# DEPENDENCIES
-LINK_DIRECTORIES(build/deps/googletest/googletest)
+IF (CMAKE_COMPILER_IS_GNUCXX)
+  ADD_DEFINITIONS(-std=gnu++0x)
+ENDIF()
 
-# SETTINGS
-INCLUDE_DIRECTORIES(
-    /usr/local/include
-    /usr/include/eigen3
-    ${gtest_SOURCE_DIR}/include
-    ${gtest_SOURCE_DIR}
-)
+# EXTERNAL PACKAGES
+FIND_PACKAGE(Kindr)
 
-# KINEMATICS
-SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
+# INCLUDES
+INCLUDE_DIRECTORIES(/usr/include/eigen3)
+
+#LIBRARY
 ADD_LIBRARY(
-    wave_kinematics
-    STATIC
-    src/quadrotor.cpp
+   wave_kinematics
+   STATIC
+   src/rotation.cpp
+   src/quadrotor.cpp
+ )
+SET(
+  TEST_DEPS
+  wave_kinematics
+  wave_controls
+  wave_utils
+  gtest
+  pthread
 )
 
-# TESTS
+# UNIT TESTS
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
-SET(
-    TEST_DEPS
-    wave_kinematics
-    wave_controls
-    wave_utils
-#    yaml-cpp
-    gtest
-#    pthread
-#    ${OpenCV_LIBS}
-)
 ADD_EXECUTABLE(
+    # TARGET
     wave_kinematics_tests
+    # TESTS
+    tests/rotation/rotation_test.cpp
     tests/quadrotor_test.cpp
+    # TEST RUNNER
     tests/test_runner.cpp
 )
 TARGET_LINK_LIBRARIES(wave_kinematics_tests ${TEST_DEPS})

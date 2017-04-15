@@ -5,12 +5,7 @@ PROJECT(wave_controls)
 LINK_DIRECTORIES(build/deps/googletest/googletest)
 
 # SETTINGS
-INCLUDE_DIRECTORIES(
-    /usr/local/include
-    /usr/include/eigen3
-    ${gtest_SOURCE_DIR}/include
-    ${gtest_SOURCE_DIR}
-)
+INCLUDE_DIRECTORIES(/usr/include/eigen3)
 
 # CONTROLS
 SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)

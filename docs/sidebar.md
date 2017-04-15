@@ -4,6 +4,7 @@
 
 ## API
 - [kinematics](#api/kinematics/kinematics)
+    - [rotation](#api/kinematics/rotation)
 - [estimation](#api/estimation/estimation)
 - [optimization](#api/optimization/optimization)
 - [utils](#api/utils/utils)
