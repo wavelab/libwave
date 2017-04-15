@@ -24,11 +24,12 @@ install_ceres_solver() {
     mkdir -p $SRC_PREFIX_PATH
     cd $SRC_PREFIX_PATH
 
-    # clone ceres-solver if directory does not already exist, or pull
     if [ ! -d ceres-solver ]; then
+        # clone ceres-solver if directory does not already exist
        git clone https://github.com/ceres-solver/ceres-solver.git
     else
-       git -C ceres-solver pull
+        # otherwise, fetch to ensure we have the newest tags
+       git -C ceres-solver fetch
     fi
 
     # go into ceres-solver repo and prepare for build
