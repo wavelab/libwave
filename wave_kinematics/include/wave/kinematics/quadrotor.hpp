@@ -19,8 +19,11 @@ class AttitudeController {
     PID yaw_controller;
 
     AttitudeController(void);
-    Vec4 update(Vec4 setpoints, Vec4 actual, double dt);
-    Vec4 update(Vec4 psetpoints, Vec4 vsetpoints, Vec4 actual, double dt);
+    Vec4 update(const Vec4 &setpoints, const Vec4 &actual, double dt);
+    Vec4 update(const Vec4 &psetpoints,
+                const Vec4 &vsetpoints,
+                const Vec4 &actual,
+                double dt);
 };
 
 class PositionController {
@@ -33,7 +36,10 @@ class PositionController {
     PID z_controller;
 
     PositionController(void);
-    Vec4 update(Vec3 setpoints, Vec4 actual, double yaw, double dt);
+    Vec4 update(const Vec3 &setpoints,
+                const Vec4 &actual,
+                double yaw,
+                double dt);
 };
 
 class QuadrotorModel {
@@ -53,17 +59,16 @@ class QuadrotorModel {
     double g;
 
     Vec4 attitude_setpoints;
-    VecX position_setpoints;
+    Vec3 position_setpoints;
 
     AttitudeController attitude_controller;
     PositionController position_controller;
 
     QuadrotorModel(void);
-    QuadrotorModel(VecX pose);
-    int update(VecX motor_inputs, double dt);
-    VecX attitudeControllerControl(double dt);
-    VecX positionControllerControl(double dt);
-    VecX velocityControllerControl(double dt);
+    QuadrotorModel(const VecX &pose);
+    int update(const VecX &motor_inputs, double dt);
+    Vec4 attitudeControllerControl(double dt);
+    Vec4 positionControllerControl(double dt);
     void setAttitude(double roll, double pitch, double yaw, double z);
     void setPosition(double x, double y, double z);
     void setVelocity(double vx, double vy, double vz);

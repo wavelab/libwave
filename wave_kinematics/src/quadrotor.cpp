@@ -12,7 +12,9 @@ AttitudeController::AttitudeController(void) {
     this->yaw_controller = PID(200.0, 0.5, 10.0);
 }
 
-Vec4 AttitudeController::update(Vec4 setpoints, Vec4 actual, double dt) {
+Vec4 AttitudeController::update(const Vec4 &setpoints,
+                                const Vec4 &actual,
+                                double dt) {
     // check rate
     this->dt += dt;
     if (this->dt < 0.001) {
@@ -64,9 +66,9 @@ Vec4 AttitudeController::update(Vec4 setpoints, Vec4 actual, double dt) {
     return outputs;
 }
 
-Vec4 AttitudeController::update(Vec4 psetpoints,
-                                Vec4 vsetpoints,
-                                Vec4 actual,
+Vec4 AttitudeController::update(const Vec4 &psetpoints,
+                                const Vec4 &vsetpoints,
+                                const Vec4 &actual,
                                 double dt) {
     Vec4 setpoints;
     setpoints = psetpoints + vsetpoints;
@@ -84,8 +86,8 @@ PositionController::PositionController(void) {
     this->z_controller = PID(0.3, 0.0, 0.018);
 }
 
-Vec4 PositionController::update(Vec3 setpoints,
-                                Vec4 actual,
+Vec4 PositionController::update(const Vec3 &setpoints,
+                                const Vec4 &actual,
                                 double yaw,
                                 double dt) {
     // check rate
@@ -181,13 +183,13 @@ QuadrotorModel::QuadrotorModel(void) {
     this->g = 10.0;  // gravitational constant
 
     this->attitude_setpoints = Vec4();
-    this->position_setpoints = VecX(3);
+    this->position_setpoints = Vec3();
 
     this->attitude_controller = AttitudeController();
     this->position_controller = PositionController();
 }
 
-QuadrotorModel::QuadrotorModel(VecX pose) {
+QuadrotorModel::QuadrotorModel(const VecX &pose) {
     this->states = VecX(12);
     this->states(0) = pose(3);  // roll
     this->states(1) = pose(4);  // pitch
@@ -225,7 +227,7 @@ QuadrotorModel::QuadrotorModel(VecX pose) {
     this->position_controller = PositionController();
 }
 
-int QuadrotorModel::update(VecX motor_inputs, double dt) {
+int QuadrotorModel::update(const VecX &motor_inputs, double dt) {
     double ph = this->states(0);
     double th = this->states(1);
     double ps = this->states(2);
@@ -291,7 +293,7 @@ int QuadrotorModel::update(VecX motor_inputs, double dt) {
     return 0;
 }
 
-VecX QuadrotorModel::attitudeControllerControl(double dt) {
+Vec4 QuadrotorModel::attitudeControllerControl(double dt) {
     Vec4 actual_attitude;
     Vec4 motor_inputs;
 
@@ -309,7 +311,7 @@ VecX QuadrotorModel::attitudeControllerControl(double dt) {
     return motor_inputs;
 }
 
-VecX QuadrotorModel::positionControllerControl(double dt) {
+Vec4 QuadrotorModel::positionControllerControl(double dt) {
     // position controller
     // clang-format off
     Vec4 actual_position;
