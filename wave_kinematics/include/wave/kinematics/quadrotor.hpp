@@ -36,16 +36,6 @@ class PositionController {
     Vec4 update(Vec3 setpoints, Vec4 actual, double yaw, double dt);
 };
 
-/*class VelocityController {
- public:
-    PID vx_controller;
-    PID vy_controller;
-    PID vz_controller;
-
-    VelocityController(void);
-    VecX update(Vec3 setpoints, Vec3 actual, double yaw, double dt);
-};
-*/
 class QuadrotorModel {
  public:
     VecX states;
