@@ -4,15 +4,20 @@ sudo: required
 language:
     - c++
 
+cache:
+    ccache: true
+    directories:
+        - /usr/local/src
+
 install:
-    - travis_wait sudo bash scripts/install/install_deps.bash
+    - sudo bash scripts/install/install_deps.bash
 
 script:
     - bash scripts/ci_run.bash
 
 notifications:
-    recipients:
-        - chutsu@gmail.com
     email:
+        recipients:
+            - chutsu@gmail.com
         on_success: change
         on_failure: always
