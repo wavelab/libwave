@@ -13,16 +13,18 @@ INCLUDE_DIRECTORIES(/usr/include/eigen3)
 
 #LIBRARY
 ADD_LIBRARY(
-   wave_kinematics
-   STATIC
-   src/rotation.cpp
- )
+    wave_kinematics
+    STATIC
+    src/rotation.cpp
+    src/quadrotor.cpp
+)
 SET(
-  TEST_DEPS
-  wave_kinematics
-  wave_utils
-  gtest
-  pthread
+    WAVE_KINEMATICS_TEST_DEPS
+    wave_kinematics
+    wave_controls
+    wave_utils
+    gtest
+    pthread
 )
 
 # UNIT TESTS
@@ -31,8 +33,9 @@ ADD_EXECUTABLE(
     # TARGET
     wave_kinematics_tests
     # TESTS
-    tests/rotation/rotation_test.cpp
+    tests/rotation_test.cpp
+    tests/quadrotor_test.cpp
     # TEST RUNNER
     tests/test_runner.cpp
 )
-TARGET_LINK_LIBRARIES(wave_kinematics_tests ${TEST_DEPS})
+TARGET_LINK_LIBRARIES(wave_kinematics_tests ${WAVE_KINEMATICS_TEST_DEPS})

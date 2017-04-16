@@ -16,7 +16,7 @@ ADD_LIBRARY(
     src/ceres/ceres_examples.cpp
 )
 SET(
-    TEST_DEPS
+    WAVE_OPTIMIZATION_TEST_DEPS
     wave_optimization
     wave_utils
     ${CERES_LIBRARIES}
@@ -26,7 +26,6 @@ SET(
 
 # UNIT TESTS
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
-
 ADD_EXECUTABLE(
     # TARGET
     wave_optimization_tests
@@ -35,4 +34,4 @@ ADD_EXECUTABLE(
     # TEST RUNNER
     tests/test_runner.cpp
 )
-TARGET_LINK_LIBRARIES(wave_optimization_tests ${TEST_DEPS})
+TARGET_LINK_LIBRARIES(wave_optimization_tests ${WAVE_OPTIMIZATION_TEST_DEPS})

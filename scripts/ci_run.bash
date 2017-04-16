@@ -16,5 +16,8 @@ run_module_tests() {
 
 # MAIN
 compile_libwave
-run_module_tests wave_utils
+run_module_tests wave_controls
+run_module_tests wave_kinematics
 run_module_tests wave_optimization
+# run_module_tests wave_matching
+run_module_tests wave_utils
