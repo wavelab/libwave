@@ -3,15 +3,6 @@
 namespace wave {
 
 // ATTITUDE CONTROLLER
-AttitudeController::AttitudeController(void) {
-    this->dt = 0.0;
-    this->outputs << 0.0, 0.0, 0.0, 0.0;
-
-    this->roll_controller = PID(200.0, 0.5, 10.0);
-    this->pitch_controller = PID(200.0, 0.5, 10.0);
-    this->yaw_controller = PID(200.0, 0.5, 10.0);
-}
-
 Vec4 AttitudeController::update(const Vec4 &setpoints,
                                 const Vec4 &actual,
                                 double dt) {
@@ -77,15 +68,6 @@ Vec4 AttitudeController::update(const Vec4 &psetpoints,
 
 
 // POSITION CONTROLLER
-PositionController::PositionController(void) {
-    this->dt = 0.0;
-    this->outputs << 0.0, 0.0, 0.0, 0.0;
-
-    this->x_controller = PID(0.5, 0.0, 0.035);
-    this->y_controller = PID(0.5, 0.0, 0.035);
-    this->z_controller = PID(0.3, 0.0, 0.018);
-}
-
 Vec4 PositionController::update(const Vec3 &setpoints,
                                 const Vec4 &actual,
                                 double yaw,
@@ -154,58 +136,6 @@ Vec4 PositionController::update(const Vec3 &setpoints,
 
 
 // QUADROTOR MODEL
-QuadrotorModel::QuadrotorModel(void) {
-    this->attitude << 0.0, 0.0, 0.0;
-    this->angular_velocity << 0.0, 0.0, 0.0;
-    this->position << 0.0, 0.0, 0.0;
-    this->linear_velocity << 0.0, 0.0, 0.0;
-
-    this->Ix = 0.0963;  // inertial x
-    this->Iy = 0.0963;  // inertial y
-    this->Iz = 0.1927;  // inertial z
-
-    this->kr = 0.1;  // rotation drag constant
-    this->kt = 0.2;  // translation drag constant
-
-    this->l = 0.9;  // arm length
-    this->d = 1.0;  // drag
-
-    this->m = 1.0;   // mass of quad
-    this->g = 10.0;  // gravitational constant
-
-    this->attitude_setpoints << 0.0, 0.0, 0.0, 0.5;
-    this->position_setpoints << 0.0, 0.0, 0.0;
-
-    this->attitude_controller = AttitudeController();
-    this->position_controller = PositionController();
-}
-
-QuadrotorModel::QuadrotorModel(const VecX &pose) {
-    this->attitude << pose(3), pose(4), pose(5);
-    this->angular_velocity << 0.0, 0.0, 0.0;
-    this->position << pose(0), pose(1), pose(2);
-    this->linear_velocity << 0.0, 0.0, 0.0;
-
-    this->Ix = 0.0963;  // inertial x
-    this->Iy = 0.0963;  // inertial y
-    this->Iz = 0.1927;  // inertial z
-
-    this->kr = 0.1;  // rotation drag constant
-    this->kt = 0.2;  // translation drag constant;
-
-    this->l = 0.9;  // arm length
-    this->d = 1.0;  // drag
-
-    this->m = 1.0;   // mass of quad
-    this->g = 10.0;  // gravitational constant
-
-    this->attitude_setpoints << 0.0, 0.0, 0.0, 0.5;
-    this->position_setpoints << pose(0), pose(1), pose(2);
-
-    this->attitude_controller = AttitudeController();
-    this->position_controller = PositionController();
-}
-
 int QuadrotorModel::update(const VecX &motor_inputs, double dt) {
     double ph = this->attitude(0);
     double th = this->attitude(1);

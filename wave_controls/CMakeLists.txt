@@ -27,7 +27,7 @@ ADD_EXECUTABLE(
     # TARGET
     wave_controls_tests
     # TESTS
-    tests/control_test.cpp
+    tests/pid_test.cpp
     # TEST RUNNER
     tests/test_runner.cpp
 )
