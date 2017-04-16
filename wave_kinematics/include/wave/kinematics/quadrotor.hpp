@@ -44,7 +44,11 @@ class PositionController {
 
 class QuadrotorModel {
  public:
-    VecX states;
+    Vec3 attitude;
+    Vec3 angular_velocity;
+    Vec3 position;
+    Vec3 linear_velocity;
+
     double Ix;
     double Iy;
     double Iz;
