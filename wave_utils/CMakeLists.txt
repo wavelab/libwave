@@ -19,7 +19,7 @@ ADD_LIBRARY(
     src/time.cpp
 )
 SET(
-    TEST_DEPS
+    WAVE_UTILS_TEST_DEPS
     wave_utils
     yaml-cpp
     gtest
@@ -30,7 +30,6 @@ SET(
 # UNIT TESTS
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
 FILE(COPY tests/data DESTINATION ${PROJECT_BINARY_DIR}/tests)
-
 ADD_EXECUTABLE(
     # TARGET
     wave_utils_tests
@@ -43,4 +42,4 @@ ADD_EXECUTABLE(
     # TEST RUNNER
     tests/test_runner.cpp
 )
-TARGET_LINK_LIBRARIES(wave_utils_tests ${TEST_DEPS})
+TARGET_LINK_LIBRARIES(wave_utils_tests ${WAVE_UTILS_TEST_DEPS})
