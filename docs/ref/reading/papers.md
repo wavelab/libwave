@@ -39,9 +39,9 @@
 ## Seminal works - a partial list
 
 * [[1987 - The original EKF SLAM from Cheeseman, Smith and Self][CheesemanEtAl87]]: the original, a beautiful paper formulating SLAM using Gaussian uncertainty for the first time.
-* [1997 - Lu and Milios Scan Registration Graph SLAM][LuMilios97]: York University shows up big with 2D lidar scan registration in hallways, includes ICP and graphSLAM foundations.
+* [[1997 - Lu and Milios Scan Registration Graph SLAM][LuMilios97]]: York University shows up big with 2D lidar scan registration in hallways, includes ICP and graphSLAM foundations.
 * [[2002 - Rao-Blackwellized Particle SLAM][MontemerloEtAl2002]]: Thrun and Montemerlo show how particle filters can handle extreme nonlinearities, but run into a lot of problems in implementation.
-* [[2003 - MonoSLAM][]]: The first real monocular camera only SLAM paper, courtesy of Andy Davison.
+* [[2003 - MonoSLAM][DavisonEtAl2007]]: The first real monocular camera only SLAM paper, courtesy of Andy Davison.
 * [[2007 - Parallel Tracking and Mapping][KleinMurray2007]]: The case for separate mapping and localization threads, shows how maps don't need to be simultaneously updated at all.
 * [[2010 - Why Filter?][StrasdatEtAl2010]] The case for bundle adjustments over continuous filtering, allowing the optimization to go back and correct past linearization mistakes.
 * [[2011 - KinectFusion][NewcombeEtAl2011]]  The first dense rgbd SLAM, showing us a path to merging of the offline reconstruction methods with online SLAM (same problem different timescales).
@@ -100,7 +100,7 @@
 
 - [tzutalin, "The list of vision-based SLAM / Visual Odometry open source projects, libraries, dataset, tools, and studies", Github, tzutalin/awesome-visual-slam.][VSLAMList]
 
-- [Raúl Mur-Artal, J. M. M. Montiel and Juan D. Tardós. ORB-SLAM: A Versatile and Accurate Monocular SLAM System. IEEE > Transactions on Robotics, vol. 31, no. 5, pp. 1147-1163, 2015.][MurArtalEtAl15]
+- [Raúl Mur-Artal, J. M. M. Montiel and Juan D. Tardós. ORB-SLAM: A Versatile and Accurate Monocular SLAM System. IEEE Transactions on Robotics, vol. 31, no. 5, pp. 1147-1163, 2015.][MurArtalEtAl15]
 
 - [Das, A., & Waslander, S. L. (2016, October). Calibration of a dynamic camera cluster for multi-camera visual SLAM. In Intelligent Robots and Systems (IROS), 2016 IEEE/RSJ International Conference on (pp. 4637-4642). IEEE.][DasWaslander2016]
 
