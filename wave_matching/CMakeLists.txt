@@ -1,29 +1,20 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8.3)
 PROJECT(wave_matching)
 
-set( CMAKE_BUILD_TYPE release )
+FIND_PACKAGE(PCL REQUIRED common registration point_types io)
+FIND_PACKAGE(OpenCV REQUIRED)
 
-find_package(PCL REQUIRED common registration point_types io)
-find_package(OpenCV REQUIRED)
+ADD_DEFINITIONS(${EIGEN_DEFINITIONS})
+ADD_DEFINITIONS(${PCL_DEFINITIONS})
 
-add_definitions(${EIGEN_DEFINITIONS}
-        ${PCL_DEFINITIONS})
+INCLUDE_DIRECTORIES(${PCL_INCLUDE_DIRS})
+INCLUDE_DIRECTORIES(${EIGEN_INCLUDE_DIRS})
 
-include_directories(${PCL_INCLUDE_DIRS}
-        ${EIGEN_INCLUDE_DIRS}
-        /usr/include
-        /usr/include/eigen3
-        /usr/local/include
-        include
-        )
+LINK_DIRECTORIES(${PCL_LIBRARY_DIRS})
+LINK_DIRECTORIES(${EIGEN_LIBRARY_DIRS})
+LINK_DIRECTORIES(/usr/lib/x86_64-linux-gnu/)
 
-link_directories(${PCL_LIBRARY_DIRS}
-        ${EIGEN_LIBRARY_DIRS}
-        /usr/lib
-        /usr/local/lib
-        /usr/lib/x86_64-linux-gnu/)
-
-set(DEPS
+SET(WAVE_MATCHING_DEPS
     yaml-cpp
     wave_utils
     ${OpenCV_LIBS}
@@ -32,14 +23,14 @@ set(DEPS
     ${PCL_POINT_TYPES_LIBRARIES}
     ${PCL_IO_LIBRARIES})
 
-set(TEST_DEPS
+SET(WAVE_MATCHING_TEST_DEPS
     wave_matching
     wave_utils
     gtest
     ${CMAKE_THREAD_LIBS_INIT})
 
-add_library(wave_matching STATIC src/icp.cpp src/ndt.cpp)
-target_link_libraries(wave_matching ${DEPS})
+ADD_LIBRARY(wave_matching STATIC src/icp.cpp)
+TARGET_LINK_LIBRARIES(wave_matching ${WAVE_MATCHING_DEPS})
 
 # Unit tests
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
@@ -48,12 +39,11 @@ FILE(COPY config DESTINATION ${PROJECT_BINARY_DIR}/tests)
 
 ADD_EXECUTABLE(
     # TARGET
-    registration_tests
+    wave_matching_tests
     # TESTS
     tests/icp_tests.cpp
     tests/ndt_tests.cpp
     # TEST RUNNER
     tests/test_runner.cpp
 )
-TARGET_LINK_LIBRARIES(registration_tests
-    ${TEST_DEPS})
+TARGET_LINK_LIBRARIES(wave_matching_tests ${WAVE_MATCHING_TEST_DEPS})

@@ -43,8 +43,11 @@ install_dependencies() {
 download_opencv() {
     mkdir -p /usr/local/src/opencv
     cd /usr/local/src/opencv
-    wget $OPENCV_URL -O opencv-3.0.0-alpha.zip
-    unzip -qq opencv-3.0.0-alpha.zip
+    if [ ! -d opencv-3.0.0-alpha ]; then
+        wget $OPENCV_URL -O opencv-3.0.0-alpha.zip
+        unzip -qq opencv-3.0.0-alpha.zip
+        rm opencv-3.0.0-alpha.zip
+    fi
     cd -
 }
 
@@ -61,7 +64,7 @@ install_opencv() {
         -D WITH_V4L=ON \
         -D WITH_QT=ON \
         -D WITH_OPENGL=ON ..
-    make -j 4
+    make -j$(nproc)
 
     # DO NOT ACTUALLY INSTALL THIS WILL CAUSE PROBLEMS WITH
     # BUILDS THAT DEPEND ON OPENCV 2

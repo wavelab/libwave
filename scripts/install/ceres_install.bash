@@ -2,6 +2,7 @@
 set -e  # exit on first error
 UBUNTU_VERSION=`lsb_release --release | cut -f2`
 SRC_PREFIX_PATH="/usr/local/src/"
+CERES_VERSION=1.12.0
 
 
 install_dependencies() {
@@ -20,23 +21,30 @@ install_suitesparse_fix() {
 }
 
 install_ceres_solver() {
-    # clone ceres solver
     mkdir -p $SRC_PREFIX_PATH
     cd $SRC_PREFIX_PATH
-    git clone https://github.com/ceres-solver/ceres-solver.git
+
+    if [ ! -d ceres-solver ]; then
+        # clone ceres-solver if directory does not already exist
+       git clone https://github.com/ceres-solver/ceres-solver.git
+    else
+        # otherwise, fetch to ensure we have the newest tags
+       git -C ceres-solver fetch
+    fi
 
     # go into ceres-solver repo and prepare for build
     cd ceres-solver
-    mkdir build
+    git checkout tags/${CERES_VERSION}
+    mkdir -p build
     cd build
     cmake ..
 
     # compile and install
-    make
-    make test
+    make -j$(nproc)
+    # Test, but skip the slowest tests
+    make test ARGS="-E 'bundle_adjustment|covariance|rotation'"
     make install
 }
-
 
 # MAIN
 if [ $UBUNTU_VERSION == "16.04" ]; then
