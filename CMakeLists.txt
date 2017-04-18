@@ -13,6 +13,7 @@ LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 # INCLUDES
 INCLUDE_DIRECTORIES(
   wave_controls/include
+  wave_geometry/include
   wave_kinematics/include
   wave_matching/include
   wave_optimization/include
@@ -26,6 +27,10 @@ INCLUDE_DIRECTORIES(${gtest_SOURCE_DIR}/include/ ${gtest_SOURCE_DIR})
 # libwave_controls.a
 ADD_SUBDIRECTORY(wave_controls)
 ADD_DEPENDENCIES(wave_controls wave_utils)
+
+# libwave_geometry.a
+ADD_SUBDIRECTORY(wave_geometry)
+ADD_DEPENDENCIES(wave_geometry wave_utils)
 
 # libwave_kinematics.a
 ADD_SUBDIRECTORY(wave_kinematics)
@@ -48,12 +53,14 @@ ADD_CUSTOM_TARGET(
     COMMAND
         ${CMAKE_AR} rc libwave.a
             ${CMAKE_BINARY_DIR}/wave_controls/libwave_controls.a
+	    ${CMAKE_BINARY_DIR}/wave_geometry/libwave_geometry.a
             ${CMAKE_BINARY_DIR}/wave_kinematics/libwave_kinematics.a
             ${CMAKE_BINARY_DIR}/wave_matching/libwave_matching.a
             ${CMAKE_BINARY_DIR}/wave_optimization/libwave_optimization.a
             ${CMAKE_BINARY_DIR}/wave_utils/libwave_utils.a
     DEPENDS
         wave_controls
+	wave_geometry
         wave_kinematics
         wave_matching
         wave_optimization
