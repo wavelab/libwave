@@ -2,4 +2,4 @@ ndt:
   step_size: 3   #maximum newton line search step size
   max_iter: 100 #maxIterations
   t_eps: 1e-8   #transformationEpsilon
-  config_res: 5 #Voxel side length for generating distributions
+  default_res: 5 #Voxel side length for generating distributions

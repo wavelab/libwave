@@ -5,38 +5,27 @@ PROJECT(wave_optimization)
 FIND_PACKAGE(Ceres REQUIRED)
 
 # INCLUDES
-INCLUDE_DIRECTORIES(
-    /usr/include
-	/usr/include/eigen3
-	${CERES_INCLUDE_DIRS}
-	/usr/local/include
-	include
-)
-
-# LIBS
-LINK_DIRECTORIES(
-	/usr/lib
-	/usr/local/lib
-)
+INCLUDE_DIRECTORIES(include)
+INCLUDE_DIRECTORIES(/usr/include/eigen3)
+INCLUDE_DIRECTORIES(${CERES_INCLUDE_DIRS})
 
 # LIBRARY
 ADD_LIBRARY(
-	wave_optimization
-	STATIC
-	src/ceres/ceres_examples.cpp
+    wave_optimization
+    STATIC
+    src/ceres/ceres_examples.cpp
 )
 SET(
-    TEST_DEPS
-	wave_optimization
-	wave_utils
-	${CERES_LIBRARIES}
-	gtest
-	pthread
+    WAVE_OPTIMIZATION_TEST_DEPS
+    wave_optimization
+    wave_utils
+    ${CERES_LIBRARIES}
+    gtest
+    pthread
 )
 
 # UNIT TESTS
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
-
 ADD_EXECUTABLE(
     # TARGET
     wave_optimization_tests
@@ -45,4 +34,4 @@ ADD_EXECUTABLE(
     # TEST RUNNER
     tests/test_runner.cpp
 )
-TARGET_LINK_LIBRARIES(wave_optimization_tests ${TEST_DEPS})
+TARGET_LINK_LIBRARIES(wave_optimization_tests ${WAVE_OPTIMIZATION_TEST_DEPS})

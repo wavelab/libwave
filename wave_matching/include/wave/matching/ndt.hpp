@@ -12,6 +12,7 @@ namespace wave {
 class NDTMatcher : public Matcher<PCLPointCloud> {
  public:
     explicit NDTMatcher(float resolution, const std::string &config_path);
+    ~NDTMatcher();
     void setRef(const PCLPointCloud &ref);
     void setTarget(const PCLPointCloud &target);
     bool match();

@@ -11,13 +11,13 @@ NDTMatcher::NDTMatcher(float res, const std::string &config_path) {
 
     ConfigParser parser;
 
-    float step_size, t_eps, config_res;
+    float step_size, t_eps, default_res;
     int max_iter;
 
     parser.addParam("ndt.step_size", &step_size);
     parser.addParam("ndt.max_iter", &max_iter);
     parser.addParam("ndt.t_eps", &t_eps);
-    parser.addParam("ndt.config_res", &config_res);
+    parser.addParam("ndt.default_res", &default_res);
 
     if (parser.load(config_path) != 0) {
         ConfigException config_exception;
@@ -25,11 +25,11 @@ NDTMatcher::NDTMatcher(float res, const std::string &config_path) {
     }
 
     if (res < this->min_res) {
-        if (config_res < this->min_res) {
+        if (default_res < this->min_res) {
             LOG_ERROR("Invalid resolution given, using minimum");
-            config_res = this->min_res;
+            default_res = this->min_res;
         } else {
-            this->resolution = config_res;
+            this->resolution = default_res;
         }
     } else {
         this->resolution = res;
@@ -39,6 +39,18 @@ NDTMatcher::NDTMatcher(float res, const std::string &config_path) {
     this->ndt.setStepSize(step_size);
     this->ndt.setResolution(this->resolution);
     this->ndt.setMaximumIterations(max_iter);
+}
+
+NDTMatcher::~NDTMatcher() {
+    if (this->ref) {
+        this->ref.reset();
+    }
+    if (this->target) {
+        this->target.reset();
+    }
+    if (this->final) {
+        this->final.reset();
+    }
 }
 
 void NDTMatcher::setRef(const PCLPointCloud &ref) {

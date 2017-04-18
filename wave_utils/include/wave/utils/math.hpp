@@ -34,6 +34,7 @@ void vec2mat(std::vector<double> x, int rows, int cols, MatX &y);
 void mat2vec(MatX A, std::vector<double> &x);
 double wrapTo180(double euler_angle);
 double wrapTo360(double euler_angle);
+int euler2rot(Vec3 euler, int euler_seq, Mat3 &R);
 
 }  // end of wave namespace
 #endif

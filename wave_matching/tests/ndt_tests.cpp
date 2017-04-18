@@ -1,9 +1,9 @@
 // Tests for wrapper
 
+#include <iostream>
 #include <gtest/gtest.h>
 #include <pcl/io/pcd_io.h>
 #include <Eigen/Dense>
-#include <iostream>
 
 #include "wave/matching/ndt.hpp"
 
@@ -26,7 +26,7 @@ class NDTTest : public testing::Test {
         pcl::io::loadPCDFile("data/testscan.pcd", *(this->ref));
     }
 
-    void setParams(const float res, const Eigen::Affine3d perturb) {
+    void initMatcher(const float res, const Eigen::Affine3d perturb) {
         this->matcher = new NDTMatcher(res, "config/ndt.yaml");
         pcl::transformPointCloud(*(this->ref), *(this->target), perturb);
         this->matcher->setup(this->ref, this->target);
@@ -34,6 +34,7 @@ class NDTTest : public testing::Test {
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr ref, target;
     NDTMatcher *matcher;
+    const float threshold = 0.12;
 };
 
 TEST(NDTTests, initialization) {
@@ -48,12 +49,12 @@ TEST_F(NDTTest, fullResNullMatch) {
     // Setup
     perturb = Eigen::Affine3d::Identity();
     perturb.translation() << 0, 0, 0;
-    this->setParams(-1, perturb);
+    this->initMatcher(-1, perturb);
     // test and assert
     match_success = matcher->match();
     double diff = (matcher->getResult().matrix() - perturb.matrix()).norm();
     EXPECT_TRUE(match_success);
-    EXPECT_LT(diff, 0.12);
+    EXPECT_LT(diff, this->threshold);
 }
 
 // Zero displacement using resolution set by constructor
@@ -64,12 +65,12 @@ TEST_F(NDTTest, nullDisplacement) {
     // Setup
     perturb = Eigen::Affine3d::Identity();
     perturb.translation() << 0, 0, 0;
-    this->setParams(2.5f, perturb);
+    this->initMatcher(2.5f, perturb);
     // test and assert
     match_success = matcher->match();
     double diff = (matcher->getResult().matrix() - perturb.matrix()).norm();
     EXPECT_TRUE(match_success);
-    EXPECT_LT(diff, 0.1);
+    EXPECT_LT(diff, this->threshold);
 }
 
 // Small displacement using resolution set by constructor
@@ -80,12 +81,12 @@ TEST_F(NDTTest, smallDisplacement) {
     // Setup
     perturb = Eigen::Affine3d::Identity();
     perturb.translation() << 0.2, 0, 0;
-    this->setParams(2.5f, perturb);
+    this->initMatcher(2.5f, perturb);
     // test and assert
     match_success = matcher->match();
     double diff = (matcher->getResult().matrix() - perturb.matrix()).norm();
     EXPECT_TRUE(match_success);
-    EXPECT_LT(diff, 0.1);
+    EXPECT_LT(diff, this->threshold);
 }
 
 }  // end of namespace wave
