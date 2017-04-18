@@ -1,5 +1,3 @@
-// Class to wrap PCL ICP matcher
-
 #ifndef WAVE_MATCHING_NDT_HPP
 #define WAVE_MATCHING_NDT_HPP
 

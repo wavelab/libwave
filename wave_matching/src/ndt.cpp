@@ -5,14 +5,14 @@
 namespace wave {
 
 NDTMatcher::NDTMatcher(float res, const std::string &config_path) {
-    this->ref = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
-    this->target = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
-    this->final = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
+    this->ref = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+    this->target = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+    this->final = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
 
     ConfigParser parser;
 
-    float step_size = 0.1, t_eps = 0.01, config_res = 3;
-    int max_iter = 100;
+    float step_size, t_eps, config_res;
+    int max_iter;
 
     parser.addParam("ndt.step_size", &step_size);
     parser.addParam("ndt.max_iter", &max_iter);
@@ -25,7 +25,7 @@ NDTMatcher::NDTMatcher(float res, const std::string &config_path) {
     }
 
     if (res < this->min_res) {
-        if(config_res < this->min_res) {
+        if (config_res < this->min_res) {
             LOG_ERROR("Invalid resolution given, using minimum");
             config_res = this->min_res;
         } else {

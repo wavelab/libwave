@@ -21,8 +21,8 @@ class NDTTest : public testing::Test {
     }
 
     virtual void SetUp() {
-        this->ref = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
-        this->target = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
+        this->ref = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+        this->target = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
         pcl::io::loadPCDFile("data/testscan.pcd", *(this->ref));
     }
 
