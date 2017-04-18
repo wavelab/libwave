@@ -8,62 +8,74 @@
 #include <set>
 #include <memory>
 
+#include "wave/utils/utils.hpp"
+#include "wave/optimization/factor_graph/factor.hpp"
+#include "wave/optimization/factor_graph/variable.hpp"
+
 namespace wave {
-
-enum MType {
-    DOUBLE = 1,
-    VEC2 = 2,
-    VEC3 = 3,
-    VEC4 = 4,
-    VECX = 5,
-    MAT2 = 6,
-    MAT3 = 7,
-    MAT4 = 8,
-    MAT5 = 9
-};
-
-class Factor {
- public:
-    int arity;
-    int connections[2];
-    enum MType type;
-    void *measurement;
-
-    Factor(size_t at, double measurement) {
-        this->arity = 1;
-        this->connections[0] = at;
-        this->connections[1] = -1;
-        this->type = DOUBLE;
-        this->measurement = new double(measurement);
-    }
-
-    Factor(size_t from, size_t to, double measurement) {
-        this->arity = 2;
-        this->connections[0] = from;
-        this->connections[1] = to;
-        this->type = DOUBLE;
-        this->measurement = new double(measurement);
-    }
-
-    ~Factor(void) {
-        switch (this->type) {
-            case DOUBLE: delete static_cast<double *>(this->measurement); break;
-            default: break;
-        }
-        this->measurement = NULL;
-    }
-};
 
 class FactorGraph {
  public:
-    std::multimap<size_t, std::shared_ptr<Factor>> graph;
-    std::set<size_t> variables;
+    std::multimap<std::shared_ptr<Variable>, std::shared_ptr<Factor>> graph;
+    std::set<std::shared_ptr<Variable>> variables;
     std::vector<std::shared_ptr<Factor>> factors;
 
-    FactorGraph(void);
-    int addUnaryFactor(size_t at, double measurement);
-    int addBinaryFactor(size_t from, size_t to, double measurement);
-    int print(void);
+    FactorGraph() : graph{}, variables{}, factors{} {}
+
+    template <typename V, typename T>
+    int addUnaryFactor(size_t at, const T &z) {
+        // store variable and factor
+        auto variable = std::make_shared<V>(at);
+        this->variables.insert(variable);
+
+        auto factor = std::make_shared<UnaryFactor<T>>(variable, z);
+        this->factors.push_back(factor);
+
+        // store key-factor pair
+        auto value = std::make_pair(variable, factor);
+        this->graph.insert(value);
+
+        return 0;
+    }
+
+    template <typename VA, typename VB, typename T>
+    int addBinaryFactor(size_t from, size_t to, const T &z) {
+        // store variables and factor
+        auto from_var = std::make_shared<VA>(from);
+        this->variables.insert(from_var);
+
+        auto to_var = std::make_shared<VB>(to);
+        this->variables.insert(to_var);
+
+        auto factor = std::make_shared<BinaryFactor<T>>(from_var, to_var, z);
+        this->factors.push_back(factor);
+
+        // store key-factor pairs
+        auto val1 = std::make_pair(from_var, factor);
+        this->graph.insert(val1);
+
+        auto val2 = std::make_pair(to_var, factor);
+        this->graph.insert(val2);
+
+        return 0;
+    }
+
+    std::string toString() {
+        std::ostringstream oss;
+        int index = 0;
+
+        for (auto f : this->factors) {
+            oss << "f" << index << " -- ";
+            oss << f->toString() << std::endl;
+            index++;
+        }
+
+        return oss.str();
+    }
+
+    void print() {
+        std::cout << this->toString() << std::endl;
+    }
 };
 
 }  // end of wave namespace

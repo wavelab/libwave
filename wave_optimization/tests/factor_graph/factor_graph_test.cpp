@@ -4,41 +4,35 @@
 
 namespace wave {
 
-TEST(Factor, constructor) {
-    Factor f1(2, 100);
-    ASSERT_EQ(1, f1.arity);
-    ASSERT_EQ(2, f1.connections[0]);
-    ASSERT_EQ(100, *static_cast<double *>(f1.measurement));
-
-    Factor f2(1, 2, 100);
-    ASSERT_EQ(2, f2.arity);
-    ASSERT_EQ(1, f2.connections[0]);
-    ASSERT_EQ(2, f2.connections[1]);
-    ASSERT_EQ(100, *static_cast<double *>(f2.measurement));
-}
-
 TEST(FactorGraph, addUnaryFactor) {
     FactorGraph graph;
-    graph.addUnaryFactor(1, 2);
+    graph.addUnaryFactor<PoseVar, double>(1, 2.0);
+    graph.addUnaryFactor<PoseVar, int>(1, 1);
 
-    ASSERT_EQ(1, (int) graph.graph.size());
-    ASSERT_EQ(1, (int) graph.factors.size());
+    ASSERT_EQ(2u, graph.graph.size());
+    ASSERT_EQ(2u, graph.factors.size());
 }
 
 TEST(FactorGraph, addBinaryFactor) {
     FactorGraph graph;
 
-    graph.addBinaryFactor(1, 2, 2);
-    ASSERT_EQ(2, (int) graph.graph.size());
-    ASSERT_EQ(1, (int) graph.factors.size());
+    graph.addBinaryFactor<PoseVar, PoseVar, double>(1, 2, 2);
+    ASSERT_EQ(2u, graph.graph.size());
+    ASSERT_EQ(1u, graph.factors.size());
 }
 
 TEST(FactorGraph, print) {
     FactorGraph graph;
 
-    graph.addUnaryFactor(1, 2);
-    graph.addBinaryFactor(1, 2, 2);
-    graph.addBinaryFactor(2, 3, 2);
+    graph.addUnaryFactor<PoseVar, int>(1, 1);
+    graph.addBinaryFactor<PoseVar, PoseVar, int>(2, 3, 2);
+    graph.addBinaryFactor<PoseVar, PoseVar, int>(3, 4, 3);
+
+    Vec2 z;
+    z << 100.0, 200.0;
+    graph.addBinaryFactor<PoseVar, PoseVar, Vec2>(1, 2, z);
+    graph.addBinaryFactor<PoseVar, PoseVar, Vec2>(2, 3, z);
+
     graph.print();
 }
 

@@ -14,7 +14,6 @@ ADD_LIBRARY(
     wave_optimization
     STATIC
     src/ceres/ceres_examples.cpp
-    src/factor_graph/factor_graph.cpp
 )
 SET(
     TEST_DEPS
@@ -33,6 +32,8 @@ ADD_EXECUTABLE(
     # TESTS
     tests/ceres/ceres_examples_test.cpp
     tests/factor_graph/factor_graph_test.cpp
+    tests/factor_graph/factor_test.cpp
+    tests/factor_graph/variable_test.cpp
     # TEST RUNNER
     tests/test_runner.cpp
 )
