@@ -4,7 +4,7 @@
 #include <iostream>
 #include <functional>
 
-#include "wave/kinematics/rotation.hpp"
+#include "wave/geometry/rotation.hpp"
 #include "wave/utils/utils.hpp"
 #include <kindr/Core>
 

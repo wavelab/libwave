@@ -1,4 +1,4 @@
-# wave.kinematics.rotation
+# wave.geometry.rotation
 
 Our rotation library component internally uses the Kindr library's rotation class to perform elementary operations. For more information on the Kindr library rotations, see their documentation [here](http://docs.leggedrobotics.com/kindr/page_rotations.html).
 

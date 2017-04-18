@@ -3,8 +3,8 @@
 
 #include <gtest/gtest.h>
 
-#include "wave/kinematics/numerical_test_functors.hpp"
-#include "wave/kinematics/rotation.hpp"
+#include "wave/geometry/numerical_test_functors.hpp"
+#include "wave/geometry/rotation.hpp"
 #include "wave/utils/math.hpp"
 #include "wave/utils/utils.hpp"
 
