@@ -31,7 +31,10 @@ SET(WAVE_MATCHING_TEST_DEPS
     gtest
     ${CMAKE_THREAD_LIBS_INIT})
 
-ADD_LIBRARY(wave_matching STATIC src/icp.cpp src/ndt.cpp)
+ADD_LIBRARY(wave_matching 
+            STATIC
+            src/icp.cpp
+            src/ndt.cpp)
 TARGET_LINK_LIBRARIES(wave_matching ${WAVE_MATCHING_DEPS})
 
 # Unit tests
