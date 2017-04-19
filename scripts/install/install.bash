@@ -4,13 +4,11 @@ set -e  # exit on first error
 clone_libwave() {
     if [ ! -d libwave ]
     then
-        echo "Clonging libwave to current directory"
+        echo "Cloning libwave to current directory"
         git clone https://github.com/wavelab/libwave
     else
         echo "Updating libwave to latest"
-        cd libwave
-        git pull
-        cd -
+        git -C libwave pull
     fi
 }
 
