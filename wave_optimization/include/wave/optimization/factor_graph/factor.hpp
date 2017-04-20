@@ -9,8 +9,8 @@
 namespace wave {
 
 struct Factor {
-    int arity;
-    std::vector<std::shared_ptr<Variable>> variables;
+    const int arity;
+    const std::vector<std::shared_ptr<Variable>> variables;
 
     Factor() : arity{0}, variables{} {}
 
@@ -20,7 +20,7 @@ struct Factor {
            const std::shared_ptr<Variable> &to)
         : arity{2}, variables{from, to} {}
 
-    std::string toString() {
+    virtual std::string toString() {
         std::ostringstream oss;
 
         switch (this->arity) {
@@ -42,7 +42,7 @@ struct Factor {
         return oss.str();
     }
 
-    void print() {
+    virtual void print() {
         std::cout << this->toString() << std::endl;
     }
 };

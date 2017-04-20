@@ -5,27 +5,23 @@
 namespace wave {
 
 TEST(Variable, constructor) {
-    Variable var1(VariableType::POSE, 1);
-    EXPECT_EQ(VariableType::POSE, var1.type);
+    Variable var1(1, 2);
     EXPECT_EQ(1u, var1.id);
-
-    Variable var2(VariableType::LANDMARK, 2);
-    EXPECT_EQ(VariableType::LANDMARK, var2.type);
-    EXPECT_EQ(2u, var2.id);
+    EXPECT_EQ(2u, var1.size);
 }
 
 TEST(PoseVar, constructor) {
     PoseVar var(1);
 
-    EXPECT_EQ(VariableType::POSE, var.type);
     EXPECT_EQ(1u, var.id);
+    EXPECT_EQ(6u, var.size);
 }
 
 TEST(LandmarkVar, constructor) {
     LandmarkVar var(2);
 
-    EXPECT_EQ(VariableType::LANDMARK, var.type);
     EXPECT_EQ(2u, var.id);
+    EXPECT_EQ(3u, var.size);
 }
 
 }  // end of wave namespace

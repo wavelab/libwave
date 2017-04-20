@@ -3,26 +3,19 @@
 
 namespace wave {
 
-enum class VariableType { NOT_SET = 0, POSE = 1, LANDMARK = 2 };
-
 struct Variable {
-    VariableType type;
     size_t id;
+    size_t size;
 
-    Variable() : type(VariableType::NOT_SET), id{0} {}
-    Variable(VariableType type, size_t id) : type{type}, id{id} {}
+    Variable() : id{0}, size{0} {}
+    Variable(size_t id, size_t size) : id{id}, size{size} {}
 
     std::string toString() {
         std::ostringstream oss;
 
         oss << "[";
         oss << "id: " << this->id << ", ";
-        oss << "var_type: ";
-        switch (this->type) {
-            case VariableType::POSE: oss << "POSE"; break;
-            case VariableType::LANDMARK: oss << "LANDMARK"; break;
-            default: oss << "NOT_SET"; break;
-        }
+        oss << "size: " << this->size;
         oss << "]";
 
         return oss.str();
@@ -41,11 +34,11 @@ struct Variable {
 };
 
 struct PoseVar : Variable {
-    PoseVar(size_t id) : Variable{VariableType::POSE, id} {}
+    PoseVar(size_t id) : Variable{id, 6} {}
 };
 
 struct LandmarkVar : Variable {
-    LandmarkVar(size_t id) : Variable{VariableType::LANDMARK, id} {}
+    LandmarkVar(size_t id) : Variable{id, 3} {}
 };
 
 }  // end of wave namespace
