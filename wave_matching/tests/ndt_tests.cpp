@@ -5,16 +5,16 @@
 #include <pcl/io/pcd_io.h>
 #include <Eigen/Dense>
 
-#include "wave/matching/icp.hpp"
+#include "wave/matching/ndt.hpp"
 
 namespace wave {
 
 // Fixture to load same pointcloud all the time
-class ICPTest : public testing::Test {
+class NDTTest : public testing::Test {
  protected:
-    ICPTest() {}
+    NDTTest() {}
 
-    virtual ~ICPTest() {
+    virtual ~NDTTest() {
         if (this->matcher) {
             delete this->matcher;
         }
@@ -27,22 +27,22 @@ class ICPTest : public testing::Test {
     }
 
     void initMatcher(const float res, const Eigen::Affine3d perturb) {
-        this->matcher = new ICPMatcher(res, "config/icp.yaml");
+        this->matcher = new NDTMatcher(res, "config/ndt.yaml");
         pcl::transformPointCloud(*(this->ref), *(this->target), perturb);
         this->matcher->setup(this->ref, this->target);
     }
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr ref, target;
-    ICPMatcher *matcher;
-    const float threshold = 0.1;
+    NDTMatcher *matcher;
+    const float threshold = 0.12;
 };
 
-TEST(ICPTests, initialization) {
-    ICPMatcher matcher(0.1f, "config/icp.yaml");
+TEST(NDTTests, initialization) {
+    NDTMatcher matcher(1.0f, "config/ndt.yaml");
 }
 
-// Zero displacement without downsampling
-TEST_F(ICPTest, fullResNullMatch) {
+// Zero displacement using resolution from config
+TEST_F(NDTTest, fullResNullMatch) {
     Eigen::Affine3d perturb;
     Eigen::Affine3d result;
     bool match_success = false;
@@ -57,15 +57,15 @@ TEST_F(ICPTest, fullResNullMatch) {
     EXPECT_LT(diff, this->threshold);
 }
 
-// Zero displacement using voxel downsampling
-TEST_F(ICPTest, nullDisplacement) {
+// Zero displacement using resolution set by constructor
+TEST_F(NDTTest, nullDisplacement) {
     Eigen::Affine3d perturb;
     Eigen::Affine3d result;
     bool match_success = false;
     // Setup
     perturb = Eigen::Affine3d::Identity();
     perturb.translation() << 0, 0, 0;
-    this->initMatcher(0.05f, perturb);
+    this->initMatcher(2.5f, perturb);
     // test and assert
     match_success = matcher->match();
     double diff = (matcher->getResult().matrix() - perturb.matrix()).norm();
@@ -73,15 +73,15 @@ TEST_F(ICPTest, nullDisplacement) {
     EXPECT_LT(diff, this->threshold);
 }
 
-// Small displacement using voxel downsampling
-TEST_F(ICPTest, smallDisplacement) {
+// Small displacement using resolution set by constructor
+TEST_F(NDTTest, smallDisplacement) {
     Eigen::Affine3d perturb;
     Eigen::Affine3d result;
     bool match_success = false;
     // Setup
     perturb = Eigen::Affine3d::Identity();
     perturb.translation() << 0.2, 0, 0;
-    this->initMatcher(0.05f, perturb);
+    this->initMatcher(2.5f, perturb);
     // test and assert
     match_success = matcher->match();
     double diff = (matcher->getResult().matrix() - perturb.matrix()).norm();

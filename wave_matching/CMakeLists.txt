@@ -29,10 +29,14 @@ SET(WAVE_MATCHING_TEST_DEPS
     gtest
     ${CMAKE_THREAD_LIBS_INIT})
 
-ADD_LIBRARY(wave_matching STATIC src/icp.cpp)
+# LIBRARY
+ADD_LIBRARY(wave_matching
+            STATIC
+            src/icp.cpp
+            src/ndt.cpp)
 TARGET_LINK_LIBRARIES(wave_matching ${WAVE_MATCHING_DEPS})
 
-# Unit tests
+# UNIT TESTS
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
 FILE(COPY tests/data DESTINATION ${PROJECT_BINARY_DIR}/tests)
 FILE(COPY config DESTINATION ${PROJECT_BINARY_DIR}/tests)
@@ -42,6 +46,7 @@ ADD_EXECUTABLE(
     wave_matching_tests
     # TESTS
     tests/icp_tests.cpp
+    tests/ndt_tests.cpp
     # TEST RUNNER
     tests/test_runner.cpp
 )
