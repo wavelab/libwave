@@ -6,9 +6,9 @@
 #include <Eigen/Geometry>
 
 namespace wave {
-// define exception
+  
 class ConfigException : public __exception {
-    virtual const char* what() const throw() {
+    virtual const char *what() const throw() {
         return "Failed to Load Matcher Config";
     }
 };
@@ -21,6 +21,8 @@ class Matcher {
     Matcher() {
         resolution = -1;
     }
+
+    virtual ~Matcher() {}
 
     const Eigen::Affine3d &getResult() {
         return this->result;
