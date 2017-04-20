@@ -15,6 +15,8 @@ class Matcher {
         resolution = -1;
     }
 
+    virtual ~Matcher() {}
+
     const Eigen::Affine3d &getResult() {
         return this->result;
     };
