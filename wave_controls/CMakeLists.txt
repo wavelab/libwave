@@ -1,9 +1,6 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8.8)
 PROJECT(wave_controls)
 
-# DEPENDENCIES
-LINK_DIRECTORIES(build/deps/googletest/googletest)
-
 # SETTINGS
 INCLUDE_DIRECTORIES(/usr/include/eigen3)
 

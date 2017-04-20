@@ -1,8 +1,6 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8.3)
 PROJECT(wave_matching)
 
-SET(CMAKE_BUILD_TYPE Release)
-
 FIND_PACKAGE(PCL REQUIRED common registration point_types io)
 FIND_PACKAGE(OpenCV REQUIRED)
 
@@ -31,13 +29,14 @@ SET(WAVE_MATCHING_TEST_DEPS
     gtest
     ${CMAKE_THREAD_LIBS_INIT})
 
-ADD_LIBRARY(wave_matching 
+# LIBRARY
+ADD_LIBRARY(wave_matching
             STATIC
             src/icp.cpp
             src/ndt.cpp)
 TARGET_LINK_LIBRARIES(wave_matching ${WAVE_MATCHING_DEPS})
 
-# Unit tests
+# UNIT TESTS
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
 FILE(COPY tests/data DESTINATION ${PROJECT_BINARY_DIR}/tests)
 FILE(COPY config DESTINATION ${PROJECT_BINARY_DIR}/tests)
