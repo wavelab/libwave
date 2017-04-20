@@ -10,7 +10,6 @@
 namespace wave {
 
 class ICPMatcher : public Matcher<PCLPointCloud> {
- public:
     explicit ICPMatcher(float resolution, const std::string& config_path);
     ~ICPMatcher();
     void setRef(const PCLPointCloud &ref);
