@@ -33,7 +33,8 @@ SET(WAVE_MATCHING_TEST_DEPS
 ADD_LIBRARY(wave_matching
             STATIC
             src/icp.cpp
-            src/ndt.cpp)
+            src/ndt.cpp
+            src/g_icp.cpp)
 TARGET_LINK_LIBRARIES(wave_matching ${WAVE_MATCHING_DEPS})
 
 # UNIT TESTS
