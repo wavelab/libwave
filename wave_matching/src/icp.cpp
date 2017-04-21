@@ -7,6 +7,7 @@ ICPMatcher::ICPMatcher(float res, const std::string &config_path) {
     this->ref = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
     this->target = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
     this->final = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+  
     if (res > 0) {
         this->resolution = res;
         this->filter.setLeafSize(res, res, res);

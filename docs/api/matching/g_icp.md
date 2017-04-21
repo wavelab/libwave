@@ -1,4 +1,4 @@
-# wave/matching/g_icp.hpp
+# wave/matching/icp.hpp
 
 This is a wrap of ICP in PCL
 
@@ -14,17 +14,17 @@ This type definition is used as a shorthand for the pointcloud object type used
 by the scan matching implementations in PCL. A number of those implementations are
 wrapped, so they use the same datatype for the pointcloud.
 
-## GICP Matcher
+## ICP Matcher
 
-    class GICPMatcher : public Matcher<PCLPointCloud> {
+    class ICPMatcher : public Matcher<PCLPointCloud> {
      public:
-        explicit GICPMatcher(float resolution, const std::string& config_path);
+        explicit ICPMatcher(float resolution, const std::string& config_path);
         void setRef(const PCLPointCloud &ref);
         void setTarget(const PCLPointCloud &target);
         bool match();
 
      private:
-        pcl::GeneralizedIterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> gicp;
+        pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
         pcl::VoxelGrid<pcl::PointXYZ> filter;
         PCLPointCloud ref, target, final;
     };
@@ -35,7 +35,8 @@ wrapped, so they use the same datatype for the pointcloud.
 There are a few parameters that may be changed specific to this algorithm. They
 can be set in the yaml config file.
 
-* corr_rand: nearest neighbour correspondences used to calculate distributions
+* max_corr: correspondences behind this many distance-units are
+discarded
 * max_iter: Limits number of ICP iterations
 * t_eps: Criteria to stop iterating. If the difference between consecutive transformations is less than this, stop.
 * fit_eps: Criteria to stop iterating. If the cost function does
@@ -54,9 +55,9 @@ config_path is the path to the yaml config file
 
 ### Private Members
 
-    pcl::GeneralizedIterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp
+    pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp
 
-This is an instance of the G-ICP class from PCL
+This is an instance of the ICP class from PCL
 
 ---
 
