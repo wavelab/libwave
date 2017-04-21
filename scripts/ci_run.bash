@@ -20,5 +20,5 @@ run_module_tests wave_controls
 run_module_tests wave_geometry
 run_module_tests wave_kinematics
 run_module_tests wave_optimization
-run_module_tests wave_matching
+# run_module_tests wave_matching
 run_module_tests wave_utils
