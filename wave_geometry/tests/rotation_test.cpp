@@ -10,7 +10,6 @@
 
 namespace wave {
 
-
 class RotationTestFixture : public ::testing::Test {
  public:
     // Data members used for testing.

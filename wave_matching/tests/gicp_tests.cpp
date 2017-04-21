@@ -1,13 +1,12 @@
-// Tests for wrapper
-
-#include <gtest/gtest.h>
 #include <pcl/io/pcd_io.h>
-#include <Eigen/Dense>
-#include <iostream>
 
-#include "wave/matching/g_icp.hpp"
+#include "wave/wave_test.hpp"
+#include "wave/matching/gicp.hpp"
 
 namespace wave {
+
+#define TEST_SCAN "tests/data/testscan.pcd"
+#define TEST_CONFIG "tests/config/g_icp.yaml"
 
 // Fixture to load same pointcloud all the time
 class GICPTest : public testing::Test {
@@ -23,11 +22,11 @@ class GICPTest : public testing::Test {
     virtual void SetUp() {
         this->ref = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
         this->target = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
-        pcl::io::loadPCDFile("data/testscan.pcd", *(this->ref));
+        pcl::io::loadPCDFile(TEST_SCAN, *(this->ref));
     }
 
-    void setParams(const float res, const Eigen::Affine3d perturb) {
-        this->matcher = new GICPMatcher(res, "config/g_icp.yaml");
+    void setParams(const float res, const Affine3 perturb) {
+        this->matcher = new GICPMatcher(res, TEST_CONFIG);
         pcl::transformPointCloud(*(this->ref), *(this->target), perturb);
         this->matcher->setup(this->ref, this->target);
     }
@@ -37,18 +36,20 @@ class GICPTest : public testing::Test {
 };
 
 TEST(gicp_tests, initialization) {
-    GICPMatcher matcher(0.1f, "config/g_icp.yaml");
+    GICPMatcher matcher(0.1f, TEST_CONFIG);
 }
 
 // Zero displacement without downsampling
 TEST_F(GICPTest, fullResNullMatch) {
-    Eigen::Affine3d perturb;
-    Eigen::Affine3d result;
+    Affine3 perturb;
+    Affine3 result;
     bool match_success = false;
-    // Setup
-    perturb = Eigen::Affine3d::Identity();
+
+    // setup
+    perturb = Affine3::Identity();
     perturb.translation() << 0, 0, 0;
     this->setParams(-1, perturb);
+
     // test and assert
     match_success = matcher->match();
     double diff = (matcher->getResult().matrix() - perturb.matrix()).norm();
@@ -58,13 +59,15 @@ TEST_F(GICPTest, fullResNullMatch) {
 
 // Zero displacement using voxel downsampling
 TEST_F(GICPTest, nullDisplacement) {
-    Eigen::Affine3d perturb;
-    Eigen::Affine3d result;
+    Affine3 perturb;
+    Affine3 result;
     bool match_success = false;
-    // Setup
-    perturb = Eigen::Affine3d::Identity();
+
+    // setup
+    perturb = Affine3::Identity();
     perturb.translation() << 0, 0, 0;
     this->setParams(0.05f, perturb);
+
     // test and assert
     match_success = matcher->match();
     double diff = (matcher->getResult().matrix() - perturb.matrix()).norm();
@@ -74,13 +77,15 @@ TEST_F(GICPTest, nullDisplacement) {
 
 // Small displacement using voxel downsampling
 TEST_F(GICPTest, smallDisplacement) {
-    Eigen::Affine3d perturb;
-    Eigen::Affine3d result;
+    Affine3 perturb;
+    Affine3 result;
     bool match_success = false;
-    // Setup
-    perturb = Eigen::Affine3d::Identity();
+
+    // setup
+    perturb = Affine3::Identity();
     perturb.translation() << 0.2, 0, 0;
     this->setParams(0.05f, perturb);
+
     // test and assert
     match_success = matcher->match();
     double diff = (matcher->getResult().matrix() - perturb.matrix()).norm();

@@ -4,6 +4,7 @@
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 #include <pcl/registration/ndt.h>
+
 #include "wave/matching/matcher.hpp"
 #include "wave/matching/pcl_common.hpp"
 
@@ -24,5 +25,4 @@ class NDTMatcher : public Matcher<PCLPointCloud> {
 };
 
 }  // end of namespace wave
-
 #endif  // WAVE_MATCHING_ICP_HPP

@@ -1,13 +1,12 @@
-// Tests for wrapper
-
-#include <iostream>
-#include <gtest/gtest.h>
 #include <pcl/io/pcd_io.h>
-#include <Eigen/Dense>
 
+#include "wave/wave_test.hpp"
 #include "wave/matching/icp.hpp"
 
 namespace wave {
+
+#define TEST_SCAN "tests/data/testscan.pcd"
+#define TEST_CONFIG "tests/config/icp.yaml"
 
 // Fixture to load same pointcloud all the time
 class ICPTest : public testing::Test {
@@ -23,11 +22,11 @@ class ICPTest : public testing::Test {
     virtual void SetUp() {
         this->ref = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
         this->target = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
-        pcl::io::loadPCDFile("data/testscan.pcd", *(this->ref));
+        pcl::io::loadPCDFile(TEST_SCAN, *(this->ref));
     }
 
-    void initMatcher(const float res, const Eigen::Affine3d perturb) {
-        this->matcher = new ICPMatcher(res, "config/icp.yaml");
+    void initMatcher(const float res, const Affine3 perturb) {
+        this->matcher = new ICPMatcher(res, TEST_CONFIG);
         pcl::transformPointCloud(*(this->ref), *(this->target), perturb);
         this->matcher->setup(this->ref, this->target);
     }
@@ -38,18 +37,20 @@ class ICPTest : public testing::Test {
 };
 
 TEST(ICPTests, initialization) {
-    ICPMatcher matcher(0.1f, "config/icp.yaml");
+    ICPMatcher matcher(0.1f, TEST_CONFIG);
 }
 
 // Zero displacement without downsampling
 TEST_F(ICPTest, fullResNullMatch) {
-    Eigen::Affine3d perturb;
-    Eigen::Affine3d result;
+    Affine3 perturb;
+    Affine3 result;
     bool match_success = false;
-    // Setup
-    perturb = Eigen::Affine3d::Identity();
+
+    // setup
+    perturb = Affine3::Identity();
     perturb.translation() << 0, 0, 0;
     this->initMatcher(-1, perturb);
+
     // test and assert
     match_success = matcher->match();
     double diff = (matcher->getResult().matrix() - perturb.matrix()).norm();
@@ -59,13 +60,15 @@ TEST_F(ICPTest, fullResNullMatch) {
 
 // Zero displacement using voxel downsampling
 TEST_F(ICPTest, nullDisplacement) {
-    Eigen::Affine3d perturb;
-    Eigen::Affine3d result;
+    Affine3 perturb;
+    Affine3 result;
     bool match_success = false;
-    // Setup
-    perturb = Eigen::Affine3d::Identity();
+
+    // setup
+    perturb = Affine3::Identity();
     perturb.translation() << 0, 0, 0;
     this->initMatcher(0.05f, perturb);
+
     // test and assert
     match_success = matcher->match();
     double diff = (matcher->getResult().matrix() - perturb.matrix()).norm();
@@ -75,13 +78,15 @@ TEST_F(ICPTest, nullDisplacement) {
 
 // Small displacement using voxel downsampling
 TEST_F(ICPTest, smallDisplacement) {
-    Eigen::Affine3d perturb;
-    Eigen::Affine3d result;
+    Affine3 perturb;
+    Affine3 result;
     bool match_success = false;
-    // Setup
-    perturb = Eigen::Affine3d::Identity();
+
+    // setup
+    perturb = Affine3::Identity();
     perturb.translation() << 0.2, 0, 0;
     this->initMatcher(0.05f, perturb);
+
     // test and assert
     match_success = matcher->match();
     double diff = (matcher->getResult().matrix() - perturb.matrix()).norm();
