@@ -10,8 +10,8 @@ struct Variable {
     size_t size;
     VecX data;
 
-    Variable() : id{0}, size{0}, data{VecX(0)} {}
-    Variable(size_t id, size_t size) : id{id}, size{size}, data{VecX(size)} {}
+    Variable() : id{0}, size{0}, data{0} {}
+    Variable(size_t id, size_t size) : id{id}, size{size}, data{size} {}
 
     std::string toString() {
         std::ostringstream oss;
@@ -41,11 +41,15 @@ struct Variable {
 };
 
 struct PoseVar : Variable {
-    PoseVar(size_t id) : Variable{id, 6} {}
+    PoseVar(size_t id) : Variable{id, 6} {
+        this->data.fill(0.0);
+    }
 };
 
 struct LandmarkVar : Variable {
-    LandmarkVar(size_t id) : Variable{id, 3} {}
+    LandmarkVar(size_t id) : Variable{id, 3} {
+        this->data.fill(0.0);
+    }
 };
 
 }  // end of wave namespace

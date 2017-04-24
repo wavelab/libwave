@@ -15,6 +15,7 @@ TEST(PoseVar, constructor) {
 
     EXPECT_EQ(1u, var.id);
     EXPECT_EQ(6u, var.size);
+    EXPECT_EQ(6u, var.data.size());
 }
 
 TEST(LandmarkVar, constructor) {
@@ -22,6 +23,7 @@ TEST(LandmarkVar, constructor) {
 
     EXPECT_EQ(2u, var.id);
     EXPECT_EQ(3u, var.size);
+    EXPECT_EQ(3u, var.data.size());
 }
 
 }  // end of wave namespace
