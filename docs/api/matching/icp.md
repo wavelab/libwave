@@ -1,4 +1,4 @@
-# wave/matching/icp.hpp
+# wave/matching/g_icp.hpp
 
 This is a wrap of ICP in PCL
 
@@ -14,17 +14,17 @@ This type definition is used as a shorthand for the pointcloud object type used
 by the scan matching implementations in PCL. A number of those implementations are
 wrapped, so they use the same datatype for the pointcloud.
 
-## ICP Matcher
+## GICP Matcher
 
-    class ICPMatcher : public Matcher<PCLPointCloud> {
+    class GICPMatcher : public Matcher<PCLPointCloud> {
      public:
-        explicit ICPMatcher(float resolution);
+        explicit GICPMatcher(float resolution, const std::string& config_path);
         void setRef(const PCLPointCloud &ref);
         void setTarget(const PCLPointCloud &target);
         bool match();
 
      private:
-        pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
+        pcl::GeneralizedIterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> gicp;
         pcl::VoxelGrid<pcl::PointXYZ> filter;
         PCLPointCloud ref, target, final;
     };
@@ -35,27 +35,28 @@ wrapped, so they use the same datatype for the pointcloud.
 There are a few parameters that may be changed specific to this algorithm. They
 can be set in the yaml config file.
 
-* MaxCorrespondenceDistance: correspondences behind this many distance-units are
-discarded
-* MaximumIterations: Limits number of ICP iterations
-* TransformationEpsilon: Criteria to stop iterating. If the difference between consecutive transformations is less than this, stop.
-* EuclideanFitnessEpsilon: Criteria to stop iterating. If the cost function does
+* corr_rand: nearest neighbour correspondences used to calculate distributions
+* max_iter: Limits number of ICP iterations
+* t_eps: Criteria to stop iterating. If the difference between consecutive transformations is less than this, stop.
+* fit_eps: Criteria to stop iterating. If the cost function does
 not improve by more than this quantity, stop.
 
 ### Constructor
 
-    explicit ICPMatcher(float resolution);
+    explicit ICPMatcher(float resolution, const std::string& config_path);
 
 This constructor takes an argument in order to adjust how much downsampling is
 done before matching is attempted. Pointclouds are downsampled using a voxel filter,
 the argument is the edge length of each voxel. If resolution is non-positive,
-no downsampling is used
+no downsampling is used.
+
+config_path is the path to the yaml config file
 
 ### Private Members
 
-    pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp
+    pcl::GeneralizedIterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp
 
-This is an instance of the ICP class from PCL
+This is an instance of the G-ICP class from PCL
 
 ---
 

@@ -3,32 +3,48 @@
 
 namespace wave {
 
-ICPMatcher::ICPMatcher(float res) {
-    this->ref = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
-    this->target = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
-    this->final = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
+ICPMatcher::ICPMatcher(float res, const std::string &config_path) {
+    this->ref = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+    this->target = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+    this->final = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+
     if (res > 0) {
         this->resolution = res;
         this->filter.setLeafSize(res, res, res);
     } else {
         this->resolution = -1;
     }
-    wave::ConfigParser parser;
+    ConfigParser parser;
 
-    double max_corr = 3, t_eps = 1e-8, fit_eps = 1e-2;
-    int max_iter = 100;
+    double max_corr, t_eps, fit_eps;
+    int max_iter;
 
-    parser.addParam("icp.maxCorrespondence", &max_corr);
-    parser.addParam("icp.maxIterations", &max_iter);
-    parser.addParam("icp.transformationEpsilon", &t_eps);
-    parser.addParam("icp.euclideanFitnessEpsilon", &fit_eps);
+    parser.addParam("icp.max_corr", &max_corr);
+    parser.addParam("icp.max_iter", &max_iter);
+    parser.addParam("icp.t_eps", &t_eps);
+    parser.addParam("icp.fit_eps", &fit_eps);
 
-    parser.load("config/icp.yaml");
+    if (parser.load(config_path) != 0) {
+        ConfigException config_exception;
+        throw config_exception;
+    }
 
     this->icp.setMaxCorrespondenceDistance(max_corr);
     this->icp.setMaximumIterations(max_iter);
     this->icp.setTransformationEpsilon(t_eps);
     this->icp.setEuclideanFitnessEpsilon(fit_eps);
+}
+
+ICPMatcher::~ICPMatcher() {
+    if (this->ref) {
+        this->ref.reset();
+    }
+    if (this->target) {
+        this->target.reset();
+    }
+    if (this->final) {
+        this->final.reset();
+    }
 }
 
 void ICPMatcher::setRef(const PCLPointCloud &ref) {

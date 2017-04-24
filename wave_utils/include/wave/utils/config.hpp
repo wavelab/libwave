@@ -49,6 +49,7 @@ enum ConfigDataType {
 class ConfigParam {
  public:
     enum ConfigDataType type = TYPE_NOT_SET;
+
     std::string key;
     void *data = nullptr;
     bool optional = false;
