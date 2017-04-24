@@ -47,6 +47,9 @@ ADD_DEPENDENCIES(wave_optimization wave_utils)
 # libwave_utils.a
 ADD_SUBDIRECTORY(wave_utils)
 
+# wave_containers: header-only library
+ADD_SUBDIRECTORY(wave_containers)
+
 # libwave.a
 ADD_CUSTOM_TARGET(
     libwave ALL
