@@ -9,16 +9,14 @@ using TimeType = std::chrono::steady_clock::time_point;
 
 /** Generic measurement storage type designed to be used with
  * MeasurementContainer. */
-template<typename T, typename S>
+template <typename T, typename S>
 struct Measurement {
     TimeType time_point;
     S sensor_id;
     T value;
 
-    Measurement(const TimeType &t, const S &s, const T &v) :
-            time_point{t},
-            sensor_id{s},
-            value{v} {}
+    Measurement(const TimeType &t, const S &s, const T &v)
+        : time_point{t}, sensor_id{s}, value{v} {}
 };
 
 /** Perform linear interpolation (or extrapolation) between two measurements.
@@ -27,7 +25,7 @@ struct Measurement {
  * For measurements requiring non-linear interpolation, you may provide your own
  * specialization.
  */
-template<typename T>
+template <typename T>
 decltype(T::value) interpolate(const T &m1, const T &m2, const TimeType &t) {
     auto w2 = 1.0 * (t - m1.time_point) / (m2.time_point - m1.time_point);
     return (1 - w2) * m1.value + w2 * m2.value;

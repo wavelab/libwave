@@ -14,8 +14,8 @@ TEST(Utils_measurement, insert) {
     MeasurementContainer<TestMeasurement> m;
     auto now = std::chrono::steady_clock::now();
 
-    const auto
-            meas = Measurement<double, SomeSensors>{now, SomeSensors::S1, 2.5};
+    const auto meas =
+      Measurement<double, SomeSensors>{now, SomeSensors::S1, 2.5};
 
     auto res = m.insert(meas);
 
