@@ -54,18 +54,25 @@ ADD_SUBDIRECTORY(wave_containers)
 ADD_CUSTOM_TARGET(
     libwave ALL
     COMMAND
-        ${CMAKE_AR} rc libwave.a
+      ${CMAKE_AR} rc libwave.a
             ${CMAKE_BINARY_DIR}/wave_controls/libwave_controls.a
-	    ${CMAKE_BINARY_DIR}/wave_geometry/libwave_geometry.a
+            ${CMAKE_BINARY_DIR}/wave_geometry/libwave_geometry.a
             ${CMAKE_BINARY_DIR}/wave_kinematics/libwave_kinematics.a
             ${CMAKE_BINARY_DIR}/wave_matching/libwave_matching.a
             ${CMAKE_BINARY_DIR}/wave_optimization/libwave_optimization.a
             ${CMAKE_BINARY_DIR}/wave_utils/libwave_utils.a
     DEPENDS
         wave_controls
-	wave_geometry
+        wave_geometry
         wave_kinematics
         wave_matching
         wave_optimization
         wave_utils
 )
+INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/libwave.a DESTINATION /usr/local/lib)
+INSTALL(DIRECTORY wave_controls/include/ DESTINATION /usr/local/include)
+INSTALL(DIRECTORY wave_geometry/include/ DESTINATION /usr/local/include)
+INSTALL(DIRECTORY wave_kinematics/include/ DESTINATION /usr/local/include)
+INSTALL(DIRECTORY wave_matching/include/ DESTINATION /usr/local/include)
+INSTALL(DIRECTORY wave_optimization/include/ DESTINATION /usr/local/include)
+INSTALL(DIRECTORY wave_utils/include/ DESTINATION /usr/local/include)
