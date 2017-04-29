@@ -1,6 +1,7 @@
 #include "wave/kinematics/quadrotor.hpp"
 
 namespace wave {
+namespace quadrotor {
 
 // ATTITUDE CONTROLLER
 Vec4 AttitudeController::update(const Vec4 &setpoints,
@@ -166,13 +167,13 @@ int QuadrotorModel::update(const VecX &motor_inputs, double dt) {
     // convert motor inputs to angular p, q, r and total thrust
     // clang-format off
     Mat4 A;
+    Vec4 tau;
     A << 1.0, 1.0, 1.0, 1.0,
          0.0, -this->l, 0.0, this->l,
          -this->l, 0.0, this->l, 0.0,
          -this->d, this->d, -this->d, this->d;
     // clang-format on
-
-    Vec4 tau = A * motor_inputs;
+    tau = A * motor_inputs;
     double tauf = tau(0);
     double taup = tau(1);
     double tauq = tau(2);
@@ -310,4 +311,5 @@ void QuadrotorModel::printState(void) {
     printf("psi: %f\n", this->attitude(2));
 }
 
+}  // end of quadrotor namespace
 }  // end of wave namespace

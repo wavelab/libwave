@@ -8,6 +8,7 @@
 #include "wave/controls/pid.hpp"
 
 namespace wave {
+namespace quadrotor {
 
 class AttitudeController {
  public:
@@ -19,11 +20,11 @@ class AttitudeController {
     PID yaw_controller;
 
     AttitudeController()
-        : dt(0.0),
-          outputs(),
-          roll_controller(200.0, 0.5, 10.0),
-          pitch_controller(200.0, 0.5, 10.0),
-          yaw_controller(200.0, 0.5, 10.0) {}
+        : dt{0.0},
+          outputs{0.0, 0.0, 0.0, 0.0},
+          roll_controller{200.0, 0.5, 10.0},
+          pitch_controller{200.0, 0.5, 10.0},
+          yaw_controller{200.0, 0.5, 10.0} {}
 
     Vec4 update(const Vec4 &setpoints, const Vec4 &actual, double dt);
     Vec4 update(const Vec4 &psetpoints,
@@ -42,11 +43,11 @@ class PositionController {
     PID z_controller;
 
     PositionController()
-        : dt(0.0),
-          outputs(),
-          x_controller(0.5, 0.0, 0.035),
-          y_controller(0.5, 0.0, 0.035),
-          z_controller(0.5, 0.0, 0.018) {}
+        : dt{0.0},
+          outputs{},
+          x_controller{0.5, 0.0, 0.035},
+          y_controller{0.5, 0.0, 0.035},
+          z_controller{0.5, 0.0, 0.018} {}
 
     Vec4 update(const Vec3 &setpoints,
                 const Vec4 &actual,
@@ -94,7 +95,7 @@ class QuadrotorModel {
           d(1.0),      // drag
           m(1.0),      // mass of quad
           g(10.0),     // gravitational constant
-          attitude_setpoints(0, 0, 0, 0),
+          attitude_setpoints(0, 0, 0, 0.5),
           position_setpoints(0, 0, 0),
           attitude_controller(),
           position_controller() {}
@@ -113,7 +114,7 @@ class QuadrotorModel {
           d(1.0),      // drag
           m(1.0),      // mass of quad
           g(10.0),     // gravitational constant
-          attitude_setpoints(0, 0, 0, 0),
+          attitude_setpoints(0, 0, 0, 0.5),
           position_setpoints(0, 0, 0),
           attitude_controller(),
           position_controller() {}
@@ -129,5 +130,6 @@ class QuadrotorModel {
     void printState();
 };
 
+}  // end of quadrotor namespace
 }  // end of wave namespace
 #endif

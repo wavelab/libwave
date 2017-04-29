@@ -133,5 +133,5 @@ def plot_quadrotor_velocity_data():
 
 if __name__ == "__main__":
     plot_quadrotor_attitude_data()
-    plot_quadrotor_position_data()
-    plot_quadrotor_velocity_data()
+    # plot_quadrotor_position_data()
+    # plot_quadrotor_velocity_data()

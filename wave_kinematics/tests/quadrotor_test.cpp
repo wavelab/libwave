@@ -3,17 +3,19 @@
 #include "wave/controls/pid.hpp"
 
 namespace wave {
+namespace quadrotor {
 
 #define ATTITUDE_CONTROLLER_OUTPUT "/tmp/quadrotor_attitude_controller.dat"
 #define POSITION_CONTROLLER_OUTPUT "/tmp/quadrotor_position_controller.dat"
 
 TEST(AttitudeController, update) {
     QuadrotorModel quad;
-    AttitudeController controller;
+    AttitudeController controller = AttitudeController();
 
     // setup
     Vec4 setpoints;
-    setpoints << deg2rad(10.0), deg2rad(10.0), deg2rad(10.0), 0.0;
+    setpoints << deg2rad(10.0), deg2rad(20.0), deg2rad(30.0), 0.0;
+    std::cout << setpoints.transpose() << std::endl;
     FILE *output_file = fopen(ATTITUDE_CONTROLLER_OUTPUT, "w");
     fprintf(output_file, "t, roll, pitch, yaw\n");
 
@@ -23,7 +25,7 @@ TEST(AttitudeController, update) {
     Vec4 actual;
     Vec4 motor_inputs;
 
-    for (int i = 0; i < 1000; i++) {
+    for (int i = 0; i < 2000; i++) {
         // clang-format off
         actual << quad.attitude(0),
                   quad.attitude(1),
@@ -34,9 +36,9 @@ TEST(AttitudeController, update) {
         quad.update(motor_inputs, dt);
 
         fprintf(output_file, "%f, ", t);
-        fprintf(output_file, "%f, ", rad2deg(quad.position(0)));
-        fprintf(output_file, "%f, ", rad2deg(quad.position(1)));
-        fprintf(output_file, "%f\n", rad2deg(quad.position(2)));
+        fprintf(output_file, "%f, ", rad2deg(quad.attitude(0)));
+        fprintf(output_file, "%f, ", rad2deg(quad.attitude(1)));
+        fprintf(output_file, "%f\n", rad2deg(quad.attitude(2)));
         t += dt;
     }
 
@@ -118,4 +120,5 @@ TEST(PositionController, update) {
     ASSERT_NEAR(pos_setpoints(2), quad.position(2), 0.01);
 }
 
+}  // end of quadrotor namespace
 }  // end of wave namespace
