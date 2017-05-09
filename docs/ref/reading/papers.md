@@ -1,4 +1,4 @@
-# Great SLAM Papers
+# Great SLAM Papers {#reading_papers}
 
 ## SLAM Surveys
 * 2006 Famous Hugh Durrant-Whyte Survey, claiming SLAM is solved [[Part I - State of the art][DurrantBailey2006]], [[Part II- Recursive Bayesian Formulation and open issues][BaileyDurrant2006]]

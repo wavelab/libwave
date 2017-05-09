@@ -13,45 +13,42 @@ INCLUDE(cmake/WaveUtils.cmake)
 ENABLE_TESTING()
 
 
-# INCLUDES
-INCLUDE_DIRECTORIES(
-  wave_controls/include
-  wave_geometry/include
-  wave_kinematics/include
-  wave_matching/include
-  wave_optimization/include
-  wave_utils/include
-)
+# The sub-libraries, each of which is in a subdirectory of the same name
+SET(LIBWAVE_MODULES
+    wave_controls
+    wave_containers
+    wave_geometry
+    wave_kinematics
+    wave_matching
+    wave_optimization
+    wave_utils)
+
+FOREACH(dir ${LIBWAVE_MODULES})
+    INCLUDE_DIRECTORIES(${dir}/include)
+ENDFOREACH()
+FOREACH(dir ${LIBWAVE_MODULES})
+    ADD_SUBDIRECTORY(${dir})
+ENDFOREACH()
 
 # gtest
 ADD_SUBDIRECTORY(deps/googletest)
 INCLUDE_DIRECTORIES(${gtest_SOURCE_DIR}/include/ ${gtest_SOURCE_DIR})
 
+# Define dependencies between modules
 # libwave_controls.a
-ADD_SUBDIRECTORY(wave_controls)
 ADD_DEPENDENCIES(wave_controls wave_utils)
 
 # libwave_geometry.a
-ADD_SUBDIRECTORY(wave_geometry)
 ADD_DEPENDENCIES(wave_geometry wave_utils)
 
 # libwave_kinematics.a
-ADD_SUBDIRECTORY(wave_kinematics)
 ADD_DEPENDENCIES(wave_kinematics wave_controls wave_utils)
 
 # libwave_matching.a
-ADD_SUBDIRECTORY(wave_matching)
 ADD_DEPENDENCIES(wave_matching wave_utils)
 
 # libwave_optimization.a
-ADD_SUBDIRECTORY(wave_optimization)
 ADD_DEPENDENCIES(wave_optimization wave_utils)
-
-# libwave_utils.a
-ADD_SUBDIRECTORY(wave_utils)
-
-# wave_containers: header-only library
-ADD_SUBDIRECTORY(wave_containers)
 
 # libwave library
 SET(LIBWAVE_MODULE_LIBS
@@ -61,14 +58,6 @@ SET(LIBWAVE_MODULE_LIBS
     ${CMAKE_BINARY_DIR}/wave_matching/libwave_matching.a
     ${CMAKE_BINARY_DIR}/wave_optimization/libwave_optimization.a
     ${CMAKE_BINARY_DIR}/wave_utils/libwave_utils.a)
-
-SET(LIBWAVE_MODULES
-    wave_controls
-    wave_geometry
-    wave_kinematics
-    wave_matching
-    wave_optimization
-    wave_utils)
 
 IF(BUILD_SHARED_LIBS)
     # SHARED LIBRARY
@@ -101,3 +90,8 @@ ENDIF()
 FOREACH(MODULE ${LIBWAVE_MODULES})
   INSTALL(DIRECTORY ${MODULE}/include/ DESTINATION include)
 ENDFOREACH()
+
+# Documentation
+SET(WAVE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+SET(WAVE_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR})
+ADD_SUBDIRECTORY(docs)

@@ -1,3 +1,7 @@
+/** @file
+ * @ingroup kinematics
+ */
+
 #ifndef WAVE_QUADROTOR_QUADROTOR_HPP
 #define WAVE_QUADROTOR_QUADROTOR_HPP
 
@@ -8,6 +12,8 @@
 #include "wave/controls/pid.hpp"
 
 namespace wave {
+/** @addtogroup kinematics
+ *  @{ */
 
 class AttitudeController {
  public:
@@ -129,5 +135,6 @@ class QuadrotorModel {
     void printState();
 };
 
+/** @} end of group */
 }  // end of wave namespace
 #endif
