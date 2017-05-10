@@ -50,7 +50,7 @@ ADD_SUBDIRECTORY(wave_utils)
 # wave_containers: header-only library
 ADD_SUBDIRECTORY(wave_containers)
 
-# libwave
+# libwave library
 SET(LIBWAVE_MODULE_LIBS
     ${CMAKE_BINARY_DIR}/wave_controls/libwave_controls.a
     ${CMAKE_BINARY_DIR}/wave_geometry/libwave_geometry.a
@@ -94,10 +94,7 @@ ELSE ()
 
 ENDIF()
 
-INSTALL(DIRECTORY wave_containers/include/ DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
-INSTALL(DIRECTORY wave_controls/include/ DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
-INSTALL(DIRECTORY wave_geometry/include/ DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
-INSTALL(DIRECTORY wave_kinematics/include/ DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
-INSTALL(DIRECTORY wave_matching/include/ DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
-INSTALL(DIRECTORY wave_optimization/include/ DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
-INSTALL(DIRECTORY wave_utils/include/ DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
+# libwave headers
+FOREACH(MODULE ${LIBWAVE_MODULES})
+  INSTALL(DIRECTORY ${MODULE}/include/ DESTINATION include)
+ENDFOREACH()
