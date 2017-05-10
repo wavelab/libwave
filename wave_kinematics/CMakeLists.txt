@@ -9,6 +9,7 @@ ADD_LIBRARY(
     wave_kinematics
     STATIC
     src/quadrotor.cpp
+    src/two_wheel.cpp
 )
 SET(
     WAVE_KINEMATICS_TEST_DEPS
