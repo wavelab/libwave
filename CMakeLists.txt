@@ -51,6 +51,22 @@ ADD_SUBDIRECTORY(wave_utils)
 ADD_SUBDIRECTORY(wave_containers)
 
 # libwave
+SET(LIBWAVE_MODULE_LIBS
+    ${CMAKE_BINARY_DIR}/wave_controls/libwave_controls.a
+    ${CMAKE_BINARY_DIR}/wave_geometry/libwave_geometry.a
+    ${CMAKE_BINARY_DIR}/wave_kinematics/libwave_kinematics.a
+    ${CMAKE_BINARY_DIR}/wave_matching/libwave_matching.a
+    ${CMAKE_BINARY_DIR}/wave_optimization/libwave_optimization.a
+    ${CMAKE_BINARY_DIR}/wave_utils/libwave_utils.a)
+
+SET(LIBWAVE_MODULES
+    wave_controls
+    wave_geometry
+    wave_kinematics
+    wave_matching
+    wave_optimization
+    wave_utils)
+
 IF(BUILD_SHARED_LIBS)
     # SHARED LIBRARY
     ADD_CUSTOM_TARGET(
@@ -58,50 +74,30 @@ IF(BUILD_SHARED_LIBS)
         COMMAND
             gcc -shared -o libwave.so
               -Wl,--whole-archive
-                ${CMAKE_BINARY_DIR}/wave_controls/libwave_controls.a
-                ${CMAKE_BINARY_DIR}/wave_geometry/libwave_geometry.a
-                ${CMAKE_BINARY_DIR}/wave_kinematics/libwave_kinematics.a
-                ${CMAKE_BINARY_DIR}/wave_matching/libwave_matching.a
-                ${CMAKE_BINARY_DIR}/wave_optimization/libwave_optimization.a
-                ${CMAKE_BINARY_DIR}/wave_utils/libwave_utils.a
+                ${LIBWAVE_MODULE_LIBS}
               -Wl,--no-whole-archive
         DEPENDS
-            wave_controls
-            wave_geometry
-            wave_kinematics
-            wave_matching
-            wave_optimization
-            wave_utils
+            ${LIBWAVE_MODULES}
     )
-    INSTALL(FILES ${CMAKE_BINARY_DIR}/libwave.so DESTINATION /usr/local/lib)
+    INSTALL(FILES ${CMAKE_BINARY_DIR}/libwave.so DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
 
 ELSE ()
     # STATIC LIBRARY
     ADD_CUSTOM_TARGET(
         libwave ALL
         COMMAND
-            ar -rcT libwave.a
-                ${CMAKE_BINARY_DIR}/wave_controls/libwave_controls.a
-                ${CMAKE_BINARY_DIR}/wave_geometry/libwave_geometry.a
-                ${CMAKE_BINARY_DIR}/wave_kinematics/libwave_kinematics.a
-                ${CMAKE_BINARY_DIR}/wave_matching/libwave_matching.a
-                ${CMAKE_BINARY_DIR}/wave_optimization/libwave_optimization.a
-                ${CMAKE_BINARY_DIR}/wave_utils/libwave_utils.a
+            ar -rcT libwave.a ${LIBWAVE_MODULE_LIBS}
         DEPENDS
-            wave_controls
-            wave_geometry
-            wave_kinematics
-            wave_matching
-            wave_optimization
-            wave_utils
+            ${LIBWAVE_MODULES}
     )
-    INSTALL(FILES ${CMAKE_BINARY_DIR}/libwave.a DESTINATION /usr/local/lib)
+    INSTALL(FILES ${CMAKE_BINARY_DIR}/libwave.a DESTINATION CMAKE_INSTALL_PREFIX}/lib)
 
 ENDIF()
-INSTALL(DIRECTORY wave_containers/include/ DESTINATION /usr/local/include)
-INSTALL(DIRECTORY wave_controls/include/ DESTINATION /usr/local/include)
-INSTALL(DIRECTORY wave_geometry/include/ DESTINATION /usr/local/include)
-INSTALL(DIRECTORY wave_kinematics/include/ DESTINATION /usr/local/include)
-INSTALL(DIRECTORY wave_matching/include/ DESTINATION /usr/local/include)
-INSTALL(DIRECTORY wave_optimization/include/ DESTINATION /usr/local/include)
-INSTALL(DIRECTORY wave_utils/include/ DESTINATION /usr/local/include)
+
+INSTALL(DIRECTORY wave_containers/include/ DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
+INSTALL(DIRECTORY wave_controls/include/ DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
+INSTALL(DIRECTORY wave_geometry/include/ DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
+INSTALL(DIRECTORY wave_kinematics/include/ DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
+INSTALL(DIRECTORY wave_matching/include/ DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
+INSTALL(DIRECTORY wave_optimization/include/ DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
+INSTALL(DIRECTORY wave_utils/include/ DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
