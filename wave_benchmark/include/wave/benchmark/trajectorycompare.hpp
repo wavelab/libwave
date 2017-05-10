@@ -17,14 +17,14 @@ class TrajectoryCompare {
     void push_measurement(Pose pose, const TimeType time);
     void calculate_error();
     void output_csv(std::string path, std::string filename);
+    MeasurementContainer<PoseMeasurement> ground_truth;
+    MeasurementContainer<PoseMeasurement> measurements;
+    MeasurementContainer<PoseMeasurement> error;
 
  private:
-    wave::MeasurementContainer<Measurement> ground_truth;
-    wave::MeasurementContainer<Measurement> measurements;
-    wave::MeasurementContainer<Measurement> error;
     const int ground_truth_key = 0;
     const int measurement_key = 1;
-    const int error_key = 3;
+    const int error_key = 2;
     std::ofstream file;
 };
 

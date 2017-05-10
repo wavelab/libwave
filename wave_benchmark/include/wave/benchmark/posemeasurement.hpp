@@ -12,21 +12,24 @@ struct Pose {
     wave::Vec3 translation;
 };
 
-struct Measurement {
+struct PoseMeasurement {
     TimeType time_point;
     int sensor_id;
     Pose value;
-    Measurement(const TimeType &t, const int &s, const Pose &v)
-            : time_point{t}, sensor_id{s}, value{v} {}
+    PoseMeasurement(const TimeType &t, const int &s, const Pose &v)
+        : time_point{t}, sensor_id{s}, value{v} {}
 };
 
 /** Perform interpolation (or extrapolation) between two measurements.
 */
-Pose interpolate(const Measurement &m1, const Measurement &m2, const TimeType &t) {
+inline Pose interpolate(const PoseMeasurement &m1,
+                 const PoseMeasurement &m2,
+                 const TimeType &t) {
     auto w2 = 1.0 * (t - m1.time_point) / (m2.time_point - m1.time_point);
 
-    auto wvec = (1-w2)*m1.value.rotation.logMap() + w2 * m2.value.rotation.logMap();
-    auto trans = (1-w2)*m1.value.translation + w2 * m2.value.translation;
+    auto wvec =
+      (1 - w2) * m1.value.rotation.logMap() + w2 * m2.value.rotation.logMap();
+    auto trans = (1 - w2) * m1.value.translation + w2 * m2.value.translation;
     Pose retval;
     retval.rotation.setFromExpMap(wvec);
     retval.translation = trans;
@@ -34,4 +37,4 @@ Pose interpolate(const Measurement &m1, const Measurement &m2, const TimeType &t
 };
 
 
-#endif //POSE_COMPARE_POSEMEASUREMENT_HPP_H
+#endif  // POSE_COMPARE_POSEMEASUREMENT_HPP_H
