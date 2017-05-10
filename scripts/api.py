@@ -417,8 +417,6 @@ def genapi(header_file, doc, output_dir="./"):
 
 if __name__ == "__main__":
     files = walkdir(sys.argv[1])
-    # doc = parse_header("./include/yarl/utils/config.hpp")
-    # genapi("./include/yarl/utils/config.hpp", doc)
 
     for f in files:
         print("-> {}".format(f))

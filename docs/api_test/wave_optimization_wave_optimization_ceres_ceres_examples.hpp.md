@@ -26,17 +26,17 @@
 
 ## Functions
 
+    void runAutoDiffExample(void )
+
+
+---
+
     void runNumericalDiffExample(void )
 
 
 ---
 
     void runCurveFittingExample(void )
-
-
----
-
-    void runAutoDiffExample(void )
 
 
 ---
