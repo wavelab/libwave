@@ -65,7 +65,9 @@ TEST(trajectorycompare, error_rotation) {
         truth_sample.rotation.setFromExpMap(Vec3(0.2 * i, 0.15 * i, 0.18 * i));
         compare.push_truth(truth_sample, start_t + std::chrono::seconds(i));
         traj_sample.rotation.setFromExpMap(Vec3(0.25 * i, 0.20 * i, 0.15 * i));
-        expected_error.push_back(Rotation().setFromMatrix(truth_sample.rotation.toRotationMatrix().transpose() * traj_sample.rotation.toRotationMatrix()));
+        expected_error.push_back(Rotation().setFromMatrix(
+          truth_sample.rotation.toRotationMatrix().transpose() *
+          traj_sample.rotation.toRotationMatrix()));
         compare.push_measurement(traj_sample,
                                  start_t + std::chrono::seconds(i));
     }
@@ -74,8 +76,8 @@ TEST(trajectorycompare, error_rotation) {
     EXPECT_EQ(compare.measurements.size(), compare.error.size());
     for (int i = 0; i < 10; i++) {
         auto time_c = start_t + std::chrono::seconds(i);
-        EXPECT_TRUE(
-          expected_error.at(i).isNear(compare.error.get(time_c, 2).rotation, 1e-5));
+        EXPECT_TRUE(expected_error.at(i).isNear(
+          compare.error.get(time_c, 2).rotation, 1e-5));
     }
 }
 
