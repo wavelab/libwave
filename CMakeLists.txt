@@ -18,6 +18,7 @@ INCLUDE_DIRECTORIES(
   wave_matching/include
   wave_optimization/include
   wave_utils/include
+  wave_vision/include
 )
 
 # gtest
@@ -44,6 +45,10 @@ ADD_DEPENDENCIES(wave_matching wave_utils)
 ADD_SUBDIRECTORY(wave_optimization)
 ADD_DEPENDENCIES(wave_optimization wave_utils)
 
+# libwave_vision.a
+ADD_SUBDIRECTORY(wave_vision)
+ADD_DEPENDENCIES(wave_vision wave_utils)
+
 # libwave_utils.a
 ADD_SUBDIRECTORY(wave_utils)
 
@@ -56,6 +61,7 @@ SET(LIBWAVE_MODULE_LIBS
     ${CMAKE_BINARY_DIR}/wave_geometry/libwave_geometry.a
     ${CMAKE_BINARY_DIR}/wave_kinematics/libwave_kinematics.a
     ${CMAKE_BINARY_DIR}/wave_matching/libwave_matching.a
+    ${CMAKE_BINARY_DIR}/wave_vision.libwave_vision.a
     ${CMAKE_BINARY_DIR}/wave_optimization/libwave_optimization.a
     ${CMAKE_BINARY_DIR}/wave_utils/libwave_utils.a)
 
@@ -64,6 +70,7 @@ SET(LIBWAVE_MODULES
     wave_geometry
     wave_kinematics
     wave_matching
+    wave_vision
     wave_optimization
     wave_utils)
 

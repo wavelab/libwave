@@ -1,0 +1,38 @@
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8.3)
+PROJECT(wave_vision)
+
+# PACKAGES
+FIND_PACKAGE(OpenCV REQUIRED)
+
+# DEFINITIONS
+ADD_DEFINITIONS(${EIGEN_DEFINITIONS})
+
+# INCLUDES
+INCLUDE_DIRECTORIES(
+    ${OpenCV_INCLUDE_DIRS}
+    ${EIGEN_INCLUDE_DIRS})
+
+# LIBRARY DIRS
+
+# LIBRARY
+SET(
+    WAVE_VISION_DEPS
+    yaml-cpp
+    wave_utils
+    ${OpenCV_LIBS}
+)
+
+SET(
+    WAVE_VISION_TEST_DEPS
+    yaml-cpp
+    wave_utils
+    gtest
+    ${OpenCV_LIBS}
+)
+ADD_LIBRARY(
+    wave_vision
+    STATIC
+)
+TARGET_LINK_LIBRARIES(wave_vision ${WAVE_VISION_DEPS})
+
+# UNIT TESTS
