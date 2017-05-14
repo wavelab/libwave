@@ -13,20 +13,18 @@ VecX AttitudeController::update(Vec3 setpoints, Vec3 actual, double dt) {
 
     // check rate
     this->dt += dt;
-    if (this->dt < 0.001) {
+    if (this->dt < 0.001) {  // controller is running at 100Hz
         return this->outputs;
     }
 
     // roll pitch yaw
-    // clang-format off
-  outputs(0) = this->roll_controller.update(setpoints(0), actual(0), dt);
-  outputs(1) = this->pitch_controller.update(setpoints(1), actual(1), dt);
-  outputs(2) = 0.0;
-    // clang-format on
+    outputs(0) = this->roll_controller.update(setpoints(0), actual(0), dt);
+    outputs(1) = this->pitch_controller.update(setpoints(1), actual(1), dt);
+    outputs(2) = 0.0;
 
     // keep track of outputs
     this->outputs = outputs;
-    this->dt = 0.0;
+    this->dt = 0.0;  // reset controller timer
 
     return outputs;
 }
@@ -100,7 +98,7 @@ int GimbalModel::update(Vec3 motor_inputs, double dt) {
     quat2euler(this->frame_orientation, 321, euler);
     this->joint_setpoints(0) = target_attitude_if(0) - euler(0);
     this->joint_setpoints(1) = target_attitude_if(1) - euler(1);
-    this->joint_setpoints(2) = 0.0;
+    this->joint_setpoints(2) = 0.0;  // 0 because this is a 2-axis gimbal
 
     return 0;
 }
@@ -110,14 +108,12 @@ Vec3 GimbalModel::attitudeControllerControl(double dt) {
     Vec3 motor_inputs;
 
     // attitude controller
-    // clang-format off
-  actual_attitude << this->states(0), this->states(2), 0.0;
-  motor_inputs = this->joint_controller.update(
-    this->joint_setpoints,
-    actual_attitude,
-    dt
-  );
-    // clang-format on
+    actual_attitude << this->states(0), this->states(2), 0.0;
+    motor_inputs = this->joint_controller.update(
+      this->joint_setpoints,
+      actual_attitude,
+      dt
+    );
 
     return motor_inputs;
 }
