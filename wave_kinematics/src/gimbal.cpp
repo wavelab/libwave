@@ -3,11 +3,6 @@
 namespace wave {
 
 // Attitude Controller
-AttitudeController::AttitudeController(void) {
-    this->roll_controller = PID(0.3, 0.0, 0.2);
-    this->pitch_controller = PID(0.3, 0.0, 0.2);
-}
-
 VecX AttitudeController::update(Vec3 setpoints, Vec3 actual, double dt) {
     Vec3 outputs;
 
@@ -30,50 +25,6 @@ VecX AttitudeController::update(Vec3 setpoints, Vec3 actual, double dt) {
 }
 
 // GIMBAL MODEL
-GimbalModel::GimbalModel(void) {
-    this->states = VecX(4);
-    this->states(0) = 0.0;  // roll position
-    this->states(1) = 0.0;  // roll velocity
-    this->states(2) = 0.0;  // pitch position
-    this->states(3) = 0.0;  // pitch velocity
-
-    this->Ix = 0.01;
-    this->Iy = 0.01;
-
-    // downward facing camera (gimbal is NWU frame)
-    // NWU frame: (x - forward, y - left, z - up)
-    this->camera_offset = Pose(0.0, deg2rad(90.0), 0.0, 0.0, 0.0, 0.0);
-
-    this->joint_setpoints = Vec3();
-    this->joint_controller = AttitudeController();
-
-    this->frame_orientation = Quaternion();
-    this->joint_orientation = Quaternion();
-    this->target_attitude_if << 0.0, 0.0, 0.0;
-}
-
-GimbalModel::GimbalModel(VecX pose) {
-    this->states = VecX(4);
-    this->states(0) = pose(0);  // roll position
-    this->states(1) = pose(1);  // roll velocity
-    this->states(2) = pose(3);  // pitch position
-    this->states(3) = pose(4);  // pitch velocity
-
-    this->Ix = 0.01;
-    this->Iy = 0.01;
-
-    // downward facing camera (gimbal is NWU frame)
-    // NWU frame: (x - forward, y - left, z - up)
-    this->camera_offset = Pose(0.0, deg2rad(90.0), 0.0, 0.0, 0.0, 0.0);
-
-    this->joint_setpoints = Vec3();
-    this->joint_controller = AttitudeController();
-
-    this->frame_orientation = Quaternion();
-    this->joint_orientation = Quaternion();
-    this->target_attitude_if << 0.0, 0.0, 0.0;
-}
-
 int GimbalModel::update(Vec3 motor_inputs, double dt) {
     // setup
     float ph = this->states(0);
@@ -109,11 +60,8 @@ Vec3 GimbalModel::attitudeControllerControl(double dt) {
 
     // attitude controller
     actual_attitude << this->states(0), this->states(2), 0.0;
-    motor_inputs = this->joint_controller.update(
-      this->joint_setpoints,
-      actual_attitude,
-      dt
-    );
+    motor_inputs =
+      this->joint_controller.update(this->joint_setpoints, actual_attitude, dt);
 
     return motor_inputs;
 }
