@@ -10,10 +10,8 @@ NDTMatcher::NDTMatcher(float res, const std::string &config_path) {
     this->final = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
 
     ConfigParser parser;
-
     float step_size, t_eps, default_res;
     int max_iter;
-
     parser.addParam("ndt.step_size", &step_size);
     parser.addParam("ndt.max_iter", &max_iter);
     parser.addParam("ndt.t_eps", &t_eps);

@@ -7,18 +7,17 @@ ICPMatcher::ICPMatcher(float res, const std::string &config_path) {
     this->ref = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
     this->target = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
     this->final = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
-  
+
     if (res > 0) {
         this->resolution = res;
         this->filter.setLeafSize(res, res, res);
     } else {
         this->resolution = -1;
     }
-    ConfigParser parser;
 
+    ConfigParser parser;
     double max_corr, t_eps, fit_eps;
     int max_iter;
-
     parser.addParam("icp.max_corr", &max_corr);
     parser.addParam("icp.max_iter", &max_iter);
     parser.addParam("icp.t_eps", &t_eps);

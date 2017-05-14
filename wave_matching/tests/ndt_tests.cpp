@@ -1,13 +1,12 @@
-// Tests for wrapper
-
-#include <iostream>
-#include <gtest/gtest.h>
 #include <pcl/io/pcd_io.h>
-#include <Eigen/Dense>
 
+#include "wave/wave_test.hpp"
 #include "wave/matching/ndt.hpp"
 
 namespace wave {
+
+#define TEST_SCAN "tests/data/testscan.pcd"
+#define TEST_CONFIG "tests/config/ndt.yaml"
 
 // Fixture to load same pointcloud all the time
 class NDTTest : public testing::Test {
@@ -23,11 +22,11 @@ class NDTTest : public testing::Test {
     virtual void SetUp() {
         this->ref = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
         this->target = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
-        pcl::io::loadPCDFile("data/testscan.pcd", *(this->ref));
+        pcl::io::loadPCDFile(TEST_SCAN, *(this->ref));
     }
 
-    void initMatcher(const float res, const Eigen::Affine3d perturb) {
-        this->matcher = new NDTMatcher(res, "config/ndt.yaml");
+    void initMatcher(const float res, const Affine3 perturb) {
+        this->matcher = new NDTMatcher(res, TEST_CONFIG);
         pcl::transformPointCloud(*(this->ref), *(this->target), perturb);
         this->matcher->setup(this->ref, this->target);
     }
@@ -38,18 +37,20 @@ class NDTTest : public testing::Test {
 };
 
 TEST(NDTTests, initialization) {
-    NDTMatcher matcher(1.0f, "config/ndt.yaml");
+    NDTMatcher matcher(1.0f, TEST_CONFIG);
 }
 
 // Zero displacement using resolution from config
 TEST_F(NDTTest, fullResNullMatch) {
-    Eigen::Affine3d perturb;
-    Eigen::Affine3d result;
+    Affine3 perturb;
+    Affine3 result;
     bool match_success = false;
-    // Setup
-    perturb = Eigen::Affine3d::Identity();
+
+    // setup
+    perturb = Affine3::Identity();
     perturb.translation() << 0, 0, 0;
     this->initMatcher(-1, perturb);
+
     // test and assert
     match_success = matcher->match();
     double diff = (matcher->getResult().matrix() - perturb.matrix()).norm();
@@ -59,13 +60,15 @@ TEST_F(NDTTest, fullResNullMatch) {
 
 // Zero displacement using resolution set by constructor
 TEST_F(NDTTest, nullDisplacement) {
-    Eigen::Affine3d perturb;
-    Eigen::Affine3d result;
+    Affine3 perturb;
+    Affine3 result;
     bool match_success = false;
-    // Setup
-    perturb = Eigen::Affine3d::Identity();
+
+    // setup
+    perturb = Affine3::Identity();
     perturb.translation() << 0, 0, 0;
     this->initMatcher(2.5f, perturb);
+
     // test and assert
     match_success = matcher->match();
     double diff = (matcher->getResult().matrix() - perturb.matrix()).norm();
@@ -75,13 +78,15 @@ TEST_F(NDTTest, nullDisplacement) {
 
 // Small displacement using resolution set by constructor
 TEST_F(NDTTest, smallDisplacement) {
-    Eigen::Affine3d perturb;
-    Eigen::Affine3d result;
+    Affine3 perturb;
+    Affine3 result;
     bool match_success = false;
-    // Setup
-    perturb = Eigen::Affine3d::Identity();
+
+    // setup
+    perturb = Affine3::Identity();
     perturb.translation() << 0.2, 0, 0;
     this->initMatcher(2.5f, perturb);
+
     // test and assert
     match_success = matcher->match();
     double diff = (matcher->getResult().matrix() - perturb.matrix()).norm();

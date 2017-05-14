@@ -5,10 +5,8 @@
 
 namespace wave {
 
-// Default constructor.
 Rotation::Rotation() {}
 
-// Constructor taking Euler angles.
 Rotation::Rotation(const Vec3 &input_vector) {
     // Check if the input is finite, throw error otherwise
     checkArrayFinite(input_vector);
@@ -16,7 +14,6 @@ Rotation::Rotation(const Vec3 &input_vector) {
     this->setFromEulerXYZ(input_vector);
 }
 
-// Constructor taking in an angle magnitude and rotation axis.
 Rotation::Rotation(const double angle_magnitude, const Vec3 &rotation_axis) {
     // Check if the input is finite, throw error otherwise
     checkArrayFinite(rotation_axis);
@@ -74,10 +71,9 @@ Rotation &Rotation::setFromEulerXYZ(const Vec3 &input_vector) {
     checkArrayFinite(input_vector);
 
     Mat3 rotation_matrix;
-    rotation_matrix =
-      Eigen::AngleAxisd(input_vector[2], Eigen::Vector3d::UnitZ()) *
-      Eigen::AngleAxisd(input_vector[1], Eigen::Vector3d::UnitY()) *
-      Eigen::AngleAxisd(input_vector[0], Eigen::Vector3d::UnitX());
+    rotation_matrix = Eigen::AngleAxisd(input_vector[2], Vec3::UnitZ()) *
+                      Eigen::AngleAxisd(input_vector[1], Vec3::UnitY()) *
+                      Eigen::AngleAxisd(input_vector[0], Vec3::UnitX());
 
 
     this->rotation_object.setMatrix(rotation_matrix);

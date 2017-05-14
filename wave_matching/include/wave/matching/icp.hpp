@@ -1,9 +1,8 @@
-// Class to wrap PCL ICP matcher
-
 #ifndef WAVE_MATCHING_ICP_HPP
 #define WAVE_MATCHING_ICP_HPP
 
 #include <pcl/registration/icp.h>
+
 #include "wave/matching/pcl_common.hpp"
 #include "wave/matching/matcher.hpp"
 
