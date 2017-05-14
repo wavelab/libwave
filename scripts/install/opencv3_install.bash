@@ -1,10 +1,10 @@
 #!/bin/bash
 set -e  # exit on first error
-OPENCV_URL=https://github.com/Itseez/opencv/archive/3.0.0-alpha.zip
+OPENCV_REPO=https://github.com/opencv/opencv
 
 
 install_dependencies() {
-    sudo apt-get -y install -qq \
+    apt-get -y install -qq \
         libopencv-dev \
         build-essential \
         cmake \
@@ -41,12 +41,9 @@ install_dependencies() {
 }
 
 download_opencv() {
-    mkdir -p /usr/local/src/opencv
-    cd /usr/local/src/opencv
-    if [ ! -d opencv-3.0.0-alpha ]; then
-        wget $OPENCV_URL -O opencv-3.0.0-alpha.zip
-        unzip -qq opencv-3.0.0-alpha.zip
-        rm opencv-3.0.0-alpha.zip
+    cd /usr/local/src/
+    if [ ! -d opencv ]; then
+        git clone $OPENCV_REPO
     fi
     cd -
 }
@@ -54,7 +51,7 @@ download_opencv() {
 install_opencv() {
     # compile and install opencv
     cd /usr/local/src/opencv
-    cd opencv-3.0.0-alpha
+    git checkout 3.2.0
     mkdir -p build
     cd build
     cmake \
@@ -66,10 +63,9 @@ install_opencv() {
         -D WITH_OPENGL=ON ..
     make -j$(nproc)
 
-    # DO NOT ACTUALLY INSTALL THIS WILL CAUSE PROBLEMS WITH
-    # BUILDS THAT DEPEND ON OPENCV 2
+    # THIS WILL CAUSE PROBLEMS WITH BUILDS THAT DEPEND ON OPENCV 2
     # THE REASON IS /usr/local/lib has precedence over /usr/lib
-    # sudo make install
+    make install
 }
 
 # MAIN
