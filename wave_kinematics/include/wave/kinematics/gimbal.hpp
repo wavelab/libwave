@@ -31,16 +31,17 @@ class Gimbal2AxisController {
     /**
      * Update gimbal attitude controller.
      *
-     * Args:
+     * @param setpoints, actual Vectors of size 2 with roll and pitch setpoints
+     *  and actual attitudes in radians.
+     * @param dt Update time step in seconds
      *
-     * - `setpoints`, `actual` are vector of size 3 with roll, pitch and
-     * yaw setpoints and actual attitudes in radians,
-     * - `dt` denoting the update time step.
+     * @returns motor inputs for roll and pitch as a vector of size 2 for a
+     * 2-axis gimbal.
      *
-     * Returns:
-     *
-     * motor inputs for roll and pitchas a vector of size 2 for a 2-axis
-     * gimbal.
+     * The update rate is capped at 100 Hz. That is, each call to `update`
+     * increments an internal counter by `dt`. If the counter reaches 0.001, it
+     * is reset and the controller is updated. Otherwise, the arguments other
+     * than `dt` are ignored.
      */
     Vec2 update(Vec2 setpoints, Vec2 actual, double dt);
 };
@@ -96,59 +97,47 @@ class Gimbal2AxisModel {
     /**
      * Update gimbal model
      *
-     * Args:
-     *
-     * - `motor_inputs`: a vector of roll and pitch in radians
-     * - `dt`: simulation time step or time difference when the model was last
-     *         updated
+     * @param motor_inputs Vector of roll and pitch in radians
+     * @param dt Simulation time step or time since the model was last updated,
+     *  in seconds
      */
     void update(Vec2 motor_inputs, double dt);
 
     /**
      * Update gimbal attitude controller
      *
-     * Args:
-     *
-     * - `dt` is time step or time difference when the model was last updated
+     * @param dt Time step or time since the model was last updated, in seconds
      */
     Vec2 attitudeControllerControl(double dt);
 
     /**
      * Set gimbal frame orientation
      *
-     * Args:
-     *
-     * - `frame_if`: frame orientation in inertial frame (NWU coordinate
-     *   system)
+     * @param frame_if Frame orientation in inertial frame (NWU coordinate
+     * system)
      */
     void setFrameOrientation(Quaternion frame_if);
 
     /**
      * Set gimbal joint attitude
      *
-     * Args:
-     *
-     * - `euler_if`: gimbal attitude in inertial frame (NWU coordinate system)
+     * @param euler_if Gimbal attitude in inertial frame (NWU coordinate system)
      */
     void setAttitude(Vec2 euler_if);
 
     /**
      * Obtain gimbal target in body frame
      *
-     * Args:
-     *
-     * - `target_cf`: target in camera frame (EDN coordinate system)
+     * @param target_cf target in camera frame (EDN coordinate system)
      */
     Vec3 getTargetInBF(Vec3 target_cf);
 
     /**
      * Obtain gimbal target in body planar frame
      *
-     * Args:
-     *
-     * - `target_cf`: target in camera frame (EDN coordinate system)
-     * - `body_if`: gimbal body in inertial frame (NWU coordinate system)
-     * - `joint_bf`: gimbal body in body frame (NWU coordinate system)
+     * @param target_cf Target in camera frame (EDN coordinate system)
+     * @param body_if Gimbal body in inertial frame (NWU coordinate system)
+     * @param joint_bf Gimbal body in body frame (NWU coordinate system)
      */
     Vec3 getTargetInBPF(Vec3 target_cf,
                         Quaternion body_if,
@@ -157,9 +146,7 @@ class Gimbal2AxisModel {
     /**
      * Track target
      *
-     * Args:
-     *
-     * - `target_cf`: target in camera frame (EDN coordinate system)
+     * @param target_cf Target in camera frame (EDN coordinate system)
      */
     void trackTarget(Vec3 target_cf);
 

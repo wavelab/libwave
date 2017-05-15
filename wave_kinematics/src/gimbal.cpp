@@ -4,26 +4,21 @@ namespace wave {
 
 // Attitude Controller
 Vec2 Gimbal2AxisController::update(Vec2 setpoints, Vec2 actual, double dt) {
-    Vec2 outputs;
-
-    // check rate
-    // controller is running at 100Hz
+    // limit rate to 100Hz
+    // increment counter and only take action when 0.001s accumulates
     this->dt += dt;
-    if (this->dt < 0.001) {
-        // not time to update controller yet
-        // returning last controller outputs
-        return this->outputs;
+    if (this->dt >= 0.001) {
+        // time to update; reset the counter
+        this->dt = 0.0;
+
+        // calculate roll and pitch outputs using independent controllers
+        auto roll = this->roll_controller.update(setpoints(0), actual(0), dt);
+        auto pitch = this->pitch_controller.update(setpoints(1), actual(1), dt);
+
+        // keep track of outputs
+        this->outputs << roll, pitch;
     }
-
-    // roll pitch yaw
-    outputs(0) = this->roll_controller.update(setpoints(0), actual(0), dt);
-    outputs(1) = this->pitch_controller.update(setpoints(1), actual(1), dt);
-
-    // keep track of outputs
-    this->outputs = outputs;
-    this->dt = 0.0;  // reset controller timer
-
-    return outputs;
+    return this->outputs;
 }
 
 // GIMBAL MODEL
