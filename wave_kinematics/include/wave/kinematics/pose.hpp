@@ -8,6 +8,10 @@
 
 namespace wave {
 
+/**
+ * A generic pose class that stores orientation and position information in a
+ * quaternion and vector of size 3.
+ */
 class Pose {
  public:
     Quaternion q;
@@ -17,10 +21,19 @@ class Pose {
     Pose(Quaternion q, Vec3 position) : q{q}, position{position} {}
     Pose(double roll, double pitch, double yaw, double x, double y, double z);
 
+    /// Obtain orientation as a rotation matrix
     Mat3 rotationMatrix();
+
+    /// Print position
     void printPosition();
+
+    /// Print orientation
     void printOrientation();
+
+    /// Print quaternion
     void printQuaternion();
+
+    /// Print pose
     void print();
 };
 
