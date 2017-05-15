@@ -43,7 +43,7 @@ install_dependencies() {
 download_opencv() {
     mkdir -p /usr/local/src/opencv
     cd /usr/local/src/opencv
-    if [ ! -d opencv ]; then
+    if [ ! -d opencv-3.2.0 ]; then
         wget $OPENCV_URL -O opencv3.2.zip
         unzip -qq opencv3.2.zip
         rm opencv3.2.zip
@@ -53,7 +53,8 @@ download_opencv() {
 
 install_opencv() {
     # compile and install opencv
-    cd /usr/local/src/opencv/opencv-3.2.0
+    cd /usr/local/src/opencv/
+    cd opencv-3.2.0
     mkdir -p build
     cd build
     cmake \
@@ -71,6 +72,6 @@ install_opencv() {
 }
 
 # MAIN
-# install_dependencies
-# download_opencv
+install_dependencies
+download_opencv
 install_opencv
