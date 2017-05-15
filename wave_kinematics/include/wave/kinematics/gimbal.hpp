@@ -41,6 +41,11 @@ class Gimbal2AxisController {
      *
      * motor inputs for roll and pitchas a vector of size 2 for a 2-axis
      * gimbal.
+     *
+     * The update rate is capped at 100 Hz. That is, each call to `update`
+     * increments an internal counter by `dt`. If the counter reaches 0.001, it
+     * is reset and the controller is updated. Otherwise, the arguments other
+     * than `dt` are ignored.
      */
     Vec2 update(Vec2 setpoints, Vec2 actual, double dt);
 };
