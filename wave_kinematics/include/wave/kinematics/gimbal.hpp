@@ -15,18 +15,18 @@ namespace wave {
  * Attitude Controller for a 2-Axis gimbal, this controller implements 2 PID
  * controllers for both roll and pitch and has a fixed control rate of 100Hz.
  */
-class AttitudeController {
+class Gimbal2AxisController {
  public:
     PID roll_controller;
     PID pitch_controller;
     double dt;
-    Vec3 outputs;
+    Vec2 outputs;
 
-    AttitudeController()
+    Gimbal2AxisController()
         : roll_controller{0.3, 0.0, 0.2},
           pitch_controller{0.3, 0.0, 0.2},
           dt{0.0},
-          outputs{0.0, 0.0, 0.0} {}
+          outputs{0.0, 0.0} {}
 
     /**
      * Update gimbal attitude controller.
@@ -37,7 +37,7 @@ class AttitudeController {
      * time step. Returns motor inputs in roll, pitch, and yaw as a vector of
      * size 3 for a gimbal.
      */
-    VecX update(Vec3 setpoints, Vec3 actual, double dt);
+    Vec2 update(Vec2 setpoints, Vec2 actual, double dt);
 };
 
 /**
@@ -59,34 +59,34 @@ class Gimbal2AxisModel {
     double Iy;
     Pose camera_offset;
 
-    Vec3 joint_setpoints;
-    AttitudeController joint_controller;
+    Vec2 joint_setpoints;
+    Gimbal2AxisController joint_controller;
 
     Quaternion frame_orientation;
     Quaternion joint_orientation;
-    Vec3 target_attitude_if;
+    Vec2 target_attitude_if;
 
     Gimbal2AxisModel()
         : states{0.0, 0.0, 0.0, 0.0},
           Ix{0.01},
           Iy{0.01},
           camera_offset{0.0, deg2rad(90.0), 0.0, 0.0, 0.0, 0.0},
-          joint_setpoints{0.0, 0.0, 0.0},
+          joint_setpoints{0.0, 0.0},
           joint_controller{},
           frame_orientation{},
           joint_orientation{},
-          target_attitude_if{0.0, 0.0, 0.0} {}
+          target_attitude_if{0.0, 0.0} {}
 
     Gimbal2AxisModel(Vec4 pose)
         : states{pose},
           Ix{0.01},
           Iy{0.01},
           camera_offset{0.0, deg2rad(90.0), 0.0, 0.0, 0.0, 0.0},
-          joint_setpoints{0.0, 0.0, 0.0},
+          joint_setpoints{0.0, 0.0},
           joint_controller{},
           frame_orientation{},
           joint_orientation{},
-          target_attitude_if{0.0, 0.0, 0.0} {}
+          target_attitude_if{0.0, 0.0} {}
 
     /**
      * Update gimbal model
@@ -96,7 +96,7 @@ class Gimbal2AxisModel {
      * - `dt`: simulation time step or time difference when the model was last
      *         updated
      */
-    void update(Vec3 motor_inputs, double dt);
+    void update(Vec2 motor_inputs, double dt);
 
     /**
      * Update gimbal attitude controller
@@ -104,7 +104,7 @@ class Gimbal2AxisModel {
      * Args:
      * - `dt` is time step or time difference when the model was last updated
      */
-    Vec3 attitudeControllerControl(double dt);
+    Vec2 attitudeControllerControl(double dt);
 
     /**
      * Set gimbal frame orientation
@@ -120,7 +120,7 @@ class Gimbal2AxisModel {
      * Args:
      * - `euler_if`: gimbal attitude in inertial frame (NWU coordinate system)
      */
-    void setAttitude(Vec3 euler_if);
+    void setAttitude(Vec2 euler_if);
 
     /**
      * Obtain gimbal target in body frame

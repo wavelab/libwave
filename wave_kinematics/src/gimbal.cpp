@@ -3,8 +3,8 @@
 namespace wave {
 
 // Attitude Controller
-VecX AttitudeController::update(Vec3 setpoints, Vec3 actual, double dt) {
-    Vec3 outputs;
+Vec2 Gimbal2AxisController::update(Vec2 setpoints, Vec2 actual, double dt) {
+    Vec2 outputs;
 
     // check rate
     // controller is running at 100Hz
@@ -18,7 +18,6 @@ VecX AttitudeController::update(Vec3 setpoints, Vec3 actual, double dt) {
     // roll pitch yaw
     outputs(0) = this->roll_controller.update(setpoints(0), actual(0), dt);
     outputs(1) = this->pitch_controller.update(setpoints(1), actual(1), dt);
-    outputs(2) = 0.0;
 
     // keep track of outputs
     this->outputs = outputs;
@@ -28,7 +27,7 @@ VecX AttitudeController::update(Vec3 setpoints, Vec3 actual, double dt) {
 }
 
 // GIMBAL MODEL
-void Gimbal2AxisModel::update(Vec3 motor_inputs, double dt) {
+void Gimbal2AxisModel::update(Vec2 motor_inputs, double dt) {
     // setup
     float ph = this->states(0);
     float ph_vel = this->states(1);
@@ -52,15 +51,14 @@ void Gimbal2AxisModel::update(Vec3 motor_inputs, double dt) {
     quat2euler(this->frame_orientation, 321, euler);
     this->joint_setpoints(0) = target_attitude_if(0) - euler(0);
     this->joint_setpoints(1) = target_attitude_if(1) - euler(1);
-    this->joint_setpoints(2) = 0.0;  // 0 because this is a 2-axis gimbal
 }
 
-Vec3 Gimbal2AxisModel::attitudeControllerControl(double dt) {
-    Vec3 actual_attitude;
-    Vec3 motor_inputs;
+Vec2 Gimbal2AxisModel::attitudeControllerControl(double dt) {
+    Vec2 actual_attitude;
+    Vec2 motor_inputs;
 
     // attitude controller
-    actual_attitude << this->states(0), this->states(2), 0.0;
+    actual_attitude << this->states(0), this->states(2);
     motor_inputs =
       this->joint_controller.update(this->joint_setpoints, actual_attitude, dt);
 
@@ -78,10 +76,9 @@ void Gimbal2AxisModel::setFrameOrientation(Quaternion frame_if) {
     euler2quat(euler, 321, this->frame_orientation);
 }
 
-void Gimbal2AxisModel::setAttitude(Vec3 euler_if) {
+void Gimbal2AxisModel::setAttitude(Vec2 euler_if) {
     this->target_attitude_if(0) = euler_if(0);
     this->target_attitude_if(1) = euler_if(1);
-    this->target_attitude_if(2) = 0.0;
 }
 
 Vec3 Gimbal2AxisModel::getTargetInBF(Vec3 target_cf) {
@@ -137,7 +134,6 @@ void Gimbal2AxisModel::trackTarget(Vec3 target_cf) {
     dist = target.norm();
     this->target_attitude_if(0) = asin(target(1) / dist);
     this->target_attitude_if(1) = -asin(target(0) / dist);
-    this->target_attitude_if(2) = 0.0;
 }
 
 Vec4 Gimbal2AxisModel::getState(void) {

@@ -21,21 +21,21 @@ static void print_target_bpf(std::string prefix, Vec3 &target) {
     std::cout << std::fixed << std::setprecision(2) << target(2) << std::endl;
 }
 
-TEST(GimbalAttitudeController, constructor) {
-    AttitudeController controller;
+TEST(GimbalGimbal2AxisController, constructor) {
+    Gimbal2AxisController controller;
 }
 
-TEST(GimbalAttitudeController, update) {
+TEST(GimbalGimbal2AxisController, update) {
     double t, dt;
     FILE *output_file;
     Gimbal2AxisModel gimbal;
-    AttitudeController controller;
-    Vec3 setpoints;
-    Vec3 actual;
-    Vec3 motor_inputs;
+    Gimbal2AxisController controller;
+    Vec2 setpoints;
+    Vec2 actual;
+    Vec2 motor_inputs;
 
     // setup
-    setpoints << deg2rad(10.0), deg2rad(-10.0), 0.0;
+    setpoints << deg2rad(10.0), deg2rad(-10.0);
     output_file = fopen(ATTITUDE_CONTROLLER_OUTPUT, "w");
     fprintf(output_file, "t, roll, pitch\n");
 
@@ -43,7 +43,7 @@ TEST(GimbalAttitudeController, update) {
     t = 0;
     dt = 0.001;
     for (int i = 0; i < 1000; i++) {
-        actual << gimbal.states(0), gimbal.states(2), 0.0;
+        actual << gimbal.states(0), gimbal.states(2);
         motor_inputs = controller.update(setpoints, actual, dt);
         gimbal.update(motor_inputs, dt);
 
@@ -76,81 +76,81 @@ TEST(Gimbal2AxisModel, getTargetInBF) {
     target_bf = gimbal.getTargetInBF(target_cf);
     std::cout << "[target is front of camera]\t\t";
     print_target_bf(target_bf);
-    ASSERT_NEAR(0.0, target_bf(0), 0.0000001);
-    ASSERT_NEAR(0.0, target_bf(1), 0.0000001);
-    ASSERT_NEAR(-1.0, target_bf(2), 0.0000001);
+    EXPECT_NEAR(0.0, target_bf(0), 0.0000001);
+    EXPECT_NEAR(0.0, target_bf(1), 0.0000001);
+    EXPECT_NEAR(-1.0, target_bf(2), 0.0000001);
 
     // target left of camera
     target_cf << -1.0, 0.0, 0.0;
     target_bf = gimbal.getTargetInBF(target_cf);
     std::cout << "[target is left of camera]\t\t";
     print_target_bf(target_bf);
-    ASSERT_NEAR(0.0, target_bf(0), 0.0000001);
-    ASSERT_NEAR(1.0, target_bf(1), 0.0000001);
-    ASSERT_NEAR(0.0, target_bf(2), 0.0000001);
+    EXPECT_NEAR(0.0, target_bf(0), 0.0000001);
+    EXPECT_NEAR(1.0, target_bf(1), 0.0000001);
+    EXPECT_NEAR(0.0, target_bf(2), 0.0000001);
 
     // target is right of camera
     target_cf << 1.0, 0.0, 0.0;
     target_bf = gimbal.getTargetInBF(target_cf);
     std::cout << "[target is right of camera]\t\t";
     print_target_bf(target_bf);
-    ASSERT_NEAR(0.0, target_bf(0), 0.0000001);
-    ASSERT_NEAR(-1.0, target_bf(1), 0.0000001);
-    ASSERT_NEAR(0.0, target_bf(2), 0.0000001);
+    EXPECT_NEAR(0.0, target_bf(0), 0.0000001);
+    EXPECT_NEAR(-1.0, target_bf(1), 0.0000001);
+    EXPECT_NEAR(0.0, target_bf(2), 0.0000001);
 
     // target is top of camera
     target_cf << 0.0, -1.0, 0.0;
     target_bf = gimbal.getTargetInBF(target_cf);
     std::cout << "[target is top of camera]\t\t";
     print_target_bf(target_bf);
-    ASSERT_NEAR(1.0, target_bf(0), 0.0000001);
-    ASSERT_NEAR(0.0, target_bf(1), 0.0000001);
-    ASSERT_NEAR(0.0, target_bf(2), 0.0000001);
+    EXPECT_NEAR(1.0, target_bf(0), 0.0000001);
+    EXPECT_NEAR(0.0, target_bf(1), 0.0000001);
+    EXPECT_NEAR(0.0, target_bf(2), 0.0000001);
 
     // target is bottom of camera
     target_cf << 0.0, 1.0, 0.0;
     target_bf = gimbal.getTargetInBF(target_cf);
     std::cout << "[target is bottom of camera]\t\t";
     print_target_bf(target_bf);
-    ASSERT_NEAR(-1.0, target_bf(0), 0.0000001);
-    ASSERT_NEAR(0.0, target_bf(1), 0.0000001);
-    ASSERT_NEAR(0.0, target_bf(2), 0.0000001);
+    EXPECT_NEAR(-1.0, target_bf(0), 0.0000001);
+    EXPECT_NEAR(0.0, target_bf(1), 0.0000001);
+    EXPECT_NEAR(0.0, target_bf(2), 0.0000001);
 
     // target is top-left of camera
     target_cf << -1.0, -1.0, 0.0;
     target_bf = gimbal.getTargetInBF(target_cf);
     std::cout << "[target is top-left of camera]\t\t";
     print_target_bf(target_bf);
-    ASSERT_NEAR(1.0, target_bf(0), 0.0000001);
-    ASSERT_NEAR(1.0, target_bf(1), 0.0000001);
-    ASSERT_NEAR(0.0, target_bf(2), 0.0000001);
+    EXPECT_NEAR(1.0, target_bf(0), 0.0000001);
+    EXPECT_NEAR(1.0, target_bf(1), 0.0000001);
+    EXPECT_NEAR(0.0, target_bf(2), 0.0000001);
 
     // target is top-right of camera
     target_cf << 1.0, -1.0, 0.0;
     target_bf = gimbal.getTargetInBF(target_cf);
     std::cout << "[target is top-right of camera]\t\t";
     print_target_bf(target_bf);
-    ASSERT_NEAR(1.0, target_bf(0), 0.0000001);
-    ASSERT_NEAR(-1.0, target_bf(1), 0.0000001);
-    ASSERT_NEAR(0.0, target_bf(2), 0.0000001);
+    EXPECT_NEAR(1.0, target_bf(0), 0.0000001);
+    EXPECT_NEAR(-1.0, target_bf(1), 0.0000001);
+    EXPECT_NEAR(0.0, target_bf(2), 0.0000001);
 
     // target is bottom-left of camera
     target_cf << -1.0, 1.0, 0.0;
     target_bf = gimbal.getTargetInBF(target_cf);
     std::cout << "[target is bottom-left of camera]\t";
     print_target_bf(target_bf);
-    ASSERT_NEAR(-1.0, target_bf(0), 0.0000001);
-    ASSERT_NEAR(1.0, target_bf(1), 0.0000001);
-    ASSERT_NEAR(0.0, target_bf(2), 0.0000001);
+    EXPECT_NEAR(-1.0, target_bf(0), 0.0000001);
+    EXPECT_NEAR(1.0, target_bf(1), 0.0000001);
+    EXPECT_NEAR(0.0, target_bf(2), 0.0000001);
 
     // target is bottom-right of camera
     target_cf << 1.0, 1.0, 0.0;
     target_bf = gimbal.getTargetInBF(target_cf);
     std::cout << "[target is bottom-right of camera]\t";
     print_target_bf(target_bf);
-    ASSERT_NEAR(-1.0, target_bf(0), 0.0000001);
-    ASSERT_NEAR(-1.0, target_bf(1), 0.0000001);
-    ASSERT_NEAR(0.0, target_bf(2), 0.0000001);
+    EXPECT_NEAR(-1.0, target_bf(0), 0.0000001);
+    EXPECT_NEAR(-1.0, target_bf(1), 0.0000001);
+    EXPECT_NEAR(0.0, target_bf(2), 0.0000001);
 }
 
 TEST(Gimbal2AxisModel, getTargetInBPF) {
@@ -184,9 +184,9 @@ TEST(Gimbal2AxisModel, getTargetInBPF) {
     target_bpf = gimbal.getTargetInBPF(target_cf, frame, joints);
     print_target_bpf("[gimbal point backwards]\t", target_bpf);
 
-    ASSERT_TRUE(target_bpf(0) < 0.0);
-    ASSERT_NEAR(0.0, target_bpf(1), 0.000000001);
-    ASSERT_TRUE(target_bpf(2) < 0.0);
+    EXPECT_TRUE(target_bpf(0) < 0.0);
+    EXPECT_NEAR(0.0, target_bpf(1), 0.000000001);
+    EXPECT_TRUE(target_bpf(2) < 0.0);
 
     // gimbal point forwards
     euler << 0.0, deg2rad(-10), 0.0;
@@ -198,9 +198,9 @@ TEST(Gimbal2AxisModel, getTargetInBPF) {
     target_bpf = gimbal.getTargetInBPF(target_cf, frame, joints);
     print_target_bpf("[gimbal point forwards]\t\t", target_bpf);
 
-    ASSERT_TRUE(target_bpf(0) > 0.0);
-    ASSERT_NEAR(0.0, target_bpf(1), 0.000000001);
-    ASSERT_TRUE(target_bpf(2) < 0.0);
+    EXPECT_TRUE(target_bpf(0) > 0.0);
+    EXPECT_NEAR(0.0, target_bpf(1), 0.000000001);
+    EXPECT_TRUE(target_bpf(2) < 0.0);
 
     // gimbal point right
     euler << deg2rad(-10), 0.0, 0.0;
@@ -212,9 +212,9 @@ TEST(Gimbal2AxisModel, getTargetInBPF) {
     target_bpf = gimbal.getTargetInBPF(target_cf, frame, joints);
     print_target_bpf("[gimbal point right]\t\t", target_bpf);
 
-    ASSERT_NEAR(0.0, target_bpf(0), 0.0000000001);
-    ASSERT_TRUE(target_bpf(1) < 0.0);
-    ASSERT_TRUE(target_bpf(2) < 0.0);
+    EXPECT_NEAR(0.0, target_bpf(0), 0.0000000001);
+    EXPECT_TRUE(target_bpf(1) < 0.0);
+    EXPECT_TRUE(target_bpf(2) < 0.0);
 
     // gimbal point left
     euler << deg2rad(10), 0.0, 0.0;
@@ -226,9 +226,9 @@ TEST(Gimbal2AxisModel, getTargetInBPF) {
     target_bpf = gimbal.getTargetInBPF(target_cf, frame, joints);
     print_target_bpf("[gimbal point left]\t\t", target_bpf);
 
-    ASSERT_NEAR(0.0, target_bpf(0), 0.0000000001);
-    ASSERT_TRUE(target_bpf(1) > 0.0);
-    ASSERT_TRUE(target_bpf(2) < 0.0);
+    EXPECT_NEAR(0.0, target_bpf(0), 0.0000000001);
+    EXPECT_TRUE(target_bpf(1) > 0.0);
+    EXPECT_TRUE(target_bpf(2) < 0.0);
 
     // gimbal point backwards right
     euler << deg2rad(-10), deg2rad(10), 0.0;
@@ -240,9 +240,9 @@ TEST(Gimbal2AxisModel, getTargetInBPF) {
     target_bpf = gimbal.getTargetInBPF(target_cf, frame, joints);
     print_target_bpf("[gimbal point backwards right]\t", target_bpf);
 
-    ASSERT_TRUE(target_bpf(0) < 0.0);
-    ASSERT_TRUE(target_bpf(1) < 0.0);
-    ASSERT_TRUE(target_bpf(2) < 0.0);
+    EXPECT_TRUE(target_bpf(0) < 0.0);
+    EXPECT_TRUE(target_bpf(1) < 0.0);
+    EXPECT_TRUE(target_bpf(2) < 0.0);
 
     // gimbal point backwards left
     euler << deg2rad(10), deg2rad(10), 0.0;
@@ -254,9 +254,9 @@ TEST(Gimbal2AxisModel, getTargetInBPF) {
     target_bpf = gimbal.getTargetInBPF(target_cf, frame, joints);
     print_target_bpf("[gimbal point backwards left]\t", target_bpf);
 
-    ASSERT_TRUE(target_bpf(0) < 0.0);
-    ASSERT_TRUE(target_bpf(1) > 0.0);
-    ASSERT_TRUE(target_bpf(2) < 0.0);
+    EXPECT_TRUE(target_bpf(0) < 0.0);
+    EXPECT_TRUE(target_bpf(1) > 0.0);
+    EXPECT_TRUE(target_bpf(2) < 0.0);
 
     // gimbal point forwards right
     euler << deg2rad(-10), deg2rad(-10), 0.0;
@@ -268,9 +268,9 @@ TEST(Gimbal2AxisModel, getTargetInBPF) {
     target_bpf = gimbal.getTargetInBPF(target_cf, frame, joints);
     print_target_bpf("[gimbal point forwards right]\t", target_bpf);
 
-    ASSERT_TRUE(target_bpf(0) > 0.0);
-    ASSERT_TRUE(target_bpf(1) < 0.0);
-    ASSERT_TRUE(target_bpf(2) < 0.0);
+    EXPECT_TRUE(target_bpf(0) > 0.0);
+    EXPECT_TRUE(target_bpf(1) < 0.0);
+    EXPECT_TRUE(target_bpf(2) < 0.0);
 
     // gimbal point forwards left
     euler << deg2rad(10), deg2rad(-10), 0.0;
@@ -282,9 +282,9 @@ TEST(Gimbal2AxisModel, getTargetInBPF) {
     target_bpf = gimbal.getTargetInBPF(target_cf, frame, joints);
     print_target_bpf("[gimbal point forwards left]\t", target_bpf);
 
-    ASSERT_TRUE(target_bpf(0) > 0.0);
-    ASSERT_TRUE(target_bpf(1) > 0.0);
-    ASSERT_TRUE(target_bpf(2) < 0.0);
+    EXPECT_TRUE(target_bpf(0) > 0.0);
+    EXPECT_TRUE(target_bpf(1) > 0.0);
+    EXPECT_TRUE(target_bpf(2) < 0.0);
 }
 
 TEST(Gimbal2AxisModel, getTargetInBPF2) {
@@ -319,9 +319,9 @@ TEST(Gimbal2AxisModel, getTargetInBPF2) {
     print_target_bpf("[gimbal point backwards, body pitch backwards]\t\t",
                      target_bpf);
 
-    ASSERT_NEAR(0.0, target_bpf(0), 0.01);
-    ASSERT_NEAR(0.0, target_bpf(1), 0.01);
-    ASSERT_NEAR(-10.0, target_bpf(2), 0.01);
+    EXPECT_NEAR(0.0, target_bpf(0), 0.01);
+    EXPECT_NEAR(0.0, target_bpf(1), 0.01);
+    EXPECT_NEAR(-10.0, target_bpf(2), 0.01);
 
     // gimbal point left, body roll left
     euler << deg2rad(10), 0.0, 0.0;
@@ -333,9 +333,9 @@ TEST(Gimbal2AxisModel, getTargetInBPF2) {
     target_bpf = gimbal.getTargetInBPF(target_cf, frame, joints);
     print_target_bpf("[gimbal point left, body roll left]\t\t\t", target_bpf);
 
-    ASSERT_NEAR(0.0, target_bpf(0), 0.01);
-    ASSERT_NEAR(0.0, target_bpf(1), 0.01);
-    ASSERT_NEAR(-10.0, target_bpf(2), 0.01);
+    EXPECT_NEAR(0.0, target_bpf(0), 0.01);
+    EXPECT_NEAR(0.0, target_bpf(1), 0.01);
+    EXPECT_NEAR(-10.0, target_bpf(2), 0.01);
 }
 
 TEST(Gimbal2AxisModel, trackTarget) {
