@@ -31,11 +31,16 @@ class Gimbal2AxisController {
     /**
      * Update gimbal attitude controller.
      *
-     * Where `setpoints`, `actual` are vector of size 3 with roll, pitch and
-     * yaw setpoints and actual attitudes in radians, with `dt` denoting the
-     * update
-     * time step. Returns motor inputs in roll, pitch, and yaw as a vector of
-     * size 3 for a gimbal.
+     * Args:
+     *
+     * - `setpoints`, `actual` are vector of size 3 with roll, pitch and
+     * yaw setpoints and actual attitudes in radians,
+     * - `dt` denoting the update time step.
+     *
+     * Returns:
+     *
+     * motor inputs for roll and pitchas a vector of size 2 for a 2-axis
+     * gimbal.
      */
     Vec2 update(Vec2 setpoints, Vec2 actual, double dt);
 };
@@ -92,7 +97,8 @@ class Gimbal2AxisModel {
      * Update gimbal model
      *
      * Args:
-     * - `motor_inputs`: a vector of roll pitch and yaw in radians
+     *
+     * - `motor_inputs`: a vector of roll and pitch in radians
      * - `dt`: simulation time step or time difference when the model was last
      *         updated
      */
@@ -102,6 +108,7 @@ class Gimbal2AxisModel {
      * Update gimbal attitude controller
      *
      * Args:
+     *
      * - `dt` is time step or time difference when the model was last updated
      */
     Vec2 attitudeControllerControl(double dt);
@@ -110,7 +117,9 @@ class Gimbal2AxisModel {
      * Set gimbal frame orientation
      *
      * Args:
-     * - `frame_if`: frame orientation in inertial frame (NWU coordinate system)
+     *
+     * - `frame_if`: frame orientation in inertial frame (NWU coordinate
+     *   system)
      */
     void setFrameOrientation(Quaternion frame_if);
 
@@ -118,6 +127,7 @@ class Gimbal2AxisModel {
      * Set gimbal joint attitude
      *
      * Args:
+     *
      * - `euler_if`: gimbal attitude in inertial frame (NWU coordinate system)
      */
     void setAttitude(Vec2 euler_if);
@@ -126,6 +136,7 @@ class Gimbal2AxisModel {
      * Obtain gimbal target in body frame
      *
      * Args:
+     *
      * - `target_cf`: target in camera frame (EDN coordinate system)
      */
     Vec3 getTargetInBF(Vec3 target_cf);
@@ -134,6 +145,7 @@ class Gimbal2AxisModel {
      * Obtain gimbal target in body planar frame
      *
      * Args:
+     *
      * - `target_cf`: target in camera frame (EDN coordinate system)
      * - `body_if`: gimbal body in inertial frame (NWU coordinate system)
      * - `joint_bf`: gimbal body in body frame (NWU coordinate system)
@@ -146,14 +158,15 @@ class Gimbal2AxisModel {
      * Track target
      *
      * Args:
+     *
      * - `target_cf`: target in camera frame (EDN coordinate system)
      */
     void trackTarget(Vec3 target_cf);
 
     /**
-     * Get gimbal state
+     * Obtain gimbal state
      *
-     * The state is:
+     * The state vector is:
      *
      * - roll
      * - roll velocity
