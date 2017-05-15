@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e  # exit on first error
-OPENCV_REPO=https://github.com/opencv/opencv
+OPENCV_URL=https://github.com/opencv/opencv/archive/3.2.0.zip
 
 
 install_dependencies() {
@@ -41,17 +41,19 @@ install_dependencies() {
 }
 
 download_opencv() {
-    cd /usr/local/src/
+    mkdir -p /usr/local/src/opencv
+    cd /usr/local/src/opencv
     if [ ! -d opencv ]; then
-        git clone $OPENCV_REPO
+        wget $OPENCV_URL -O opencv3.2.zip
+        unzip -qq opencv3.2.zip
+        rm opencv3.2.zip
     fi
     cd -
 }
 
 install_opencv() {
     # compile and install opencv
-    cd /usr/local/src/opencv
-    git checkout 3.2.0
+    cd /usr/local/src/opencv/opencv3.2
     mkdir -p build
     cd build
     cmake \
