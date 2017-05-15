@@ -14,11 +14,12 @@ namespace wave {
  */
 class Pose {
  public:
-    Quaternion q;
     Vec3 position;
+    Quaternion orientation;
 
-    Pose() : q{1.0, 0.0, 0.0, 0.0}, position{0.0, 0.0, 0.0} {}
-    Pose(Quaternion q, Vec3 position) : q{q}, position{position} {}
+    Pose() : position{0.0, 0.0, 0.0}, orientation{1.0, 0.0, 0.0, 0.0} {}
+    Pose(Vec3 position, Quaternion orientation)
+        : position{position}, orientation{orientation} {}
     Pose(double roll, double pitch, double yaw, double x, double y, double z);
 
     /// Obtain orientation as a rotation matrix
