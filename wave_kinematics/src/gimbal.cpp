@@ -28,17 +28,14 @@ Vec2 Gimbal2AxisController::update(Vec2 setpoints, Vec2 actual, double dt) {
 
 // GIMBAL MODEL
 void Gimbal2AxisModel::update(Vec2 motor_inputs, double dt) {
-    // setup
+    // update states
     float ph = this->states(0);
     float ph_vel = this->states(1);
     float th = this->states(2);
     float th_vel = this->states(3);
 
-    // roll
     this->states(0) = ph + ph_vel * dt;
     this->states(1) = ph_vel + (motor_inputs(0) / this->Ix) * dt;
-
-    // pitch
     this->states(2) = th + th_vel * dt;
     this->states(3) = th_vel + (motor_inputs(1) / this->Ix) * dt;
 
@@ -54,15 +51,9 @@ void Gimbal2AxisModel::update(Vec2 motor_inputs, double dt) {
 }
 
 Vec2 Gimbal2AxisModel::attitudeControllerControl(double dt) {
-    Vec2 actual_attitude;
-    Vec2 motor_inputs;
-
-    // attitude controller
-    actual_attitude << this->states(0), this->states(2);
-    motor_inputs =
-      this->joint_controller.update(this->joint_setpoints, actual_attitude, dt);
-
-    return motor_inputs;
+    Vec2 actual_attitude{this->states(0), this->states(2)};
+    return this->joint_controller.update(
+      this->joint_setpoints, actual_attitude, dt);
 }
 
 void Gimbal2AxisModel::setFrameOrientation(Quaternion frame_if) {
