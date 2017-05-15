@@ -53,7 +53,7 @@ download_opencv() {
 
 install_opencv() {
     # compile and install opencv
-    cd /usr/local/src/opencv/opencv3.2
+    cd /usr/local/src/opencv/opencv-3.2.0
     mkdir -p build
     cd build
     cmake \
@@ -71,6 +71,6 @@ install_opencv() {
 }
 
 # MAIN
-install_dependencies
-download_opencv
+# install_dependencies
+# download_opencv
 install_opencv
