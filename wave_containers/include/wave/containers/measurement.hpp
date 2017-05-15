@@ -29,7 +29,7 @@ template <typename T>
 decltype(T::value) interpolate(const T &m1, const T &m2, const TimeType &t) {
     auto w2 = 1.0 * (t - m1.time_point) / (m2.time_point - m1.time_point);
     return (1 - w2) * m1.value + w2 * m2.value;
-};
+}
 
 }  // namespace wave
 
