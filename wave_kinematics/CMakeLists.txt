@@ -8,8 +8,8 @@ INCLUDE_DIRECTORIES(/usr/include/eigen3)
 ADD_LIBRARY(
     wave_kinematics
     STATIC
-    src/data.cpp
     src/gimbal.cpp
+    src/pose.cpp
     src/quadrotor.cpp
 )
 SET(
@@ -28,6 +28,7 @@ ADD_EXECUTABLE(
     wave_kinematics_tests
     # TESTS
     tests/gimbal_test.cpp
+    tests/pose_test.cpp
     tests/quadrotor_test.cpp
     # TEST RUNNER
     tests/test_runner.cpp

@@ -7,7 +7,7 @@
 
 #include "wave/utils/utils.hpp"
 #include "wave/controls/pid.hpp"
-#include "wave/kinematics/data.hpp"
+#include "wave/kinematics/pose.hpp"
 
 namespace wave {
 
@@ -41,8 +41,15 @@ class AttitudeController {
 };
 
 /**
- * 2-axis Gimbal model with PID attitude controllers, this model assumes its
- * running at a rate of 100hz.
+ * 2-axis Gimbal model with PID attitude controllers
+ *
+ * This model has the following assumptions:
+ *
+ * - gimbal motion is linear
+ * - no friction
+ * - no gimbal lock protection
+ * - running at a rate of 100hz
+ * - donwload facing (origin attitude is downwards)
  */
 class GimbalModel {
  public:
