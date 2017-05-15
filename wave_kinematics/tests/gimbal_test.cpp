@@ -28,7 +28,7 @@ TEST(GimbalAttitudeController, constructor) {
 TEST(GimbalAttitudeController, update) {
     double t, dt;
     FILE *output_file;
-    GimbalModel gimbal;
+    Gimbal2AxisModel gimbal;
     AttitudeController controller;
     Vec3 setpoints;
     Vec3 actual;
@@ -57,8 +57,8 @@ TEST(GimbalAttitudeController, update) {
     fclose(output_file);
 }
 
-TEST(GimbalModel, getTargetInBF) {
-    GimbalModel gimbal;
+TEST(Gimbal2AxisModel, getTargetInBF) {
+    Gimbal2AxisModel gimbal;
     Vec3 target_cf;
     Vec3 target_bf;
 
@@ -153,8 +153,8 @@ TEST(GimbalModel, getTargetInBF) {
     ASSERT_NEAR(0.0, target_bf(2), 0.0000001);
 }
 
-TEST(GimbalModel, getTargetInBPF) {
-    GimbalModel gimbal;
+TEST(Gimbal2AxisModel, getTargetInBPF) {
+    Gimbal2AxisModel gimbal;
     Vec3 euler, target_cf, target_bpf;
     Quaternion frame, joints;
     double roll, pitch, yaw;
@@ -287,8 +287,8 @@ TEST(GimbalModel, getTargetInBPF) {
     ASSERT_TRUE(target_bpf(2) < 0.0);
 }
 
-TEST(GimbalModel, getTargetInBPF2) {
-    GimbalModel gimbal;
+TEST(Gimbal2AxisModel, getTargetInBPF2) {
+    Gimbal2AxisModel gimbal;
     Vec3 euler, target_cf, target_bpf;
     Quaternion frame, joints;
     double roll, pitch, yaw;
@@ -338,8 +338,8 @@ TEST(GimbalModel, getTargetInBPF2) {
     ASSERT_NEAR(-10.0, target_bpf(2), 0.01);
 }
 
-TEST(GimbalModel, trackTarget) {
-    GimbalModel gimbal;
+TEST(Gimbal2AxisModel, trackTarget) {
+    Gimbal2AxisModel gimbal;
     Vec3 euler, target_cf, target_bpf;
     double roll, pitch, yaw;
     double dx, dy, dz;

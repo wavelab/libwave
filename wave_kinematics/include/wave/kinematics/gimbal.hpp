@@ -46,12 +46,12 @@ class AttitudeController {
  * This model has the following assumptions:
  *
  * - gimbal motion is linear
+ * - gimbal is downward facing (origin is downwards)
  * - no friction
  * - no gimbal lock protection
  * - running at a rate of 100hz
- * - donwload facing (origin attitude is downwards)
  */
-class GimbalModel {
+class Gimbal2AxisModel {
  public:
     Vec4 states;
 
@@ -66,7 +66,7 @@ class GimbalModel {
     Quaternion joint_orientation;
     Vec3 target_attitude_if;
 
-    GimbalModel()
+    Gimbal2AxisModel()
         : states{0.0, 0.0, 0.0, 0.0},
           Ix{0.01},
           Iy{0.01},
@@ -77,7 +77,7 @@ class GimbalModel {
           joint_orientation{},
           target_attitude_if{0.0, 0.0, 0.0} {}
 
-    GimbalModel(Vec4 pose)
+    Gimbal2AxisModel(Vec4 pose)
         : states{pose},
           Ix{0.01},
           Iy{0.01},
@@ -90,31 +90,53 @@ class GimbalModel {
 
     /**
      * Update gimbal model
+     *
+     * Args:
+     * - `motor_inputs`: a vector of roll pitch and yaw in radians
+     * - `dt`: simulation time step or time difference when the model was last
+     *         updated
      */
-    int update(Vec3 motor_inputs, double dt);
+    void update(Vec3 motor_inputs, double dt);
 
     /**
      * Update gimbal attitude controller
+     *
+     * Args:
+     * - `dt` is time step or time difference when the model was last updated
      */
     Vec3 attitudeControllerControl(double dt);
 
     /**
      * Set gimbal frame orientation
+     *
+     * Args:
+     * - `frame_if`: frame orientation in inertial frame (NWU coordinate system)
      */
     void setFrameOrientation(Quaternion frame_if);
 
     /**
      * Set gimbal joint attitude
+     *
+     * Args:
+     * - `euler_if`: gimbal attitude in inertial frame (NWU coordinate system)
      */
     void setAttitude(Vec3 euler_if);
 
     /**
      * Obtain gimbal target in body frame
+     *
+     * Args:
+     * - `target_cf`: target in camera frame (EDN coordinate system)
      */
     Vec3 getTargetInBF(Vec3 target_cf);
 
     /**
      * Obtain gimbal target in body planar frame
+     *
+     * Args:
+     * - `target_cf`: target in camera frame (EDN coordinate system)
+     * - `body_if`: gimbal body in inertial frame (NWU coordinate system)
+     * - `joint_bf`: gimbal body in body frame (NWU coordinate system)
      */
     Vec3 getTargetInBPF(Vec3 target_cf,
                         Quaternion body_if,
@@ -122,11 +144,23 @@ class GimbalModel {
 
     /**
      * Track target
+     *
+     * Args:
+     * - `target_cf`: target in camera frame (EDN coordinate system)
      */
     void trackTarget(Vec3 target_cf);
 
     /**
      * Get gimbal state
+     *
+     * The state is:
+     *
+     * - roll
+     * - roll velocity
+     * - pitch
+     * - pitch velocity
+     *
+     * as a vector of size 4.
      */
     Vec4 getState();
 
