@@ -113,7 +113,6 @@ TEST(Utils_measurement, get_interpolated_other_sensors) {
     auto t2 = t1 + std::chrono::seconds(10);
     auto tmid = t1 + std::chrono::seconds(5);
 
-    auto v1 = 3.5, v2 = 8.0;
     m.emplace(t1, SomeSensors::S1, 10);
     m.emplace(t2, SomeSensors::S1, 20);
     m.emplace(t1, SomeSensors::S3, 70);
@@ -133,14 +132,14 @@ TEST(Utils_measurement, iterators) {
     for (auto i = 0; i < 5; ++i) {
         auto now = std::chrono::steady_clock::now();
         auto value_in = i * 1.1;
-        m.emplace(now, SomeSensors::S1, i);
+        m.emplace(now, SomeSensors::S1, value_in);
     }
     ASSERT_EQ(5ul, m.size());
 
     EXPECT_EQ(5, std::distance(m.begin(), m.end()));
     EXPECT_EQ(5, std::distance(m.cbegin(), m.cend()));
 
-    auto expected = 0;
+    auto expected = 0.0;
     // Note the container supports range-based for loops
     for (auto &v : m) {
         EXPECT_DOUBLE_EQ(expected, v.value);
