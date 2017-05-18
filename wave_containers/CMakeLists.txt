@@ -14,14 +14,10 @@ INCLUDE_DIRECTORIES(
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
 
 ADD_EXECUTABLE(
-    # TARGET
     ${PROJECT_NAME}_tests
-    # TESTS
     tests/containers/measurement_test.cpp
-    # TEST RUNNER
-    tests/test_runner.cpp
 )
 
-SET(TEST_DEPS gtest)
+SET(TEST_DEPS gtest gtest_main)
 
 TARGET_LINK_LIBRARIES(${PROJECT_NAME}_tests ${TEST_DEPS})

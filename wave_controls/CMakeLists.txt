@@ -15,17 +15,15 @@ SET(
     WAVE_CONTROL_TEST_DEPS
     wave_controls
     gtest
+    gtest_main
     pthread
 )
 
 # UNIT TESTS
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
 ADD_EXECUTABLE(
-    # TARGET
-    wave_controls_tests
-    # TESTS
+    ${PROJECT_NAME}_tests
     tests/pid_test.cpp
-    # TEST RUNNER
-    tests/test_runner.cpp
 )
+
 TARGET_LINK_LIBRARIES(wave_controls_tests ${WAVE_CONTROL_TEST_DEPS})

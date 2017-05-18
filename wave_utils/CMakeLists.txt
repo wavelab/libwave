@@ -24,6 +24,7 @@ SET(
     wave_utils
     yaml-cpp
     gtest
+    gtest_main
     pthread
     ${OpenCV_LIBS}
 )
@@ -32,15 +33,11 @@ SET(
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
 FILE(COPY tests/data DESTINATION ${PROJECT_BINARY_DIR}/tests)
 ADD_EXECUTABLE(
-    # TARGET
-    wave_utils_tests
-    # TESTS
+    ${PROJECT_NAME}_tests
     tests/utils/config_test.cpp
     tests/utils/data_test.cpp
     tests/utils/filesystem_test.cpp
     tests/utils/math_test.cpp
     tests/utils/time_test.cpp
-    # TEST RUNNER
-    tests/test_runner.cpp
 )
 TARGET_LINK_LIBRARIES(wave_utils_tests ${WAVE_UTILS_TEST_DEPS})
