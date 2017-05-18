@@ -19,20 +19,9 @@ ADD_LIBRARY(
     src/math.cpp
     src/time.cpp
 )
-SET(
-    WAVE_UTILS_TEST_DEPS
-    wave_utils
-    yaml-cpp
-    gtest
-    gtest_main
-    pthread
-    ${OpenCV_LIBS}
-)
 
 # UNIT TESTS
-SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
-FILE(COPY tests/data DESTINATION ${PROJECT_BINARY_DIR}/tests)
-ADD_EXECUTABLE(
+WAVE_ADD_TEST(
     ${PROJECT_NAME}_tests
     tests/utils/config_test.cpp
     tests/utils/data_test.cpp
@@ -40,4 +29,9 @@ ADD_EXECUTABLE(
     tests/utils/math_test.cpp
     tests/utils/time_test.cpp
 )
-TARGET_LINK_LIBRARIES(wave_utils_tests ${WAVE_UTILS_TEST_DEPS})
+TARGET_LINK_LIBRARIES(
+    ${PROJECT_NAME}_tests
+    ${PROJECT_NAME}
+    yaml-cpp
+    ${OpenCV_LIBS}
+)

@@ -30,14 +30,6 @@ SET(
     ${PCL_POINT_TYPES_LIBRARIES}
     ${PCL_IO_LIBRARIES}
 )
-SET(
-    WAVE_MATCHING_TEST_DEPS
-    wave_matching
-    wave_utils
-    gtest
-    gtest_main
-    ${CMAKE_THREAD_LIBS_INIT}
-)
 ADD_LIBRARY(
     wave_matching
     STATIC
@@ -48,13 +40,14 @@ ADD_LIBRARY(
 TARGET_LINK_LIBRARIES(wave_matching ${WAVE_MATCHING_DEPS})
 
 # UNIT TESTS
-SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
-FILE(COPY tests/data DESTINATION ${PROJECT_BINARY_DIR}/tests)
-FILE(COPY tests/config DESTINATION ${PROJECT_BINARY_DIR}/tests)
-ADD_EXECUTABLE(
+WAVE_ADD_TEST(
     ${PROJECT_NAME}_tests
     tests/icp_tests.cpp
     tests/ndt_tests.cpp
     tests/gicp_tests.cpp
 )
-TARGET_LINK_LIBRARIES(wave_matching_tests ${WAVE_MATCHING_TEST_DEPS})
+TARGET_LINK_LIBRARIES(
+    ${PROJECT_NAME}_tests
+    ${PROJECT_NAME}
+    wave_utils
+)

@@ -11,13 +11,4 @@ INCLUDE_DIRECTORIES(
 )
 
 # UNIT TESTS
-SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
-
-ADD_EXECUTABLE(
-    ${PROJECT_NAME}_tests
-    tests/containers/measurement_test.cpp
-)
-
-SET(TEST_DEPS gtest gtest_main)
-
-TARGET_LINK_LIBRARIES(${PROJECT_NAME}_tests ${TEST_DEPS})
+WAVE_ADD_TEST(${PROJECT_NAME}_tests tests/containers/measurement_test.cpp)
