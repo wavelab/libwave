@@ -35,3 +35,5 @@ TARGET_LINK_LIBRARIES(
     yaml-cpp
     ${OpenCV_LIBS}
 )
+# Copy the test data
+file(COPY tests/data DESTINATION ${PROJECT_BINARY_DIR}/tests)

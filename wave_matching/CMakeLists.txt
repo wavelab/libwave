@@ -52,3 +52,5 @@ TARGET_LINK_LIBRARIES(
     ${PROJECT_NAME}
     wave_utils
 )
+# Copy the test data
+file(COPY tests/data tests/config DESTINATION ${PROJECT_BINARY_DIR}/tests)
