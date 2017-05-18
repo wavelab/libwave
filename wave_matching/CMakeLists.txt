@@ -45,6 +45,7 @@ WAVE_ADD_TEST(
     tests/icp_tests.cpp
     tests/ndt_tests.cpp
     tests/gicp_tests.cpp
+    DISABLED  # Don't run this test for now
 )
 TARGET_LINK_LIBRARIES(
     ${PROJECT_NAME}_tests
