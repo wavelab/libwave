@@ -12,7 +12,7 @@ FASTDetector::FASTDetector(const std::string &config_path) {
     int param_type;
 
     if (parser.load(config_path) != 0) {
-        FeatureDetectorConfigException exception;
+        ConfigurationLoadingException exception;
         throw exception;
     }
 
@@ -27,18 +27,16 @@ FASTDetector::FASTDetector(const std::string &config_path) {
 }
 
 void FASTDetector::checkConfiguration(int new_threshold, int new_type) {
+    // Create InvalidConfigurationException object
+    InvalidConfigurationException exception;
+
     // Check parameters. If invalid, throw an exception.
-    try {
-        if (new_threshold < 0) {
-            std::cout << "Invalid threshold for FASTDetector!" << std::endl;
-            throw "Exception";
-        } else if (new_type < 1 || new_type > 3) {
-            std::cout << "Invalid type for FASTDetector!" << std::endl;
-            throw "Exception";
-        }
-    }
-    catch (int) {
-        std::cout << "Unhandled Exception" << std::endl;
+    if (new_threshold < 0) {
+        std::cout << "Invalid threshold for FASTDetector!" << std::endl;
+        throw exception;
+    } else if (new_type < 1 || new_type > 3) {
+        std::cout << "Invalid type for FASTDetector!" << std::endl;
+        throw exception;
     }
 }
 
@@ -83,4 +81,3 @@ std::vector<Keypoint>& FASTDetector::detectFeatures(Image& image_to_detect) {
 }
 
 } //end of namespace wave
-

@@ -10,9 +10,15 @@
 
 namespace wave {
 
-class FeatureDetectorConfigException : public std::exception {
+class ConfigurationLoadingException : public std::exception {
     const char* what() const throw() {
         return "Failed to Load Detector Configuration";
+    }
+};
+
+class InvalidConfigurationException : public std::exception {
+    const char* what() const throw() {
+        return "Invalid Detector Configuration";
     }
 };
 
