@@ -1,5 +1,5 @@
-#ifndef WAVE_FAST_FEATURE_DETECTOR_HPP
-#define WAVE_FAST_FEATURE_DETECTOR_HPP
+#ifndef WAVE_FAST_DETECTOR_HPP
+#define WAVE_FAST_DETECTOR_HPP
 
 #include "wave/vision/feature_detector.hpp"
 
@@ -13,14 +13,13 @@ class FASTDetector : public FeatureDetector <Image> {
                            bool new_nonmax_suppression,
                            int new_type);
     void loadImage(Image& source_image);
-    // const std::vector<Keypoint>& detectFeatures();
-
+    std::vector<Keypoint>& detectFeatures();
 
  private:
     // Member Variables
     // -------------------------------------------------------------------------
 
-    // Configuration Parameters
+    // FASTDetector-specific Configuration Parameters
     int threshold;
     bool nonmax_suppression;
     int type;
@@ -28,8 +27,8 @@ class FASTDetector : public FeatureDetector <Image> {
     // OpenCV Variables
     // -------------------------------------------------------------------------
     static cv::Ptr<cv::FastFeatureDetector> fast_detector;
-    cv::Ptr<Image> image;
-    cv::Ptr<Keypoint> keypoints;
+    Image image;
+    std::vector<Keypoint> keypoints;
 
     // Private Functions
     // -------------------------------------------------------------------------
@@ -40,4 +39,4 @@ class FASTDetector : public FeatureDetector <Image> {
 
 
 
-#endif //WAVE_FAST_FEATURE_DETECTOR_HPP
+#endif //WAVE_FAST_DETECTOR_HPP

@@ -60,7 +60,14 @@ void FASTDetector::configureDetector(int new_threshold,
 }
 
 void FASTDetector::loadImage(Image& source_image) {
-    this->image = &source_image;
+    this->image = source_image;
+}
+
+std::vector<Keypoint>& FASTDetector::detectFeatures() {
+    // Detect features in image
+    this->fast_detector->detect(this->image, this->keypoints);
+
+    return this->keypoints;
 }
 
 } //end of namespace wave
