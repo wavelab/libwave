@@ -40,6 +40,7 @@ TARGET_LINK_LIBRARIES(wave_vision ${WAVE_VISION_DEPS})
 #     # TARGET
 #     wave_vision_tests
 #     # TESTS
+#     tests/fast_tests.cpp
 #     # TEST RUNNER
 #     tests/test_runner.cpp
 # )

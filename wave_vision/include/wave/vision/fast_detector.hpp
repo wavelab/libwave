@@ -9,9 +9,12 @@ class FASTDetector : public FeatureDetector <Image> {
  public:
     explicit FASTDetector(const std::string&);
     ~FASTDetector();
-    void configureDetector(int new_threshold,
+    void configureDetector(int  new_threshold,
                            bool new_nonmax_suppression,
-                           int new_type);
+                           int  new_type);
+    void getConfiguration(int&  current_threshold,
+                          bool& current_nonmax_suppresion,
+                          int&  current_type);
     void loadImage(Image& source_image);
     std::vector<Keypoint>& detectFeatures();
 

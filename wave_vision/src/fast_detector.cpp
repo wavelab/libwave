@@ -59,6 +59,15 @@ void FASTDetector::configureDetector(int new_threshold,
     this->fast_detector->setType(this->type);
 }
 
+void FASTDetector::getConfiguration(int& current_threshold,
+                                    bool& current_nonmax_suppression,
+                                    int& current_type) {
+    // Obtain current configuration values using cv::FastFeatureDetector::get**
+    current_threshold = this->fast_detector->getThreshold();
+    current_nonmax_suppression = this->fast_detector->getNonmaxSuppression();
+    current_type = this->fast_detector->getType();
+}
+
 void FASTDetector::loadImage(Image& source_image) {
     this->image = source_image;
 }
