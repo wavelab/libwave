@@ -72,7 +72,10 @@ void FASTDetector::loadImage(Image& source_image) {
     this->image = source_image;
 }
 
-std::vector<Keypoint>& FASTDetector::detectFeatures() {
+std::vector<Keypoint>& FASTDetector::detectFeatures(Image& image_to_detect) {
+    // Load image
+    this->loadImage(image_to_detect);
+
     // Detect features in image
     this->fast_detector->detect(this->image, this->keypoints);
 

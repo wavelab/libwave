@@ -15,8 +15,7 @@ class FASTDetector : public FeatureDetector <Image> {
     void getConfiguration(int&  current_threshold,
                           bool& current_nonmax_suppresion,
                           int&  current_type);
-    void loadImage(Image& source_image);
-    std::vector<Keypoint>& detectFeatures();
+    std::vector<Keypoint>& detectFeatures(Image& image_to_detect);
 
  private:
     // Member Variables
@@ -36,6 +35,7 @@ class FASTDetector : public FeatureDetector <Image> {
     // Private Functions
     // -------------------------------------------------------------------------
     void checkConfiguration(int new_threshold, int new_type);
+    void loadImage(Image& source_image);
 };
 
 } // end of namespace wave

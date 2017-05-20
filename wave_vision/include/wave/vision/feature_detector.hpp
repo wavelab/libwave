@@ -21,18 +21,16 @@ class FeatureDetector {
  public:
     virtual ~FeatureDetector();
 
-    virtual void setImage(const T) = 0;
-
-    const Image& getImage() {
+    Image& getImage() {
         return this->image;
     }
 
-    virtual std::vector<Keypoint>& detectFeatures() = 0;
+    virtual std::vector<Keypoint>& detectFeatures(Image& image_to_detect) = 0;
 
  protected:
     cv::Ptr<Image> image;
     std::vector<Keypoint> keypoints;
-    virtual void checkConfiguration() = 0;
+    virtual void loadImage(const T) = 0;
 };
 
 } // end of namespace wave
