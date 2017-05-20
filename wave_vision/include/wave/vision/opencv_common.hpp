@@ -2,10 +2,12 @@
 #define WAVE_OPENCV_COMMON_HPP
 
 #include <opencv2/opencv.hpp>
+#include <opencv2/features2d.hpp>
 
 namespace wave {
 
-typedef cv::Mat OpenCVImage;
+typedef cv::Mat Image;
+typedef cv::KeyPoint Keypoint;
 
 } // end of namespace wave
 
