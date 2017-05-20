@@ -59,5 +59,9 @@ void FASTDetector::configureDetector(int new_threshold,
     this->fast_detector->setType(this->type);
 }
 
+void FASTDetector::loadImage(Image& source_image) {
+    this->image = &source_image;
+}
+
 } //end of namespace wave
 

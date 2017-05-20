@@ -9,8 +9,10 @@ class FASTDetector : public FeatureDetector <Image> {
  public:
     explicit FASTDetector(const std::string&);
     ~FASTDetector();
-    void configureDetector(int, bool, int);
-    // void setImage(const Image& source_image);
+    void configureDetector(int new_threshold,
+                           bool new_nonmax_suppression,
+                           int new_type);
+    void loadImage(Image& source_image);
     // const std::vector<Keypoint>& detectFeatures();
 
 
@@ -31,7 +33,7 @@ class FASTDetector : public FeatureDetector <Image> {
 
     // Private Functions
     // -------------------------------------------------------------------------
-    void checkConfiguration(int, int);
+    void checkConfiguration(int new_threshold, int new_type);
 };
 
 } // end of namespace wave
