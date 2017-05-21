@@ -15,11 +15,20 @@ class ICPMatcher : public Matcher<PCLPointCloud> {
     void setRef(const PCLPointCloud &ref);
     void setTarget(const PCLPointCloud &target);
     bool match();
+    void estimate_info();
+
+    enum covar_method {
+        LUM,
+        CENSI
+    };
 
  private:
     pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
     pcl::VoxelGrid<pcl::PointXYZ> filter;
     PCLPointCloud ref, target, final;
+    covar_method estimate_method;
+    void estimate_lum();
+    void estimate_censi();
 };
 
 }  // end of wave namespace

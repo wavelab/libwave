@@ -75,4 +75,27 @@ bool ICPMatcher::match() {
     return false;
 }
 
+void ICPMatcher::estimate_info() {
+    switch (this->estimate_method) {
+        case ICPMatcher::covar_method::LUM:
+            this->estimate_lum();
+        case ICPMatcher::covar_method::CENSI:
+            this->estimate_censi();
+        default:
+            return;
+    }
+}
+
+void ICPMatcher::estimate_lum() {
+    if (this->icp.hasConverged()) {
+    
+    }
+}
+
+void ICPMatcher::estimate_censi() {
+    if (this->icp.hasConverged()) {
+
+    }
+}
+
 }  // end of wave namespace

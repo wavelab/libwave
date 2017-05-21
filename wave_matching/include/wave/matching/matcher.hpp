@@ -45,6 +45,10 @@ class Matcher {
         return 0;
     }
 
+    virtual void estimate_info() {
+        this->information = MatX::Identity(6,6);
+    }
+
  protected:
     float resolution;
     Affine3 result;
