@@ -22,21 +22,26 @@ class InvalidConfigurationException : public std::exception {
     }
 };
 
+// Templates for image type and keypoints.
 template <typename T>
+
 class FeatureDetector {
  public:
     virtual ~FeatureDetector();
 
-    Image& getImage() {
+    virtual cv::Ptr<T> getImage() {
         return this->image;
     }
 
-    virtual std::vector<Keypoint>& detectFeatures(Image& image_to_detect) = 0;
+    virtual std::vector<Keypoint>& detectFeatures(T& image_to_detect) = 0;
 
  protected:
-    cv::Ptr<Image> image;
+    cv::Ptr<T> image;
     std::vector<Keypoint> keypoints;
-    virtual void loadImage(const T) = 0;
+
+    virtual void loadImage(T& source_image) {
+        this->image = &source_image;
+    };
 };
 
 } // end of namespace wave

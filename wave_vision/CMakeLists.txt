@@ -33,15 +33,15 @@ ADD_LIBRARY(
 TARGET_LINK_LIBRARIES(wave_vision ${WAVE_VISION_DEPS})
 
 # UNIT TESTS
-# SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
-# FILE(COPY tests/data DESTINATION ${PROJECT_BINARY_DIR}/tests)
-# FILE(COPY tests/config DESTINATION ${PROJECT_BINARY_DIR}/tests)
-# ADD_EXECUTABLE(
-#     # TARGET
-#     wave_vision_tests
-#     # TESTS
-#     tests/fast_tests.cpp
-#     # TEST RUNNER
-#     tests/test_runner.cpp
-# )
-# TARGET_LINK_LIBRARIES(wave_vision_tests ${WAVE_VISION_TEST_DEPS})
+SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
+FILE(COPY tests/data DESTINATION ${PROJECT_BINARY_DIR}/tests)
+FILE(COPY tests/config DESTINATION ${PROJECT_BINARY_DIR}/tests)
+ADD_EXECUTABLE(
+    # TARGET
+    wave_vision_tests
+    # TESTS
+    tests/fast_tests.cpp
+    # TEST RUNNER
+    tests/test_runner.cpp
+)
+TARGET_LINK_LIBRARIES(wave_vision_tests ${WAVE_VISION_TEST_DEPS})

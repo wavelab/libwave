@@ -5,7 +5,7 @@
 
 namespace wave {
 
-class FASTDetector : public FeatureDetector <Image> {
+class FASTDetector : public FeatureDetector<Image> {
  public:
     explicit FASTDetector(const std::string&);
     ~FASTDetector();
@@ -13,7 +13,7 @@ class FASTDetector : public FeatureDetector <Image> {
                            bool new_nonmax_suppression,
                            int  new_type);
     void getConfiguration(int&  current_threshold,
-                          bool& current_nonmax_suppresion,
+                          bool& current_nonmax_suppression,
                           int&  current_type);
     std::vector<Keypoint>& detectFeatures(Image& image_to_detect);
 
@@ -30,12 +30,10 @@ class FASTDetector : public FeatureDetector <Image> {
     // -------------------------------------------------------------------------
     static cv::Ptr<cv::FastFeatureDetector> fast_detector;
     Image image;
-    std::vector<Keypoint> keypoints;
 
     // Private Functions
     // -------------------------------------------------------------------------
     void checkConfiguration(int new_threshold, int new_type);
-    void loadImage(Image& source_image);
 };
 
 } // end of namespace wave
