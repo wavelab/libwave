@@ -7,7 +7,7 @@ namespace wave {
 
 class FASTDetector : public FeatureDetector<Image> {
  public:
-    explicit FASTDetector(const std::string&);
+    FASTDetector(const std::string& config_path);
     ~FASTDetector();
     void configureDetector(int  new_threshold,
                            bool new_nonmax_suppression,
