@@ -44,7 +44,7 @@ void FASTDetector::checkConfiguration(int new_threshold, int new_type) {
     }
 }
 
-void FASTDetector::configureDetector(int new_threshold,
+void FASTDetector::configure(int new_threshold,
                                      bool new_nonmax_suppression,
                                      int new_type) {
     // Confirm configuration parameters are valid

@@ -32,4 +32,9 @@ TEST(FASTTests, GoodInitialization) {
     SUCCEED();
 }
 
+TEST(FASTTests, GoodManualConfiguration) {
+    FASTDetector detector(TEST_CONFIG);
+    int bad_threshold = -1;
+}
+
 }  // end of namespace wave
