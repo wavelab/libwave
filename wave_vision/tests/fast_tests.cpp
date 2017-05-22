@@ -92,13 +92,13 @@ TEST(FASTTests, BadTypeConfiguration) {
 
 TEST_F(FASTTest, DetectImage) {
     this->keypoints = detector->detectFeatures(this->image);
-    cv::imshow("Lenna", this->image);
+    //cv::imshow("Lenna", this->image);
 
     // Draw Keypoints on image and display
     cv::Mat image_with_keypoints;
     cv::drawKeypoints(this->image, this->keypoints, image_with_keypoints,
                       cv::Scalar::all(-1), cv::DrawMatchesFlags::DEFAULT);
-    cv::imshow("Detection Test", image_with_keypoints);
+    //cv::imshow("Detection Test", image_with_keypoints);
 
     //cv::waitKey(0);
     SUCCEED();
