@@ -4,6 +4,10 @@ PROJECT(wave_vision)
 # PACKAGES
 FIND_PACKAGE(OpenCV REQUIRED)
 
+# DEFINITIONS
+ADD_DEFINITIONS(${EIGEN_DEFINITIONS}
+                ${OpenCV_DEFINITIONS})
+
 # INCLUDES
 INCLUDE_DIRECTORIES(
     ${EIGEN_INCLUDE_DIRS}
@@ -11,6 +15,7 @@ INCLUDE_DIRECTORIES(
 
 # LIBRARY DIRS
 LINK_DIRECTORIES(${EIGEN_LIBRARY_DIRS})
+LINK_DIRECTORIES(/usr/lib/x86_64-linux-gnu/)
 
 # LIBRARIES
 SET(
@@ -22,16 +27,18 @@ SET(
 
 SET(
     WAVE_VISION_TEST_DEPS
-    yaml-cpp
+    wave_vision
     wave_utils
     gtest
     ${OpenCV_LIBS}
     ${CMAKE_THREAD_LIBS_INIT}
 )
+
 ADD_LIBRARY(
     wave_vision
     STATIC
-    src/fast_detector.cpp)
+    src/fast_detector.cpp
+)
 TARGET_LINK_LIBRARIES(wave_vision ${WAVE_VISION_DEPS})
 
 # UNIT TESTS

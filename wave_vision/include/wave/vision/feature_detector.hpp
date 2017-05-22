@@ -27,7 +27,7 @@ template <typename T>
 
 class FeatureDetector {
  public:
-    virtual ~FeatureDetector();
+    virtual ~FeatureDetector() {};
 
     virtual cv::Ptr<T> getImage() {
         return this->image;

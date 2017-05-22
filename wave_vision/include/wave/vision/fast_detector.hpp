@@ -28,7 +28,7 @@ class FASTDetector : public FeatureDetector<Image> {
 
     // OpenCV Variables
     // -------------------------------------------------------------------------
-    static cv::Ptr<cv::FastFeatureDetector> fast_detector;
+    cv::Ptr<cv::FastFeatureDetector> fast_detector;
     Image image;
 
     // Private Functions

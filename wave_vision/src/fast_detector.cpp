@@ -25,6 +25,8 @@ FASTDetector::FASTDetector(const std::string &config_path) {
     configureDetector(param_threshold, param_nonmax_suppression, param_type);
 }
 
+FASTDetector::~FASTDetector() {}
+
 void FASTDetector::checkConfiguration(int new_threshold, int new_type) {
     // Create InvalidConfigurationException object
     InvalidConfigurationException exception;
@@ -33,7 +35,7 @@ void FASTDetector::checkConfiguration(int new_threshold, int new_type) {
     if (new_threshold < 0) {
         std::cout << "Invalid threshold for FASTDetector!" << std::endl;
         throw exception;
-    } else if (new_type < 1 || new_type > 3) {
+    } else if (new_type < 0 || new_type > 3) {
         std::cout << "Invalid type for FASTDetector!" << std::endl;
         throw exception;
     }
