@@ -39,7 +39,6 @@ Vec3 Rotation::rotate(const Vec3 &input_vector) const {
 }
 
 Vec3 Rotation::inverseRotate(const Vec3 &input_vector) const {
-    
     // Check if the input is finite, throw error otherwise
     checkArrayFinite(input_vector);
 
@@ -99,7 +98,6 @@ Rotation &Rotation::setFromAngleAxis(const double angle_magnitude,
 }
 
 Rotation &Rotation::setFromExpMap(const Vec3 &se3_vector) {
-    
     checkArrayFinite(se3_vector);
 
     this->rotation_object = this->rotation_object.exponentialMap(se3_vector);

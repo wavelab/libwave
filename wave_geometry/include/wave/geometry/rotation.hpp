@@ -58,7 +58,6 @@ class Rotation {
     // Operator overloads.
     Rotation operator*(const Rotation &R) const;
     friend std::ostream &operator<<(std::ostream &stream, const Rotation &R);
-
 };
 
 // Other helper functions.
