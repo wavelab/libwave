@@ -39,6 +39,7 @@ Vec3 Rotation::rotate(const Vec3 &input_vector) const {
 }
 
 Vec3 Rotation::inverseRotate(const Vec3 &input_vector) const {
+    
     // Check if the input is finite, throw error otherwise
     checkArrayFinite(input_vector);
 
@@ -98,7 +99,7 @@ Rotation &Rotation::setFromAngleAxis(const double angle_magnitude,
 }
 
 Rotation &Rotation::setFromExpMap(const Vec3 &se3_vector) {
-    // Check if the input is finite, throw error otherwise
+    
     checkArrayFinite(se3_vector);
 
     this->rotation_object = this->rotation_object.exponentialMap(se3_vector);
@@ -106,12 +107,7 @@ Rotation &Rotation::setFromExpMap(const Vec3 &se3_vector) {
 }
 
 Rotation &Rotation::setFromMatrix(const Mat3 &input_matrix) {
-    // Check if the input is finite, throw error otherwise
     checkArrayFinite(input_matrix);
-
-    // Check if the input is a valid rotation matrix,
-    // throw error otherwise.
-
     checkValidRotation(input_matrix);
 
     this->rotation_object.setMatrix(input_matrix);
@@ -123,7 +119,6 @@ Vec3 Rotation::logMap() const {
 }
 
 Rotation &Rotation::manifoldPlus(const Vec3 &omega) {
-    // Check if the input is finite, throw error otherwise
     checkArrayFinite(omega);
 
     this->rotation_object = this->rotation_object.boxPlus(omega);
@@ -132,7 +127,6 @@ Rotation &Rotation::manifoldPlus(const Vec3 &omega) {
 
 bool Rotation::isNear(const Rotation &R,
                       const double comparison_threshold = 1e-6) const {
-    // Check if the input is finite, throw error otherwise
     checkArrayFinite(R.toRotationMatrix());
     checkScalarFinite(comparison_threshold);
 
@@ -145,7 +139,6 @@ Mat3 Rotation::toRotationMatrix() const {
 }
 
 Rotation Rotation::operator*(const Rotation &R) const {
-    // Check if the input is finite, throw error otherwise
     checkArrayFinite(R.toRotationMatrix());
 
     Rotation composed;
@@ -158,17 +151,5 @@ std::ostream &operator<<(std::ostream &stream, const Rotation &R) {
     return stream;
 }
 
-bool Rotation::isValidRotationMatrix(const Mat3 &R) {
-    // For a rotation to be valid, R*inv(R)==I,
-    // and det(R) = 1;
-
-    Mat3 eye3;
-    eye3.setIdentity();
-    Mat3 ortho_matrix = R * R.inverse();
-    if (ortho_matrix.isApprox(eye3) && !fltcmp(R.determinant(), 1))
-        return true;
-    else
-        return false;
-}
 
 }  // end of wave namespace

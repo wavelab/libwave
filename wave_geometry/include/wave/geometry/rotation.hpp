@@ -59,9 +59,10 @@ class Rotation {
     Rotation operator*(const Rotation &R) const;
     friend std::ostream &operator<<(std::ostream &stream, const Rotation &R);
 
-    // Static functions.
-    static bool isValidRotationMatrix(const Mat3 &input_matrix);
 };
+
+// Other helper functions.
+bool isValidRotationMatrix(const Mat3 &input_matrix);
 
 }  // end of wave namespace
 #endif

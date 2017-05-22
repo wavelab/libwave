@@ -30,16 +30,31 @@ void checkScalarFinite(double input_scalar) {
 // Function that checks to see if the input vector is normalized.
 template <typename MatrixType>
 void checkVectorNormalized(const Eigen::MatrixBase<MatrixType> &input_vector) {
-    // fltcmp returns 0 on successful comparision.
-    if (fltcmp(input_vector.norm(), 1)) {
+    // fltcmp returns 0 if equal.
+    if (fltcmp(input_vector.norm(), 1.0, sqrt(std::numeric_limits<double>::epsilon()))) {
         throw std::invalid_argument("Vector input is not normalized.");
     }
 }
 
+// Function that checks if a rotation matrix is valid.  Requires that:
+// 1) R*inv(R)==I,
+// 2) det(R) == 1;
+bool isValidRotationMatrix(const Mat3 &R) {
+
+    Mat3 eye3;
+    eye3.setIdentity();
+    Mat3 ortho_matrix = R * R.inverse();
+    // fltcmp returns 0 if equal.
+    if (ortho_matrix.isApprox(eye3) && !fltcmp(R.determinant(), 1.0, sqrt(std::numeric_limits<double>::epsilon() ) ))
+        return true;
+    else
+        return false;
+}
+
 // Function that checks to see if the input matrix is a valid rotation.
 void checkValidRotation(const Mat3 &R) {
-    // fltcmp returns 0 on successful comparision.
-    if (!Rotation::isValidRotationMatrix(R)) {
+    
+    if (!isValidRotationMatrix(R)) {
         throw std::invalid_argument(
           "Matrix input is not a valid rotation matrix.");
     }
