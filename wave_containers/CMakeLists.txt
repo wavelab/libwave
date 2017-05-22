@@ -12,5 +12,5 @@ INCLUDE_DIRECTORIES(
 
 # UNIT TESTS
 WAVE_ADD_TEST(${PROJECT_NAME}_tests
-    tests/containers/measurement_test.cpp
-    tests/containers/landmark_measurement_test.cpp)
+    tests/measurement_test.cpp
+    tests/landmark_measurement_test.cpp)
