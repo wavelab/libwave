@@ -17,11 +17,11 @@ namespace wave {
 class FactorGraph {
  public:
     std::multimap<std::shared_ptr<FactorVariable>, std::shared_ptr<Factor>>
-      graph;
-    std::set<std::shared_ptr<FactorVariable>> variables;
-    std::vector<std::shared_ptr<Factor>> factors;
+      graph{};
+    std::set<std::shared_ptr<FactorVariable>> variables{};
+    std::vector<std::shared_ptr<Factor>> factors{};
 
-    FactorGraph() : graph{}, variables{}, factors{} {}
+    FactorGraph() {}
 
     template <typename V, typename T>
     int addUnaryFactor(FactorId at, const T &z) {

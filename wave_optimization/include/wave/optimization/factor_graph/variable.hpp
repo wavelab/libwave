@@ -35,26 +35,10 @@ struct FactorVariable {
 
 struct PoseVar : FactorVariable {
     PoseVar(size_t id) : FactorVariable{id, 6} {}
-
-    friend std::ostream &operator<<(std::ostream &os, const PoseVar &var) {
-        os << "[";
-        os << "id: " << var.id << ", ";
-        os << "size: " << var.data.size();
-        os << "]";
-        return os;
-    }
 };
 
 struct LandmarkVar : FactorVariable {
     LandmarkVar(size_t id) : FactorVariable{id, 3} {}
-
-    friend std::ostream &operator<<(std::ostream &os, const LandmarkVar &var) {
-        os << "[";
-        os << "id: " << var.id << ", ";
-        os << "size: " << var.data.size();
-        os << "]";
-        return os;
-    }
 };
 
 }  // end of wave namespace
