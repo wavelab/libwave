@@ -131,14 +131,15 @@ TEST(Utils_measurement, iterators) {
 
     for (auto i = 0; i < 5; ++i) {
         auto now = std::chrono::steady_clock::now();
-        m.emplace(now, SomeSensors::S1, i);
+        auto value_in = i * 1.1;
+        m.emplace(now, SomeSensors::S1, value_in);
     }
     ASSERT_EQ(5ul, m.size());
 
     EXPECT_EQ(5, std::distance(m.begin(), m.end()));
     EXPECT_EQ(5, std::distance(m.cbegin(), m.cend()));
 
-    auto expected = 0;
+    auto expected = 0.0;
     // Note the container supports range-based for loops
     for (auto &v : m) {
         EXPECT_DOUBLE_EQ(expected, v.value);
