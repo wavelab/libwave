@@ -3,7 +3,7 @@
 
 namespace wave {
 
-#define TEST_CONFIG "config/fast_good.yaml"
+#define TEST_CONFIG "config/fast.yaml"
 #define TEST_IMAGE "data/lenna.png"
 
 // Test fixture to load same image data
@@ -32,9 +32,35 @@ TEST(FASTTests, GoodInitialization) {
     SUCCEED();
 }
 
-TEST(FASTTests, GoodManualConfiguration) {
+TEST(FASTTests, BadInitialization) {
+    const std::string bad_path = "bad_path";
+
+    ASSERT_THROW(FASTDetector detector(bad_path),
+                 ConfigurationLoadingException);
+}
+
+TEST(FASTTests, BadThresholdConfiguration) {
     FASTDetector detector(TEST_CONFIG);
     int bad_threshold = -1;
+    bool nonmax_suppression = true;
+    int type = 2;
+
+    ASSERT_THROW(detector.configure(bad_threshold, nonmax_suppression, type),
+                 InvalidConfigurationException);
+}
+
+TEST(FASTTests, BadTypeConfiguration) {
+    FASTDetector detector(TEST_CONFIG);
+    int threshold = 10;
+    bool nonmax_suppression = true;
+    int bad_type_neg = -1;
+    int bad_type_pos = 4;
+
+    ASSERT_THROW(detector.configure(threshold, nonmax_suppression, bad_type_neg),
+                 InvalidConfigurationException);
+
+    ASSERT_THROW(detector.configure(threshold, nonmax_suppression, bad_type_pos),
+                 InvalidConfigurationException);
 }
 
 }  // end of namespace wave
