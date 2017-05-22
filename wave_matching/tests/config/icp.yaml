@@ -1,0 +1,5 @@
+icp:
+  max_corr: 3   #maxCorrespondences
+  max_iter: 100 #maxIterations
+  t_eps: 1e-8   #transformationEpsilon
+  fit_eps: 1e-2 #euclideanFitnessEpsilon

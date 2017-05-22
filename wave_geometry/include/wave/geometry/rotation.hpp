@@ -6,6 +6,7 @@
 #include <ostream>
 
 #include <kindr/Core>
+
 #include "wave/utils/utils.hpp"
 
 namespace wave {

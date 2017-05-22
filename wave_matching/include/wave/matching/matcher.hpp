@@ -2,8 +2,8 @@
 #define WAVE_MATCHING_MATCHER_HPP
 
 #include <exception>
-#include <Eigen/Core>
-#include <Eigen/Geometry>
+
+#include "wave/utils/utils.hpp"
 
 namespace wave {
 
@@ -47,8 +47,8 @@ class Matcher {
 
  protected:
     float resolution;
-    Eigen::Affine3d result;
-    Eigen::MatrixXd information;
+    Affine3 result;
+    MatX information;
 };
 
 }  // end of wave namespace

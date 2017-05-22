@@ -1,5 +1,5 @@
 #include "wave/utils/config.hpp"
-#include "wave/matching/g_icp.hpp"
+#include "wave/matching/gicp.hpp"
 
 namespace wave {
 
@@ -7,6 +7,7 @@ GICPMatcher::GICPMatcher(float res, const std::string &config_path) {
     this->ref = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
     this->target = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
     this->final = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
+
     if (res > 0) {
         this->resolution = res;
         this->filter.setLeafSize(res, res, res);
@@ -15,10 +16,8 @@ GICPMatcher::GICPMatcher(float res, const std::string &config_path) {
     }
 
     ConfigParser parser;
-
     double r_eps = 1e-8, fit_eps = 1e-2;
     int corr_rand = 10, max_iter = 100;
-
     parser.addParam("g_icp.corr_rand", &corr_rand);
     parser.addParam("g_icp.max_iter", &max_iter);
     parser.addParam("g_icp.r_eps", &r_eps);

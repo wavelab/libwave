@@ -67,7 +67,7 @@ template <typename MatrixType, typename FunctorType>
 void numerical_jacobian(FunctorType F,
                         Vec3 evaluation_point,
                         Eigen::MatrixBase<MatrixType> &jac) {
-    for (size_t i = 0; i < evaluation_point.size(); i++) {
+    for (int i = 0; i < evaluation_point.size(); i++) {
         // Select the step size as recommended in Numerical Recipes.
         double step_size = cbrt(std::numeric_limits<double>::epsilon()) *
                            std::fabs(evaluation_point[i]);

@@ -14,11 +14,10 @@ ICPMatcher::ICPMatcher(float res, const std::string &config_path) {
     } else {
         this->resolution = -1;
     }
-    ConfigParser parser;
 
+    ConfigParser parser;
     double max_corr, t_eps, fit_eps;
     int max_iter;
-
     parser.addParam("icp.max_corr", &max_corr);
     parser.addParam("icp.max_iter", &max_iter);
     parser.addParam("icp.t_eps", &t_eps);
