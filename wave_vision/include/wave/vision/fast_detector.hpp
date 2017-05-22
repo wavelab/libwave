@@ -5,7 +5,7 @@
 
 namespace wave {
 
-class FASTDetector : public FeatureDetector<Image> {
+class FASTDetector : public FeatureDetector<cv::Mat> {
  public:
     FASTDetector(const std::string& config_path);
     ~FASTDetector();
@@ -15,7 +15,7 @@ class FASTDetector : public FeatureDetector<Image> {
     void getConfiguration(int&  current_threshold,
                           bool& current_nonmax_suppression,
                           int&  current_type);
-    std::vector<Keypoint>& detectFeatures(Image& image_to_detect);
+    std::vector<cv::KeyPoint>& detectFeatures(const cv::Mat& image);
 
  private:
     // Member Variables

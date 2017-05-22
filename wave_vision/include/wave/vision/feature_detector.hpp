@@ -6,7 +6,9 @@
 
 // Libwave Headers
 #include "wave/utils/utils.hpp"
-#include "opencv_common.hpp"
+
+// Third Party Headers
+#include "opencv2/opencv.hpp"
 
 namespace wave {
 
@@ -22,9 +24,7 @@ class InvalidConfigurationException : public std::exception {
     }
 };
 
-// Templates for image type and keypoints.
 template <typename T>
-
 class FeatureDetector {
  public:
     virtual ~FeatureDetector() {};
@@ -33,13 +33,13 @@ class FeatureDetector {
         return this->image;
     }
 
-    virtual std::vector<Keypoint>& detectFeatures(T& image_to_detect) = 0;
+    virtual std::vector<cv::KeyPoint>& detectFeatures(const T& image) = 0;
 
  protected:
-    Image image;
-    std::vector<Keypoint> keypoints;
+    cv::Mat image;
+    std::vector<cv::KeyPoint> keypoints;
 
-    virtual void loadImage(T& source_image) {
+    virtual void loadImage(const T& source_image) {
         this->image = source_image;
     };
 };

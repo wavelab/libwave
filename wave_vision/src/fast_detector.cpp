@@ -11,14 +11,14 @@ FASTDetector::FASTDetector(const std::string &config_path) {
     bool param_nonmax_suppression;
     int param_type;
 
+    parser.addParam("fast.threshold", &param_threshold);
+    parser.addParam("fast.nonmax_suppression", &param_nonmax_suppression);
+    parser.addParam("fast.type", &param_type);
+
     if (parser.load(config_path) != 0) {
         ConfigurationLoadingException exception;
         throw exception;
     }
-
-    parser.addParam("fast.threshold", &param_threshold);
-    parser.addParam("fast.nonmax_suppression", &param_nonmax_suppression);
-    parser.addParam("fast.type", &param_type);
 
     // Create FastFeatureDetector with these parameters
     this->fast_detector = cv::FastFeatureDetector::create();
@@ -67,9 +67,9 @@ void FASTDetector::getConfiguration(int& current_threshold,
     current_type = this->fast_detector->getType();
 }
 
-std::vector<Keypoint>& FASTDetector::detectFeatures(Image& image_to_detect) {
+std::vector<cv::KeyPoint>& FASTDetector::detectFeatures(const cv::Mat& image) {
     // Load image
-    this->loadImage(image_to_detect);
+    this->loadImage(image);
 
     // Detect features in image
     this->fast_detector->detect(this->image, this->keypoints);
