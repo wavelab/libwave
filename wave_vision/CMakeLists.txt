@@ -16,23 +16,13 @@ INCLUDE_DIRECTORIES(
 # LIBRARY DIRS
 LINK_DIRECTORIES(${EIGEN_LIBRARY_DIRS})
 
-# LIBRARIES
+# LIBRARY
 SET(
     WAVE_VISION_DEPS
     yaml-cpp
     wave_utils
     ${OpenCV_LIBS}
 )
-
-SET(
-    WAVE_VISION_TEST_DEPS
-    wave_vision
-    wave_utils
-    gtest
-    ${OpenCV_LIBS}
-    ${CMAKE_THREAD_LIBS_INIT}
-)
-
 ADD_LIBRARY(
     wave_vision
     STATIC
@@ -41,15 +31,14 @@ ADD_LIBRARY(
 TARGET_LINK_LIBRARIES(wave_vision ${WAVE_VISION_DEPS})
 
 # UNIT TESTS
-SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
-FILE(COPY tests/data DESTINATION ${PROJECT_BINARY_DIR}/tests)
-FILE(COPY tests/config DESTINATION ${PROJECT_BINARY_DIR}/tests)
-ADD_EXECUTABLE(
-    # TARGET
-    wave_vision_tests
-    # TESTS
-    tests/fast_tests.cpp
-    # TEST RUNNER
-    tests/test_runner.cpp
+WAVE_ADD_TEST(
+    ${PROJECT_NAME}_tests
+    tests/fast_tests.cpp)
+TARGET_LINK_LIBRARIES(
+    ${PROJECT_NAME}_tests
+    ${PROJECT_NAME}
+    wave_utils
 )
-TARGET_LINK_LIBRARIES(wave_vision_tests ${WAVE_VISION_TEST_DEPS})
+# Copy test data
+file(COPY tests/data tests/config DESTINATION ${PROJECT_BINARY_DIR}/tests)
+
