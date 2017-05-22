@@ -3,11 +3,8 @@
 
 namespace wave {
 
-#define TEST_CONFIG_GOOD "tests/config/fast_good.yaml"
-#define TEST_CONFIG_BAD_THRESHOLD "tests/config/fast_bad_threshold.yaml"
-#define TEST_CONFIG_BAD_TYPE_NEG "tests/config/fast_bad_type_neg.yaml"
-#define TEST_CONFIG_BAD_TYPE_POS "tests/config/fast_bad_type_pos.yaml"
-#define TEST_IMAGE "tests/data/lenna.png"
+#define TEST_CONFIG "config/fast_good.yaml"
+#define TEST_IMAGE "data/lenna.png"
 
 // Test fixture to load same image data
 class FASTTest : public testing::Test {
@@ -23,7 +20,7 @@ class FASTTest : public testing::Test {
     }
 
     void initDetector() {
-        this->detector = new FASTDetector(TEST_CONFIG_GOOD);
+        this->detector = new FASTDetector(TEST_CONFIG);
     }
 
     cv::Mat image;
@@ -31,25 +28,8 @@ class FASTTest : public testing::Test {
 };
 
 TEST(FASTTests, GoodInitialization) {
-    FASTDetector detector(TEST_CONFIG_GOOD);
+    FASTDetector detector(TEST_CONFIG);
     SUCCEED();
 }
-
-TEST(FASTTests, BadThresholdInitialization) {
-    EXPECT_THROW(FASTDetector detector(TEST_CONFIG_BAD_THRESHOLD),
-                 ConfigurationLoadingException);
-}
-
-TEST(FASTTests, BadTypeInitializationPos) {
-    EXPECT_THROW(FASTDetector detector(TEST_CONFIG_BAD_TYPE_POS),
-                 ConfigurationLoadingException);
-}
-
-TEST(FASTTests, BadTypeInitializationNeg) {
-    EXPECT_THROW(FASTDetector detector(TEST_CONFIG_BAD_TYPE_NEG),
-                 ConfigurationLoadingException);
-}
-
-
 
 }  // end of namespace wave

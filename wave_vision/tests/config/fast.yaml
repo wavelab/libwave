@@ -6,10 +6,10 @@ fast:
 
   # Removes keypoints in adjacent locations
   # true (default), or false
-  nonmax_supression: true
+  nonmax_suppression: true
 
   # Neighbourhood, as defined in the paper by Rosten.
   # 0 = TYPE_5_8
   # 1 = TYPE_7_12
   # 2 = TYPE_9_16 (default)
-  type: -1
+  type: 2

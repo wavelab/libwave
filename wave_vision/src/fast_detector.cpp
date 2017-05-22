@@ -20,9 +20,12 @@ FASTDetector::FASTDetector(const std::string &config_path) {
         throw exception;
     }
 
+    checkConfiguration(param_threshold, param_type);
+
     // Create FastFeatureDetector with these parameters
-    this->fast_detector = cv::FastFeatureDetector::create();
-    configureDetector(param_threshold, param_nonmax_suppression, param_type);
+    this->fast_detector = cv::FastFeatureDetector::create(param_threshold,
+                                                          param_nonmax_suppression,
+                                                          param_type);
 }
 
 FASTDetector::~FASTDetector() {}
