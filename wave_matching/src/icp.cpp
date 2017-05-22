@@ -177,7 +177,7 @@ void ICPMatcher::estimate_censi() {
                 j(3,5) = rg*cos(br)*cos(az);
                 j(4,5) = rg*cos(az)*sin(br);
                 j(5,5) = -rg*sin(az);
-                cov_Z = j * sphere_cov * j.transposeInPlace();
+                cov_Z = j * sphere_cov.derived() * j.transpose();
 
                 // coordinate transform jacobian. Order is range, bearing, azimuth for first and 2nd point
 //                [ cos(S2)*sin(S3), -S1*sin(S2)*sin(S3), S1*cos(S2)*cos(S3),               0,                   0,                  0]
