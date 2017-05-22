@@ -10,8 +10,9 @@ ADD_DEFINITIONS(${EIGEN_DEFINITIONS})
 ADD_DEFINITIONS(${PCL_DEFINITIONS})
 
 # INCLUDES
-INCLUDE_DIRECTORIES(${PCL_INCLUDE_DIRS})
-INCLUDE_DIRECTORIES(${EIGEN_INCLUDE_DIRS})
+INCLUDE_DIRECTORIES(${PCL_INCLUDE_DIRS}
+    ${EIGEN_INCLUDE_DIRS}
+    ${OpenCV_INCLUDE_DIRS})
 
 # LIBRARY DIRS
 LINK_DIRECTORIES(${PCL_LIBRARY_DIRS})
@@ -29,13 +30,6 @@ SET(
     ${PCL_POINT_TYPES_LIBRARIES}
     ${PCL_IO_LIBRARIES}
 )
-SET(
-    WAVE_MATCHING_TEST_DEPS
-    wave_matching
-    wave_utils
-    gtest
-    ${CMAKE_THREAD_LIBS_INIT}
-)
 ADD_LIBRARY(
     wave_matching
     STATIC
@@ -46,17 +40,17 @@ ADD_LIBRARY(
 TARGET_LINK_LIBRARIES(wave_matching ${WAVE_MATCHING_DEPS})
 
 # UNIT TESTS
-SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
-FILE(COPY tests/data DESTINATION ${PROJECT_BINARY_DIR}/tests)
-FILE(COPY tests/config DESTINATION ${PROJECT_BINARY_DIR}/tests)
-ADD_EXECUTABLE(
-    # TARGET
-    wave_matching_tests
-    # TESTS
+WAVE_ADD_TEST(
+    ${PROJECT_NAME}_tests
     tests/icp_tests.cpp
     tests/ndt_tests.cpp
     tests/gicp_tests.cpp
-    # TEST RUNNER
-    tests/test_runner.cpp
+    DISABLED  # Don't run this test for now
 )
-TARGET_LINK_LIBRARIES(wave_matching_tests ${WAVE_MATCHING_TEST_DEPS})
+TARGET_LINK_LIBRARIES(
+    ${PROJECT_NAME}_tests
+    ${PROJECT_NAME}
+    wave_utils
+)
+# Copy the test data
+file(COPY tests/data tests/config DESTINATION ${PROJECT_BINARY_DIR}/tests)
