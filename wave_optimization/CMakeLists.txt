@@ -31,8 +31,8 @@ ADD_EXECUTABLE(
     wave_optimization_tests
     # TESTS
     tests/ceres/ceres_examples_test.cpp
-    tests/factor_graph/factor_graph_test.cpp
     tests/factor_graph/factor_test.cpp
+    tests/factor_graph/graph_test.cpp
     tests/factor_graph/variable_test.cpp
     # TEST RUNNER
     tests/test_runner.cpp

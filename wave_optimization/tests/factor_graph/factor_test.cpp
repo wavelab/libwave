@@ -6,20 +6,22 @@ namespace wave {
 
 TEST(Factor, constructor) {
     // TEST UNARY FACTOR
-    auto var = std::make_shared<Variable>(1, 2);
+    auto var = std::make_shared<FactorVariable>(1, 2);
     UnaryFactor<double> f1(var, 100.0);
 
     EXPECT_EQ(1u, f1.variables[0]->id);
     EXPECT_DOUBLE_EQ(100.0, f1.measurement);
+    std::cout << f1 << std::endl;
 
     // TEST BINARY FACTOR
-    auto var1 = std::make_shared<Variable>(1, 3);
-    auto var2 = std::make_shared<Variable>(2, 3);
+    auto var1 = std::make_shared<FactorVariable>(1, 3);
+    auto var2 = std::make_shared<FactorVariable>(2, 3);
     BinaryFactor<double> f2(var1, var2, 100.0);
 
     EXPECT_EQ(1u, f2.variables[0]->id);
     EXPECT_EQ(2u, f2.variables[1]->id);
     EXPECT_DOUBLE_EQ(100.0, f2.measurement);
+    std::cout << f2 << std::endl;
 }
 
 }  // end of wave namespace

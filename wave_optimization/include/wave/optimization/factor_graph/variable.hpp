@@ -1,54 +1,59 @@
 #ifndef WAVE_OPTIMIZATION_FACTOR_GRAPH_VARIABLE_HPP
 #define WAVE_OPTIMIZATION_FACTOR_GRAPH_VARIABLE_HPP
 
+#include <iostream>
+
 #include "wave/utils/utils.hpp"
 
 namespace wave {
 
-struct Variable {
-    size_t id;
-    size_t size;
+using FactorId = size_t;
+
+struct FactorVariable {
+    FactorId id;
     VecX data;
 
-    Variable() : id{0}, size{0}, data{0} {}
-    Variable(size_t id, size_t size) : id{id}, size{size}, data{size} {}
+    FactorVariable() : id{0}, data{VecX::Zero(1)} {}
+    FactorVariable(size_t id, size_t size) : id{id}, data{VecX::Zero(size)} {}
 
-    std::string toString() {
-        std::ostringstream oss;
-
-        oss << "[";
-        oss << "id: " << this->id << ", ";
-        oss << "size: " << this->size;
-        oss << "]";
-
-        return oss.str();
+    friend std::ostream &operator<<(std::ostream &os,
+                                    const FactorVariable &var) {
+        os << "[";
+        os << "id: " << var.id << ", ";
+        os << "size: " << var.data.size();
+        os << "]";
+        return os;
     }
 
-    void print() {
-        std::cout << this->toString() << std::endl;
-    }
-
-    bool operator<(const Variable &other) const {
+    bool operator<(const FactorVariable &other) const {
         if (this->id < other.id) {
             return true;
         }
         return false;
     }
+};
 
-    VecX &getData() {
-        return data;
+struct PoseVar : FactorVariable {
+    PoseVar(size_t id) : FactorVariable{id, 6} {}
+
+    friend std::ostream &operator<<(std::ostream &os, const PoseVar &var) {
+        os << "[";
+        os << "id: " << var.id << ", ";
+        os << "size: " << var.data.size();
+        os << "]";
+        return os;
     }
 };
 
-struct PoseVar : Variable {
-    PoseVar(size_t id) : Variable{id, 6} {
-        this->data.fill(0.0);
-    }
-};
+struct LandmarkVar : FactorVariable {
+    LandmarkVar(size_t id) : FactorVariable{id, 3} {}
 
-struct LandmarkVar : Variable {
-    LandmarkVar(size_t id) : Variable{id, 3} {
-        this->data.fill(0.0);
+    friend std::ostream &operator<<(std::ostream &os, const LandmarkVar &var) {
+        os << "[";
+        os << "id: " << var.id << ", ";
+        os << "size: " << var.data.size();
+        os << "]";
+        return os;
     }
 };
 

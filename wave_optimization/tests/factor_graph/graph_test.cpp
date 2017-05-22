@@ -1,5 +1,5 @@
 #include "wave/wave_test.hpp"
-#include "wave/optimization/factor_graph/factor_graph.hpp"
+#include "wave/optimization/factor_graph/graph.hpp"
 
 
 namespace wave {
@@ -33,7 +33,7 @@ TEST(FactorGraph, print) {
     graph.addBinaryFactor<PoseVar, PoseVar, Vec2>(1, 2, z);
     graph.addBinaryFactor<PoseVar, PoseVar, Vec2>(2, 3, z);
 
-    graph.print();
+    std::cout << graph << std::endl;
 }
 
 }  // end of wave namespace

@@ -1,5 +1,5 @@
-#ifndef WAVE_OPTIMIZATION_FACTOR_GRAPH_FACTOR_GRAPH_HPP
-#define WAVE_OPTIMIZATION_FACTOR_GRAPH_FACTOR_GRAPH_HPP
+#ifndef WAVE_OPTIMIZATION_FACTOR_GRAPH_GRAPH_HPP
+#define WAVE_OPTIMIZATION_FACTOR_GRAPH_GRAPH_HPP
 
 #include <iostream>
 #include <fstream>
@@ -16,14 +16,15 @@ namespace wave {
 
 class FactorGraph {
  public:
-    std::multimap<std::shared_ptr<Variable>, std::shared_ptr<Factor>> graph;
-    std::set<std::shared_ptr<Variable>> variables;
+    std::multimap<std::shared_ptr<FactorVariable>, std::shared_ptr<Factor>>
+      graph;
+    std::set<std::shared_ptr<FactorVariable>> variables;
     std::vector<std::shared_ptr<Factor>> factors;
 
     FactorGraph() : graph{}, variables{}, factors{} {}
 
     template <typename V, typename T>
-    int addUnaryFactor(size_t at, const T &z) {
+    int addUnaryFactor(FactorId at, const T &z) {
         // store variable and factor
         auto variable = std::make_shared<V>(at);
         this->variables.insert(variable);
@@ -39,7 +40,7 @@ class FactorGraph {
     }
 
     template <typename VA, typename VB, typename T>
-    int addBinaryFactor(size_t from, size_t to, const T &z) {
+    int addBinaryFactor(FactorId from, FactorId to, const T &z) {
         // store variables and factor
         auto from_var = std::make_shared<VA>(from);
         this->variables.insert(from_var);
@@ -60,21 +61,17 @@ class FactorGraph {
         return 0;
     }
 
-    std::string toString() {
-        std::ostringstream oss;
+    friend std::ostream &operator<<(std::ostream &os,
+                                    const FactorGraph &graph) {
         int index = 0;
 
-        for (auto f : this->factors) {
-            oss << "f" << index << " -- ";
-            oss << f->toString() << std::endl;
+        for (auto f : graph.factors) {
+            os << "f" << index << " -- ";
+            os << *f << std::endl;
             index++;
         }
 
-        return oss.str();
-    }
-
-    void print() {
-        std::cout << this->toString() << std::endl;
+        return os;
     }
 };
 
