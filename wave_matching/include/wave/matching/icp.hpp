@@ -17,7 +17,7 @@ class ICPMatcher : public Matcher<PCLPointCloud> {
     bool match();
     void estimate_info();
 
-    enum covar_method {
+    enum covar_method : int {
         LUM,
         CENSI
     };
@@ -27,6 +27,7 @@ class ICPMatcher : public Matcher<PCLPointCloud> {
     pcl::VoxelGrid<pcl::PointXYZ> filter;
     PCLPointCloud ref, target, final;
     covar_method estimate_method;
+    double lidar_ang_covar, lidar_lin_covar;
     void estimate_lum();
     void estimate_censi();
 };
