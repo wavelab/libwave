@@ -10,7 +10,7 @@ ENDIF()
 # CMAKE SETTINGS
 LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 INCLUDE(cmake/WaveUtils.cmake)
-enable_testing()
+ENABLE_TESTING()
 
 
 # INCLUDES

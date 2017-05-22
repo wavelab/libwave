@@ -7,31 +7,31 @@
 # The test will be added to the tests run by "make test", unless DISABLED is
 # given. It will be linked against the needed gtest libraries. Any other links
 # can be made separately with the target_link_libraries command.
-function(wave_add_test NAME)
+FUNCTION(WAVE_ADD_TEST NAME)
 
     # Define the arguments this function accepts
-    set(options DISABLED)
-    set(one_value_args "")
-    set(multi_value_args "")
-    cmake_parse_arguments(WAVE_ADD_TEST
+    SET(options DISABLED)
+    SET(one_value_args "")
+    SET(multi_value_args "")
+    CMAKE_PARSE_ARGUMENTS(WAVE_ADD_TEST
         "${options}" "${one_value_args}" "${multi_value_args}" ${ARGN})
 
     # Build the test executable using the given sources
-    add_executable(${NAME} ${WAVE_ADD_TEST_UNPARSED_ARGUMENTS})
+    ADD_EXECUTABLE(${NAME} ${WAVE_ADD_TEST_UNPARSED_ARGUMENTS})
 
     # Link gtest libraries including one providing main()
-    target_link_libraries(${NAME} gtest gtest_main pthread)
+    TARGET_LINK_LIBRARIES(${NAME} gtest gtest_main pthread)
 
     # Put the test executable in the tests/ directory
-    set_target_properties(${NAME} PROPERTIES
+    SET_TARGET_PROPERTIES(${NAME} PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
 
-    if(WAVE_ADD_TEST_DISABLED)
-        message(WARNING "Test ${NAME} is disabled: building, but not adding it to tests")
-    else()
-        message(STATUS "Adding test ${NAME}")
+    IF(WAVE_ADD_TEST_DISABLED)
+        MESSAGE(WARNING "Test ${NAME} is disabled: building, but not adding it to tests")
+    ELSE()
+        MESSAGE(STATUS "Adding test ${NAME}")
         # Add the executable as a test, so it runs with "make test"
-        add_test(NAME ${NAME} COMMAND ${NAME})
-    endif()
+        ADD_TEST(NAME ${NAME} COMMAND ${NAME})
+    ENDIF()
 
-endfunction(wave_add_test)
+ENDFUNCTION(WAVE_ADD_TEST)
