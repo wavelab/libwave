@@ -29,18 +29,18 @@ class FeatureDetector {
  public:
     virtual ~FeatureDetector() {};
 
-    virtual cv::Ptr<T> getImage() {
+    virtual T& getImage() {
         return this->image;
     }
 
     virtual std::vector<Keypoint>& detectFeatures(T& image_to_detect) = 0;
 
  protected:
-    cv::Ptr<T> image;
+    Image image;
     std::vector<Keypoint> keypoints;
 
     virtual void loadImage(T& source_image) {
-        this->image = &source_image;
+        this->image = source_image;
     };
 };
 

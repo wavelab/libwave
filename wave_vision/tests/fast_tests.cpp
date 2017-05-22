@@ -21,6 +21,7 @@ class FASTTest : public testing::Test {
     virtual void SetUp() {
         this->image = cv::imread(TEST_IMAGE, cv::IMREAD_COLOR);
     }
+
     void initDetector() {
         this->detector = new FASTDetector(TEST_CONFIG_GOOD);
     }
