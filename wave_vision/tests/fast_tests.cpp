@@ -26,7 +26,7 @@ class FASTTest : public testing::Test {
         this->detector = new FASTDetector(TEST_CONFIG_GOOD);
     }
 
-    Image image;
+    cv::Mat image;
     FASTDetector *detector;
 };
 
