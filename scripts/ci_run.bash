@@ -7,19 +7,14 @@ compile_libwave() {
     mkdir -p build
     cd build
     cmake .. -DCMAKE_MODULE_PATH=$DIR/$CMAKE_CONFIG_DIR
-    make
+    make -j$(nproc)
 }
 
-run_module_tests() {
-    cd $1 && ./tests/$1_tests --silence-stdcout && cd -
+test_libwave() {
+    export GTEST_COLOR=1
+    ctest --output-on-failure
 }
 
 # MAIN
 compile_libwave
-run_module_tests wave_controls
-run_module_tests wave_containers
-run_module_tests wave_geometry
-run_module_tests wave_kinematics
-run_module_tests wave_optimization
-# run_module_tests wave_matching
-run_module_tests wave_utils
+test_libwave
