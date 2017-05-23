@@ -6,10 +6,10 @@
 
 namespace wave {
 
-
-// This function checks to make sure all elements of the input
-// Eigen array have finite values (not Nan or +/- Inf), as these
-// values are invalid for rotation geometry.
+/** Checks that all elements are finite (not NaN or +/-INF)
+ *
+ * @throws std::invalid_argument if any element is NaN or +/-INF
+ */
 template <typename MatrixType>
 void checkArrayFinite(const Eigen::MatrixBase<MatrixType> &mat) {
     if (!mat.allFinite()) {
@@ -18,16 +18,22 @@ void checkArrayFinite(const Eigen::MatrixBase<MatrixType> &mat) {
     }
 }
 
-// Function that checks to see if a scalar value is finite,
-// (not Nan or +/- Inf), as these values are invalid for
-// rotation geometry.
+/** Checks that scalar value is finite (not NaN or +/-INF)
+ *
+ * @throw std::invalid_argument if `input_scalar` is NaN or +/-INF
+ */
 void checkScalarFinite(double input_scalar) {
     if (!std::isfinite(input_scalar)) {
         throw std::invalid_argument("Scalar input is non-finite.");
     }
 }
 
-// Function that checks to see if the input vector is normalized.
+/** Checks if the input vector is normalized.
+ *
+ * To be normalized, the norm must be within machine epsilon of 1.
+ *
+ * @throws std::invalid_argument if input is not normalized
+ */
 template <typename MatrixType>
 void checkVectorNormalized(const Eigen::MatrixBase<MatrixType> &input_vector) {
     // fltcmp returns 0 if equal.
@@ -38,9 +44,14 @@ void checkVectorNormalized(const Eigen::MatrixBase<MatrixType> &input_vector) {
     }
 }
 
-// Function that checks if a rotation matrix is valid.  Requires that:
-// 1) R*inv(R)==I,
-// 2) det(R) == 1;
+/** Checks if a matrix is a valid rotation matrix.
+ *
+ * A matrix `R` is valid if:
+ * 1. R*inv(R) == I,
+ * 2. det(R) == 1;
+ *
+ * @returns true if valid
+ */
 bool isValidRotationMatrix(const Mat3 &R) {
     Mat3 eye3;
     eye3.setIdentity();
@@ -54,7 +65,10 @@ bool isValidRotationMatrix(const Mat3 &R) {
         return false;
 }
 
-// Function that checks to see if the input matrix is a valid rotation.
+/** Checks if the input matrix is a valid rotation.
+ *
+ * @throws std::invalid_argument if `isValidRotationMatrix(R)` returns false
+ */
 void checkValidRotation(const Mat3 &R) {
     if (!isValidRotationMatrix(R)) {
         throw std::invalid_argument(
