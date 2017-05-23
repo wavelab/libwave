@@ -17,7 +17,9 @@ struct PoseMeasurement {
     int sensor_id;
     Pose value;
     PoseMeasurement(const TimeType &t, const int &s, const Pose &v)
-        : time_point{t}, sensor_id{s}, value{v} {}
+        : time_point{t}, sensor_id{s} {
+        value = v;
+    }
 };
 
 /** Perform interpolation (or extrapolation) between two measurements.
