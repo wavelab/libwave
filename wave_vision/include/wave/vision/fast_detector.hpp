@@ -1,12 +1,16 @@
 #ifndef WAVE_FAST_DETECTOR_HPP
 #define WAVE_FAST_DETECTOR_HPP
 
+// Libwave Headers
 #include "wave/vision/feature_detector.hpp"
 
 namespace wave {
 
 class FASTDetector : public FeatureDetector<cv::Mat> {
  public:
+    // Public Functions
+    // -------------------------------------------------------------------------
+
     FASTDetector(const std::string& config_path);
     ~FASTDetector();
     void configure(int  new_threshold,

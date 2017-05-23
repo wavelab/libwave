@@ -7,10 +7,13 @@ FASTDetector::FASTDetector(const std::string &config_path) {
     // Extract parameters from .yaml file.
     ConfigParser parser;
 
+    // Configuration parameters
     int param_threshold;
     bool param_nonmax_suppression;
     int param_type;
 
+    // Add parameters to parser, to be loaded. If path cannot be found, throw an
+    // exception.
     parser.addParam("fast.threshold", &param_threshold);
     parser.addParam("fast.nonmax_suppression", &param_nonmax_suppression);
     parser.addParam("fast.type", &param_type);
@@ -20,6 +23,7 @@ FASTDetector::FASTDetector(const std::string &config_path) {
         throw exception;
     }
 
+    // Verify configuration values
     checkConfiguration(param_threshold, param_type);
 
     // Create FastFeatureDetector with these parameters
@@ -74,7 +78,7 @@ std::vector<cv::KeyPoint>& FASTDetector::detectFeatures(const cv::Mat& image) {
     // Load image
     this->loadImage(image);
 
-    // Detect features in image
+    // Detect features in image, save values into keypoints.
     this->fast_detector->detect(this->image, this->keypoints);
 
     return this->keypoints;

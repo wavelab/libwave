@@ -1,6 +1,6 @@
 fast:
   # Threshold on difference between intensity of the central pixel, and pixels
-  # of a circle around this pixel
+  # in a circle (Bresenham radius 3) around this pixel.
   # 10 (default), must be greater than zero.
   threshold: 10
 

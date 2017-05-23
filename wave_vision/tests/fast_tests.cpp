@@ -1,10 +1,11 @@
+// Libwave Headers
 #include "wave/wave_test.hpp"
 #include "wave/vision/fast_detector.hpp"
 
 namespace wave {
 
-#define TEST_CONFIG "config/fast.yaml"
-#define TEST_IMAGE "data/lenna.png"
+#define TEST_CONFIG "tests/config/fast.yaml"
+#define TEST_IMAGE "tests/data/lenna.png"
 
 // Test fixture to load same image data
 class FASTTest : public testing::Test {
@@ -30,12 +31,13 @@ class FASTTest : public testing::Test {
     std::vector<cv::KeyPoint> keypoints;
 };
 
-//
+// Checks that correct configuration can be loaded
 TEST(FASTTests, GoodInitialization) {
     FASTDetector detector(TEST_CONFIG);
     SUCCEED();
 }
 
+// Checks that incorrect configuration path throws an exception
 TEST(FASTTests, BadInitialization) {
     const std::string bad_path = "bad_path";
 
@@ -43,6 +45,8 @@ TEST(FASTTests, BadInitialization) {
                  ConfigurationLoadingException);
 }
 
+// Checks that correct configuration values can be set in detector, and also
+// read from getConfiguration function.
 TEST(FASTTests, GoodManualConfiguration) {
     FASTDetector detector(TEST_CONFIG);
     int threshold = 10;
@@ -66,6 +70,7 @@ TEST(FASTTests, GoodManualConfiguration) {
     ASSERT_EQ(type, check_type);
 }
 
+// Checks that invalid threshold value throws the proper exception
 TEST(FASTTests, BadThresholdConfiguration) {
     FASTDetector detector(TEST_CONFIG);
     int bad_threshold = -1;
@@ -76,6 +81,7 @@ TEST(FASTTests, BadThresholdConfiguration) {
                  InvalidConfigurationException);
 }
 
+// Checks that invalid type values throw the proper exception
 TEST(FASTTests, BadTypeConfiguration) {
     FASTDetector detector(TEST_CONFIG);
     int threshold = 10;
@@ -90,6 +96,8 @@ TEST(FASTTests, BadTypeConfiguration) {
                  InvalidConfigurationException);
 }
 
+// Confirms that keypoints can be determined, and image with keypoints can be
+// displayed.
 TEST_F(FASTTest, DetectImage) {
     this->keypoints = detector->detectFeatures(this->image);
     //cv::imshow("Lenna", this->image);
