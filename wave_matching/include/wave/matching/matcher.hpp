@@ -52,7 +52,7 @@ class Matcher {
  protected:
     float resolution;
     Affine3 result;
-    MatX information;
+    Mat6 information;
 };
 
 }  // end of wave namespace

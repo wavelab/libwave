@@ -87,8 +87,86 @@ void ICPMatcher::estimate_info() {
     }
 }
 
+// Taken from the Lu and Milios matcher in PCL
 void ICPMatcher::estimate_lum() {
     if (this->icp.hasConverged()) {
+        auto list = this->icp.correspondences_.get();
+        Mat6 MM = Mat6::Zero ();
+        Vec6 MZ = Vec6::Zero ();
+        std::vector <Eigen::Vector3f> corrs_aver;
+        std::vector <Eigen::Vector3f> corrs_diff;
+        int numCorr = 0;
+        for (auto it = list->begin(); it != list->end(); ++it) {
+            if (it->index_match > -1) {
+                corrs_aver.push_back(Eigen::Vector3f(
+                        0.5f * (this->ref->points[it->index_query].x + this->target->points[it->index_match].x),
+                        0.5f * (this->ref->points[it->index_query].y + this->target->points[it->index_match].y),
+                        0.5f * (this->ref->points[it->index_query].z + this->target->points[it->index_match].z)));
+                corrs_diff.push_back(Eigen::Vector3f(
+                        this->ref->points[it->index_query].x - this->target->points[it->index_match].x,
+                        this->ref->points[it->index_query].y - this->target->points[it->index_match].y,
+                        this->ref->points[it->index_query].z - this->target->points[it->index_match].z));
+                numCorr++;
+            }
+        }
+
+        for (int ci = 0; ci != numCorr; ++ci)  // ci = correspondence iterator
+        {
+            // Fast computation of summation elements of M'M
+            MM (0, 4) -= corrs_aver[ci] (1);
+            MM (0, 5) += corrs_aver[ci] (2);
+            MM (1, 3) -= corrs_aver[ci] (2);
+            MM (1, 4) += corrs_aver[ci] (0);
+            MM (2, 3) += corrs_aver[ci] (1);
+            MM (2, 5) -= corrs_aver[ci] (0);
+            MM (3, 4) -= corrs_aver[ci] (0) * corrs_aver[ci] (2);
+            MM (3, 5) -= corrs_aver[ci] (0) * corrs_aver[ci] (1);
+            MM (4, 5) -= corrs_aver[ci] (1) * corrs_aver[ci] (2);
+            MM (3, 3) += corrs_aver[ci] (1) * corrs_aver[ci] (1) + corrs_aver[ci] (2) * corrs_aver[ci] (2);
+            MM (4, 4) += corrs_aver[ci] (0) * corrs_aver[ci] (0) + corrs_aver[ci] (1) * corrs_aver[ci] (1);
+            MM (5, 5) += corrs_aver[ci] (0) * corrs_aver[ci] (0) + corrs_aver[ci] (2) * corrs_aver[ci] (2);
+
+            // Fast computation of M'Z
+            MZ (0) += corrs_diff[ci] (0);
+            MZ (1) += corrs_diff[ci] (1);
+            MZ (2) += corrs_diff[ci] (2);
+            MZ (3) += corrs_aver[ci] (1) * corrs_diff[ci] (2) - corrs_aver[ci] (2) * corrs_diff[ci] (1);
+            MZ (4) += corrs_aver[ci] (0) * corrs_diff[ci] (1) - corrs_aver[ci] (1) * corrs_diff[ci] (0);
+            MZ (5) += corrs_aver[ci] (2) * corrs_diff[ci] (0) - corrs_aver[ci] (0) * corrs_diff[ci] (2);
+
+        }
+        // Remaining elements of M'M
+        MM (0, 0) = MM (1, 1) = MM (2, 2) = static_cast<float> (numCorr);
+        MM (4, 0) = MM (0, 4);
+        MM (5, 0) = MM (0, 5);
+        MM (3, 1) = MM (1, 3);
+        MM (4, 1) = MM (1, 4);
+        MM (3, 2) = MM (2, 3);
+        MM (5, 2) = MM (2, 5);
+        MM (4, 3) = MM (3, 4);
+        MM (5, 3) = MM (3, 5);
+        MM (5, 4) = MM (4, 5);
+
+        // Compute pose difference estimation
+        Vec6 D = static_cast<Vec6> (MM.inverse () * MZ);
+
+        // Compute s^2
+        float ss = 0.0f;
+        for (int ci = 0; ci != numCorr; ++ci)  // ci = correspondence iterator
+        {
+            ss += static_cast<float> (pow (corrs_diff[ci] (0) - (D (0) + corrs_aver[ci] (2) * D (5) - corrs_aver[ci] (1) * D (4)), 2.0f)
+                                      + pow (corrs_diff[ci] (1) - (D (1) + corrs_aver[ci] (0) * D (4) - corrs_aver[ci] (2) * D (3)), 2.0f)
+                                      + pow (corrs_diff[ci] (2) - (D (2) + corrs_aver[ci] (1) * D (3) - corrs_aver[ci] (0) * D (5)), 2.0f));
+        }
+
+        // When reaching the limitations of computation due to linearization
+        if (ss < 0.0000000000001 || !pcl_isfinite (ss))
+        {
+            this->information = Mat6::Identity();
+            return;
+        }
+
+        this->information = MM * (1.0f/ss);
     }
 }
 
