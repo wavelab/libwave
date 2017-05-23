@@ -13,3 +13,4 @@ fast:
   # 1 = TYPE_7_12
   # 2 = TYPE_9_16 (default)
   type: 2
+  
