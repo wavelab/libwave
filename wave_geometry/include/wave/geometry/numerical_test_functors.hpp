@@ -1,12 +1,7 @@
 #ifndef WAVE_NUMERICAL_TEST_FUNCTORS_HPP
 #define WAVE_NUMERICAL_TEST_FUNCTORS_HPP
 
-#include <iostream>
-#include <functional>
-
 #include "wave/geometry/rotation.hpp"
-#include "wave/utils/utils.hpp"
-#include <kindr/Core>
 
 namespace wave {
 

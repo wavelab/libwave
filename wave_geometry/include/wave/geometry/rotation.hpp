@@ -60,5 +60,8 @@ class Rotation {
     friend std::ostream &operator<<(std::ostream &stream, const Rotation &R);
 };
 
+// Other helper functions.
+bool isValidRotationMatrix(const Mat3 &input_matrix);
+
 }  // end of wave namespace
 #endif
