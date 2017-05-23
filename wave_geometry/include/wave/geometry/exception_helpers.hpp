@@ -1,5 +1,5 @@
-#ifndef WAVE_EXCEPTION_HELPERS_HPP
-#define WAVE_EXCEPTION_HELPERS_HPP
+#ifndef WAVE_GEOMETRY_EXCEPTION_HELPERS_HPP
+#define WAVE_GEOMETRY_EXCEPTION_HELPERS_HPP
 
 #include "wave/geometry/rotation.hpp"
 #include "wave/utils/math.hpp"
@@ -11,7 +11,7 @@ namespace wave {
  * @throws std::invalid_argument if any element is NaN or +/-INF
  */
 template <typename MatrixType>
-void checkArrayFinite(const Eigen::MatrixBase<MatrixType> &mat) {
+inline void checkMatrixFinite(const Eigen::MatrixBase<MatrixType> &mat) {
     if (!mat.allFinite()) {
         throw std::invalid_argument(
           "Array input contains non-finite elements.");
@@ -22,7 +22,8 @@ void checkArrayFinite(const Eigen::MatrixBase<MatrixType> &mat) {
  *
  * @throw std::invalid_argument if `input_scalar` is NaN or +/-INF
  */
-void checkScalarFinite(double input_scalar) {
+template <typename Scalar>
+inline void checkScalarFinite(Scalar input_scalar) {
     if (!std::isfinite(input_scalar)) {
         throw std::invalid_argument("Scalar input is non-finite.");
     }
@@ -35,7 +36,8 @@ void checkScalarFinite(double input_scalar) {
  * @throws std::invalid_argument if input is not normalized
  */
 template <typename MatrixType>
-void checkVectorNormalized(const Eigen::MatrixBase<MatrixType> &input_vector) {
+inline void checkVectorNormalized(
+        const Eigen::MatrixBase<MatrixType> &input_vector) {
     // fltcmp returns 0 if equal.
     if (fltcmp(input_vector.norm(),
                1.0,
@@ -52,7 +54,7 @@ void checkVectorNormalized(const Eigen::MatrixBase<MatrixType> &input_vector) {
  *
  * @returns true if valid
  */
-bool isValidRotationMatrix(const Mat3 &R) {
+inline bool isValidRotationMatrix(const Mat3 &R) {
     Mat3 eye3;
     eye3.setIdentity();
     Mat3 ortho_matrix = R * R.inverse();
@@ -69,12 +71,13 @@ bool isValidRotationMatrix(const Mat3 &R) {
  *
  * @throws std::invalid_argument if `isValidRotationMatrix(R)` returns false
  */
-void checkValidRotation(const Mat3 &R) {
+inline void checkValidRotation(const Mat3 &R) {
     if (!isValidRotationMatrix(R)) {
         throw std::invalid_argument(
           "Matrix input is not a valid rotation matrix.");
     }
 }
-}
 
-#endif
+}  // namespace wave
+
+#endif  // WAVE_GEOMETRY_EXCEPTION_HELPERS_HPP
