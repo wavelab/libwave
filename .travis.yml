@@ -9,15 +9,17 @@ cache:
     directories:
         - /usr/local/src
 
-install:
-    - sudo bash scripts/install/install_deps.bash
+#install:
+    #- sudo bash scripts/install/install_deps.bash
 
 script:
-    - bash scripts/ci_run.bash
+    #- bash scripts/ci_run.bash
+    - exit -1
 
 notifications:
-    email:
-        recipients:
-            - chutsu@gmail.com
+    slack:
+        rooms: 
+            - wavelabteam:4t8bdaWVBZ5HtHvFhyewStty
         on_success: change
         on_failure: always
+    email: false
