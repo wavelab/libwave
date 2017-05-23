@@ -9,12 +9,11 @@ cache:
     directories:
         - /usr/local/src
 
-#install:
-    #- sudo bash scripts/install/install_deps.bash
+install:
+    - sudo bash scripts/install/install_deps.bash
 
 script:
-    #- bash scripts/ci_run.bash
-    - exit -1
+    - bash scripts/ci_run.bash
 
 notifications:
     slack:
