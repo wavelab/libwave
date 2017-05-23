@@ -27,11 +27,15 @@ inline Pose interpolate(const PoseMeasurement &m1,
                  const TimeType &t) {
     auto w2 = 1.0 * (t - m1.time_point) / (m2.time_point - m1.time_point);
 
-    auto wvec =
-      (1 - w2) * m1.value.rotation.logMap() + w2 * m2.value.rotation.logMap();
+    auto m1inverse = m1.value.rotation;
+    m1inverse.invert();
+    auto relative = m2.value.rotation * m1inverse;
+    wave::Vec3 wvec = w2 * relative.logMap();
+    wave::Rotation interpolated;
+    interpolated.setFromExpMap(wvec);
     auto trans = (1 - w2) * m1.value.translation + w2 * m2.value.translation;
     Pose retval;
-    retval.rotation.setFromExpMap(wvec);
+    retval.rotation = interpolated * m1.value.rotation;
     retval.translation = trans;
     return retval;
 };
