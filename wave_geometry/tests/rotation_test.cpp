@@ -29,7 +29,6 @@ class RotationTestFixture : public ::testing::Test {
     }
 };
 
-
 // Construction tests.
 
 // Test that fromEulerXYZ returns the correct matrix.
@@ -253,7 +252,6 @@ TEST_F(RotationTestFixture, testManifoldMinus) {
     Vec3 log_params = rotation3.manifoldMinus(rotation2);
     Vec3 error = rotation1_angleaxis_params - log_params;
     ASSERT_LE(error.norm(), this->comparision_threshold);
-
 }
 
 // JACOBIAN TESTING
@@ -298,15 +296,16 @@ TEST_F(RotationTestFixture, testRotateAndJacobian) {
 
 // Compare the composeAndJacobian derivatives numerically.
 TEST_F(RotationTestFixture, testComposeAndJacobian) {
-   Rotation rotation1(Vec3(0.1, 0.2, 0.3));
-   Rotation rotation2(Vec3(-0.1, -0.2, -0.3));
+    Rotation rotation1(Vec3(0.1, 0.2, 0.3));
+    Rotation rotation2(Vec3(-0.1, -0.2, -0.3));
     // rotation3 is the composition of rotation1 and rotation2.
     Rotation rotation3(
       Vec3(-0.065223037770317, 0.020616131403543, -0.013176146513587));
 
-     // First get the analytical Jacobians and composition.
+    // First get the analytical Jacobians and composition.
     Mat3 J_left_analytical, J_right_analytical;
-    Rotation composed_rotation = rotation1.composeAndJacobian(rotation2,J_left_analytical,J_right_analytical);
+    Rotation composed_rotation = rotation1.composeAndJacobian(
+      rotation2, J_left_analytical, J_right_analytical);
     ASSERT_TRUE(
       composed_rotation.isNear(rotation3, this->comparision_threshold));
 
@@ -319,7 +318,7 @@ TEST_F(RotationTestFixture, testComposeAndJacobian) {
     // Jacobian wrt the left rotation.
     ComposeAndJacobianJLeftFunctor J_left_functor(rotation1, rotation2);
     numerical_jacobian(J_left_functor, perturbation_vec, J_left_numerical);
-  
+
     wave::MatX error_matrix = J_left_analytical - J_left_numerical;
     ASSERT_LE(error_matrix.norm(), this->comparision_threshold);
 
@@ -327,10 +326,9 @@ TEST_F(RotationTestFixture, testComposeAndJacobian) {
     // Jacobian wrt the right rotation.
     ComposeAndJacobianJRightFunctor J_right_functor(rotation1, rotation2);
     numerical_jacobian(J_right_functor, perturbation_vec, J_right_numerical);
-    
+
     error_matrix = J_right_analytical - J_right_numerical;
     ASSERT_LE(error_matrix.norm(), this->comparision_threshold);
-
 }
 
 // Compare the inverseAndJacobian derivatives numerically.
@@ -339,7 +337,7 @@ TEST_F(RotationTestFixture, testInverseAndJacobian) {
     // rotation1_inverse is the inverse of rotation1.
     Rotation rotation1_inverse(
       Vec3(-0.037879880513201, -0.220124031212965, -0.285771700628461));
-    
+
     Mat3 J_analytical;
     Rotation rotation2 = rotation1.inverseAndJacobian(J_analytical);
     ASSERT_TRUE(
@@ -355,21 +353,17 @@ TEST_F(RotationTestFixture, testInverseAndJacobian) {
 
     wave::MatX error_matrix = J_numerical - J_analytical;
     ASSERT_LE(error_matrix.norm(), this->comparision_threshold);
-
-
-    std::cout<<J_numerical <<std::endl;
-    std::cout<<J_analytical <<std::endl;
-
 }
 
 // Compare the logMapAndJacobian derivatives numerically.
 TEST_F(RotationTestFixture, testLogMapAndJacobian) {
-     // True angle axis params for rotation1.
+    // True angle axis params for rotation1.
     Vec3 rotation1_angleaxis_params(
       0.068924613882066, 0.213225926957886, 0.288748939228675);
 
     Mat3 J_analytical;
-    Vec3 log_params = Rotation::logMapAndJacobian(this->rotation1_expected, J_analytical);
+    Vec3 log_params =
+      Rotation::logMapAndJacobian(this->rotation1_expected, J_analytical);
     Vec3 error = rotation1_angleaxis_params - log_params;
     ASSERT_LE(error.norm(), this->comparision_threshold);
 
@@ -384,8 +378,47 @@ TEST_F(RotationTestFixture, testLogMapAndJacobian) {
 
     wave::MatX error_matrix = J_numerical - J_analytical;
     ASSERT_LE(error_matrix.norm(), this->comparision_threshold);
-
 }
 
+// Compare the manifoldMinusAndJacobian derivatives numerically.
+TEST_F(RotationTestFixture, testManifoldMinusAndJacobian) {
+    // We know that rotation3 = rotation1*rotation2
+    // Therefore rotation3 * inv(rotation2) = rotation1
+    // log(rotation3 * inv(rotation2)) = log(rotation1)
+    // which is exactly rotation3 \boxminus rotation2.
+
+    // True angle axis params for rotation1.
+    Vec3 rotation1_angleaxis_params(
+      0.068924613882066, 0.213225926957886, 0.288748939228675);
+    Rotation rotation2(Vec3(-0.1, -0.2, -0.3));
+    // rotation3 is the composition of rotation1 and rotation2.
+    Rotation rotation3(
+      Vec3(-0.065223037770317, 0.020616131403543, -0.013176146513587));
+
+    Mat3 J_left_analytical, J_right_analytical;
+    Vec3 log_params = rotation3.manifoldMinusAndJacobian(
+      rotation2, J_left_analytical, J_right_analytical);
+    Vec3 error = rotation1_angleaxis_params - log_params;
+    ASSERT_LE(error.norm(), this->comparision_threshold);
+
+    // Now get the numerical Jacobians
+    Mat3 J_left_numerical(3, 3), J_right_numerical(3, 3);
+    // Perturbations are about zero vector in the tangent space.
+    Vec3 perturbation_vec(0, 0, 0);
+
+    // Jacobian wrt the left rotation.
+    ManifoldMinusAndJacobianJLeftFunctor J_left_functor(rotation3, rotation2);
+    numerical_jacobian(J_left_functor, perturbation_vec, J_left_numerical);
+
+    wave::MatX error_matrix = J_left_analytical - J_left_numerical;
+    ASSERT_LE(error_matrix.norm(), this->comparision_threshold);
+
+    // Jacobian wrt the right rotation.
+    ManifoldMinusAndJacobianJRightFunctor J_right_functor(rotation3, rotation2);
+    numerical_jacobian(J_right_functor, perturbation_vec, J_right_numerical);
+
+    error_matrix = J_right_analytical - J_right_numerical;
+    ASSERT_LE(error_matrix.norm(), this->comparision_threshold);
+}
 
 }  // end of wave namespace

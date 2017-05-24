@@ -44,16 +44,16 @@ class ComposeAndJacobianJLeftFunctor {
  public:
     Rotation R_left;
     Rotation R_right;
-    ComposeAndJacobianJLeftFunctor(Rotation R_left,Rotation R_right) {
+    ComposeAndJacobianJLeftFunctor(Rotation R_left, Rotation R_right) {
         this->R_left = R_left;
         this->R_right = R_right;
     }
 
     Rotation operator()(Vec3 perturbation) {
         Mat3 J;
-        Rotation R_perturbed =  this->R_left;
+        Rotation R_perturbed = this->R_left;
         R_perturbed = R_perturbed.manifoldPlus(perturbation);
-        return R_perturbed.composeAndJacobian(R_right,J,J);
+        return R_perturbed.composeAndJacobian(R_right, J, J);
     }
 };
 
@@ -61,16 +61,16 @@ class ComposeAndJacobianJRightFunctor {
  public:
     Rotation R_left;
     Rotation R_right;
-    ComposeAndJacobianJRightFunctor(Rotation R_left,Rotation R_right) {
+    ComposeAndJacobianJRightFunctor(Rotation R_left, Rotation R_right) {
         this->R_left = R_left;
         this->R_right = R_right;
     }
 
     Rotation operator()(Vec3 perturbation) {
         Mat3 J;
-        Rotation R_perturbed =  this->R_right;
+        Rotation R_perturbed = this->R_right;
         R_perturbed = R_perturbed.manifoldPlus(perturbation);
-        return R_left.composeAndJacobian(R_perturbed,J,J);
+        return R_left.composeAndJacobian(R_perturbed, J, J);
     }
 };
 
@@ -83,7 +83,7 @@ class InverseAndJacobianFunctor {
 
     Rotation operator()(Vec3 perturbation) {
         Mat3 J;
-        Rotation R_perturbed =  this->R;
+        Rotation R_perturbed = this->R;
         R_perturbed = R_perturbed.manifoldPlus(perturbation);
         return R_perturbed.inverseAndJacobian(J);
     }
@@ -98,9 +98,9 @@ class LogMapAndJacobianFunctor {
 
     Vec3 operator()(Vec3 perturbation) {
         Mat3 J;
-        Rotation R_perturbed =  this->R;
+        Rotation R_perturbed = this->R;
         R_perturbed = R_perturbed.manifoldPlus(perturbation);
-        return Rotation::logMapAndJacobian(R_perturbed,J);
+        return Rotation::logMapAndJacobian(R_perturbed, J);
     }
 };
 
@@ -109,14 +109,14 @@ class ManifoldMinusAndJacobianJLeftFunctor {
  public:
     Rotation R_left;
     Rotation R_right;
-    ManifoldMinusAndJacobianJLeftFunctor(Rotation R_left,Rotation R_right) {
+    ManifoldMinusAndJacobianJLeftFunctor(Rotation R_left, Rotation R_right) {
         this->R_left = R_left;
         this->R_right = R_right;
     }
 
     Vec3 operator()(Vec3 perturbation) {
         Mat3 J;
-        Rotation R_perturbed =  this->R_left;
+        Rotation R_perturbed = this->R_left;
         R_perturbed = R_perturbed.manifoldPlus(perturbation);
         return R_perturbed.manifoldMinus(this->R_right);
     }
@@ -126,14 +126,14 @@ class ManifoldMinusAndJacobianJRightFunctor {
  public:
     Rotation R_left;
     Rotation R_right;
-    ManifoldMinusAndJacobianJRightFunctor(Rotation R_left,Rotation R_right) {
+    ManifoldMinusAndJacobianJRightFunctor(Rotation R_left, Rotation R_right) {
         this->R_left = R_left;
         this->R_right = R_right;
     }
 
     Vec3 operator()(Vec3 perturbation) {
         Mat3 J;
-        Rotation R_perturbed =  this->R_right;
+        Rotation R_perturbed = this->R_right;
         R_perturbed = R_perturbed.manifoldPlus(perturbation);
         return this->R_left.manifoldMinus(R_perturbed);
     }
@@ -164,7 +164,7 @@ void numerical_jacobian(FunctorType F,
                            std::fabs(evaluation_point[i]);
         // If the step size is exactly equal to zero, just select it as
         // sqrt(eps).
-        if (step_size == 0.0){
+        if (step_size == 0.0) {
             step_size = sqrt(std::numeric_limits<double>::epsilon());
         }
 
@@ -173,13 +173,12 @@ void numerical_jacobian(FunctorType F,
         perturbation_point[i] =
           get_perturbation_point(evaluation_point[i], step_size);
         auto F_xp1 = F(perturbation_point);
-     
+
         // Perform same operations for zero perturbation.
-        auto F_x= F(evaluation_point);
+        auto F_x = F(evaluation_point);
 
         // Finally compute the finite difference.
-        Vec3 finite_difference =
-          (F_xp1 - F_x ) / (step_size);
+        Vec3 finite_difference = (F_xp1 - F_x) / (step_size);
         jac.col(i) = finite_difference;
     }
 }

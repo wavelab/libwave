@@ -43,20 +43,31 @@ class Rotation {
     Rotation &setIdentity();
 
     // Module functions.
+
+    // Returns the log map of R.
     Vec3 logMap() const;
 
     // Returns the log map of R and the associated Jacobian
     // of the mapping.
-    static Vec3 logMapAndJacobian(const Rotation &R, Mat3& J_logmap);
+    static Vec3 logMapAndJacobian(const Rotation &R, Mat3 &J_logmap);
 
+    // Performs the coordinate mapping operation.
     Vec3 rotate(const Vec3 &input_vector) const;
+
+    // Performs the coordinate mapping operation, and the Jacobians
+    // wrt the point and rotation.
     Vec3 rotateAndJacobian(const Vec3 &input_vector,
                            Mat3 &J_point,
-                           Mat3 &J_param) const;
-    Vec3 inverseRotate(const Vec3 &input_vector) const;
-    void invert();
-    bool isNear(const Rotation &R, double comparison_threshold) const;
+                           Mat3 &J_rot) const;
 
+    // Performs the inverse coordinate mapping.
+    Vec3 inverseRotate(const Vec3 &input_vector) const;
+
+    // Inverts "this".
+    void invert();
+
+    // Checks if R is sufficiently close to "this".
+    bool isNear(const Rotation &R, double comparison_threshold) const;
 
     // Returns the boxplus of a rotation and a vector.
     Rotation &manifoldPlus(const Vec3 &omega);
@@ -65,14 +76,18 @@ class Rotation {
     Vec3 manifoldMinus(const Rotation &R) const;
 
     // Returns the boxminus of two rotations, and the Jacobians of boxminus
-    // wrt the left and right rotations.  
-    Vec3 manifoldMinusAndJacobian(const Rotation &R, Mat3 &J_left,Mat3 &J_right) const;
+    // wrt the left and right rotations.
+    Vec3 manifoldMinusAndJacobian(const Rotation &R,
+                                  Mat3 &J_left,
+                                  Mat3 &J_right) const;
 
     // Composes two rotations and computes the Jacobians wrt the left
-    // and right rotations.  
+    // and right rotations.
     // R_out = R_left*R_right.  Note that "this" corresponds to
     // R_left.
-    Rotation composeAndJacobian(const Rotation &rotation_right, Mat3 &J_left, Mat3 &J_right) const;
+    Rotation composeAndJacobian(const Rotation &rotation_right,
+                                Mat3 &J_left,
+                                Mat3 &J_right) const;
 
     // Returns the inverse of "this" and the Jacobian of the inverse
     // mapping.
@@ -92,7 +107,6 @@ class Rotation {
 
 // Other helper functions.
 bool isValidRotationMatrix(const Mat3 &input_matrix);
-
 
 
 }  // end of wave namespace

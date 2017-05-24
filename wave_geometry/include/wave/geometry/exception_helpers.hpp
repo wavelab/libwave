@@ -37,7 +37,7 @@ inline void checkScalarFinite(Scalar input_scalar) {
  */
 template <typename MatrixType>
 inline void checkVectorNormalized(
-        const Eigen::MatrixBase<MatrixType> &input_vector) {
+  const Eigen::MatrixBase<MatrixType> &input_vector) {
     // fltcmp returns 0 if equal.
     if (fltcmp(input_vector.norm(),
                1.0,
