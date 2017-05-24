@@ -1,4 +1,4 @@
-# Visual Features
+# Visual Features {#vision_features}
 
 ### Viewpoint Invariance
 * Needed for Relocalization, loop closing, multi-agent SLAM. Descriptors look the same upto 30-35 degrees.

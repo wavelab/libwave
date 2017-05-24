@@ -1,3 +1,7 @@
+/** @file
+ * @ingroup kinematics
+ */
+
 #ifndef WAVE_KINEMATICS_POSE_HPP
 #define WAVE_KINEMATICS_POSE_HPP
 
@@ -7,6 +11,8 @@
 #include "wave/utils/utils.hpp"
 
 namespace wave {
+/** @addtogroup kinematics
+ *  @{ */
 
 /**
  * A generic pose class that stores orientation and position information in a
@@ -38,5 +44,6 @@ class Pose {
     void print();
 };
 
+/** @} end of group */
 }  // end of wave namespace
 #endif
