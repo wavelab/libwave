@@ -1,44 +1,77 @@
+/**
+ * @file
+ * Base class from which feature detectors can be derived.
+ * @ingroup vision
+ */
 #ifndef WAVE_FEATURE_DETECTOR_HPP
 #define WAVE_FEATURE_DETECTOR_HPP
 
-// C++ Headers
+/** C++ Headers */
 #include <exception>
 
-// Libwave Headers
+/** Libwave Headers */
 #include "wave/utils/utils.hpp"
 
-// Third Party Headers
+/** Third Party Headers */
 #include "opencv2/opencv.hpp"
 
+/** The wave namespace */
 namespace wave {
-// Classes
-// -----------------------------------------------------------------------------
+/** @addtogroup vision
+ *  @{ */
+
+/**
+ * Custom exception class for a failed attempt at loading a configuration
+ */
 class ConfigurationLoadingException : public std::exception {
     const char* what() const throw() {
         return "Failed to Load Detector Configuration";
     }
 };
 
+/**
+ * Representation of a generic feature detector.
+ *
+ * Internally, this class, and all derived classes are wrapping various
+ * detectors implemented in OpenCV. Further reference on OpenCV's Feature
+ * Detectors can be found [here][opencv_feature_detectors].
+ *
+ * [opencv_feature_detectors]: http://docs.opencv.org/trunk/d5/d51/group__features2d__main.html
+ */
 template <typename T>
 class FeatureDetector {
  public:
-    // Public Functions
-    // -------------------------------------------------------------------------
+    /** Destructor */
     virtual ~FeatureDetector() {};
-    virtual T& getImage() {
+
+    /** Function to return current image being detected
+     *
+     *  @return T& the image (in matrix form).
+     */
+    T& getImage() {
         return this->image;
     }
+
+    /** Virtual function to detect features in an image. Calls a different
+     *  detector depending on the derived class.
+     *
+     *  @param image, the image to detect features in.
+     *  @return std::vector<cv::KeyPoint>&, a vector of the detected keypoints.
+     */
     virtual std::vector<cv::KeyPoint>& detectFeatures(const T& image) = 0;
 
  protected:
-    // Member Variables
-    // -------------------------------------------------------------------------
-    cv::Mat image;
+    // The image currently being detected.
+    T image;
+
+    // The keypoints detected in an image
     std::vector<cv::KeyPoint> keypoints;
 
-    // Protected Functions
-    // -------------------------------------------------------------------------
-    virtual void loadImage(const T& source_image) {
+    /** Function to set image within the member variables.
+     *
+     *  @param source_image, the image to load.
+     */
+    void loadImage(const T& source_image) {
         this->image = source_image;
     };
 };

@@ -64,15 +64,17 @@ TEST(FASTTests, BadTypeConfiguration) {
                  std::invalid_argument);
 }
 
-/* TEST(FASTTests, DefaultConstructorTest) {
-    FASTDetector detector();
+TEST(FASTTests, DefaultConstructorTest) {
+    FASTDetector detector;
 
     FASTParams config;
+
+    config = detector.getConfiguration();
 
     ASSERT_EQ(config.threshold, 10);
     ASSERT_EQ(config.nonmax_suppression, true);
     ASSERT_EQ(config.type, 2);
-} */
+}
 
 // Checks that correct configuration values can be set in detector, and also
 // read from getConfiguration function.
@@ -100,15 +102,16 @@ TEST_F(FASTTest, DetectImage) {
     EXPECT_GT(this->keypoints.size(), 0);
 
     // VISUAL TEST TO CONFIRM IMAGE AND KEYPOINTS ARE DISPLAYED PROPERLY
-    //cv::imshow("Lenna", this->image);
+    // cv::Mat extracted_image = this->detector.getImage();
+    // cv::imshow("Lenna", extracted_image);
 
     // Draw Keypoints on image and display
     // cv::Mat image_with_keypoints;
     // cv::drawKeypoints(this->image, this->keypoints, image_with_keypoints,
     //                   cv::Scalar::all(-1), cv::DrawMatchesFlags::DEFAULT);
-    //cv::imshow("Detection Test", image_with_keypoints);
+    // cv::imshow("Detection Test", image_with_keypoints);
 
-    //cv::waitKey(0);
+    // cv::waitKey(0);
 }
 
 }  // end of namespace wave
