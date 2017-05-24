@@ -37,14 +37,16 @@ class TrajectoryCompare {
      *
      */
     void calculateError();
-    /** Helper function that takes complete measurement containers and calculates the
+    /** Helper function that takes complete measurement containers and
+     * calculates the
      * error immediately.
      *
      */
     void calculateError(const MeasurementContainer<PoseMeasurement> &truth,
                         const MeasurementContainer<PoseMeasurement> &measured);
     /** Outputs content of error container into a csv
-     * The format of the csv is to output the translational error followed by the
+     * The format of the csv is to output the translational error followed by
+     * the
      * rotational error as a so(3) vector. Newlines are delimiters
      *
      */

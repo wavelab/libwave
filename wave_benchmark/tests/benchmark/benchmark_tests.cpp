@@ -39,8 +39,7 @@ TEST(trajectorycompare, error_straight) {
         traj_sample.translation = Vec3(i, 0, 0);
         compare.pushTruth(traj_sample, start_t + std::chrono::seconds(i));
         traj_sample.translation = Vec3(i * 1.2, 0, 0);
-        compare.pushMeasurement(traj_sample,
-                                 start_t + std::chrono::seconds(i));
+        compare.pushMeasurement(traj_sample, start_t + std::chrono::seconds(i));
     }
     compare.calculateError();
     EXPECT_EQ(compare.measurements.size(), compare.error.size());
@@ -68,8 +67,7 @@ TEST(trajectorycompare, error_rotation) {
         expected_error.push_back(Rotation().setFromMatrix(
           truth_sample.rotation.toRotationMatrix().transpose() *
           traj_sample.rotation.toRotationMatrix()));
-        compare.pushMeasurement(traj_sample,
-                                 start_t + std::chrono::seconds(i));
+        compare.pushMeasurement(traj_sample, start_t + std::chrono::seconds(i));
     }
     compare.calculateError();
 
@@ -94,8 +92,7 @@ TEST(trajectorycompare, csv_output_test) {
         truth_sample.rotation.setFromExpMap(Vec3(0.2 * i, 0.15 * i, 0.18 * i));
         compare.pushTruth(truth_sample, start_t + std::chrono::seconds(i));
         traj_sample.rotation.setFromExpMap(Vec3(0.25 * i, 0.20 * i, 0.15 * i));
-        compare.pushMeasurement(traj_sample,
-                                 start_t + std::chrono::seconds(i));
+        compare.pushMeasurement(traj_sample, start_t + std::chrono::seconds(i));
     }
     compare.calculateError();
     compare.outputCSV("test_output.txt");
@@ -104,9 +101,9 @@ TEST(trajectorycompare, csv_output_test) {
 TEST(rotation_interpolation, quarterturn) {
     // Setup
     MeasurementContainer<PoseMeasurement> container;
-    BenchmarkPose pose = { Rotation(Vec3::Zero()), Vec3::Zero() };
-    BenchmarkPose pose_rot = { Rotation(Vec3(2, 0, 0)), Vec3::Zero() };
-    BenchmarkPose expected = { Rotation(Vec3(0.5, 0, 0)), Vec3::Zero() };
+    BenchmarkPose pose = {Rotation(Vec3::Zero()), Vec3::Zero()};
+    BenchmarkPose pose_rot = {Rotation(Vec3(2, 0, 0)), Vec3::Zero()};
+    BenchmarkPose expected = {Rotation(Vec3(0.5, 0, 0)), Vec3::Zero()};
     auto start_t = std::chrono::steady_clock::now();
     container.emplace(start_t, 0, pose);
     container.emplace(start_t + std::chrono::seconds(4), 0, pose_rot);
