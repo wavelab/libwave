@@ -19,8 +19,7 @@ FASTDetector::FASTDetector(const std::string &config_path) {
     parser.addParam("fast.type", &param_type);
 
     if (parser.load(config_path) != 0) {
-        ConfigurationLoadingException exception;
-        throw exception;
+        throw ConfigurationLoadingException{};
     }
 
     // Verify configuration values
