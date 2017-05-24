@@ -28,6 +28,7 @@ class ConfigurationLoadingException : public std::exception {
         return "Failed to Load Detector Configuration";
     }
 };
+
 /**
  * Representation of a generic feature detector.
  *
