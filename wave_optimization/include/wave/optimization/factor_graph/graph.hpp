@@ -17,28 +17,28 @@ namespace wave {
 class FactorGraph {
  public:
     std::vector<std::shared_ptr<Factor>> factors;
-    std::vector<std::shared_ptr<FactorVariable>> variables;
+    std::multimap<VariableId, std::shared_ptr<FactorVariable>> variables;
 
     FactorGraph() {}
 
     template <typename V>
-    void add(const VariableId &v1, const MatX &z) {
-        auto var = std::make_shared<V>(v1);
+    void add(const VariableId &key, const MatX &z) {
+        auto var = std::make_shared<V>(key);
         auto factor = std::make_shared<UnaryFactor>(var, z);
 
         this->factors.push_back(factor);
-        this->variables.push_back(var);
+        this->variables.insert({key, var});
     }
 
     template <typename VA, typename VB>
-    void add(const VariableId &v1, const VariableId &v2, const MatX &z) {
-        auto var1 = std::make_shared<VA>(v1);
-        auto var2 = std::make_shared<VB>(v2);
+    void add(const VariableId &key1, const VariableId &key2, const MatX &z) {
+        auto var1 = std::make_shared<VA>(key1);
+        auto var2 = std::make_shared<VB>(key2);
         auto factor = std::make_shared<BinaryFactor>(var1, var2, z);
 
         this->factors.push_back(factor);
-        this->variables.push_back(var1);
-        this->variables.push_back(var2);
+        this->variables.insert({key1, var1});
+        this->variables.insert({key2, var2});
     }
 
     friend std::ostream &operator<<(std::ostream &os,
