@@ -116,12 +116,75 @@ Vec3 Rotation::logMap() const {
     return this->rotation_object.logarithmicMap();
 }
 
+Vec3 Rotation::logMapAndJacobian(const Rotation &R, Mat3& J_logmap){
+
+    Vec3 log_params = R.logMap();
+    // compute the derivative. First get the Jacobian of the expMap
+    // for log(R).
+    Mat3 J_exp = kindr::getJacobianOfExponentialMap(log_params);
+
+    // Inverse of logMap is just inverse of J_exp.
+    J_logmap = J_exp.inverse(); 
+
+    return log_params;
+}   
+
+
 Rotation &Rotation::manifoldPlus(const Vec3 &omega) {
     checkMatrixFinite(omega);
 
     this->rotation_object = this->rotation_object.boxPlus(omega);
     return *this;
 }
+
+Vec3 Rotation::manifoldMinus(const Rotation &R) const{
+    checkMatrixFinite(R.toRotationMatrix());
+
+    return this->rotation_object.boxMinus(R.rotation_object);
+}
+
+Vec3 Rotation::manifoldMinusAndJacobian(const Rotation &R_right, Mat3 &J_left,Mat3 &J_right) const{
+     checkMatrixFinite(R_right.toRotationMatrix());
+    // Compute manifoldMinus.
+     Vec3 manifold_difference = this->manifoldMinus(R_right);
+
+    // Compute the Jacobian using chain rule.  Recall the form
+    // of manifoldMinus (R_left = "this")
+
+    // R_left \boxminus R_right
+    // = logm(R_left*inv(R_right))
+    // J_left = J_logm * J_compose_R_left
+    // J_right = J_logm * J_compose_inv_R_right * J_inv_R_right
+
+    Mat3 J_inv_R_right;
+    Rotation inv_R_left =  R_right.inverseAndJacobian(J_inv_R_right);
+
+    Mat3 J_compose_R_left,J_compose_inv_R_right;
+    Rotation R_composed = this->composeAndJacobian(inv_R_left,J_compose_R_left,J_compose_inv_R_right);
+
+    Mat3 J_logm;
+    Rotation::logMapAndJacobian(R_composed,J_logm);
+
+    J_left = J_logm*J_compose_R_left;
+    J_right = J_logm*J_compose_inv_R_right*J_inv_R_right;
+
+    return manifold_difference;
+}
+
+ Rotation Rotation::composeAndJacobian(const Rotation &R_right, Mat3 &J_left, Mat3 &J_right) const{
+    checkMatrixFinite(R_right.toRotationMatrix());
+
+    // Compute the rotation composition.
+    Rotation R_out;
+    R_out = (*this)* R_right;
+
+    //Jacobian wrt left rotation is identity.
+    J_left = Eigen::MatrixXd::Identity(3,3);
+
+    // Jacobian wrt right rotation is the left rotation matrix.
+    J_right = this->toRotationMatrix();;
+    return R_out;
+ }
 
 bool Rotation::isNear(const Rotation &R,
                       const double comparison_threshold = 1e-6) const {
@@ -130,6 +193,13 @@ bool Rotation::isNear(const Rotation &R,
 
     return this->rotation_object.isNear(R.rotation_object,
                                         comparison_threshold);
+}
+
+Rotation Rotation::inverseAndJacobian(Mat3 &J_rotation) const {
+    Rotation inverted;
+    inverted.rotation_object  = this->rotation_object.inverted();
+    J_rotation = -1.0*inverted.toRotationMatrix();
+    return inverted;
 }
 
 Mat3 Rotation::toRotationMatrix() const {
@@ -144,10 +214,17 @@ Rotation Rotation::operator*(const Rotation &R) const {
     return composed;
 }
 
+Vec3 Rotation::operator-(const Rotation &R) const {
+    checkMatrixFinite(R.toRotationMatrix());
+
+    return this->manifoldMinus(R);
+}
+
 std::ostream &operator<<(std::ostream &stream, const Rotation &R) {
     stream << R.rotation_object;
     return stream;
 }
+
 
 
 }  // end of wave namespace
