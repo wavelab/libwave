@@ -1,5 +1,5 @@
-#ifndef POSE_COMPARE_POSEMEASUREMENT_HPP_H
-#define POSE_COMPARE_POSEMEASUREMENT_HPP_H
+#ifndef WAVE_BENCHMARK_POSE_MEASUREMENT_HPP
+#define WAVE_BENCHMARK_POSE_MEASUREMENT_HPP
 
 #include <chrono>
 #include <wave/geometry/rotation.hpp>
@@ -43,4 +43,4 @@ inline Pose interpolate(const PoseMeasurement &m1,
 };
 
 
-#endif  // POSE_COMPARE_POSEMEASUREMENT_HPP_H
+#endif  // WAVE_BENCHMARK_POSE_MEASUREMENT_HPP

@@ -1,10 +1,10 @@
-#ifndef POSE_COMPARE_LIBRARY_HPP
-#define POSE_COMPARE_LIBRARY_HPP
+#ifndef WAVE_BENCHMARK_TRAJECTORY_COMPARE_HPP
+#define WAVE_BENCHMARK_TRAJECTORY_COMPARE_HPP
 
 #include <iostream>
 #include <fstream>
 
-#include "posemeasurement.hpp"
+#include "pose_measurement.hpp"
 #include <wave/containers/measurement_container.hpp>
 #include <wave/geometry/rotation.hpp>
 
@@ -30,4 +30,4 @@ class TrajectoryCompare {
 
 }  // end of namespace wave
 
-#endif
+#endif  // WAVE_BENCHMARK_TRAJECTORY_COMPARE_HPP

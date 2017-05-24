@@ -10,7 +10,7 @@ INCLUDE_DIRECTORIES(
     ${EIGEN3_INCLUDE_DIR}
 )
 
-ADD_LIBRARY(${PROJECT_NAME} src/trajectorycompare.cpp)
+ADD_LIBRARY(${PROJECT_NAME} src/trajectory_compare.cpp)
 TARGET_LINK_LIBRARIES(${PROJECT_NAME} wave_utils wave_geometry)
 
 # UNIT TESTS
