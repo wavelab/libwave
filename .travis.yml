@@ -14,3 +14,6 @@ install:
 
 script:
     - bash scripts/ci_run.bash
+
+notifications:
+    email: false
