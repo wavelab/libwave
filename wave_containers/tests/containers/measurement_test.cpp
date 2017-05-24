@@ -253,7 +253,8 @@ TEST_F(FilledMeasurementContainer, getTimeWindowAll) {
     // Check case of window containing all measurements
     const auto t = this->t_start;
     auto res = this->m.getTimeWindow(t, t + seconds(99));
-    EXPECT_EQ(this->m.size(), std::distance(res.first, res.second));
+    EXPECT_EQ(static_cast<signed>(this->m.size()),
+              std::distance(res.first, res.second));
 
     for (int i = 0; res.first != res.second; ++i, ++res.first) {
         EXPECT_DOUBLE_EQ(this->inputs[i], res.first->value);
@@ -275,7 +276,6 @@ TEST_F(FilledMeasurementContainer, getTimeWindowSome) {
 
 TEST_F(FilledMeasurementContainer, getAllFromSensor) {
     // Check case of empty result
-    const auto t = this->t_start;
     auto res = this->m.getAllFromSensor(SomeSensors::S3);
     EXPECT_EQ(res.first, res.second);
 
