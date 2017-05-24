@@ -101,9 +101,9 @@ TEST(trajectorycompare, csv_output_test) {
 TEST(rotation_interpolation, quarterturn) {
     // Setup
     MeasurementContainer<PoseMeasurement> container;
-    BenchmarkPose pose = {Rotation(Vec3::Zero()), Vec3::Zero()};
-    BenchmarkPose pose_rot = {Rotation(Vec3(2, 0, 0)), Vec3::Zero()};
-    BenchmarkPose expected = {Rotation(Vec3(0.5, 0, 0)), Vec3::Zero()};
+    BenchmarkPose pose(Rotation(Vec3::Zero()), Vec3::Zero());
+    BenchmarkPose pose_rot(Rotation(Vec3(2, 0, 0)), Vec3::Zero());
+    BenchmarkPose expected(Rotation(Vec3(0.5, 0, 0)), Vec3::Zero());
     auto start_t = std::chrono::steady_clock::now();
     container.emplace(start_t, 0, pose);
     container.emplace(start_t + std::chrono::seconds(4), 0, pose_rot);

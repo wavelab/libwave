@@ -15,8 +15,10 @@ namespace wave {
  *  @{ */
 
 struct BenchmarkPose {
-    wave::Rotation rotation;
-    wave::Vec3 translation;
+    Rotation rotation;
+    Vec3 translation;
+    BenchmarkPose() : rotation(Rotation()), translation{0.0, 0.0, 0.0} {}
+    BenchmarkPose(Rotation rot, Vec3 trans) : rotation(rot), translation(trans) {}
 };
 
 using PoseMeasurement = Measurement<BenchmarkPose, int>;
