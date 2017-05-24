@@ -14,11 +14,3 @@ install:
 
 script:
     - bash scripts/ci_run.bash
-
-notifications:
-    slack:
-        rooms: 
-            - wavelabteam:4t8bdaWVBZ5HtHvFhyewStty
-        on_success: change
-        on_failure: always
-    email: false
