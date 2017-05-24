@@ -87,7 +87,6 @@ FASTParams FASTDetector::getConfiguration() {
 }
 
 std::vector<cv::KeyPoint>& FASTDetector::detectFeatures(const cv::Mat& image) {
-    // Load image
     this->loadImage(image);
 
     // Detect features in image, save values into keypoints.
