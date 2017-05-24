@@ -1,9 +1,15 @@
+/** @file
+ * @ingroup geometry
+ */
+
 #ifndef WAVE_NUMERICAL_TEST_FUNCTORS_HPP
 #define WAVE_NUMERICAL_TEST_FUNCTORS_HPP
 
 #include "wave/geometry/rotation.hpp"
 
 namespace wave {
+/** @addtogroup geometry
+ *  @{ */
 
 // The Functors are used for computing finite difference Jacobians
 // of rotation expressions.
@@ -98,6 +104,7 @@ void numerical_jacobian(FunctorType F,
     }
 }
 
+/** @} end of group */
 }  // end namespace wave
 
 #endif

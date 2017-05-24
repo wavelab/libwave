@@ -1,4 +1,4 @@
-# Ceres Tutorial
+# Ceres Tutorial {#tutorial_ceres}
 As with all nonlinear-optimizers they can be difficult to master, in the following we give examples on how to effectively implement custom cost functions in Ceres-Solver. In particular we will cover several different topics:
 
 - How do I define a cost function?
@@ -11,35 +11,37 @@ As with all nonlinear-optimizers they can be difficult to master, in the followi
 ## How do I define a cost function?
 Ceres can solve bounds constrained robustified non-linear least squares problems of the form
 
+@f[
 \begin{align}
   \min_{\mathbf{x}} &\quad \frac{1}{2}\sum_{i} \rho_i\left(\left\|f_i\left(x_{i_1}, ... ,x_{i_k}\right)\right\|^2\right) \\
     \text{s.t.} &\quad l_j \le x_j \le u_j
 \end{align}
+@f]
 
 The expression
-$\rho_i\left(\left\|f_i\left(x_{i_1},...,x_{i_k}\right)\right\|^2\right)$ is known as a `ResidualBlock`, where $f_i(\cdot)$ is a `CostFunction` that depends on the parameter blocks $\left[x_{i_1},... , x_{i_k}\right]$. In most optimization problems small groups of scalars occur together. For example the three components of a translation vector and the four components of the quaternion that define the pose of a camera. We refer to such a group of small scalars as a `ParameterBlock`. Of course a `ParameterBlock` can just be a single parameter. $l_j$ and $u_j$ are bounds on the parameter block $x_j$.
+@f$\rho_i\left(\left\|f_i\left(x_{i_1},...,x_{i_k}\right)\right\|^2\right)@f$ is known as a `ResidualBlock`, where @f$f_i(\cdot)@f$ is a `CostFunction` that depends on the parameter blocks @f$\left[x_{i_1},... , x_{i_k}\right]@f$. In most optimization problems small groups of scalars occur together. For example the three components of a translation vector and the four components of the quaternion that define the pose of a camera. We refer to such a group of small scalars as a `ParameterBlock`. Of course a `ParameterBlock` can just be a single parameter. @f$l_j@f$ and @f$u_j@f$ are bounds on the parameter block @f$x_j@f$.
 
-$\rho_i$ is a `LossFunction`. A `LossFunction` is a scalar function that is used to reduce the influence of outliers on the solution of non-linear least squares problems.
+@f$\rho_i@f$ is a `LossFunction`. A `LossFunction` is a scalar function that is used to reduce the influence of outliers on the solution of non-linear least squares problems.
 
-As a special case, when $\rho_i(x) = x$, i.e., the identity function, and $l_j = -\infty$ and $u_j = \infty$ we get the more familiar `non-linear least squares problem:
+As a special case, when @f$\rho_i(x) = x@f$, i.e., the identity function, and @f$l_j = -\infty@f$ and @f$u_j = \infty@f$ we get the more familiar `non-linear least squares problem:
 
-\begin{equation}
+@f[
   \frac{1}{2}\sum_{i} \left\|f_i\left(x_{i_1}, ... ,x_{i_k}\right)\right\|^2
-\end{equation}
+@f]
 
 **Example** consider the problem of finding the minimum of the function:
 
-\begin{equation}
+@f[
   \dfrac{1}{2} (10 - x)^{2}
-\end{equation}
+@f]
 
-**Important**: In Ceres while implementing the `CostFunction` you as the user are expected to implement the **residual only** because the cost function is always contructed the same way ($\text{cost} = \sum \text{residuals}^{2}$).
+**Important**: In Ceres while implementing the `CostFunction` you as the user are expected to implement the **residual only** because the cost function is always contructed the same way (@f$\text{cost} = \sum \text{residuals}^{2}@f$).
 
-\begin{equation}
+@f[
   r = (10 - x)
-\end{equation}
+@f]
 
-The minimum is located at $x = 10$ and in Ceres **this is what you are going to implement**, like so:
+The minimum is located at @f$x = 10@f$ and in Ceres **this is what you are going to implement**, like so:
 
     struct CostFunctor {
       template <typename T>
@@ -52,7 +54,7 @@ The minimum is located at $x = 10$ and in Ceres **this is what you are going to 
 Keypoints to the example code:
 
 - In Ceres a cost function implementation is a functor (function objects: a plain old C++ object plus the `()` operator), this is essentially so that the ceres solver can call your cost function with the overridded `()` operator you implemented. This is where you will add your custom residual function, for more information on functors see [this][stack_overflow-functors].
-- It is **important to note in Ceres we only define the residual** when implementing the cost functor, because the cost function always is constructed the same way ($\text{cost} = \sum \text{residuals}^{2}$).
+- It is **important to note in Ceres we only define the residual** when implementing the cost functor, because the cost function always is constructed the same way (@f$\text{cost} = \sum \text{residuals}^{2}@f$).
 - The output of your cost function is written to `residual[0]`, in all cases `residual` is always an array of type `T`, further in this example we are only writing to `residual[0]` because the output dimension for our scalar cost function is 1.
 - `x[0]` is of size 1 for this problem because the dimension of `x` is 1.
 - The `operator()` is a templated method, which assumes that all its inputs and outputs are of some type `T`. The use of templating here allows Ceres to call `CostFunctor::operator<T>()`, with `T=double` when just the value of the residual is needed, and with a special type `T=Jet` when the Jacobians are needed.
@@ -127,7 +129,7 @@ Defining a numerical cost function is just a matter of using `ceres::NumericDiff
 
 
 ## How do I define an analytical cost function?
-The implementation for an analytical cost function is more involving compared to a numerical or automatic differentiated cost function. First we have to implement the analytical cost function using `ceres::SizedCostFunction`. In this example, we implement the `CostFunction` by calculating the residual between $x$ and $10$, and the loss function is the identity, for definitions of residuals, cost and loss functions, see "How do I define a cost function?" above.
+The implementation for an analytical cost function is more involving compared to a numerical or automatic differentiated cost function. First we have to implement the analytical cost function using `ceres::SizedCostFunction`. In this example, we implement the `CostFunction` by calculating the residual between @f$x@f$ and @f$10@f$, and the loss function is the identity, for definitions of residuals, cost and loss functions, see "How do I define a cost function?" above.
 
 
     class AnalyticalCostFunction
@@ -176,11 +178,11 @@ After defining the cost function to use it you simply do:
 ## How do I load the optimization data?
 The examples we have seen until now are simple optimization problems with no data. The original purpose of least squares and non-linear least squares analysis was fitting curves to data. It is only appropriate that we now consider an example of such a problem. Lets consider a curve fitting problem of the form:
 
-\begin{equation}
+@f[
     y = e^{mx + c}
-\end{equation}
+@f]
 
-We begin by defining a templated object to evaluate the residual, for specific definitions of residual, cost and loss functions see "How do I define a cost function?" above. Implementing the residual for $y = e^{mx + c}$ we obtain a cost functor that looks something like this:
+We begin by defining a templated object to evaluate the residual, for specific definitions of residual, cost and loss functions see "How do I define a cost function?" above. Implementing the residual for @f$y = e^{mx + c}@f$ we obtain a cost functor that looks something like this:
 
     struct CurveFittingResidual {
       CurveFittingResidual(double x, double y)
@@ -198,7 +200,7 @@ We begin by defining a templated object to evaluate the residual, for specific d
       const double y;
     };
 
-where we are calculating the residual between $y$ and $e^{mx + c}$. The key-point to note is we are using the private `x` and `y` member variables to store an observation. Assuming the observations are in a `2n` sized array called `data` the problem construction is a simple matter of creating a `ceres::CostFunction` for every observation.
+where we are calculating the residual between @f$y@f$ and @f$e^{mx + c}@f$. The key-point to note is we are using the private `x` and `y` member variables to store an observation. Assuming the observations are in a `2n` sized array called `data` the problem construction is a simple matter of creating a `ceres::CostFunction` for every observation.
 
     double m = 0.0;
     double c = 0.0;
@@ -232,9 +234,9 @@ Running the above code would yeild:
     Initial m: 0 c: 0
     Final   m: 0.291861 c: 0.131439
 
-Ceres finds a solution $m=0.291861,c=0.131439$with an objective function value of $1.05675$. These values are a bit different than the parameters of the original model $m=0.3,c=0.1$, but this is expected. When reconstructing a curve from noisy data, we expect to see such deviations. To verify the results run the `runCurveFittingExample()` in `wave_optimization/src/ceres/ceres_examples.cpp` and then input the values for $m$ and $c$ while executing the python script `scripts/plot/ceres_curve_fitting_example.py` to plot something similar to the figure below.
+Ceres finds a solution @f$m=0.291861,c=0.131439@f$with an objective function value of @f$1.05675@f$. These values are a bit different than the parameters of the original model @f$m=0.3,c=0.1@f$, but this is expected. When reconstructing a curve from noisy data, we expect to see such deviations. To verify the results run the `runCurveFittingExample()` in `wave_optimization/src/ceres/ceres_examples.cpp` and then input the values for @f$m@f$ and @f$c@f$ while executing the python script `scripts/plot/ceres_curve_fitting_example.py` to plot something similar to the figure below.
 
-![Least Squares Curve Fitting Plot](images/least_squares_fit.png)
+![Least Squares Curve Fitting Plot](least_squares_fit.png)
 
 
 
