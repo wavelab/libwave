@@ -19,12 +19,6 @@ class ConfigurationLoadingException : public std::exception {
     }
 };
 
-class InvalidConfigurationException : public std::exception {
-    const char* what() const throw() {
-        return "Invalid Detector Configuration";
-    }
-};
-
 template <typename T>
 class FeatureDetector {
  public:

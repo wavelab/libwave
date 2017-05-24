@@ -78,7 +78,7 @@ TEST(FASTTests, BadThresholdConfiguration) {
     int type = 2;
 
     ASSERT_THROW(detector.configure(bad_threshold, nonmax_suppression, type),
-                 InvalidConfigurationException);
+                 std::invalid_argument);
 }
 
 // Checks that invalid type values throw the proper exception
@@ -90,10 +90,10 @@ TEST(FASTTests, BadTypeConfiguration) {
     int bad_type_pos = 4;
 
     ASSERT_THROW(detector.configure(threshold, nonmax_suppression, bad_type_neg),
-                 InvalidConfigurationException);
+                 std::invalid_argument);
 
     ASSERT_THROW(detector.configure(threshold, nonmax_suppression, bad_type_pos),
-                 InvalidConfigurationException);
+                 std::invalid_argument);
 }
 
 // Confirms that keypoints can be determined, and image with keypoints can be

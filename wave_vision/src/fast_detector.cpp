@@ -34,16 +34,12 @@ FASTDetector::FASTDetector(const std::string &config_path) {
 FASTDetector::~FASTDetector() {}
 
 void FASTDetector::checkConfiguration(int new_threshold, int new_type) {
-    // Create InvalidConfigurationException object
-    InvalidConfigurationException exception;
-
     // Check parameters. If invalid, throw an exception.
     if (new_threshold < 0) {
-        std::cout << "Invalid threshold for FASTDetector!" << std::endl;
-        throw exception;
+        throw std::invalid_argument("Invalid threshold for FASTDetector!");
     } else if (new_type < 0 || new_type > 3) {
         std::cout << "Invalid type for FASTDetector!" << std::endl;
-        throw exception;
+        throw std::invalid_argument("Invalid type for FASTDetector!");
     }
 }
 
