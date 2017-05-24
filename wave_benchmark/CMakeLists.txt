@@ -7,7 +7,7 @@ FIND_PACKAGE(Eigen3 REQUIRED)
 # INCLUDES
 INCLUDE_DIRECTORIES(
     include
-    /usr/include/eigen3
+    ${EIGEN3_INCLUDE_DIR}
 )
 
 ADD_LIBRARY(${PROJECT_NAME} src/trajectorycompare.cpp)
@@ -16,15 +16,8 @@ TARGET_LINK_LIBRARIES(${PROJECT_NAME} wave_utils wave_geometry)
 # UNIT TESTS
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
 
-ADD_EXECUTABLE(
-    # TARGET
+WAVE_ADD_TEST(
     ${PROJECT_NAME}_tests
-    # TESTS
     tests/benchmark/benchmark_tests.cpp
-    # TEST RUNNER
-    tests/test_runner.cpp
 )
-
-SET(TEST_DEPS gtest ${PROJECT_NAME})
-
-TARGET_LINK_LIBRARIES(${PROJECT_NAME}_tests ${TEST_DEPS})
+TARGET_LINK_LIBRARIES(${PROJECT_NAME}_tests ${PROJECT_NAME})
