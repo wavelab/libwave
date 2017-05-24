@@ -6,38 +6,32 @@
 
 namespace wave {
 
+struct FASTParams {
+    int threshold;
+    bool nonmax_suppression;
+    int type;
+};
+
 class FASTDetector : public FeatureDetector<cv::Mat> {
  public:
     // Public Functions
     // -------------------------------------------------------------------------
-
     FASTDetector();
+    FASTDetector(FASTParams& config);
     FASTDetector(const std::string& config_path);
     ~FASTDetector();
-    void configure(int  new_threshold,
-                   bool new_nonmax_suppression,
-                   int  new_type);
-    void getConfiguration(int&  current_threshold,
-                          bool& current_nonmax_suppression,
-                          int&  current_type);
+    void configure(FASTParams& new_config);
+    FASTParams getConfiguration();
     std::vector<cv::KeyPoint>& detectFeatures(const cv::Mat& image);
 
  private:
-    // Member Variables
-    // -------------------------------------------------------------------------
-
-    // FASTDetector-specific Configuration Parameters
-    int threshold;
-    bool nonmax_suppression;
-    int type;
-
     // OpenCV Variables
     // -------------------------------------------------------------------------
     cv::Ptr<cv::FastFeatureDetector> fast_detector;
 
     // Private Functions
     // -------------------------------------------------------------------------
-    void checkConfiguration(int new_threshold, int new_type);
+    void checkConfiguration(FASTParams& check_config);
 };
 
 } // end of namespace wave

@@ -11,14 +11,10 @@ namespace wave {
 class FASTTest : public testing::Test {
  protected:
     FASTTest() {}
-    virtual ~FASTTest() {
-        if (this->detector) {
-            delete this->detector;
-        }
-    }
+    virtual ~FASTTest() {}
 
     void initDetector() {
-        this->detector = new FASTDetector(TEST_CONFIG);
+        this->detector = FASTDetector(TEST_CONFIG);
     }
 
     virtual void SetUp() {
@@ -27,14 +23,13 @@ class FASTTest : public testing::Test {
     }
 
     cv::Mat image;
-    FASTDetector *detector;
+    FASTDetector detector;
     std::vector<cv::KeyPoint> keypoints;
 };
 
 // Checks that correct configuration can be loaded
 TEST(FASTTests, GoodInitialization) {
-    FASTDetector detector(TEST_CONFIG);
-    SUCCEED();
+    EXPECT_NO_THROW(FASTDetector detector(TEST_CONFIG));
 }
 
 // Checks that incorrect configuration path throws an exception
@@ -45,71 +40,75 @@ TEST(FASTTests, BadInitialization) {
                  ConfigurationLoadingException);
 }
 
-// Checks that correct configuration values can be set in detector, and also
-// read from getConfiguration function.
-TEST(FASTTests, GoodManualConfiguration) {
-    FASTDetector detector(TEST_CONFIG);
-    int threshold = 10;
-    bool nonmax_suppression = true;
-    int type = 2;
-
-    int check_threshold;
-    bool check_nonmax_suppression;
-    int check_type;
-
-    // Configure detector with valid values
-    detector.configure(threshold, nonmax_suppression, type);
-
-    // Extract configuration from detector, assert values have been properly set
-    detector.getConfiguration(check_threshold,
-                              check_nonmax_suppression,
-                              check_type);
-
-    ASSERT_EQ(threshold, check_threshold);
-    ASSERT_EQ(nonmax_suppression, check_nonmax_suppression);
-    ASSERT_EQ(type, check_type);
-}
-
 // Checks that invalid threshold value throws the proper exception
 TEST(FASTTests, BadThresholdConfiguration) {
     FASTDetector detector(TEST_CONFIG);
-    int bad_threshold = -1;
-    bool nonmax_suppression = true;
-    int type = 2;
 
-    ASSERT_THROW(detector.configure(bad_threshold, nonmax_suppression, type),
+    FASTParams bad_threshold_config {-1, true, 2};
+
+    ASSERT_THROW(detector.configure(bad_threshold_config),
                  std::invalid_argument);
 }
 
 // Checks that invalid type values throw the proper exception
 TEST(FASTTests, BadTypeConfiguration) {
     FASTDetector detector(TEST_CONFIG);
-    int threshold = 10;
-    bool nonmax_suppression = true;
-    int bad_type_neg = -1;
-    int bad_type_pos = 4;
 
-    ASSERT_THROW(detector.configure(threshold, nonmax_suppression, bad_type_neg),
+    FASTParams bad_type_config_neg {10, true, -1};
+    FASTParams bad_type_config_pos {10, true, 4};
+
+    ASSERT_THROW(detector.configure(bad_type_config_neg),
                  std::invalid_argument);
 
-    ASSERT_THROW(detector.configure(threshold, nonmax_suppression, bad_type_pos),
+    ASSERT_THROW(detector.configure(bad_type_config_pos),
                  std::invalid_argument);
+}
+
+/* TEST(FASTTests, DefaultConstructorTest) {
+    FASTDetector detector();
+
+    FASTParams config;
+
+    ASSERT_EQ(config.threshold, 10);
+    ASSERT_EQ(config.nonmax_suppression, true);
+    ASSERT_EQ(config.type, 2);
+} */
+
+// Checks that correct configuration values can be set in detector, and also
+// read from getConfiguration function.
+TEST(FASTTests, GoodPathConfiguration) {
+    FASTDetector detector(TEST_CONFIG);
+
+    FASTParams input_config {10, true, 2};
+    FASTParams output_config;
+
+    // Configure detector with valid values
+    detector.configure(input_config);
+
+    // Extract configuration from detector, assert values have been properly set
+    output_config = detector.getConfiguration();
+
+    ASSERT_EQ(output_config.threshold, input_config.threshold);
+    ASSERT_EQ(output_config.nonmax_suppression, input_config.nonmax_suppression);
+    ASSERT_EQ(output_config.type, input_config.type);
 }
 
 // Confirms that keypoints can be determined, and image with keypoints can be
 // displayed.
 TEST_F(FASTTest, DetectImage) {
-    this->keypoints = detector->detectFeatures(this->image);
+    this->keypoints = detector.detectFeatures(this->image);
+    EXPECT_GT(this->keypoints.size(), 0);
+
+    // VISUAL TEST TO CONFIRM IMAGE AND KEYPOINTS ARE DISPLAYED PROPERLY
     //cv::imshow("Lenna", this->image);
 
     // Draw Keypoints on image and display
-    cv::Mat image_with_keypoints;
-    cv::drawKeypoints(this->image, this->keypoints, image_with_keypoints,
-                      cv::Scalar::all(-1), cv::DrawMatchesFlags::DEFAULT);
+    // cv::Mat image_with_keypoints;
+    // cv::drawKeypoints(this->image, this->keypoints, image_with_keypoints,
+    //                   cv::Scalar::all(-1), cv::DrawMatchesFlags::DEFAULT);
     //cv::imshow("Detection Test", image_with_keypoints);
 
     //cv::waitKey(0);
-    SUCCEED();
 }
 
 }  // end of namespace wave
