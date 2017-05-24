@@ -1,3 +1,14 @@
+/**
+ * @file
+ * @ingroup containers
+ *
+ * Container which stores and transparently interpolates measurements from
+ * multiple sensors.
+ *
+ * @defgroup containers
+ * Storage types for data used by other modules.
+ */
+
 #ifndef WAVE_CONTAINERS_MEASUREMENT_CONTAINER_HPP
 #define WAVE_CONTAINERS_MEASUREMENT_CONTAINER_HPP
 
@@ -10,6 +21,9 @@
 #include <chrono>
 
 namespace wave {
+
+/** @addtogroup containers
+ *  @{ */
 
 using TimeType = std::chrono::steady_clock::time_point;
 
@@ -81,15 +95,15 @@ struct measurement_container {
  * in wave/containers/measurement.hpp is designed to be used here.
  *
  * However, any class can be used that has the following public members:
- *   \li \c  time_point (of type \c wave::TimeType)
- *   \li \c sensor_id (any type sortable by \c std::less)
- *   \li \c value (any type)
+ *   - `time_point` (of type `wave::TimeType`)
+ *   - `sensor_id` (any type sortable by `std::less`)
+ *   - `value` (any type)
  *
  * Additionally, the non-member function
- *   \code{.cpp}
+ *   ```
  *   interpolate(const T&, const T&, const TimeType&)
- *   \endcode
- * must be defined for type \c T.
+ *   ```
+ * must be defined for type `T`.
  */
 template <typename T>
 class MeasurementContainer {
@@ -177,6 +191,8 @@ class MeasurementContainer {
     // Internal multi_index_container
     typename internal::measurement_container<T>::type storage;
 };
+
+/** @} end of group */
 
 template <typename T>
 MeasurementContainer<T>::MeasurementContainer() {}
