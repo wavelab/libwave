@@ -99,7 +99,7 @@ TEST(FASTTests, GoodPathConfiguration) {
 // displayed.
 TEST_F(FASTTest, DetectImage) {
     this->keypoints = detector.detectFeatures(this->image);
-    EXPECT_GT(this->keypoints.size(), 0);
+    ASSERT_NE(this->keypoints.size(), 0);
 
     // VISUAL TEST TO CONFIRM IMAGE AND KEYPOINTS ARE DISPLAYED PROPERLY
     // cv::Mat extracted_image = this->detector.getImage();

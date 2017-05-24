@@ -28,7 +28,6 @@ class ConfigurationLoadingException : public std::exception {
         return "Failed to Load Detector Configuration";
     }
 };
-
 /**
  * Representation of a generic feature detector.
  *
@@ -38,7 +37,6 @@ class ConfigurationLoadingException : public std::exception {
  *
  * [opencv_feature_detectors]: http://docs.opencv.org/trunk/d5/d51/group__features2d__main.html
  */
-template <typename T>
 class FeatureDetector {
  public:
     /** Destructor */
@@ -48,7 +46,7 @@ class FeatureDetector {
      *
      *  @return T& the image (in matrix form).
      */
-    T& getImage() {
+    virtual cv::Mat& getImage() {
         return this->image;
     }
 
@@ -58,11 +56,11 @@ class FeatureDetector {
      *  @param image, the image to detect features in.
      *  @return std::vector<cv::KeyPoint>&, a vector of the detected keypoints.
      */
-    virtual std::vector<cv::KeyPoint>& detectFeatures(const T& image) = 0;
+    virtual std::vector<cv::KeyPoint>& detectFeatures(const cv::Mat& image) = 0;
 
  protected:
     // The image currently being detected.
-    T image;
+    cv::Mat image;
 
     // The keypoints detected in an image
     std::vector<cv::KeyPoint> keypoints;
@@ -71,7 +69,7 @@ class FeatureDetector {
      *
      *  @param source_image, the image to load.
      */
-    void loadImage(const T& source_image) {
+    virtual void loadImage(const cv::Mat& source_image) {
         this->image = source_image;
     };
 };

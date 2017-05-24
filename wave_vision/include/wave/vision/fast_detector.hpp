@@ -12,7 +12,7 @@ struct FASTParams {
     int type;
 };
 
-class FASTDetector : public FeatureDetector<cv::Mat> {
+class FASTDetector : public FeatureDetector {
  public:
     // Public Functions
     // -------------------------------------------------------------------------
