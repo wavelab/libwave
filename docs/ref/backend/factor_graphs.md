@@ -1,4 +1,4 @@
-# Factor Graphs
+# Factor Graphs {#backend_factor_graphs}
 
 ## Good References
 
@@ -22,7 +22,7 @@ dependence between random variables. A factor graph is a model that employs a
 *bipartite* graph; a graph consisting of two distinct nodes.The two nodes in
 a factor graph are *variables* and *factors*, which are connected together by
 *edges* [[4][Eckford2010]]. Illustrated below is an example factor graph,
-with 3 variables X1, X2, X3, and four factors f1, f2, f3, and f4 [[5][FG-wiki]].
+with 3 variables @f$X1, X2, X3@f$, and four factors @f$f1, f2, f3@f$, and @f$f4@f$ [[5][FG-wiki]].
 As a convention, variables are usually denoted by circles [[4][Eckford2010]].
 
 ![Factor Graph](factor_graph.jpg)
@@ -30,7 +30,7 @@ As a convention, variables are usually denoted by circles [[4][Eckford2010]].
 The edges illustrate the relationship between the factors and the variables. If
 the variable appears in the factor, we can connect an edge between the two.
 Since the edges illustrate the associated variables, we can express the factors
-as such: **f1(X1), f2(X1, X2), f3(X1, X2), f4(X2, X3)**.
+as such: @f[ f1(X1),\quad f2(X1, X2),\quad f3(X1, X2),\quad f4(X2, X3) @f]
 
 ### Factors
 
@@ -40,11 +40,11 @@ mathematical fundamentals [[1][Dellaert2012]]. As we know from probability
 theory, any joint probability model with any number of variables can be broken
 down into factors [[4][Eckford2010]].
 
-For example, we can state that the probability of two variables, *a*, and *b*,
-can be expressed as: **f(a, b) = f(a | b)\*f(b)**; a factor of the two
+For example, we can state that the probability of two variables, @f$ a @f$, and @f$ b @f$,
+can be expressed as: @f$ f(a, b) = f(a | b) f(b) @f$; a factor of the two
 variables. This example can also be extended to our above example - if we know
-that the probability of *X1*, *X2*, and *X3*, is expressed as **f(X1, X2, X3) =
-f1(X1)\*f2(X1, X2)\*f3(X1, X2)\*f4(X2,X3)**, we can use this to derive the
+that the probability of @f$X1, X2, X3 @f$, is expressed as @f[ f(X1, X2, X3) =
+f1(X1) f2(X1, X2) f3(X1, X2) f4(X2,X3) @f], we can use this to derive the
 above image.
 
 ## Applications
@@ -56,18 +56,18 @@ example.
 
 One application is robot localization, as discussed by Dellaert
 [[1][Dellaert2012]]. Let us imagine we have a robot from which we can obtain
-odometry and GPS measurements. The variables *x1, x2*, and *x3* denote 3 poses
-of the robot over time while *z1, z2*, and *z3* denote the measurement of that
+odometry and GPS measurements. The variables @f$x1@f$, @f$x2@f$, and @f$x3@f$ denote 3 poses
+of the robot over time while @f$z1@f$, @f$z2@f$, and @f$z3@f$ denote the measurement of that
 pose. The factor graph can be derived as follows:
 
 ![Factor Graph 2](factor_graph_2.jpg)
 
-The GPS measurements are illustrated by **f1(x1; z1), f2(x2; z2)**, and
-**f3(x3; z3)**. As measurements only depend on the one state they are
+The GPS measurements are illustrated by @f$ f1(x1; z1), f2(x2; z2) @f$, and
+@f$ f3(x3; z3) @f$. As measurements only depend on the one state they are
 measuring, these are unary factors. The odometry measurements are shown as the
 dots between the variables, as this information provides the relation between
-the two poses. This can be described as **f4(x1, x2; o1)**, and **f5(x2, x3;
-o2)**, where *o* refers to the odometry measurement at that point. As this
+the two poses. This can be described as @f$f4(x1, x2; o1)@f$ and @f$f5(x2, x3;
+o2)@f$, where @f$o@f$ refers to the odometry measurement at that point. As this
 depends on two variables, this is a binary factor. In addition to this, each of
 these measurement factors will have associated noise.
 

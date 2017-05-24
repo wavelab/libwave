@@ -140,5 +140,4 @@ void runCurveFittingExample(void) {
     std::cout << "Final   m: " << m << " c: " << c << "\n";
 }
 
-
 }  // end of wave namespace

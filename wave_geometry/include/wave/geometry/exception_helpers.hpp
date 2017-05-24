@@ -1,3 +1,7 @@
+/** @file
+ * @ingroup geometry
+ */
+
 #ifndef WAVE_GEOMETRY_EXCEPTION_HELPERS_HPP
 #define WAVE_GEOMETRY_EXCEPTION_HELPERS_HPP
 
@@ -5,6 +9,8 @@
 #include "wave/utils/math.hpp"
 
 namespace wave {
+/** @addtogroup geometry
+ *  @{ */
 
 /** Checks that all elements are finite (not NaN or +/-INF)
  *
@@ -78,6 +84,7 @@ inline void checkValidRotation(const Mat3 &R) {
     }
 }
 
+/** @} end of group */
 }  // namespace wave
 
 #endif  // WAVE_GEOMETRY_EXCEPTION_HELPERS_HPP
