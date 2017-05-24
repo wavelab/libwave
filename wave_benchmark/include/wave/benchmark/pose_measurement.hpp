@@ -2,8 +2,10 @@
 #define WAVE_BENCHMARK_POSE_MEASUREMENT_HPP
 
 #include <chrono>
-#include <wave/geometry/rotation.hpp>
-#include <wave/utils/math.hpp>
+#include "wave/geometry/rotation.hpp"
+#include "wave/utils/math.hpp"
+
+namespace wave {
 
 using TimeType = std::chrono::steady_clock::time_point;
 
@@ -25,8 +27,8 @@ struct PoseMeasurement {
 /** Perform interpolation (or extrapolation) between two measurements.
 */
 inline Pose interpolate(const PoseMeasurement &m1,
-                 const PoseMeasurement &m2,
-                 const TimeType &t) {
+                        const PoseMeasurement &m2,
+                        const TimeType &t) {
     auto w2 = 1.0 * (t - m1.time_point) / (m2.time_point - m1.time_point);
 
     auto m1inverse = m1.value.rotation;
@@ -42,5 +44,6 @@ inline Pose interpolate(const PoseMeasurement &m1,
     return retval;
 };
 
+}  // namespace wave
 
 #endif  // WAVE_BENCHMARK_POSE_MEASUREMENT_HPP

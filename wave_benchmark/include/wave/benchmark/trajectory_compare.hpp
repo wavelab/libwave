@@ -5,8 +5,8 @@
 #include <fstream>
 
 #include "pose_measurement.hpp"
-#include <wave/containers/measurement_container.hpp>
-#include <wave/geometry/rotation.hpp>
+#include "wave/containers/measurement_container.hpp"
+#include "wave/geometry/rotation.hpp"
 
 namespace wave {
 
@@ -28,6 +28,6 @@ class TrajectoryCompare {
     std::ofstream file;
 };
 
-}  // end of namespace wave
+}  // namespace wave
 
 #endif  // WAVE_BENCHMARK_TRAJECTORY_COMPARE_HPP

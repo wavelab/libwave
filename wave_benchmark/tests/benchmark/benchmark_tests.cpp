@@ -1,5 +1,5 @@
-#include <wave/wave_test.hpp>
-#include <wave/benchmark/trajectory_compare.hpp>
+#include "wave/wave_test.hpp"
+#include "wave/benchmark/trajectory_compare.hpp"
 
 namespace wave {
 

@@ -1,4 +1,4 @@
-#include <wave/benchmark/trajectory_compare.hpp>
+#include "wave/benchmark/trajectory_compare.hpp"
 
 namespace wave {
 
@@ -18,8 +18,7 @@ void TrajectoryCompare::push_truth(Pose pose, const TimeType time) {
 
 void TrajectoryCompare::calculate_error() {
     for (auto iter = measurements.begin(); iter != measurements.end(); iter++) {
-        Pose truth =
-          ground_truth.get(iter->time_point, this->ground_truth_key);
+        Pose truth = ground_truth.get(iter->time_point, this->ground_truth_key);
         Pose error;
         truth.rotation.invert();
         error.rotation = truth.rotation * iter->value.rotation;
