@@ -7,14 +7,15 @@
 
 namespace wave {
 
-using FactorId = size_t;
+using VariableId = size_t;
 
 struct FactorVariable {
-    FactorId id;
+    VariableId id;
     VecX data;
 
     FactorVariable() : id{0}, data{VecX::Zero(1)} {}
-    FactorVariable(size_t id, size_t size) : id{id}, data{VecX::Zero(size)} {}
+    FactorVariable(VariableId id, size_t size)
+        : id{id}, data{VecX::Zero(size)} {}
 
     friend std::ostream &operator<<(std::ostream &os,
                                     const FactorVariable &var) {
@@ -34,11 +35,11 @@ struct FactorVariable {
 };
 
 struct PoseVar : FactorVariable {
-    PoseVar(size_t id) : FactorVariable{id, 6} {}
+    PoseVar(VariableId id) : FactorVariable{id, 6} {}
 };
 
 struct LandmarkVar : FactorVariable {
-    LandmarkVar(size_t id) : FactorVariable{id, 3} {}
+    LandmarkVar(VariableId id) : FactorVariable{id, 3} {}
 };
 
 }  // end of wave namespace

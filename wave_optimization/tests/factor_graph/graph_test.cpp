@@ -4,35 +4,36 @@
 
 namespace wave {
 
-TEST(FactorGraph, addUnaryFactor) {
-    FactorGraph graph;
-    graph.addUnaryFactor<PoseVar, double>(1, 2.0);
-    graph.addUnaryFactor<PoseVar, int>(1, 1);
+TEST(FactorGraph, add) {
+    // add unary factor
+    FactorGraph graph1;
+    MatX m1 = MatX::Random(1, 3);
+    MatX m2 = MatX::Random(1, 3);
 
-    ASSERT_EQ(2u, graph.graph.size());
-    ASSERT_EQ(2u, graph.factors.size());
-}
+    graph1.add<PoseVar>(1, m1);
+    graph1.add<PoseVar>(2, m2);
 
-TEST(FactorGraph, addBinaryFactor) {
-    FactorGraph graph;
+    ASSERT_EQ(2u, graph1.factors.size());
+    ASSERT_EQ(2u, graph1.variables.size());
 
-    graph.addBinaryFactor<PoseVar, PoseVar, double>(1, 2, 2);
-    ASSERT_EQ(2u, graph.graph.size());
-    ASSERT_EQ(1u, graph.factors.size());
+    // add binary factor
+    FactorGraph graph2;
+    MatX m3 = MatX::Random(1, 3);
+
+    graph2.add<PoseVar, PoseVar>(1, 2, m3);
+    ASSERT_EQ(1u, graph2.factors.size());
+    ASSERT_EQ(2u, graph2.variables.size());
 }
 
 TEST(FactorGraph, print) {
     FactorGraph graph;
+    MatX m1 = MatX::Random(1, 3);
+    MatX m2 = MatX::Random(1, 3);
 
-    graph.addUnaryFactor<PoseVar, int>(1, 1);
-    graph.addBinaryFactor<PoseVar, PoseVar, int>(2, 3, 2);
-    graph.addBinaryFactor<PoseVar, PoseVar, int>(3, 4, 3);
+    graph.add<PoseVar>(1, m1);
+    graph.add<PoseVar>(2, m2);
 
-    Vec2 z;
-    z << 100.0, 200.0;
-    graph.addBinaryFactor<PoseVar, PoseVar, Vec2>(1, 2, z);
-    graph.addBinaryFactor<PoseVar, PoseVar, Vec2>(2, 3, z);
-
+    ASSERT_EQ(2u, graph.factors.size());
     std::cout << graph << std::endl;
 }
 

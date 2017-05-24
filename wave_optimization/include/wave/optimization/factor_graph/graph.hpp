@@ -16,49 +16,29 @@ namespace wave {
 
 class FactorGraph {
  public:
-    std::multimap<std::shared_ptr<FactorVariable>, std::shared_ptr<Factor>>
-      graph{};
-    std::set<std::shared_ptr<FactorVariable>> variables{};
-    std::vector<std::shared_ptr<Factor>> factors{};
+    std::vector<std::shared_ptr<Factor>> factors;
+    std::vector<std::shared_ptr<FactorVariable>> variables;
 
     FactorGraph() {}
 
-    template <typename V, typename T>
-    int addUnaryFactor(FactorId at, const T &z) {
-        // store variable and factor
-        auto variable = std::make_shared<V>(at);
-        this->variables.insert(variable);
+    template <typename V>
+    void add(const VariableId &v1, const MatX &z) {
+        auto var = std::make_shared<V>(v1);
+        auto factor = std::make_shared<UnaryFactor>(var, z);
 
-        auto factor = std::make_shared<UnaryFactor<T>>(variable, z);
         this->factors.push_back(factor);
-
-        // store key-factor pair
-        auto value = std::make_pair(variable, factor);
-        this->graph.insert(value);
-
-        return 0;
+        this->variables.push_back(var);
     }
 
-    template <typename VA, typename VB, typename T>
-    int addBinaryFactor(FactorId from, FactorId to, const T &z) {
-        // store variables and factor
-        auto from_var = std::make_shared<VA>(from);
-        this->variables.insert(from_var);
+    template <typename VA, typename VB>
+    void add(const VariableId &v1, const VariableId &v2, const MatX &z) {
+        auto var1 = std::make_shared<VA>(v1);
+        auto var2 = std::make_shared<VB>(v2);
+        auto factor = std::make_shared<BinaryFactor>(var1, var2, z);
 
-        auto to_var = std::make_shared<VB>(to);
-        this->variables.insert(to_var);
-
-        auto factor = std::make_shared<BinaryFactor<T>>(from_var, to_var, z);
         this->factors.push_back(factor);
-
-        // store key-factor pairs
-        auto val1 = std::make_pair(from_var, factor);
-        this->graph.insert(val1);
-
-        auto val2 = std::make_pair(to_var, factor);
-        this->graph.insert(val2);
-
-        return 0;
+        this->variables.push_back(var1);
+        this->variables.push_back(var2);
     }
 
     friend std::ostream &operator<<(std::ostream &os,
