@@ -9,6 +9,9 @@ ENDIF()
 
 # CMAKE SETTINGS
 LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
+INCLUDE(cmake/WaveUtils.cmake)
+ENABLE_TESTING()
+
 
 # INCLUDES
 INCLUDE_DIRECTORIES(
@@ -19,6 +22,7 @@ INCLUDE_DIRECTORIES(
   wave_optimization/include
   wave_utils/include
   wave_containers/include
+  wave_benchmark/include
 )
 
 # gtest
@@ -54,24 +58,52 @@ ADD_SUBDIRECTORY(wave_containers)
 ADD_SUBDIRECTORY(wave_benchmark)
 ADD_DEPENDENCIES(wave_benchmark wave_utils)
 
-# libwave.a
-ADD_CUSTOM_TARGET(
-    libwave ALL
-    COMMAND
-        ${CMAKE_AR} rc libwave.a
-		${CMAKE_BINARY_DIR}/wave_controls/libwave_controls.a
-	    ${CMAKE_BINARY_DIR}/wave_geometry/libwave_geometry.a
-		${CMAKE_BINARY_DIR}/wave_kinematics/libwave_kinematics.a
-		${CMAKE_BINARY_DIR}/wave_matching/libwave_matching.a
-		${CMAKE_BINARY_DIR}/wave_optimization/libwave_optimization.a
-		${CMAKE_BINARY_DIR}/wave_utils/libwave_utils.a
-		${CMAKE_BINARY_DIR}/wave_benchmark/libwave_benchmark.a
-    DEPENDS
-        wave_controls
-	    wave_geometry
-        wave_kinematics
-        wave_matching
-        wave_optimization
-        wave_utils
-		wave_benchmark
-)
+# libwave library
+SET(LIBWAVE_MODULE_LIBS
+    ${CMAKE_BINARY_DIR}/wave_controls/libwave_controls.a
+    ${CMAKE_BINARY_DIR}/wave_geometry/libwave_geometry.a
+    ${CMAKE_BINARY_DIR}/wave_kinematics/libwave_kinematics.a
+    ${CMAKE_BINARY_DIR}/wave_matching/libwave_matching.a
+    ${CMAKE_BINARY_DIR}/wave_optimization/libwave_optimization.a
+    ${CMAKE_BINARY_DIR}/wave_utils/libwave_utils.a)
+
+SET(LIBWAVE_MODULES
+    wave_controls
+    wave_geometry
+    wave_kinematics
+    wave_matching
+    wave_optimization
+    wave_utils
+    wave_benchmark)
+
+IF(BUILD_SHARED_LIBS)
+    # SHARED LIBRARY
+    ADD_CUSTOM_TARGET(
+        libwave ALL
+        COMMAND
+            gcc -shared -o libwave.so
+              -Wl,--whole-archive
+                ${LIBWAVE_MODULE_LIBS}
+              -Wl,--no-whole-archive
+        DEPENDS
+            ${LIBWAVE_MODULES}
+    )
+    INSTALL(FILES ${CMAKE_BINARY_DIR}/libwave.so DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+
+ELSE ()
+    # STATIC LIBRARY
+    ADD_CUSTOM_TARGET(
+        libwave ALL
+        COMMAND
+            ar -rcT libwave.a ${LIBWAVE_MODULE_LIBS}
+        DEPENDS
+            ${LIBWAVE_MODULES}
+    )
+    INSTALL(FILES ${CMAKE_BINARY_DIR}/libwave.a DESTINATION CMAKE_INSTALL_PREFIX}/lib)
+
+ENDIF()
+
+# libwave headers
+FOREACH(MODULE ${LIBWAVE_MODULES})
+  INSTALL(DIRECTORY ${MODULE}/include/ DESTINATION include)
+ENDFOREACH()

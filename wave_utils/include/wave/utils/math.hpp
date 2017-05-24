@@ -37,6 +37,9 @@ void mat2vec(MatX A, std::vector<double> &x);
 double wrapTo180(double euler_angle);
 double wrapTo360(double euler_angle);
 int euler2rot(Vec3 euler, int euler_seq, Mat3 &R);
+int euler2quat(Vec3 euler, int euler_seq, Quaternion &q);
+int quat2euler(Quaternion q, int euler_seq, Vec3 &euler);
+int quat2rot(Quaternion q, Mat3 &R);
 
 }  // end of wave namespace
 #endif

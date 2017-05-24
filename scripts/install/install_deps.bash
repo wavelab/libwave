@@ -35,5 +35,5 @@ install_dependency "Yaml-CPP" $SCRIPT_PATH/yaml_cpp_install.bash
 install_dependency "Ceres" $SCRIPT_PATH/ceres_install.bash
 install_dependency "Eigen" $SCRIPT_PATH/eigen_install.bash
 install_dependency "Kindr" $SCRIPT_PATH/kindr_install.bash
-install_dependency "OpenCV 2.4" $SCRIPT_PATH/opencv2_install.bash
+install_dependency "OpenCV 3.2" $SCRIPT_PATH/opencv3_install.bash
 install_dependency "PCL 1.7.2" $SCRIPT_PATH/pcl_install.bash

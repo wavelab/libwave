@@ -11,21 +11,8 @@ ADD_LIBRARY(
     STATIC
     src/pid.cpp
 )
-SET(
-    WAVE_CONTROL_TEST_DEPS
-    wave_controls
-    gtest
-    pthread
-)
+
 
 # UNIT TESTS
-SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
-ADD_EXECUTABLE(
-    # TARGET
-    wave_controls_tests
-    # TESTS
-    tests/pid_test.cpp
-    # TEST RUNNER
-    tests/test_runner.cpp
-)
-TARGET_LINK_LIBRARIES(wave_controls_tests ${WAVE_CONTROL_TEST_DEPS})
+WAVE_ADD_TEST(${PROJECT_NAME}_tests tests/pid_test.cpp)
+TARGET_LINK_LIBRARIES(${PROJECT_NAME}_tests ${PROJECT_NAME})

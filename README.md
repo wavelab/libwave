@@ -1,4 +1,4 @@
-# libwave [![Build Status](https://travis-ci.org/wavelab/libwave.png)][1]
+# libwave [![Build Status](https://travis-ci.org/wavelab/libwave.png?branch=master)][1]
 
 This library contains reusable code for:
 

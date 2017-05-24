@@ -13,7 +13,7 @@ download_kindr() {
     mkdir -p /usr/local/src/kindr
     cd /usr/local/src/kindr
     wget $KINDR_URL -O kindr-$KINDR_VER.zip
-    unzip kindr-$KINDR_VER.zip
+    unzip -o kindr-$KINDR_VER.zip
     cd -
 }
 
