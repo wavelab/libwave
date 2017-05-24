@@ -4,25 +4,18 @@
 #include <chrono>
 #include "wave/geometry/rotation.hpp"
 #include "wave/utils/math.hpp"
+#include "wave/containers/measurement.hpp"
 
 namespace wave {
 
-using TimeType = std::chrono::steady_clock::time_point;
+//using TimeType = std::chrono::steady_clock::time_point;
 
 struct Pose {
     wave::Rotation rotation;
     wave::Vec3 translation;
 };
 
-struct PoseMeasurement {
-    TimeType time_point;
-    int sensor_id;
-    Pose value;
-    PoseMeasurement(const TimeType &t, const int &s, const Pose &v)
-        : time_point{t}, sensor_id{s} {
-        value = v;
-    }
-};
+using PoseMeasurement = Measurement<Pose, int>;
 
 /** Perform interpolation (or extrapolation) between two measurements.
 */

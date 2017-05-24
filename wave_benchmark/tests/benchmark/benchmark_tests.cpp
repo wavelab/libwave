@@ -14,7 +14,7 @@ TEST(trajectorycompare, pushtest) {
     testpose.translation.setOnes();
     auto now = std::chrono::steady_clock::now();
 
-    compare.push_truth(testpose, now);
+    compare.pushTruth(testpose, now);
     ASSERT_EQ(1ul, compare.ground_truth.size());
 }
 
@@ -25,7 +25,7 @@ TEST(trajectorycompare, resettest) {
     testpose.translation.setOnes();
     auto now = std::chrono::steady_clock::now();
 
-    compare.push_truth(testpose, now);
+    compare.pushTruth(testpose, now);
     compare.reset();
     ASSERT_EQ(0ul, compare.ground_truth.size());
 }
@@ -37,12 +37,12 @@ TEST(trajectorycompare, error_straight) {
     auto start_t = std::chrono::steady_clock::now();
     for (int i = 0; i < 10; i++) {
         traj_sample.translation = Vec3(i, 0, 0);
-        compare.push_truth(traj_sample, start_t + std::chrono::seconds(i));
+        compare.pushTruth(traj_sample, start_t + std::chrono::seconds(i));
         traj_sample.translation = Vec3(i * 1.2, 0, 0);
-        compare.push_measurement(traj_sample,
+        compare.pushMeasurement(traj_sample,
                                  start_t + std::chrono::seconds(i));
     }
-    compare.calculate_error();
+    compare.calculateError();
     EXPECT_EQ(compare.measurements.size(), compare.error.size());
     for (int i = 0; i < 10; i++) {
         EXPECT_NEAR(compare.error.get(start_t + std::chrono::seconds(i), 2)
@@ -63,15 +63,15 @@ TEST(trajectorycompare, error_rotation) {
     auto start_t = std::chrono::steady_clock::now();
     for (int i = 0; i < 10; i++) {
         truth_sample.rotation.setFromExpMap(Vec3(0.2 * i, 0.15 * i, 0.18 * i));
-        compare.push_truth(truth_sample, start_t + std::chrono::seconds(i));
+        compare.pushTruth(truth_sample, start_t + std::chrono::seconds(i));
         traj_sample.rotation.setFromExpMap(Vec3(0.25 * i, 0.20 * i, 0.15 * i));
         expected_error.push_back(Rotation().setFromMatrix(
           truth_sample.rotation.toRotationMatrix().transpose() *
           traj_sample.rotation.toRotationMatrix()));
-        compare.push_measurement(traj_sample,
+        compare.pushMeasurement(traj_sample,
                                  start_t + std::chrono::seconds(i));
     }
-    compare.calculate_error();
+    compare.calculateError();
 
     EXPECT_EQ(compare.measurements.size(), compare.error.size());
     for (int i = 0; i < 10; i++) {
@@ -92,13 +92,27 @@ TEST(trajectorycompare, csv_output_test) {
     auto start_t = std::chrono::steady_clock::now();
     for (int i = 0; i < 10; i++) {
         truth_sample.rotation.setFromExpMap(Vec3(0.2 * i, 0.15 * i, 0.18 * i));
-        compare.push_truth(truth_sample, start_t + std::chrono::seconds(i));
+        compare.pushTruth(truth_sample, start_t + std::chrono::seconds(i));
         traj_sample.rotation.setFromExpMap(Vec3(0.25 * i, 0.20 * i, 0.15 * i));
-        compare.push_measurement(traj_sample,
+        compare.pushMeasurement(traj_sample,
                                  start_t + std::chrono::seconds(i));
     }
-    compare.calculate_error();
-    compare.output_csv("", "test_output.txt");
+    compare.calculateError();
+    compare.outputCSV("test_output.txt");
+}
+
+TEST(rotation_interpolation, quarter) {
+    // Setup
+    MeasurementContainer<PoseMeasurement> container;
+    Pose pose = { Rotation(Vec3::Zero()), Vec3::Zero() };
+    Pose pose_rot = { Rotation(Vec3(2, 0, 0)), Vec3::Zero() };
+    Pose expected = { Rotation(Vec3(0.5, 0, 0)), Vec3::Zero() };
+    auto start_t = std::chrono::steady_clock::now();
+    container.emplace(start_t, 0, pose);
+    container.emplace(start_t + std::chrono::seconds(4), 0, pose_rot);
+    // Test
+    Pose inter = container.get(start_t + std::chrono::seconds(1), 0);
+    EXPECT_TRUE(expected.rotation.isNear(inter.rotation, 0.1));
 }
 
 }  // end of namespace wave

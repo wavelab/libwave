@@ -13,10 +13,12 @@ namespace wave {
 class TrajectoryCompare {
  public:
     void reset();
-    void push_truth(Pose pose, const TimeType time);
-    void push_measurement(Pose pose, const TimeType time);
-    void calculate_error();
-    void output_csv(std::string path, std::string filename);
+    void pushTruth(Pose pose, const TimeType time);
+    void pushMeasurement(Pose pose, const TimeType time);
+    void calculateError();
+    void calculateError(const MeasurementContainer<PoseMeasurement> &truth,
+                        const MeasurementContainer<PoseMeasurement> &measured);
+    void outputCSV(std::string path);
     MeasurementContainer<PoseMeasurement> ground_truth;
     MeasurementContainer<PoseMeasurement> measurements;
     MeasurementContainer<PoseMeasurement> error;
