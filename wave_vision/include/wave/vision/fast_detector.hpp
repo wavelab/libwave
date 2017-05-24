@@ -11,6 +11,7 @@ class FASTDetector : public FeatureDetector<cv::Mat> {
     // Public Functions
     // -------------------------------------------------------------------------
 
+    FASTDetector();
     FASTDetector(const std::string& config_path);
     ~FASTDetector();
     void configure(int  new_threshold,

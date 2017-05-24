@@ -3,6 +3,20 @@
 
 namespace wave {
 
+// Default Constructor
+FASTDetector::FASTDetector() {
+    // Instantiate cv::FastFeatureDetector object with default values
+
+    int default_threshold = 10;
+    bool default_nonmax_suppression = true;
+    int default_type = 2;
+
+    // Create FastFeatureDetector with these parameters
+    this->fast_detector = cv::FastFeatureDetector::create(default_threshold,
+                                                          default_nonmax_suppression,
+                                                          default_type);
+}
+
 FASTDetector::FASTDetector(const std::string &config_path) {
     // Extract parameters from .yaml file.
     ConfigParser parser;
