@@ -1,3 +1,7 @@
+/** @file
+ * @ingroup benchmark
+ */
+
 #ifndef WAVE_BENCHMARK_POSE_MEASUREMENT_HPP
 #define WAVE_BENCHMARK_POSE_MEASUREMENT_HPP
 
@@ -7,19 +11,19 @@
 #include "wave/containers/measurement.hpp"
 
 namespace wave {
+/** @addtogroup benchmark
+ *  @{ */
 
-//using TimeType = std::chrono::steady_clock::time_point;
-
-struct Pose {
+struct BenchmarkPose {
     wave::Rotation rotation;
     wave::Vec3 translation;
 };
 
-using PoseMeasurement = Measurement<Pose, int>;
+using PoseMeasurement = Measurement<BenchmarkPose, int>;
 
 /** Perform interpolation (or extrapolation) between two measurements.
 */
-inline Pose interpolate(const PoseMeasurement &m1,
+inline BenchmarkPose interpolate(const PoseMeasurement &m1,
                         const PoseMeasurement &m2,
                         const TimeType &t) {
     auto w2 = 1.0 * (t - m1.time_point) / (m2.time_point - m1.time_point);
@@ -31,12 +35,13 @@ inline Pose interpolate(const PoseMeasurement &m1,
     wave::Rotation interpolated;
     interpolated.setFromExpMap(wvec);
     auto trans = (1 - w2) * m1.value.translation + w2 * m2.value.translation;
-    Pose retval;
+    BenchmarkPose retval;
     retval.rotation = interpolated * m1.value.rotation;
     retval.translation = trans;
     return retval;
 };
 
+/** @} end of group */
 }  // namespace wave
 
 #endif  // WAVE_BENCHMARK_POSE_MEASUREMENT_HPP

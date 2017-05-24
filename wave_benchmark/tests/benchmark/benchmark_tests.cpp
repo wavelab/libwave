@@ -9,7 +9,7 @@ TEST(trajectorycompare, contructor) {
 
 TEST(trajectorycompare, pushtest) {
     TrajectoryCompare compare;
-    Pose testpose;
+    BenchmarkPose testpose;
     testpose.rotation.setIdentity();
     testpose.translation.setOnes();
     auto now = std::chrono::steady_clock::now();
@@ -20,7 +20,7 @@ TEST(trajectorycompare, pushtest) {
 
 TEST(trajectorycompare, resettest) {
     TrajectoryCompare compare;
-    Pose testpose;
+    BenchmarkPose testpose;
     testpose.rotation.setIdentity();
     testpose.translation.setOnes();
     auto now = std::chrono::steady_clock::now();
@@ -32,7 +32,7 @@ TEST(trajectorycompare, resettest) {
 
 TEST(trajectorycompare, error_straight) {
     TrajectoryCompare compare;
-    Pose traj_sample;
+    BenchmarkPose traj_sample;
     traj_sample.rotation.setIdentity();
     auto start_t = std::chrono::steady_clock::now();
     for (int i = 0; i < 10; i++) {
@@ -54,7 +54,7 @@ TEST(trajectorycompare, error_straight) {
 
 TEST(trajectorycompare, error_rotation) {
     TrajectoryCompare compare;
-    Pose truth_sample, traj_sample;
+    BenchmarkPose truth_sample, traj_sample;
     std::vector<Rotation> expected_error;
     truth_sample.rotation.setIdentity();
     truth_sample.translation.setOnes();
@@ -84,7 +84,7 @@ TEST(trajectorycompare, error_rotation) {
 // This test outputs a file whose format can be checked
 TEST(trajectorycompare, csv_output_test) {
     TrajectoryCompare compare;
-    Pose truth_sample, traj_sample;
+    BenchmarkPose truth_sample, traj_sample;
     truth_sample.rotation.setIdentity();
     truth_sample.translation.setOnes();
     traj_sample.rotation.setIdentity();
@@ -101,17 +101,17 @@ TEST(trajectorycompare, csv_output_test) {
     compare.outputCSV("test_output.txt");
 }
 
-TEST(rotation_interpolation, quarter) {
+TEST(rotation_interpolation, quarterturn) {
     // Setup
     MeasurementContainer<PoseMeasurement> container;
-    Pose pose = { Rotation(Vec3::Zero()), Vec3::Zero() };
-    Pose pose_rot = { Rotation(Vec3(2, 0, 0)), Vec3::Zero() };
-    Pose expected = { Rotation(Vec3(0.5, 0, 0)), Vec3::Zero() };
+    BenchmarkPose pose = { Rotation(Vec3::Zero()), Vec3::Zero() };
+    BenchmarkPose pose_rot = { Rotation(Vec3(2, 0, 0)), Vec3::Zero() };
+    BenchmarkPose expected = { Rotation(Vec3(0.5, 0, 0)), Vec3::Zero() };
     auto start_t = std::chrono::steady_clock::now();
     container.emplace(start_t, 0, pose);
     container.emplace(start_t + std::chrono::seconds(4), 0, pose_rot);
     // Test
-    Pose inter = container.get(start_t + std::chrono::seconds(1), 0);
+    BenchmarkPose inter = container.get(start_t + std::chrono::seconds(1), 0);
     EXPECT_TRUE(expected.rotation.isNear(inter.rotation, 0.1));
 }
 
