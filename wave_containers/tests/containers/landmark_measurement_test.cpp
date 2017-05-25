@@ -23,7 +23,7 @@ TEST(LandmarkContainer, insert) {
 
     auto res = m.insert(meas);
 
-    EXPECT_EQ(1ul, m.size());
+    EXPECT_EQ(1u, m.size());
     EXPECT_TRUE(res.second);
 
     // Insert the same thing
@@ -35,13 +35,13 @@ TEST(LandmarkContainer, insert) {
 TEST(LandmarkContainer, emplace) {
     auto m = TestContainer{};
     auto now = std::chrono::steady_clock::now();
-    auto res = m.emplace(now, CameraSensors::Left, 1ul, Vec2{1.2, 3.4});
+    auto res = m.emplace(now, CameraSensors::Left, 1u, Vec2{1.2, 3.4});
 
-    EXPECT_EQ(1ul, m.size());
+    EXPECT_EQ(1u, m.size());
     EXPECT_TRUE(res.second);
 
     // Insert the same thing
-    auto res2 = m.emplace(now, CameraSensors::Left, 1ul, Vec2{2.3, 4.5});
+    auto res2 = m.emplace(now, CameraSensors::Left, 1u, Vec2{2.3, 4.5});
     EXPECT_FALSE(res2.second);
     EXPECT_EQ(res.first, res2.first);
 }
@@ -50,11 +50,11 @@ TEST(LandmarkContainer, capacity) {
     auto m = TestContainer{};
     auto now = std::chrono::steady_clock::now();
 
-    EXPECT_EQ(0ul, m.size());
+    EXPECT_EQ(0u, m.size());
     EXPECT_TRUE(m.empty());
 
-    m.emplace(now, CameraSensors::Left, 1ul, Vec2{1.2, 3.4});
-    EXPECT_EQ(1ul, m.size());
+    m.emplace(now, CameraSensors::Left, 1u, Vec2{1.2, 3.4});
+    EXPECT_EQ(1u, m.size());
     EXPECT_FALSE(m.empty());
 }
 
@@ -62,25 +62,25 @@ TEST(LandmarkContainer, erase) {
     auto m = TestContainer{};
     auto now = std::chrono::steady_clock::now();
 
-    m.emplace(now, CameraSensors::Left, 1ul, Vec2{1.2, 3.4});
-    ASSERT_EQ(1ul, m.size());
+    m.emplace(now, CameraSensors::Left, 1u, Vec2{1.2, 3.4});
+    ASSERT_EQ(1u, m.size());
 
-    auto res = m.erase(now, CameraSensors::Right, 1ul);
-    EXPECT_EQ(0ul, res);
-    EXPECT_EQ(1ul, m.size());
+    auto res = m.erase(now, CameraSensors::Right, 1u);
+    EXPECT_EQ(0u, res);
+    EXPECT_EQ(1u, m.size());
 
-    res = m.erase(now, CameraSensors::Left, 1ul);
-    EXPECT_EQ(1ul, res);
-    EXPECT_EQ(0ul, m.size());
+    res = m.erase(now, CameraSensors::Left, 1u);
+    EXPECT_EQ(1u, res);
+    EXPECT_EQ(0u, m.size());
 }
 
 TEST(LandmarkContainer, get) {
     auto m = TestContainer{};
     auto now = std::chrono::steady_clock::now();
     auto value_in = Vec2{1.2, 3.4};
-    m.emplace(now, CameraSensors::Left, 1ul, value_in);
+    m.emplace(now, CameraSensors::Left, 1u, value_in);
 
-    auto value_out = m.get(now, CameraSensors::Left, 1ul);
+    auto value_out = m.get(now, CameraSensors::Left, 1u);
 
     EXPECT_PRED2(VectorsNear, value_in, value_out);
 }
@@ -95,7 +95,7 @@ TEST(LandmarkContainer, iterators) {
     for (auto i = 0; i < 5; ++i) {
         auto now = std::chrono::steady_clock::now();
         auto value_in = Vec2{i * 1.1, 0};
-        m.emplace(now, CameraSensors::Left, 1ul, value_in);
+        m.emplace(now, CameraSensors::Left, 1u, value_in);
     }
     ASSERT_EQ(5ul, m.size());
     EXPECT_EQ(5, std::distance(m.begin(), m.end()));
@@ -116,14 +116,14 @@ TEST(LandmarkContainer, clear) {
     auto m = TestContainer{};
     auto now = std::chrono::steady_clock::now();
     auto value_in = Vec2{1.2, 3.4};
-    for (auto i = 0ul; i < 5ul; ++i) {
+    for (auto i = 0u; i < 5ul; ++i) {
         m.emplace(now, CameraSensors::Left, i, value_in);
     }
     ASSERT_EQ(5ul, m.size());
 
     m.clear();
 
-    EXPECT_EQ(0ul, m.size());
+    EXPECT_EQ(0u, m.size());
     EXPECT_TRUE(m.empty());
 }
 
@@ -160,7 +160,7 @@ class FilledLandmarkContainer : public ::testing::Test {
         // always return output sorted by time.
         auto insert_order = std::vector<int>{1, 5, 2, 6, 4, 0, 3};
 
-        for (auto i = 0ul; i < input_ids_l.size(); ++i) {
+        for (auto i = 0u; i < input_ids_l.size(); ++i) {
             auto k = insert_order[i];
             auto t = this->t_start + seconds(k);
             for (auto id : this->input_ids_l[k]) {
@@ -174,7 +174,7 @@ class FilledLandmarkContainer : public ::testing::Test {
                 this->inputs_r[k][id] = val;
             }
         }
-        for (auto i = 0ul; i < input_ids_l.size(); ++i) {
+        for (auto i = 0u; i < input_ids_l.size(); ++i) {
             // Generate expected values with expected ordering
             for (auto v : this->inputs_l[i]) {
                 this->expected_values.push_back(v.second);
@@ -190,7 +190,7 @@ class FilledLandmarkContainer : public ::testing::Test {
 
 TEST_F(FilledLandmarkContainer, emplace) {
     // Check emplacement that occured in the test fixture constructor
-    auto i = 0ul;
+    auto i = 0u;
     for (auto a = this->m.begin(); a != this->m.end(); ++a) {
         ASSERT_PRED2(VectorsNear, this->expected_values[i++], a->value);
     }
@@ -201,12 +201,12 @@ TEST_F(FilledLandmarkContainer, eraseByKey) {
 
     // Erase non-existent key
     auto res = this->m.erase(this->t_start, CameraSensors::Left, 99);
-    EXPECT_EQ(0ul, res);
+    EXPECT_EQ(0u, res);
     EXPECT_EQ(this->expected_values.size(), this->m.size());
 
     // Erase existent key
     res = this->m.erase(this->t_start, CameraSensors::Right, 1);
-    EXPECT_EQ(1ul, res);
+    EXPECT_EQ(1u, res);
     EXPECT_EQ(this->expected_values.size() - 1, m.size());
 }
 
@@ -248,7 +248,7 @@ TEST_F(FilledLandmarkContainer, iterators) {
     EXPECT_EQ(expected_size, std::distance(this->m.cbegin(), this->m.cend()));
 
     // Note the container supports range-based for loops
-    auto i = 0ul;
+    auto i = 0u;
     for (auto &v : this->m) {
         EXPECT_PRED2(VectorsNear, this->expected_values[i++], v.value);
     }
@@ -277,14 +277,14 @@ TEST_F(FilledLandmarkContainer, insertRange) {
 
     auto m2 = TestContainer{};
     m2.insert(a, b);
-    EXPECT_EQ(2ul, m2.size());
+    EXPECT_EQ(2u, m2.size());
 
     auto it = m2.begin();
     EXPECT_PRED2(VectorsNear, this->expected_values[1], it->value);
     EXPECT_PRED2(VectorsNear, this->expected_values[2], (++it)->value);
 
     m2.insert(a, ++b);
-    EXPECT_EQ(3ul, m2.size());
+    EXPECT_EQ(3u, m2.size());
 }
 
 TEST_F(FilledLandmarkContainer, getTimeWindowEmpty) {
@@ -308,7 +308,7 @@ TEST_F(FilledLandmarkContainer, getTimeWindowAll) {
     EXPECT_EQ(static_cast<signed>(this->m.size()),
               std::distance(res.first, res.second));
 
-    for (auto i = 0ul; res.first != res.second; ++i, ++res.first) {
+    for (auto i = 0u; res.first != res.second; ++i, ++res.first) {
         EXPECT_PRED2(VectorsNear, this->expected_values[i], res.first->value);
     }
 }
@@ -336,7 +336,7 @@ TEST_F(FilledLandmarkContainer, getLandmarkIDs) {
     // These expected values were counted manually from above
     auto expected_ids = std::vector<LandmarkId>{1, 2, 3, 4, 5, 6, 25};
     ASSERT_EQ(expected_ids.size(), ids.size());
-    for (auto i = 0ul; i < expected_ids.size(); ++i) {
+    for (auto i = 0u; i < expected_ids.size(); ++i) {
         EXPECT_EQ(expected_ids[i], ids[i]);
     }
 }
@@ -377,7 +377,7 @@ TEST_F(FilledLandmarkContainer, getLandmarkIdsInWindowAll) {
 
     auto expected_ids = std::vector<LandmarkId>{1, 2, 3, 4, 5, 6, 25};
     EXPECT_EQ(expected_ids.size(), ids.size());
-    for (auto i = 0ul; i < ids.size(); ++i) {
+    for (auto i = 0u; i < ids.size(); ++i) {
         EXPECT_EQ(expected_ids[i], ids[i]);
     }
 }
@@ -387,7 +387,7 @@ TEST_F(FilledLandmarkContainer, getLandmarkIdsInWindowSome) {
     auto ids = this->m.getLandmarkIDsInWindow(t + seconds(5), t + seconds(6));
     const auto expected2 = std::vector<LandmarkId>{1, 3, 4};
     EXPECT_EQ(expected2.size(), ids.size());
-    for (auto i = 0ul; i < ids.size(); ++i) {
+    for (auto i = 0u; i < ids.size(); ++i) {
         EXPECT_EQ(expected2[i], ids[i]);
     }
 }
@@ -418,10 +418,10 @@ TEST_F(FilledLandmarkContainer, getTrackInWindowAll) {
       std::vector<TimeType>{t + seconds(2), t + seconds(3), t + seconds(6)};
 
     ASSERT_EQ(expected_times.size(), track.size());
-    for (auto i = 0ul; i < track.size(); ++i) {
+    for (auto i = 0u; i < track.size(); ++i) {
         EXPECT_EQ(expected_times[i], track[i].time_point);
         EXPECT_EQ(CameraSensors::Right, track[i].sensor_id);
-        EXPECT_EQ(4ul, track[i].landmark_id);
+        EXPECT_EQ(4u, track[i].landmark_id);
     }
 }
 
@@ -435,10 +435,10 @@ TEST_F(FilledLandmarkContainer, getTrackInWindowSome) {
     auto expected_times = std::vector<TimeType>{t + seconds(3)};
 
     ASSERT_EQ(expected_times.size(), track.size());
-    for (auto i = 0ul; i < track.size(); ++i) {
+    for (auto i = 0u; i < track.size(); ++i) {
         EXPECT_EQ(expected_times[i], track[i].time_point);
         EXPECT_EQ(CameraSensors::Right, track[i].sensor_id);
-        EXPECT_EQ(4ul, track[i].landmark_id);
+        EXPECT_EQ(4u, track[i].landmark_id);
     }
 }
 
@@ -452,10 +452,10 @@ TEST_F(FilledLandmarkContainer, getTrack) {
       std::vector<TimeType>{t + seconds(2), t + seconds(3), t + seconds(6)};
 
     ASSERT_EQ(expected_times.size(), track.size());
-    for (auto i = 0ul; i < track.size(); ++i) {
+    for (auto i = 0u; i < track.size(); ++i) {
         EXPECT_EQ(expected_times[i], track[i].time_point);
         EXPECT_EQ(CameraSensors::Right, track[i].sensor_id);
-        EXPECT_EQ(4ul, track[i].landmark_id);
+        EXPECT_EQ(4u, track[i].landmark_id);
     }
 }
 
