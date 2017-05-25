@@ -12,7 +12,7 @@
 #include <vector>
 
 /** Libwave Headers */
-#include "feature_detector.hpp"
+#include "wave/vision/detector/feature_detector.hpp"
 
 /** The wave namespace */
 namespace wave {
