@@ -44,7 +44,7 @@ TEST(FASTTests, BadInitialization) {
 TEST(FASTTests, BadThresholdConfiguration) {
     FASTDetector detector(TEST_CONFIG);
 
-    FASTParams bad_threshold_config {-1, true, 2};
+    FASTParams bad_threshold_config{-1, true, 2};
 
     ASSERT_THROW(detector.configure(bad_threshold_config),
                  std::invalid_argument);
@@ -54,8 +54,8 @@ TEST(FASTTests, BadThresholdConfiguration) {
 TEST(FASTTests, BadTypeConfiguration) {
     FASTDetector detector(TEST_CONFIG);
 
-    FASTParams bad_type_config_neg {10, true, -1};
-    FASTParams bad_type_config_pos {10, true, 4};
+    FASTParams bad_type_config_neg{10, true, -1};
+    FASTParams bad_type_config_pos{10, true, 4};
 
     ASSERT_THROW(detector.configure(bad_type_config_neg),
                  std::invalid_argument);
@@ -81,7 +81,7 @@ TEST(FASTTests, DefaultConstructorTest) {
 TEST(FASTTests, GoodPathConfiguration) {
     FASTDetector detector(TEST_CONFIG);
 
-    FASTParams input_config {10, true, 2};
+    FASTParams input_config{10, true, 2};
     FASTParams output_config;
 
     // Configure detector with valid values
@@ -91,7 +91,8 @@ TEST(FASTTests, GoodPathConfiguration) {
     output_config = detector.getConfiguration();
 
     ASSERT_EQ(output_config.threshold, input_config.threshold);
-    ASSERT_EQ(output_config.nonmax_suppression, input_config.nonmax_suppression);
+    ASSERT_EQ(output_config.nonmax_suppression,
+              input_config.nonmax_suppression);
     ASSERT_EQ(output_config.type, input_config.type);
 }
 
@@ -107,8 +108,11 @@ TEST_F(FASTTest, DISABLED_DetectImage) {
     // Visual test, to confirm that images are displayed properly
     // Draw Keypoints on image and display
     cv::Mat image_with_keypoints;
-    cv::drawKeypoints(this->image, this->keypoints, image_with_keypoints,
-                       cv::Scalar::all(-1), cv::DrawMatchesFlags::DEFAULT);
+    cv::drawKeypoints(this->image,
+                      this->keypoints,
+                      image_with_keypoints,
+                      cv::Scalar::all(-1),
+                      cv::DrawMatchesFlags::DEFAULT);
     cv::imshow("Detection Test", image_with_keypoints);
 
     cv::waitKey(0);

@@ -55,7 +55,8 @@ struct FASTParams {
  * Further reference on the FastFeatureDetector can be found
  * [here][opencv_feature_detectors].
  *
- * [opencv_feature_detectors]: http://docs.opencv.org/trunk/df/d74/classcv_1_1FastFeatureDetector.html
+ * [opencv_feature_detectors]:
+ * http://docs.opencv.org/trunk/df/d74/classcv_1_1FastFeatureDetector.html
  */
 class FASTDetector : public FeatureDetector {
  public:
@@ -68,7 +69,7 @@ class FASTDetector : public FeatureDetector {
      *  and type values.
      *
      */
-    explicit FASTDetector(const FASTParams& config);
+    explicit FASTDetector(const FASTParams &config);
 
     /** Constructs a FastFeatureDetector using parameters extracted from the
      *  fast.yaml configuration file
@@ -76,7 +77,7 @@ class FASTDetector : public FeatureDetector {
      *  @param config_path, the path to the location of the fast.yaml config
      *  file
      */
-    explicit FASTDetector(const std::string& config_path);
+    explicit FASTDetector(const std::string &config_path);
 
     /** Destructor */
     ~FASTDetector();
@@ -86,7 +87,7 @@ class FASTDetector : public FeatureDetector {
      *
      * @param new_config, containing the desired configuration values.
      */
-    void configure(const FASTParams& new_config);
+    void configure(const FASTParams &new_config);
 
     /** Returns the current configuration parameters being used by the
      *  FastFeatureDetector.
@@ -100,20 +101,20 @@ class FASTDetector : public FeatureDetector {
      *  @param image, the image to detect features in.
      *  @return a vector containing all of the keypoints found within the image.
      */
-    std::vector<cv::KeyPoint> detectFeatures(const cv::Mat& image);
+    std::vector<cv::KeyPoint> detectFeatures(const cv::Mat &image);
 
  private:
     /** The pointer to the wrapped cv::FastFeatureDetector object */
     cv::Ptr<cv::FastFeatureDetector> fast_detector;
 
-   /** Checks whether the desired configuration is valid.
-    *
-    *  The threshold value must be greater than zero, while the type must be
-    *  0, 1, or 2.
-    *
-    *  @param check_config, containing the desired configuration values.
-    */
-    void checkConfiguration(const FASTParams& check_config);
+    /** Checks whether the desired configuration is valid.
+     *
+     *  The threshold value must be greater than zero, while the type must be
+     *  0, 1, or 2.
+     *
+     *  @param check_config, containing the desired configuration values.
+     */
+    void checkConfiguration(const FASTParams &check_config);
 };
 
 }  // end of namespace wave
