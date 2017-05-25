@@ -34,9 +34,9 @@ TEST(VisionCommon, projection_matrix) {
 
     // clang-format off
     MatX expected(3, 4);
-		expected << fx, 0.0, cx, 0.0,
-							0.0, fy, cy, 0.0,
-							0.0, 0.0, 1.0, 0.0;
+    expected << fx, 0.0, cx, 0.0,
+                0.0, fy, cy, 0.0,
+                0.0, 0.0, 1.0, 0.0;
 
     Mat3 K;
     K << fx, 0.0, cx,
