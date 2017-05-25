@@ -16,4 +16,9 @@
 #include "wave/utils/math.hpp"
 #include "wave/utils/time.hpp"
 
+#define UNUSED(expr)   \
+    do {               \
+        (void) (expr); \
+    } while (0)
+
 #endif

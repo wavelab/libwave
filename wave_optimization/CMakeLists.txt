@@ -13,14 +13,15 @@ INCLUDE_DIRECTORIES(${CERES_INCLUDE_DIRS})
 ADD_LIBRARY(
     wave_optimization
     STATIC
+    src/ceres/ba.cpp
     src/ceres/ceres_examples.cpp
 )
 
 # UNIT TESTS
-WAVE_ADD_TEST(${PROJECT_NAME}_tests tests/ceres/ceres_examples_test.cpp)
-TARGET_LINK_LIBRARIES(
-    ${PROJECT_NAME}_tests
-    ${PROJECT_NAME}
-    wave_utils
-    ${CERES_LIBRARIES}
-)
+WAVE_ADD_TEST(${PROJECT_NAME}_tests
+						  tests/ceres/ceres_examples_test.cpp
+						  tests/ceres/ba_test.cpp)
+TARGET_LINK_LIBRARIES(${PROJECT_NAME}_tests
+											${PROJECT_NAME}
+											wave_utils
+											${CERES_LIBRARIES})

@@ -12,9 +12,11 @@
  * `AnalyticalCostFunction` run the automatic differentiation, numerical
  * differentiation and analytical differentiation nonlinear least squares
  * optimization problem on the following cost function:
+ *
  * @f[
- * f(x) = (10 - x)
+ *     f(x) = (10 - x)
  * @f]
+ *
  * where the minimum is located at $x = 10$.
  *
  * [tutorial]: #ref/optimizers/ceres_examples
