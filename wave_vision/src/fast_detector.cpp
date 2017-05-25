@@ -11,20 +11,18 @@ FASTDetector::FASTDetector() {
     int default_type = 2;
 
     // Create FastFeatureDetector with these parameters
-    this->fast_detector = cv::FastFeatureDetector::create(default_threshold,
-                                                          default_nonmax_suppression,
-                                                          default_type);
+    this->fast_detector = cv::FastFeatureDetector::create(
+      default_threshold, default_nonmax_suppression, default_type);
 }
 
 // Constructor using FASTParams struct
-FASTDetector::FASTDetector(const FASTParams& config) {
+FASTDetector::FASTDetector(const FASTParams &config) {
     // Ensure parameters are valid
     checkConfiguration(config);
 
     // Create FastFeatureDetector with these parameters
-    this->fast_detector = cv::FastFeatureDetector::create(config.threshold,
-                                                          config.nonmax_suppression,
-                                                          config.type);
+    this->fast_detector = cv::FastFeatureDetector::create(
+      config.threshold, config.nonmax_suppression, config.type);
 }
 
 // Constructor using .yaml file, located at config_path.
@@ -49,14 +47,13 @@ FASTDetector::FASTDetector(const std::string &config_path) {
     checkConfiguration(config);
 
     // Create FastFeatureDetector with these parameters
-    this->fast_detector = cv::FastFeatureDetector::create(config.threshold,
-                                                          config.nonmax_suppression,
-                                                          config.type);
+    this->fast_detector = cv::FastFeatureDetector::create(
+      config.threshold, config.nonmax_suppression, config.type);
 }
 
 FASTDetector::~FASTDetector() {}
 
-void FASTDetector::checkConfiguration(const FASTParams& check_config) {
+void FASTDetector::checkConfiguration(const FASTParams &check_config) {
     // Check parameters. If invalid, throw an exception.
     if (check_config.threshold < 0) {
         throw std::invalid_argument("Invalid threshold for FASTDetector!");
@@ -65,7 +62,7 @@ void FASTDetector::checkConfiguration(const FASTParams& check_config) {
     }
 }
 
-void FASTDetector::configure(const FASTParams& new_config) {
+void FASTDetector::configure(const FASTParams &new_config) {
     // Confirm configuration parameters are valid
     checkConfiguration(new_config);
 
@@ -80,13 +77,14 @@ FASTParams FASTDetector::getConfiguration() {
 
     // Obtain current configuration values using cv::FastFeatureDetector::get**
     current_config.threshold = this->fast_detector->getThreshold();
-    current_config.nonmax_suppression = this->fast_detector->getNonmaxSuppression();
+    current_config.nonmax_suppression =
+      this->fast_detector->getNonmaxSuppression();
     current_config.type = this->fast_detector->getType();
 
     return current_config;
 }
 
-std::vector<cv::KeyPoint> FASTDetector::detectFeatures(const cv::Mat& image) {
+std::vector<cv::KeyPoint> FASTDetector::detectFeatures(const cv::Mat &image) {
     std::vector<cv::KeyPoint> keypoints;
 
     this->loadImage(image);
