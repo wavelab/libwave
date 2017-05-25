@@ -97,21 +97,20 @@ TEST(FASTTests, GoodPathConfiguration) {
 
 // Confirms that keypoints can be determined, and image with keypoints can be
 // displayed.
-TEST_F(FASTTest, DetectImage) {
+TEST_F(FASTTest, DISABLED_DetectImage) {
     this->keypoints = detector.detectFeatures(this->image);
     ASSERT_NE(this->keypoints.size(), 0);
 
-    // VISUAL TEST TO CONFIRM IMAGE AND KEYPOINTS ARE DISPLAYED PROPERLY
-    // cv::Mat extracted_image = this->detector.getImage();
-    // cv::imshow("Lenna", extracted_image);
+    cv::Mat extracted_image = this->detector.getImage();
+    cv::imshow("Lenna", extracted_image);
 
+    // Visual test, to confirm that images are displayed properly
     // Draw Keypoints on image and display
-    // cv::Mat image_with_keypoints;
-    // cv::drawKeypoints(this->image, this->keypoints, image_with_keypoints,
-    //                   cv::Scalar::all(-1), cv::DrawMatchesFlags::DEFAULT);
-    // cv::imshow("Detection Test", image_with_keypoints);
+    cv::Mat image_with_keypoints;
+    cv::drawKeypoints(this->image, this->keypoints, image_with_keypoints,
+                       cv::Scalar::all(-1), cv::DrawMatchesFlags::DEFAULT);
+    cv::imshow("Detection Test", image_with_keypoints);
 
-    // cv::waitKey(0);
+    cv::waitKey(0);
 }
-
 }  // end of namespace wave
