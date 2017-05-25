@@ -10,11 +10,11 @@
 #include <exception>
 #include <vector>
 
+/** Third Party Headers */
+#include <opencv2/opencv.hpp>
+
 /** Libwave Headers */
 #include "wave/utils/utils.hpp"
-
-/** Third Party Headers */
-#include "opencv2/opencv.hpp"
 
 /** The wave namespace */
 namespace wave {
