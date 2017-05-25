@@ -6,8 +6,6 @@ language:
 
 cache:
     ccache: true
-    directories:
-        - /usr/local/src
 
 install:
     - sudo bash scripts/install/install_deps.bash
