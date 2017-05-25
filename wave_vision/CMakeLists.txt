@@ -25,14 +25,14 @@ SET(
 ADD_LIBRARY(
     wave_vision
     STATIC
-    src/fast_detector.cpp
+    src/detector/fast_detector.cpp
 )
 TARGET_LINK_LIBRARIES(wave_vision ${WAVE_VISION_DEPS})
 
 # UNIT TESTS
 WAVE_ADD_TEST(
     ${PROJECT_NAME}_tests
-    tests/fast_tests.cpp)
+    tests/detector_tests/fast_tests.cpp)
 TARGET_LINK_LIBRARIES(
     ${PROJECT_NAME}_tests
     ${PROJECT_NAME}
