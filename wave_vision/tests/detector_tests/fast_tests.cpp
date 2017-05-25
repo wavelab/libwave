@@ -4,7 +4,7 @@
 
 namespace wave {
 
-const auto TEST_CONFIG = "tests/config/fast.yaml";
+const auto TEST_CONFIG = "tests/config/detector/fast.yaml";
 const auto TEST_IMAGE = "tests/data/lenna.png";
 
 // Test fixture to load same image data
