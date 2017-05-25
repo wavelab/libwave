@@ -1,6 +1,6 @@
 // Libwave Headers
 #include "wave/wave_test.hpp"
-#include "wave/vision/fast_detector.hpp"
+#include "wave/vision/detector/fast_detector.hpp"
 
 namespace wave {
 
