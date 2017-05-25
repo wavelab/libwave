@@ -25,8 +25,26 @@ namespace wave {
  *
  */
 struct FASTParams {
+    /**
+     *  Threshold on difference between intensity of the central pixel, and
+     *  pixels in a circle (Bresenham radius 3) around this pixel.
+     *  10 (default), must be greater than zero.
+     */
     int threshold;
+
+    /**
+     *  Removes keypoints in adjacent locations
+     *  true (default), or false
+     */
     bool nonmax_suppression;
+
+    /**
+     *  Neighbourhood, as defined in the paper by Rosten. May only be the
+     *  following:
+     *  0 = TYPE_5_8
+     *  1 = TYPE_7_12
+     *  2 = TYPE_9_16 (default)
+     */
     int type;
 };
 
