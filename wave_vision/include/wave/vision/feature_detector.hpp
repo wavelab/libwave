@@ -8,6 +8,7 @@
 
 /** C++ Headers */
 #include <exception>
+#include <vector>
 
 /** Libwave Headers */
 #include "wave/utils/utils.hpp"
@@ -41,7 +42,7 @@ class ConfigurationLoadingException : public std::exception {
 class FeatureDetector {
  public:
     /** Destructor */
-    virtual ~FeatureDetector() {};
+    virtual ~FeatureDetector() {}
 
     /** Function to return current image being detected
      *
@@ -72,9 +73,9 @@ class FeatureDetector {
      */
     virtual void loadImage(const cv::Mat& source_image) {
         this->image = source_image;
-    };
+    }
 };
 
-} // end of namespace wave
+}  // end of namespace wave
 
-#endif //WAVE_FEATURE_DETECTOR_HPP
+#endif  // WAVE_FEATURE_DETECTOR_HPP

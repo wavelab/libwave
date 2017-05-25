@@ -7,6 +7,10 @@
 #ifndef WAVE_FAST_DETECTOR_HPP
 #define WAVE_FAST_DETECTOR_HPP
 
+/** C++ Headers */
+#include <string>
+#include <vector>
+
 /** Libwave Headers */
 #include "wave/vision/feature_detector.hpp"
 
@@ -46,7 +50,7 @@ class FASTDetector : public FeatureDetector {
      *  nonmax_suppression, and type values.
      *
      */
-    FASTDetector(FASTParams& config);
+    explicit FASTDetector(const FASTParams& config);
 
     /** Constructs a FastFeatureDetector using parameters extracted from the
      *  fast.yaml configuration file
@@ -54,7 +58,7 @@ class FASTDetector : public FeatureDetector {
      *  @param config_path, the path to the location of the fast.yaml config
      *  file
      */
-    FASTDetector(const std::string& config_path);
+    explicit FASTDetector(const std::string& config_path);
 
     /** Destructor */
     ~FASTDetector();
@@ -65,7 +69,7 @@ class FASTDetector : public FeatureDetector {
      * @param new_config, a FASTParams struct containing the desired
      * configuration values.
      */
-    void configure(FASTParams& new_config);
+    void configure(const FASTParams& new_config);
 
     /** Returns the current configuration parameters being used by the
      *  FastFeatureDetector.
@@ -94,9 +98,9 @@ class FASTDetector : public FeatureDetector {
     *  @param check_config, the FASTParams struct containing the desired
     *  configuration values.
     */
-    void checkConfiguration(FASTParams& check_config);
+    void checkConfiguration(const FASTParams& check_config);
 };
 
-} // end of namespace wave
+}  // end of namespace wave
 
-#endif //WAVE_FAST_DETECTOR_HPP
+#endif  // WAVE_FAST_DETECTOR_HPP

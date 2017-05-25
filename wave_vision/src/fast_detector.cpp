@@ -6,7 +6,6 @@ namespace wave {
 // Default Constructor
 FASTDetector::FASTDetector() {
     // Instantiate cv::FastFeatureDetector object with default values
-
     int default_threshold = 10;
     bool default_nonmax_suppression = true;
     int default_type = 2;
@@ -17,7 +16,8 @@ FASTDetector::FASTDetector() {
                                                           default_type);
 }
 
-FASTDetector::FASTDetector(FASTParams& config) {
+// Constructor using FASTParams struct
+FASTDetector::FASTDetector(const FASTParams& config) {
     // Ensure parameters are valid
     checkConfiguration(config);
 
@@ -27,6 +27,7 @@ FASTDetector::FASTDetector(FASTParams& config) {
                                                           config.type);
 }
 
+// Constructor using .yaml file, located at config_path.
 FASTDetector::FASTDetector(const std::string &config_path) {
     // Extract parameters from .yaml file.
     ConfigParser parser;
@@ -51,12 +52,11 @@ FASTDetector::FASTDetector(const std::string &config_path) {
     this->fast_detector = cv::FastFeatureDetector::create(config.threshold,
                                                           config.nonmax_suppression,
                                                           config.type);
-
 }
 
 FASTDetector::~FASTDetector() {}
 
-void FASTDetector::checkConfiguration(FASTParams& check_config) {
+void FASTDetector::checkConfiguration(const FASTParams& check_config) {
     // Check parameters. If invalid, throw an exception.
     if (check_config.threshold < 0) {
         throw std::invalid_argument("Invalid threshold for FASTDetector!");
@@ -65,7 +65,7 @@ void FASTDetector::checkConfiguration(FASTParams& check_config) {
     }
 }
 
-void FASTDetector::configure(FASTParams& new_config) {
+void FASTDetector::configure(const FASTParams& new_config) {
     // Confirm configuration parameters are valid
     checkConfiguration(new_config);
 
@@ -95,4 +95,4 @@ std::vector<cv::KeyPoint>& FASTDetector::detectFeatures(const cv::Mat& image) {
     return this->keypoints;
 }
 
-} // end of namespace wave
+}  // end of namespace wave
