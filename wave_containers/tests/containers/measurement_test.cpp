@@ -43,8 +43,6 @@ TEST(Utils_measurement, emplace) {
     auto res2 = m.emplace(now, SomeSensors::S1, 2.5);
     EXPECT_FALSE(res2.second);
     EXPECT_EQ(res.first, res2.first);
-
-    std::vector<double> v;
 }
 
 TEST(Utils_measurement, capacity) {
