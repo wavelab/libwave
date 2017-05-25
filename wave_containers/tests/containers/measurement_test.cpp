@@ -99,10 +99,10 @@ TEST(Utils_measurement, get_interpolated_other_sensors) {
     auto t2 = t1 + seconds(10);
     auto tmid = t1 + seconds(5);
 
-    m.emplace(t1, SomeSensors::S1, 10);
-    m.emplace(t2, SomeSensors::S1, 20);
-    m.emplace(t1, SomeSensors::S3, 70);
-    m.emplace(t2, SomeSensors::S3, 80);
+    m.emplace(t1, SomeSensors::S1, 10.);
+    m.emplace(t2, SomeSensors::S1, 20.);
+    m.emplace(t1, SomeSensors::S3, 70.);
+    m.emplace(t2, SomeSensors::S3, 80.);
 
     EXPECT_THROW(m.get(tmid, SomeSensors::S2), std::out_of_range);
 }
