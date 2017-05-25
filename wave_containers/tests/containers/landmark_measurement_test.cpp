@@ -241,11 +241,11 @@ TEST_F(FilledLandmarkContainer, eraseByRange) {
 }
 
 TEST_F(FilledLandmarkContainer, iterators) {
+    auto expected_size = static_cast<signed>(this->expected_values.size());
+
     // Since I'm just wrapping internal iterators, just do a simple sanity check
-    EXPECT_EQ(this->expected_values.size(),
-              std::distance(this->m.begin(), this->m.end()));
-    EXPECT_EQ(this->expected_values.size(),
-              std::distance(this->m.cbegin(), this->m.cend()));
+    EXPECT_EQ(expected_size, std::distance(this->m.begin(), this->m.end()));
+    EXPECT_EQ(expected_size, std::distance(this->m.cbegin(), this->m.cend()));
 
     // Note the container supports range-based for loops
     auto i = 0ul;
@@ -305,7 +305,8 @@ TEST_F(FilledLandmarkContainer, getTimeWindowAll) {
     // Check case of window containing all measurements
     const auto t = this->t_start;
     auto res = this->m.getTimeWindow(t, t + seconds(99));
-    EXPECT_EQ(this->m.size(), std::distance(res.first, res.second));
+    EXPECT_EQ(static_cast<signed>(this->m.size()),
+              std::distance(res.first, res.second));
 
     for (auto i = 0ul; res.first != res.second; ++i, ++res.first) {
         EXPECT_PRED2(VectorsNear, this->expected_values[i], res.first->value);
@@ -342,13 +343,12 @@ TEST_F(FilledLandmarkContainer, getLandmarkIDs) {
 
 TEST_F(FilledLandmarkContainer, getAllFromSensor) {
     // Check case of empty result
-    const auto t = this->t_start;
     auto res = this->m.getAllFromSensor(CameraSensors::Top);
     EXPECT_EQ(res.first, res.second);
 
     // Check case of filled result
     res = this->m.getAllFromSensor(CameraSensors::Right);
-    EXPECT_EQ(this->input_values_r.size(),
+    EXPECT_EQ(static_cast<signed>(this->input_values_r.size()),
               std::distance(res.first, res.second));
 
     for (auto i = 0; res.first != res.second; ++res.first, ++i) {
@@ -461,7 +461,6 @@ TEST_F(FilledLandmarkContainer, getTrack) {
 
 TEST_F(FilledLandmarkContainer, getTrackEmpty) {
     // Check cases of a query with no measurements
-    const auto t = this->t_start;
     auto track = this->m.getTrack(CameraSensors::Top, 4);
     EXPECT_TRUE(track.empty());
 
