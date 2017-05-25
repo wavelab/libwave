@@ -86,13 +86,15 @@ FASTParams FASTDetector::getConfiguration() {
     return current_config;
 }
 
-std::vector<cv::KeyPoint>& FASTDetector::detectFeatures(const cv::Mat& image) {
+std::vector<cv::KeyPoint> FASTDetector::detectFeatures(const cv::Mat& image) {
+    std::vector<cv::KeyPoint> keypoints;
+
     this->loadImage(image);
 
     // Detect features in image, save values into keypoints.
-    this->fast_detector->detect(this->image, this->keypoints);
+    this->fast_detector->detect(this->image, keypoints);
 
-    return this->keypoints;
+    return keypoints;
 }
 
 }  // end of namespace wave

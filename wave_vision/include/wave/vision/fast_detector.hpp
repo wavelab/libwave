@@ -46,8 +46,8 @@ class FASTDetector : public FeatureDetector {
 
     /** Constructs a FastFeatureDetector using parameters specified by the user
      *
-     *  @param config, a FASTParams struct containing the desired threshold,
-     *  nonmax_suppression, and type values.
+     *  @param config, containing the desired threshold, nonmax_suppression,
+     *  and type values.
      *
      */
     explicit FASTDetector(const FASTParams& config);
@@ -66,28 +66,26 @@ class FASTDetector : public FeatureDetector {
     /** Reconfigures the FastFeatureDetector object with new values requested by
      *  the user
      *
-     * @param new_config, a FASTParams struct containing the desired
-     * configuration values.
+     * @param new_config, containing the desired configuration values.
      */
     void configure(const FASTParams& new_config);
 
     /** Returns the current configuration parameters being used by the
      *  FastFeatureDetector.
      *
-     * @return FASTParams, a struct containing the current configuration values.
+     * @return a struct containing the current configuration values.
      */
     FASTParams getConfiguration();
 
     /** Detects features in an image using the FastFeatureDetector.
      *
-     *  @param image, a cv::Mat object of the image to detect features in.
-     *  @return std::vector<cv::KeyPoint>, a vector containing all of the
-     *  keypoints found within the image.
+     *  @param image, the image to detect features in.
+     *  @return a vector containing all of the keypoints found within the image.
      */
-    std::vector<cv::KeyPoint>& detectFeatures(const cv::Mat& image);
+    std::vector<cv::KeyPoint> detectFeatures(const cv::Mat& image);
 
  private:
-    /** The smart pointer to the wrapped cv::FastFeatureDetector object */
+    /** The pointer to the wrapped cv::FastFeatureDetector object */
     cv::Ptr<cv::FastFeatureDetector> fast_detector;
 
    /** Checks whether the desired configuration is valid.
@@ -95,8 +93,7 @@ class FASTDetector : public FeatureDetector {
     *  The threshold value must be greater than zero, while the type must be
     *  0, 1, or 2.
     *
-    *  @param check_config, the FASTParams struct containing the desired
-    *  configuration values.
+    *  @param check_config, containing the desired configuration values.
     */
     void checkConfiguration(const FASTParams& check_config);
 };

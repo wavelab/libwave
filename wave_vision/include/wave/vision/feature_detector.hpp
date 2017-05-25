@@ -46,7 +46,7 @@ class FeatureDetector {
 
     /** Function to return current image being detected
      *
-     *  @return T& the image (in matrix form).
+     *  @return the image (in matrix form).
      */
     virtual cv::Mat& getImage() {
         return this->image;
@@ -56,16 +56,13 @@ class FeatureDetector {
      *  detector depending on the derived class.
      *
      *  @param image, the image to detect features in.
-     *  @return std::vector<cv::KeyPoint>&, a vector of the detected keypoints.
+     *  @return a vector of the detected keypoints.
      */
-    virtual std::vector<cv::KeyPoint>& detectFeatures(const cv::Mat& image) = 0;
+    virtual std::vector<cv::KeyPoint> detectFeatures(const cv::Mat& image) = 0;
 
  protected:
     // The image currently being detected.
     cv::Mat image;
-
-    // The keypoints detected in an image
-    std::vector<cv::KeyPoint> keypoints;
 
     /** Function to set image within the member variables.
      *
