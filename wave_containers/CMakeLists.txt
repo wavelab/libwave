@@ -7,8 +7,10 @@ FIND_PACKAGE(Eigen3 REQUIRED)
 # INCLUDES
 INCLUDE_DIRECTORIES(
     include
-    ${Eigen3_DIRECTORY}
+    ${EIGEN3_INCLUDE_DIR}
 )
 
 # UNIT TESTS
-WAVE_ADD_TEST(${PROJECT_NAME}_tests tests/containers/measurement_test.cpp)
+WAVE_ADD_TEST(${PROJECT_NAME}_tests
+    tests/containers/measurement_test.cpp
+    tests/containers/landmark_measurement_test.cpp)
