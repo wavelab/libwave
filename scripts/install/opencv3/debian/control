@@ -1,0 +1,18 @@
+Source: opencv
+Maintainer: Archie Lee <archie.lee@uwaterloo.ca>
+Section: misc
+Priority: optional
+Standards-Version: 3.9.2
+Build-Depends: debhelper (>= 9)
+
+Package: opencv
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, libopencv-dev, build-essential, cmake,
+        python-dev, python-numpy, libdc1394-22, libdc1394-22-dev, libjpeg-dev,
+        libpng12-dev, libtiff4-dev, libjasper-dev, libavcodec-dev, libavformat-dev,
+        libswscale-dev, libxine2-dev, libgstreamer0.10-dev, libgstreamer-plugins-base0.10-dev,
+        libv4l-dev, libtbb-dev, libqt4-dev, libfaac-dev, libmp3lame-dev,
+        libopencore-amrnb-dev, libopencore-amrwb-dev, libtheora-dev, libvorbis-dev,
+        libxvidcore-dev, x264, v4l-utils, git, libgtk2.0-dev, pkg-config,
+        libtiff5-dev, libtiff5-alt-dev,
+Description: Installs OpenCV 3.2.0

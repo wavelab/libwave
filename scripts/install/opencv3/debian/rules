@@ -1,0 +1,13 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@ --buildsystem=cmake --with python2,python3 --parallel
+
+override_dh_auto_configure:
+	dh_auto_configure -- \
+	-D CMAKE_BUILD_TYPE=Release \
+        -D CMAKE_INSTALL_PREFIX=/usr/local \
+        -D WITH_TBB=ON \
+        -D WITH_V4L=ON \
+        -D WITH_QT=ON \
+        -D WITH_OPENGL=ON 
