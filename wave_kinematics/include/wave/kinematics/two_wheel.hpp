@@ -5,7 +5,6 @@
 #ifndef WAVE_KINEMATICS_TWOWHEEL_HPP
 #define WAVE_KINEMATICS_TWOWHEEL_HPP
 
-#include <float.h>
 #include <iostream>
 
 #include "wave/utils/utils.hpp"
@@ -21,7 +20,7 @@ class TwoWheelRobot2DModel {
                 /// heading theta (radians)
 
     TwoWheelRobot2DModel() : pose{0.0, 0.0, 0.0} {}
-    TwoWheelRobot2DModel(Vec3 pose) : pose{pose} {}
+    TwoWheelRobot2DModel(const Vec3 &pose) : pose{pose} {}
 
     /** Update two wheel model
      *
@@ -32,7 +31,7 @@ class TwoWheelRobot2DModel {
      *
      * @returns Updated pose of two wheel robot
      */
-    Vec3 update(Vec2 inputs, double dt);
+    Vec3 update(const Vec2 &inputs, double dt);
 };
 
 /** @} end of group */
