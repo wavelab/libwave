@@ -1,5 +1,4 @@
-# Special Euclidean Group in 3D
-
+# Special Euclidean Group in 3D {#math_se3}
 
 ## Good References
 * Good reference on Lie Algebra for SO(3) and SE(3), goes into a lot of nice detail for derivatives and such.  [Eathan Eade Link](http://www.ethaneade.org/lie.pdf), [ Ivancevic Link] (https://arxiv.org/pdf/1104.1106.pdf)

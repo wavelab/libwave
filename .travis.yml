@@ -6,18 +6,15 @@ language:
 
 cache:
     ccache: true
-    directories:
-        - /usr/local/src
+
+before_install:
+    - bash scripts/ci/ci_check.bash
 
 install:
     - sudo bash scripts/install/install_deps.bash
 
 script:
-    - bash scripts/ci_run.bash
+    - bash scripts/ci/ci_run.bash
 
 notifications:
-    email:
-        recipients:
-            - chutsu@gmail.com
-        on_success: change
-        on_failure: always
+    email: false

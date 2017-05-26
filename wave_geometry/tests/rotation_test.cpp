@@ -37,6 +37,14 @@ TEST_F(RotationTestFixture, testFromEulerXyz) {
     Rotation rotation1(Vec3(0.1, 0.2, 0.3));
     ASSERT_TRUE(
       this->rotation1_expected.isNear(rotation1, this->comparision_threshold));
+
+    // Test non-finite input values.
+    Vec3 input_vector_nan(std::numeric_limits<double>::quiet_NaN(), 0, 0);
+    ASSERT_THROW(Rotation rotation_nan(input_vector_nan),
+                 std::invalid_argument);
+    Vec3 input_vector_inf(0, 0, std::numeric_limits<double>::infinity());
+    ASSERT_THROW(Rotation rotation_inf(input_vector_inf),
+                 std::invalid_argument);
 }
 
 
@@ -50,6 +58,63 @@ TEST_F(RotationTestFixture, testFromAngleAxis) {
                                       rotation1_angleaxis_params.normalized());
     ASSERT_TRUE(rotation1_expected.isNear(rotation_from_angle_axis,
                                           this->comparision_threshold));
+
+    // Test non-finite input values.
+    Vec3 input_vector_nan(std::numeric_limits<double>::quiet_NaN(), 0, 0);
+    ASSERT_THROW(Rotation rotation_nan(1, input_vector_nan),
+                 std::invalid_argument);
+    double input_mag = std::numeric_limits<double>::infinity();
+    ASSERT_THROW(
+      Rotation rotation_inf(input_mag, rotation1_angleaxis_params.normalized()),
+      std::invalid_argument);
+
+    // Test passing non normalized axis
+    ASSERT_THROW(Rotation rotation_inf(1, rotation1_angleaxis_params),
+                 std::invalid_argument);
+}
+
+// Test that setFromExpMap returns the correct matrix.
+TEST_F(RotationTestFixture, testSetFromExpMap) {
+    // True angle axis params for rotation1.
+    Vec3 rotation1_angleaxis_params(
+      0.068924613882066, 0.213225926957886, 0.288748939228675);
+
+    Rotation rotation_from_exp_map;
+    rotation_from_exp_map.setFromExpMap(rotation1_angleaxis_params);
+    ASSERT_TRUE(rotation1_expected.isNear(rotation_from_exp_map,
+                                          this->comparision_threshold));
+
+    // Test non-finite input values.
+    Vec3 input_vector_nan(std::numeric_limits<double>::quiet_NaN(), 0, 0);
+    ASSERT_THROW(rotation_from_exp_map.setFromExpMap(input_vector_nan),
+                 std::invalid_argument);
+    Vec3 input_vector_inf(std::numeric_limits<double>::infinity(), 0, 0);
+    ASSERT_THROW(rotation_from_exp_map.setFromExpMap(input_vector_inf),
+                 std::invalid_argument);
+
+    // Test passing non normalized axis
+    ASSERT_THROW(Rotation rotation_inf(1, rotation1_angleaxis_params),
+                 std::invalid_argument);
+}
+
+// Test input checking for setFromMatrix.
+TEST_F(RotationTestFixture, testFromMatrix) {
+    Rotation rotation1;
+    Mat3 rotation_matrix;
+    rotation_matrix << 1, 0, 0, 0, 1, 0, 0, 0,
+      std::numeric_limits<double>::infinity();
+    ASSERT_THROW(rotation1.setFromMatrix(rotation_matrix),
+                 std::invalid_argument);
+
+    rotation_matrix << 1, 0, 0, 0, 1, 0, 0, 0,
+      std::numeric_limits<double>::quiet_NaN();
+    ASSERT_THROW(rotation1.setFromMatrix(rotation_matrix),
+                 std::invalid_argument);
+
+    // Invalid rotation matrix.
+    rotation_matrix << 1, 0, 0, 0, 1, 0, 0, 0, 10;
+    ASSERT_THROW(rotation1.setFromMatrix(rotation_matrix),
+                 std::invalid_argument);
 }
 
 // Test that logMap returns the correct parameters.
@@ -116,6 +181,12 @@ TEST_F(RotationTestFixture, testRotate) {
     Vec3 v1_rotated_test = rotation1.rotate(v1);
     Vec3 error = v1_rotated_test - v1_rotated;
     ASSERT_LE(error.norm(), this->comparision_threshold);
+
+    // Test non-finite input values.
+    Vec3 input_vector_nan(std::numeric_limits<double>::quiet_NaN(), 0, 0);
+    ASSERT_THROW(rotation1.rotate(input_vector_nan), std::invalid_argument);
+    Vec3 input_vector_inf(std::numeric_limits<double>::infinity(), 0, 0);
+    ASSERT_THROW(rotation1.rotate(input_vector_inf), std::invalid_argument);
 }
 
 // Test that inverse rotation of a vector returns correct value.
@@ -127,6 +198,14 @@ TEST_F(RotationTestFixture, testInverseRotate) {
     Vec3 v1_rotated(0.879548179412290, 1.209097549950123, 0.874344391414010);
     Vec3 error = v1_inverse_rotated_test - v1_rotated;
     ASSERT_LE(error.norm(), this->comparision_threshold);
+
+    // Test non-finite input values.
+    Vec3 input_vector_nan(std::numeric_limits<double>::quiet_NaN(), 0, 0);
+    ASSERT_THROW(rotation1_inverse.inverseRotate(input_vector_nan),
+                 std::invalid_argument);
+    Vec3 input_vector_inf(std::numeric_limits<double>::infinity(), 0, 0);
+    ASSERT_THROW(rotation1_inverse.inverseRotate(input_vector_inf),
+                 std::invalid_argument);
 }
 
 // Test functionality of the boxplus operator.
@@ -146,6 +225,14 @@ TEST_F(RotationTestFixture, testManifoldPlus) {
     // Use manifold plus to make rotation2==rotation3.
     rotation2.manifoldPlus(rotation1_angleaxis_params);
     ASSERT_TRUE(rotation2.isNear(rotation3, this->comparision_threshold));
+
+    // Test non-finite input values.
+    Vec3 input_vector_nan(std::numeric_limits<double>::quiet_NaN(), 0, 0);
+    ASSERT_THROW(rotation2.manifoldPlus(input_vector_nan),
+                 std::invalid_argument);
+    Vec3 input_vector_inf(std::numeric_limits<double>::infinity(), 0, 0);
+    ASSERT_THROW(rotation2.manifoldPlus(input_vector_inf),
+                 std::invalid_argument);
 }
 
 // JACOBIAN TESTING
@@ -176,6 +263,16 @@ TEST_F(RotationTestFixture, testRotateAndJacobian) {
     numerical_jacobian(Jparam_functor, perturbation_vec, Jparam_numerical);
     error_matrix = Jparam_analytical - Jparam_numerical;
     ASSERT_LE(error_matrix.norm(), this->comparision_threshold);
+
+    // Test non-finite input values.
+    Vec3 input_vector_nan(std::numeric_limits<double>::quiet_NaN(), 0, 0);
+    ASSERT_THROW(rotation1.rotateAndJacobian(
+                   input_vector_nan, Jpoint_analytical, Jparam_analytical),
+                 std::invalid_argument);
+    Vec3 input_vector_inf(std::numeric_limits<double>::infinity(), 0, 0);
+    ASSERT_THROW(rotation1.rotateAndJacobian(
+                   input_vector_inf, Jpoint_analytical, Jparam_analytical),
+                 std::invalid_argument);
 }
 
 }  // end of wave namespace

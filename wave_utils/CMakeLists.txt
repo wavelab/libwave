@@ -7,6 +7,7 @@ FIND_PACKAGE(Eigen3 REQUIRED)
 
 # INCLUDES
 INCLUDE_DIRECTORIES(/usr/include/eigen3)
+INCLUDE_DIRECTORIES(${OpenCV_INCLUDE_DIRS})
 
 # LIBRARY
 ADD_LIBRARY(
@@ -18,28 +19,21 @@ ADD_LIBRARY(
     src/math.cpp
     src/time.cpp
 )
-SET(
-    WAVE_UTILS_TEST_DEPS
-    wave_utils
-    yaml-cpp
-    gtest
-    pthread
-    ${OpenCV_LIBS}
-)
 
 # UNIT TESTS
-SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
-FILE(COPY tests/data DESTINATION ${PROJECT_BINARY_DIR}/tests)
-ADD_EXECUTABLE(
-    # TARGET
-    wave_utils_tests
-    # TESTS
+WAVE_ADD_TEST(
+    ${PROJECT_NAME}_tests
     tests/utils/config_test.cpp
     tests/utils/data_test.cpp
     tests/utils/filesystem_test.cpp
     tests/utils/math_test.cpp
     tests/utils/time_test.cpp
-    # TEST RUNNER
-    tests/test_runner.cpp
 )
-TARGET_LINK_LIBRARIES(wave_utils_tests ${WAVE_UTILS_TEST_DEPS})
+TARGET_LINK_LIBRARIES(
+    ${PROJECT_NAME}_tests
+    ${PROJECT_NAME}
+    yaml-cpp
+    ${OpenCV_LIBS}
+)
+# COPY TEST DATA
+FILE(COPY tests/data DESTINATION ${PROJECT_BINARY_DIR}/tests)
