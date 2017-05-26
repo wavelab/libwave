@@ -5,8 +5,6 @@
 #ifndef WAVE_KINEMATICS_TWOWHEEL_HPP
 #define WAVE_KINEMATICS_TWOWHEEL_HPP
 
-#include <iostream>
-
 #include "wave/utils/utils.hpp"
 
 namespace wave {
