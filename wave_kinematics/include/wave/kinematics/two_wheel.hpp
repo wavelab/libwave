@@ -32,7 +32,7 @@ class TwoWheelRobot2DModel {
      *
      * @returns Updated pose of two wheel robot
      */
-    Vec3 update(Vec2 inputs, float dt);
+    Vec3 update(Vec2 inputs, double dt);
 };
 
 /** @} end of group */
