@@ -8,17 +8,14 @@
  *
  *
  *************************************************************************/
-#include <iostream>
-#include "ground_segmentation/groundSegmentation.h"
 #include <Eigen/Eigenvalues>
-#include <cassert>
+#include "groundSegmentation.hpp"
 
 bool compareSignalPoints(const signalPoint &a, const signalPoint &b) {
     return a.height < b.height;
 }
 
 groundSegmentation::groundSegmentation() {
-    // constructor, set default values
 
     set_rmax(100.0);
     set_num_maxbinpoints(200);
@@ -42,11 +39,9 @@ groundSegmentation::groundSegmentation() {
 
 
 void groundSegmentation::initializePolarBinGrid(void) {
-    //#pragma omp parallel
     for (int i = 0; i < NUMBINSA; i++) {
         pBG->aCell[i].sigPoints.clear();
         std::vector<signalPoint>().swap(pBG->aCell[i].sigPoints);
-        //#pragma omp parallel
         for (int j = 0; j < NUMBINSL; j++) {
             pBG->aCell[i].lCell[j].binPoints.clear();
             pBG->aCell[i].lCell[j].obsPoints.clear();
@@ -70,10 +65,10 @@ void groundSegmentation::initializePolarBinGrid(void) {
 }
 
 void groundSegmentation::setupGroundSegmentation(
-  pcl::PointCloud<pcl::PointXYZ>::Ptr inputCloud,
-  pcl::PointCloud<PointXYZGD>::Ptr groundCloud,
-  pcl::PointCloud<PointXYZGD>::Ptr obsCloud,
-  pcl::PointCloud<PointXYZGD>::Ptr drvCloud) {
+            pcl::PointCloud<pcl::PointXYZ>::Ptr inputCloud,
+            pcl::PointCloud<PointXYZGD>::Ptr groundCloud,
+            pcl::PointCloud<PointXYZGD>::Ptr obsCloud,
+            pcl::PointCloud<PointXYZGD>::Ptr drvCloud) {
     groundCloud->clear();
     obsCloud->clear();
 
@@ -96,10 +91,8 @@ void groundSegmentation::genPolarBinGrid(
     unsigned int nPts = inputCloud->size();
     double bsize_rad = (double) ((360.0) / NUMBINSA);  // in degrees
     double bsize_lin = (double) RMAX / NUMBINSL;       // in meters
-    //#pragma omp parallel
     for (int i = 0; i < nPts; i++) {
         PointXYZGD curPt;
-        ;
         double px = curPt.x = inputCloud->points[i].x;
         double py = curPt.y = inputCloud->points[i].y;
         double pz = curPt.z = inputCloud->points[i].z;
@@ -114,15 +107,11 @@ void groundSegmentation::genPolarBinGrid(
             unsigned int bind_rad =
               floor((ph) / bsize_rad);  // got the radial bin
 
-            assert(bind_rad < NUMBINSA);
-
             // get the linear bin
             double xyDist = (sqrt(px * px + py * py));
 
             unsigned int bind_lin =
               floor((xyDist) / bsize_lin);  // got the radial bin
-            assert(bind_lin < NUMBINSL);
-
 
             pBG->aCell[bind_rad].lCell[bind_lin].binPoints.push_back(
               curPt);  // add the point to the bin
@@ -138,9 +127,6 @@ void groundSegmentation::genPolarBinGrid(
             }
         }
     }
-    /*for(int i =0; i < NUMBINSL; i++) {
-                 dCloud->push_back(pBG->aCell[50].lCell[i].prototypePoint);
-        }*/
 }
 
 
@@ -172,7 +158,6 @@ void groundSegmentation::segmentGround() {
 
 void groundSegmentation::sectorINSAC(int sectorIndex) {
     if (sectorIndex >= NUMBINSA) {
-        assert(true);
         return;
     }
     int numFilled = 0;
@@ -194,8 +179,6 @@ void groundSegmentation::sectorINSAC(int sectorIndex) {
             numFilled++;
         }
     }
-
-
     // get the seed points.  Select the 3 lowest points.  Sort based on height
     // values
     sort(sigPtr.begin(), sigPtr.end(), compareSignalPoints);
@@ -240,20 +223,17 @@ void groundSegmentation::sectorINSAC(int sectorIndex) {
     {
         keepGoing = false;
         sufficientModel = false;
-        // cout<<"model too small!" <<endl;
     }
 
     // got the seedpoints, start theINSAC process
-
-
     // cov matrices
     MatrixXd C_XsX;
     MatrixXd C_XX;
     MatrixXd C_XsXs;
     MatrixXd C_XXs;
 
-    if (sigPtr.size() ==
-        0)  // no points to insac, put the seed points in as ground
+    if (sigPtr.size() == 0)
+        // no points to insac, put the seed points in as ground
         keepGoing = false;
 
     MatrixXd temp;
@@ -266,7 +246,6 @@ void groundSegmentation::sectorINSAC(int sectorIndex) {
         C_XX = genGPModel(currentModel, currentModel, P_SF, P_L);
         C_XsXs = genGPModel(sigPtr, sigPtr, P_SF, P_L);
         C_XXs = C_XsX.transpose();
-
 
         // temporary calc
         MatrixXd tCalc1 =
@@ -285,16 +264,7 @@ void groundSegmentation::sectorINSAC(int sectorIndex) {
 
         if (Vf_s.rows() == 0) {
             keepGoing = false;
-            ROS_WARN_STREAM(
-              "WARNING BREAKING LOOP: VF_s does not exist");  // arun: are we
-                                                              // still getting
-                                                              // this?
-            /*cout<< "debug output:"<<"current model size:
-            "<<currentModel.size()<<"current sig size: " << sigPtr.size()<<endl;
-            cout<< "XsX" << C_XsX <<endl;
-            cout<< "XX" << C_XX <<endl;
-            cout<< "XXs" << C_XXs <<endl;
-            cout<<" end debug" <<endl;*/
+            ROS_WARN_STREAM("WARNING BREAKING LOOP: VF_s does not exist");
             continue;
         }
 
@@ -305,10 +275,8 @@ void groundSegmentation::sectorINSAC(int sectorIndex) {
         while (searchCandidatePoints) {
             double vf = Vf_s(k, k);
             double met = (sigPtr[k].height - f_s(k)) / (sqrt(P_SN + vf * vf));
-            // cout<<"model cov:"<<vf<<"model h: "<<met<<"actual
-            // h:"<<sigPtr[k].height<<endl;
-            if (vf < P_TMODEL && abs(met) < P_TDATA) {  // we have an inlier!
 
+            if (vf < P_TMODEL && abs(met) < P_TDATA) {  // we have an inlier!
                 // add to model set
                 currentModel.push_back(sigPtr[k]);
                 // remove from sample set
@@ -339,18 +307,15 @@ void groundSegmentation::sectorINSAC(int sectorIndex) {
                 k++;
             }
 
-            if (sigPtr.size() == k)
+            if (sigPtr.size() == k) {
                 searchCandidatePoints = false;
+            }
         }
 
         int endSize = currentModel.size();  // end size of the model set
-        // cout<<"endsize is :"<<endSize<<endl;
-
-        if (startSize == endSize || sigPtr.size() == 0)  // we added no new
-                                                         // points in the
-                                                         // current iteration,
-                                                         // terminate INSAC
+        if (startSize == endSize || sigPtr.size() == 0) {
             keepGoing = false;
+        }
     }  // end INSAC
 
     // fill in the ground and obs pointclouds
@@ -358,12 +323,9 @@ void groundSegmentation::sectorINSAC(int sectorIndex) {
     double numObs = 0;
     Vector3d obsSum(0, 0, 0);
 
-    //#pragma omp parallel
     for (int i = 0; i < (int) currentModel.size(); i++) {
         int currIdx = currentModel[i].idx;
         linCell *curCell = &pBG->aCell[sectorIndex].lCell[currIdx];
-        // cout<<"nPts is: "<< curCell->binPoints.size() <<"for idx: "<<
-        // currIdx<<endl;
 
         // go through all the points in this cell and assign to ground/not
         // ground
@@ -392,25 +354,18 @@ void groundSegmentation::sectorINSAC(int sectorIndex) {
                 numObs++;
             }
         }
-
         // mean of obs points
         curCell->obsMean = obsSum / numObs;
     }
 
-    //#pragma omp parallel
     // FIXME: WHY IS F_S < SIGPTR SOMETIMES?
     int i;
-    // cout << "[Local Mapping] WARNING: f_s.size < sigPtr.size, wtf?" << "
-    // fsize: " << f_s.size() << " sPtr: " << sigPtr.size() << " did INSAC "<<
-    // sufficientModel << endl;
-
     if (sufficientModel) {
+        // add all the obs points from the non ground classified pts
         for (i = 0; i < (int) sigPtr.size();
-             i++)  // add all the obs points from the non ground classified pts
-        {
+             i++) {
             linCell *curCell = &pBG->aCell[sectorIndex].lCell[sigPtr[i].idx];
 
-            //#pragma omp parallel
             for (int j = 0; j < (int) curCell->binPoints.size(); j++) {
                 float h = abs(curCell->binPoints[j].z - f_s(i));
                 // check drivability
@@ -429,8 +384,6 @@ void groundSegmentation::sectorINSAC(int sectorIndex) {
                                    curCell->binPoints[j].z);
                 numObs++;
             }
-
-
             // mean of obs points
             curCell->obsMean = obsSum / numObs;
         }
