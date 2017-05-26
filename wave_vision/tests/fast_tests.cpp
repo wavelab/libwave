@@ -100,7 +100,7 @@ TEST(FASTTests, GoodPathConfiguration) {
 // displayed.
 TEST_F(FASTTest, DISABLED_DetectImage) {
     this->keypoints = detector.detectFeatures(this->image);
-    ASSERT_NE(this->keypoints.size(), 0);
+    ASSERT_NE(this->keypoints.size(), 0u);
 
     cv::Mat extracted_image = this->detector.getImage();
     cv::imshow("Lenna", extracted_image);

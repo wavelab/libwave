@@ -32,16 +32,15 @@ TEST(VisionCommon, projection_matrix) {
     double cx = 320.0;
     double cy = 320.0;
 
-    // clang-format off
     MatX expected(3, 4);
-    expected << fx, 0.0, cx, 0.0,
-                0.0, fy, cy, 0.0,
-                0.0, 0.0, 1.0, 0.0;
+    expected << fx, 0.0, cx, 0.0,  //
+      0.0, fy, cy, 0.0,            //
+      0.0, 0.0, 1.0, 0.0;          //
 
     Mat3 K;
-    K << fx, 0.0, cx,
-         0.0, fy, cy,
-         0.0, 0.0, 1.0;
+    K << fx, 0.0, cx,  //
+      0.0, fy, cy,     //
+      0.0, 0.0, 1.0;   //
 
     Vec3 rpy;
     rpy << deg2rad(0.0), deg2rad(0.0), deg2rad(0.0);
@@ -49,9 +48,7 @@ TEST(VisionCommon, projection_matrix) {
     Mat3 R;
     euler2rot(rpy, 123, R);
 
-    Vec3 t;
-    t << 0.0, 0.0, 0.0;
-    // clang-format on
+    Vec3 t = Vec3::Zero();
 
     // test and assert
     MatX P;
@@ -59,7 +56,7 @@ TEST(VisionCommon, projection_matrix) {
 
     EXPECT_EQ(3, P.rows());
     EXPECT_EQ(4, P.cols());
-    EXPECT_TRUE(P.isApprox(expected));
+    EXPECT_PRED2(MatricesNear, expected, P);
 }
 
 }  // end of wave namespace
