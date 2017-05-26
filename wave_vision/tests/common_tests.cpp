@@ -14,17 +14,6 @@ TEST(VisionCommon, focal_length) {
     EXPECT_FLOAT_EQ(554.25629, f2(1));
 }
 
-TEST(VisionCommon, matconcat) {
-    cv::Mat img = cv::imread(TEST_IMAGE);
-    cv::Mat out;
-    matconcat(img, img, out);
-    // cv::imshow("test", out);
-    // cv::waitKey(10000);
-
-    EXPECT_EQ(img.rows, out.rows);
-    EXPECT_EQ(img.cols * 2, out.cols);
-}
-
 TEST(VisionCommon, projection_matrix) {
     // setup
     double fx = 554.38;

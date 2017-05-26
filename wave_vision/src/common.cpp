@@ -3,7 +3,7 @@
 namespace wave {
 
 double focal_length(double fov, double image_width) {
-    return (image_width / 2.0) / tan(deg2rad(hfov) / 2.0);
+    return (image_width / 2.0) / tan(deg2rad(fov) / 2.0);
 }
 
 Vec2 focal_length(double hfov,
@@ -13,7 +13,7 @@ Vec2 focal_length(double hfov,
     Vec2 focal;
 
     focal(0) = focal_length(hfov, image_width);
-    focal(1) = focal_length(vfov, image_height)
+    focal(1) = focal_length(vfov, image_height);
 
     return focal;
 }
