@@ -23,7 +23,8 @@ class TwoWheelRobot2DModel {
     /** Update two wheel model
      *
      * @param inputs Model input vector where first input is wheel velocity in
-     * m/s and the second input is steering angular velocity rad/s
+     * m/s and the second input is heading angular velocity rad/s
+     *
      * @param dt Update time step in seconds
      *
      * @returns Updated pose of two wheel robot
