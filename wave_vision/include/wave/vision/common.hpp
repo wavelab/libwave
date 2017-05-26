@@ -34,13 +34,6 @@ Vec2 focal_length(double hfov,
                   double image_width,
                   double image_height);
 
-/** Combine 2 matrices together to form a third
- *
- * This function was design to concatenate two image matrices `img1` and `img2`
- * so they can form a third side by side image, `out`
- */
-void matconcat(const cv::Mat &img1, const cv::Mat &img2, cv::Mat &out);
-
 /** Calculate camera projection matrix
  *
  * @param K camera intrinsic matrix
