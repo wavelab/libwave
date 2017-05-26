@@ -117,6 +117,7 @@ class FASTDetector : public FeatureDetector {
     void checkConfiguration(const FASTParams &check_config);
 };
 
+/** @} end of group */
 }  // end of namespace wave
 
 #endif  // WAVE_FAST_DETECTOR_HPP

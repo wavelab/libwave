@@ -74,6 +74,7 @@ class FeatureDetector {
     }
 };
 
+/** @} end of group */
 }  // end of namespace wave
 
 #endif  // WAVE_FEATURE_DETECTOR_HPP
