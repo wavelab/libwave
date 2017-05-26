@@ -14,8 +14,9 @@ namespace wave {
 /** Generic two wheel robot motion model */
 class TwoWheelRobot2DModel {
  public:
-    Vec3 pose;  /// Pose of the two wheel robot position in x, y (meters) and
-                /// heading theta (radians)
+    /** Robot pose consisting of position in x and y (meters) and heading
+     * (radians) */
+    Vec3 pose;
 
     TwoWheelRobot2DModel() : pose{0.0, 0.0, 0.0} {}
     TwoWheelRobot2DModel(const Vec3 &pose) : pose{pose} {}
