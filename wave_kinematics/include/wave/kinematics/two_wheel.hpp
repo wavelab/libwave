@@ -19,7 +19,7 @@ class TwoWheelRobot2DModel {
     Vec3 pose;
 
     TwoWheelRobot2DModel() : pose{0.0, 0.0, 0.0} {}
-    TwoWheelRobot2DModel(const Vec3 &pose) : pose{pose} {}
+    explicit TwoWheelRobot2DModel(const Vec3 &pose) : pose{pose} {}
 
     /** Update two wheel model
      *
