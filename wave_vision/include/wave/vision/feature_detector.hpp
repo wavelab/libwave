@@ -25,7 +25,7 @@ namespace wave {
  * Custom exception class for a failed attempt at loading a configuration
  */
 class ConfigurationLoadingException : public std::exception {
-    const char* what() const throw() {
+    const char *what() const throw() {
         return "Failed to Load Detector Configuration";
     }
 };
@@ -37,7 +37,8 @@ class ConfigurationLoadingException : public std::exception {
  * detectors implemented in OpenCV. Further reference on OpenCV's Feature
  * Detectors can be found [here][opencv_feature_detectors].
  *
- * [opencv_feature_detectors]: http://docs.opencv.org/trunk/d5/d51/group__features2d__main.html
+ * [opencv_feature_detectors]:
+ * http://docs.opencv.org/trunk/d5/d51/group__features2d__main.html
  */
 class FeatureDetector {
  public:
@@ -48,7 +49,7 @@ class FeatureDetector {
      *
      *  @return the image (in matrix form).
      */
-    virtual cv::Mat& getImage() {
+    virtual cv::Mat &getImage() {
         return this->image;
     }
 
@@ -58,7 +59,7 @@ class FeatureDetector {
      *  @param image, the image to detect features in.
      *  @return a vector of the detected keypoints.
      */
-    virtual std::vector<cv::KeyPoint> detectFeatures(const cv::Mat& image) = 0;
+    virtual std::vector<cv::KeyPoint> detectFeatures(const cv::Mat &image) = 0;
 
  protected:
     // The image currently being detected.
@@ -68,11 +69,12 @@ class FeatureDetector {
      *
      *  @param source_image, the image to load.
      */
-    virtual void loadImage(const cv::Mat& source_image) {
+    virtual void loadImage(const cv::Mat &source_image) {
         this->image = source_image;
     }
 };
 
+/** @} end of group */
 }  // end of namespace wave
 
 #endif  // WAVE_FEATURE_DETECTOR_HPP
