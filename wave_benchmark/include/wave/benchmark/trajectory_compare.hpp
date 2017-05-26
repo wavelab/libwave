@@ -11,6 +11,7 @@
 #include "pose_measurement.hpp"
 #include "wave/containers/measurement_container.hpp"
 #include "wave/geometry/rotation.hpp"
+#include "enum_class.hpp"
 
 namespace wave {
 /** @addtogroup benchmark
@@ -56,9 +57,6 @@ class TrajectoryCompare {
     MeasurementContainer<PoseMeasurement> error;
 
  private:
-    const int ground_truth_key = 0;
-    const int measurement_key = 1;
-    const int error_key = 2;
     std::ofstream file;
 };
 

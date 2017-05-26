@@ -10,22 +10,22 @@ void TrajectoryCompare::reset() {
 
 void TrajectoryCompare::pushMeasurement(BenchmarkPose pose,
                                         const TimeType time) {
-    measurements.insert(PoseMeasurement(time, this->measurement_key, pose));
+    measurements.insert(PoseMeasurement(time, ComparisonKey::MEASUREMENT, pose));
 }
 
 void TrajectoryCompare::pushTruth(BenchmarkPose pose, const TimeType time) {
-    ground_truth.insert(PoseMeasurement(time, this->ground_truth_key, pose));
+    ground_truth.insert(PoseMeasurement(time, ComparisonKey ::GROUND_TRUTH, pose));
 }
 
 void TrajectoryCompare::calculateError() {
     for (auto iter = measurements.begin(); iter != measurements.end(); iter++) {
         BenchmarkPose truth =
-          ground_truth.get(iter->time_point, this->ground_truth_key);
+          ground_truth.get(iter->time_point, ComparisonKey::GROUND_TRUTH);
         BenchmarkPose error;
         truth.rotation.invert();
         error.rotation = truth.rotation * iter->value.rotation;
         error.translation = iter->value.translation - truth.translation;
-        this->error.emplace(iter->time_point, this->error_key, error);
+        this->error.emplace(iter->time_point, ComparisonKey::ERROR, error);
     }
 }
 

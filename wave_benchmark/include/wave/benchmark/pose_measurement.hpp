@@ -9,6 +9,7 @@
 #include "wave/geometry/rotation.hpp"
 #include "wave/utils/math.hpp"
 #include "wave/containers/measurement.hpp"
+#include "enum_class.hpp"
 
 namespace wave {
 /** @addtogroup benchmark
@@ -21,7 +22,7 @@ struct BenchmarkPose {
     BenchmarkPose(Rotation rot, Vec3 trans) : rotation(rot), translation(trans) {}
 };
 
-using PoseMeasurement = Measurement<BenchmarkPose, int>;
+using PoseMeasurement = Measurement<BenchmarkPose, ComparisonKey>;
 
 /** Perform interpolation (or extrapolation) between two measurements.
 */
