@@ -1,33 +1,52 @@
 #include "wave/wave_test.hpp"
-#include "wave/optimization/factor_graph/variable.hpp"
+#include "wave/optimization/factor_graph/FactorVariable.hpp"
 
 
 namespace wave {
 
-TEST(FactorVariable, constructor) {
-    FactorVariable var(1, 2);
-    EXPECT_EQ(1u, var.id);
-    EXPECT_EQ(2u, var.data.size());
+TEST(ValueTest, constructFromRawData) {
+    // Construct a variable from raw buffer, as ceres would give
+    double buf[3] = {7.7, 8.8, 9.9};
+    auto expected = Vec3{7.7, 8.8, 9.9};
 
-    std::cout << var << std::endl;
+    auto val = ValueView<3>{buf};
+    static_assert(3u == ValueView<3>::Size, "");
+    EXPECT_EQ(3, val.size());
+
+    EXPECT_PRED2(VectorsNear, expected, Eigen::Map<Vec3>{val.data()});
 }
 
-TEST(PoseVar, constructor) {
-    PoseVar var(1);
+TEST(ValueTest, print) {
+    double buf[2] = {7.7, 8.8};
+    auto val = ValueView<2>{buf};
+    std::stringstream ss, ss2;
+    ss << val;
+    EXPECT_STREQ("ValueView<2>", ss.str().c_str());
 
-    EXPECT_EQ(1u, var.id);
-    EXPECT_EQ(6u, var.data.size());
-
-    std::cout << var << std::endl;
+    val.print(ss2);
+    EXPECT_EQ(ss.str(), ss2.str());
 }
 
-TEST(LandmarkVar, constructor) {
-    LandmarkVar var(2);
-
-    EXPECT_EQ(2u, var.id);
-    EXPECT_EQ(3u, var.data.size());
-
-    std::cout << var << std::endl;
+TEST(VariableTest, constructDefault) {
+    // Construct an uninitialized variable
+    auto var = FactorVariable<ValueView<2>>{};
+    EXPECT_EQ(2, var.size());
 }
 
-}  // end of wave namespace
+TEST(VariableTest, constructInitialValue) {
+    // Construct and initialize a variable
+    const auto expected = Vec2{1.1, 2.2};
+    auto var = FactorVariable<ValueView<2>>{expected};
+    EXPECT_EQ(2, var.size());
+    EXPECT_PRED2(VectorsNear, expected, Eigen::Map<Vec2>{var.value.data()});
+}
+
+TEST(VariableTest, constructInitialRvalue) {
+    // Construct and initialize a variable
+    auto var = FactorVariable<ValueView<2>>{Vec2{1.1, 2.2}};
+    const auto expected = Vec2{1.1, 2.2};
+    EXPECT_EQ(2, var.size());
+    EXPECT_PRED2(VectorsNear, expected, Eigen::Map<Vec2>{var.value.data()});
+}
+
+}  // namespace wave
