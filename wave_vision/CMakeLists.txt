@@ -9,11 +9,8 @@ FIND_PACKAGE(Eigen3 REQUIRED)
 ADD_DEFINITIONS(${OpenCV_DEFINITIONS})
 
 # INCLUDES
-INCLUDE_DIRECTORIES(
-    include
-    ${OpenCV_INCLUDE_DIRS}
-    ${EIGEN_INCLUDE_DIR}
-)
+INCLUDE_DIRECTORIES(${OpenCV_INCLUDE_DIRS})
+INCLUDE_DIRECTORIES(${EIGEN_INCLUDE_DIR})
 
 # LIBRARY
 SET(
@@ -25,19 +22,19 @@ SET(
 ADD_LIBRARY(
     wave_vision
     STATIC
+    src/common.cpp
     src/fast_detector.cpp
 )
 TARGET_LINK_LIBRARIES(wave_vision ${WAVE_VISION_DEPS})
 
 # UNIT TESTS
-WAVE_ADD_TEST(
-    ${PROJECT_NAME}_tests
-    tests/fast_tests.cpp)
+WAVE_ADD_TEST(${PROJECT_NAME}_tests
+              tests/common_tests.cpp
+              tests/fast_tests.cpp)
 TARGET_LINK_LIBRARIES(
     ${PROJECT_NAME}_tests
     ${PROJECT_NAME}
     wave_utils
 )
-# Copy test data
-file(COPY tests/data tests/config DESTINATION ${PROJECT_BINARY_DIR}/tests)
-
+# COPY TEST DATA
+FILE(COPY tests/data tests/config DESTINATION ${PROJECT_BINARY_DIR}/tests)

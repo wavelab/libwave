@@ -11,12 +11,16 @@
 
 namespace wave {
 
-/** Predicate to check is vectors are approximately equal.
+/** Predicate to check if vectors are approximately equal.
  * Use with EXPECT_PRED2 */
 inline bool VectorsNear(const VecX &v1, const VecX &v2) {
-    // The absolute comparison of isMuchSmallerThan works better for us than
-    // relative comparison of isApprox
     return v1.isApprox(v2);
+}
+
+/** Predicate to check if matrices are approximately equal.
+ * Use with EXPECT_PRED2 */
+inline bool MatricesNear(const MatX &m1, const MatX &m2) {
+    return m1.isApprox(m2);
 }
 
 }  // namespace wave
