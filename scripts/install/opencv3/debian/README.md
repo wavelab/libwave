@@ -31,6 +31,9 @@ build-essential
 7) Run debuild and fix any errors
 `debuild -S -k<your-GPG-key>`
 
+8) Ensure that you register your GPG key with UbuntuOne
+ https://launchpad.net/~<username>/+editpgpkeys
+
 8) Upload to your PPA
 `dput ppa:<user>/<ppa> <package-name>_<version>_source.changes`
-It will take a while to process.
+It will take a while to process
