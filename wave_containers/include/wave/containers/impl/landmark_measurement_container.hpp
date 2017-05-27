@@ -19,7 +19,7 @@ using boost::multi_index::tag;
  * holding measurements of type T. See `wave::internal::measurement_container`.
  */
 template <typename T>
-struct container_traits<LandmarkMeasurementContainer<T>> {
+struct container_traits<::wave::LandmarkMeasurementContainer<T>> {
     // Define to give MeasurementContainerBase access to its derived type
     using MeasurementType = T;
 

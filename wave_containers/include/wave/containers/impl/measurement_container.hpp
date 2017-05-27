@@ -33,7 +33,7 @@ using boost::multi_index::tag;
  */
 
 template <typename T>
-struct container_traits<MeasurementContainer<T>> {
+struct container_traits<::wave::MeasurementContainer<T>> {
     // Define to give MeasurementContainerBase access to its derived type
     using MeasurementType = T;
 
