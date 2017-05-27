@@ -30,6 +30,7 @@ struct container_traits;
  */
 template <typename Derived>
 class MeasurementContainerBase {
+ protected:
     using traits = internal::container_traits<Derived>;
 
  public:

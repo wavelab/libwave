@@ -87,8 +87,7 @@ MeasurementContainerBase<T>::getAllFromSensor(const SensorIdType &s) const
   noexcept {
     // Get the measurements sorted by sensor_id
     const auto &sensor_index =
-      this->storage
-        .template get<typename internal::container_traits<T>::sensor_index>();
+      this->storage.template get<typename traits::sensor_index>();
 
     return sensor_index.equal_range(s);
 };
@@ -151,15 +150,13 @@ MeasurementContainerBase<T>::cend() const noexcept {
 template <typename T>
 typename MeasurementContainerBase<T>::composite_type &
 MeasurementContainerBase<T>::composite() noexcept {
-    return this->storage
-      .template get<typename internal::container_traits<T>::composite_index>();
+    return this->storage.template get<typename traits::composite_index>();
 }
 
 template <typename T>
 const typename MeasurementContainerBase<T>::composite_type &
 MeasurementContainerBase<T>::composite() const noexcept {
-    return this->storage
-      .template get<typename internal::container_traits<T>::composite_index>();
+    return this->storage.template get<typename traits::composite_index>();
 }
 
 

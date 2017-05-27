@@ -100,8 +100,7 @@ LandmarkMeasurementContainer<T>::getLandmarkIDsInWindow(
   const TimeType &start, const TimeType &end) const {
     // Use the index sorted by landmark id
     const auto &landmark_index =
-      this->storage.template get<typename internal::container_traits<
-        LandmarkMeasurementContainer<T>>::landmark_index>();
+      this->storage.template get<typename Base::traits::landmark_index>();
     auto unique_ids = std::vector<LandmarkIdType>{};
 
     // Iterate over all measurements sorted by time, first then landmark_id.
@@ -143,8 +142,7 @@ LandmarkMeasurementContainer<T>::getTrackInWindow(const SensorIdType &s,
     }
 
     const auto &landmark_index =
-      this->storage.template get<typename internal::container_traits<
-        LandmarkMeasurementContainer<T>>::landmark_index>();
+      this->storage.template get<typename Base::traits::landmark_index>();
 
     // Get all measurements with desired landmark id
     const auto res = landmark_index.equal_range(id);
@@ -156,8 +154,7 @@ LandmarkMeasurementContainer<T>::getTrackInWindow(const SensorIdType &s,
     // http://www.boost.org/doc/libs/1_63_0/libs/multi_index/doc/examples.html#example6
     //
     // While iterating, pick the measurements with desired sensor_id
-    auto time_view = typename internal::container_traits<
-      LandmarkMeasurementContainer<T>>::time_view{};
+    auto time_view = typename Base::traits::time_view{};
     for (auto it = res.first; it != res.second; ++it) {
         if (it->sensor_id == s) {
             // insert a pointer to the measurement

@@ -26,29 +26,22 @@ template <typename T>
 class LandmarkMeasurementContainer
   : public MeasurementContainerBase<LandmarkMeasurementContainer<T>> {
  public:
+    using Base = MeasurementContainerBase<LandmarkMeasurementContainer<T>>;
+
     // Types
 
-    /** Alias for the template parameter, giving the type of measurement stored
+    /** Alias for the template parameter, giving the type of Measurement stored
      * in this container */
-    using MeasurementType = T;
+    using typename Base::MeasurementType;
     /** Alias for the measurement's value.
      * Note this does *not* correspond to a typical container's value_type. */
-    using ValueType = decltype(MeasurementType::value);
-    /** Alias for the type of the sensor id */
-    using SensorIdType = decltype(MeasurementType::sensor_id);
+    using typename Base::ValueType;
+    /** Alias for template parameter giving the type of the sensor id */
+    using typename Base::SensorIdType;
     /** Alias for the type of the landmark id */
     using LandmarkIdType = decltype(MeasurementType::landmark_id);
     /** A vector representing landmark / feature measurements across images */
     using Track = std::vector<MeasurementType>;
-
-
-    using iterator = typename internal::container_traits<
-      LandmarkMeasurementContainer<T>>::composite_type::iterator;
-    using const_iterator = typename internal::container_traits<
-      LandmarkMeasurementContainer<T>>::composite_type::const_iterator;
-    using sensor_iterator = typename internal::container_traits<
-      LandmarkMeasurementContainer<T>>::sensor_type::iterator;
-    using size_type = std::size_t;
 
     // Constructors
 

@@ -38,6 +38,19 @@ template <typename T>
 class MeasurementContainer
   : public MeasurementContainerBase<MeasurementContainer<T>> {
  public:
+    using Base = MeasurementContainerBase<MeasurementContainer<T>>;
+
+    // Types
+
+    /** Alias for the template parameter, giving the type of Measurement stored
+     * in this container */
+    using typename Base::MeasurementType;
+    /** Alias for the measurement's value.
+     * Note this does *not* correspond to a typical container's value_type. */
+    using typename Base::ValueType;
+    /** Alias for template parameter giving the type of the sensor id */
+    using typename Base::SensorIdType;
+
     // Constructors
 
     /** Default construct an empty container */
@@ -46,25 +59,6 @@ class MeasurementContainer
     /** Inherit all non-default constuctors from base */
     using MeasurementContainerBase<
       MeasurementContainer<T>>::MeasurementContainerBase;
-
-    // Types
-
-    /** Alias for the template parameter, giving the type of Measurement stored
-     * in this container */
-    using MeasurementType = T;
-    /** Alias for the measurement's value.
-     * Note this does *not* correspond to a typical container's value_type. */
-    using ValueType = decltype(MeasurementType::value);
-    /** Alias for template parameter giving the type of the sensor id */
-    using SensorIdType = decltype(MeasurementType::sensor_id);
-
-    using iterator = typename internal::container_traits<
-      MeasurementContainer<T>>::composite_type::iterator;
-    using const_iterator = typename internal::container_traits<
-      MeasurementContainer<T>>::composite_type::const_iterator;
-    using sensor_iterator = typename internal::container_traits<
-      MeasurementContainer<T>>::sensor_type::iterator;
-    using size_type = std::size_t;
 
     // Retrieval
 
