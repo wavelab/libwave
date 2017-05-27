@@ -54,8 +54,7 @@ class MeasurementContainerBase {
     using SensorIdType = decltype(MeasurementType::sensor_id);
 
     using iterator = typename traits::composite_type::iterator;
-    using const_iterator = typename internal::container_traits<
-      Derived>::composite_type::const_iterator;
+    using const_iterator = typename traits::composite_type::const_iterator;
     using sensor_iterator = typename traits::sensor_type::iterator;
     using size_type = std::size_t;
 
