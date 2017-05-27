@@ -42,5 +42,29 @@ struct LandmarkVar : FactorVariable {
     LandmarkVar(VariableId id) : FactorVariable{id, 3} {}
 };
 
+
+struct Landmark2DVar {
+    Landmark2DVar() = default;
+    explicit Landmark2DVar(const double const *data) : position{data} {}
+
+    Eigen::Map<const Vec2> position{0};
+
+    constexpr static int SizeAtCompileTime = 2;
+};
+
+using Vec1 = Eigen::Matrix<double, 1, 1>;
+
+struct Pose2DVar {
+    Pose2DVar() = default;
+
+    explicit Pose2DVar(const double const *data)
+        : position{data}, orientation{data + 2} {}
+
+    Eigen::Map<const Vec2> position{0};
+    Eigen::Map<const Vec1> orientation{0};
+    constexpr static int SizeAtCompileTime = 3;
+};
+
+
 }  // end of wave namespace
 #endif

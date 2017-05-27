@@ -16,44 +16,41 @@ namespace wave {
 
 class FactorGraph {
  public:
-    std::vector<std::shared_ptr<Factor>> factors;
+    // Types
+    using size_type = std::size_t;
+
+    // Constructors
+    FactorGraph();
+
+    // Capacity
+
+    /** Return number of variables in the graph */
+    size_type countVariables() const noexcept;
+
+    /** Return number of factors in the graph */
+    size_type countFactors() const noexcept;
+
+    /** Return total number of factors and variables */
+    size_type size() const noexcept;
+
+    bool empty() const noexcept;
+
+    // Modifiers
+
+    template <typename FactorType, typename... Args>
+    void addFactor(Args &&... args);
+
+    // Output
+
+    friend std::ostream &operator<<(std::ostream &os, const FactorGraph &graph);
+
+ private:
+    std::vector<std::shared_ptr<FactorBase>> factors;
     std::multimap<VariableId, std::shared_ptr<FactorVariable>> variables;
-
-    FactorGraph() {}
-
-    template <typename V>
-    void add(const VariableId &key, const MatX &z) {
-        auto var = std::make_shared<V>(key);
-        auto factor = std::make_shared<UnaryFactor>(var, z);
-
-        this->factors.push_back(factor);
-        this->variables.insert({key, var});
-    }
-
-    template <typename VA, typename VB>
-    void add(const VariableId &key1, const VariableId &key2, const MatX &z) {
-        auto var1 = std::make_shared<VA>(key1);
-        auto var2 = std::make_shared<VB>(key2);
-        auto factor = std::make_shared<BinaryFactor>(var1, var2, z);
-
-        this->factors.push_back(factor);
-        this->variables.insert({key1, var1});
-        this->variables.insert({key2, var2});
-    }
-
-    friend std::ostream &operator<<(std::ostream &os,
-                                    const FactorGraph &graph) {
-        int index = 0;
-
-        for (auto f : graph.factors) {
-            os << "f" << index << " -- ";
-            os << *f << std::endl;
-            index++;
-        }
-
-        return os;
-    }
 };
 
-}  // end of wave namespace
-#endif
+}  // namespace wave
+
+#include "impl/graph.hpp"
+
+#endif  // WAVE_OPTIMIZATION_FACTOR_GRAPH_GRAPH_HPP

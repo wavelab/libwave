@@ -1,38 +1,39 @@
 #include "wave/wave_test.hpp"
 #include "wave/optimization/factor_graph/factor.hpp"
+#include <boost/core/demangle.hpp>
 
 
 namespace wave {
 
-TEST(Factor, constructor) {
-    MatX A(3, 3);
-    MatX expected(3, 3);
+TEST(FactorTest, evaluate) {
+    auto meas = 1.23;
+    DistanceToLandmarkFactor f{
+      meas, std::make_shared<Pose2DVar>(), std::make_shared<Landmark2DVar>()};
 
-    // TEST UNARY FACTOR
-    // clang-format off
-    A << 0.0, 1.0, 2.0,
-         3.0, 4.0, 5.0,
-         6.0, 7.0, 8.0;
-    expected << 0.0, 1.0, 2.0,
-                3.0, 4.0, 5.0,
-                6.0, 7.0, 8.0;
-    // clang-format on
-    auto var = std::make_shared<FactorVariable>(1, 2);
-    UnaryFactor f1(var, A);
+    // Prepare sample C-style arrays as used by Ceres
+    const double param_pose[3] = {1.1, 2.2, 3.3};
+    const double param_landmark[2] = {4.4, 5.5};
+    const double const *parameters[2] = {param_pose, param_landmark};
+    double out_residuals[1];
+    double out_jac_pose[3];
+    double out_jac_landmark[2];
+    double *out_jacobians[2] = {out_jac_pose, out_jac_landmark};
 
-    EXPECT_EQ(1u, f1.variables[0]->id);
-    EXPECT_TRUE(f1.measurement.isApprox(expected));
-    std::cout << f1 << std::endl;
+    // Calculate expected values (use analytic jacobians)
+    auto dist =
+      std::sqrt((1.1 - 4.4) * (1.1 - 4.4) + (2.2 - 5.5) * (2.2 - 5.5));
+    auto expected_residual = dist - meas;
+    Vec3 expected_jac_pose{(1.1 - 4.4) / dist, (2.2 - 5.5) / dist, 0};
+    Vec2 expected_jac_landmark{(1.1 - 4.4) / dist, (2.2 - 5.5) / dist};
 
-    // TEST BINARY FACTOR
-    auto var1 = std::make_shared<FactorVariable>(1, 3);
-    auto var2 = std::make_shared<FactorVariable>(2, 3);
-    BinaryFactor f2(var1, var2, A);
-
-    EXPECT_EQ(1u, f2.variables[0]->id);
-    EXPECT_EQ(2u, f2.variables[1]->id);
-    EXPECT_TRUE(f2.measurement.isApprox(expected));
-    std::cout << f2 << std::endl;
+    // Call and compare
+    auto res = f.evaluate(parameters, out_residuals, out_jacobians);
+    EXPECT_TRUE(res);
+    EXPECT_DOUBLE_EQ(expected_residual, out_residuals[0]);
+    EXPECT_PRED2(
+      VectorsNear, expected_jac_pose, Eigen::Map<Vec3>{out_jac_pose});
+    EXPECT_PRED2(
+      VectorsNear, expected_jac_landmark, Eigen::Map<Vec2>{out_jac_landmark});
 }
 
 }  // end of wave namespace
