@@ -78,6 +78,9 @@ struct container_traits<MeasurementContainer<T>> {
 }  // namespace internal
 
 template <typename T>
+MeasurementContainer<T>::MeasurementContainer() {}
+
+template <typename T>
 typename MeasurementContainer<T>::ValueType MeasurementContainer<T>::get(
   const TimeType &t, const SensorIdType &s) const {
     // To interpolate measurements from one sensor only, we first extract all

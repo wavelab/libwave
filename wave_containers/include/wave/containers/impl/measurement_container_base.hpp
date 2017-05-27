@@ -51,10 +51,11 @@ MeasurementContainerBase<T>::emplace(Args &&... args) {
 }
 
 template <typename T>
+template <typename... Args>
 typename MeasurementContainerBase<T>::size_type
-MeasurementContainerBase<T>::erase(const TimeType &t, const SensorIdType &s) {
+MeasurementContainerBase<T>::erase(Args &&... args) {
     auto &composite = this->composite();
-    auto it = composite.find(boost::make_tuple(t, s));
+    auto it = composite.find(boost::make_tuple(std::forward<Args>(args)...));
     if (it == composite.end()) {
         return 0;
     }

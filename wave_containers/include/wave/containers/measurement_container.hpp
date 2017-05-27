@@ -15,7 +15,6 @@
 #include "wave/containers/measurement_container_base.hpp"
 
 namespace wave {
-
 /** @addtogroup containers
  *  @{ */
 
@@ -42,7 +41,7 @@ class MeasurementContainer
     // Constructors
 
     /** Default construct an empty container */
-    MeasurementContainer() {}
+    MeasurementContainer();
 
     /** Inherit all non-default constuctors from base */
     using MeasurementContainerBase<

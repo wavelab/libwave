@@ -9,7 +9,6 @@
 #include <chrono>
 
 namespace wave {
-
 /** @addtogroup containers
  *  @{ */
 
@@ -95,11 +94,17 @@ class MeasurementContainerBase {
     template <typename... Args>
     std::pair<iterator, bool> emplace(Args &&... args);
 
-    /** Delete the element with the matching time and sensor id, if one exists.
+    /** Delete the element with the matching key, if one exists.
+     *
+     * The required arguments depend on the derived type. For example, for
+     * MeasurementContainer, the key consists of time and sensor_id. For
+     * LandmarkMeasurementContainer, the key consists of time, sensor_id, and
+     * landmark_id.
      *
      * @return the number of elements deleted.
      */
-    size_type erase(const TimeType &t, const SensorIdType &s);
+    template <typename... Args>
+    size_type erase(Args &&... args);
 
     /** Delete the element at `position`
      *
