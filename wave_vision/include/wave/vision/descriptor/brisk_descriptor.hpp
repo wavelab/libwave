@@ -1,0 +1,8 @@
+//
+// Created by pganti on 27/05/17.
+//
+
+#ifndef WAVE_BRISK_DESCRIPTOR_HPP
+#define WAVE_BRISK_DESCRIPTOR_HPP
+
+#endif //WAVE_BRISK_DESCRIPTOR_HPP

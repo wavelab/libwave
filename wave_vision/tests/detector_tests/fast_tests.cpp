@@ -37,7 +37,7 @@ TEST(FASTTests, BadInitialization) {
     const std::string bad_path = "bad_path";
 
     ASSERT_THROW(FASTDetector detector(bad_path),
-                 ConfigurationLoadingException);
+                 std::invalid_argument);
 }
 
 // Checks that invalid threshold value throws the proper exception
