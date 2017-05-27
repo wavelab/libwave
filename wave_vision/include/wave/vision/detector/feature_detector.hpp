@@ -53,7 +53,7 @@ class FeatureDetector {
     virtual std::vector<cv::KeyPoint> detectFeatures(const cv::Mat &image) = 0;
 
  protected:
-    // The image currently being detected.
+    /** The image currently being detected. */
     cv::Mat image;
 
     /** Function to set image within the member variables.
