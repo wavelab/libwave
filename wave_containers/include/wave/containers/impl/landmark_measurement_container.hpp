@@ -42,18 +42,15 @@ struct container_traits<LandmarkMeasurementContainer<T>> {
     // multi_index_container is generated
     struct time_index {};
     struct sensor_index {};
-    struct sensor_composite_index {};
     struct landmark_index {};
     struct composite_index {};
 
     // Define an index for each key. Each index will be accessible via its tag
     struct indices
-      : indexed_by<
-          ordered_non_unique<tag<time_index>, time_key>,
-          ordered_non_unique<tag<sensor_index>, sensor_key>,
-          ordered_non_unique<tag<landmark_index>, landmark_key>,
-          ordered_unique<tag<composite_index>, combined_key>,
-          ordered_unique<tag<sensor_composite_index>, sensor_composite_key>> {};
+      : indexed_by<ordered_non_unique<tag<time_index>, time_key>,
+                   ordered_non_unique<tag<landmark_index>, landmark_key>,
+                   ordered_unique<tag<composite_index>, combined_key>,
+                   ordered_unique<tag<sensor_index>, sensor_composite_key>> {};
 
     // Finally, define the multi_index_container type.
     // This is the container type which can actually be used to make objects
@@ -63,8 +60,6 @@ struct container_traits<LandmarkMeasurementContainer<T>> {
     using composite_type = typename type::template index<composite_index>::type;
     using time_type = typename type::template index<time_index>::type;
     using sensor_type = typename type::template index<sensor_index>::type;
-    using sensor_composite_type =
-      typename type::template index<sensor_composite_index>::type;
     using landmark_type = typename type::template index<landmark_index>::type;
 
     // Define a view indexed by time, for complex searches

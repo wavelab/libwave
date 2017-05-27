@@ -47,7 +47,7 @@ class LandmarkMeasurementContainer
     using const_iterator = typename internal::container_traits<
       LandmarkMeasurementContainer<T>>::composite_type::const_iterator;
     using sensor_iterator = typename internal::container_traits<
-      LandmarkMeasurementContainer<T>>::sensor_composite_type::iterator;
+      LandmarkMeasurementContainer<T>>::sensor_type::iterator;
     using size_type = std::size_t;
 
     // Constructors
