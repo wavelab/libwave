@@ -33,6 +33,11 @@ namespace wave {
  *   interpolate(const T&, const T&, const TimeType&)
  *   ```
  * must be defined for type `T`.
+ *
+ * The unique key for this container is the tuple (time_point, sensor_id). That
+ * is, an insertion will have an effect only if there is not already an element
+ * in the container with that key. When iterating over the container, elements
+ * are sorted lexicographically: first by time, then by sensor_id.
  */
 template <typename T>
 class MeasurementContainer

@@ -21,6 +21,12 @@ namespace wave {
  *   - `sensor_id` (any type sortable by \c std::less)
  *   - `landmark_id` (any type sortable by \c std::less)
  *   - `value` (any type)
+ *
+ * The unique key for this container is the tuple (time_point, sensor_id,
+ * landmark_id). That is, an insertion will have an effect only if there is not
+ * already an element in the container with that key. When iterating over the
+ * container, elements are sorted lexicographically: first by time, then by
+ * sensor_id, then by landmark_id.
  */
 template <typename T>
 class LandmarkMeasurementContainer

@@ -26,6 +26,14 @@ struct container_traits;
 
 /** Base class for containers which store measurements.
  *
+ * It implements constructors, interators, counting, insertion, and some
+ * retrieval methods; derived classes should implement their own specialized
+ * retrieval methods.
+ *
+ * A traits class template, `container_traits`, must be specialized for each
+ * derived class, defining the keys and indices used for the underlying
+ * multi_index_container.
+ *
  * @tparam Derived is the derived type, e.g. a landmark measurement container
  */
 template <typename Derived>
@@ -97,12 +105,19 @@ class MeasurementContainerBase {
 
     /** Delete the element with the matching key, if one exists.
      *
-     * The required arguments depend on the derived type. For example, for
-     * MeasurementContainer, the key consists of time and sensor_id. For
-     * LandmarkMeasurementContainer, the key consists of time, sensor_id, and
-     * landmark_id.
+     * @param args
+     * @parblock
+     * arguments forming a unique key for the container.
      *
-     * @return the number of elements deleted.
+     * See the documentation for the derived container class for a definition of
+     * the unique key.
+     *
+     * For example, for MeasurementContainer, the key consists of time and
+     * sensor_id. For LandmarkMeasurementContainer, the key consists of time,
+     * sensor_id, and landmark_id.
+     * @endparblock
+     *
+     * @return the number of elements deleted (0 or 1).
      */
     template <typename... Args>
     size_type erase(Args &&... args);
