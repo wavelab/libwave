@@ -1,4 +1,74 @@
+#include <boost/multi_index_container.hpp>
+#include <boost/multi_index/member.hpp>
+#include <boost/multi_index/ordered_index.hpp>
+#include <boost/multi_index/composite_key.hpp>
+#include <boost/version.hpp>
+
 namespace wave {
+
+namespace internal {
+
+using boost::multi_index::member;
+using boost::multi_index::indexed_by;
+using boost::multi_index::ordered_unique;
+using boost::multi_index::ordered_non_unique;
+using boost::multi_index::composite_key;
+using boost::multi_index::tag;
+
+/** Holds all the type definitions required for a boost::multi_index_container
+ * holding measurements of type T. See `wave::internal::measurement_container`.
+ */
+template <typename T>
+struct landmark_container {
+    // First, define which members of the Measurement object are used as keys
+    struct time_key : member<T, TimeType, &T::time_point> {};
+    struct sensor_key : member<T, decltype(T::sensor_id), &T::sensor_id> {};
+    struct landmark_key : member<T, decltype(T::landmark_id), &T::landmark_id> {
+    };
+
+    // Define a composite key which combines the above three keys
+    // This lets us search elements sorted by time, then sensor id, then
+    // landmark ID
+    struct combined_key : composite_key<T, time_key, sensor_key, landmark_key> {
+    };
+    struct sensor_composite_key
+      : composite_key<T, sensor_key, time_key, landmark_key> {};
+
+    // These types are used as tags to retrieve each index after the
+    // multi_index_container is generated
+    struct time_index {};
+    struct sensor_index {};
+    struct sensor_composite_index {};
+    struct landmark_index {};
+    struct composite_index {};
+
+    // Define an index for each key. Each index will be accessible via its tag
+    struct indices
+      : indexed_by<
+          ordered_non_unique<tag<time_index>, time_key>,
+          ordered_non_unique<tag<sensor_index>, sensor_key>,
+          ordered_non_unique<tag<landmark_index>, landmark_key>,
+          ordered_unique<tag<composite_index>, combined_key>,
+          ordered_unique<tag<sensor_composite_index>, sensor_composite_key>> {};
+
+    // Finally, define the multi_index_container type.
+    // This is the container type which can actually be used to make objects
+    using type = boost::multi_index_container<T, indices, std::allocator<T>>;
+
+    // For convenience, get the type of the indices, using their tags
+    using composite_type = typename type::template index<composite_index>::type;
+    using time_type = typename type::template index<time_index>::type;
+    using sensor_composite_type =
+      typename type::template index<sensor_composite_index>::type;
+    using landmark_type = typename type::template index<landmark_index>::type;
+
+    // Define a view indexed by time, for complex searches
+    struct const_time_index
+      : indexed_by<
+          ordered_non_unique<member<T, const TimeType, &T::time_point>>> {};
+    using time_view = boost::multi_index_container<const T *, const_time_index>;
+};
+}  // namespace internal
 
 template <typename T>
 LandmarkMeasurementContainer<T>::LandmarkMeasurementContainer() {}
