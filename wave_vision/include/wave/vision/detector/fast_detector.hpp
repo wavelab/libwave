@@ -1,6 +1,6 @@
 /**
  * @file
- * Fast Feature Detector implementation, derived from Feature Detector base
+ * FAST Feature Detector implementation, derived from Feature Detector base
  * class.
  * @ingroup vision
  */

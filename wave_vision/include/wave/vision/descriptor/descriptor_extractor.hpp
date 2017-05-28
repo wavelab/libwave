@@ -52,7 +52,7 @@ class DescriptorExtractor {
      *
      *  @return descriptors, the computed keypoint descriptors.
      */
-    virtual cv::Mat computeDescriptors(const cv::Mat&image,
+    virtual cv::Mat computeDescriptors(const cv::Mat &image,
                                        std::vector<cv::KeyPoint>) = 0;
 
  protected:
@@ -63,9 +63,8 @@ class DescriptorExtractor {
      *
      *  @param source_image, the image to load
      */
-
     virtual void loadImage(const cv::Mat &source_image);
 };
-}
+}  // end of namespace wave
 
 #endif  // WAVE_DESCRIPTOR_EXTRACTOR_HPP
