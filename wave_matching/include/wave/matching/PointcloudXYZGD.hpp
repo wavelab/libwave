@@ -25,11 +25,10 @@ struct PointXYZGD {
 } EIGEN_ALIGN16;
 
 POINT_CLOUD_REGISTER_POINT_STRUCT(PointXYZGD,
-                                  (float, x, x)
-                                  (float, y, y)
-                                  (float, z, z)
-                                  (uint16_t, ground_adj, ground_adj)
-                                  (uint16_t,drivable, drivable))
+                                  (float, x, x)(float, y, y)(float, z, z)(
+                                    uint16_t, ground_adj, ground_adj)(uint16_t,
+                                                                      drivable,
+                                                                      drivable))
 
 // Helper functions
 inline bool isDR(float in) {

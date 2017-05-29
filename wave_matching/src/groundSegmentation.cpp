@@ -94,19 +94,23 @@ void groundSegmentation::genPolarBinGrid(
 
             // bin into sector
 
-            unsigned int bind_rad = static_cast<unsigned int>(ph / bsize_rad);  // got the radial bin
+            unsigned int bind_rad =
+              static_cast<unsigned int>(ph / bsize_rad);  // got the radial bin
 
             // get the linear bin
             float xyDist = sqrt(px * px + py * py);
 
-            unsigned int bind_lin = static_cast<unsigned int>(xyDist / bsize_lin);  // got the radial bin
+            unsigned int bind_lin = static_cast<unsigned int>(
+              xyDist / bsize_lin);  // got the radial bin
 
             pBG->aCell[bind_rad].lCell[bind_lin].binPoints.push_back(curPt);
             // add the point to the bin
             // check the protoype point
 
             if (isnanf(pBG->aCell[bind_rad].lCell[bind_lin].prototypePoint.z) ||
-                    pz < pBG->aCell[bind_rad].lCell[bind_lin].prototypePoint.z)  // smallest by z
+                pz < pBG->aCell[bind_rad]
+                       .lCell[bind_lin]
+                       .prototypePoint.z)  // smallest by z
             {
                 pBG->aCell[bind_rad].lCell[bind_lin].prototypePoint = curPt;
                 pBG->aCell[bind_rad].rangeHeightSignal[bind_lin].x = xyDist;
@@ -172,9 +176,10 @@ void groundSegmentation::sectorINSAC(int sectorIndex) {
     // now that the z points are sorted by height, take the
     // this->params.num_seed_points worth
     // as the seed
-    size_t npt = sigPtr.size() < static_cast<size_t>(this->params.num_seed_points)
-                ? sigPtr.size()
-                : static_cast<size_t>(this->params.num_seed_points);
+    size_t npt =
+      sigPtr.size() < static_cast<size_t>(this->params.num_seed_points)
+        ? sigPtr.size()
+        : static_cast<size_t>(this->params.num_seed_points);
     std::vector<signalPoint> currentModel;
     int ptCtr = 0;
     int currIdx = 0;
