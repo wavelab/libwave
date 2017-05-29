@@ -45,7 +45,7 @@ class Matcher {
         return 0;
     }
 
-    virtual void estimate_info() {
+    virtual void estimateInfo() {
         this->information = MatX::Identity(6,6);
     }
 

@@ -15,7 +15,7 @@ class ICPMatcher : public Matcher<PCLPointCloud> {
     void setRef(const PCLPointCloud &ref);
     void setTarget(const PCLPointCloud &target);
     bool match();
-    void estimate_info();
+    void estimateInfo();
 
     enum covar_method : int {
         LUM,
@@ -28,8 +28,8 @@ class ICPMatcher : public Matcher<PCLPointCloud> {
     PCLPointCloud ref, target, final;
     covar_method estimate_method;
     double lidar_ang_covar, lidar_lin_covar;
-    void estimate_lum();
-    void estimate_censi();
+    void estimateLUM();
+    void estimateCensi();
 };
 
 }  // end of wave namespace

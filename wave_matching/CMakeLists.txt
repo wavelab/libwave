@@ -1,6 +1,8 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8.3)
 PROJECT(wave_matching)
 
+SET(CMAKE_BUILD_TYPE release)
+
 # PACKAGES
 FIND_PACKAGE(PCL REQUIRED common registration point_types io)
 FIND_PACKAGE(OpenCV REQUIRED)

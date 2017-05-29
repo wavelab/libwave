@@ -5,8 +5,8 @@
 
 namespace wave {
 
-#define TEST_SCAN "tests/data/testscan.pcd"
-#define TEST_CONFIG "tests/config/g_icp.yaml"
+#define TEST_SCAN "data/testscan.pcd"
+#define TEST_CONFIG "config/gicp.yaml"
 
 // Fixture to load same pointcloud all the time
 class GICPTest : public testing::Test {
