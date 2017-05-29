@@ -33,7 +33,7 @@ struct GroundSegmentationParams {
     int num_bins_l;
 
     // set default parameters
-    groundSegmentationParams() {
+    GroundSegmentationParams() {
         rmax = 100;
         max_bin_points = 200;
         num_seed_points = 10;
@@ -51,7 +51,7 @@ struct GroundSegmentationParams {
     }
 
     // use config file to set parameters
-    groundSegmentationParams(const std::string &config_path) {
+    GroundSegmentationParams(const std::string &config_path) {
         ConfigParser parser;
         parser.addParam("groundSegmentation.rmax", &rmax);
         parser.addParam("groundSegmentation.num_maxbinpoints", &max_bin_points);

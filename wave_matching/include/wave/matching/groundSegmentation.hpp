@@ -80,7 +80,7 @@ class groundSegmentation {
     /**
      * Collection of all configurable parameters
      */
-    groundSegmentationParams params;
+    GroundSegmentationParams params;
 
     /**
      * Data storage
