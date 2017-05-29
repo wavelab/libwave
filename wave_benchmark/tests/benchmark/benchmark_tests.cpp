@@ -44,10 +44,12 @@ TEST(trajectorycompare, error_straight) {
     compare.calculateError();
     EXPECT_EQ(compare.measurements.size(), compare.error.size());
     for (int i = 0; i < 10; i++) {
-        EXPECT_NEAR(compare.error.get(start_t + std::chrono::seconds(i), ComparisonKey::ERROR)
-                      .translation(0),
-                    0.2 * i,
-                    1e-5);
+        EXPECT_NEAR(
+          compare.error
+            .get(start_t + std::chrono::seconds(i), ComparisonKey::ERROR)
+            .translation(0),
+          0.2 * i,
+          1e-5);
     }
 }
 
@@ -106,9 +108,11 @@ TEST(rotation_interpolation, quarterturn) {
     BenchmarkPose expected(Rotation(Vec3(0.5, 0, 0)), Vec3::Zero());
     auto start_t = std::chrono::steady_clock::now();
     container.emplace(start_t, ComparisonKey::GROUND_TRUTH, pose);
-    container.emplace(start_t + std::chrono::seconds(4), ComparisonKey::GROUND_TRUTH, pose_rot);
+    container.emplace(
+      start_t + std::chrono::seconds(4), ComparisonKey::GROUND_TRUTH, pose_rot);
     // Test
-    BenchmarkPose inter = container.get(start_t + std::chrono::seconds(1), ComparisonKey::GROUND_TRUTH);
+    BenchmarkPose inter = container.get(start_t + std::chrono::seconds(1),
+                                        ComparisonKey::GROUND_TRUTH);
     EXPECT_TRUE(expected.rotation.isNear(inter.rotation, 0.1));
 }
 

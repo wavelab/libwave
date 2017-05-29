@@ -19,7 +19,8 @@ struct BenchmarkPose {
     Rotation rotation;
     Vec3 translation;
     BenchmarkPose() : rotation(Rotation()), translation{0.0, 0.0, 0.0} {}
-    BenchmarkPose(Rotation rot, Vec3 trans) : rotation(rot), translation(trans) {}
+    BenchmarkPose(Rotation rot, Vec3 trans)
+        : rotation(rot), translation(trans) {}
 };
 
 using PoseMeasurement = Measurement<BenchmarkPose, ComparisonKey>;
@@ -27,8 +28,8 @@ using PoseMeasurement = Measurement<BenchmarkPose, ComparisonKey>;
 /** Perform interpolation (or extrapolation) between two measurements.
 */
 inline BenchmarkPose interpolate(const PoseMeasurement &m1,
-                        const PoseMeasurement &m2,
-                        const TimeType &t) {
+                                 const PoseMeasurement &m2,
+                                 const TimeType &t) {
     auto w2 = 1.0 * (t - m1.time_point) / (m2.time_point - m1.time_point);
 
     auto m1inverse = m1.value.rotation;

@@ -10,11 +10,13 @@ void TrajectoryCompare::reset() {
 
 void TrajectoryCompare::pushMeasurement(BenchmarkPose pose,
                                         const TimeType time) {
-    measurements.insert(PoseMeasurement(time, ComparisonKey::MEASUREMENT, pose));
+    measurements.insert(
+      PoseMeasurement(time, ComparisonKey::MEASUREMENT, pose));
 }
 
 void TrajectoryCompare::pushTruth(BenchmarkPose pose, const TimeType time) {
-    ground_truth.insert(PoseMeasurement(time, ComparisonKey ::GROUND_TRUTH, pose));
+    ground_truth.insert(
+      PoseMeasurement(time, ComparisonKey::GROUND_TRUTH, pose));
 }
 
 void TrajectoryCompare::calculateError() {
