@@ -22,8 +22,9 @@ SET(
 ADD_LIBRARY(
     wave_vision
     STATIC
-    src/common.cpp
     src/detector/fast_detector.cpp
+    src/descriptor/brisk_descriptor.cpp
+    src/common.cpp
 )
 TARGET_LINK_LIBRARIES(wave_vision ${WAVE_VISION_DEPS})
 

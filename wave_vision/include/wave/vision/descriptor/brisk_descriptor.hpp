@@ -16,7 +16,14 @@
 
 /** The wave namespace */
 namespace wave {
+/** @addtogroup vision
+ *  @{ */
 
+/**
+ *  BRISKDescriptorParams struct contains the configuration parameters for the
+ *  BRISKDescriptor extractor.
+ *
+ */
 struct BRISKDescriptorParams {
     std::vector<float> radiusList;
     std::vector<int> numberList;
@@ -25,7 +32,7 @@ struct BRISKDescriptorParams {
     std::vector<int> indexChange;
 };
 
-class BRISKDescriptor {
+class BRISKDescriptor : public DescriptorExtractor {
     /** Constructs a BRISKDescriptor Extractor using the default parameters. */
     BRISKDescriptor();
 
@@ -34,14 +41,6 @@ class BRISKDescriptor {
      *
      *  @param config contains the desired parameter values for a BRISKParams
      *  implementation.
-     */
-    explicit BRISKDescriptor(const BRISKDescriptorParams &config);
-
-    /** Constructs a BRISKDescriptor Extractor using parameters specified by the
-     *  user.
-     *
-     *  @param config contains the desired parameter values for a
-     *  BRISKParamsCustomPattern implementation.
      */
     explicit BRISKDescriptor(const BRISKDescriptorParams &config);
 
@@ -91,6 +90,8 @@ class BRISKDescriptor {
      */
     void checkConfiguration(const BRISKDescriptorParams &check_config);
 };
+
+/** @} end of group */
 } /** end of namespace wave */
 
 #endif  // WAVE_BRISK_DESCRIPTOR_HPP
