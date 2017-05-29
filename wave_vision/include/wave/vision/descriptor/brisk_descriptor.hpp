@@ -28,7 +28,7 @@ class BRISKDescriptor {
      *  @param config contains the desired parameter values for a BRISKParams
      *  implementation.
      */
-    BRISKDescriptor(const BRISKDescriptorParams &config);
+    explicit BRISKDescriptor(const BRISKDescriptorParams &config);
 
     /** Constructs a BRISKDescriptor Extractor using parameters specified by the
      *  user.
@@ -36,7 +36,7 @@ class BRISKDescriptor {
      *  @param config contains the desired parameter values for a
      *  BRISKParamsCustomPattern implementation.
      */
-    BRISKDescriptor(const BRISKDescriptorParams &config);
+    explicit BRISKDescriptor(const BRISKDescriptorParams &config);
 
     /** Constructs a BRISKDescriptor Extractor using parameters found in the
     *   linked .yaml file.
@@ -46,6 +46,43 @@ class BRISKDescriptor {
     *   configured for both BRISKParams or BRISKParamsCustomPattern.
     */
     BRISKDescriptor(const std::string &config_path);
+
+    /** Destructor */
+    ~BRISKDescriptor();
+
+    /** Reconfigures the BRISKDescriptor object with new values requested by
+     *  the user
+     *
+     *  @param new_config, containing the desired configuration values.
+     */
+    void configure(const BRISKDescriptorParams &new_config);
+
+    /** Returns the current configuration parameters being used by the
+     *  BRISKDescriptor Extractor.
+     *
+     *  @return a struct containing the current configuration values.
+     */
+    BRISKDescriptorParams getConfiguration();
+
+    /** Extracts descriptors from the keypoints in an image, using the BRISK
+     *  extractor.
+     *
+     *  @param image, the image to detect features in.
+     *  @param keypoints, the keypoints from the detected image
+     *  @return an array containing the computed descriptors.
+     */
+    cv::Mat extractDescriptors(const cv::Mat &image,
+                               const std::vector<cv::KeyPoint> &keypoints);
+
+ private:
+    /** The pointer to the wrapped cv::BRISK object */
+    cv::Ptr<cv::BRISK> brisk_descriptor;
+
+    /** Checks whether the desired configuration is valid.
+     *
+     *  @param check_config, containing the desired configuration values.
+     */
+    void checkConfiguration(const BRISKDescriptorParams &check_config);
 };
 } /** end of namespace wave */
 
