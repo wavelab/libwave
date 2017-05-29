@@ -1,7 +1,5 @@
 #include "wave/wave_test.hpp"
-#include "wave/optimization/factor_graph/factor.hpp"
-#include <boost/core/demangle.hpp>
-
+#include "wave/optimization/factor_graph/Factor.hpp"
 
 namespace wave {
 
@@ -36,4 +34,19 @@ TEST(FactorTest, evaluate) {
       VectorsNear, expected_jac_landmark, Eigen::Map<Vec2>{out_jac_landmark});
 }
 
-}  // end of wave namespace
+TEST(FactorTest, print) {
+    auto v1 = std::make_shared<Pose2DVar>();
+    auto v2 = std::make_shared<Landmark2DVar>();
+
+    DistanceToLandmarkFactor factor{0.0, v1, v2};
+
+    std::stringstream expected;
+    expected << "[Factor arity 2, variables: ";
+    expected << *v1 << "(" << v1 << "), " << *v2 << "(" << v2 << ")]";
+
+    std::stringstream ss;
+    ss << factor;
+    EXPECT_EQ(expected.str(), ss.str());
+}
+
+}  // namespace wave

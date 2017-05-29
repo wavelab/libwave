@@ -1,33 +1,30 @@
 #include "wave/wave_test.hpp"
-#include "wave/optimization/factor_graph/variable.hpp"
+#include "wave/optimization/factor_graph/FactorVariable.hpp"
 
 
 namespace wave {
 
-TEST(FactorVariable, constructor) {
-    FactorVariable var(1, 2);
-    EXPECT_EQ(1u, var.id);
-    EXPECT_EQ(2u, var.data.size());
+TEST(VariableTest, constructFromData) {
+    double in[] = {1.1, 2.2};
+    auto var = FactorVariable<2>{in};
+    static_assert(2 == FactorVariable<2>::SizeAtCompileTime, "");
 
-    std::cout << var << std::endl;
+    EXPECT_EQ(in, var.data());
 }
 
-TEST(PoseVar, constructor) {
-    PoseVar var(1);
-
-    EXPECT_EQ(1u, var.id);
-    EXPECT_EQ(6u, var.data.size());
-
-    std::cout << var << std::endl;
+TEST(VariableTest, constructDefault) {
+    auto var = FactorVariable<2>{};
+    EXPECT_EQ(nullptr, var.data());
 }
 
-TEST(LandmarkVar, constructor) {
-    LandmarkVar var(2);
+TEST(VariableTest, print) {
+    auto var = FactorVariable<2>{};
+    std::stringstream ss, ss2;
+    ss << var;
+    EXPECT_STREQ("FactorVariable<2>", ss.str().c_str());
 
-    EXPECT_EQ(2u, var.id);
-    EXPECT_EQ(3u, var.data.size());
-
-    std::cout << var << std::endl;
+    var.print(ss2);
+    EXPECT_EQ(ss.str(), ss2.str());
 }
 
-}  // end of wave namespace
+}  // namespace wave

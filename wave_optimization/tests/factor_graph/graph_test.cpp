@@ -1,25 +1,22 @@
 #include "wave/wave_test.hpp"
-#include "wave/optimization/factor_graph/graph.hpp"
+#include "wave/optimization/factor_graph/FactorGraph.hpp"
 
 namespace wave {
 
 TEST(FactorGraph, add) {
     // add unary factor
-    FactorGraph graph1;
+    FactorGraph graph;
     auto p = std::make_shared<Pose2DVar>();
     auto l = std::make_shared<Landmark2DVar>();
 
-    graph1.addFactor<DistanceToLandmarkFactor>(2.3, p, l);
+    graph.addFactor<DistanceToLandmarkFactor>(2.3, p, l);
 
-    ASSERT_EQ(2u, graph1.countFactors());
-    ASSERT_EQ(2u, graph1.countVariables());
+    ASSERT_EQ(1u, graph.countFactors());
 }
 
 TEST(FactorGraph, capacity) {
     FactorGraph graph;
-    EXPECT_EQ(0u, graph.size());
     EXPECT_EQ(0u, graph.countFactors());
-    EXPECT_EQ(0u, graph.countVariables());
     EXPECT_TRUE(graph.empty());
 
     MatX m3 = MatX::Random(1, 3);
@@ -28,9 +25,7 @@ TEST(FactorGraph, capacity) {
     auto l = std::make_shared<Landmark2DVar>();
     graph.addFactor<DistanceToLandmarkFactor>(2.3, p, l);
 
-    EXPECT_EQ(3u, graph.size());
     EXPECT_EQ(1u, graph.countFactors());
-    EXPECT_EQ(2u, graph.countVariables());
     EXPECT_FALSE(graph.empty());
 }
 
@@ -51,4 +46,4 @@ TEST(FactorGraph, Sim) {
     }
 }
 
-}  // end of wave namespace
+}  // namespace wave
