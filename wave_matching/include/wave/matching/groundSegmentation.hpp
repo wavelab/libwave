@@ -12,17 +12,18 @@
  *
  *************************************************************************/
 
-#include <ros/console.h>
 #include <vector>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/registration/transforms.h>
-#include <geometry_msgs/Pose.h>
-#include "ground_segmentation/PointcloudXYZGD.h"
-#include "groundSegmentationParams.hpp"
+#include <wave/matching/PointcloudXYZGD.hpp>
+#include <wave/matching/groundSegmentationParams.hpp>
+#include <wave/utils/math.hpp>
 
 // Defines
+namespace wave {
+
 #define INVALID 1000
 
 struct signalPoint {
@@ -33,23 +34,23 @@ struct signalPoint {
 };
 
 struct linCell {
-    vector<PointXYZGD> binPoints;  // all the points
-    vector<PointXYZGD> obsPoints;  // just the obs points
-    vector<PointXYZGD> drvPoints;
-    vector<PointXYZGD> groundPoints;  // just the ground points
+    std::vector<PointXYZGD> binPoints;  // all the points
+    std::vector<PointXYZGD> obsPoints;  // just the obs points
+    std::vector<PointXYZGD> drvPoints;
+    std::vector<PointXYZGD> groundPoints;  // just the ground points
     PointXYZGD prototypePoint;
-    int cAssigned;            // what cluster is it assigned to
-    Eigen::Vector3d obsMean;  // mean of obstacle points
+    int cAssigned;  // what cluster is it assigned to
+    Vec3 obsMean;   // mean of obstacle points
 };
 
 struct angCell {
-    linCell lCell[NUMBINSL];  // the linear cells within that angle sector
-    pcl::PointXY rangeHeightSignal[NUMBINSL];
-    vector<signalPoint> sigPoints;  // range height signal for that sector
+    std::vector<signalPoint> sigPoints;  // range height signal for that sector
+    std::vector<linCell> lCell;  // the linear cells within that angle sector
+    std::vector<pcl::PointXY> rangeHeightSignal;
 };
 
 struct polarBinGrid {
-    angCell aCell[NUMBINSA];
+    std::vector<angCell> aCell;
 };
 
 class groundSegmentation {
@@ -65,19 +66,28 @@ class groundSegmentation {
 
     // constructor
     groundSegmentation();
+
     void setupGroundSegmentation(pcl::PointCloud<pcl::PointXYZ>::Ptr,
                                  pcl::PointCloud<PointXYZGD>::Ptr,
                                  pcl::PointCloud<PointXYZGD>::Ptr,
                                  pcl::PointCloud<PointXYZGD>::Ptr);
+
     void genPolarBinGrid(pcl::PointCloud<pcl::PointXYZ>::Ptr);
+
     void initializePolarBinGrid(void);
-    Eigen::MatrixXd genGPModel(vector<signalPoint> &,
-                               vector<signalPoint> &,
-                               float,
-                               float);
+
+    MatX genGPModel(std::vector<signalPoint> &,
+                    std::vector<signalPoint> &,
+                    float,
+                    float);
+
     void segmentGround(void);
+
     void sectorINSAC(int);
+
  private:
 };
+
+}  // namespace wave
 
 #endif  // WAVE_GROUNDSEGMENTATION_HPP
