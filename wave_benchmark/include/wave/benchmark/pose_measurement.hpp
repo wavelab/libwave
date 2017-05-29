@@ -9,7 +9,7 @@
 #include "wave/geometry/rotation.hpp"
 #include "wave/utils/math.hpp"
 #include "wave/containers/measurement.hpp"
-#include "enum_class.hpp"
+#include "wave/benchmark/enum_class.hpp"
 
 namespace wave {
 /** @addtogroup benchmark
