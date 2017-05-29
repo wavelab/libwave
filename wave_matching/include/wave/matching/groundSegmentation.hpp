@@ -21,10 +21,7 @@
 #include <wave/matching/groundSegmentationParams.hpp>
 #include <wave/utils/math.hpp>
 
-// Defines
 namespace wave {
-
-#define INVALID 1000
 
 struct signalPoint {
     double range;

@@ -57,11 +57,11 @@ void groundSegmentation::initializePolarBinGrid(void) {
             pBG->aCell[i].lCell[j].drvPoints.clear();
             pBG->aCell[i].lCell[j].groundPoints.clear();
             pBG->aCell[i].lCell[j].prototypePoint = PointXYZGD();
-            pBG->aCell[i].lCell[j].prototypePoint.x = INVALID;
-            pBG->aCell[i].lCell[j].prototypePoint.y = INVALID;
-            pBG->aCell[i].lCell[j].prototypePoint.z = INVALID;
-            pBG->aCell[i].rangeHeightSignal[j].x = INVALID;
-            pBG->aCell[i].rangeHeightSignal[j].y = INVALID;
+            pBG->aCell[i].lCell[j].prototypePoint.x = NAN;
+            pBG->aCell[i].lCell[j].prototypePoint.y = NAN;
+            pBG->aCell[i].lCell[j].prototypePoint.z = NAN;
+            pBG->aCell[i].rangeHeightSignal[j].x = NAN;
+            pBG->aCell[i].rangeHeightSignal[j].y = NAN;
             pBG->aCell[i].lCell[j].cAssigned = -1;
 
             // force memory deletion of std::vectors
@@ -175,7 +175,7 @@ void groundSegmentation::sectorINSAC(int sectorIndex) {
     std::vector<signalPoint> &sigPtr = pBG->aCell[sectorIndex].sigPoints;
     sigPtr.clear();
     for (int i = 0; i < this->params.num_bins_l; i++) {
-        if (pBG->aCell[sectorIndex].rangeHeightSignal[i].x != INVALID &&
+        if (!std::isnan(pBG->aCell[sectorIndex].rangeHeightSignal[i].x) &&
             pBG->aCell[sectorIndex].lCell[i].binPoints.size() >
               5)  // bin has a valid point, and enough points to make a good
         // guess for a protopoint
