@@ -10,13 +10,7 @@
 /** The wave namespace */
 namespace wave {
 
-struct BRISKParams {
-    int threshold;
-    int octaves;
-    float patternScale;
-};
-
-struct BRISKParamsCustomPattern {
+struct BRISKDescriptorParams {
     std::vector<float> radiusList;
     std::vector<int> numberList;
     float dMax;
@@ -25,14 +19,8 @@ struct BRISKParamsCustomPattern {
 };
 
 class BRISKDescriptor {
-    /** Constructs a BRISKDescriptor Extractor using the default parameters.
-     *
-     *  @param use_custom_params. If true, loads the default
-     *  BRISKParamsCustomPattern configuration, else loads the default
-     *  BRISKParams configuration.
-     *
-     */
-    BRISKDescriptor(const bool use_custom_pattern_config);
+    /** Constructs a BRISKDescriptor Extractor using the default parameters. */
+    BRISKDescriptor();
 
     /** Constructs a BRISKDescriptor Extractor using parameters specified by the
      *  user.
@@ -40,7 +28,7 @@ class BRISKDescriptor {
      *  @param config contains the desired parameter values for a BRISKParams
      *  implementation.
      */
-    BRISKDescriptor(const BRISKParamsStandard &config);
+    BRISKDescriptor(const BRISKDescriptorParams &config);
 
     /** Constructs a BRISKDescriptor Extractor using parameters specified by the
      *  user.
@@ -48,7 +36,7 @@ class BRISKDescriptor {
      *  @param config contains the desired parameter values for a
      *  BRISKParamsCustomPattern implementation.
      */
-    BRISKDescriptor(const BRISKParamsCustom &config);
+    BRISKDescriptor(const BRISKDescriptorParams &config);
 
     /** Constructs a BRISKDescriptor Extractor using parameters found in the
     *   linked .yaml file.
