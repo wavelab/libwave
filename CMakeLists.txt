@@ -18,6 +18,7 @@ SET(LIBWAVE_MODULES
     wave_kinematics
     wave_matching
     wave_optimization
+    wave_vision
     wave_utils
     wave_benchmark)
 
@@ -48,6 +49,9 @@ ADD_DEPENDENCIES(wave_matching wave_utils)
 # libwave_optimization.a
 ADD_DEPENDENCIES(wave_optimization wave_utils)
 
+# libwave_vision.a
+ADD_DEPENDENCIES(wave_vision wave_utils)
+
 # libwave_benchmark.a
 ADD_DEPENDENCIES(wave_benchmark wave_utils)
 
@@ -57,6 +61,7 @@ SET(LIBWAVE_MODULE_LIBS
     ${CMAKE_BINARY_DIR}/wave_geometry/libwave_geometry.a
     ${CMAKE_BINARY_DIR}/wave_kinematics/libwave_kinematics.a
     ${CMAKE_BINARY_DIR}/wave_matching/libwave_matching.a
+    ${CMAKE_BINARY_DIR}/wave_vision/libwave_vision.a
     ${CMAKE_BINARY_DIR}/wave_optimization/libwave_optimization.a
     ${CMAKE_BINARY_DIR}/wave_utils/libwave_utils.a)
 
