@@ -7,6 +7,13 @@
 #ifndef WAVE_BRISK_DESCRIPTOR_HPP
 #define WAVE_BRISK_DESCRIPTOR_HPP
 
+/** C++ Headers */
+#include <string>
+#include <vector>
+
+/** Libwave Headers */
+#include "wave/vision/descriptor/descriptor_extractor.hpp"
+
 /** The wave namespace */
 namespace wave {
 

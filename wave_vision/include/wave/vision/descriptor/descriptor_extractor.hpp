@@ -52,7 +52,7 @@ class DescriptorExtractor {
      *
      *  @return descriptors, the computed keypoint descriptors.
      */
-    virtual cv::Mat computeDescriptors(const cv::Mat &image,
+    virtual cv::Mat extractDescriptors(const cv::Mat &image,
                                        std::vector<cv::KeyPoint>) = 0;
 
  protected:
