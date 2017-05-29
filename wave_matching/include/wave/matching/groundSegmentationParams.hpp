@@ -6,7 +6,7 @@
 
 namespace wave {
 
-struct groundSegmentationParams {
+struct GroundSegmentationParams {
     // variables
     double rmax;         // max radius of point to consider
     int max_bin_points;  // max number of points to consider per bin

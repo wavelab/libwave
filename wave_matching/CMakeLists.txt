@@ -1,6 +1,8 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8.3)
 PROJECT(wave_matching)
 
+set(CMAKE_CXX_FLAGS "-std=gnu++11 ${CMAKE_CXX_FLAGS}")
+
 # PACKAGES
 FIND_PACKAGE(PCL REQUIRED common registration point_types io)
 FIND_PACKAGE(OpenCV REQUIRED)

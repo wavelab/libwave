@@ -19,30 +19,11 @@ bool compareSignalPoints(const signalPoint &a, const signalPoint &b) {
     return a.height < b.height;
 }
 
-groundSegmentation::groundSegmentation() {
-    this->params.rmax = 100.0;
-    this->params.max_bin_points = 200;
-    this->params.num_seed_points = 10;
-
-    this->params.p_l = 10;
-    this->params.p_sf = 1.0;
-    this->params.p_sn = 0.3;
-    this->params.p_tmodel = 5.0;
-    this->params.p_tdata = 5.0;
-    this->params.p_tg = 0.3;
-
-    this->params.robot_height = 1.2;
-
-    this->params.max_seed_range = 50;
-    this->params.max_seed_height = 15;
-
-    this->params.num_bins_a = 72;
-    this->params.num_bins_l = 200;
-
+groundSegmentation::groundSegmentation(GroundSegmentationParams config) {
+    this->params = config;
     this->pBG = new polarBinGrid;
     initializePolarBinGrid();
 }
-
 
 void groundSegmentation::initializePolarBinGrid(void) {
     this->pBG->aCell.resize(this->params.num_bins_a);
@@ -98,10 +79,8 @@ void groundSegmentation::genPolarBinGrid(
     initializePolarBinGrid();
 
     size_t nPts = inputCloud->size();
-    double bsize_rad =
-      (double) ((360.0) / this->params.num_bins_a);  // in degrees
-    double bsize_lin =
-      (double) this->params.rmax / this->params.num_bins_l;  // in meters
+    double bsize_rad = (double) ((360.0) / this->params.num_bins_a);
+    double bsize_lin = (double) this->params.rmax / this->params.num_bins_l;
     for (size_t i = 0; i < nPts; i++) {
         PointXYZGD curPt;
         float px = curPt.x = inputCloud->points[i].x;
@@ -118,17 +97,16 @@ void groundSegmentation::genPolarBinGrid(
             unsigned int bind_rad = static_cast<unsigned int>(ph / bsize_rad);  // got the radial bin
 
             // get the linear bin
-            float xyDist = (sqrt(px * px + py * py));
+            float xyDist = sqrt(px * px + py * py);
 
             unsigned int bind_lin = static_cast<unsigned int>(xyDist / bsize_lin);  // got the radial bin
 
-            pBG->aCell[bind_rad].lCell[bind_lin].binPoints.push_back(
-              curPt);  // add the point to the bin
+            pBG->aCell[bind_rad].lCell[bind_lin].binPoints.push_back(curPt);
+            // add the point to the bin
             // check the protoype point
 
-            if (pz < pBG->aCell[bind_rad]
-                       .lCell[bind_lin]
-                       .prototypePoint.z)  // smallest by z
+            if (isnanf(pBG->aCell[bind_rad].lCell[bind_lin].prototypePoint.z) ||
+                    pz < pBG->aCell[bind_rad].lCell[bind_lin].prototypePoint.z)  // smallest by z
             {
                 pBG->aCell[bind_rad].lCell[bind_lin].prototypePoint = curPt;
                 pBG->aCell[bind_rad].rangeHeightSignal[bind_lin].x = xyDist;
@@ -176,10 +154,9 @@ void groundSegmentation::sectorINSAC(int sectorIndex) {
     sigPtr.clear();
     for (int i = 0; i < this->params.num_bins_l; i++) {
         if (!std::isnan(pBG->aCell[sectorIndex].rangeHeightSignal[i].x) &&
-            pBG->aCell[sectorIndex].lCell[i].binPoints.size() >
-              5)  // bin has a valid point, and enough points to make a good
-        // guess for a protopoint
-        {
+            pBG->aCell[sectorIndex].lCell[i].binPoints.size() > 5) {
+            // bin has a valid point, and enough points to make a good
+            // guess for a protopoint
             signalPoint newPoint;
             newPoint.range = pBG->aCell[sectorIndex].rangeHeightSignal[i].x;
             newPoint.height = pBG->aCell[sectorIndex].rangeHeightSignal[i].y;
@@ -211,19 +188,20 @@ void groundSegmentation::sectorINSAC(int sectorIndex) {
         }
 
         if (sigPtr[currIdx].range < this->params.max_seed_range &&
-            fabs(sigPtr[currIdx].height) <
-              this->params.max_seed_height)  // close enough to
-        // robot and height
-        // makese sense in
-        // robot locality
-        {
+            fabs(sigPtr[currIdx].height) < this->params.max_seed_height) {
+            // close enough to
+            // robot and height
+            // makese sense in
+            // robot locality
+
             sigPtr[currIdx].isGround = true;
             currentModel.push_back(sigPtr[currIdx]);
             sigPtr.erase(sigPtr.begin() + currIdx);
             ptCtr++;
 
-        } else
+        } else {
             currIdx++;
+        }
 
         if (static_cast<size_t>(ptCtr) >= npt)  // done
         {
