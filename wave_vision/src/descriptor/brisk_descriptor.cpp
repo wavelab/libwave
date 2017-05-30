@@ -55,7 +55,21 @@ BRISKDescriptor::BRISKDescriptor(const BRISKDescriptorParams &config) {
                                                indexChange);
 }
 
-// Destructor
+BRISKDescriptor::BRISKDescriptor(const std::string &config_path) {
+    // Extract parameters from .yaml file.
+    ConfigParser parser;
+
+    // Configuration parameters
+    BRISKDescriptorParams config;
+    // Add parameters to parser, to be loaded. If path cannot be found, throw an
+    // exception.
+
+    if (parser.load(config_path) != 0) {
+        throw std::invalid_argument(
+          "Failed to Load BRISKDescriptor Configuration");
+    }
+}
+
 BRISKDescriptor::~BRISKDescriptor() {}
 
 void BRISKDescriptor::checkConfiguration(
@@ -93,7 +107,7 @@ void BRISKDescriptor::checkConfiguration(
         }
     }
 
-    // Ensure dMax and dMin are both positive, and ensure dMax is less than dMin
+    // Ensure dMax and dMin are both positive, and check dMax is less than dMin
     if (check_config.dMax < 0) {
         throw std::invalid_argument("dMax is a negative value!");
     } else if (check_config.dMin < 0) {

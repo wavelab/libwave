@@ -77,20 +77,6 @@ class BRISKDescriptor : public DescriptorExtractor {
     /** Destructor */
     ~BRISKDescriptor();
 
-    /** Reconfigures the BRISKDescriptor object with new values requested by
-     *  the user.
-     *
-     *  @param new_config, containing the desired configuration values.
-     */
-    void configure(const BRISKDescriptorParams &new_config);
-
-    /** Returns the current configuration parameters being used by the
-     *  BRISKDescriptor Extractor.
-     *
-     *  @return a struct containing the current configuration values.
-     */
-    BRISKDescriptorParams getConfiguration();
-
     /** Extracts descriptors from the keypoints in an image, using the BRISK
      *  extractor.
      *
