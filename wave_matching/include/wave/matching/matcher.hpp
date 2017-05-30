@@ -96,7 +96,7 @@ class Matcher {
      * reference pointcloud in the reference frame of the reference pointcloud.
      */
     Affine3 result;
-  /** The information matrix calculated by the scan-matching algorithm. The
+    /** The information matrix calculated by the scan-matching algorithm. The
      * diagonal elements correpond to translational perturbations in the x, y,
      * and z directions and angular perturbations on the 3-2-1 euler angles, in
      * that order and in the frame of the reference pointcloud. This may change
