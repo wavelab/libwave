@@ -77,6 +77,13 @@ class BRISKDescriptor : public DescriptorExtractor {
     /** Destructor */
     ~BRISKDescriptor();
 
+    /** Returns the current configuration parameters being used by the
+     *  BRISK Descriptor Extractor.
+     *
+     * @return a struct containing the current configuration values.
+     */
+    BRISKDescriptorParams getConfiguration();
+
     /** Extracts descriptors from the keypoints in an image, using the BRISK
      *  extractor.
      *
@@ -90,6 +97,9 @@ class BRISKDescriptor : public DescriptorExtractor {
  private:
     /** The pointer to the wrapped cv::BRISK object. */
     cv::Ptr<cv::BRISK> brisk_descriptor;
+
+    /** The current configuration, stored in a BRISKDescriptorParams struct */
+    BRISKDescriptorParams current_config;
 
     /** Checks whether the desired configuration is valid.
      *
