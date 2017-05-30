@@ -54,6 +54,7 @@ struct BRISKDescriptorParams {
 };
 
 class BRISKDescriptor : public DescriptorExtractor {
+ public:
     /** Constructs a BRISKDescriptor Extractor using the default parameters. */
     BRISKDescriptor();
 
