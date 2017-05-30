@@ -34,7 +34,7 @@ namespace wave {
 class DescriptorExtractor {
  public:
     /** Destructor */
-    virtual ~DescriptorExtractor() {};
+    virtual ~DescriptorExtractor(){};
 
     /** Function to return the current image being detected
      *
