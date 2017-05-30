@@ -7,21 +7,10 @@ FIND_PACKAGE(Eigen3 REQUIRED)
 # INCLUDES
 INCLUDE_DIRECTORIES(
     include
-    ${Eigen3_DIRECTORY}
+    ${EIGEN3_INCLUDE_DIR}
 )
 
 # UNIT TESTS
-SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
-
-ADD_EXECUTABLE(
-    # TARGET
-    ${PROJECT_NAME}_tests
-    # TESTS
+WAVE_ADD_TEST(${PROJECT_NAME}_tests
     tests/containers/measurement_test.cpp
-    # TEST RUNNER
-    tests/test_runner.cpp
-)
-
-SET(TEST_DEPS gtest)
-
-TARGET_LINK_LIBRARIES(${PROJECT_NAME}_tests ${TEST_DEPS})
+    tests/containers/landmark_measurement_test.cpp)
