@@ -34,7 +34,7 @@ namespace wave {
 class DescriptorExtractor {
  public:
     /** Destructor */
-    virtual ~DescriptorExtractor() {}
+    virtual ~DescriptorExtractor() {};
 
     /** Function to return the current image being detected
      *
@@ -63,7 +63,9 @@ class DescriptorExtractor {
      *
      *  @param source_image, the image to load
      */
-    virtual void loadImage(const cv::Mat &source_image);
+    virtual void loadImage(const cv::Mat &source_image) {
+        this->image = source_image;
+    };
 };
 }  // end of namespace wave
 

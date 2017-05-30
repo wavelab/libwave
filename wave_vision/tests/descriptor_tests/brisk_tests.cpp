@@ -2,6 +2,7 @@
 #include "wave/wave_test.hpp"
 #include "wave/vision/descriptor/brisk_descriptor.hpp"
 
+/** The wave namespace */
 namespace wave {
 const std::string TEST_CONFIG = "tests/config/descriptor/brisk.yaml";
 const std::string TEST_IMAGE = "tests/data/lenna.png";
@@ -27,9 +28,15 @@ class BRISKTest : public testing::Test {
 };
 
 // Checks that correct configuration can be loaded
-TEST(FASTTests, GoodInitialization) {
-    EXPECT_NO_THROW(FASTDetector detector(TEST_CONFIG));
+TEST(BRISKTests, GoodInitialization) {
+    EXPECT_NO_THROW(BRISKDescriptor descriptor(TEST_CONFIG));
 }
 
+// Checks that incorrect configuration path throws an exception
+TEST(BRISKTests, BadInitialization) {
+    const std::string bad_path = "bad_path";
 
+    ASSERT_THROW(BRISKDescriptor descriptor(bad_path), std::invalid_argument);
 }
+
+} /** end of namespace wave */
