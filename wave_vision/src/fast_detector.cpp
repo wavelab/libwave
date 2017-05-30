@@ -35,9 +35,9 @@ FASTDetector::FASTDetector(const std::string &config_path) {
 
     // Add parameters to parser, to be loaded. If path cannot be found, throw an
     // exception.
-    parser.addParam("fast.threshold", &config.threshold);
-    parser.addParam("fast.nonmax_suppression", &config.nonmax_suppression);
-    parser.addParam("fast.type", &config.type);
+    parser.addParam("threshold", &config.threshold);
+    parser.addParam("nonmax_suppression", &config.nonmax_suppression);
+    parser.addParam("type", &config.type);
 
     if (parser.load(config_path) != 0) {
         throw std::invalid_argument(

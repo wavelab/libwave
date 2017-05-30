@@ -4,8 +4,8 @@
 
 namespace wave {
 
-const std::string TEST_CONFIG = "tests/config/fast.yaml";
-const std::string TEST_IMAGE = "tests/data/lenna.png";
+const auto TEST_CONFIG = "tests/config/fast.yaml";
+const auto TEST_IMAGE = "tests/data/lenna.png";
 
 // Test fixture to load same image data
 class FASTTest : public testing::Test {
