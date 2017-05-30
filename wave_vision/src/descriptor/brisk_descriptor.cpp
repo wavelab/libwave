@@ -37,6 +37,10 @@ BRISKDescriptor::BRISKDescriptor() {
     // Create cv::BRISK object
     this->brisk_descriptor =
       cv::BRISK::create(radiusList, numberList, dMax, dMin, indexChange);
+
+    // Store configuration parameters within member struct
+    this->current_config =
+      BRISKDescriptorParams{radiusList, numberList, dMax, dMin};
 }
 
 // Constructor using BRISKDescriptorParams struct
@@ -53,6 +57,9 @@ BRISKDescriptor::BRISKDescriptor(const BRISKDescriptorParams &config) {
                                                config.dMax,
                                                config.dMin,
                                                indexChange);
+
+    // Store configuration parameters within member struct
+    this->current_config = config;
 }
 
 BRISKDescriptor::BRISKDescriptor(const std::string &config_path) {
@@ -115,6 +122,10 @@ void BRISKDescriptor::checkConfiguration(
     } else if (check_config.dMax > check_config.dMin) {
         throw std::invalid_argument("dMax is greater than dMin!");
     }
+}
+
+BRISKDescriptorParams BRISKDescriptor::getConfiguration() {
+    return this->current_config;
 }
 
 }  // End of namespace wave
