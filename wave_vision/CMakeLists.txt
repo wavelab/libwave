@@ -32,6 +32,7 @@ TARGET_LINK_LIBRARIES(wave_vision ${WAVE_VISION_DEPS})
 WAVE_ADD_TEST(
     ${PROJECT_NAME}_tests
     tests/detector_tests/fast_tests.cpp
+    tests/descriptor_tests/brisk_tests.cpp
     tests/common_tests.cpp)
 TARGET_LINK_LIBRARIES(
     ${PROJECT_NAME}_tests
