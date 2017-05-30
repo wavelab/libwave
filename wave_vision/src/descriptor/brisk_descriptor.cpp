@@ -34,10 +34,20 @@ BRISKDescriptor::BRISKDescriptor() {
      */
     const std::vector<int> indexChange = std::vector<int>();
 
+    // Create cv::BRISK object
     this->brisk_descriptor =
       cv::BRISK::create(radiusList, numberList, dMax, dMin, indexChange);
 }
 
+// Constructor using BRISKDescriptorParams struct
+BRISKDescriptor::BRISKDescriptor(const BRISKDescriptorParams &config) {
+    // Ensure parameters are valid
+    this->checkConfiguration(config);
+}
+
 // Destructor
 BRISKDescriptor::~BRISKDescriptor() {}
+
+void BRISKDescriptor::checkConfiguration(
+  const BRISKDescriptorParams &check_config) {}
 }  // End of namespace wave
