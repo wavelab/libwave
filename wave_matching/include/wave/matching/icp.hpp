@@ -17,10 +17,7 @@ class ICPMatcher : public Matcher<PCLPointCloud> {
     bool match();
     void estimateInfo();
 
-    enum covar_method : int {
-        LUM,
-        CENSI
-    };
+    enum covar_method : int { LUM, CENSI };
 
  private:
     pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;

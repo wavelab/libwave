@@ -14,15 +14,15 @@ namespace wave {
 typedef Eigen::Vector2d Vec2;
 typedef Eigen::Vector3d Vec3;
 typedef Eigen::Vector4d Vec4;
-typedef Eigen::Matrix <double, 5, 1> Vec5;
-typedef Eigen::Matrix <double, 6, 1> Vec6;
+typedef Eigen::Matrix<double, 5, 1> Vec5;
+typedef Eigen::Matrix<double, 6, 1> Vec6;
 typedef Eigen::VectorXd VecX;
 
 typedef Eigen::Matrix2d Mat2;
 typedef Eigen::Matrix3d Mat3;
 typedef Eigen::Matrix4d Mat4;
-typedef Eigen::Matrix <double, 5, 5> Mat5;
-typedef Eigen::Matrix <double, 6, 6> Mat6;
+typedef Eigen::Matrix<double, 5, 5> Mat5;
+typedef Eigen::Matrix<double, 6, 6> Mat6;
 typedef Eigen::MatrixXd MatX;
 
 typedef Eigen::Affine3d Affine3;
