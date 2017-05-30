@@ -1,0 +1,6 @@
+controller:
+    min: -30.0
+    max: 30.0
+    kp: 0.4
+    ki: 0.0
+    kd: 0.3
