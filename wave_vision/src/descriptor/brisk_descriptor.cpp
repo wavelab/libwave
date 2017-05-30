@@ -128,4 +128,14 @@ BRISKDescriptorParams BRISKDescriptor::getConfiguration() {
     return this->current_config;
 }
 
+cv::Mat BRISKDescriptor::extractDescriptors(
+  cv::Mat &image, std::vector<cv::KeyPoint> &keypoints) {
+    cv::Mat descriptors;
+
+    // Call compute method, and return descriptors
+    this->brisk_descriptor->compute(image, keypoints, descriptors);
+
+    return descriptors;
+}
+
 }  // End of namespace wave
