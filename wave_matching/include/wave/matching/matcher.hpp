@@ -80,6 +80,10 @@ class Matcher {
         return 0;
     }
 
+    virtual void estimateInfo() {
+        this->information = MatX::Identity(6, 6);
+    }
+
  protected:
     /** The edge length (in the same distance-units as those used in the
      * pointcloud) of a downsampling voxel filter. If no downsampling is
@@ -92,14 +96,13 @@ class Matcher {
      * reference pointcloud in the reference frame of the reference pointcloud.
      */
     Affine3 result;
-
     /** The information matrix calculated by the scan-matching algorithm. The
      * diagonal elements correpond to translational perturbations in the x, y,
      * and z directions and angular perturbations on the 3-2-1 euler angles, in
      * that order and in the frame of the reference pointcloud. This may change
      * as the kinematics module of libwave progresses.
      */
-    MatX information;
+    Mat6 information;
 };
 
 /** @} end of group */
