@@ -19,17 +19,32 @@ namespace wave {
 /** @addtogroup vision
  *  @{ */
 
-/**
- *  BRISKDescriptorParams struct contains the configuration parameters for the
+/** BRISKDescriptorParams struct contains the configuration parameters for the
  *  BRISKDescriptor extractor.
  *
+ *  The BRISK Descriptor creates a pattern of points organized as concentric
+ *  circles around the keypoint. Each point in these rings are then used for
+ *  brightness comparison tests to construct the descriptor.
  */
 struct BRISKDescriptorParams {
+    /** radiusList defines the radius of each subsequent circle (in pixels).
+     *  Default: radiusList =
+     */
     std::vector<float> radiusList;
+
+    /** numberList defines the number of points in each circle. Must be the same
+     * size as radiusList.
+     * Default: numberList = {1, 10, 14, 15, 20};
+     */
     std::vector<int> numberList;
+
+    /** dMax and dMin are threshold distances to classify a pair of points as a
+     *  \a long pair or a \a short pair. Short pairs are not used in the
+     *  brightness comparison, due to balancing effects of local gradients. The
+     *  long pairs are not used in the assembly of the bit vector descriptor.
+     */
     float dMax;
     float dMin;
-    std::vector<int> indexChange;
 };
 
 class BRISKDescriptor : public DescriptorExtractor {
@@ -57,7 +72,7 @@ class BRISKDescriptor : public DescriptorExtractor {
     ~BRISKDescriptor();
 
     /** Reconfigures the BRISKDescriptor object with new values requested by
-     *  the user
+     *  the user.
      *
      *  @param new_config, containing the desired configuration values.
      */
@@ -81,7 +96,7 @@ class BRISKDescriptor : public DescriptorExtractor {
                                const std::vector<cv::KeyPoint> &keypoints);
 
  private:
-    /** The pointer to the wrapped cv::BRISK object */
+    /** The pointer to the wrapped cv::BRISK object. */
     cv::Ptr<cv::BRISK> brisk_descriptor;
 
     /** Checks whether the desired configuration is valid.

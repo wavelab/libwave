@@ -44,6 +44,12 @@ struct FASTParams {
      *  0 = TYPE_5_8
      *  1 = TYPE_7_12
      *  2 = TYPE_9_16 (default)
+     *
+     *  The neighbourhood refers to the pixel circumference and number of
+     *  pixels that must be brighter or darker than the center pixel for the
+     *  algorithm to deem the point as a corner. For example, TYPE_9_16
+     *  requires 9 consecutive pixels out of a 16 pixel circumference circle to
+     *  be brighter or darker than the center pixel.
      */
     int type;
 };
