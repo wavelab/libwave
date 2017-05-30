@@ -40,7 +40,8 @@ FASTDetector::FASTDetector(const std::string &config_path) {
     parser.addParam("fast.type", &config.type);
 
     if (parser.load(config_path) != 0) {
-        throw std::invalid_argument("Failed to Load Detector Configuration");
+        throw std::invalid_argument(
+          "Failed to Load FASTDetector Configuration");
     }
 
     // Verify configuration values
