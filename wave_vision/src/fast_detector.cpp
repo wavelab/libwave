@@ -18,7 +18,7 @@ FASTDetector::FASTDetector() {
 // Constructor using FASTParams struct
 FASTDetector::FASTDetector(const FASTParams &config) {
     // Ensure parameters are valid
-    checkConfiguration(config);
+    this->checkConfiguration(config);
 
     // Create FastFeatureDetector with these parameters
     this->fast_detector = cv::FastFeatureDetector::create(
@@ -44,7 +44,7 @@ FASTDetector::FASTDetector(const std::string &config_path) {
     }
 
     // Verify configuration values
-    checkConfiguration(config);
+    this->checkConfiguration(config);
 
     // Create FastFeatureDetector with these parameters
     this->fast_detector = cv::FastFeatureDetector::create(
@@ -64,7 +64,7 @@ void FASTDetector::checkConfiguration(const FASTParams &check_config) {
 
 void FASTDetector::configure(const FASTParams &new_config) {
     // Confirm configuration parameters are valid
-    checkConfiguration(new_config);
+    this->checkConfiguration(new_config);
 
     // Set configuration values in detector.
     this->fast_detector->setThreshold(new_config.threshold);
