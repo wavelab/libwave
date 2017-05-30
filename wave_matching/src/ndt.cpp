@@ -12,10 +12,10 @@ NDTMatcher::NDTMatcher(float res, const std::string &config_path) {
     ConfigParser parser;
     float step_size, t_eps, default_res;
     int max_iter;
-    parser.addParam("ndt.step_size", &step_size);
-    parser.addParam("ndt.max_iter", &max_iter);
-    parser.addParam("ndt.t_eps", &t_eps);
-    parser.addParam("ndt.default_res", &default_res);
+    parser.addParam("step_size", &step_size);
+    parser.addParam("max_iter", &max_iter);
+    parser.addParam("t_eps", &t_eps);
+    parser.addParam("default_res", &default_res);
 
     if (parser.load(config_path) != 0) {
         ConfigException config_exception;

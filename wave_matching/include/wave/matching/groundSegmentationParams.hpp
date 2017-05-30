@@ -53,22 +53,20 @@ struct GroundSegmentationParams {
     // use config file to set parameters
     GroundSegmentationParams(const std::string &config_path) {
         ConfigParser parser;
-        parser.addParam("groundSegmentation.rmax", &rmax);
-        parser.addParam("groundSegmentation.num_maxbinpoints", &max_bin_points);
-        parser.addParam("groundSegmentation.num_seedpoints", &num_seed_points);
-        parser.addParam("groundSegmentation.num_ang_bins", &num_bins_a);
-        parser.addParam("groundSegmentation.num_lin_bins", &num_bins_l);
-        parser.addParam("groundSegmentation.gp_lengthparameter", &p_l);
-        parser.addParam("groundSegmentation.gp_covariancescale", &p_sf);
-        parser.addParam("groundSegmentation.gp_modelnoise", &p_sn);
-        parser.addParam("groundSegmentation.gp_groundmodelconfidence",
-                        &p_tmodel);
-        parser.addParam("groundSegmentation.gp_grounddataconfidence", &p_tdata);
-        parser.addParam("groundSegmentation.gp_groundthreshold", &p_tg);
-        parser.addParam("groundSegmentation.robotheight", &robot_height);
-        parser.addParam("groundSegmentation.seeding_maxrange", &max_seed_range);
-        parser.addParam("groundSegmentation.seeding_maxheight",
-                        &max_seed_height);
+        parser.addParam("rmax", &rmax);
+        parser.addParam("num_maxbinpoints", &max_bin_points);
+        parser.addParam("num_seedpoints", &num_seed_points);
+        parser.addParam("num_ang_bins", &num_bins_a);
+        parser.addParam("num_lin_bins", &num_bins_l);
+        parser.addParam("gp_lengthparameter", &p_l);
+        parser.addParam("gp_covariancescale", &p_sf);
+        parser.addParam("gp_modelnoise", &p_sn);
+        parser.addParam("gp_groundmodelconfidence", &p_tmodel);
+        parser.addParam("gp_grounddataconfidence", &p_tdata);
+        parser.addParam("gp_groundthreshold", &p_tg);
+        parser.addParam("robotheight", &robot_height);
+        parser.addParam("seeding_maxrange", &max_seed_range);
+        parser.addParam("seeding_maxheight", &max_seed_height);
         if (parser.load(config_path) != 0) {
             LOG_ERROR("Unable to load config");
         }

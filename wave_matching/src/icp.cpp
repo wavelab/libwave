@@ -18,10 +18,10 @@ ICPMatcher::ICPMatcher(float res, const std::string &config_path) {
     ConfigParser parser;
     double max_corr, t_eps, fit_eps;
     int max_iter;
-    parser.addParam("icp.max_corr", &max_corr);
-    parser.addParam("icp.max_iter", &max_iter);
-    parser.addParam("icp.t_eps", &t_eps);
-    parser.addParam("icp.fit_eps", &fit_eps);
+    parser.addParam("max_corr", &max_corr);
+    parser.addParam("max_iter", &max_iter);
+    parser.addParam("t_eps", &t_eps);
+    parser.addParam("fit_eps", &fit_eps);
 
     if (parser.load(config_path) != 0) {
         ConfigException config_exception;
