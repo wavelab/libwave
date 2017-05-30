@@ -1,6 +1,6 @@
 # - Macros used in libwave
 
-include(CMakeParseArguments)
+INCLUDE(CMakeParseArguments)
 
 # wave_add_test: Add a gtest target
 #
