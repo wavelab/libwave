@@ -4,6 +4,7 @@
 // Libwave Headers
 #include "wave/wave_test.hpp"
 #include "wave/vision/descriptor/brisk_descriptor.hpp"
+#include "wave/vision/detector/fast_detector.hpp"
 
 /** The wave namespace */
 namespace wave {
@@ -13,37 +14,42 @@ const std::string TEST_IMAGE = "tests/data/lenna.png";
 // Test fixture to load same image data
 class BRISKTest : public testing::Test {
  protected:
-    BRISKTest() {}
+    BRISKTest() {
+        initDetector();
+        initDescriptor();
+        this->image = cv::imread(TEST_IMAGE, cv::IMREAD_COLOR);
+        this->keypoints = this->fast.detectFeatures(this->image);
+    }
     virtual ~BRISKTest() {}
 
-    void initDetector() {
-        this->descriptor = BRISKDescriptor(TEST_CONFIG);
+    void initDescriptor() {
+        this->brisk = BRISKDescriptor(TEST_CONFIG);
     }
 
-    virtual void SetUp() {
-        initDetector();
-        this->image = cv::imread(TEST_IMAGE, cv::IMREAD_COLOR);
+    void initDetector() {
+        this->fast = FASTDetector();
     }
 
     cv::Mat image;
     std::vector<cv::KeyPoint> keypoints;
-    BRISKDescriptor descriptor;
+    FASTDetector fast;
+    BRISKDescriptor brisk;
 };
 
 // Checks that correct configuration can be loaded
 TEST(BRISKTests, GoodInitialization) {
-    EXPECT_NO_THROW(BRISKDescriptor descriptor(TEST_CONFIG));
+    EXPECT_NO_THROW(BRISKDescriptor brisk(TEST_CONFIG));
 }
 
 // Checks that incorrect configuration path throws an exception
 TEST(BRISKTests, BadInitialization) {
     const std::string bad_path = "bad_path";
 
-    ASSERT_THROW(BRISKDescriptor descriptor(bad_path), std::invalid_argument);
+    ASSERT_THROW(BRISKDescriptor brisk(bad_path), std::invalid_argument);
 }
 
 TEST(BRISKTests, DefaultConstructorTest) {
-    BRISKDescriptor descriptor;
+    BRISKDescriptor brisk;
 
     // Instantiate cv::BRISK with default values
     float patternScale = 1.0f;
@@ -58,7 +64,7 @@ TEST(BRISKTests, DefaultConstructorTest) {
     float d_max = 5.85f;
     float d_min = 8.2f;
 
-    BRISKDescriptorParams config = descriptor.getConfiguration();
+    BRISKDescriptorParams config = brisk.getConfiguration();
 
     EXPECT_TRUE(
       std::equal(rList.begin(), rList.end(), config.radiusList.begin()));
@@ -76,9 +82,9 @@ TEST(BRISKTests, CustomParamsConstructorTest) {
 
     BRISKDescriptorParams input_config{rList, nList, d_max, d_min};
 
-    BRISKDescriptor descriptor(input_config);
+    BRISKDescriptor brisk(input_config);
 
-    BRISKDescriptorParams config = descriptor.getConfiguration();
+    BRISKDescriptorParams config = brisk.getConfiguration();
 
     EXPECT_TRUE(
       std::equal(rList.begin(), rList.end(), config.radiusList.begin()));
@@ -94,9 +100,9 @@ TEST(BRISKTests, CustomYamlConstructorTest) {
     float d_max = 5.85f;
     float d_min = 8.2f;
 
-    BRISKDescriptor descriptor(TEST_CONFIG);
+    BRISKDescriptor brisk(TEST_CONFIG);
 
-    BRISKDescriptorParams config = descriptor.getConfiguration();
+    BRISKDescriptorParams config = brisk.getConfiguration();
 
     EXPECT_TRUE(
       std::equal(rList.begin(), rList.end(), config.radiusList.begin()));
@@ -116,10 +122,9 @@ TEST(BRISKTests, BadRadiusList) {
     BRISKDescriptorParams neg_rlist{r_list_neg, n_list, d_max, d_min};
     BRISKDescriptorParams empty_rlist{r_list_empty, n_list, d_max, d_min};
 
-    ASSERT_THROW(BRISKDescriptor descriptor(neg_rlist), std::invalid_argument);
+    ASSERT_THROW(BRISKDescriptor briskr(neg_rlist), std::invalid_argument);
 
-    ASSERT_THROW(BRISKDescriptor descriptor(empty_rlist),
-                 std::invalid_argument);
+    ASSERT_THROW(BRISKDescriptor brisk(empty_rlist), std::invalid_argument);
 }
 
 TEST(BRISKTests, BadNumberList) {
@@ -132,10 +137,9 @@ TEST(BRISKTests, BadNumberList) {
     BRISKDescriptorParams neg_nlist{r_list, n_list_neg, d_max, d_min};
     BRISKDescriptorParams empty_nlist{r_list, n_list_empty, d_max, d_min};
 
-    ASSERT_THROW(BRISKDescriptor descriptor(neg_nlist), std::invalid_argument);
+    ASSERT_THROW(BRISKDescriptor brisk(neg_nlist), std::invalid_argument);
 
-    ASSERT_THROW(BRISKDescriptor descriptor(empty_nlist),
-                 std::invalid_argument);
+    ASSERT_THROW(BRISKDescriptor brisk(empty_nlist), std::invalid_argument);
 }
 
 TEST(BRISKTests, UnequalVectorSize) {
@@ -146,8 +150,7 @@ TEST(BRISKTests, UnequalVectorSize) {
 
     BRISKDescriptorParams bad_vec_size{r_list, n_list, d_max, d_min};
 
-    ASSERT_THROW(BRISKDescriptor descriptor(bad_vec_size),
-                 std::invalid_argument);
+    ASSERT_THROW(BRISKDescriptor brisk(bad_vec_size), std::invalid_argument);
 }
 
 TEST(BRISKTests, CheckDistValues) {
@@ -167,10 +170,28 @@ TEST(BRISKTests, CheckDistValues) {
     BRISKDescriptorParams swapped_dists = {
       r_list, n_list, d_max_large, d_min_small};
 
-    ASSERT_THROW(BRISKDescriptor descriptor(neg_dmax), std::invalid_argument);
-    ASSERT_THROW(BRISKDescriptor descriptor(neg_dmin), std::invalid_argument);
-    ASSERT_THROW(BRISKDescriptor descriptor(swapped_dists),
-                 std::invalid_argument);
+    ASSERT_THROW(BRISKDescriptor brisk(neg_dmax), std::invalid_argument);
+    ASSERT_THROW(BRISKDescriptor brisk(neg_dmin), std::invalid_argument);
+    ASSERT_THROW(BRISKDescriptor brisk(swapped_dists), std::invalid_argument);
 }
 
+TEST_F(BRISKTest, DISABLED_ComputeDescriptors) {
+    cv::Mat descriptors;
+    cv::Mat image_with_keypoints;
+
+    descriptors = this->brisk.extractDescriptors(this->image, this->keypoints);
+
+    ASSERT_GT(descriptors.total(), 0u);
+
+    // Visual test to verify descriptors are being computed properly
+    cv::imshow("Lenna", this->image);
+    cv::drawKeypoints(descriptors,
+                      this->keypoints,
+                      image_with_keypoints,
+                      cv::Scalar::all(-1),
+                      cv::DrawMatchesFlags::DEFAULT);
+    cv::imshow("Descriptors", image_with_keypoints);
+
+    cv::waitKey(0);
+}
 } /** end of namespace wave */
