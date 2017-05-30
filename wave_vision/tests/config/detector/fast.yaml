@@ -1,15 +1,16 @@
-fast:
-  # Threshold on difference between intensity of the central pixel, and pixels
-  # of a circle around this pixel
-  # 10 (default)
-  threshold: 10
+# FAST Detector Configuration parameters
 
-  # Removes keypoints in adjacent locations
-  # true (default), or false
-  nonmax_suppression: true
+# Threshold on difference between intensity of the central pixel, and pixels
+# of a circle around this pixel
+# 10 (default)
+threshold: 10
 
-  # Neighbourhood, as defined in the paper by Rosten.
-  # 0 = TYPE_5_8
-  # 1 = TYPE_7_12
-  # 2 = TYPE_9_16 (default)
-  type: 2
+# Removes keypoints in adjacent locations
+# true (default), or false
+nonmax_suppression: true
+
+# Neighbourhood, as defined in the paper by Rosten.
+# 0 = TYPE_5_8
+# 1 = TYPE_7_12
+# 2 = TYPE_9_16 (default)
+type: 2
