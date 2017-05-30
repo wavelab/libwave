@@ -27,13 +27,16 @@ namespace wave {
  *  brightness comparison tests to construct the descriptor.
  */
 struct BRISKDescriptorParams {
-    /** radiusList defines the radius of each subsequent circle (in pixels).
-     *  Default: radiusList =
+    /** radiusList defines the radius of each subsequent circle (in pixels). All
+     *  numbers must be positive. Cannot be empty.
+     *
+     *  Default: radiusList = {0.0f, 2.47f, 4.17f, 6.29f, 9.18f}
      */
     std::vector<float> radiusList;
 
     /** numberList defines the number of points in each circle. Must be the same
-     * size as radiusList.
+     * size as radiusList. All numbers must be positive. Cannot be empty.
+     *
      * Default: numberList = {1, 10, 14, 15, 20};
      */
     std::vector<int> numberList;
@@ -42,6 +45,9 @@ struct BRISKDescriptorParams {
      *  \a long pair or a \a short pair. Short pairs are not used in the
      *  brightness comparison, due to balancing effects of local gradients. The
      *  long pairs are not used in the assembly of the bit vector descriptor.
+     *  The value of dMax must be less than that of dMin.
+     *
+     *  Default: dMax = 5.85f, dMin = 8.2f.
      */
     float dMax;
     float dMin;
