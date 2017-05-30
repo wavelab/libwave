@@ -68,13 +68,34 @@ BRISKDescriptor::BRISKDescriptor(const std::string &config_path) {
 
     // Configuration parameters
     BRISKDescriptorParams config;
+
     // Add parameters to parser, to be loaded. If path cannot be found, throw an
     // exception.
+    parser.addParam("brisk.radiusList", &config.radiusList);
+    parser.addParam("brisk.numberList", &config.numberList);
+    parser.addParam("brisk.dMax", &config.dMax);
+    parser.addParam("brisk.dMin", &config.dMin);
 
     if (parser.load(config_path) != 0) {
         throw std::invalid_argument(
           "Failed to Load BRISKDescriptor Configuration");
     }
+
+    // Create unused indexChange vector
+    const std::vector<int> indexChange = std::vector<int>();
+
+    // Confirm configuration is valid
+    this->checkConfiguration(config);
+
+    // Create cv::BRISK object with the desired parameters
+    this->brisk_descriptor = cv::BRISK::create(config.radiusList,
+                                               config.numberList,
+                                               config.dMax,
+                                               config.dMin,
+                                               indexChange);
+
+    // Store configuration parameters within member struct
+    this->current_config = config;
 }
 
 BRISKDescriptor::~BRISKDescriptor() {}
