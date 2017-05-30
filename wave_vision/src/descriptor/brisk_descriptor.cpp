@@ -71,10 +71,10 @@ BRISKDescriptor::BRISKDescriptor(const std::string &config_path) {
 
     // Add parameters to parser, to be loaded. If path cannot be found, throw an
     // exception.
-    parser.addParam("brisk.radiusList", &config.radiusList);
-    parser.addParam("brisk.numberList", &config.numberList);
-    parser.addParam("brisk.dMax", &config.dMax);
-    parser.addParam("brisk.dMin", &config.dMin);
+    parser.addParam("radiusList", &config.radiusList);
+    parser.addParam("numberList", &config.numberList);
+    parser.addParam("dMax", &config.dMax);
+    parser.addParam("dMin", &config.dMin);
 
     if (parser.load(config_path) != 0) {
         throw std::invalid_argument(
@@ -154,6 +154,7 @@ cv::Mat BRISKDescriptor::extractDescriptors(
     cv::Mat descriptors;
 
     // Call compute method, and return descriptors
+    this->loadImage(image);
     this->brisk_descriptor->compute(image, keypoints, descriptors);
 
     return descriptors;
