@@ -11,12 +11,8 @@ BRISKDescriptor::BRISKDescriptor() {
 
     // radiusList contains the radius (in pixels) of each circle in the sampling
     // pattern
-    std::vector<float> radiusList;
-    radiusList[0] = f * 0.0f;
-    radiusList[1] = f * 2.9f;
-    radiusList[2] = f * 4.9f;
-    radiusList[3] = f * 7.4f;
-    radiusList[4] = f * 10.8f;
+    std::vector<float> radiusList = {
+      f * 0.0f, f * 2.9f, f * 4.9f, f * 7.4f, f * 10.8f};
 
     // numberList contains the number of points for each subsequent circle in
     // the pattern

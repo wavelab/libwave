@@ -1,3 +1,6 @@
+// C++ Headers
+#include <algorithm>
+
 // Libwave Headers
 #include "wave/wave_test.hpp"
 #include "wave/vision/descriptor/brisk_descriptor.hpp"
@@ -39,9 +42,69 @@ TEST(BRISKTests, BadInitialization) {
     ASSERT_THROW(BRISKDescriptor descriptor(bad_path), std::invalid_argument);
 }
 
-// TEST(BRISKTests, DefaultConstructorTest) {
-//     BRISKDescriptor descriptor;
-// }
+TEST(BRISKTests, DefaultConstructorTest) {
+    BRISKDescriptor descriptor;
+
+    // Instantiate cv::BRISK with default values
+    float patternScale = 1.0f;
+    float f = 0.85f * patternScale;
+
+    // radiusList contains the radius (in pixels) of each circle in the sampling
+    // pattern
+    std::vector<float> rList = {
+      f * 0.0f, f * 2.9f, f * 4.9f, f * 7.4f, f * 10.8f};
+
+    std::vector<int> nList = {1, 10, 14, 15, 20};
+    float d_max = 5.85f;
+    float d_min = 8.2f;
+
+    BRISKDescriptorParams config = descriptor.getConfiguration();
+
+    EXPECT_TRUE(
+      std::equal(rList.begin(), rList.end(), config.radiusList.begin()));
+    EXPECT_TRUE(
+      std::equal(nList.begin(), nList.end(), config.numberList.begin()));
+    ASSERT_EQ(config.dMax, d_max);
+    ASSERT_EQ(config.dMin, d_min);
+}
+
+TEST(BRISKTests, CustomParamsConstructorTest) {
+    std::vector<float> rList = {0.0, 2.465, 4.165, 6.29, 9.18};
+    std::vector<int> nList = {1, 10, 14, 15, 20};
+    float d_max = 5.85f;
+    float d_min = 8.2f;
+
+    BRISKDescriptorParams input_config{rList, nList, d_max, d_min};
+
+    BRISKDescriptor descriptor(input_config);
+
+    BRISKDescriptorParams config = descriptor.getConfiguration();
+
+    EXPECT_TRUE(
+      std::equal(rList.begin(), rList.end(), config.radiusList.begin()));
+    EXPECT_TRUE(
+      std::equal(nList.begin(), nList.end(), config.numberList.begin()));
+    ASSERT_EQ(config.dMax, d_max);
+    ASSERT_EQ(config.dMin, d_min);
+}
+
+TEST(BRISKTests, CustomYamlConstructorTest) {
+    std::vector<float> rList = {0.0, 2.465, 4.165, 6.29, 9.18};
+    std::vector<int> nList = {1, 10, 14, 15, 20};
+    float d_max = 5.85f;
+    float d_min = 8.2f;
+
+    BRISKDescriptor descriptor(TEST_CONFIG);
+
+    BRISKDescriptorParams config = descriptor.getConfiguration();
+
+    EXPECT_TRUE(
+      std::equal(rList.begin(), rList.end(), config.radiusList.begin()));
+    EXPECT_TRUE(
+      std::equal(nList.begin(), nList.end(), config.numberList.begin()));
+    ASSERT_EQ(config.dMax, d_max);
+    ASSERT_EQ(config.dMin, d_min);
+}
 
 TEST(BRISKTests, BadRadiusList) {
     std::vector<float> r_list_neg = {-1.0f, 2.0f, 3.0f, 4.0f, 5.0f};
@@ -93,8 +156,8 @@ TEST(BRISKTests, CheckDistValues) {
     float d_max_neg = -5.0f;
     float d_max = 5.0f;
     float d_max_large = 20.0f;
-    float d_min = 8.0;
-    float d_min_neg = -8.0;
+    float d_min = 8.0f;
+    float d_min_neg = -8.0f;
     float d_min_small = 1.0f;
 
     BRISKDescriptorParams neg_dmax = {r_list, n_list, d_max_neg, d_min};
