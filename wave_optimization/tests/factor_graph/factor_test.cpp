@@ -11,7 +11,7 @@ TEST(FactorTest, evaluate) {
     // Prepare sample C-style arrays as used by Ceres
     const double param_pose[3] = {1.1, 2.2, 3.3};
     const double param_landmark[2] = {4.4, 5.5};
-    const double const *parameters[2] = {param_pose, param_landmark};
+    const double *const parameters[2] = {param_pose, param_landmark};
     double out_residuals[1];
     double out_jac_pose[3];
     double out_jac_landmark[2];
@@ -25,7 +25,7 @@ TEST(FactorTest, evaluate) {
     Vec2 expected_jac_landmark{(1.1 - 4.4) / dist, (2.2 - 5.5) / dist};
 
     // Call and compare
-    auto res = f.evaluate(parameters, out_residuals, out_jacobians);
+    auto res = f.evaluateRaw(parameters, out_residuals, out_jacobians);
     EXPECT_TRUE(res);
     EXPECT_DOUBLE_EQ(expected_residual, out_residuals[0]);
     EXPECT_PRED2(

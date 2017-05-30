@@ -26,9 +26,9 @@ class FactorBase {
      * This interface is based on Ceres' `CostFunction`. See
      * http://ceres-solver.org/nnls_modeling.html#costfunction
      */
-    virtual bool evaluate(double const *const *parameters,
-                          double *residuals,
-                          double **jacobians) noexcept = 0;
+    virtual bool evaluateRaw(double const *const *parameters,
+                             double *residuals,
+                             double **jacobians) noexcept = 0;
 
     /** Print representation of the object for debugging.
      * Called by `operator<<`. */
