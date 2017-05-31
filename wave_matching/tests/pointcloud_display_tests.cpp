@@ -47,4 +47,19 @@ TEST(viewer, multiple_clouds_test) {
     display.stopSpin();
 }
 
+TEST(viewer, line_test) {
+    PointcloudDisplay display;
+    display.startSpin();
+    std::vector<pcl::PointXYZ> pts(10);
+    for (int i = 0; i < 10; i++) {
+        pts.at(i) = pcl::PointXYZ(cos(i), sin(i), 0.3 * i);
+    }
+    for (int j = 0; j < 9; j++) {
+        display.addLine(pts.at(j), pts.at(j + 1), j, j + 1);
+    }
+    boost::this_thread::sleep(
+      boost::posix_time::microseconds(5000000));  // five seconds
+    display.stopSpin();
+}
+
 }  // namespace wave

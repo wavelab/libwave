@@ -3,11 +3,7 @@
 
 namespace wave {
 
-PointcloudDisplay::PointcloudDisplay() {
-    boost::mutex::scoped_lock cld_update_lock(this->update_cloud_mutex);
-    this->update_cloud = false;
-    cld_update_lock.unlock();
-}
+PointcloudDisplay::PointcloudDisplay() {}
 
 void PointcloudDisplay::startSpin() {
     this->continueFlag.test_and_set(std::memory_order_relaxed);
@@ -32,10 +28,8 @@ void PointcloudDisplay::spin() {
         this->viewer->spinOnce(1);
         boost::this_thread::sleep(boost::posix_time::microseconds(1000));
 
-        boost::mutex::scoped_lock cld_lock(this->update_cloud_mutex);
-        if (this->update_cloud) {
-            this->addCloudInternal();
-        }
+        boost::mutex::scoped_lock cld_lock(this->update_mutex);
+        this->updateInternal();
         cld_lock.unlock();
     }
     // Cleanup viewer
@@ -44,13 +38,21 @@ void PointcloudDisplay::spin() {
 }
 
 void PointcloudDisplay::addPointcloud(const PCLPointCloud cld, int id) {
-    boost::mutex::scoped_lock cld_lock(this->update_cloud_mutex);
+    boost::mutex::scoped_lock lock(this->update_mutex);
     this->clouds.emplace(Cloud{cld, id});
-    this->update_cloud = true;
-    cld_lock.unlock();
+    lock.unlock();
 }
 
-void PointcloudDisplay::addCloudInternal() {
+void PointcloudDisplay::addLine(pcl::PointXYZ pt1,
+                                pcl::PointXYZ pt2,
+                                int id1,
+                                int id2) {
+    boost::mutex::scoped_lock lock(this->update_mutex);
+    this->lines.emplace(Line{pt1, pt2, id1, id2});
+    lock.unlock();
+}
+
+void PointcloudDisplay::updateInternal() {
     // add or update clouds in the viewer until the queue is empty
     while (this->clouds.size() != 0) {
         if (this->viewer->contains(std::to_string(this->clouds.front().id))) {
@@ -64,6 +66,52 @@ void PointcloudDisplay::addCloudInternal() {
         }
         this->clouds.pop();
     }
-    this->update_cloud = false;
+    while (this->lines.size() != 0) {
+        if (this->viewer->contains(std::to_string(this->lines.front().id1) +
+                                   "pt")) {
+            this->viewer->updateSphere(
+              this->lines.front().pt1,
+              0.2,
+              200,
+              0,
+              0,
+              std::to_string(this->lines.front().id1) + "pt");
+        } else {
+            this->viewer->addSphere(
+              this->lines.front().pt1,
+              0.2,
+              200,
+              0,
+              0,
+              std::to_string(this->lines.front().id1) + "pt");
+        }
+        if (this->viewer->contains(std::to_string(this->lines.front().id2) +
+                                   "pt")) {
+            this->viewer->updateSphere(
+              this->lines.front().pt2,
+              0.2,
+              200,
+              0,
+              0,
+              std::to_string(this->lines.front().id2) + "pt");
+        } else {
+            this->viewer->addSphere(
+              this->lines.front().pt2,
+              0.2,
+              200,
+              0,
+              0,
+              std::to_string(this->lines.front().id2) + "pt");
+        }
+        // Doesn't seem to be a way to update lines
+        this->viewer->addLine(this->lines.front().pt1,
+                              this->lines.front().pt2,
+                              0,
+                              200,
+                              0,
+                              std::to_string(this->lines.front().id1) +
+                                std::to_string(this->lines.front().id2) + "ln");
+        this->lines.pop();
+    }
 }
 }
