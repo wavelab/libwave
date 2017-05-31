@@ -94,7 +94,7 @@ BRISKDescriptor::BRISKDescriptor(const std::string &config_path) {
     this->current_config = config;
 }
 
-BRISKDescriptor::~BRISKDescriptor() {}
+BRISKDescriptor::~BRISKDescriptor() = default;
 
 void BRISKDescriptor::checkConfiguration(
   const BRISKDescriptorParams &check_config) {
