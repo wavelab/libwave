@@ -18,7 +18,7 @@ namespace wave {
 /** @addtogroup vision
  *  @{ */
 
-/** BRISKDescriptorParams struct contains the configuration parameters for the
+/** This struct contains the configuration parameters for the
  *  BRISKDescriptor extractor.
  *
  *  The BRISK Descriptor creates a pattern of points organized as concentric
