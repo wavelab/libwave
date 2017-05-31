@@ -28,13 +28,13 @@ struct FASTParams {
     /**
      *  Threshold on difference between intensity of the central pixel, and
      *  pixels in a circle (Bresenham radius 3) around this pixel.
-     *  10 (default), must be greater than zero.
+     *  10 (recommended), must be greater than zero.
      */
     int threshold;
 
     /**
      *  Removes keypoints in adjacent locations
-     *  true (default), or false
+     *  true (recommended), or false
      */
     bool nonmax_suppression;
 
@@ -43,7 +43,7 @@ struct FASTParams {
      *  following:
      *  0 = TYPE_5_8
      *  1 = TYPE_7_12
-     *  2 = TYPE_9_16 (default)
+     *  2 = TYPE_9_16 (recommended)
      *
      *  The neighbourhood refers to the pixel circumference and number of
      *  pixels that must be brighter or darker than the center pixel for the
