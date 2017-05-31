@@ -5,8 +5,8 @@
 
 namespace wave {
 
-#define TEST_SCAN "tests/data/testscan.pcd"
-#define TEST_CONFIG "tests/config/ndt.yaml"
+const auto TEST_SCAN = "data/testscan.pcd";
+const auto TEST_CONFIG = "config/ndt.yaml";
 
 // Fixture to load same pointcloud all the time
 class NDTTest : public testing::Test {
