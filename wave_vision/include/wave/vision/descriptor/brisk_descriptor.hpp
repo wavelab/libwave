@@ -14,7 +14,6 @@
 /** Libwave Headers */
 #include "wave/vision/descriptor/descriptor_extractor.hpp"
 
-/** The wave namespace */
 namespace wave {
 /** @addtogroup vision
  *  @{ */
@@ -110,6 +109,6 @@ class BRISKDescriptor : public DescriptorExtractor {
 };
 
 /** @} end of group */
-} /** end of namespace wave */
+}  // end of namespace wave
 
 #endif  // WAVE_BRISK_DESCRIPTOR_HPP

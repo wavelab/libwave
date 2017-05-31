@@ -16,7 +16,6 @@
 /** Libwave Headers */
 #include "wave/utils/utils.hpp"
 
-/** The wave namespace */
 namespace wave {
 /** @addtogroup vision
  *  @{ */

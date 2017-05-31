@@ -6,8 +6,8 @@
 #include "wave/vision/descriptor/brisk_descriptor.hpp"
 #include "wave/vision/detector/fast_detector.hpp"
 
-/** The wave namespace */
 namespace wave {
+
 const auto TEST_CONFIG = "tests/config/descriptor/brisk.yaml";
 const auto TEST_IMAGE = "tests/data/lenna.png";
 
@@ -194,4 +194,5 @@ TEST_F(BRISKTest, DISABLED_ComputeDescriptors) {
 
     cv::waitKey(0);
 }
-} /** end of namespace wave */
+
+}  // end of namespace wave
