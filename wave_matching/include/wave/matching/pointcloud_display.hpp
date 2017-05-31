@@ -26,7 +26,7 @@ class PointcloudDisplay {
     std::atomic_flag continueFlag = ATOMIC_FLAG_INIT;
     boost::mutex update_cloud_mutex;
     bool update_cloud;
-    struct Cloud{
+    struct Cloud {
         PCLPointCloud cloud;
         int id;
     };
@@ -35,4 +35,4 @@ class PointcloudDisplay {
 
 }  // namespace wave
 
-#endif //WAVE_POINTCLOUDDISPLAY_HPP
+#endif  // WAVE_POINTCLOUDDISPLAY_HPP
