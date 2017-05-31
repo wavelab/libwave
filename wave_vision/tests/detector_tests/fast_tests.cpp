@@ -1,10 +1,10 @@
 // Libwave Headers
 #include "wave/wave_test.hpp"
-#include "wave/vision/fast_detector.hpp"
+#include "wave/vision/detector/fast_detector.hpp"
 
 namespace wave {
 
-const auto TEST_CONFIG = "tests/config/fast.yaml";
+const auto TEST_CONFIG = "tests/config/detector/fast.yaml";
 const auto TEST_IMAGE = "tests/data/lenna.png";
 
 // Test fixture to load same image data
