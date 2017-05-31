@@ -29,7 +29,6 @@ namespace wave {
  *
  *  [opencv_descriptor_extractors]:
  *  http://docs.opencv.org/trunk/d5/d51/group__features2d__main.html
- *
  */
 class DescriptorExtractor {
  public:
