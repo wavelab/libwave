@@ -30,14 +30,14 @@ struct BRISKDescriptorParams {
     /** radiusList defines the radius of each subsequent circle (in pixels). All
      *  numbers must be positive. Cannot be empty.
      *
-     *  Default: radiusList = {0.0f, 2.47f, 4.17f, 6.29f, 9.18f}
+     *  Recommended: radiusList = {0.0f, 2.47f, 4.17f, 6.29f, 9.18f}
      */
     std::vector<float> radiusList;
 
     /** numberList defines the number of points in each circle. Must be the same
-     * size as radiusList. All numbers must be positive. Cannot be empty.
+     *  size as radiusList. All numbers must be positive. Cannot be empty.
      *
-     * Default: numberList = {1, 10, 14, 15, 20};
+     *  Recommended: numberList = {1, 10, 14, 15, 20};
      */
     std::vector<int> numberList;
 
@@ -47,7 +47,7 @@ struct BRISKDescriptorParams {
      *  long pairs are not used in the assembly of the bit vector descriptor.
      *  The value of dMax must be less than that of dMin.
      *
-     *  Default: dMax = 5.85f, dMin = 8.2f.
+     *  Recommended: dMax = 5.85f, dMin = 8.2f.
      */
     float dMax;
     float dMin;
