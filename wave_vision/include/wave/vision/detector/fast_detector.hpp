@@ -20,7 +20,7 @@ namespace wave {
  *  @{ */
 
 /**
- *  FASTParams struct contains the configuration parameters for the
+ *  This struct contains the configuration parameters for the
  *  FastFeatureDetector.
  *
  */
