@@ -66,6 +66,6 @@ class DescriptorExtractor {
         this->image = source_image;
     };
 };
-}  // end of namespace wave
+}  // namespace wave
 
 #endif  // WAVE_DESCRIPTOR_EXTRACTOR_HPP

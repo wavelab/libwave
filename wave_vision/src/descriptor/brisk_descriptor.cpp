@@ -155,4 +155,4 @@ cv::Mat BRISKDescriptor::extractDescriptors(
 
     return descriptors;
 }
-}  // end of namespace wave
+}  // namespace wave

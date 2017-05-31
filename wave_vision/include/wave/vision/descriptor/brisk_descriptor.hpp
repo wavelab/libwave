@@ -109,6 +109,6 @@ class BRISKDescriptor : public DescriptorExtractor {
 };
 
 /** @} end of group */
-}  // end of namespace wave
+}  // namespace wave
 
 #endif  // WAVE_BRISK_DESCRIPTOR_HPP
