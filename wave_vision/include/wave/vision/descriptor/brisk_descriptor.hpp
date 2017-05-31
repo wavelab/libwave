@@ -29,16 +29,16 @@ struct BRISKDescriptorParams {
     /** radiusList defines the radius of each subsequent circle (in pixels). All
      *  numbers must be positive. Cannot be empty.
      *
-     *  Recommended: radiusList = {0.0f, 2.47f, 4.17f, 6.29f, 9.18f}
+     *  Recommended: radius_list = {0.0f, 2.47f, 4.17f, 6.29f, 9.18f}
      */
-    std::vector<float> radiusList;
+    std::vector<float> radius_list;
 
     /** numberList defines the number of points in each circle. Must be the same
      *  size as radiusList. All numbers must be positive. Cannot be empty.
      *
-     *  Recommended: numberList = {1, 10, 14, 15, 20};
+     *  Recommended: number_list = {1, 10, 14, 15, 20};
      */
-    std::vector<int> numberList;
+    std::vector<int> number_list;
 
     /** dMax and dMin are threshold distances to classify a pair of points as a
      *  \a long pair or a \a short pair. Short pairs are not used in the
@@ -46,17 +46,10 @@ struct BRISKDescriptorParams {
      *  long pairs are not used in the assembly of the bit vector descriptor.
      *  The value of dMax must be less than that of dMin.
      *
-     *  Recommended: dMax = 5.85f, dMin = 8.2f.
+     *  Recommended: d_max = 5.85f, d_min = 8.2f.
      */
-    float dMax;
-    float dMin;
-
-    /** OpenCV refers to this as a parameter for "index remapping of the bits."
-     *  Kaehler and Bradski's book, "Learning OpenCV3: Computer Vision in C++
-     *  with the OpenCV Library" states this parameter is unused, and should be
-     *  omitted.
-     */
-    const std::vector<int> indexChange = std::vector<int>();
+    float d_max;
+    float d_min;
 };
 
 class BRISKDescriptor : public DescriptorExtractor {

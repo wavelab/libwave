@@ -4,13 +4,13 @@
 # numbers must be positive. Cannot be empty.
 #
 # Recommended: radiusList: [0.0, 2.465, 4.165, 6.29, 9.18]
-radiusList: [0.0, 2.465, 4.165, 6.29, 9.18]
+radius_list: [0.0, 2.465, 4.165, 6.29, 9.18]
 
 # numberList defines the number of points in each circle. Must be the same
 # size as radiusList. All numbers must be positive. Cannot be empty.
 #
 # Recommended: numberList: [1, 10, 14, 15, 20]
-numberList: [1, 10, 14, 15, 20]
+number_list: [1, 10, 14, 15, 20]
 
 # dMax and dMin are threshold distances to classify a pair of points as a
 # long pair or a short pair. Short pairs are not used in the brightness
@@ -20,6 +20,6 @@ numberList: [1, 10, 14, 15, 20]
 # The value of dMax must be less than that of dMin.
 #
 # Recommended: dMax = 5.85, dMin = 8.2.
-dMax: 5.85
-dMin: 8.2
+d_max: 5.85
+d_min: 8.2
 

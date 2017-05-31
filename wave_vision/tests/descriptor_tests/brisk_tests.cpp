@@ -52,26 +52,26 @@ TEST(BRISKTests, DefaultConstructorTest) {
     BRISKDescriptor brisk;
 
     // Instantiate cv::BRISK with default values
-    float patternScale = 1.0f;
-    float f = 0.85f * patternScale;
+    float pattern_scale = 1.0f;
+    float f = 0.85f * pattern_scale;
 
     // radiusList contains the radius (in pixels) of each circle in the sampling
     // pattern
-    std::vector<float> rList = {
+    std::vector<float> rlist = {
       f * 0.0f, f * 2.9f, f * 4.9f, f * 7.4f, f * 10.8f};
 
-    std::vector<int> nList = {1, 10, 14, 15, 20};
+    std::vector<int> nlist = {1, 10, 14, 15, 20};
     float d_max = 5.85f;
     float d_min = 8.2f;
 
     BRISKDescriptorParams config = brisk.getConfiguration();
 
     EXPECT_TRUE(
-      std::equal(rList.begin(), rList.end(), config.radiusList.begin()));
+      std::equal(rlist.begin(), rlist.end(), config.radius_list.begin()));
     EXPECT_TRUE(
-      std::equal(nList.begin(), nList.end(), config.numberList.begin()));
-    ASSERT_EQ(config.dMax, d_max);
-    ASSERT_EQ(config.dMin, d_min);
+      std::equal(nlist.begin(), nlist.end(), config.number_list.begin()));
+    ASSERT_EQ(config.d_max, d_max);
+    ASSERT_EQ(config.d_min, d_min);
 }
 
 TEST(BRISKTests, CustomParamsConstructorTest) {
@@ -87,11 +87,11 @@ TEST(BRISKTests, CustomParamsConstructorTest) {
     BRISKDescriptorParams config = brisk.getConfiguration();
 
     EXPECT_TRUE(
-      std::equal(rList.begin(), rList.end(), config.radiusList.begin()));
+      std::equal(rList.begin(), rList.end(), config.radius_list.begin()));
     EXPECT_TRUE(
-      std::equal(nList.begin(), nList.end(), config.numberList.begin()));
-    ASSERT_EQ(config.dMax, d_max);
-    ASSERT_EQ(config.dMin, d_min);
+      std::equal(nList.begin(), nList.end(), config.number_list.begin()));
+    ASSERT_EQ(config.d_max, d_max);
+    ASSERT_EQ(config.d_min, d_min);
 }
 
 TEST(BRISKTests, CustomYamlConstructorTest) {
@@ -105,11 +105,11 @@ TEST(BRISKTests, CustomYamlConstructorTest) {
     BRISKDescriptorParams config = brisk.getConfiguration();
 
     EXPECT_TRUE(
-      std::equal(rList.begin(), rList.end(), config.radiusList.begin()));
+      std::equal(rList.begin(), rList.end(), config.radius_list.begin()));
     EXPECT_TRUE(
-      std::equal(nList.begin(), nList.end(), config.numberList.begin()));
-    ASSERT_EQ(config.dMax, d_max);
-    ASSERT_EQ(config.dMin, d_min);
+      std::equal(nList.begin(), nList.end(), config.number_list.begin()));
+    ASSERT_EQ(config.d_max, d_max);
+    ASSERT_EQ(config.d_min, d_min);
 }
 
 TEST(BRISKTests, BadRadiusList) {

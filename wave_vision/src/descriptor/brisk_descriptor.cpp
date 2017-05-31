@@ -44,12 +44,19 @@ BRISKDescriptor::BRISKDescriptor(const BRISKDescriptorParams &config) {
     // Ensure parameters are valid
     this->checkConfiguration(config);
 
+    /** OpenCV refers to this as a parameter for "index remapping of the bits."
+     *  Kaehler and Bradski's book, "Learning OpenCV3: Computer Vision in C++
+     *  with the OpenCV Library" states this parameter is unused, and should be
+     *  omitted.
+     */
+    const std::vector<int> index_change = std::vector<int>();
+
     // Create cv::BRISK object with the desired parameters
-    this->brisk_descriptor = cv::BRISK::create(config.radiusList,
-                                               config.numberList,
-                                               config.dMax,
-                                               config.dMin,
-                                               config.indexChange);
+    this->brisk_descriptor = cv::BRISK::create(config.radius_list,
+                                               config.number_list,
+                                               config.d_max,
+                                               config.d_min,
+                                               index_change);
 
     // Store configuration parameters within member struct
     this->current_config = config;
@@ -64,10 +71,10 @@ BRISKDescriptor::BRISKDescriptor(const std::string &config_path) {
 
     // Add parameters to parser, to be loaded. If path cannot be found, throw an
     // exception.
-    parser.addParam("radiusList", &config.radiusList);
-    parser.addParam("numberList", &config.numberList);
-    parser.addParam("dMax", &config.dMax);
-    parser.addParam("dMin", &config.dMin);
+    parser.addParam("radius_list", &config.radius_list);
+    parser.addParam("number_list", &config.number_list);
+    parser.addParam("d_max", &config.d_max);
+    parser.addParam("d_min", &config.d_min);
 
     if (parser.load(config_path) != 0) {
         throw std::invalid_argument(
@@ -77,12 +84,19 @@ BRISKDescriptor::BRISKDescriptor(const std::string &config_path) {
     // Confirm configuration is valid
     this->checkConfiguration(config);
 
+    /** OpenCV refers to this as a parameter for "index remapping of the bits."
+     *  Kaehler and Bradski's book, "Learning OpenCV3: Computer Vision in C++
+     *  with the OpenCV Library" states this parameter is unused, and should be
+     *  omitted.
+     */
+    const std::vector<int> index_change = std::vector<int>();
+
     // Create cv::BRISK object with the desired parameters
-    this->brisk_descriptor = cv::BRISK::create(config.radiusList,
-                                               config.numberList,
-                                               config.dMax,
-                                               config.dMin,
-                                               config.indexChange);
+    this->brisk_descriptor = cv::BRISK::create(config.radius_list,
+                                               config.number_list,
+                                               config.d_max,
+                                               config.d_min,
+                                               index_change);
 
     // Store configuration parameters within member struct
     this->current_config = config;
@@ -92,46 +106,48 @@ BRISKDescriptor::~BRISKDescriptor() = default;
 
 void BRISKDescriptor::checkConfiguration(
   const BRISKDescriptorParams &check_config) {
-    std::vector<float> rList = check_config.radiusList;
-    std::vector<int> nList = check_config.numberList;
+    std::vector<float> rlist = check_config.radius_list;
+    std::vector<int> nlist = check_config.number_list;
 
     // Check that the size of radiusList and numberList are equal and positive
-    if (rList.size() == 0) {
-        throw std::invalid_argument("No parameters in radiusList!");
-    } else if (nList.size() == 0) {
-        throw std::invalid_argument("No parameters in numberList!");
-    } else if (rList.size() != nList.size()) {
+    if (rlist.size() == 0) {
+        throw std::invalid_argument("No parameters in radius_list!");
+    } else if (nlist.size() == 0) {
+        throw std::invalid_argument("No parameters in number_list!");
+    } else if (rlist.size() != nlist.size()) {
         throw std::invalid_argument(
-          "radiusList and numberList are of unequal size!");
+          "radius_list and number_list are of unequal size!");
     }
 
     // Ensure all values of radiusList are positive
-    std::vector<float>::iterator rListIterator;
+    std::vector<float>::iterator rlist_iterator;
 
-    for (rListIterator = rList.begin(); rListIterator != rList.end();
-         rListIterator++) {
-        if (*rListIterator < 0) {
-            throw std::invalid_argument("radiusList has a negative parameter!");
+    for (rlist_iterator = rlist.begin(); rlist_iterator != rlist.end();
+         rlist_iterator++) {
+        if (*rlist_iterator < 0) {
+            throw std::invalid_argument(
+              "radius_list has a negative parameter!");
         }
     }
 
     // Ensure all values of numberList are positive
-    std::vector<int>::iterator nListIterator;
+    std::vector<int>::iterator nlist_iterator;
 
-    for (nListIterator = nList.begin(); nListIterator != nList.end();
-         nListIterator++) {
-        if (*nListIterator < 0) {
-            throw std::invalid_argument("numberList has a negative parameter!");
+    for (nlist_iterator = nlist.begin(); nlist_iterator != nlist.end();
+         nlist_iterator++) {
+        if (*nlist_iterator < 0) {
+            throw std::invalid_argument(
+              "number_list has a negative parameter!");
         }
     }
 
     // Ensure dMax and dMin are both positive, and check dMax is less than dMin
-    if (check_config.dMax < 0) {
-        throw std::invalid_argument("dMax is a negative value!");
-    } else if (check_config.dMin < 0) {
-        throw std::invalid_argument("dMin is a negative value!");
-    } else if (check_config.dMax > check_config.dMin) {
-        throw std::invalid_argument("dMax is greater than dMin!");
+    if (check_config.d_max < 0) {
+        throw std::invalid_argument("d_max is a negative value!");
+    } else if (check_config.d_min < 0) {
+        throw std::invalid_argument("d_min is a negative value!");
+    } else if (check_config.d_max > check_config.d_min) {
+        throw std::invalid_argument("d_max is greater than d_min!");
     }
 }
 
