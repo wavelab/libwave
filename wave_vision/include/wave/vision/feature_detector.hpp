@@ -22,15 +22,6 @@ namespace wave {
  *  @{ */
 
 /**
- * Custom exception class for a failed attempt at loading a configuration
- */
-class ConfigurationLoadingException : public std::exception {
-    const char *what() const throw() {
-        return "Failed to Load Detector Configuration";
-    }
-};
-
-/**
  * Representation of a generic feature detector.
  *
  * Internally, this class, and all derived classes are wrapping various
@@ -62,7 +53,7 @@ class FeatureDetector {
     virtual std::vector<cv::KeyPoint> detectFeatures(const cv::Mat &image) = 0;
 
  protected:
-    // The image currently being detected.
+    /** The image currently being detected. */
     cv::Mat image;
 
     /** Function to set image within the member variables.
