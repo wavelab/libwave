@@ -8,8 +8,8 @@
 
 /** The wave namespace */
 namespace wave {
-const std::string TEST_CONFIG = "tests/config/descriptor/brisk.yaml";
-const std::string TEST_IMAGE = "tests/data/lenna.png";
+const auto TEST_CONFIG = "tests/config/descriptor/brisk.yaml";
+const auto TEST_IMAGE = "tests/data/lenna.png";
 
 // Test fixture to load same image data
 class BRISKTest : public testing::Test {
