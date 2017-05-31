@@ -82,43 +82,6 @@ class Factor : public FactorBase {
     boost::fusion::vector<std::shared_ptr<VariableTypes>...> variables;
 };
 
-/**
- * Factor representing a distance measurement between a 2D pose and landmark.
- *
- * @todo Move elsewhere (just an example here for now)
- */
-class DistanceToLandmarkFactor : public Factor<1, Pose2DVar, Landmark2DVar> {
- public:
-    explicit DistanceToLandmarkFactor(double measurement,
-                                      std::shared_ptr<Pose2DVar> p,
-                                      std::shared_ptr<Landmark2DVar> l)
-        : Factor<1, Pose2DVar, Landmark2DVar>{std::move(p), std::move(l)},
-          meas{measurement} {}
-
-    bool evaluate(const Pose2DVar &pose,
-                  const Landmark2DVar &landmark,
-                  ResidualsOut<1> residual,
-                  JacobianOut<1, 3> j_pose,
-                  JacobianOut<1, 2> j_landmark) noexcept override {
-        double distance = (pose.position - landmark.position).norm();
-        residual(0) = distance - this->meas;
-
-        if (j_pose) {
-            j_pose << (pose.position - landmark.position).transpose() /
-                        distance,
-              0;
-        }
-        if (j_landmark) {
-            j_landmark << (pose.position - landmark.position).transpose() /
-                            distance;
-        }
-
-        return true;
-    }
-
-    double meas;
-};
-
 /** @} group optimization */
 }  // namespace wave
 

@@ -1,5 +1,6 @@
 #include "wave/wave_test.hpp"
 #include "wave/optimization/factor_graph/FactorGraph.hpp"
+#include "example_instances.hpp"
 
 namespace wave {
 
