@@ -4,11 +4,8 @@
 namespace wave {
 
 PointcloudDisplay::PointcloudDisplay() {
-    boost::mutex::scoped_lock cld_lock(this->add_cloud_mutex);
     boost::mutex::scoped_lock cld_update_lock(this->update_cloud_mutex);
-    this->add_cloud = false;
     this->update_cloud = false;
-    cld_lock.unlock();
     cld_update_lock.unlock();
 }
 
@@ -29,19 +26,14 @@ void PointcloudDisplay::spin() {
     this->viewer->setBackgroundColor(0, 0, 0);
     this->viewer->addCoordinateSystem(1.0);
     while(this->continueFlag.test_and_set(std::memory_order_relaxed) && !(this->viewer->wasStopped())) {
-        this->viewer->spinOnce(100);
-        boost::this_thread::sleep(boost::posix_time::microseconds(100000));
+        this->viewer->spinOnce(1);
+        boost::this_thread::sleep(boost::posix_time::microseconds(1000));
 
-        boost::mutex::scoped_lock cld_lock(this->add_cloud_mutex);
-        if(this->add_cloud) {
+        boost::mutex::scoped_lock cld_lock(this->update_cloud_mutex);
+        if(this->update_cloud) {
             this->addCloudInternal();
         }
         cld_lock.unlock();
-        boost::mutex::scoped_lock update_lock(this->add_cloud_mutex);
-        if(this->update_cloud) {
-            this->updateCloudInternal();
-        }
-        update_lock.unlock();
     }
     // Cleanup viewer
     this->viewer->close();
@@ -49,28 +41,22 @@ void PointcloudDisplay::spin() {
 }
 
 void PointcloudDisplay::addPointcloud(const PCLPointCloud cld, int id) {
-    boost::mutex::scoped_lock cld_lock(this->add_cloud_mutex);
-    this->cloud_ = cld;
-    this->id_ = id;
-    this->add_cloud = true;
+    boost::mutex::scoped_lock cld_lock(this->update_cloud_mutex);
+    this->clouds.emplace(Cloud{cld, id});
+    this->update_cloud = true;
     cld_lock.unlock();
 }
 
-void PointcloudDisplay::updatePointcloud(const PCLPointCloud cld, int id) {
-    boost::mutex::scoped_lock update_lock(this->add_cloud_mutex);
-    this->cloud_ = cld;
-    this->id_ = id;
-    this->update_cloud = true;
-    update_lock.unlock();
-}
-
 void PointcloudDisplay::addCloudInternal() {
-    this->viewer->addPointCloud(this->cloud_, std::to_string(this->id_));
-    this->add_cloud = false;
-}
-
-void PointcloudDisplay::updateCloudInternal() {
-    this->viewer->updatePointCloud(this->cloud_, std::to_string(this->id_));
+    // add or update clouds in the viewer until the queue is empty
+    while(this->clouds.size() != 0) {
+        if(this->viewer->contains(std::to_string(this->clouds.front().id))) {
+            this->viewer->updatePointCloud(this->clouds.front().cloud, std::to_string(this->clouds.front().id));
+        } else {
+            this->viewer->addPointCloud(this->clouds.front().cloud, std::to_string(this->clouds.front().id));
+        }
+        this->clouds.pop();
+    }
     this->update_cloud = false;
 }
 

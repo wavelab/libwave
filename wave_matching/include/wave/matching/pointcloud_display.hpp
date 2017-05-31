@@ -17,19 +17,20 @@ class PointcloudDisplay {
     void startSpin();
     void stopSpin();
     void addPointcloud(PCLPointCloud cld, int id);
-    void updatePointcloud(PCLPointCloud cld, int id);
     boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer;
 
  private:
     void addCloudInternal();
-    void updateCloudInternal();
     void spin();
     boost::thread *viewer_thread;
     std::atomic_flag continueFlag = ATOMIC_FLAG_INIT;
-    boost::mutex add_cloud_mutex, update_cloud_mutex;
-    bool add_cloud, update_cloud;
-    PCLPointCloud cloud_;
-    int id_;
+    boost::mutex update_cloud_mutex;
+    bool update_cloud;
+    struct Cloud{
+        PCLPointCloud cloud;
+        int id;
+    };
+    std::queue<Cloud> clouds;
 };
 
 }  // namespace wave
