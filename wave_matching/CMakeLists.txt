@@ -1,7 +1,7 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8.3)
 PROJECT(wave_matching)
 
-SET(CMAKE_BUILD_TYPE release)
+SET(CMAKE_BUILD_TYPE debug)
 
 # PACKAGES
 FIND_PACKAGE(PCL REQUIRED)
@@ -45,11 +45,22 @@ WAVE_ADD_TEST(
     tests/icp_tests.cpp
     tests/ndt_tests.cpp
     tests/gicp_tests.cpp
-    tests/pointcloud_display_tests.cpp
     DISABLED  # Don't run this test for now
+)
+
+WAVE_ADD_TEST(
+    ${PROJECT_NAME}_viz_tests
+    tests/pointcloud_display_tests.cpp
+    DISABLED  # probably requires display to work properly
 )
 TARGET_LINK_LIBRARIES(
     ${PROJECT_NAME}_tests
+    ${PROJECT_NAME}
+    wave_utils
+)
+
+TARGET_LINK_LIBRARIES(
+    ${PROJECT_NAME}_viz_tests
     ${PROJECT_NAME}
     wave_utils
 )
