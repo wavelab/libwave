@@ -120,22 +120,16 @@ void BRISKDescriptor::checkConfiguration(
     }
 
     // Ensure all values of radiusList are positive
-    std::vector<float>::iterator rlist_iterator;
-
-    for (rlist_iterator = rlist.begin(); rlist_iterator != rlist.end();
-         rlist_iterator++) {
-        if (*rlist_iterator < 0) {
+    for (const auto &radius : check_config.radius_list) {
+        if (radius < 0) {
             throw std::invalid_argument(
               "radius_list has a negative parameter!");
         }
     }
 
     // Ensure all values of numberList are positive
-    std::vector<int>::iterator nlist_iterator;
-
-    for (nlist_iterator = nlist.begin(); nlist_iterator != nlist.end();
-         nlist_iterator++) {
-        if (*nlist_iterator < 0) {
+    for (auto &num_points : check_config.number_list) {
+        if (num_points < 0) {
             throw std::invalid_argument(
               "number_list has a negative parameter!");
         }
