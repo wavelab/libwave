@@ -2,7 +2,7 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.8.3)
 PROJECT(wave_matching)
 
 # PACKAGES
-FIND_PACKAGE(PCL REQUIRED common registration point_types io)
+FIND_PACKAGE(PCL REQUIRED)
 FIND_PACKAGE(OpenCV REQUIRED)
 
 # DEFINITIONS
@@ -25,10 +25,7 @@ SET(
     yaml-cpp
     wave_utils
     ${OpenCV_LIBS}
-    ${PCL_COMMON_LIBRARIES}
-    ${PCL_REGISTRATION_LIBRARIES}
-    ${PCL_POINT_TYPES_LIBRARIES}
-    ${PCL_IO_LIBRARIES}
+    ${PCL_LIBRARIES}
 )
 ADD_LIBRARY(
     wave_matching
@@ -36,6 +33,7 @@ ADD_LIBRARY(
     src/gicp.cpp
     src/icp.cpp
     src/ndt.cpp
+    src/pointcloud_display.cpp
 )
 TARGET_LINK_LIBRARIES(wave_matching ${WAVE_MATCHING_DEPS})
 
@@ -45,6 +43,7 @@ WAVE_ADD_TEST(
     tests/icp_tests.cpp
     tests/ndt_tests.cpp
     tests/gicp_tests.cpp
+    tests/pointcloud_display_tests.cpp
     DISABLED  # Don't run this test for now
 )
 TARGET_LINK_LIBRARIES(
