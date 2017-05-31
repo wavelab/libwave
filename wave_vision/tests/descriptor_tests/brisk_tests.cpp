@@ -55,7 +55,7 @@ TEST(BRISKTests, DefaultConstructorTest) {
 
     auto config = brisk.getConfiguration();
 
-    for (int i = 0; i < config.radius_list.size(); i++) {
+    for (uint i = 0; i < config.radius_list.size(); i++) {
         ASSERT_NEAR(check_config.radius_list[i], config.radius_list[i], 0.01);
     }
     EXPECT_TRUE(std::equal(check_config.number_list.begin(),
@@ -79,7 +79,7 @@ TEST(BRISKTests, CustomParamsConstructorTest) {
 
     BRISKDescriptorParams config = brisk.getConfiguration();
 
-    for (int i = 0; i < config.radius_list.size(); i++) {
+    for (uint i = 0; i < config.radius_list.size(); i++) {
         ASSERT_NEAR(input_config.radius_list[i], config.radius_list[i], 0.01);
     }
     EXPECT_TRUE(std::equal(input_config.number_list.begin(),
@@ -102,7 +102,7 @@ TEST(BRISKTests, CustomYamlConstructorTest) {
     ASSERT_EQ(rlist.size(), config.radius_list.size());
     ASSERT_EQ(nlist.size(), config.number_list.size());
 
-    for (int i = 0; i < config.radius_list.size(); i++) {
+    for (uint i = 0; i < config.radius_list.size(); i++) {
         ASSERT_NEAR(rlist[i], config.radius_list[i], 0.01);
     }
     ASSERT_TRUE(
