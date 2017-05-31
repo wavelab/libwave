@@ -3,60 +3,17 @@
 
 namespace wave {
 
-// Default constructor
-BRISKDescriptor::BRISKDescriptor() {
-    // Instantiate cv::BRISK with default values
-    float patternScale = 1.0f;
-    float f = 0.85f * patternScale;
-
-    // radiusList contains the radius (in pixels) of each circle in the sampling
-    // pattern
-    std::vector<float> radiusList = {
-      f * 0.0f, f * 2.9f, f * 4.9f, f * 7.4f, f * 10.8f};
-
-    // numberList contains the number of points for each subsequent circle in
-    // the pattern
-    std::vector<int> numberList = {1, 10, 14, 15, 20};
-
-    // Threshold distances to classify pairs of points. dMax is maximum for
-    // short pairs, dMin is the minimum for long pairs.
-    float dMax = 5.85f;
-    float dMin = 8.2f;
-
-    /** OpenCV refers to this as a parameter for "index remapping of the bits."
-     *  Kaehler and Bradski's book, "Learning OpenCV3: Computer Vision in C++
-     *  with the OpenCV Library" states this parameter is unused, and should be
-     *  omitted.
-     */
-    const std::vector<int> indexChange = std::vector<int>();
-
-    // Create cv::BRISK object
-    this->brisk_descriptor =
-      cv::BRISK::create(radiusList, numberList, dMax, dMin, indexChange);
-
-    // Store configuration parameters within member struct
-    this->current_config =
-      BRISKDescriptorParams{radiusList, numberList, dMax, dMin};
-}
-
-// Constructor using BRISKDescriptorParams struct
+// Default constructor. Struct may be default or user defined.
 BRISKDescriptor::BRISKDescriptor(const BRISKDescriptorParams &config) {
     // Ensure parameters are valid
     this->checkConfiguration(config);
-
-    /** OpenCV refers to this as a parameter for "index remapping of the bits."
-     *  Kaehler and Bradski's book, "Learning OpenCV3: Computer Vision in C++
-     *  with the OpenCV Library" states this parameter is unused, and should be
-     *  omitted.
-     */
-    const std::vector<int> index_change = std::vector<int>();
 
     // Create cv::BRISK object with the desired parameters
     this->brisk_descriptor = cv::BRISK::create(config.radius_list,
                                                config.number_list,
                                                config.d_max,
                                                config.d_min,
-                                               index_change);
+                                               config.index_change);
 
     // Store configuration parameters within member struct
     this->current_config = config;
@@ -67,7 +24,11 @@ BRISKDescriptor::BRISKDescriptor(const std::string &config_path) {
     ConfigParser parser;
 
     // Configuration parameters
-    BRISKDescriptorParams config;
+    auto config = BRISKDescriptorParams{};
+
+    // The parser will push back to the existing vectors, so clear them
+    config.radius_list.clear();
+    config.number_list.clear();
 
     // Add parameters to parser, to be loaded. If path cannot be found, throw an
     // exception.
@@ -84,19 +45,12 @@ BRISKDescriptor::BRISKDescriptor(const std::string &config_path) {
     // Confirm configuration is valid
     this->checkConfiguration(config);
 
-    /** OpenCV refers to this as a parameter for "index remapping of the bits."
-     *  Kaehler and Bradski's book, "Learning OpenCV3: Computer Vision in C++
-     *  with the OpenCV Library" states this parameter is unused, and should be
-     *  omitted.
-     */
-    const std::vector<int> index_change = std::vector<int>();
-
     // Create cv::BRISK object with the desired parameters
     this->brisk_descriptor = cv::BRISK::create(config.radius_list,
                                                config.number_list,
                                                config.d_max,
                                                config.d_min,
-                                               index_change);
+                                               config.index_change);
 
     // Store configuration parameters within member struct
     this->current_config = config;
@@ -106,15 +60,13 @@ BRISKDescriptor::~BRISKDescriptor() = default;
 
 void BRISKDescriptor::checkConfiguration(
   const BRISKDescriptorParams &check_config) {
-    std::vector<float> rlist = check_config.radius_list;
-    std::vector<int> nlist = check_config.number_list;
-
     // Check that the size of radiusList and numberList are equal and positive
-    if (rlist.size() == 0) {
+    if (check_config.radius_list.size() == 0) {
         throw std::invalid_argument("No parameters in radius_list!");
-    } else if (nlist.size() == 0) {
+    } else if (check_config.number_list.size() == 0) {
         throw std::invalid_argument("No parameters in number_list!");
-    } else if (rlist.size() != nlist.size()) {
+    } else if (check_config.radius_list.size() !=
+               check_config.number_list.size()) {
         throw std::invalid_argument(
           "radius_list and number_list are of unequal size!");
     }

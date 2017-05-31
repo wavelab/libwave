@@ -26,21 +26,34 @@ namespace wave {
  *  brightness comparison tests to construct the descriptor.
  */
 struct BRISKDescriptorParams {
-    /** radiusList defines the radius of each subsequent circle (in pixels). All
+    /** Default Constructor */
+    BRISKDescriptorParams(){};
+
+    /** Constructor with user defined values */
+    BRISKDescriptorParams(std::vector<float> rlist,
+                          std::vector<int> nlist,
+                          float d_max,
+                          float d_min)
+        : radius_list(rlist), number_list(nlist), d_max(d_max), d_min(d_min) {}
+
+    /** radius_list defines the radius of each subsequent circle (in pixels).
+     * All
      *  numbers must be positive. Cannot be empty.
      *
      *  Recommended: radius_list = {0.0f, 2.47f, 4.17f, 6.29f, 9.18f}
      */
-    std::vector<float> radius_list;
+    std::vector<float> radius_list = {0.0f, 2.47f, 4.17f, 6.29f, 9.18f};
 
-    /** numberList defines the number of points in each circle. Must be the same
+    /** number_list defines the number of points in each circle. Must be the
+     * same
      *  size as radiusList. All numbers must be positive. Cannot be empty.
      *
      *  Recommended: number_list = {1, 10, 14, 15, 20};
      */
-    std::vector<int> number_list;
+    std::vector<int> number_list = {1, 10, 14, 15, 20};
 
-    /** dMax and dMin are threshold distances to classify a pair of points as a
+    /** d_max and d_min are threshold distances to classify a pair of points as
+     * a
      *  \a long pair or a \a short pair. Short pairs are not used in the
      *  brightness comparison, due to balancing effects of local gradients. The
      *  long pairs are not used in the assembly of the bit vector descriptor.
@@ -48,22 +61,27 @@ struct BRISKDescriptorParams {
      *
      *  Recommended: d_max = 5.85f, d_min = 8.2f.
      */
-    float d_max;
-    float d_min;
+    float d_max = 5.85f;
+    float d_min = 8.2f;
+
+    /** OpenCV refers to this as a parameter for "index remapping of the bits."
+     *  Kaehler and Bradski's book, "Learning OpenCV3: Computer Vision in C++
+     *  with the OpenCV Library" states this parameter is unused, and should be
+     *  omitted.
+     */
+    std::vector<int> index_change;
 };
 
 class BRISKDescriptor : public DescriptorExtractor {
  public:
-    /** Constructs a BRISKDescriptor Extractor using the default parameters. */
-    BRISKDescriptor();
-
-    /** Constructs a BRISKDescriptor Extractor using parameters specified by the
-     *  user.
+    /** Default constructor. The user can also specify their own struct with
+     *  desired values. If no struct is provided, default values are used.
      *
      *  @param config contains the desired parameter values for a BRISKParams
-     *  implementation.
+     *  implementation. Uses default values if not specified.
      */
-    explicit BRISKDescriptor(const BRISKDescriptorParams &config);
+    explicit BRISKDescriptor(
+      const BRISKDescriptorParams &config = BRISKDescriptorParams{});
 
     /** Constructs a BRISKDescriptor Extractor using parameters found in the
     *   linked .yaml file.

@@ -1,25 +1,25 @@
 # Configuration parameters for BRISK Descriptor Extractor
 
-# radiusList defines the radius of each subsequent circle (in pixels). All
+# radius_list defines the radius of each subsequent circle (in pixels). All
 # numbers must be positive. Cannot be empty.
 #
-# Default: radiusList: [0.0, 2.465, 4.165, 6.29, 9.18]
+# Default: radius_list: [0.0, 2.465, 4.165, 6.29, 9.18]
 radius_list: [0.0, 2.465, 4.165, 6.29, 9.18]
 
-# numberList defines the number of points in each circle. Must be the same
-# size as radiusList. All numbers must be positive. Cannot be empty.
+# number_list defines the number of points in each circle. Must be the same
+# size as radius_list. All numbers must be positive. Cannot be empty.
 #
-# Default: numberList: [1, 10, 14, 15, 20]
+# Default: number_list: [1, 10, 14, 15, 20]
 number_list: [1, 10, 14, 15, 20]
 
-# dMax and dMin are threshold distances to classify a pair of points as a
+# d_max and d_min are threshold distances to classify a pair of points as a
 # long pair or a short pair. Short pairs are not used in the brightness
 # comparison, due to balancing effects of local gradients. The long pairs are
 # not used in the assembly of the bit vector descriptor.
 #
-# The value of dMax must be less than that of dMin.
+# The value of d_max must be less than that of d_min.
 #
-# Default: dMax = 5.85, dMin = 8.2.
+# Default: d_max = 5.85, d_min = 8.2.
 d_max: 5.85
 d_min: 8.2
 

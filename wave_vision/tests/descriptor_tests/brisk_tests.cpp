@@ -51,52 +51,47 @@ TEST(BRISKTests, BadInitialization) {
 TEST(BRISKTests, DefaultConstructorTest) {
     BRISKDescriptor brisk;
 
-    // Instantiate cv::BRISK with default values
-    float pattern_scale = 1.0f;
-    float f = 0.85f * pattern_scale;
+    auto check_config = BRISKDescriptorParams{};
 
-    // radiusList contains the radius (in pixels) of each circle in the sampling
-    // pattern
-    std::vector<float> rlist = {
-      f * 0.0f, f * 2.9f, f * 4.9f, f * 7.4f, f * 10.8f};
+    auto config = brisk.getConfiguration();
 
+    for (int i = 0; i < config.radius_list.size(); i++) {
+        ASSERT_NEAR(check_config.radius_list[i], config.radius_list[i], 0.01);
+    }
+    EXPECT_TRUE(std::equal(check_config.number_list.begin(),
+                           check_config.number_list.end(),
+                           config.number_list.begin()));
+    ASSERT_EQ(check_config.d_max, config.d_max);
+    ASSERT_EQ(check_config.d_min, config.d_min);
+}
+
+TEST(BRISKTests, CustomParamsConstructorTest) {
+    std::vector<float> rlist = {0.0, 2.465, 4.165, 6.29, 9.18};
     std::vector<int> nlist = {1, 10, 14, 15, 20};
     float d_max = 5.85f;
     float d_min = 8.2f;
 
-    BRISKDescriptorParams config = brisk.getConfiguration();
-
-    EXPECT_TRUE(
-      std::equal(rlist.begin(), rlist.end(), config.radius_list.begin()));
-    EXPECT_TRUE(
-      std::equal(nlist.begin(), nlist.end(), config.number_list.begin()));
-    ASSERT_EQ(config.d_max, d_max);
-    ASSERT_EQ(config.d_min, d_min);
-}
-
-TEST(BRISKTests, CustomParamsConstructorTest) {
-    std::vector<float> rList = {0.0, 2.465, 4.165, 6.29, 9.18};
-    std::vector<int> nList = {1, 10, 14, 15, 20};
-    float d_max = 5.85f;
-    float d_min = 8.2f;
-
-    BRISKDescriptorParams input_config{rList, nList, d_max, d_min};
+    // Place defined values into config struct, and create BRISKDescriptor
+    // object
+    auto input_config = BRISKDescriptorParams(rlist, nlist, d_max, d_min);
 
     BRISKDescriptor brisk(input_config);
 
     BRISKDescriptorParams config = brisk.getConfiguration();
 
-    EXPECT_TRUE(
-      std::equal(rList.begin(), rList.end(), config.radius_list.begin()));
-    EXPECT_TRUE(
-      std::equal(nList.begin(), nList.end(), config.number_list.begin()));
+    for (int i = 0; i < config.radius_list.size(); i++) {
+        ASSERT_NEAR(input_config.radius_list[i], config.radius_list[i], 0.01);
+    }
+    EXPECT_TRUE(std::equal(input_config.number_list.begin(),
+                           input_config.number_list.end(),
+                           config.number_list.begin()));
     ASSERT_EQ(config.d_max, d_max);
     ASSERT_EQ(config.d_min, d_min);
 }
 
 TEST(BRISKTests, CustomYamlConstructorTest) {
-    std::vector<float> rList = {0.0, 2.465, 4.165, 6.29, 9.18};
-    std::vector<int> nList = {1, 10, 14, 15, 20};
+    std::vector<float> rlist = {0.0, 2.465, 4.165, 6.29, 9.18};
+    std::vector<int> nlist = {1, 10, 14, 15, 20};
     float d_max = 5.85f;
     float d_min = 8.2f;
 
@@ -104,12 +99,16 @@ TEST(BRISKTests, CustomYamlConstructorTest) {
 
     BRISKDescriptorParams config = brisk.getConfiguration();
 
-    EXPECT_TRUE(
-      std::equal(rList.begin(), rList.end(), config.radius_list.begin()));
-    EXPECT_TRUE(
-      std::equal(nList.begin(), nList.end(), config.number_list.begin()));
-    ASSERT_EQ(config.d_max, d_max);
-    ASSERT_EQ(config.d_min, d_min);
+    ASSERT_EQ(rlist.size(), config.radius_list.size());
+    ASSERT_EQ(nlist.size(), config.number_list.size());
+
+    for (int i = 0; i < config.radius_list.size(); i++) {
+        ASSERT_NEAR(rlist[i], config.radius_list[i], 0.01);
+    }
+    ASSERT_TRUE(
+      std::equal(nlist.begin(), nlist.end(), config.number_list.begin()));
+    ASSERT_EQ(d_max, config.d_max);
+    ASSERT_EQ(d_min, config.d_min);
 }
 
 TEST(BRISKTests, BadRadiusList) {
@@ -119,12 +118,14 @@ TEST(BRISKTests, BadRadiusList) {
     float d_max = 5.85f;
     float d_min = 8.2f;
 
-    BRISKDescriptorParams neg_rlist{r_list_neg, n_list, d_max, d_min};
-    BRISKDescriptorParams empty_rlist{r_list_empty, n_list, d_max, d_min};
+    auto neg_rlist = BRISKDescriptorParams(r_list_neg, n_list, d_max, d_min);
+    auto empty_rlist =
+      BRISKDescriptorParams(r_list_empty, n_list, d_max, d_min);
 
-    ASSERT_THROW(BRISKDescriptor briskr(neg_rlist), std::invalid_argument);
+    ASSERT_THROW(BRISKDescriptor brisk_rneg(neg_rlist), std::invalid_argument);
 
-    ASSERT_THROW(BRISKDescriptor brisk(empty_rlist), std::invalid_argument);
+    ASSERT_THROW(BRISKDescriptor brisk_rempty(empty_rlist),
+                 std::invalid_argument);
 }
 
 TEST(BRISKTests, BadNumberList) {
@@ -134,12 +135,14 @@ TEST(BRISKTests, BadNumberList) {
     float d_max = 5.85f;
     float d_min = 8.2f;
 
-    BRISKDescriptorParams neg_nlist{r_list, n_list_neg, d_max, d_min};
-    BRISKDescriptorParams empty_nlist{r_list, n_list_empty, d_max, d_min};
+    auto neg_nlist = BRISKDescriptorParams(r_list, n_list_neg, d_max, d_min);
+    auto empty_nlist =
+      BRISKDescriptorParams(r_list, n_list_empty, d_max, d_min);
 
-    ASSERT_THROW(BRISKDescriptor brisk(neg_nlist), std::invalid_argument);
+    ASSERT_THROW(BRISKDescriptor brisk_nneg(neg_nlist), std::invalid_argument);
 
-    ASSERT_THROW(BRISKDescriptor brisk(empty_nlist), std::invalid_argument);
+    ASSERT_THROW(BRISKDescriptor brisk_nempty(empty_nlist),
+                 std::invalid_argument);
 }
 
 TEST(BRISKTests, UnequalVectorSize) {
@@ -148,7 +151,7 @@ TEST(BRISKTests, UnequalVectorSize) {
     float d_max = 5.85f;
     float d_min = 8.2f;
 
-    BRISKDescriptorParams bad_vec_size{r_list, n_list, d_max, d_min};
+    auto bad_vec_size = BRISKDescriptorParams(r_list, n_list, d_max, d_min);
 
     ASSERT_THROW(BRISKDescriptor brisk(bad_vec_size), std::invalid_argument);
 }
@@ -163,8 +166,8 @@ TEST(BRISKTests, CheckDistValues) {
     float d_min_neg = -8.0f;
     float d_min_small = 1.0f;
 
-    BRISKDescriptorParams neg_dmax = {r_list, n_list, d_max_neg, d_min};
-    BRISKDescriptorParams neg_dmin = {r_list, n_list, d_max, d_min_neg};
+    auto neg_dmax = BRISKDescriptorParams(r_list, n_list, d_max_neg, d_min);
+    auto neg_dmin = BRISKDescriptorParams(r_list, n_list, d_max, d_min_neg);
 
     // d_max cannot be larger than d_min
     BRISKDescriptorParams swapped_dists = {
