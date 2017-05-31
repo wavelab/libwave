@@ -44,15 +44,12 @@ BRISKDescriptor::BRISKDescriptor(const BRISKDescriptorParams &config) {
     // Ensure parameters are valid
     this->checkConfiguration(config);
 
-    // Create unused indexChange vector
-    const std::vector<int> indexChange = std::vector<int>();
-
     // Create cv::BRISK object with the desired parameters
     this->brisk_descriptor = cv::BRISK::create(config.radiusList,
                                                config.numberList,
                                                config.dMax,
                                                config.dMin,
-                                               indexChange);
+                                               config.indexChange);
 
     // Store configuration parameters within member struct
     this->current_config = config;
@@ -77,9 +74,6 @@ BRISKDescriptor::BRISKDescriptor(const std::string &config_path) {
           "Failed to Load BRISKDescriptor Configuration");
     }
 
-    // Create unused indexChange vector
-    const std::vector<int> indexChange = std::vector<int>();
-
     // Confirm configuration is valid
     this->checkConfiguration(config);
 
@@ -88,7 +82,7 @@ BRISKDescriptor::BRISKDescriptor(const std::string &config_path) {
                                                config.numberList,
                                                config.dMax,
                                                config.dMin,
-                                               indexChange);
+                                               config.indexChange);
 
     // Store configuration parameters within member struct
     this->current_config = config;

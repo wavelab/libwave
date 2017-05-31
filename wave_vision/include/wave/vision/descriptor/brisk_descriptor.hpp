@@ -50,6 +50,13 @@ struct BRISKDescriptorParams {
      */
     float dMax;
     float dMin;
+
+    /** OpenCV refers to this as a parameter for "index remapping of the bits."
+     *  Kaehler and Bradski's book, "Learning OpenCV3: Computer Vision in C++
+     *  with the OpenCV Library" states this parameter is unused, and should be
+     *  omitted.
+     */
+    const std::vector<int> indexChange = std::vector<int>();
 };
 
 class BRISKDescriptor : public DescriptorExtractor {
