@@ -39,6 +39,9 @@ class ICPMatcher : public Matcher<PCLPointCloud> {
     void setRef(const PCLPointCloud &ref);
     void setTarget(const PCLPointCloud &target);
     bool match();
+    void estimateInfo();
+
+    enum covar_method : int { LUM, CENSI };
 
  private:
     /** An instance of the G-ICP class from PCL */
@@ -51,6 +54,10 @@ class ICPMatcher : public Matcher<PCLPointCloud> {
      * pointcloud after matching, so the "final" member is used as a sink for
      * it. */
     PCLPointCloud ref, target, final;
+    covar_method estimate_method;
+    double lidar_ang_covar, lidar_lin_covar;
+    void estimateLUM();
+    void estimateCensi();
 };
 
 /** @} end of group */
