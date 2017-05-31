@@ -21,7 +21,7 @@ namespace wave {
  *  @{ */
 
 /**
- *  Representation of a generic keypoint descriptor extracotr.
+ *  Representation of a generic keypoint descriptor extractor.
  *
  *  Internally, this class, and all derived classes are wrapping various
  *  descriptor extractors implemented in OpenCV. Further reference on Descriptor
@@ -33,7 +33,7 @@ namespace wave {
 class DescriptorExtractor {
  public:
     /** Destructor */
-    virtual ~DescriptorExtractor(){};
+    virtual ~DescriptorExtractor() = default;
 
     /** Function to return the current image being detected
      *

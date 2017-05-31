@@ -141,7 +141,7 @@ void BRISKDescriptor::checkConfiguration(
     }
 }
 
-BRISKDescriptorParams BRISKDescriptor::getConfiguration() {
+BRISKDescriptorParams BRISKDescriptor::getConfiguration() const {
     return this->current_config;
 }
 

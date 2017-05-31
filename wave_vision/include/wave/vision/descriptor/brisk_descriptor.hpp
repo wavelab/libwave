@@ -82,7 +82,7 @@ class BRISKDescriptor : public DescriptorExtractor {
      *
      * @return a struct containing the current configuration values.
      */
-    BRISKDescriptorParams getConfiguration();
+    BRISKDescriptorParams getConfiguration() const;
 
     /** Extracts descriptors from the keypoints in an image, using the BRISK
      *  extractor.
