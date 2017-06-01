@@ -9,7 +9,7 @@ namespace wave {
 /** @addtogroup controls
  *  @{ */
 
-   class PID {
+ class PID {
  public:
     double error_prev;
     double error_sum;
