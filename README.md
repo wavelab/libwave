@@ -44,7 +44,7 @@ describing concepts and theory behind the library.
 It is generated using Doxygen, using the build target `make doc`.
 
 
-## Developers
+## Notes for Developers
 
 To expedite our development process we use a set of git hooks to run:
 
