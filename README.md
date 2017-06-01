@@ -18,18 +18,18 @@ Execute the following in the terminal where you want libwave to reside:
 
 **Or** you can perform the installation manually:
 
-#clone repo
+    # clone repo
     git clone https://github.com/wavelab/libwave.git
     cd libwave
 
-#initialize git submodules
+    # initialize git submodules
     git submodule init
     git submodule update
 
-#install dependencies
+    # install dependencies
     bash scripts/install/install_deps.bash
 
-#compile libwave
+    # compile libwave
     mkdir -p build
     cd build
     cmake ..
