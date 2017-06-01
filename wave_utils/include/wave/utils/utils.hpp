@@ -16,6 +16,4 @@
 #include "wave/utils/math.hpp"
 #include "wave/utils/time.hpp"
 
-}  // namespace wave
-
 #endif  // WAVE_UTILS_UTILS_HPP
