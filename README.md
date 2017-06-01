@@ -49,7 +49,6 @@ It is generated using Doxygen, using the build target `make doc`.
 To expedite our development process we use a set of git hooks to run:
 
 - Clang format (pre-commit)
-- Unit tests (pre-push)
 
 these can be activated by running the `githook_init.bash` from the root of the repo
 
