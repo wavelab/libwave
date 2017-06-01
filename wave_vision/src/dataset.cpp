@@ -197,10 +197,8 @@ void TestDataset::recordObservedFeatures(
 }
 
 void TestDataset::generateTestData(const std::string &save_path) {
-    int retval;
-
     // create dataset directory
-    retval = mkdir(save_path.c_str(), ACCESSPERMS);
+    int retval = mkdir(save_path.c_str(), ACCESSPERMS);
     if (retval != 0) {
         throw std::runtime_error("Failed to create dataset directory!");
     }
@@ -212,7 +210,7 @@ void TestDataset::generateTestData(const std::string &save_path) {
 
     MatX features;
     this->generateRandom3DFeatures(features);
-    this->record3DFeatures("/tmp/test/features.dat", features);
+    this->record3DFeatures(save_path + "/features.dat", features);
 
     // calculate circle trajectory inputs
     double circle_radius = 0.5;
@@ -225,9 +223,6 @@ void TestDataset::generateTestData(const std::string &save_path) {
     // simulate synthetic VO dataset
     double dt = 0.01;
     double time = 0.0;
-
-    std::ostringstream oss;
-    std::vector<std::pair<Vec2, Vec3>> observed;
     TwoWheelRobot2DModel robot{Vec3{0.0, 0.0, 0.0}};
 
     for (int i = 0; i < 300; i++) {
@@ -238,11 +233,13 @@ void TestDataset::generateTestData(const std::string &save_path) {
         // check features
         Vec3 rpy = Vec3{0.0, 0.0, x(2)};
         Vec3 t = Vec3{x(0), x(1), 0.0};
-        if (this->camera.checkFeatures(dt, features, rpy, t, observed) == 0) {
-            oss.str("");
-            oss << "/tmp/test/observed_" << this->camera.frame << ".dat";
-            this->recordObservedFeatures(time, x, oss.str(), observed);
+        std::vector<std::pair<Vec2, Vec3>> observed;
 
+        if (this->camera.checkFeatures(dt, features, rpy, t, observed) == 0) {
+            std::ostringstream oss;
+            oss.str("");
+            oss << save_path + "/observed_" << this->camera.frame << ".dat";
+            this->recordObservedFeatures(time, x, oss.str(), observed);
             index_file << oss.str() << std::endl;
         }
 
