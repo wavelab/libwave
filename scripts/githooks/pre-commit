@@ -4,7 +4,7 @@ for file in `git status --porcelain | sed s/^...//`
 do
     if [[ $file == *.cpp || $file == *.hpp ]]; then
         echo "Clang-Formatting [${file}]"
-        clang-format -i ${file}
+        $PWD/scripts/format.bash ${file}
         git add ${file}
     fi
 done
