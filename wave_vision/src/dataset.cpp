@@ -2,7 +2,7 @@
 
 namespace wave {
 
-bool TestCamera::update(double dt) {
+bool VOTestCamera::update(double dt) {
     this->dt += dt;
 
     if (this->dt > (1.0 / this->hz)) {
@@ -14,11 +14,11 @@ bool TestCamera::update(double dt) {
     return false;
 }
 
-int TestCamera::checkFeatures(double dt,
-                              const MatX &features,
-                              const Vec3 &rpy,
-                              const Vec3 &t,
-                              std::vector<std::pair<Vec2, Vec3>> &observed) {
+int VOTestCamera::checkFeatures(double dt,
+                                const MatX &features,
+                                const Vec3 &rpy,
+                                const Vec3 &t,
+                                std::vector<std::pair<Vec2, Vec3>> &observed) {
     Vec3 f_2d, rpy_edn, t_edn;
     std::pair<Vec2, Vec3> obs;
     Vec4 f_3d, f_3d_edn;
@@ -79,7 +79,7 @@ int TestCamera::checkFeatures(double dt,
 }
 
 
-TestDataset::TestDataset(const std::string &config_file) {
+VOTestDataset::VOTestDataset(const std::string &config_file) {
     ConfigParser parser;
     double fx, fy, cx, cy;
 
@@ -133,7 +133,7 @@ static void record_observation(std::ofstream &output_file, const Vec3 &x) {
     output_file << std::endl;
 }
 
-void TestDataset::generateRandom3DFeatures(MatX &features) {
+void VOTestDataset::generateRandom3DFeatures(MatX &features) {
     Vec4 point;
 
     // generate random 3d features
@@ -147,8 +147,8 @@ void TestDataset::generateRandom3DFeatures(MatX &features) {
     }
 }
 
-void TestDataset::record3DFeatures(const std::string &output_path,
-                                   const MatX &features) {
+void VOTestDataset::record3DFeatures(const std::string &output_path,
+                                     const MatX &features) {
     int retval = mat2csv(output_path,
                          features.block(0, 0, 3, features.cols()).transpose());
 
@@ -159,7 +159,7 @@ void TestDataset::record3DFeatures(const std::string &output_path,
     }
 }
 
-void TestDataset::recordObservedFeatures(
+void VOTestDataset::recordObservedFeatures(
   double time,
   const Vec3 &x,
   const std::string &output_path,
@@ -196,7 +196,7 @@ void TestDataset::recordObservedFeatures(
     outfile.close();
 }
 
-void TestDataset::generateTestData(const std::string &save_path) {
+void VOTestDataset::generateTestData(const std::string &save_path) {
     // create dataset directory
     int retval = mkdir(save_path.c_str(), ACCESSPERMS);
     if (retval != 0) {

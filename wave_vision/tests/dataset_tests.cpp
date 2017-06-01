@@ -8,8 +8,8 @@ namespace wave {
 const std::string TEST_CONFIG = "tests/data/vo_test.yaml";
 const std::string TEST_OUTPUT = "/tmp/dataset_test";
 
-TEST(TestCamera, constructor) {
-    TestCamera camera;
+TEST(VOTestCamera, constructor) {
+    VOTestCamera camera;
 
     EXPECT_EQ(-1, camera.image_width);
     EXPECT_EQ(-1, camera.image_height);
@@ -19,8 +19,8 @@ TEST(TestCamera, constructor) {
     EXPECT_EQ(-1, camera.frame);
 }
 
-TEST(TestCamera, update) {
-    TestCamera camera;
+TEST(VOTestCamera, update) {
+    VOTestCamera camera;
     bool retval;
 
     // setup
@@ -33,8 +33,8 @@ TEST(TestCamera, update) {
     EXPECT_FLOAT_EQ(0.0, camera.dt);
 }
 
-TEST(TestCamera, checkFeatures) {
-    TestCamera camera;
+TEST(VOTestCamera, checkFeatures) {
+    VOTestCamera camera;
     MatX features;
     Vec3 rpy;
     Vec3 t;
@@ -59,15 +59,15 @@ TEST(TestCamera, checkFeatures) {
     camera.checkFeatures(0.1, features, rpy, t, observed);
 }
 
-TEST(TestDataset, constructor) {
+TEST(VOTestDataset, constructor) {
     // test default constructor
-    TestDataset dataset;
+    VOTestDataset dataset;
 
     EXPECT_EQ(-1, dataset.camera.image_width);
     EXPECT_EQ(-1, dataset.camera.image_height);
 
     // test constructor with config file path as argument
-    TestDataset dataset2(TEST_CONFIG);
+    VOTestDataset dataset2(TEST_CONFIG);
 
     EXPECT_EQ(640, dataset2.camera.image_width);
     EXPECT_EQ(640, dataset2.camera.image_height);
@@ -78,8 +78,8 @@ TEST(TestDataset, constructor) {
     EXPECT_NO_THROW();
 }
 
-TEST(TestDataset, generateTestData) {
-    TestDataset dataset(TEST_CONFIG);
+TEST(VOTestDataset, generateTestData) {
+    VOTestDataset dataset(TEST_CONFIG);
 
     boost::filesystem::remove_all(TEST_OUTPUT);
     dataset.generateTestData(TEST_OUTPUT);

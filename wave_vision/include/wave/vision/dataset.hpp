@@ -19,7 +19,7 @@ namespace wave {
 /** @addtogroup vision
  *  @{ */
 
-/** Test Camera that mimicks a real camera, specifically it contains:
+/** VO Test Camera that mimicks a real camera, specifically it contains:
  *
  * - Image width
  * - Image height
@@ -30,7 +30,7 @@ namespace wave {
  *  This class specifically is used to check whether 3D world features is
  *  observable by the camera in a certain position and orientation.
  */
-class TestCamera {
+class VOTestCamera {
  public:
     int image_width;
     int image_height;
@@ -40,7 +40,7 @@ class TestCamera {
     double dt;
     int frame;
 
-    TestCamera()
+    VOTestCamera()
         : image_width{-1}, image_height{-1}, K{}, hz{-1}, dt{0}, frame{-1} {}
 
     /** Check whether camera is triggered at this time-step
@@ -75,21 +75,21 @@ class TestCamera {
  *
  * in separate files and in a dedicated folder.
  */
-class TestDataset {
+class VOTestDataset {
  public:
-    TestCamera camera;
+    VOTestCamera camera;
     int nb_features;
     Vec2 feature_x_bounds;
     Vec2 feature_y_bounds;
     Vec2 feature_z_bounds;
 
-    TestDataset()
+    VOTestDataset()
         : camera{},
           nb_features{-1},
           feature_x_bounds{},
           feature_y_bounds{},
           feature_z_bounds{} {}
-    explicit TestDataset(const std::string &config_file);
+    explicit VOTestDataset(const std::string &config_file);
 
     /** Generate random 3D features in the world frame
      *
