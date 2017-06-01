@@ -32,7 +32,9 @@ ADD_LIBRARY(
     STATIC
     src/utils.cpp
     src/dataset.cpp
-    src/fast_detector.cpp
+    src/detector/fast_detector.cpp
+    src/descriptor/brisk_descriptor.cpp
+    src/common.cpp
 )
 TARGET_LINK_LIBRARIES(wave_vision ${WAVE_VISION_DEPS})
 
@@ -40,7 +42,8 @@ TARGET_LINK_LIBRARIES(wave_vision ${WAVE_VISION_DEPS})
 WAVE_ADD_TEST(${PROJECT_NAME}_tests
               tests/utils_tests.cpp
               tests/dataset_tests.cpp
-              tests/fast_tests.cpp)
+              tests/detector_tests/fast_tests.cpp
+              tests/descriptor_tests/brisk_tests.cpp)
 TARGET_LINK_LIBRARIES(
     ${PROJECT_NAME}_tests
     ${Boost_LIBRARIES}
