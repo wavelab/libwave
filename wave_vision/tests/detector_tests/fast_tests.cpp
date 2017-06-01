@@ -116,4 +116,4 @@ TEST_F(FASTTest, DISABLED_DetectImage) {
 
     cv::waitKey(0);
 }
-}  // end of namespace wave
+}  // namespace wave

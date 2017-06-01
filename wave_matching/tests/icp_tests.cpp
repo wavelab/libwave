@@ -94,4 +94,4 @@ TEST_F(ICPTest, smallDisplacement) {
     EXPECT_LT(diff, this->threshold);
 }
 
-}  // end of namespace wave
+}  // namespace wave
