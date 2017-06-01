@@ -43,6 +43,19 @@ describing concepts and theory behind the library.
 
 It is generated using Doxygen, using the build target `make doc`.
 
+
+## Developers
+
+To expedite our development process we use a set of git hooks to run:
+
+- Clang format (pre-commit)
+- Unit tests (pre-push)
+
+these can be activated by running the `githook_init.bash` from the root of the repo
+
+    bash scripts/githooks/githooks_init.bash
+
+
 ## LICENSE
 
 Copyright (c) <2017> <Wavelab>
