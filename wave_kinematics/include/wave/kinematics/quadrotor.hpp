@@ -138,4 +138,4 @@ class QuadrotorModel {
 /** @} group kinematics */
 }  // namespace wave
 
-#endif  // WAVE_QUADROTOR_QUADROTOR_HPP
+#endif  // WAVE_KINEMATICS_QUADROTOR_HPP

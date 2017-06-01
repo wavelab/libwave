@@ -275,4 +275,4 @@ TEST_F(RotationTestFixture, testRotateAndJacobian) {
                  std::invalid_argument);
 }
 
-}  // end of wave namespace
+}  // namespace wave

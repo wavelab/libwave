@@ -28,4 +28,4 @@ TEST(CeresExamples, runCurveFittingExample) {
 
 }  // end of examples namespace
 }  // end of ceres namespace
-}  // end of wave namespace
+}  // namespace wave

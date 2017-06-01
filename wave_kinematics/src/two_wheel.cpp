@@ -10,4 +10,4 @@ Vec3 TwoWheelRobot2DModel::update(const Vec2 &inputs, double dt) {
     return this->pose;
 }
 
-}  // end of wave namespace
+}  // namespace wave

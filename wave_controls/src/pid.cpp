@@ -22,4 +22,4 @@ double PID::update(double setpoint, double actual, double dt) {
     return output;
 }
 
-}  // end of wave namespace
+}  // namespace wave
