@@ -11,12 +11,9 @@
 #include <dirent.h>
 
 #include <string>
-#include <cerrno>
-#include <cstring>
 #include <vector>
 #include <numeric>
 #include <iostream>
-#include <sstream>
 
 
 namespace wave {
