@@ -51,9 +51,9 @@ class VOTestCamera {
     /** Returns a list of observable 3D world features
      *
      * @param dt Update time step
-     * @param features 3D world features to test
-     * @param rpy Vector containing roll, pitch, yaw of camera
-     * @param t Vector containining position in x, y and z in (NWU)
+     * @param features 3D world features to test (NWU)
+     * @param rpy Vector containing roll, pitch, yaw of camera (EDN)
+     * @param t Vector containining position in x, y and z (EDN)
      * @param observed Observed 3D features in the image frame
      */
     int checkFeatures(double dt,

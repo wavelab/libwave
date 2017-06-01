@@ -19,35 +19,24 @@ int VOTestCamera::checkFeatures(double dt,
                                 const Vec3 &rpy,
                                 const Vec3 &t,
                                 std::vector<std::pair<Vec2, Vec3>> &observed) {
-    Vec3 f_2d, rpy_edn, t_edn;
-    std::pair<Vec2, Vec3> obs;
-    Vec4 f_3d, f_3d_edn;
-    Mat3 R;
-    MatX P;
-
     // pre-check
     if (this->update(dt) == false) {
-        return 1;
+        return -1;  // not time to check yet
     }
 
-    // rotation matrix - convert from nwu to edn then to rotation matrix R
-    rpy_edn(0) = -rpy(1);
-    rpy_edn(1) = -rpy(2);
-    rpy_edn(2) = rpy(0);
-    euler2rot(rpy_edn, 123, R);
-
-    // translation - convert translation from nwu to edn
-    t_edn(0) = -t(1);
-    t_edn(1) = -t(2);
-    t_edn(2) = t(0);
+    // create rotation matrix from roll pitch yaw
+    Mat3 R;
+    euler2rot(rpy, 123, R);
 
     // projection matrix
-    projection_matrix(this->K, R, -R * t_edn, P);
+    MatX P;
+    projection_matrix(this->K, R, -R * t, P);
 
     // check which features in 3d are observable from camera
     observed.clear();
     for (int i = 0; i < features.cols(); i++) {
         // convert feature in NWU to EDN coordinate system
+        Vec4 f_3d, f_3d_edn;
         f_3d = features.block(0, i, 4, 1);
         f_3d_edn(0) = -f_3d(1);
         f_3d_edn(1) = -f_3d(2);
@@ -55,6 +44,7 @@ int VOTestCamera::checkFeatures(double dt,
         f_3d_edn(3) = 1.0;
 
         // project 3D world point to 2D image plane
+        Vec3 f_2d;
         f_2d = P * f_3d_edn;
 
         // check to see if feature is valid and infront of camera
@@ -67,6 +57,7 @@ int VOTestCamera::checkFeatures(double dt,
             // check to see if feature observed is within image plane
             if ((f_2d(0) < this->image_width) && (f_2d(0) > 0)) {
                 if ((f_2d(1) < this->image_height) && (f_2d(1) > 0)) {
+                    std::pair<Vec2, Vec3> obs;
                     obs = std::make_pair(f_2d.block(0, 0, 2, 1),
                                          f_3d.block(0, 0, 3, 1));
                     observed.push_back(obs);
@@ -235,7 +226,13 @@ void VOTestDataset::generateTestData(const std::string &save_path) {
         Vec3 t = Vec3{x(0), x(1), 0.0};
         std::vector<std::pair<Vec2, Vec3>> observed;
 
-        if (this->camera.checkFeatures(dt, features, rpy, t, observed) == 0) {
+        // convert rpy and t from NWU to EDN coordinate system
+        Vec3 rpy_edn, t_edn;
+        nwu2edn(rpy, rpy_edn);
+        nwu2edn(t, t_edn);
+
+        retval = this->camera.checkFeatures(dt, features, rpy_edn, t_edn, observed);
+        if (retval == 0) {
             std::ostringstream oss;
             oss.str("");
             oss << save_path + "/observed_" << this->camera.frame << ".dat";

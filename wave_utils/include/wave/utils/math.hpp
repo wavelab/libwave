@@ -92,6 +92,25 @@ int quat2euler(Quaternion q, int euler_seq, Vec3 &euler);
 /** Convert quaternion to rotation matrix **/
 int quat2rot(Quaternion q, Mat3 &R);
 
+/** ENU to NWU coordinate system **/
+void enu2nwu(const Vec3 &enu, Vec3 &nwu);
+
+/** NED to ENU coordinate system **/
+void ned2enu(const Vec3 &ned, Vec3 &enu);
+
+/** NED to NWU coordinate system **/
+void ned2nwu(const Quaternion &ned, Quaternion &enu);
+
+/** NWU to ENU coordinate system **/
+void nwu2enu(const Vec3 &nwu, Vec3 &enu);
+
+/** NWU to NED coordinate system **/
+void nwu2ned(const Quaternion &nwu, Quaternion &ned);
+
+/** NWU to EDN coordinate system **/
+void nwu2edn(const Vec3 &nwu, Vec3 &edn);
+
+
 /** @} end of group */
 }  // wave namespace
 #endif
