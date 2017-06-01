@@ -24,4 +24,4 @@ typedef pcl::PointCloud<pcl::PointXYZ>::Ptr PCLPointCloud;
 /** @} group matching */
 }  // namespace wave
 
-#endif  // WAVE_PCL_COMMON_HPP
+#endif  // WAVE_MATCHING_PCL_COMMON_HPP
