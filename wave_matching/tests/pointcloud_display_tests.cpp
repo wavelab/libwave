@@ -11,7 +11,7 @@ namespace wave {
 const auto TEST_SCAN = "data/testscan.pcd";
 
 TEST(viewer, init_test) {
-    PointcloudDisplay display;
+    PointCloudDisplay display("init_test");
     display.startSpin();
     boost::this_thread::sleep(
       boost::posix_time::microseconds(5000000));  // five seconds
@@ -19,7 +19,7 @@ TEST(viewer, init_test) {
 }
 
 TEST(viewer, pointcloud_test) {
-    PointcloudDisplay display;
+    PointCloudDisplay display("pointcloud_test");
     display.startSpin();
     PCLPointCloud cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
     pcl::io::loadPCDFile(TEST_SCAN, *cloud);
@@ -30,7 +30,7 @@ TEST(viewer, pointcloud_test) {
 }
 
 TEST(viewer, multiple_clouds_test) {
-    PointcloudDisplay display;
+    PointCloudDisplay display("multiple_clouds_test");
     display.startSpin();
     PCLPointCloud cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
     pcl::io::loadPCDFile(TEST_SCAN, *cloud);
@@ -48,7 +48,7 @@ TEST(viewer, multiple_clouds_test) {
 }
 
 TEST(viewer, line_test) {
-    PointcloudDisplay display;
+    PointCloudDisplay display("line_test");
     display.startSpin();
     std::vector<pcl::PointXYZ> pts(10);
     for (int i = 0; i < 10; i++) {

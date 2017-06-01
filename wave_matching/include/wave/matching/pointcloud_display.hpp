@@ -6,7 +6,7 @@
  * This is a class that provides an interface to PCLVisualiser class for
  * making cool graphics and debugging. The visualiser itself runs in a
  * separate thread so that it is always interactive.
- * Note: Ids are shared between all drawn objects, so the should be
+ * Note: Ids are shared between all drawn objects, so they should be
  * globally unique.
  */
 
@@ -15,8 +15,10 @@
 
 #include <atomic>
 #include <queue>
-#include <boost/thread.hpp>
-#include <boost/thread/mutex.hpp>
+#include <memory>
+#include <thread>
+#include <mutex>
+#include <chrono>
 #include <pcl/common/common_headers.h>
 #include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/console/parse.h>
@@ -26,12 +28,13 @@ namespace wave {
 /** @addtogroup matching
  *  @{ */
 
-class PointcloudDisplay {
+class PointCloudDisplay {
  public:
     /**
      * Default constructor
+     * @param name: Display window title. Must be unique.
      */
-    PointcloudDisplay();
+    PointCloudDisplay(const std::string &name);
 
     /**
      * Calling this launches the worker thread and opens
@@ -53,7 +56,7 @@ class PointcloudDisplay {
      * @param id: id of cloud to be added. Same id can be
      * used to update cloud later
      */
-    void addPointcloud(PCLPointCloud cld, int id);
+    void addPointcloud(const PCLPointCloud &cld, int id);
 
     /**
      * Queues a line to be added to the display.
@@ -65,13 +68,17 @@ class PointcloudDisplay {
      * @param id1 Start point ID
      * @param id2 End point ID
      */
-    void addLine(pcl::PointXYZ pt1, pcl::PointXYZ pt2, int id1, int id2);
+    void addLine(const pcl::PointXYZ &pt1,
+                 const pcl::PointXYZ &pt2,
+                 int id1,
+                 int id2);
 
  private:
+    std::string display_name;
     /**
      * PCL Visualizer class instance
      */
-    boost::shared_ptr<pcl::visualization::PCLVisualizer> viewer;
+    std::shared_ptr<pcl::visualization::PCLVisualizer> viewer;
     /**
      * Transfers objects from queues to the internal visualizer class
      */
@@ -80,39 +87,28 @@ class PointcloudDisplay {
      * Function run by worker class.
      */
     void spin();
+
+    std::shared_ptr<std::thread> viewer_thread;  ///< worker thread
+
     /**
-     * Pointer to worker thread
-     */
-    boost::thread *viewer_thread;
-    /**
-     * Atomic flag. Used by stopSpin to stop worker thread
+     * Used to stop worker thread
      */
     std::atomic_flag continueFlag = ATOMIC_FLAG_INIT;
-    /**
-     * Mutex to protect buffers
-     */
-    boost::mutex update_mutex;
-    /**
-     * Struct for cloud buffer
-     */
+    std::mutex update_mutex;  ///< Protects buffers
+    /** Struct for cloud buffer */
     struct Cloud {
         PCLPointCloud cloud;
         int id;
     };
-    /**
-     * Struct for line buffer
-     */
+
+    /** Struct for line buffer */
     struct Line {
         pcl::PointXYZ pt1, pt2;
         int id1, id2;
     };
-    /**
-     * queue for pointclouds
-     */
+
     std::queue<Cloud> clouds;
-    /**
-     * queue for lines
-     */
+
     std::queue<Line> lines;
 };
 
