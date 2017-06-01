@@ -1,10 +1,14 @@
 #!/bin/bash
+set -e  # exit on first error
+REPO_ABS_PATH=`git rev-parse --show-toplevel`
+STAGED_FILES=`git status --porcelain | sed s/^...//`
 
-for file in `git status --porcelain | sed s/^...//`
+# run clang-format on staged cpp or hpp files
+for file in $STAGED_FILES
 do
-    if [[ $file == *.cpp || $file == *.hpp ]]; then
-        echo "Clang-Formatting [${file}]"
-        $PWD/scripts/format.bash ${file}
-        git add ${file}
+    if [[ $FILE == *.cpp || $FILE == *.hpp ]]; then
+        echo "Clang-Formatting [${FILE}]"
+        $REPO_ABS_PATH/scripts/format.bash ${FILE}
+        git add ${FILE}
     fi
 done
