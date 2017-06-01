@@ -21,7 +21,7 @@ namespace wave {
  */
 typedef pcl::PointCloud<pcl::PointXYZ>::Ptr PCLPointCloud;
 
-/** @} end of group */
+/** @} group matching */
 }  // namespace wave
 
 #endif  // WAVE_PCL_COMMON_HPP

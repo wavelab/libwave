@@ -27,7 +27,7 @@ namespace wave {
 
 #define LOG_INFO(M, ...) fprintf(stdout, "[INFO] " M "\n", ##__VA_ARGS__)
 
-/** @} end of group */
+/** @} group utils */
 }  // namespace wave
 
 #endif  // WAVE_UTILS_LOGGING_HPP

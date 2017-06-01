@@ -173,7 +173,7 @@ class Rotation {
 // Other helper functions.
 bool isValidRotationMatrix(const Mat3 &input_matrix);
 
-/** @} end of group */
+/** @} group geometry */
 }  // namespace wave
 
 #endif  // WAVE_GEOMETRY_ROTATION_HPP

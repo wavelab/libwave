@@ -135,7 +135,7 @@ class QuadrotorModel {
     void printState();
 };
 
-/** @} end of group */
+/** @} group kinematics */
 }  // namespace wave
 
 #endif  // WAVE_QUADROTOR_QUADROTOR_HPP

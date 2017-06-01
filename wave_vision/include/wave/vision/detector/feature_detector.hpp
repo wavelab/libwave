@@ -60,7 +60,7 @@ class FeatureDetector {
     }
 };
 
-/** @} end of group */
+/** @} group vision */
 }  // namespace wave
 
 #endif  // WAVE_VISION_FEATURE_DETECTOR_HPP

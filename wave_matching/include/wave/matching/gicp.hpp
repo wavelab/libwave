@@ -45,7 +45,7 @@ class GICPMatcher : public Matcher<PCLPointCloud> {
     PCLPointCloud ref, target, final;
 };
 
-/** @} end of group */
+/** @} group matching */
 }  // namespace wave
 
 #endif  // WAVE_MATCHING_ICP_HPP

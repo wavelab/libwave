@@ -51,7 +51,7 @@ int csv2mat(std::string file_path, bool header, MatX &data);
  */
 int mat2csv(std::string file_path, MatX data);
 
-/** @} end of group */
+/** @} group utils */
 }  // namespace wave
 
 #endif  // WAVE_UTILS_DATA_HPP

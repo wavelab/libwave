@@ -45,7 +45,7 @@ class PID {
     double update(double setpoint, double actual, double dt);
 };
 
-/** @} end of group */
+/** @} group controls */
 }  // namespace wave
 
 #endif  // WAVE_CONTROLS_PID_HPP

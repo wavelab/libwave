@@ -63,7 +63,7 @@ class DescriptorExtractor {
     };
 };
 
-/** @} end of group */
+/** @} group vision */
 }  // namespace wave
 
 #endif  // WAVE_VISION_DESCRIPTOR_EXTRACTOR_HPP

@@ -121,7 +121,7 @@ class BRISKDescriptor : public DescriptorExtractor {
     void checkConfiguration(const BRISKDescriptorParams &check_config);
 };
 
-/** @} end of group */
+/** @} group vision */
 }  // namespace wave
 
 #endif  // WAVE_VISION_BRISK_DESCRIPTOR_HPP

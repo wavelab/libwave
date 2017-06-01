@@ -104,7 +104,7 @@ void numerical_jacobian(FunctorType F,
     }
 }
 
-/** @} end of group */
+/** @} group geometry */
 }  // namespace wave
 
 #endif  // WAVE_GEOMETRY_NUMERICAL_TEST_FUNCTORS_HPP

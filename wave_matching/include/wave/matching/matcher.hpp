@@ -105,7 +105,7 @@ class Matcher {
     Mat6 information;
 };
 
-/** @} end of group */
+/** @} group matching */
 }  // namespace wave
 
 #endif  // WAVE_MATCHING_MATCHER_HPP
