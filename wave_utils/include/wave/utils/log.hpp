@@ -11,8 +11,8 @@
  * ```
  */
 
-#ifndef WAVE_UTILS_LOGGING_HPP
-#define WAVE_UTILS_LOGGING_HPP
+#ifndef WAVE_UTILS_LOG_HPP
+#define WAVE_UTILS_LOG_HPP
 
 namespace wave {
 /** @addtogroup utils
