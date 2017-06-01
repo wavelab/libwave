@@ -24,7 +24,8 @@ namespace wave {
  *  brightness comparison tests to construct the descriptor.
  */
 struct BRISKDescriptorParams {
-    BRISKDescriptorParams(){};
+    /** Default Constructor */
+    BRISKDescriptorParams() {}
 
     BRISKDescriptorParams(std::vector<float> rlist,
                           std::vector<int> nlist,

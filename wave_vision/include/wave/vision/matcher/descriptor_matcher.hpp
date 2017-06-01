@@ -19,25 +19,38 @@ namespace wave {
 /** @addtogroup vision
  *  @{ */
 
-/** Enum to determine matcher type:
- *
- *  base matcher determines the best keypoint matches across the query set.
- *  k-nearest-neighbours finds the k best matches for each descriptor.
- *  radius threshold returns the best keypoint matches within a certain
- *  distance.
- */
-enum matcherType { base, knn, radius };
-
-/** Struct for full matcher configuration.
- *
- *  base matcher determines the best keypoint matches across the query set.
- *  k-nearest-neighbours finds the k best matches for each descriptor.
- *  radius threshold returns the best keypoint matches within a certain
- *  distance.
- */
 struct MatcherConfig {
-    /** Enum to determine matcher type. Default: base */
-    matcherType type = base;
+    /** Default constructor*/
+    MatcherConfig() {}
+
+    /** Constructor using user-defined parameters */
+    MatcherConfig(int norm_type, bool crossCheck)
+        : norm_type(norm_type), cross_check(cross_check) {}
+
+    /** Norm type to use for distance calculation between feature descriptors.
+     *
+     *  Options: cv::NORM_L1, cv::NORM_L2, cv::NORM_HAMMING, cv::NORM_HAMMING2.
+     *  As per OpenCV docs, NORM_L1 and NORM_L2 is valid for the SIFT or
+     *  SURF descriptors, while NORM_HAMMING is valid for the ORB, BRISK, and
+     *  BRIEF descriptors. NORM_HAMMING2 should only be used with ORB, when
+     *  WTA_K is 3 or 4.
+     *
+     *  Please refer to further description of the norm types
+     *  [here][opencv_norm_types].
+     *
+     *  [opencv_norm_types]:
+     *  http://docs.opencv.org/trunk/d2/de8/group__core__array.html#gad12cefbcb5291cf958a85b4b67b6149f
+     */
+    int norm_type = cv::NORM_HAMMING;
+
+    /** This boolean enables or disables the cross-checking functionality, which
+     *  looks to remove false matches. If true, the closest match to
+     *  descriptor_1 from descriptor_2 will only be reported if the object in
+     *  descriptor_2 is also the closest to descriptor_1.
+     *
+     *  Recommended: false
+     */
+    bool cross_check = false;
 };
 
 /** Representation of a generic descriptor matcher.
@@ -47,32 +60,47 @@ struct MatcherConfig {
  *  matchers can be found [here][opencv_descriptor_matchers].
  *
  *  [opencv_descriptor_matchers]:
- * http://docs.opencv.org/trunk/db/d39/classcv_1_1DescriptorMatcher.html
+ *  http://docs.opencv.org/trunk/db/d39/classcv_1_1DescriptorMatcher.html
  */
 class DescriptorMatcher {
  public:
-    /** Descructor */
+    /** Destructor */
     virtual ~DescriptorMatcher() = default;
 
     /** Virtual function to match keypoints descriptors between two images.
-     *  Templated in order to accommodate return of base, knn, or radius
-     *  matchers.
      *
      *  @param descriptors_1 the descriptors extracted from the first image.
      *  @param descriptors_2 the descriptors extracted from the second image.
-     *  @param matches either std::vector<cv::DMatch>, or
-     *  std::vector<std::vector<cv::DMatch>> depending on selection of base,
-     *  knn, or radius matchers.
+     *
+     *  @return vector containing the best matches.
      */
-    template <typename T>
-    void matchDescriptors(cv::Mat descriptors_1,
-                          cv::Mat descriptors_2,
-                          T matches) = 0;
+    virtual std::vector<cv::DMatch> matchDescriptors(
+      cv::Mat &descriptors_1, cv::Mat &descriptors_2) = 0;
+
+    /** Function to display matches between two images.
+     *
+     *  @param image_1 the first image.
+     *  @param keypoints_1 the keypoints detected in the first image.
+     *  @param image_2 the second image.
+     *  @param keypoints_2 the keypoints detected in the second image.
+     *  @param matches the matches found between the images.
+     */
+    void showMatches(cv::Mat image_1,
+                     std::vector<cv::KeyPoint> keypoints_1,
+                     cv::Mat image_2,
+                     std::vector<cv::KeyPoint> keypoints_2,
+                     std::vector<cv::DMatch> matches) {
+        cv::Mat image_matches;
+
+        cv::drawMatches(
+          image_1, keypoints_1, image_2, keypoints_2, matches, image_matches);
+
+        cv::imshow("Matched Keypoints", image_matches);
+    }
 
  private:
-    MatcherConfig config;
+    cv::Mat mask;
 };
-
 
 }  // namespace wave
 
