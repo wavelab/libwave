@@ -3,8 +3,8 @@
  * Base class from which descriptor matchers can be derived.
  * @ingroup vision
  */
-#ifndef WAVE_DESCRIPTOR_MATCHER_HPP
-#define WAVE_DESCRIPTOR_MATCHER_HPP
+#ifndef WAVE_VISION_DESCRIPTOR_MATCHER_HPP
+#define WAVE_VISION_DESCRIPTOR_MATCHER_HPP
 
 /** C++ Headers */
 #include <exception>
@@ -19,12 +19,12 @@ namespace wave {
 /** @addtogroup vision
  *  @{ */
 
-struct MatcherConfig {
+struct MatcherParams {
     /** Default constructor*/
-    MatcherConfig() {}
+    MatcherParams() {}
 
     /** Constructor using user-defined parameters */
-    MatcherConfig(int norm_type, bool crossCheck)
+    MatcherParams(int norm_type, bool crossCheck)
         : norm_type(norm_type), cross_check(cross_check) {}
 
     /** Norm type to use for distance calculation between feature descriptors.
@@ -34,6 +34,8 @@ struct MatcherConfig {
      *  SURF descriptors, while NORM_HAMMING is valid for the ORB, BRISK, and
      *  BRIEF descriptors. NORM_HAMMING2 should only be used with ORB, when
      *  WTA_K is 3 or 4.
+     *
+     *  Default: NORM_HAMMING, since currently only BRISK Descriptor is used.
      *
      *  Please refer to further description of the norm types
      *  [here][opencv_norm_types].
@@ -99,9 +101,9 @@ class DescriptorMatcher {
     }
 
  private:
-    cv::Mat mask;
+    cv::Mat mask = cv::NoArray();
 };
 
 }  // namespace wave
 
-#endif  // WAVE_DESCRIPTOR_MATCHER_HPP
+#endif  // WAVE_VISION_DESCRIPTOR_MATCHER_HPP
