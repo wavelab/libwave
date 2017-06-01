@@ -1,4 +1,4 @@
-# libwave
+#libwave
 [![Build Status](https://travis-ci.org/wavelab/libwave.png?branch=master)][1]
 
 This library contains reusable code for:
@@ -18,18 +18,18 @@ Execute the following in the terminal where you want libwave to reside:
 
 **Or** you can perform the installation manually:
 
-    # clone repo
+#clone repo
     git clone https://github.com/wavelab/libwave.git
     cd libwave
 
-    # initialize git submodules
+#initialize git submodules
     git submodule init
     git submodule update
 
-    # install dependencies
+#install dependencies
     bash scripts/install/install_deps.bash
 
-    # compile libwave
+#compile libwave
     mkdir -p build
     cd build
     cmake ..
@@ -42,6 +42,7 @@ The documentation consists of an API reference as well as pages on Fundamentals,
 describing concepts and theory behind the library.
 
 It is generated using Doxygen, using the build target `make doc`.
+
 
 ## LICENSE
 
