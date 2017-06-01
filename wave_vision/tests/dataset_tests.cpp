@@ -1,5 +1,6 @@
+#include <boost/filesystem.hpp>
+
 #include "wave/wave_test.hpp"
-#include "wave/utils/utils.hpp"
 #include "wave/vision/dataset.hpp"
 
 namespace wave {
@@ -80,7 +81,7 @@ TEST(VOTestDataset, constructor) {
 TEST(VOTestDataset, generateTestData) {
     VOTestDataset dataset(TEST_CONFIG);
 
-    remove_dir(TEST_OUTPUT);
+    boost::filesystem::remove_all(TEST_OUTPUT);
     dataset.generateTestData(TEST_OUTPUT);
     EXPECT_NO_THROW();
 }

@@ -26,9 +26,6 @@ namespace wave {
 /** Checks if a file exists at the given path */
 bool file_exists(const std::string &file_name);
 
-/** Remove directory **/
-void remove_dir(const std::string &path);
-
 /** Splits `path` with the `/` token.
  * @return vector of separated path elements */
 std::vector<std::string> path_split(const std::string path);
