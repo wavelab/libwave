@@ -2,8 +2,8 @@
  * @ingroup controls
  */
 
-#ifndef WAVE_PID_HPP
-#define WAVE_PID_HPP
+#ifndef WAVE_CONTROLS_PID_HPP
+#define WAVE_CONTROLS_PID_HPP
 
 namespace wave {
 /** @addtogroup controls
@@ -46,5 +46,6 @@ class PID {
 };
 
 /** @} end of group */
-}  // end of wave namespace
-#endif
+}  // namespace wave
+
+#endif  // WAVE_CONTROLS_PID_HPP

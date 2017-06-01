@@ -45,5 +45,6 @@ class Pose {
 };
 
 /** @} end of group */
-}  // end of wave namespace
-#endif
+}  // namespace wave
+
+#endif  // WAVE_KINEMATICS_POSE_HPP

@@ -61,6 +61,6 @@ class ICPMatcher : public Matcher<PCLPointCloud> {
 };
 
 /** @} end of group */
-}  // end of wave namespace
+}  // namespace wave
 
 #endif  // WAVE_MATCHING_ICP_HPP

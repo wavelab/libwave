@@ -28,5 +28,6 @@ float mtoc(struct timespec *tic);
 double time_now(void);
 
 /** @} end of group */
-}  // end of wave namespace
-#endif
+}  // namespace wave
+
+#endif  // WAVE_UTILS_TIME_HPP

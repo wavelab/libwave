@@ -188,7 +188,6 @@ class MeasurementContainer {
 };
 
 /** @} end of group */
-
 }  // namespace wave
 
 #include "impl/measurement_container.hpp"

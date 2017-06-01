@@ -44,5 +44,6 @@ Vec2 focal_length(double hfov,
 void projection_matrix(const Mat3 &K, const Mat3 &R, const Vec3 &t, MatX &P);
 
 /** @} end of group */
-}  // end of wave namespace
-#endif
+}  // namespace wave
+
+#endif  // WAVE_VISION_COMMON_HPP

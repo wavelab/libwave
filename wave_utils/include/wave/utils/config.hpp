@@ -215,5 +215,6 @@ class ConfigParser {
 };
 
 /** @} end of group */
-}  // end of wave namespace
-#endif
+}  // namespace wave
+
+#endif  // WAVE_UTILS_CONFIG_HPP

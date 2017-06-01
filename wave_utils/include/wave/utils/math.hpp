@@ -75,5 +75,6 @@ int quat2euler(Quaternion q, int euler_seq, Vec3 &euler);
 int quat2rot(Quaternion q, Mat3 &R);
 
 /** @} end of group */
-}  // end of wave namespace
-#endif
+}  // namespace wave
+
+#endif  // WAVE_UTILS_MATH_HPP

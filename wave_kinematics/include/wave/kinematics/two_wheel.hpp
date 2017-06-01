@@ -34,5 +34,6 @@ class TwoWheelRobot2DModel {
 };
 
 /** @} end of group */
-}  // end of wave namespace
-#endif
+}  // namespace wave
+
+#endif  // WAVE_KINEMATICS_TWOWHEEL_HPP

@@ -4,14 +4,12 @@
  * base class.
  * @ingroup vision
  */
-#ifndef WAVE_BRISK_DESCRIPTOR_HPP
-#define WAVE_BRISK_DESCRIPTOR_HPP
+#ifndef WAVE_VISION_BRISK_DESCRIPTOR_HPP
+#define WAVE_VISION_BRISK_DESCRIPTOR_HPP
 
-/** C++ Headers */
 #include <string>
 #include <vector>
 
-/** Libwave Headers */
 #include "wave/vision/descriptor/descriptor_extractor.hpp"
 
 namespace wave {
@@ -26,10 +24,8 @@ namespace wave {
  *  brightness comparison tests to construct the descriptor.
  */
 struct BRISKDescriptorParams {
-    /** Default Constructor */
     BRISKDescriptorParams(){};
 
-    /** Constructor with user defined values */
     BRISKDescriptorParams(std::vector<float> rlist,
                           std::vector<int> nlist,
                           float d_max,
@@ -92,7 +88,6 @@ class BRISKDescriptor : public DescriptorExtractor {
     */
     BRISKDescriptor(const std::string &config_path);
 
-    /** Destructor */
     ~BRISKDescriptor();
 
     /** Returns the current configuration parameters being used by the
@@ -129,4 +124,4 @@ class BRISKDescriptor : public DescriptorExtractor {
 /** @} end of group */
 }  // namespace wave
 
-#endif  // WAVE_BRISK_DESCRIPTOR_HPP
+#endif  // WAVE_VISION_BRISK_DESCRIPTOR_HPP

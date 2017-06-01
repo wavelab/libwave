@@ -2,8 +2,8 @@
  * @ingroup geometry
  */
 
-#ifndef WAVE_NUMERICAL_TEST_FUNCTORS_HPP
-#define WAVE_NUMERICAL_TEST_FUNCTORS_HPP
+#ifndef WAVE_GEOMOETRY_NUMERICAL_TEST_FUNCTORS_HPP
+#define WAVE_GEOMOETRY_NUMERICAL_TEST_FUNCTORS_HPP
 
 #include "wave/geometry/rotation.hpp"
 
@@ -105,6 +105,6 @@ void numerical_jacobian(FunctorType F,
 }
 
 /** @} end of group */
-}  // end namespace wave
+}  // namespace wave
 
-#endif
+#endif  // WAVE_GEOMETRY_NUMERICAL_TEST_FUNCTORS_HPP

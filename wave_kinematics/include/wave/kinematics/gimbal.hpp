@@ -177,5 +177,6 @@ class Gimbal2AxisModel {
 };
 
 /** @} end of group */
-}  // end of wave namespace
-#endif
+}  // namespace wave
+
+#endif  // WAVE_KINEMATICS_GIMBAL_HPP

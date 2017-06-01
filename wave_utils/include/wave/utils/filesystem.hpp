@@ -40,5 +40,7 @@ void paths_combine(const std::string path1,
                    const std::string path2,
                    std::string &out);
 
-}  // end of wave namepsace
-#endif
+/** @} end of group */
+}  // namespace wave
+
+#endif  // WAVE_UTILS_FILESYSTEM_HPP

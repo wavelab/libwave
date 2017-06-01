@@ -136,5 +136,6 @@ class QuadrotorModel {
 };
 
 /** @} end of group */
-}  // end of wave namespace
-#endif
+}  // namespace wave
+
+#endif  // WAVE_QUADROTOR_QUADROTOR_HPP

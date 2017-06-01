@@ -106,5 +106,6 @@ class Matcher {
 };
 
 /** @} end of group */
-}  // end of wave namespace
-#endif
+}  // namespace wave
+
+#endif  // WAVE_MATCHING_MATCHER_HPP
