@@ -1,5 +1,4 @@
-#include "wave/utils/filesystem.hpp"
-
+#include "wave/utils/file.hpp"
 
 namespace wave {
 
@@ -12,6 +11,31 @@ bool file_exists(const std::string &fp) {
     } else {
         return false;
     }
+}
+
+void remove_dir(const std::string &path) {
+    DIR *dir = opendir(path.c_str());
+    struct dirent *next_file;
+    char filepath[256];
+
+    // pre-check
+    if (dir == NULL) {
+        std::ostringstream msg;
+        msg << "Failed to rmdir [" << path << "]: " << std::strerror(errno);
+        throw std::runtime_error(msg.str());
+    }
+
+
+    // remove files in path
+    while ((next_file = readdir(dir)) != NULL) {
+        // build the path for each file in the folder
+        sprintf(filepath, "%s/%s", path.c_str(), next_file->d_name);
+        remove(filepath);
+    }
+
+    // remove dir
+    remove(path.c_str());
+    closedir(dir);
 }
 
 std::vector<std::string> path_split(const std::string path) {

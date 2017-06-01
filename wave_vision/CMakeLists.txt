@@ -4,8 +4,6 @@ PROJECT(wave_vision)
 # DEPENDENCIES
 FIND_PACKAGE(OpenCV REQUIRED)
 FIND_PACKAGE(Eigen3 REQUIRED)
-FIND_PACKAGE(Boost 1.40 COMPONENTS system filesystem REQUIRED)
-
 
 # DEFINITIONS
 ADD_DEFINITIONS(${OpenCV_DEFINITIONS})
@@ -13,7 +11,6 @@ ADD_DEFINITIONS(${OpenCV_DEFINITIONS})
 # INCLUDES
 INCLUDE_DIRECTORIES(${OpenCV_INCLUDE_DIRS})
 INCLUDE_DIRECTORIES(${EIGEN_INCLUDE_DIR})
-INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIR})
 
 # LIB DIRS
 LINK_DIRECTORIES(${Boost_LIBRARY_DIR})
@@ -23,7 +20,6 @@ SET(
     WAVE_VISION_DEPS
     yaml-cpp
     ${OpenCV_LIBS}
-    ${Boost_LIBRARIES}
     wave_kinematics
     wave_utils
 )
@@ -45,7 +41,6 @@ WAVE_ADD_TEST(${PROJECT_NAME}_tests
               tests/utils_tests.cpp)
 TARGET_LINK_LIBRARIES(
     ${PROJECT_NAME}_tests
-    ${Boost_LIBRARIES}
     ${PROJECT_NAME}
     wave_kinematics
     wave_utils

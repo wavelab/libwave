@@ -231,7 +231,8 @@ void VOTestDataset::generateTestData(const std::string &save_path) {
         nwu2edn(rpy, rpy_edn);
         nwu2edn(t, t_edn);
 
-        retval = this->camera.checkFeatures(dt, features, rpy_edn, t_edn, observed);
+        retval =
+          this->camera.checkFeatures(dt, features, rpy_edn, t_edn, observed);
         if (retval == 0) {
             std::ostringstream oss;
             oss.str("");
