@@ -48,4 +48,4 @@ TEST(VisionCommon, projection_matrix) {
     EXPECT_PRED2(MatricesNear, expected, P);
 }
 
-}  // end of wave namespace
+}  // namespace wave

@@ -93,4 +93,4 @@ TEST_F(GICPTest, smallDisplacement) {
     EXPECT_LT(diff, 0.1);
 }
 
-}  // end of namespace wave
+}  // namespace wave

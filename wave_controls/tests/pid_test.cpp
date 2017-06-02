@@ -59,4 +59,4 @@ TEST(PID, update) {
     EXPECT_DOUBLE_EQ(12.0, output);
 }
 
-}  // end of wave namespace
+}  // namespace wave

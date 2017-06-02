@@ -4,17 +4,14 @@
  * class.
  * @ingroup vision
  */
-#ifndef WAVE_FAST_DETECTOR_HPP
-#define WAVE_FAST_DETECTOR_HPP
+#ifndef WAVE_VISION_FAST_DETECTOR_HPP
+#define WAVE_VISION_FAST_DETECTOR_HPP
 
-/** C++ Headers */
 #include <string>
 #include <vector>
 
-/** Libwave Headers */
 #include "wave/vision/detector/feature_detector.hpp"
 
-/** The wave namespace */
 namespace wave {
 /** @addtogroup vision
  *  @{ */
@@ -66,7 +63,6 @@ struct FASTParams {
  */
 class FASTDetector : public FeatureDetector {
  public:
-    /** Default Constructor */
     FASTDetector();
 
     /** Constructs a FastFeatureDetector using parameters specified by the user
@@ -123,7 +119,7 @@ class FASTDetector : public FeatureDetector {
     void checkConfiguration(const FASTParams &check_config);
 };
 
-/** @} end of group */
-}  // end of namespace wave
+/** @} group vision */
+}  // namespace wave
 
 #endif  // WAVE_FAST_DETECTOR_HPP

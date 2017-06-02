@@ -3,20 +3,16 @@
  * Base class from which feature detectors can be derived.
  * @ingroup vision
  */
-#ifndef WAVE_FEATURE_DETECTOR_HPP
-#define WAVE_FEATURE_DETECTOR_HPP
+#ifndef WAVE_VISION_FEATURE_DETECTOR_HPP
+#define WAVE_VISION_FEATURE_DETECTOR_HPP
 
-/** C++ Headers */
 #include <exception>
 #include <vector>
 
-/** Third Party Headers */
 #include <opencv2/opencv.hpp>
 
-/** Libwave Headers */
 #include "wave/utils/utils.hpp"
 
-/** The wave namespace */
 namespace wave {
 /** @addtogroup vision
  *  @{ */
@@ -33,7 +29,6 @@ namespace wave {
  */
 class FeatureDetector {
  public:
-    /** Destructor */
     virtual ~FeatureDetector() {}
 
     /** Function to return current image being detected
@@ -65,7 +60,7 @@ class FeatureDetector {
     }
 };
 
-/** @} end of group */
-}  // end of namespace wave
+/** @} group vision */
+}  // namespace wave
 
-#endif  // WAVE_FEATURE_DETECTOR_HPP
+#endif  // WAVE_VISION_FEATURE_DETECTOR_HPP

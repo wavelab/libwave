@@ -30,4 +30,4 @@ TEST(Pose, rotationMatrix) {
     EXPECT_TRUE(R.isApprox(Mat3::Identity()));
 }
 
-}  // end of wave namespace
+}  // namespace wave

@@ -82,4 +82,4 @@ void paths_combine(const std::string path1,
     }
 }
 
-}  // end of wave namepsace
+}  // namespace wave

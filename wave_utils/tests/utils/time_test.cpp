@@ -15,4 +15,4 @@ TEST(Utils_time, ticAndtoc) {
     ASSERT_TRUE(mtoc(&start) > 9.0);
 }
 
-}  // end of wave namespace
+}  // namespace wave

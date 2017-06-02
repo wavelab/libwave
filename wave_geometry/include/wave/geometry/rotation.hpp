@@ -2,8 +2,8 @@
  * @ingroup geometry
  */
 
-#ifndef WAVE_KINEMATICS_ROTATION_HPP
-#define WAVE_KINEMATICS_ROTATION_HPP
+#ifndef WAVE_GEOMETRY_ROTATION_HPP
+#define WAVE_GEOMETRY_ROTATION_HPP
 
 #include <functional>
 #include <iostream>
@@ -173,6 +173,7 @@ class Rotation {
 // Other helper functions.
 bool isValidRotationMatrix(const Mat3 &input_matrix);
 
-/** @} end of group */
-}  // end of wave namespace
-#endif
+/** @} group geometry */
+}  // namespace wave
+
+#endif  // WAVE_GEOMETRY_ROTATION_HPP
