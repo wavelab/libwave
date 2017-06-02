@@ -18,11 +18,11 @@ class RotateAndJacobianJpointFunctor {
  public:
     Rotation R;
     Vec3 P;
-    RotateAndJacobianJpointFunctor(Rotation input_rotation) {
+    RotateAndJacobianJpointFunctor(const Rotation &input_rotation) {
         this->R = input_rotation;
     }
 
-    Vec3 operator()(Vec3 input_point) {
+    Vec3 operator()(const Vec3 &input_point) {
         Vec3 output_point = R.rotate(input_point);
         return output_point;
     }
@@ -33,12 +33,13 @@ class RotateAndJacobianJparamFunctor {
  public:
     Rotation R;
     Vec3 P;
-    RotateAndJacobianJparamFunctor(Rotation input_rotation, Vec3 input_point) {
+    RotateAndJacobianJparamFunctor(const Rotation &input_rotation,
+                                   const Vec3 &input_point) {
         this->R = input_rotation;
         this->P = input_point;
     }
 
-    Vec3 operator()(Vec3 input_point) {
+    Vec3 operator()(const Vec3 &input_point) {
         Rotation Rp = this->R;
         Rp = Rp.manifoldPlus(input_point);
         Vec3 output_point = Rp.rotate(P);
@@ -50,12 +51,13 @@ class ComposeAndJacobianJLeftFunctor {
  public:
     Rotation R_left;
     Rotation R_right;
-    ComposeAndJacobianJLeftFunctor(Rotation R_left, Rotation R_right) {
+    ComposeAndJacobianJLeftFunctor(const Rotation &R_left,
+                                   const Rotation &R_right) {
         this->R_left = R_left;
         this->R_right = R_right;
     }
 
-    Rotation operator()(Vec3 perturbation) {
+    Rotation operator()(const Vec3 &perturbation) {
         Mat3 J;
         Rotation R_perturbed = this->R_left;
         R_perturbed = R_perturbed.manifoldPlus(perturbation);
@@ -67,12 +69,13 @@ class ComposeAndJacobianJRightFunctor {
  public:
     Rotation R_left;
     Rotation R_right;
-    ComposeAndJacobianJRightFunctor(Rotation R_left, Rotation R_right) {
+    ComposeAndJacobianJRightFunctor(const Rotation &R_left,
+                                    const Rotation &R_right) {
         this->R_left = R_left;
         this->R_right = R_right;
     }
 
-    Rotation operator()(Vec3 perturbation) {
+    Rotation operator()(const Vec3 &perturbation) {
         Mat3 J;
         Rotation R_perturbed = this->R_right;
         R_perturbed = R_perturbed.manifoldPlus(perturbation);
@@ -83,11 +86,11 @@ class ComposeAndJacobianJRightFunctor {
 class InverseAndJacobianFunctor {
  public:
     Rotation R;
-    InverseAndJacobianFunctor(Rotation R) {
+    InverseAndJacobianFunctor(const Rotation &R) {
         this->R = R;
     }
 
-    Rotation operator()(Vec3 perturbation) {
+    Rotation operator()(const Vec3 &perturbation) {
         Mat3 J;
         Rotation R_perturbed = this->R;
         R_perturbed = R_perturbed.manifoldPlus(perturbation);
@@ -98,11 +101,11 @@ class InverseAndJacobianFunctor {
 class LogMapAndJacobianFunctor {
  public:
     Rotation R;
-    LogMapAndJacobianFunctor(Rotation R) {
+    LogMapAndJacobianFunctor(const Rotation &R) {
         this->R = R;
     }
 
-    Vec3 operator()(Vec3 perturbation) {
+    Vec3 operator()(const Vec3 &perturbation) {
         Mat3 J;
         Rotation R_perturbed = this->R;
         R_perturbed = R_perturbed.manifoldPlus(perturbation);
@@ -115,12 +118,13 @@ class ManifoldMinusAndJacobianJLeftFunctor {
  public:
     Rotation R_left;
     Rotation R_right;
-    ManifoldMinusAndJacobianJLeftFunctor(Rotation R_left, Rotation R_right) {
+    ManifoldMinusAndJacobianJLeftFunctor(const Rotation &R_left,
+                                         const Rotation &R_right) {
         this->R_left = R_left;
         this->R_right = R_right;
     }
 
-    Vec3 operator()(Vec3 perturbation) {
+    Vec3 operator()(const Vec3 &perturbation) {
         Mat3 J;
         Rotation R_perturbed = this->R_left;
         R_perturbed = R_perturbed.manifoldPlus(perturbation);
@@ -132,12 +136,13 @@ class ManifoldMinusAndJacobianJRightFunctor {
  public:
     Rotation R_left;
     Rotation R_right;
-    ManifoldMinusAndJacobianJRightFunctor(Rotation R_left, Rotation R_right) {
+    ManifoldMinusAndJacobianJRightFunctor(const Rotation &R_left,
+                                          const Rotation &R_right) {
         this->R_left = R_left;
         this->R_right = R_right;
     }
 
-    Vec3 operator()(Vec3 perturbation) {
+    Vec3 operator()(const Vec3 &perturbation) {
         Mat3 J;
         Rotation R_perturbed = this->R_right;
         R_perturbed = R_perturbed.manifoldPlus(perturbation);
@@ -162,7 +167,7 @@ double get_perturbation_point(double evaluation_point, double step_size) {
 
 template <typename MatrixType, typename FunctorType>
 void numerical_jacobian(FunctorType F,
-                        Vec3 evaluation_point,
+                        const Vec3 &evaluation_point,
                         Eigen::MatrixBase<MatrixType> &jac) {
     for (int i = 0; i < evaluation_point.size(); i++) {
         // Select the step size as recommended in Numerical Recipes.

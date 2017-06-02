@@ -183,11 +183,11 @@ Rotation Rotation::composeAndJacobian(const Rotation &R_right,
     R_out = (*this) * R_right;
 
     // Jacobian wrt left rotation is identity.
-    J_left = Eigen::MatrixXd::Identity(3, 3);
+    J_left = MatX::Identity(3, 3);
 
     // Jacobian wrt right rotation is the left rotation matrix.
     J_right = this->toRotationMatrix();
-    ;
+
     return R_out;
 }
 

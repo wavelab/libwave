@@ -98,8 +98,13 @@ class Rotation {
      */
     Vec3 logMap() const;
 
-    // Returns the log map of R and the associated Jacobian
-    // of the mapping.
+    /** Computes the log map of the input and computes the Jacobian
+     * of the log map wrt @f$ R @f$.
+     *
+     * @param[in] R The input rotation we are taking the log of.
+     * @param[out] J_logmap Jacobian of the log map wrt to the input
+     * @f$ R @f$.
+     */
     static Vec3 logMapAndJacobian(const Rotation &R, Mat3 &J_logmap);
 
     /** Rotates the input vector by this rotation.
@@ -166,25 +171,57 @@ class Rotation {
      */
     Rotation &manifoldPlus(const Vec3 &omega);
 
-    // Returns the boxminus of two rotations.
+    /** Calculates the result of the manifold-minus operation @f$ \boxminus @f$.
+     *
+     * @param R @f$ R \in \mathbb{SO}3 @f$, a rotation
+     * @return The result, @f$ \omega = R_t \boxminus R @f$
+     * @note the @f$ \boxminus @f$ operator is implemented as follows:
+     * @f[
+     * \boxminus: \mathbb{SO}(3) \times \mathbb{SO}(3) \mapsto \mathbb{R}^3  \\
+     * R_t \boxminus R = log(R_t R^{-1})
+     * @f]
+     * where @f$ R_t @f$ corresponds to the rotation of **this** object.
+     */
     Vec3 manifoldMinus(const Rotation &R) const;
 
-    // Returns the boxminus of two rotations, and the Jacobians of boxminus
-    // wrt the left and right rotations.
+    /** Same as manifoldMinus, except also computes the Jacobians with respect
+     * to the left and right arguments of manifoldMinus.  For manifold minus,
+     * @f$ \omega = R_t \boxminus R @f$.
+     *
+     * @param[in] R @f$ R \in \mathbb{SO}3 @f$, a rotation
+     * @param[out] J_left The Jacobian of manifoldMinus wrt the left argument,
+     * @f$ R_t @f$, which is also **this** rotation.
+     * @param[out] J_right The Jacobian of manifoldMinus wrt the right argument,
+     * @f$ R @f$, which is also the input rotation.
+     * @return The result, @f$ \omega = R_t \boxminus R @f$
+     */
     Vec3 manifoldMinusAndJacobian(const Rotation &R,
                                   Mat3 &J_left,
                                   Mat3 &J_right) const;
 
-    // Composes two rotations and computes the Jacobians wrt the left
-    // and right rotations.
-    // R_out = R_left*R_right.  Note that "this" corresponds to
-    // R_left.
-    Rotation composeAndJacobian(const Rotation &rotation_right,
+    /** Composes two rotations and computes the Jacobians wrt the left
+     * and right rotations:
+     * @f$ R_{out} = R_{left}*R_{right} @f$  Note that **this** rotation
+     * corresponds with @f$ R_{left} @f$ and the input rotation is @f$
+     * R_{right}@f$.
+     * @param[in] R_right @f$ R_{right} \in \mathbb{SO}3 @f$, the input
+     * rotation.
+     * @param[out] J_left The Jacobian of compose wrt the left argument,
+     * @f$ R_{left} @f$ , which is also **this** rotation.
+     * @param[out] J_right The Jacobian of compose wrt the right argument,
+     * @f$ R_{right} @f$, which is also the input rotation.
+     * @return The resulting composition @f$ R_{out} @f$.
+     */
+    Rotation composeAndJacobian(const Rotation &R_right,
                                 Mat3 &J_left,
                                 Mat3 &J_right) const;
 
-    // Returns the inverse of "this" and the Jacobian of the inverse
-    // mapping.
+    /** Compute the inverse of **this** rotation and computes the Jacobian
+     * of the inverse mapping wrt **this** rotation.
+     * @param[out] J_rotation The Jacobian of the inverse mapping wrt **this**
+     * rotation.
+     * @return The inverse of **this** rotation.
+     */
     Rotation inverseAndJacobian(Mat3 &J_rotation) const;
 
 
@@ -193,15 +230,15 @@ class Rotation {
 
     // Operator overloads.
 
-    // Implements rotation multiplication.
+    /** Implements rotation multiplication. */
     Rotation operator*(const Rotation &R) const;
 
-    // Implements manifoldMinus using - operator.
+    /** Implements manifoldMinus using - operator. */
     Vec3 operator-(const Rotation &R) const;
     friend std::ostream &operator<<(std::ostream &stream, const Rotation &R);
 };
 
-// Other helper functions.
+/** Checks to see if the input matrix is a valid rotation matrix. */
 bool isValidRotationMatrix(const Mat3 &input_matrix);
 
 /** @} group geometry */
