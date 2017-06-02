@@ -27,6 +27,7 @@ float mtoc(struct timespec *tic);
 /** @return the time since epoch in seconds. */
 double time_now(void);
 
-/** @} end of group */
-}  // end of wave namespace
-#endif
+/** @} group utils */
+}  // namespace wave
+
+#endif  // WAVE_UTILS_TIME_HPP

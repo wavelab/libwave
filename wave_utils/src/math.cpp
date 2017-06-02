@@ -255,4 +255,4 @@ int quat2rot(Quaternion q, Mat3 &R) {
     return 0;
 }
 
-}  // eof wave
+}  // namespace wave

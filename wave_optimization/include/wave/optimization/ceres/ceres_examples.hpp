@@ -83,6 +83,7 @@ void runNumericalDiffExample(void);
 void runAnalyticalDiffExample(void);
 void runCurveFittingExample(void);
 
-/** @} end of group */
-}  // end of wave namespace
-#endif
+/** @} group optimization */
+}  // namespace wave
+
+#endif  // WAVE_OPTIMIZATION_CERES_HPP
