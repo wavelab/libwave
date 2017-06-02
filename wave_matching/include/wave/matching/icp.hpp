@@ -60,7 +60,7 @@ class ICPMatcher : public Matcher<PCLPointCloud> {
     void estimateCensi();
 };
 
-/** @} end of group */
-}  // end of wave namespace
+/** @} group matching */
+}  // namespace wave
 
 #endif  // WAVE_MATCHING_ICP_HPP

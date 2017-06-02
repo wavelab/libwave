@@ -36,4 +36,4 @@ TEST(TwoWheelRobot2DModel, update) {
     EXPECT_NEAR(robot.pose(2), 2 * M_PI, 0.001);
 }
 
-}  // end of wave namespace
+}  // namespace wave

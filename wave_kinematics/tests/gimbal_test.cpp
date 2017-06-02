@@ -372,4 +372,4 @@ TEST(Gimbal2AxisModel, trackTarget) {
     std::cout << gimbal.joint_setpoints.transpose() << std::endl;
 }
 
-}  // end of wave namespace
+}  // namespace wave

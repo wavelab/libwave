@@ -219,6 +219,7 @@ class ConfigParser {
     int load(std::string config_file);
 };
 
-/** @} end of group */
-}  // end of wave namespace
-#endif
+/** @} group utils */
+}  // namespace wave
+
+#endif  // WAVE_UTILS_CONFIG_HPP

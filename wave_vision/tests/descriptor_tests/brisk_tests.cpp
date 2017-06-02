@@ -198,4 +198,4 @@ TEST_F(BRISKTest, DISABLED_ComputeDescriptors) {
     cv::waitKey(0);
 }
 
-}  // end of namespace wave
+}  // namespace wave

@@ -110,7 +110,7 @@ void nwu2ned(const Quaternion &nwu, Quaternion &ned);
 /** NWU to EDN coordinate system **/
 void nwu2edn(const Vec3 &nwu, Vec3 &edn);
 
+/** @} group utils */
+}  // namespace wave
 
-/** @} end of group */
-}  // wave namespace
-#endif
+#endif  // WAVE_UTILS_MATH_HPP

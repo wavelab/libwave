@@ -3,17 +3,14 @@
  * Base class from which keypoint descriptors can be derived.
  * @ingroup vision
  */
-#ifndef WAVE_DESCRIPTOR_EXTRACTOR_HPP
-#define WAVE_DESCRIPTOR_EXTRACTOR_HPP
+#ifndef WAVE_VISION_DESCRIPTOR_EXTRACTOR_HPP
+#define WAVE_VISION_DESCRIPTOR_EXTRACTOR_HPP
 
-/** C++ Headers */
 #include <exception>
 #include <vector>
 
-/** Third Party Headers */
 #include <opencv2/opencv.hpp>
 
-/** Libwave Headers */
 #include "wave/utils/utils.hpp"
 
 namespace wave {
@@ -32,7 +29,6 @@ namespace wave {
  */
 class DescriptorExtractor {
  public:
-    /** Destructor */
     virtual ~DescriptorExtractor() = default;
 
     /** Function to return the current image being detected
@@ -66,6 +62,8 @@ class DescriptorExtractor {
         this->image = source_image;
     };
 };
+
+/** @} group vision */
 }  // namespace wave
 
-#endif  // WAVE_DESCRIPTOR_EXTRACTOR_HPP
+#endif  // WAVE_VISION_DESCRIPTOR_EXTRACTOR_HPP

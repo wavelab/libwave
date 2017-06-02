@@ -83,4 +83,4 @@ TEST(Utils_math, wrapTo360) {
     ASSERT_FLOAT_EQ(270.0, retval);
 }
 
-}  // end of wave namespace
+}  // namespace wave

@@ -69,4 +69,4 @@ bool NDTMatcher::match() {
     return false;
 }
 
-}  // end of namespace wave
+}  // namespace wave

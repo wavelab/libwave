@@ -301,4 +301,4 @@ void nwu2edn(const Vec3 &nwu, Vec3 &edn) {
     edn(2) = nwu(0);
 }
 
-}  // eof wave
+}  // namespace wave
