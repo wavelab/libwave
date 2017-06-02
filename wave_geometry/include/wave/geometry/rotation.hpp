@@ -101,7 +101,7 @@ class Rotation {
     // Returns the log map of R and the associated Jacobian
     // of the mapping.
     static Vec3 logMapAndJacobian(const Rotation &R, Mat3 &J_logmap);
-  
+
     /** Rotates the input vector by this rotation.
      *
      * @return the vector @f$p_o@f$, the rotated result given by @f[
@@ -165,7 +165,7 @@ class Rotation {
      * @f]
      */
     Rotation &manifoldPlus(const Vec3 &omega);
-  
+
     // Returns the boxminus of two rotations.
     Vec3 manifoldMinus(const Rotation &R) const;
 

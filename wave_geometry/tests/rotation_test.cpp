@@ -422,4 +422,3 @@ TEST_F(RotationTestFixture, testManifoldMinusAndJacobian) {
 }
 
 }  // namespace wave
-
