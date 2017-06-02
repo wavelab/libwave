@@ -58,6 +58,8 @@ class PointCloudDisplay {
      */
     void addPointcloud(const PCLPointCloud &cld, int id);
 
+    void addPointcloud(const pcl::PointCloud<pcl::PointXYZI>::Ptr &cld, int id);
+
     /**
      * Queues a line to be added to the display.
      * Note that three objects are added for one line:
@@ -101,6 +103,11 @@ class PointCloudDisplay {
         int id;
     };
 
+    struct CloudI {
+        pcl::PointCloud<pcl::PointXYZI>::Ptr cloud;
+        int id;
+    };
+
     /** Struct for line buffer */
     struct Line {
         pcl::PointXYZ pt1, pt2;
@@ -108,7 +115,7 @@ class PointCloudDisplay {
     };
 
     std::queue<Cloud> clouds;
-
+    std::queue<CloudI> cloudsi;
     std::queue<Line> lines;
 };
 

@@ -62,4 +62,16 @@ TEST(viewer, line_test) {
     display.stopSpin();
 }
 
+TEST(viewer, pointcloud_intensity) {
+    PointCloudDisplay display("intensity_test");
+    display.startSpin();
+    pcl::PointCloud<pcl::PointXYZI>::Ptr cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
+    pcl::io::loadPCDFile(TEST_SCAN, *cloud);
+    display.addPointcloud(cloud, 1);
+    boost::this_thread::sleep(
+            boost::posix_time::microseconds(5000000));  // five seconds
+    display.stopSpin();
+
+}
+
 }  // namespace wave
