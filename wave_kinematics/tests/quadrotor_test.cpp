@@ -118,4 +118,4 @@ TEST(PositionController, update) {
     ASSERT_NEAR(pos_setpoints(2), quad.position(2), 0.01);
 }
 
-}  // end of wave namespace
+}  // namespace wave

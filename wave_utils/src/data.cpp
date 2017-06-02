@@ -122,4 +122,4 @@ int mat2csv(std::string file_path, MatX data) {
     return 0;
 }
 
-}  // end of wave namespace
+}  // namespace wave

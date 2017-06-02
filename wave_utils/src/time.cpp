@@ -28,4 +28,4 @@ double time_now(void) {
     return ((double) t.tv_sec + ((double) t.tv_usec) / 1000000.0);
 }
 
-}  // end of wave namespace
+}  // namespace wave

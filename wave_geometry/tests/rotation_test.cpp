@@ -421,4 +421,5 @@ TEST_F(RotationTestFixture, testManifoldMinusAndJacobian) {
     ASSERT_LE(error_matrix.norm(), this->comparision_threshold);
 }
 
-}  // end of wave namespace
+}  // namespace wave
+

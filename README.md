@@ -1,4 +1,5 @@
-# libwave [![Build Status](https://travis-ci.org/wavelab/libwave.png?branch=master)][1]
+# libwave
+[![Build Status](https://travis-ci.org/wavelab/libwave.png?branch=master)][1]
 
 This library contains reusable code for:
 
@@ -35,20 +36,23 @@ Execute the following in the terminal where you want libwave to reside:
     make
 
 
-## How to view docs?
+## Documentation
 
-We are currently using `ditto` to document the project, to see the docs perform
-the following:
+The documentation consists of an API reference as well as pages on Fundamentals,
+describing concepts and theory behind the library.
 
-    sudo pip install livereload
-    cd <path of libwave>/docs
-    livereload
-    # the docs are now served on 127.0.0.1:35729
-    # open up a web-browser and type in the above IP address to view docs
+It is generated using Doxygen, using the build target `make doc`.
 
-LiveReload is a python app that serves the project documentation locally, it
-updates itself when you update the docs. For more information on how to edit
-docs see [this][edit_docs].
+
+## Notes for Developers
+
+To expedite our development process we use a set of git hooks to run:
+
+- Clang format (pre-commit)
+
+these can be activated by running the `githook_init.bash` from the root of the repo
+
+    bash scripts/githooks/githooks_init.bash
 
 
 ## LICENSE

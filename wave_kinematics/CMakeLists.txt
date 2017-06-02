@@ -11,6 +11,7 @@ ADD_LIBRARY(
     src/gimbal.cpp
     src/pose.cpp
     src/quadrotor.cpp
+    src/two_wheel.cpp
 )
 
 # UNIT TESTS
@@ -19,6 +20,7 @@ WAVE_ADD_TEST(
     tests/gimbal_test.cpp
     tests/pose_test.cpp
     tests/quadrotor_test.cpp
+    tests/two_wheel_test.cpp
 )
 TARGET_LINK_LIBRARIES(
     ${PROJECT_NAME}_tests

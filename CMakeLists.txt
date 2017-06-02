@@ -2,10 +2,7 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.8.3)
 PROJECT(wave)
 
 # COMPILER SETTINGS
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
-IF (CMAKE_COMPILER_IS_GNUCXX)
-    ADD_DEFINITIONS(-std=gnu++11)
-ENDIF()
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Wextra")
 
 # CMAKE SETTINGS
 LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
@@ -13,45 +10,46 @@ INCLUDE(cmake/WaveUtils.cmake)
 ENABLE_TESTING()
 
 
-# INCLUDES
-INCLUDE_DIRECTORIES(
-  wave_controls/include
-  wave_geometry/include
-  wave_kinematics/include
-  wave_matching/include
-  wave_optimization/include
-  wave_utils/include
-)
+# The sub-libraries, each of which is in a subdirectory of the same name
+SET(LIBWAVE_MODULES
+    wave_controls
+    wave_containers
+    wave_geometry
+    wave_kinematics
+    wave_matching
+    wave_optimization
+    wave_vision
+    wave_utils)
+
+FOREACH(dir ${LIBWAVE_MODULES})
+    INCLUDE_DIRECTORIES(${dir}/include)
+ENDFOREACH()
+FOREACH(dir ${LIBWAVE_MODULES})
+    ADD_SUBDIRECTORY(${dir})
+ENDFOREACH()
 
 # gtest
 ADD_SUBDIRECTORY(deps/googletest)
 INCLUDE_DIRECTORIES(${gtest_SOURCE_DIR}/include/ ${gtest_SOURCE_DIR})
 
+# Define dependencies between modules
 # libwave_controls.a
-ADD_SUBDIRECTORY(wave_controls)
 ADD_DEPENDENCIES(wave_controls wave_utils)
 
 # libwave_geometry.a
-ADD_SUBDIRECTORY(wave_geometry)
 ADD_DEPENDENCIES(wave_geometry wave_utils)
 
 # libwave_kinematics.a
-ADD_SUBDIRECTORY(wave_kinematics)
 ADD_DEPENDENCIES(wave_kinematics wave_controls wave_utils)
 
 # libwave_matching.a
-ADD_SUBDIRECTORY(wave_matching)
 ADD_DEPENDENCIES(wave_matching wave_utils)
 
 # libwave_optimization.a
-ADD_SUBDIRECTORY(wave_optimization)
 ADD_DEPENDENCIES(wave_optimization wave_utils)
 
-# libwave_utils.a
-ADD_SUBDIRECTORY(wave_utils)
-
-# wave_containers: header-only library
-ADD_SUBDIRECTORY(wave_containers)
+# libwave_vision.a
+ADD_DEPENDENCIES(wave_vision wave_utils)
 
 # libwave library
 SET(LIBWAVE_MODULE_LIBS
@@ -59,16 +57,9 @@ SET(LIBWAVE_MODULE_LIBS
     ${CMAKE_BINARY_DIR}/wave_geometry/libwave_geometry.a
     ${CMAKE_BINARY_DIR}/wave_kinematics/libwave_kinematics.a
     ${CMAKE_BINARY_DIR}/wave_matching/libwave_matching.a
+    ${CMAKE_BINARY_DIR}/wave_vision/libwave_vision.a
     ${CMAKE_BINARY_DIR}/wave_optimization/libwave_optimization.a
     ${CMAKE_BINARY_DIR}/wave_utils/libwave_utils.a)
-
-SET(LIBWAVE_MODULES
-    wave_controls
-    wave_geometry
-    wave_kinematics
-    wave_matching
-    wave_optimization
-    wave_utils)
 
 IF(BUILD_SHARED_LIBS)
     # SHARED LIBRARY
@@ -93,7 +84,7 @@ ELSE ()
         DEPENDS
             ${LIBWAVE_MODULES}
     )
-    INSTALL(FILES ${CMAKE_BINARY_DIR}/libwave.a DESTINATION CMAKE_INSTALL_PREFIX}/lib)
+    INSTALL(FILES ${CMAKE_BINARY_DIR}/libwave.a DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
 
 ENDIF()
 
@@ -101,3 +92,8 @@ ENDIF()
 FOREACH(MODULE ${LIBWAVE_MODULES})
   INSTALL(DIRECTORY ${MODULE}/include/ DESTINATION include)
 ENDFOREACH()
+
+# Documentation
+SET(WAVE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+SET(WAVE_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR})
+ADD_SUBDIRECTORY(docs)

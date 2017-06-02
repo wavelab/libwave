@@ -231,4 +231,4 @@ std::ostream &operator<<(std::ostream &stream, const Rotation &R) {
 }
 
 
-}  // end of wave namespace
+}  // namespace wave

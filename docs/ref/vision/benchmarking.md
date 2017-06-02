@@ -1,4 +1,4 @@
-# SLAM Benchmarking and Evaluation
+# SLAM Benchmarking and Evaluation {#vision_benchmarking}
 
 ## A Framework for Evaluating Visual SLAM [paper](http://www.bmva.org/bmvc/2009/Papers/Paper396/Paper396.pdf) (http://vslam.inf.tu-dresden.de/)
 

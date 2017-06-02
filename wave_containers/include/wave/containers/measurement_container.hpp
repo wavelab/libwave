@@ -1,78 +1,32 @@
+/**
+ * @file
+ * @ingroup containers
+ *
+ * Container which stores and transparently interpolates measurements from
+ * multiple sensors.
+ *
+ * @defgroup containers
+ * Storage types for data used by other modules.
+ */
+
 #ifndef WAVE_CONTAINERS_MEASUREMENT_CONTAINER_HPP
 #define WAVE_CONTAINERS_MEASUREMENT_CONTAINER_HPP
 
-#include <boost/multi_index_container.hpp>
-#include <boost/multi_index/member.hpp>
-#include <boost/multi_index/ordered_index.hpp>
-#include <boost/multi_index/composite_key.hpp>
-#include <boost/version.hpp>
-#include <iterator>
 #include <chrono>
 
 namespace wave {
+
+/** @addtogroup containers
+ *  @{ */
 
 using TimeType = std::chrono::steady_clock::time_point;
 
 /** Internal implementation details - for developers only */
 namespace internal {
 
-using boost::multi_index::member;
-using boost::multi_index::indexed_by;
-using boost::multi_index::ordered_unique;
-using boost::multi_index::ordered_non_unique;
-using boost::multi_index::composite_key;
-using boost::multi_index::tag;
-
-/** To easily accomplish this container's goal - provide access to measurements
- * sorted by time, by sensor, or both - we wrap a Boost.MultiIndex container.
- *
- * The multi_index_container template generates code allowing us to index the
- * stored elements in different ways. Because these indices are specified at
- * compile-time, the multi_index_container is configured using template
- * parameters, which are defined here.
- *
- * See http://www.boost.org/doc/libs/1_63_0/libs/multi_index/doc/index.html for
- * details on Boost.MultiIndex.
- *
- * The internal::measurement_container<T> holds all the type definitions
- * required for a multi_index_container holding measurements of type T. Note
- * this template is for convenience only, no objects are constructed.
- */
 template <typename T>
-struct measurement_container {
-    // First, define which members of the Measurement object are used as keys
-    // Specify that the time key corresponds to the time_point member
-    struct time_key : member<T, TimeType, &T::time_point> {};
-    // Specify that the sensor key corresponds to the sensor_id member
-    struct sensor_key : member<T, decltype(T::sensor_id), &T::sensor_id> {};
+struct measurement_container;
 
-    // Define a composite key which combines the above two keys
-    // This lets us search elements sorted by sensor id first, then time
-    struct sensor_and_time_key : composite_key<T, sensor_key, time_key> {};
-
-    // These types are used as tags to retrieve each index after the
-    // multi_index_container is generated
-    struct time_index {};
-    struct sensor_index {};
-    struct composite_index {};
-
-    // Define an index for each key. Each index will be accessible via its tag
-    struct indices
-      : indexed_by<ordered_non_unique<tag<time_index>, time_key>,
-                   ordered_non_unique<tag<sensor_index>, sensor_key>,
-                   ordered_unique<tag<composite_index>, sensor_and_time_key>> {
-    };
-
-    // Note we use separate struct definitions above, instead of typedefs, to
-    // reduce the length of the name printed by the compiler.
-
-    // Finally, define the multi_index_container type.
-    // This is the container type which can actually be used to make objects
-    using type = boost::multi_index_container<T, indices, std::allocator<T>>;
-
-    // For convenience, get the type of the composite index, using its tag
-    using composite_type = typename type::template index<composite_index>::type;
-};
 }  // namespace internal
 
 /** Container which stores and transparently interpolates measurements.
@@ -81,15 +35,15 @@ struct measurement_container {
  * in wave/containers/measurement.hpp is designed to be used here.
  *
  * However, any class can be used that has the following public members:
- *   \li \c  time_point (of type \c wave::TimeType)
- *   \li \c sensor_id (any type sortable by \c std::less)
- *   \li \c value (any type)
+ *   - `time_point` (of type `wave::TimeType`)
+ *   - `sensor_id` (any type sortable by `std::less`)
+ *   - `value` (any type)
  *
  * Additionally, the non-member function
- *   \code{.cpp}
+ *   ```
  *   interpolate(const T&, const T&, const TimeType&)
- *   \endcode
- * must be defined for type \c T.
+ *   ```
+ * must be defined for type `T`.
  */
 template <typename T>
 class MeasurementContainer {
@@ -109,12 +63,18 @@ class MeasurementContainer {
       typename internal::measurement_container<T>::composite_type::iterator;
     using const_iterator = typename internal::measurement_container<
       T>::composite_type::const_iterator;
+    using sensor_iterator =
+      typename internal::measurement_container<T>::sensor_type::iterator;
     using size_type = std::size_t;
 
     // Constructors
 
     /** Default construct an empty container */
     MeasurementContainer();
+
+    /** Construct the container with the contents of the range [first, last) */
+    template <typename InputIt>
+    MeasurementContainer(InputIt first, InputIt last);
 
     // Capacity
 
@@ -134,6 +94,15 @@ class MeasurementContainer {
      */
     std::pair<iterator, bool> insert(const MeasurementType &);
 
+    /** For each element of the range [first, last), inserts a Measurement if a
+     * measurement for the same time and sensor does not already exist.
+     *
+     * @param first, last iterators representing a valid range of Measurements,
+     * but not iterators into this container
+     */
+    template <typename InputIt>
+    void insert(InputIt first, InputIt last);
+
     /** Insert a Measurement constructed from the arguments if a measurement for
      * the same time and sensor does not already exist.
      *
@@ -147,7 +116,24 @@ class MeasurementContainer {
      *
      * @return the number of elements deleted.
      */
-    size_type erase(const TimeType &, const SensorIdType &);
+    size_type erase(const TimeType &t, const SensorIdType &s);
+
+    /** Delete the element at `position`
+     *
+     * @param position a valid dereferenceable iterator of this container
+     * @return An iterator pointing to the element following the deleted one, or
+     * `end()` if it was the last.
+     */
+    iterator erase(iterator position) noexcept;
+
+
+    /** Delete the elements in the range [first, last)
+     *
+     * @param first, last a valid range of this container
+     * @return `last`
+     */
+    iterator erase(iterator first, iterator last) noexcept;
+
 
     /** Delete all elements */
     void clear() noexcept;
@@ -155,7 +141,30 @@ class MeasurementContainer {
     // Retrieval
 
     /** Get the value of a measurement with corresponding time and sensor id */
-    const ValueType get(const TimeType &, const SensorIdType &) const;
+    ValueType get(const TimeType &t, const SensorIdType &s) const;
+
+    /** Get all measurements from the given sensor
+     *
+     * @return a pair of iterators representing the start and end of the range.
+     * If the range is empty, both iterators will be equal.
+     *
+     * @note because these iterators use the underlying ordered index of
+     * sensor_ids, they are not the same type as those from `begin()`,
+     * `getTimeWindow()`, etc.
+     */
+    std::pair<sensor_iterator, sensor_iterator> getAllFromSensor(
+      const SensorIdType &s) const noexcept;
+
+    /** Get all measurements between the given times.
+     *
+     * @param start, end an inclusive range of times, with start <= end
+     *
+     * @return a pair of iterators representing the start and end of the range.
+     * If the range is empty, both iterators will be equal.
+     */
+    std::pair<iterator, iterator> getTimeWindow(const TimeType &start,
+                                                const TimeType &end) const
+      noexcept;
 
     // Iterators
 
@@ -178,134 +187,9 @@ class MeasurementContainer {
     typename internal::measurement_container<T>::type storage;
 };
 
-template <typename T>
-MeasurementContainer<T>::MeasurementContainer() {}
-
-template <typename T>
-std::pair<typename MeasurementContainer<T>::iterator, bool>
-MeasurementContainer<T>::insert(const MeasurementType &m) {
-    return this->composite().insert(m);
-}
-
-template <typename T>
-template <typename... Args>
-std::pair<typename MeasurementContainer<T>::iterator, bool>
-MeasurementContainer<T>::emplace(Args &&... args) {
-// Support Boost.MultiIndex <= 1.54, which does not have emplace()
-#if BOOST_VERSION < 105500
-    return this->composite().insert(
-      MeasurementType{std::forward<Args>(args)...});
-#else
-    return this->composite().emplace(std::forward<Args>(args)...);
-#endif
-}
-
-template <typename T>
-typename MeasurementContainer<T>::size_type MeasurementContainer<T>::erase(
-  const TimeType &t, const SensorIdType &s) {
-    auto &composite = this->composite();
-    auto it = composite.find(boost::make_tuple(s, t));
-    if (it == composite.end()) {
-        return 0;
-    }
-    composite.erase(it);
-    return 1;
-}
-
-template <typename T>
-const typename MeasurementContainer<T>::ValueType MeasurementContainer<T>::get(
-  const TimeType &t, const SensorIdType &s) const {
-    const auto &composite = this->composite();
-
-    // lower_bound is pointer to the first element >= key
-    auto i_next = composite.lower_bound(boost::make_tuple(s, t));
-
-    // Pointer to the first element < key (since keys are unique)
-    auto i_prev = i_next;
-    --i_prev;
-
-    if (t == i_next->time_point && s == i_next->sensor_id) {
-        // Requested time exactly matches
-        return i_next->value;
-    }
-
-    // The search looks at sensor_id first, then time. Must check both.
-    if (i_next == composite.end() || i_next == composite.begin() ||
-        s != i_next->sensor_id || s != i_prev->sensor_id) {
-        // Requested time is not between two measurements for this sensor
-        throw std::out_of_range("MeasurementContainer::get");
-    }
-
-    // Requested time is between two applicable measurements
-    return interpolate(*i_prev, *i_next, t);
-}
-
-template <typename T>
-bool MeasurementContainer<T>::empty() const noexcept {
-    return this->composite().empty();
-}
-
-template <typename T>
-typename MeasurementContainer<T>::size_type MeasurementContainer<T>::size()
-  const noexcept {
-    return this->composite().size();
-}
-
-template <typename T>
-void MeasurementContainer<T>::clear() noexcept {
-    return this->composite().clear();
-}
-
-template <typename T>
-typename MeasurementContainer<T>::iterator
-MeasurementContainer<T>::begin() noexcept {
-    return this->composite().begin();
-}
-
-template <typename T>
-typename MeasurementContainer<T>::iterator
-MeasurementContainer<T>::end() noexcept {
-    return this->composite().end();
-}
-
-template <typename T>
-typename MeasurementContainer<T>::const_iterator
-MeasurementContainer<T>::begin() const noexcept {
-    return this->composite().begin();
-}
-
-template <typename T>
-typename MeasurementContainer<T>::const_iterator MeasurementContainer<T>::end()
-  const noexcept {
-    return this->composite().end();
-}
-
-template <typename T>
-typename MeasurementContainer<T>::const_iterator
-MeasurementContainer<T>::cbegin() const noexcept {
-    return this->composite().cbegin();
-}
-
-template <typename T>
-typename MeasurementContainer<T>::const_iterator MeasurementContainer<T>::cend()
-  const noexcept {
-    return this->composite().cend();
-}
-
-template <typename T>
-typename MeasurementContainer<T>::composite_type &
-MeasurementContainer<T>::composite() noexcept {
-    return this->storage.template get<
-      typename internal::measurement_container<T>::composite_index>();
-}
-
-template <typename T>
-const typename MeasurementContainer<T>::composite_type &
-MeasurementContainer<T>::composite() const noexcept {
-    return this->storage.template get<
-      typename internal::measurement_container<T>::composite_index>();
-}
-
+/** @} group containers */
 }  // namespace wave
+
+#include "impl/measurement_container.hpp"
 
 #endif  // WAVE_CONTAINERS_MEASUREMENT_CONTAINER_HPP

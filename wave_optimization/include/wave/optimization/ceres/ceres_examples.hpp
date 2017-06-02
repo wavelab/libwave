@@ -1,3 +1,27 @@
+/** @file
+ * @ingroup optimization
+ *
+ * This file contains code examples on how to use [Ceres-Solver][ceres-solver],
+ * in particular it contains examples for how to implement a:
+ * - Cost function with automatic differentiation - Cost function with numerical
+ * differentiation - Cost function with analytical differentiation
+ * For more information on how to implement your own cost function see this
+ * [tutorial][tutorial] and [ceres website][ceres-tutorial].
+ *
+ * The functions `AutoDiffCostFunctor`, `NumericalDiffFunctor` and
+ * `AnalyticalCostFunction` run the automatic differentiation, numerical
+ * differentiation and analytical differentiation nonlinear least squares
+ * optimization problem on the following cost function:
+ * @f[
+ * f(x) = (10 - x)
+ * @f]
+ * where the minimum is located at $x = 10$.
+ *
+ * [tutorial]: #ref/optimizers/ceres_examples
+ * [ceres-tutorial]: http://ceres-solver.org/tutorial.html
+ * [ceres-solver]: http://ceres-solver.org/
+ */
+
 #ifndef WAVE_OPTIMIZATION_CERES_CERES_EXAMPLES_HPP
 #define WAVE_OPTIMIZATION_CERES_CERES_EXAMPLES_HPP
 
@@ -5,6 +29,8 @@
 
 
 namespace wave {
+/** @addtogroup optimization
+ *  @{ */
 
 struct AutoDiffCostFunctor {
     template <typename T>
@@ -57,5 +83,7 @@ void runNumericalDiffExample(void);
 void runAnalyticalDiffExample(void);
 void runCurveFittingExample(void);
 
-}  // end of wave namespace
-#endif
+/** @} group optimization */
+}  // namespace wave
+
+#endif  // WAVE_OPTIMIZATION_CERES_HPP

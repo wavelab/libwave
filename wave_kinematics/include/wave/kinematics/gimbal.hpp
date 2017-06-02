@@ -1,3 +1,7 @@
+/** @file
+ * @ingroup kinematics
+ */
+
 #ifndef WAVE_KINEMATICS_GIMBAL_HPP
 #define WAVE_KINEMATICS_GIMBAL_HPP
 
@@ -10,6 +14,8 @@
 #include "wave/kinematics/pose.hpp"
 
 namespace wave {
+/** @addtogroup kinematics
+ *  @{ */
 
 /**
  * Attitude Controller for a 2-Axis gimbal, this controller implements 2 PID
@@ -170,5 +176,7 @@ class Gimbal2AxisModel {
     void printState();
 };
 
-}  // end of wave namespace
-#endif
+/** @} group kinematics */
+}  // namespace wave
+
+#endif  // WAVE_KINEMATICS_GIMBAL_HPP
