@@ -7,14 +7,17 @@ language:
 cache:
     ccache: true
 
+
+jobs:
+  include:
+    - stage: install_deps
+      script: bash scripts/install/install_deps.bash
+    - stage: test
+      compiler: clang
+      script: bash scripts/ci/ci_run.bash
+
 before_install:
     - bash scripts/ci/ci_check.bash
-
-install:
-    - sudo bash scripts/install/install_deps.bash
-
-script:
-    - bash scripts/ci/ci_run.bash
 
 notifications:
     email: false
