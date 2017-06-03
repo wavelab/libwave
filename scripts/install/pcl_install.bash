@@ -38,5 +38,5 @@ elif [ $UBUNTU_VERSION == "14.04" ]; then
     install_dependencies_14
     sudo add-apt-repository -y ppa:v-launchpad-jochen-sprickerhof-de/pcl
     sudo apt-get -y update
-    sudo apt-get -y install -qq libpcl-all
+    sudo apt-get -y install -qq libpcl-1.7-all-dev
 fi
