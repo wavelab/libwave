@@ -4,20 +4,22 @@ sudo: required
 language:
     - c++
 
-cache:
-    ccache: true
-
-
 jobs:
   include:
-    - stage: install_deps
-      script: bash scripts/install/install_deps.bash
-    - stage: test
-      compiler: clang
-      script: bash scripts/ci/ci_run.bash
+    - stage: Check code style
+      script: bash scripts/ci/ci_check.bash
+      language: c++
+      git:
+        depth: 2
+        submodules: false
 
-before_install:
-    - bash scripts/ci/ci_check.bash
+    - stage: test
+      script: bash scripts/install/install_deps.bash
+      script: bash scripts/ci/ci_run.bash
+      language: c++
+      compiler: gcc
+      cache:
+        ccache: true
 
 notifications:
-    email: false
+  email: false
