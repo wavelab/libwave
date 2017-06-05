@@ -35,6 +35,7 @@ TEST(trajectorycompare, error_straight) {
     BenchmarkPose traj_sample;
     traj_sample.rotation.setIdentity();
     auto start_t = std::chrono::steady_clock::now();
+
     for (int i = 0; i < 10; i++) {
         traj_sample.translation = Vec3(i, 0, 0);
         compare.pushTruth(traj_sample, start_t + std::chrono::seconds(i));
@@ -43,6 +44,7 @@ TEST(trajectorycompare, error_straight) {
     }
     compare.calculateError();
     EXPECT_EQ(compare.measurements.size(), compare.error.size());
+
     for (int i = 0; i < 10; i++) {
         EXPECT_NEAR(
           compare.error
@@ -57,11 +59,13 @@ TEST(trajectorycompare, error_rotation) {
     TrajectoryCompare compare;
     BenchmarkPose truth_sample, traj_sample;
     std::vector<Rotation> expected_error;
+
     truth_sample.rotation.setIdentity();
     truth_sample.translation.setOnes();
     traj_sample.rotation.setIdentity();
     traj_sample.translation.setOnes();
     auto start_t = std::chrono::steady_clock::now();
+
     for (int i = 0; i < 10; i++) {
         truth_sample.rotation.setFromExpMap(Vec3(0.2 * i, 0.15 * i, 0.18 * i));
         compare.pushTruth(truth_sample, start_t + std::chrono::seconds(i));
@@ -72,8 +76,8 @@ TEST(trajectorycompare, error_rotation) {
         compare.pushMeasurement(traj_sample, start_t + std::chrono::seconds(i));
     }
     compare.calculateError();
-
     EXPECT_EQ(compare.measurements.size(), compare.error.size());
+
     for (int i = 0; i < 10; i++) {
         auto time_c = start_t + std::chrono::seconds(i);
         EXPECT_TRUE(expected_error.at(i).isNear(
@@ -85,10 +89,12 @@ TEST(trajectorycompare, error_rotation) {
 TEST(trajectorycompare, csv_output_test) {
     TrajectoryCompare compare;
     BenchmarkPose truth_sample, traj_sample;
+
     truth_sample.rotation.setIdentity();
     truth_sample.translation.setOnes();
     traj_sample.rotation.setIdentity();
     traj_sample.translation.setOnes();
+
     auto start_t = std::chrono::steady_clock::now();
     for (int i = 0; i < 10; i++) {
         truth_sample.rotation.setFromExpMap(Vec3(0.2 * i, 0.15 * i, 0.18 * i));
@@ -107,9 +113,11 @@ TEST(rotation_interpolation, quarterturn) {
     BenchmarkPose pose_rot(Rotation(Vec3(2, 0, 0)), Vec3::Zero());
     BenchmarkPose expected(Rotation(Vec3(0.5, 0, 0)), Vec3::Zero());
     auto start_t = std::chrono::steady_clock::now();
+
     container.emplace(start_t, ComparisonKey::GROUND_TRUTH, pose);
     container.emplace(
       start_t + std::chrono::seconds(4), ComparisonKey::GROUND_TRUTH, pose_rot);
+
     // Test
     BenchmarkPose inter = container.get(start_t + std::chrono::seconds(1),
                                         ComparisonKey::GROUND_TRUTH);

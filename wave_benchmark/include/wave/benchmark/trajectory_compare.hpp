@@ -23,14 +23,17 @@ class TrajectoryCompare {
      *
      */
     void reset();
+
     /** Adds a ground truth observation
      *
      */
     void pushTruth(BenchmarkPose pose, const TimeType time);
+
     /** Adds a pose measurement
      *
      */
     void pushMeasurement(BenchmarkPose pose, const TimeType time);
+
     /** Finds the difference between the measurements and ground truth
      * and places the result into another measurement container.
      * The error is calculated at the time of each measurement. Ground truth
@@ -38,6 +41,7 @@ class TrajectoryCompare {
      *
      */
     void calculateError();
+
     /** Helper function that takes complete measurement containers and
      * calculates the
      * error immediately.
@@ -45,6 +49,7 @@ class TrajectoryCompare {
      */
     void calculateError(const MeasurementContainer<PoseMeasurement> &truth,
                         const MeasurementContainer<PoseMeasurement> &measured);
+
     /** Outputs content of error container into a csv
      * The format of the csv is to output the translational error followed by
      * the
