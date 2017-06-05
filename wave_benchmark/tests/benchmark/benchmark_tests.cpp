@@ -3,11 +3,11 @@
 
 namespace wave {
 
-TEST(trajectorycompare, contructor) {
+TEST(TrajectoryCompare, contructor) {
     TrajectoryCompare compare;
 }
 
-TEST(trajectorycompare, pushtest) {
+TEST(TrajectoryCompare, pushTruth) {
     TrajectoryCompare compare;
     BenchmarkPose testpose;
     testpose.rotation.setIdentity();
@@ -18,7 +18,7 @@ TEST(trajectorycompare, pushtest) {
     ASSERT_EQ(1ul, compare.ground_truth.size());
 }
 
-TEST(trajectorycompare, resettest) {
+TEST(TrajectoryCompare, reset) {
     TrajectoryCompare compare;
     BenchmarkPose testpose;
     testpose.rotation.setIdentity();
@@ -30,7 +30,7 @@ TEST(trajectorycompare, resettest) {
     ASSERT_EQ(0ul, compare.ground_truth.size());
 }
 
-TEST(trajectorycompare, error_straight) {
+TEST(TrajectoryCompare, errorStraight) {
     TrajectoryCompare compare;
     BenchmarkPose traj_sample;
     traj_sample.rotation.setIdentity();
@@ -55,7 +55,7 @@ TEST(trajectorycompare, error_straight) {
     }
 }
 
-TEST(trajectorycompare, error_rotation) {
+TEST(TrajectoryCompare, errorRotation) {
     TrajectoryCompare compare;
     BenchmarkPose truth_sample, traj_sample;
     std::vector<Rotation> expected_error;
@@ -86,7 +86,7 @@ TEST(trajectorycompare, error_rotation) {
 }
 
 // This test outputs a file whose format can be checked
-TEST(trajectorycompare, csv_output_test) {
+TEST(TrajectoryCompare, outputCSV) {
     TrajectoryCompare compare;
     BenchmarkPose truth_sample, traj_sample;
 
@@ -106,7 +106,7 @@ TEST(trajectorycompare, csv_output_test) {
     compare.outputCSV("test_output.txt");
 }
 
-TEST(rotation_interpolation, quarterturn) {
+TEST(RotationInterpolation, quarterTurn) {
     // Setup
     MeasurementContainer<PoseMeasurement> container;
     BenchmarkPose pose(Rotation(Vec3::Zero()), Vec3::Zero());

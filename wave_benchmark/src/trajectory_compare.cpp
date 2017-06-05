@@ -8,13 +8,14 @@ void TrajectoryCompare::reset() {
     this->error.clear();
 }
 
-void TrajectoryCompare::pushMeasurement(BenchmarkPose pose,
+void TrajectoryCompare::pushMeasurement(const BenchmarkPose &pose,
                                         const TimeType time) {
     measurements.insert(
       PoseMeasurement(time, ComparisonKey::MEASUREMENT, pose));
 }
 
-void TrajectoryCompare::pushTruth(BenchmarkPose pose, const TimeType time) {
+void TrajectoryCompare::pushTruth(const BenchmarkPose &pose,
+                                  const TimeType time) {
     ground_truth.insert(
       PoseMeasurement(time, ComparisonKey::GROUND_TRUTH, pose));
 }
@@ -23,8 +24,9 @@ void TrajectoryCompare::calculateError() {
     for (auto iter = measurements.begin(); iter != measurements.end(); iter++) {
         BenchmarkPose truth =
           ground_truth.get(iter->time_point, ComparisonKey::GROUND_TRUTH);
-        BenchmarkPose error;
         truth.rotation.invert();
+
+        BenchmarkPose error;
         error.rotation = truth.rotation * iter->value.rotation;
         error.translation = iter->value.translation - truth.translation;
         this->error.emplace(iter->time_point, ComparisonKey::ERROR, error);
@@ -40,8 +42,9 @@ void TrajectoryCompare::calculateError(
     this->calculateError();
 }
 
-void TrajectoryCompare::outputCSV(std::string path) {
+void TrajectoryCompare::outputCSV(const std::string &path) {
     this->file.open(path);
+
     if (this->file.is_open()) {
         for (auto iter = error.begin(); iter != error.end(); iter++) {
             this->file << iter->value.translation << std::endl;

@@ -4,13 +4,11 @@
 namespace wave {
 
 // clang-format off
-
 enum class ComparisonKey {
     GROUND_TRUTH,
     MEASUREMENT,
     ERROR
 };
-
 // clang-format on
 
 }  // namespace wave

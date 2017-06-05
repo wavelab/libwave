@@ -19,44 +19,34 @@ namespace wave {
 
 class TrajectoryCompare {
  public:
-    /** Clears the internal measurement containers
-     *
-     */
+    /** Clears the internal measurement containers */
     void reset();
 
-    /** Adds a ground truth observation
-     *
-     */
-    void pushTruth(BenchmarkPose pose, const TimeType time);
+    /** Adds a ground truth observation */
+    void pushTruth(const BenchmarkPose &pose, const TimeType time);
 
-    /** Adds a pose measurement
-     *
-     */
-    void pushMeasurement(BenchmarkPose pose, const TimeType time);
+    /** Adds a pose measurement */
+    void pushMeasurement(const BenchmarkPose &pose, const TimeType time);
 
     /** Finds the difference between the measurements and ground truth
      * and places the result into another measurement container.
      * The error is calculated at the time of each measurement. Ground truth
      * is linearly interpolated.
-     *
      */
     void calculateError();
 
     /** Helper function that takes complete measurement containers and
-     * calculates the
-     * error immediately.
-     *
+     * calculates the error immediately.
      */
     void calculateError(const MeasurementContainer<PoseMeasurement> &truth,
                         const MeasurementContainer<PoseMeasurement> &measured);
 
     /** Outputs content of error container into a csv
      * The format of the csv is to output the translational error followed by
-     * the
-     * rotational error as a so(3) vector. Newlines are delimiters
-     *
+     * the rotational error as a so(3) vector. Newlines are delimiters
      */
-    void outputCSV(std::string path);
+    void outputCSV(const std::string &path);
+
     MeasurementContainer<PoseMeasurement> ground_truth;
     MeasurementContainer<PoseMeasurement> measurements;
     MeasurementContainer<PoseMeasurement> error;

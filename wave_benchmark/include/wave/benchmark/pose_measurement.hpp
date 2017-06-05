@@ -18,6 +18,7 @@ namespace wave {
 struct BenchmarkPose {
     Rotation rotation;
     Vec3 translation;
+
     BenchmarkPose() : rotation(Rotation()), translation{0.0, 0.0, 0.0} {}
     BenchmarkPose(Rotation rot, Vec3 trans)
         : rotation(rot), translation(trans) {}
@@ -34,11 +35,14 @@ inline BenchmarkPose interpolate(const PoseMeasurement &m1,
 
     auto m1inverse = m1.value.rotation;
     m1inverse.invert();
+
     auto relative = m2.value.rotation * m1inverse;
-    wave::Vec3 wvec = w2 * relative.logMap();
-    wave::Rotation interpolated;
+    Vec3 wvec = w2 * relative.logMap();
+
+    Rotation interpolated;
     interpolated.setFromExpMap(wvec);
     auto trans = (1 - w2) * m1.value.translation + w2 * m2.value.translation;
+
     BenchmarkPose retval;
     retval.rotation = interpolated * m1.value.rotation;
     retval.translation = trans;
