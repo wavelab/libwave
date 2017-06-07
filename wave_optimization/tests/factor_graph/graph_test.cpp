@@ -34,11 +34,9 @@ TEST(FactorGraph, capacity) {
 TEST(FactorGraph, triangulationSim) {
     // Simulate a robot passing by a landmark
     // First generate "true" data
-    auto true_l_pos = std::vector<Vec2, Eigen::aligned_allocator<Vec2>>{
-      {2.0, 1.8}, {3.0, 1.8}, {2.5, 0.7}};
+    auto true_l_pos = std::vector<Vec2>{{2.0, 1.8}, {3.0, 1.8}, {2.5, 0.7}};
 
-    auto true_poses =
-      std::vector<Vec3, Eigen::aligned_allocator<Vec3>>{{0, 0, 0}};
+    auto true_poses = std::vector<Vec3>{{0, 0, 0}};
     for (int i = 1; i < 5; ++i) {
         true_poses.push_back(true_poses.back() + Vec3{1., 0.5, 0});
     }
