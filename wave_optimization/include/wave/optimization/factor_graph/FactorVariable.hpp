@@ -49,14 +49,15 @@ class FactorVariable : public FactorVariableBase {
     constexpr static int Size = ViewType::Size;
 
     /** Default construct with uninitialized estimate */
-    FactorVariable() = default;
+    FactorVariable() : value{storage.data()} {}
 
     /** Construct with initial value */
     explicit FactorVariable(MappedType &&initial)
-        : storage{std::move(initial)} {}
+        : storage{std::move(initial)}, value{storage.data()} {}
 
     /** Construct copying initial value */
-    explicit FactorVariable(const MappedType &initial) : storage{initial} {}
+    explicit FactorVariable(const MappedType &initial)
+        : storage{initial}, value{storage.data()} {}
 
     /** Return the number of scalar values in the variable. */
     int size() const noexcept override {
@@ -95,7 +96,7 @@ class FactorVariable : public FactorVariableBase {
 
  public:
     /** */
-    ViewType value{storage.data()};
+    ViewType value;
 
  private:
     bool fixed = false;
