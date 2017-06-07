@@ -11,7 +11,7 @@ before_install:
     - bash scripts/ci/ci_check.bash
 
 install:
-    - sudo bash scripts/install/install_deps.bash
+    - travis_wait 20 sudo bash scripts/install/install_deps.bash
 
 script:
     - bash scripts/ci/ci_run.bash

@@ -1,5 +1,4 @@
-#include "wave/utils/config.hpp"
-#include "wave/utils/logging.hpp"
+#include "wave/utils/utils.hpp"
 #include "wave/matching/ndt.hpp"
 
 namespace wave {

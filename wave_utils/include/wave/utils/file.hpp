@@ -4,10 +4,11 @@
  * File system functions that C++ did not come with.
  */
 
-#ifndef WAVE_UTILS_FILESYSTEM_HPP
-#define WAVE_UTILS_FILESYSTEM_HPP
+#ifndef WAVE_UTILS_FILE_HPP
+#define WAVE_UTILS_FILE_HPP
 
 #include <stdio.h>
+#include <dirent.h>
 
 #include <string>
 #include <vector>
@@ -19,10 +20,10 @@ namespace wave {
 /** @addtogroup utils
  *  @{ */
 
-/**  Checks if a file exists at the given path */
+/** Checks if a file exists at the given path */
 bool file_exists(const std::string &file_name);
 
-/**  Splits `path` with the `/` token.
+/** Splits `path` with the `/` token.
  * @return vector of separated path elements */
 std::vector<std::string> path_split(const std::string path);
 

@@ -255,4 +255,50 @@ int quat2rot(Quaternion q, Mat3 &R) {
     return 0;
 }
 
+void enu2nwu(const Vec3 &enu, Vec3 &nwu) {
+    // ENU: (x - right, y - forward, z - up)
+    // NWU: (x - forward, y - left, z - up)
+    nwu(0) = enu(1);
+    nwu(1) = -enu(0);
+    nwu(2) = enu(2);
+}
+
+void ned2enu(const Vec3 &ned, Vec3 &enu) {
+    // NED: (x - forward, y - right, z - down)
+    // ENU: (x - right, y - forward, z - up)
+    enu(0) = ned(1);
+    enu(1) = ned(0);
+    enu(2) = -ned(2);
+}
+
+void ned2nwu(const Quaternion &ned, Quaternion &nwu) {
+    nwu.w() = ned.w();
+    nwu.x() = ned.x();
+    nwu.y() = -ned.y();
+    nwu.z() = -ned.z();
+}
+
+void nwu2enu(const Vec3 &nwu, Vec3 &enu) {
+    // NWU: (x - forward, y - left, z - up)
+    // ENU: (x - right, y - forward, z - up)
+    enu(0) = -nwu(1);
+    enu(1) = nwu(0);
+    enu(2) = nwu(2);
+}
+
+void nwu2ned(const Quaternion &nwu, Quaternion &ned) {
+    ned.w() = nwu.w();
+    ned.x() = nwu.x();
+    ned.y() = -nwu.y();
+    ned.z() = -nwu.z();
+}
+
+void nwu2edn(const Vec3 &nwu, Vec3 &edn) {
+    // NWU: (x - forward, y - left, z - up)
+    // EDN: (x - right, y - down, z - forward)
+    edn(0) = -nwu(1);
+    edn(1) = -nwu(2);
+    edn(2) = nwu(0);
+}
+
 }  // namespace wave

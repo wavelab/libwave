@@ -45,9 +45,11 @@ typedef Eigen::Quaterniond Quaternion;
 /** Generates random integer with a upper bound `ub` and lower bound `lb` using
  * a uniform random distribution. */
 int randi(int ub, int lb);
+
 /** Generates random float with a upper bound `ub` and lower bound `lb` using a
  * uniform random distribution. */
 double randf(double ub, double lb);
+
 /** Compares two floating point numbers `f1` and `f2` with an error threshold
  * defined by `threshold`.
  * @return
@@ -59,20 +61,54 @@ int fltcmp(double f1, double f2, double threshold = 0.0001);
 
 /** @return the median of `v`. */
 double median(std::vector<double> v);
+
 /** Converts degrees to radians. */
 double deg2rad(double d);
+
 /** Converts radians to degrees. */
 double rad2deg(double r);
+
 /** Reshapes a vector `x` to matrix `y` of size `rows` and `cols` */
 void vec2mat(std::vector<double> x, int rows, int cols, MatX &y);
+
 /** Reshapes a matrix to a vector*/
 void mat2vec(MatX A, std::vector<double> &x);
+
+/** Wraps `euler_angle` to 180 degrees **/
 double wrapTo180(double euler_angle);
+
+/** Wraps `euler_angle` to 360 degrees **/
 double wrapTo360(double euler_angle);
+
+/** Convert euler angle to rotation matrix **/
 int euler2rot(Vec3 euler, int euler_seq, Mat3 &R);
+
+/** Convert euler angle to quaternion **/
 int euler2quat(Vec3 euler, int euler_seq, Quaternion &q);
+
+/** Convert quaternion to euler angles **/
 int quat2euler(Quaternion q, int euler_seq, Vec3 &euler);
+
+/** Convert quaternion to rotation matrix **/
 int quat2rot(Quaternion q, Mat3 &R);
+
+/** ENU to NWU coordinate system **/
+void enu2nwu(const Vec3 &enu, Vec3 &nwu);
+
+/** NED to ENU coordinate system **/
+void ned2enu(const Vec3 &ned, Vec3 &enu);
+
+/** NED to NWU coordinate system **/
+void ned2nwu(const Quaternion &ned, Quaternion &enu);
+
+/** NWU to ENU coordinate system **/
+void nwu2enu(const Vec3 &nwu, Vec3 &enu);
+
+/** NWU to NED coordinate system **/
+void nwu2ned(const Quaternion &nwu, Quaternion &ned);
+
+/** NWU to EDN coordinate system **/
+void nwu2edn(const Vec3 &nwu, Vec3 &edn);
 
 /** @} group utils */
 }  // namespace wave
