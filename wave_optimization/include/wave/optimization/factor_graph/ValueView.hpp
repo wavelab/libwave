@@ -38,6 +38,8 @@ class ValueView {
     using MappedType = Eigen::Matrix<double, Size, 1>;
 
     ValueView() = delete;
+    virtual ~ValueView() = default;
+
 
     /** Construct to map the given array
      * The variable's values are valid only as long as `*data` is valid.
