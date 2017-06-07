@@ -30,7 +30,7 @@ BruteForceMatcher::BruteForceMatcher(const std::string &config_path) {
 
     if (parser.load(config_path) != 0) {
         throw std::invalid_argument(
-          "Failed to Load BruteForceMatcher Configuration! Path not found.");
+          "Failed to load BruteForceMatcher configuration! Path not found.");
     }
 
     // Confirm configuration is valid
@@ -46,6 +46,11 @@ BruteForceMatcher::BruteForceMatcher(const std::string &config_path) {
 
 void BruteForceMatcher::checkConfiguration(const MatcherParams &check_config) {
     // Check that the value of norm_type is one of the valid values
+    if (check_config.norm_type < cv::NORM_INF ||
+        check_config.norm_type > cv::NORM_HAMMING2) {
+        throw std::invalid_argument(
+          "Norm type is not one of the acceptable values!");
+    }
 }
 
 }  // namespace wave
