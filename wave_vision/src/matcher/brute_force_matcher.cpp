@@ -53,4 +53,6 @@ void BruteForceMatcher::checkConfiguration(const MatcherParams &check_config) {
     }
 }
 
+
+
 }  // namespace wave
