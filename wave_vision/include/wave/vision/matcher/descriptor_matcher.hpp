@@ -24,12 +24,19 @@ struct MatcherParams {
     MatcherParams() {}
 
     /** Constructor using user-defined parameters */
-    MatcherParams(int norm_type, bool crossCheck)
+    MatcherParams(int norm_type, bool cross_check)
         : norm_type(norm_type), cross_check(cross_check) {}
 
     /** Norm type to use for distance calculation between feature descriptors.
      *
-     *  Options: cv::NORM_L1, cv::NORM_L2, cv::NORM_HAMMING, cv::NORM_HAMMING2.
+     *  Options:
+     *  cv::NORM_INF: l-infinity norm
+     *  cv::NORM_L1: l1 norm
+     *  cv::NORM_L2: l2 norm
+     *  cv::NORM_L2SQR: l2 norm, squared
+     *  cv::NORM_HAMMING: Hamming distance
+     *  cv::NORM_HAMMING2:
+     *
      *  As per OpenCV docs, NORM_L1 and NORM_L2 is valid for the SIFT or
      *  SURF descriptors, while NORM_HAMMING is valid for the ORB, BRISK, and
      *  BRIEF descriptors. NORM_HAMMING2 should only be used with ORB, when
@@ -101,7 +108,7 @@ class DescriptorMatcher {
     }
 
  private:
-    cv::Mat mask = cv::NoArray();
+    cv::InputOutputArray mask = cv::noArray();
 };
 
 }  // namespace wave
