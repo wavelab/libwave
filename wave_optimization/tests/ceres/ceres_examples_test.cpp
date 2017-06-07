@@ -1,7 +1,4 @@
-#include <functional>
-
-#include <gtest/gtest.h>
-
+#include "wave/wave_test.hpp"
 #include "wave/utils/utils.hpp"
 #include "wave/optimization/ceres/ceres_examples.hpp"
 
