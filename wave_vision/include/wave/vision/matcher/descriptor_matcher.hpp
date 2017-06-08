@@ -106,9 +106,6 @@ class DescriptorMatcher {
 
         cv::imshow("Matched Keypoints", image_matches);
     }
-
- private:
-    cv::InputOutputArray mask = cv::noArray();
 };
 
 }  // namespace wave

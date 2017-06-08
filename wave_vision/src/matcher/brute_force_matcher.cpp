@@ -53,6 +53,11 @@ void BruteForceMatcher::checkConfiguration(const MatcherParams &check_config) {
     }
 }
 
+std::vector<cv::DMatch> BruteForceMatcher::matchDescriptors(
+  cv::Mat &descriptors_1, cv::Mat &descriptors_2) {
+    std::vector<cv::DMatch> matches;
+
+}
 
 
 }  // namespace wave

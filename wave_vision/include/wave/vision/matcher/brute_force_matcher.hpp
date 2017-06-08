@@ -38,12 +38,15 @@ class BruteForceMatcher : DescriptorMatcher {
     /** Destructor */
     ~BruteForceMatcher() = default;
 
+
     /** Returns the current configuration parameters being used by the
-     *  BruteForceMatcher.
+     *  DescriptorMatcher.
      *
      * @return a struct containing the current configuration values.
      */
-    MatcherParams getConfiguration() const;
+    MatcherParams getConfiguration() const {
+        return this->current_config;
+    }
 
     /** Function to match keypoints descriptors between two images using the
      *  BruteForceMatcher.
@@ -60,7 +63,7 @@ class BruteForceMatcher : DescriptorMatcher {
     /** The pointer to the wrapped cv::BFMatcher object */
     cv::Ptr<cv::BFMatcher> brute_force_matcher;
 
-    /** The current configuration*/
+    /** Current configuration parameters */
     MatcherParams current_config;
 
     /** Checks whether the desired configuration is valid
