@@ -90,11 +90,11 @@ typename MeasurementContainer<T>::ValueType MeasurementContainer<T>::get(
 
     // Find all measurements from this sensor
     const auto &sensor_index =
-      this->storage.template get<typename Base::traits::sensor_index>();
+      this->storage.template get<typename traits::sensor_index>();
     const auto sensor_it = sensor_index.equal_range(s);
 
     // Construct a view, indexed by time, with only those measurements
-    auto time_view = typename Base::traits::time_view{};
+    auto time_view = typename traits::time_view{};
     for (auto it = sensor_it.first; it != sensor_it.second; ++it) {
         time_view.insert(&*it);  // the view holds pointers to the measurements
     }

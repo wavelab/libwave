@@ -146,13 +146,13 @@ MeasurementContainerBase<Derived>::cend() const noexcept {
 }
 
 template <typename Derived>
-typename MeasurementContainerBase<Derived>::composite_type &
+typename MeasurementContainerBase<Derived>::traits::composite_type &
 MeasurementContainerBase<Derived>::composite() noexcept {
     return this->storage.template get<typename traits::composite_index>();
 }
 
 template <typename Derived>
-const typename MeasurementContainerBase<Derived>::composite_type &
+const typename MeasurementContainerBase<Derived>::traits::composite_type &
 MeasurementContainerBase<Derived>::composite() const noexcept {
     return this->storage.template get<typename traits::composite_index>();
 }

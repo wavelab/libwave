@@ -42,6 +42,8 @@ namespace wave {
 template <typename T>
 class MeasurementContainer
   : public MeasurementContainerBase<MeasurementContainer<T>> {
+    using traits = internal::container_traits<MeasurementContainer<T>>;
+
  public:
     using Base = MeasurementContainerBase<MeasurementContainer<T>>;
 

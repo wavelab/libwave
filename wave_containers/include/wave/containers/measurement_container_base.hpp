@@ -49,7 +49,6 @@ struct container_traits;
  */
 template <typename Derived>
 class MeasurementContainerBase {
- protected:
     using traits = internal::container_traits<Derived>;
 
  public:
@@ -188,11 +187,9 @@ class MeasurementContainerBase {
     const_iterator cend() const noexcept;
 
  protected:
-    using composite_type = typename traits::composite_type;
-
     // Helper to get the composite index
-    composite_type &composite() noexcept;
-    const composite_type &composite() const noexcept;
+    typename traits::composite_type &composite() noexcept;
+    const typename traits::composite_type &composite() const noexcept;
 
     // Internal multi_index_container
     typename traits::type storage;
