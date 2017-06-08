@@ -30,11 +30,22 @@ struct container_traits;
  * retrieval methods; derived classes should implement their own specialized
  * retrieval methods.
  *
- * A traits class template, `container_traits`, must be specialized for each
- * derived class, defining the keys and indices used for the underlying
- * multi_index_container.
+ * A traits class template, `internal::container_traits`, must be specialized
+ * for each derived class. It defines the types of keys and indices used for the
+ * underlying multi_index_container.
  *
- * @tparam Derived is the derived type, e.g. a landmark measurement container
+ * The base methods are shared with derived classes through static polymorphism,
+ * using the curiously recurring template pattern (CRTP) - a common pattern used
+ * extensively by Eigen, for example. For more about CRTP see:
+ *
+ * - Eli Bendersky, [The Curiously Recurring Template Pattern in C++]
+ * (http://eli.thegreenplace.net/2011/05/17/the-curiously-recurring-template-pattern-in-c)
+ * - [What is the curiously recurring template pattern (CRTP)?]
+ * (https://stackoverflow.com/questions/4173254)
+ * - [C++ static polymorphism (CRTP) and using typedefs from derived classes]
+ * (https://stackoverflow.com/questions/6006614)
+ *
+ * @tparam Derived is the derived type, e.g. LandmarkMeasurementContainer
  */
 template <typename Derived>
 class MeasurementContainerBase {
