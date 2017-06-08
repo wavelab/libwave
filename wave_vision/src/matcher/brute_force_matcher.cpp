@@ -57,8 +57,11 @@ std::vector<cv::DMatch> BruteForceMatcher::matchDescriptors(
   cv::Mat &descriptors_1, cv::Mat &descriptors_2) {
     std::vector<cv::DMatch> matches;
 
+    // Determine matches between sets of descriptors
+    this->brute_force_matcher->match(
+      descriptors_1, descriptors_2, matches, this->mask);
+
     return matches;
 }
-
 
 }  // namespace wave

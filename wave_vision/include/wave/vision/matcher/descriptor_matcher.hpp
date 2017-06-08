@@ -106,6 +106,18 @@ class DescriptorMatcher {
 
         cv::imshow("Matched Keypoints", image_matches);
     }
+
+ protected:
+    /** Protected mask variable, currently unused.
+     *
+     *  The mask variable indicates which descriptors can be matched between the
+     *  two sets. As per OpenCV docs "queryDescriptors[i] can be matched with
+     *  trainDescriptors[j] only if masks.at<uchar>(i,j) is non-zero.
+     *
+     *  In the libwave wrapper, queryDescriptors and trainDescriptors are
+     *  referred to as descriptors_1 and descriptors_2.
+     */
+    cv::InputArray mask = cv::noArray();
 };
 
 }  // namespace wave
