@@ -1,5 +1,5 @@
 #include "wave/wave_test.hpp"
-#include "wave/vision/common.hpp"
+#include "wave/vision/utils.hpp"
 
 namespace wave {
 

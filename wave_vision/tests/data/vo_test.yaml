@@ -1,0 +1,20 @@
+camera:
+  image_width: 640
+  image_height: 640
+  fx: 554.25
+  fy: 554.25
+  cx: 320.0
+  cy: 320.0
+  hz: 10.0
+
+feature_points:
+  nb_features: 100
+  x:
+    min: -10.0
+    max: 10.0
+  y:
+    min: -10.0
+    max: 10.0
+  z:
+    min: -1.0
+    max: 1.0
