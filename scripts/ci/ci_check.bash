@@ -3,7 +3,8 @@ set -e  # exit on first error
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}" )" && pwd)" # This script's directory
 
 check_format() {
-    # Use specifically clang-format-3.8 on CI
+    # Install and use clang-format-3.8, not the version preiinstalled on CI
+    sudo apt-get -qq install clang-format-3.8
     export FORMAT_EXE=clang-format-3.8
 
     # Run clang-format on all files
