@@ -67,7 +67,7 @@ TEST(BFTests, BadInitialization) {
 TEST(BFTests, DefaultConstructorTest) {
     BruteForceMatcher bfmatcher;
 
-    auto check_config = BFMatcherParams {};
+    auto check_config = BFMatcherParams{};
 
     auto config = bfmatcher.getConfiguration();
 
@@ -101,5 +101,4 @@ TEST(BFTests, CustomYamlConstructorTest) {
     ASSERT_EQ(norm_type, config.norm_type);
     ASSERT_EQ(cross_check, config.cross_check);
 }
-
 }
