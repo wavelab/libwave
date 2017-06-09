@@ -33,8 +33,8 @@ struct Pose2D : public ValueView<3> {
 
     using Vec1 = Eigen::Matrix<double, 1, 1>;
 
-    Eigen::Map<const Vec2> position{map.data()};
-    Eigen::Map<const Vec1> orientation{map.data() + 2};
+    Eigen::Map<const Vec2> position{dataptr};
+    Eigen::Map<const Vec1> orientation{dataptr + 2};
 };
 
 /**
@@ -49,7 +49,7 @@ struct Landmark2D : public ValueView<2> {
     // (https://gcc.gnu.org/bugzilla/show_bug.cgi?id=67054)
     explicit Landmark2D(double *d) : ValueView<2>{d} {}
 
-    Eigen::Map<const Vec2> position{map.data()};
+    Eigen::Map<const Vec2> position{dataptr};
 };
 
 /** Define variable types for each value type */
