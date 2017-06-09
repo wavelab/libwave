@@ -1,14 +1,14 @@
-# Configuration parameters for
+# Configuration parameters for Brute Force matcher
 
 # Norm type to use for distance calculation between feature descriptors.
 #
 #  Options:
-#  cv::NORM_INF: l-infinity norm
-#  cv::NORM_L1: l1 norm
-#  cv::NORM_L2: l2 norm
-#  cv::NORM_L2SQR: l2 norm, squared
-#  cv::NORM_HAMMING: Hamming distance
-#  cv::NORM_HAMMING2:
+#  1: cv::NORM_INF, l-infinity norm
+#  2: cv::NORM_L1: l1 norm
+#  4: cv::NORM_L2: l2 norm
+#  5: cv::NORM_L2SQR: l2 norm, squared
+#  6: cv::NORM_HAMMING: Hamming distance
+#  7: cv::NORM_HAMMING2:
 #
 #  As per OpenCV docs, NORM_L1 and NORM_L2 is valid for the SIFT or
 #  SURF descriptors, while NORM_HAMMING is valid for the ORB, BRISK, and
@@ -23,7 +23,7 @@
 #  [opencv_norm_types]:
 #  http://docs.opencv.org/trunk/d2/de8/group__core__array.html#gad12cefbcb5291cf958a85b4b67b6149f
 #
-norm_type: cv::NORM_HAMMING
+norm_type: 6
 
 # This boolean enables or disables the cross-checking functionality, which
 # looks to remove false matches. If true, the closest match to

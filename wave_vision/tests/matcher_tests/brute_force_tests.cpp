@@ -9,7 +9,7 @@
 
 namespace wave {
 
-const auto TEST_CONFIG = "tests/config/matcher/brute_force.yaml";
+const auto TEST_CONFIG = "tests/config/matcher/brute_force_matcher.yaml";
 const auto TEST_IMAGE_1 = "tests/data/image_center.png";
 const auto TEST_IMAGE_2 = "tests/data/image_right.png";
 
@@ -51,4 +51,55 @@ class BFTest : public testing::Test {
     BRISKDescriptor brisk;
     BruteForceMatcher bfmatcher;
 };
+
+// Checks that correct configuration can be loaded
+TEST(BFTests, GoodInitialization) {
+    // EXPECT_NO_THROW(BruteForceMatcher bfmatcher(TEST_CONFIG));
+}
+
+// Checks that incorrect configuration path throws an exception
+TEST(BFTests, BadInitialization) {
+    const std::string bad_path = "bad_path";
+
+    ASSERT_THROW(BruteForceMatcher bfmatcher(bad_path), std::invalid_argument);
+}
+
+TEST(BFTests, DefaultConstructorTest) {
+    BruteForceMatcher bfmatcher;
+
+    auto check_config = BFMatcherParams {};
+
+    auto config = bfmatcher.getConfiguration();
+
+    ASSERT_EQ(check_config.norm_type, config.norm_type);
+    ASSERT_EQ(check_config.cross_check, config.cross_check);
+}
+
+TEST(BFTests, CustomParamsConstructorTest) {
+    int norm_type = cv::NORM_L2;
+    bool cross_check = true;
+
+    // Place defined values into config struct and create BruteForceMatcher
+    auto custom_config = BFMatcherParams(norm_type, cross_check);
+
+    BruteForceMatcher bfmatcher(custom_config);
+
+    BFMatcherParams config = bfmatcher.getConfiguration();
+
+    ASSERT_EQ(custom_config.norm_type, config.norm_type);
+    ASSERT_EQ(cross_check, config.cross_check);
+}
+
+TEST(BFTests, CustomYamlConstructorTest) {
+    int norm_type = cv::NORM_HAMMING;
+    bool cross_check = false;
+
+    BruteForceMatcher bfmatcher(TEST_CONFIG);
+
+    BFMatcherParams config = bfmatcher.getConfiguration();
+
+    ASSERT_EQ(norm_type, config.norm_type);
+    ASSERT_EQ(cross_check, config.cross_check);
+}
+
 }
