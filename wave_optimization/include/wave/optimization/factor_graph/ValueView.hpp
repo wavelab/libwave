@@ -46,7 +46,7 @@ class ValueView {
      *
      * @param data pointer to an array of size Size.
      */
-    explicit ValueView(double *d) : map{d} {}
+    explicit ValueView(double *const d) : dataptr{d} {}
 
     /** Return the size of the underlying value */
     constexpr int size() const noexcept {
@@ -56,10 +56,10 @@ class ValueView {
     /** Return a raw pointer to the start of the internal vector.
      */
     const double *data() const {
-        return this->map.data();
+        return this->dataptr;
     }
     double *data() {
-        return this->map.data();
+        return this->dataptr;
     }
 
     void print(std::ostream &os) const {
@@ -67,7 +67,7 @@ class ValueView {
     }
 
  protected:
-    Eigen::Map<MappedType> map;
+    double *const dataptr;
 };
 
 template <int S>

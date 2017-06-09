@@ -48,8 +48,11 @@ class FactorVariable : public FactorVariableBase {
     using MappedType = typename ViewType::MappedType;
     constexpr static int Size = ViewType::Size;
 
-    /** Default construct with uninitialized estimate */
-    FactorVariable() : value{storage.data()} {}
+    /** Default construct with uninitialized estimate
+     * Actually initializes to zero to avoid problems with garbage floats
+     * @todo move setting of initial value elsewhere
+     */
+    FactorVariable() : storage{MappedType::Zero()}, value{storage.data()} {}
 
     /** Construct with initial value */
     explicit FactorVariable(MappedType &&initial)
