@@ -50,6 +50,5 @@ class BFTest : public testing::Test {
     FASTDetector fast;
     BRISKDescriptor brisk;
     BruteForceMatcher bfmatcher;
-
 };
 }
