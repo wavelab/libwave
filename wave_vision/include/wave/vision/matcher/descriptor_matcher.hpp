@@ -61,6 +61,8 @@ class DescriptorMatcher {
           image_1, keypoints_1, image_2, keypoints_2, matches, image_matches);
 
         cv::imshow("Matched Keypoints", image_matches);
+
+        cv::waitKey(0);
     }
 };
 

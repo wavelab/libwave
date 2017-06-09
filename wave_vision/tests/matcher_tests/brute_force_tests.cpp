@@ -54,7 +54,7 @@ class BFTest : public testing::Test {
 
 // Checks that correct configuration can be loaded
 TEST(BFTests, GoodInitialization) {
-    // EXPECT_NO_THROW(BruteForceMatcher bfmatcher(TEST_CONFIG));
+    ASSERT_NO_THROW(BruteForceMatcher bfmatcher(TEST_CONFIG));
 }
 
 // Checks that incorrect configuration path throws an exception
@@ -100,5 +100,38 @@ TEST(BFTests, CustomYamlConstructorTest) {
 
     ASSERT_EQ(norm_type, config.norm_type);
     ASSERT_EQ(cross_check, config.cross_check);
+}
+
+TEST(BFTests, BadNormType) {
+    int bad_norm_type_neg = -1;
+    int bad_norm_type_high = 8;
+    int bad_norm_type_nd = 3;
+
+    bool cross_check = false;
+
+    auto config_neg = BFMatcherParams(bad_norm_type_neg, cross_check);
+    auto config_high = BFMatcherParams(bad_norm_type_high, cross_check);
+    auto config_nd = BFMatcherParams(bad_norm_type_nd, cross_check);
+
+    ASSERT_THROW(BruteForceMatcher bfmatcher(config_neg),
+                 std::invalid_argument);
+    ASSERT_THROW(BruteForceMatcher bfmatcher(config_high),
+                 std::invalid_argument);
+    ASSERT_THROW(BruteForceMatcher bfmatcher(config_nd), std::invalid_argument);
+}
+
+TEST_F(BFTest, DISABLED_MatchDescriptors) {
+    std::vector<cv::DMatch> matches;
+
+    // Match descriptors from image 1 and image 2
+    matches = this->bfmatcher.matchDescriptors(this->descriptors_1,
+                                               this->descriptors_2);
+
+    // Test has been confirmed visually
+    this->bfmatcher.showMatches(this->image_1,
+                                this->keypoints_1,
+                                this->image_2,
+                                this->keypoints_2,
+                                matches);
 }
 }
