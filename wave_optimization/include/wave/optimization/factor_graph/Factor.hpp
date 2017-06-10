@@ -102,7 +102,7 @@ class Factor : public FactorBase {
      * @note  Each residual and jacobian parameter is a special map object which
      * may evaluate to false to indicate the jacobian should not be calculated
      * on this call. Wrap calculation and assignment of each parameter `j` in a
-     * conditional, `if (j) {...}`.R
+     * conditional, `if (j) {...}`.
      *
      * @return true if calculation was successful, false on failure
      */
