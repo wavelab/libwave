@@ -17,45 +17,30 @@ namespace wave {
 /** @addtogroup optimization
  *  @{ */
 
-class FactorBase;
-class FactorGraph;
+void addFactorToProblem(ceres::Problem &problem, FactorBase &factor) {
+    // We make a vector of residual block pointers and pass it to
+    // AddResidualBlock because Ceres' implementation forms a vector
+    // anyway.
+    auto data_ptrs = std::vector<double *>{};
 
+    for (const auto &v : factor.variables()) {
+        data_ptrs.push_back(v->data());
 
-class FactorGraphProblem : public ceres::Problem {
- public:
-    explicit FactorGraphProblem(const FactorGraph &graph) {
-        for (const auto &ptr : graph) {
-            this->addFactor(*ptr);
+        // Explicitly adding parameters "causes additional correctness
+        // checking"
+        // @todo can add local parametrization in this call
+        problem.AddParameterBlock(v->data(), v->size());
+
+        // Set parameter blocks constant if the variable is so marked
+        if (v->isFixed()) {
+            problem.SetParameterBlockConstant(v->data());
         }
     }
 
- private:
-    void addFactor(FactorBase &factor) {
-        // We make a vector of residual block pointers and pass it to
-        // AddResidualBlock because Ceres' implementation forms a vector
-        // anyway.
-        auto data_ptrs = std::vector<double *>{};
-
-        for (const auto &v : factor.variables()) {
-            data_ptrs.push_back(v->data());
-
-            // Explicitly adding parameters "causes additional correctness
-            // checking"
-            // @todo can add local parametrization in this call
-            this->AddParameterBlock(v->data(), v->size());
-
-            // Set parameter blocks constant if the variable is so marked
-            if (v->isFixed()) {
-                this->SetParameterBlockConstant(v->data());
-            }
-        }
-
-        // Give ceres the cost function and its parameter blocks.
-        this->AddResidualBlock(
-          factor.costFunction().release(), nullptr, data_ptrs);
-    }
-};
-
+    // Give ceres the cost function and its parameter blocks.
+    problem.AddResidualBlock(
+      factor.costFunction().release(), nullptr, data_ptrs);
+}
 
 /**
  * Evaluates the factors in graph. Sets the variable to the estimated values.
@@ -64,7 +49,11 @@ class FactorGraphProblem : public ceres::Problem {
  */
 void evaluateGraph(FactorGraph &graph) {
     // Initialize the problem
-    FactorGraphProblem problem{graph};
+    ceres::Problem problem;
+
+    for (const auto &ptr : graph) {
+        addFactorToProblem(problem, *ptr);
+    }
 
     // Initialize the solver
     ceres::Solver::Options options;
@@ -75,7 +64,6 @@ void evaluateGraph(FactorGraph &graph) {
     // in the graph
     ceres::Solve(options, &problem, &summary);
 }
-
 
 /** @} group optimization */
 }  // namespace wave
