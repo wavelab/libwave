@@ -40,13 +40,15 @@ typename FactorGraph::const_iterator FactorGraph::end() const noexcept {
 }
 
 std::ostream &operator<<(std::ostream &os, const FactorGraph &graph) {
-    int index = 0;
-
-    for (auto f : graph.factors) {
-        //        os << "f" << index << " -- ";
-        //        os << *f << std::endl;
-        index++;
+    os << "FactorGraph " << graph.countFactors() << " factors [";
+    const auto N = graph.countFactors();
+    for (auto i = 0 * N; i < N; ++i) {
+        os << *graph.factors[i];
+        if (i < N - 1) {
+            os << ", ";
+        }
     }
+    os << "]";
 
     return os;
 }
