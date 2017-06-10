@@ -74,4 +74,32 @@ TEST(FactorGraph, triangulationSim) {
     }
 }
 
+TEST(GraphTest, print) {
+    auto l = std::make_shared<Landmark2DVar>();
+    auto v1 = std::make_shared<Pose2DVar>();
+    auto v2 = std::make_shared<Pose2DVar>();
+    auto v3 = std::make_shared<Pose2DVar>();
+
+    auto graph = FactorGraph{};
+
+    graph.addFactor<DistanceToLandmarkFactor>(0.0, v1, l);
+    graph.addFactor<DistanceToLandmarkFactor>(1.1, v2, l);
+    graph.addFactor<DistanceToLandmarkFactor>(2.2, v3, l);
+
+    // Currently factors are stored privately in graph, so make our own to
+    // generate the expected string
+    auto f1 = DistanceToLandmarkFactor{0.0, v1, l};
+    auto f2 = DistanceToLandmarkFactor{1.1, v2, l};
+    auto f3 = DistanceToLandmarkFactor{2.2, v3, l};
+
+    std::stringstream expected;
+    expected << "FactorGraph 3 factors [";
+    expected << f1 << ", " << f2 << ", " << f3;
+    expected << "]";
+
+    std::stringstream ss;
+    ss << graph;
+    EXPECT_EQ(expected.str(), ss.str());
+}
+
 }  // namespace wave
