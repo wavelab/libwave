@@ -1,6 +1,3 @@
-// C++ Headers
-#include <algorithm>
-
 // Libwave Headers
 #include "wave/wave_test.hpp"
 #include "wave/vision/detector/fast_detector.hpp"
