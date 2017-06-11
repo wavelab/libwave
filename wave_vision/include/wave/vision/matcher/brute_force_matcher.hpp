@@ -7,15 +7,12 @@
 #define WAVE_VISION_BRUTE_FORCE_MATCHER_HPP
 
 /** C++ Headers */
-#include <exception>
 #include <string>
 #include <vector>
 
-/** Third Party Headers */
-#include <opencv2/opencv.hpp>
-
 /** Libwave Headers */
 #include "wave/utils/utils.hpp"
+#include "wave/vision/descriptor_matcher.hpp"
 
 namespace wave {
 /** @addtogroup vision
@@ -100,8 +97,8 @@ class BruteForceMatcher {
      *
      *  @return vector containing the best matches.
      */
-    std::vector<cv::DMatch> matchDescriptors(cv::Mat &descriptors_1,
-                                             cv::Mat &descriptors_2) const;
+    std::vector<cv::DMatch> matchDescriptors(
+      cv::Mat &descriptors_1, cv::Mat &descriptors_2) const override;
 
  private:
     /** The pointer to the wrapped cv::BFMatcher object */
