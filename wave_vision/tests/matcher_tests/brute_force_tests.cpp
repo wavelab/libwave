@@ -122,16 +122,22 @@ TEST(BFTests, BadNormType) {
 
 TEST_F(BFTest, DISABLED_MatchDescriptors) {
     std::vector<cv::DMatch> matches;
+    cv::Mat img_with_matches;
 
     // Match descriptors from image 1 and image 2
     matches = this->bfmatcher.matchDescriptors(this->descriptors_1,
                                                this->descriptors_2);
 
     // Test has been confirmed visually
-    this->bfmatcher.showMatches(this->image_1,
-                                this->keypoints_1,
-                                this->image_2,
-                                this->keypoints_2,
-                                matches);
+    cv::drawMatches(this->image_1,
+                    this->keypoints_1,
+                    this->image_2,
+                    this->keypoints_2,
+                    matches,
+                    img_with_matches);
+
+    cv::imshow("matches", img_with_matches);
+
+    cv::waitKey(0);
 }
 }

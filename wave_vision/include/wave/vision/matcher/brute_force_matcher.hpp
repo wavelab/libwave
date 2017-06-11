@@ -7,11 +7,15 @@
 #define WAVE_VISION_BRUTE_FORCE_MATCHER_HPP
 
 /** C++ Headers */
+#include <exception>
 #include <string>
 #include <vector>
 
+/** Third Party Headers */
+#include <opencv2/opencv.hpp>
+
 /** Libwave Headers */
-#include "wave/vision/matcher/descriptor_matcher.hpp"
+#include "wave/utils/utils.hpp"
 
 namespace wave {
 /** @addtogroup vision
@@ -60,7 +64,7 @@ struct BFMatcherParams {
     bool cross_check = false;
 };
 
-class BruteForceMatcher : public DescriptorMatcher {
+class BruteForceMatcher {
  public:
     /** Default constructor. The user can also specify their own struct with
      *  desired values. If no struct is provided, default values are used.
@@ -79,9 +83,6 @@ class BruteForceMatcher : public DescriptorMatcher {
      */
     BruteForceMatcher(const std::string &config_path);
 
-    /** Destructor */
-    ~BruteForceMatcher() = default;
-
     /** Returns the current configuration parameters being used by the
      *  DescriptorMatcher.
      *
@@ -91,7 +92,7 @@ class BruteForceMatcher : public DescriptorMatcher {
         return this->current_config;
     }
 
-    /** Function to match keypoints descriptors between two images using the
+    /** Matches keypoints descriptors between two images using the
      *  BruteForceMatcher.
      *
      *  @param descriptors_1 the descriptors extracted from the first image.
@@ -100,7 +101,7 @@ class BruteForceMatcher : public DescriptorMatcher {
      *  @return vector containing the best matches.
      */
     std::vector<cv::DMatch> matchDescriptors(cv::Mat &descriptors_1,
-                                             cv::Mat &descriptors_2);
+                                             cv::Mat &descriptors_2) const;
 
  private:
     /** The pointer to the wrapped cv::BFMatcher object */
