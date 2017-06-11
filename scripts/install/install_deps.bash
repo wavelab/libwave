@@ -1,12 +1,6 @@
 #!/bin/bash
 set -e  # exit on first error
 
-# Prompt for users but not on CI
-y=
-if [[ "$CI" == "true" ]]; then
-  y=-y
-fi
-
 echo
 echo "Some of libwave's dependencies are available from a Personal Package" \
 "Archive (PPA). You will be prompted to add the PPA to your sources list." \
@@ -15,10 +9,10 @@ echo
 
 # Echo the commands before running them
 set -x
-sudo apt-add-repository $y ppa:lkoppel/robotics
+sudo apt-add-repository ppa:lkoppel/robotics
 sudo apt-get update
 
-sudo apt-get install $y cmake \
+sudo apt-get install cmake \
   libboost-dev \
   libyaml-cpp-dev \
   libeigen3-dev \
