@@ -21,7 +21,7 @@ BruteForceMatcher::BruteForceMatcher(const std::string &config_path) {
     ConfigParser parser;
 
     // Configuration parameters
-    auto config = BFMatcherParams{};
+    BFMatcherParams config;
 
     // Add parameters to parser, to be loaded. If path cannot be found, throw an
     // exception.
@@ -58,7 +58,8 @@ void BruteForceMatcher::checkConfiguration(
     }
 
     // Check the value of the ratio_test heuristic
-    if (check_config.ratio_rejection < 0 || check_config.ratio_rejection > 1) {
+    if (check_config.ratio_test_heuristic < 0.0 ||
+        check_config.ratio_test_heuristic > 1.0) {
         throw std::invalid_argument(
           "Ratio test heuristic is not an acceptable value!");
     }

@@ -24,8 +24,16 @@ struct BFMatcherParams {
     BFMatcherParams() {}
 
     /** Constructor using user-defined parameters */
-    BFMatcherParams(int norm_type, bool cross_check)
-        : norm_type(norm_type), cross_check(cross_check) {}
+    BFMatcherParams(int norm_type,
+                    bool cross_check,
+                    bool ratio_rejection,
+                    double ratio_test_heuristic,
+                    int rejection_heuristic)
+        : norm_type(norm_type),
+          cross_check(cross_check),
+          ratio_rejection(ratio_rejection),
+          ratio_test_heuristic(ratio_test_heuristic),
+          rejection_heuristic(rejection_heuristic) {}
 
     /** Norm type to use for distance calculation between feature descriptors.
      *
@@ -61,7 +69,6 @@ struct BFMatcherParams {
      */
     bool cross_check = true;
 
-
     /** Determines whether to use the ratio test or threshold-based distance
      *  heuristic for outlier rejection.
      *
@@ -94,7 +101,7 @@ struct BFMatcherParams {
      *  Recommended: 5. Must be greater than or equal to zero. Only used if
      *  @param ratio_rejection is false.
      */
-    int rejection_heuristic = 0;
+    int rejection_heuristic = 5;
 
     /**
      *

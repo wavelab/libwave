@@ -48,7 +48,7 @@ ratio_rejection: true
 # A value of 0.8 was shown by Dr. Lowe to reject 90% of the false matches,
 # and discard only 5% of the correct matches.
 #
-# Recommended: 0.8. Must be between 0 and 1.
+# Recommended: 0.8. Must be between 0 and 1. Only used if ratio_rejection is true.
 ratio_test_heuristic: 0.8
 
 # Specifies the rejection heuristic for good matches.
@@ -58,7 +58,7 @@ ratio_test_heuristic: 0.8
 # descriptor distances. The greater the heuristic, the more matches will
 # be kept.
 #
-# Recommended: 0. Must be greater than or equal to zero. If zero, uses the
-# ratio-test based method to determine good matches.
+# Recommended: 5. Must be greater than or equal to zero. Only used if
+# ratio_rejection is false.
 #
-rejection_heuristic: 0
+rejection_heuristic: 5
