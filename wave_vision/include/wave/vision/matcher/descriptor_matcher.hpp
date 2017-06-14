@@ -28,7 +28,12 @@ namespace wave {
  *  [opencv_descriptor_matchers]:
  *  http://docs.opencv.org/trunk/db/d39/classcv_1_1DescriptorMatcher.html
  */
+
 class DescriptorMatcher {
+ protected:
+    /** Destructor */
+    ~DescriptorMatcher() = default;
+
  public:
     /** Match keypoint descriptors between two images.
      *
@@ -38,10 +43,30 @@ class DescriptorMatcher {
      *  @return vector containing the best matches.
      */
     virtual std::vector<cv::DMatch> matchDescriptors(
-            cv::Mat &descriptors_1, cv::Mat &descriptors_2) = 0;
+      cv::Mat &descriptors_1, cv::Mat &descriptors_2) const = 0;
 
+    /** Remove outliers between matches using various outlier rejection methods.
+     *  Outlier rejection methods are specified within the MatcherParams struct.
+     *  Uses a heuristic based approach as a first pass to determine good
+     *  matches.
+     *
+     *  @param matches the unfiltered matches computed from two images.
+     *
+     *  @return the matches with outliers removed.
+     */
+    virtual std::vector<cv::DMatch> removeOutliers(
+      std::vector<cv::DMatch> matches) const = 0;
 
-
+    /** Overloaded method, which takes in a vector of a vector of matches. This
+     *  is designed to be used with the knnMatchDescriptors method, and uses the
+     *  ratio test as a first pass to determine good matches.
+     *
+     *  @param matches the unfiltered matches computed from two images.
+     *
+     *  @return the matches with outliers removed.
+     */
+    virtual std::vector<cv::DMatch> removeOutliers(
+      std::vector<std::vector<cv::DMatch>> matches) const = 0;
 };
 
 }  // namespace wave

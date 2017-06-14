@@ -27,6 +27,9 @@ BruteForceMatcher::BruteForceMatcher(const std::string &config_path) {
     // exception.
     parser.addParam("norm_type", &config.norm_type);
     parser.addParam("cross_check", &config.cross_check);
+    parser.addParam("ratio_rejection", &config.ratio_rejection);
+    parser.addParam("ratio_test_heuristic", &config.ratio_test_heuristic);
+    parser.addParam("rejection_heuristic", &config.rejection_heuristic);
 
     if (parser.load(config_path) != 0) {
         throw std::invalid_argument(
@@ -53,7 +56,34 @@ void BruteForceMatcher::checkConfiguration(
         throw std::invalid_argument(
           "Norm type is not one of the acceptable values!");
     }
+
+    // Check the value of the ratio_test heuristic
+    if (check_config.ratio_rejection < 0 || check_config.ratio_rejection > 1) {
+        throw std::invalid_argument(
+          "Ratio test heuristic is not an acceptable value!");
+    }
+
+    // Check the value of the threshold distance heuristic
+    if (check_config.rejection_heuristic < 0) {
+        throw std::invalid_argument(
+          "Threshold distance heuristic is not an acceptable value!");
+    }
 }
+
+std::vector<cv::DMatch> BruteForceMatcher::removeOutliers(
+  std::vector<cv::DMatch> matches) const {
+    std::vector<cv::DMatch> good_matches;
+
+    return good_matches;
+}
+
+std::vector<cv::DMatch> BruteForceMatcher::removeOutliers(
+  std::vector<std::vector<cv::DMatch>> matches) const {
+    std::vector<cv::DMatch> good_matches;
+
+    return good_matches;
+}
+
 
 std::vector<cv::DMatch> BruteForceMatcher::matchDescriptors(
   cv::Mat &descriptors_1, cv::Mat &descriptors_2) const {

@@ -50,7 +50,7 @@ TEST(BFTests, CustomParamsConstructorTest) {
 
 TEST(BFTests, CustomYamlConstructorTest) {
     int norm_type = cv::NORM_HAMMING;
-    bool cross_check = false;
+    bool cross_check = true;
 
     BruteForceMatcher bfmatcher(TEST_CONFIG);
 

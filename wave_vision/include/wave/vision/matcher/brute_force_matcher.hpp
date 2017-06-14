@@ -12,7 +12,7 @@
 
 /** Libwave Headers */
 #include "wave/utils/utils.hpp"
-#include "wave/vision/descriptor_matcher.hpp"
+#include "wave/vision/matcher/descriptor_matcher.hpp"
 
 namespace wave {
 /** @addtogroup vision
@@ -56,12 +56,55 @@ struct BFMatcherParams {
      *  descriptor_1 from descriptor_2 will only be reported if the object in
      *  descriptor_2 is also the closest to descriptor_1.
      *
-     *  Recommended: false
+     *  Recommended: true.
      */
-    bool cross_check = false;
+    bool cross_check = true;
+
+
+    /** Determines whether to use the ratio test or threshold-based distance
+     *  heuristic for outlier rejection.
+     *
+     *  Recommended: true.
+     */
+    bool ratio_rejection = true;
+
+    /** Specifies heuristic for the ratio test, illustrated by Dr. David G. Lowe
+     *  in his paper _Distinctive Image Features from Scale-Invariant Keypoints_
+     *  (2004). The test takes the ratio of the closest keypoint distance
+     *  to that of the second closest neighbour. If the ratio is greater than
+     * the
+     *  heuristic, it is discarded.
+     *
+     *  A value of 0.8 was shown by Dr. Lowe to reject 90% of the false matches,
+     *  and discard only 5% of the correct matches.
+     *
+     *  Recommended: 0.8. Must be between 0 and 1. Only used if @param
+     *  ratio_rejection is true.
+     */
+    double ratio_test_heuristic = 0.8;
+
+    /** Specifies the rejection heuristic for good matches.
+     *
+     *  Matches will only be kept if the descriptor distance is less than or
+     *  equal to the product of the rejection heuristic and the _minimum_ of all
+     *  descriptor distances. The greater the heuristic, the more matches will
+     *  be kept.
+     *
+     *  Recommended: 5. Must be greater than or equal to zero. Only used if
+     *  @param ratio_rejection is false.
+     */
+    int rejection_heuristic = 0;
+
+    /**
+     *
+     * Options:
+     * cv::RANSAC: Random Sample Consensus estimation
+     * cv::LMEDS:
+     */
+    // int estimator = cv::RANSAC;
 };
 
-class BruteForceMatcher {
+class BruteForceMatcher : public DescriptorMatcher {
  public:
     /** Default constructor. The user can also specify their own struct with
      *  desired values. If no struct is provided, default values are used.
@@ -99,6 +142,29 @@ class BruteForceMatcher {
      */
     std::vector<cv::DMatch> matchDescriptors(
       cv::Mat &descriptors_1, cv::Mat &descriptors_2) const override;
+
+    /** Remove outliers between matches. Uses a heuristic based approach as a
+     *  first pass to determine good matches. Determines the fundamental
+     *  matrix to act as a mask for further refinement.
+     *
+     *  @param matches the unfiltered matches computed from two images.
+     *
+     *  @return the matches with outliers removed.
+     */
+    std::vector<cv::DMatch> removeOutliers(
+      std::vector<cv::DMatch> matches) const override;
+
+    /** Overloaded method, which takes in a vector of a vector of matches. This
+     *  is designed to be used with the knnMatchDescriptors method, and uses the
+     *  ratio test as a first pass to determine good matches. Determines the
+     *  fundamental matrix to act as a mask for further refinement.
+     *
+     *  @param matches the unfiltered matches computed from two images.
+     *
+     *  @return the matches with outliers removed.
+     */
+    std::vector<cv::DMatch> removeOutliers(
+      std::vector<std::vector<cv::DMatch>> matches) const override;
 
  private:
     /** The pointer to the wrapped cv::BFMatcher object */
