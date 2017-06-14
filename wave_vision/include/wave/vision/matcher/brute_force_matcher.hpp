@@ -100,8 +100,8 @@ class BruteForceMatcher {
      *
      *  @return vector containing the best matches.
      */
-    std::vector<cv::DMatch> matchDescriptors(cv::Mat &descriptors_1,
-                                             cv::Mat &descriptors_2) const;
+    std::vector<cv::DMatch> matchDescriptors(
+      const cv::Mat &descriptors_1, const cv::Mat &descriptors_2) const;
 
  private:
     /** The pointer to the wrapped cv::BFMatcher object */

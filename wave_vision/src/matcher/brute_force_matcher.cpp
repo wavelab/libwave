@@ -56,7 +56,7 @@ void BruteForceMatcher::checkConfiguration(
 }
 
 std::vector<cv::DMatch> BruteForceMatcher::matchDescriptors(
-  cv::Mat &descriptors_1, cv::Mat &descriptors_2) const {
+  const cv::Mat &descriptors_1, const cv::Mat &descriptors_2) const {
     std::vector<cv::DMatch> matches;
 
     /** Mask variable, currently unused.
