@@ -43,7 +43,7 @@ class DescriptorMatcher {
      *  @return vector containing the best matches.
      */
     virtual std::vector<cv::DMatch> matchDescriptors(
-      cv::Mat &descriptors_1, cv::Mat &descriptors_2) const = 0;
+      const cv::Mat &descriptors_1, const cv::Mat &descriptors_2) const = 0;
 
     /** Remove outliers between matches using various outlier rejection methods.
      *  Outlier rejection methods are specified within the MatcherParams struct.
@@ -55,7 +55,7 @@ class DescriptorMatcher {
      *  @return the matches with outliers removed.
      */
     virtual std::vector<cv::DMatch> removeOutliers(
-      std::vector<cv::DMatch> matches) const = 0;
+      std::vector<cv::DMatch> &matches) = 0;
 
     /** Overloaded method, which takes in a vector of a vector of matches. This
      *  is designed to be used with the knnMatchDescriptors method, and uses the
@@ -66,7 +66,7 @@ class DescriptorMatcher {
      *  @return the matches with outliers removed.
      */
     virtual std::vector<cv::DMatch> removeOutliers(
-      std::vector<std::vector<cv::DMatch>> matches) const = 0;
+      std::vector<std::vector<cv::DMatch>> &matches) = 0;
 };
 
 }  // namespace wave

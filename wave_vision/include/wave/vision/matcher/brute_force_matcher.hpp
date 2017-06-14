@@ -149,7 +149,8 @@ class BruteForceMatcher : public DescriptorMatcher {
      *  @return vector containing the best matches.
      */
     std::vector<cv::DMatch> matchDescriptors(
-      cv::Mat &descriptors_1, cv::Mat &descriptors_2) const override;
+      const cv::Mat &descriptors_1,
+      const cv::Mat &descriptors_2) const override;
 
     /** Remove outliers between matches. Uses a heuristic based approach as a
      *  first pass to determine good matches. Determines the fundamental
@@ -160,7 +161,7 @@ class BruteForceMatcher : public DescriptorMatcher {
      *  @return the matches with outliers removed.
      */
     std::vector<cv::DMatch> removeOutliers(
-      std::vector<cv::DMatch> matches) const override;
+      std::vector<cv::DMatch> &matches) override;
 
     /** Overloaded method, which takes in a vector of a vector of matches. This
      *  is designed to be used with the knnMatchDescriptors method, and uses the
@@ -172,7 +173,7 @@ class BruteForceMatcher : public DescriptorMatcher {
      *  @return the matches with outliers removed.
      */
     std::vector<cv::DMatch> removeOutliers(
-      std::vector<std::vector<cv::DMatch>> matches) const override;
+      std::vector<std::vector<cv::DMatch>> &matches) override;
 
  private:
     /** The pointer to the wrapped cv::BFMatcher object */

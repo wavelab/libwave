@@ -72,22 +72,21 @@ void BruteForceMatcher::checkConfiguration(
 }
 
 std::vector<cv::DMatch> BruteForceMatcher::removeOutliers(
-  std::vector<cv::DMatch> matches) const {
+  std::vector<cv::DMatch> &matches) {
     std::vector<cv::DMatch> good_matches;
     float min_distance;
-    std::vector<cv::DMatch>::const_iterator it;
 
     // Sort matches by distance in increasing order
     std::sort(matches.begin(), matches.end());
 
-    min_distance = matches[0].distance;
+    min_distance = matches.begin()->distance;
 
     // Keep any match that is less than the rejection heuristic times minimum
     // distance
-    for (it == matches.begin(); it != matches.end(); it++) {
-        if (it->distance <=
+    for (auto &match : matches) {
+        if (match.distance <=
             this->current_config.rejection_heuristic * min_distance) {
-            good_matches.push_back(*it);
+            good_matches.push_back(match);
         }
     }
 
@@ -95,7 +94,7 @@ std::vector<cv::DMatch> BruteForceMatcher::removeOutliers(
 }
 
 std::vector<cv::DMatch> BruteForceMatcher::removeOutliers(
-  std::vector<std::vector<cv::DMatch>> matches) const {
+  std::vector<std::vector<cv::DMatch>> &matches) {
     std::vector<cv::DMatch> good_matches = matches[0];
 
     return good_matches;
@@ -103,7 +102,7 @@ std::vector<cv::DMatch> BruteForceMatcher::removeOutliers(
 
 
 std::vector<cv::DMatch> BruteForceMatcher::matchDescriptors(
-  cv::Mat &descriptors_1, cv::Mat &descriptors_2) const {
+  const cv::Mat &descriptors_1, const cv::Mat &descriptors_2) const {
     std::vector<cv::DMatch> matches;
 
     /** Mask variable, currently unused.

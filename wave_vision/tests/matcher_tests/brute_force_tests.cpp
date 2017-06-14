@@ -166,4 +166,40 @@ TEST(BFTests, DISABLED_MatchDescriptors) {
 
     cv::waitKey(0);
 }
+
+TEST(BFTests, MatchDescriptorsRejection) {
+    std::vector<cv::DMatch> matches;
+    std::vector<cv::DMatch> good_matches;
+    cv::Mat img_with_matches;
+
+    cv::Mat image_1, image_2;
+    std::vector<cv::KeyPoint> keypoints_1, keypoints_2;
+    cv::Mat descriptors_1, descriptors_2;
+    FASTDetector fast;
+    BRISKDescriptor brisk;
+    BruteForceMatcher bfmatcher;
+
+    image_1 = cv::imread(TEST_IMAGE_1, cv::IMREAD_COLOR);
+    image_2 = cv::imread(TEST_IMAGE_2, cv::IMREAD_COLOR);
+    keypoints_1 = fast.detectFeatures(image_1);
+    keypoints_2 = fast.detectFeatures(image_2);
+    descriptors_1 = brisk.extractDescriptors(image_1, keypoints_1);
+    descriptors_2 = brisk.extractDescriptors(image_2, keypoints_2);
+
+    // Match descriptors from image 1 and image 2
+    matches = bfmatcher.matchDescriptors(descriptors_1, descriptors_2);
+
+    good_matches = bfmatcher.removeOutliers(matches);
+
+    cv::drawMatches(image_1,
+                    keypoints_1,
+                    image_2,
+                    keypoints_2,
+                    good_matches,
+                    img_with_matches);
+
+    cv::imshow("good matches", img_with_matches);
+
+    cv::waitKey(0);
+}
 }
