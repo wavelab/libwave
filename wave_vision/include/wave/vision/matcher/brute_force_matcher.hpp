@@ -7,6 +7,7 @@
 #define WAVE_VISION_BRUTE_FORCE_MATCHER_HPP
 
 /** C++ Headers */
+#include <algorithm>
 #include <string>
 #include <vector>
 

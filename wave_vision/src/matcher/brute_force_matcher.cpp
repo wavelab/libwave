@@ -73,13 +73,29 @@ void BruteForceMatcher::checkConfiguration(
 std::vector<cv::DMatch> BruteForceMatcher::removeOutliers(
   std::vector<cv::DMatch> matches) const {
     std::vector<cv::DMatch> good_matches;
+    float min_distance;
+    std::vector<cv::DMatch>::const_iterator it;
+
+    // Sort matches by distance in increasing order
+    std::sort(matches.begin(), matches.end());
+
+    min_distance = matches[0].distance;
+
+    // Keep any match that is less than the rejection heuristic times minimum
+    // distance
+    for (it == matches.begin(); it != matches.end(); it++) {
+        if (it->distance <=
+            this->current_config.rejection_heuristic * min_distance) {
+            good_matches.push_back(*it);
+        }
+    }
 
     return good_matches;
 }
 
 std::vector<cv::DMatch> BruteForceMatcher::removeOutliers(
   std::vector<std::vector<cv::DMatch>> matches) const {
-    std::vector<cv::DMatch> good_matches;
+    std::vector<cv::DMatch> good_matches = matches[0];
 
     return good_matches;
 }
