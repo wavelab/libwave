@@ -3,35 +3,41 @@
 
 namespace wave {
 
-GICPMatcher::GICPMatcher(float res, const std::string &config_path) {
-    this->ref = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
-    this->target = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
-    this->final = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
+GICPMatcherParams::GICPMatcherParams() {
+    this->corr_rand = 10;
+    this->max_iter = 100;
+    this->r_eps = 1e-8;
+    this->fit_eps = 1e-2;
+}
 
-    if (res > 0) {
-        this->resolution = res;
-        this->filter.setLeafSize(res, res, res);
-    } else {
-        this->resolution = -1;
-    }
-
+GICPMatcherParams::GICPMatcherParams(const std::string &config_path) {
     ConfigParser parser;
-    double r_eps = 1e-8, fit_eps = 1e-2;
-    int corr_rand = 10, max_iter = 100;
-    parser.addParam("g_icp.corr_rand", &corr_rand);
-    parser.addParam("g_icp.max_iter", &max_iter);
-    parser.addParam("g_icp.r_eps", &r_eps);
-    parser.addParam("g_icp.fit_eps", &fit_eps);
+    parser.addParam("corr_rand", &this->corr_rand);
+    parser.addParam("max_iter", &this->max_iter);
+    parser.addParam("r_eps", &this->r_eps);
+    parser.addParam("fit_eps", &this->fit_eps);
 
     if (parser.load(config_path) != 0) {
         ConfigException config_exception;
         throw config_exception;
     }
+}
 
-    this->gicp.setCorrespondenceRandomness(corr_rand);
-    this->gicp.setMaximumIterations(max_iter);
-    this->gicp.setRotationEpsilon(r_eps);
-    this->gicp.setEuclideanFitnessEpsilon(fit_eps);
+GICPMatcher::GICPMatcher(GICPMatcherParams params1) : params(params1) {
+    this->ref = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
+    this->target = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
+    this->final = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
+
+    if (params.res > 0) {
+        this->resolution = params.res;
+        this->filter.setLeafSize(params.res, params.res, params.res);
+    } else {
+        this->resolution = -1;
+    }
+    this->gicp.setCorrespondenceRandomness(this->params.corr_rand);
+    this->gicp.setMaximumIterations(this->params.max_iter);
+    this->gicp.setRotationEpsilon(this->params.r_eps);
+    this->gicp.setEuclideanFitnessEpsilon(this->params.fit_eps);
 }
 
 void GICPMatcher::setRef(const PCLPointCloud &ref) {

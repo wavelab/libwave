@@ -27,9 +27,18 @@ namespace wave {
 /** @addtogroup matching
  *  @{ */
 
+struct GICPMatcherParams {
+    GICPMatcherParams();
+    GICPMatcherParams(const std::string &config_path);
+
+    int corr_rand, max_iter;
+    double r_eps, fit_eps;
+    float res;
+};
+
 class GICPMatcher : public Matcher<PCLPointCloud> {
  public:
-    explicit GICPMatcher(float resolution, const std::string &config_path);
+    explicit GICPMatcher(GICPMatcherParams params1);
     /** hey there
      *
      * Its some function
@@ -43,6 +52,7 @@ class GICPMatcher : public Matcher<PCLPointCloud> {
     pcl::GeneralizedIterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> gicp;
     pcl::VoxelGrid<pcl::PointXYZ> filter;
     PCLPointCloud ref, target, final;
+    GICPMatcherParams params;
 };
 
 /** @} group matching */

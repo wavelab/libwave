@@ -26,6 +26,15 @@
 #include "wave/matching/matcher.hpp"
 #include "wave/matching/pcl_common.hpp"
 
+struct NDTMatcherParams {
+    NDTMatcherParams();
+    NDTMatcherParams(const std::string &config_path);
+
+    int step_size, max_iter;
+    double t_eps;
+    float res;
+};
+
 namespace wave {
 /** @addtogroup matching
  *  @{ */
@@ -37,7 +46,7 @@ class NDTMatcher : public Matcher<PCLPointCloud> {
      * both resolutions are finer than the `min_res` class member, the
      * resolution is set to `min_res.`
      */
-    explicit NDTMatcher(float resolution, const std::string &config_path);
+    explicit NDTMatcher(NDTMatcherParams params1);
     ~NDTMatcher();
     void setRef(const PCLPointCloud &ref);
     void setTarget(const PCLPointCloud &target);
@@ -53,6 +62,7 @@ class NDTMatcher : public Matcher<PCLPointCloud> {
      * it. */
     PCLPointCloud ref, target, final;
     const float min_res = 0.05f;
+    NDTMatcherParams params;
 };
 
 /** @} group matching */

@@ -27,6 +27,16 @@ namespace wave {
 /** @addtogroup matching
  *  @{ */
 
+struct ICPMatcherParams {
+    ICPMatcherParams();
+    ICPMatcherParams(const std::string &config_path);
+
+    int max_corr, max_iter;
+    double t_eps, fit_eps, lidar_ang_covar, lidar_lin_covar;
+    float res;
+    enum covar_method : int { LUM, CENSI } covar_estimator;
+};
+
 class ICPMatcher : public Matcher<PCLPointCloud> {
  public:
     /** This constructor takes an argument in order to adjust how much
@@ -34,14 +44,12 @@ class ICPMatcher : public Matcher<PCLPointCloud> {
      * downsampled using a voxel filter, the argument is the edge length of
      * each voxel. If resolution is non-positive, no downsampling is used.
      */
-    explicit ICPMatcher(float resolution, const std::string &config_path);
+    explicit ICPMatcher(ICPMatcherParams params1);
     ~ICPMatcher();
     void setRef(const PCLPointCloud &ref);
     void setTarget(const PCLPointCloud &target);
     bool match();
     void estimateInfo();
-
-    enum covar_method : int { LUM, CENSI };
 
  private:
     /** An instance of the G-ICP class from PCL */
@@ -54,10 +62,10 @@ class ICPMatcher : public Matcher<PCLPointCloud> {
      * pointcloud after matching, so the "final" member is used as a sink for
      * it. */
     PCLPointCloud ref, target, final;
-    covar_method estimate_method;
-    double lidar_ang_covar, lidar_lin_covar;
     void estimateLUM();
     void estimateCensi();
+
+    ICPMatcherParams params;
 };
 
 /** @} group matching */
