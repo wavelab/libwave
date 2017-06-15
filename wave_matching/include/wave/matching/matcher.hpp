@@ -50,7 +50,7 @@ class Matcher {
     const Eigen::Affine3d &getResult() {
         return this->result;
     };
-    const Eigen::MatrixXd &getInfo() {
+    const Mat6 &getInfo() {
         return this->information;
     };
     float getRes() {

@@ -35,6 +35,7 @@ class ICPMatcher : public Matcher<PCLPointCloud> {
      * each voxel. If resolution is non-positive, no downsampling is used.
      */
     explicit ICPMatcher(float resolution, const std::string &config_path);
+    ICPMatcher() = delete;
     ~ICPMatcher();
     void setRef(const PCLPointCloud &ref);
     void setTarget(const PCLPointCloud &target);
