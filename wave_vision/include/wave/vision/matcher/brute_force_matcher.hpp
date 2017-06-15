@@ -65,12 +65,16 @@ struct BFMatcherParams {
      *  descriptor_1 from descriptor_2 will only be reported if the object in
      *  descriptor_2 is also the closest to descriptor_1.
      *
-     *  Recommended: true.
+     *  Must be __false__ if ratio_rejection is true, and vice versa!
+     *
+     *  Recommended: false
      */
-    bool cross_check = true;
+    bool cross_check = false;
 
     /** Determines whether to use the ratio test or threshold-based distance
      *  heuristic for outlier rejection.
+     *
+     *  Must be __false__ if cross_check is true, and vice versa!
      *
      *  Recommended: true.
      */
@@ -140,18 +144,6 @@ class BruteForceMatcher : public DescriptorMatcher {
         return this->current_config;
     }
 
-    /** Matches keypoints descriptors between two images using the
-     *  BruteForceMatcher.
-     *
-     *  @param descriptors_1 the descriptors extracted from the first image.
-     *  @param descriptors_2 the descriptors extracted from the second image.
-     *
-     *  @return vector containing the best matches.
-     */
-    std::vector<cv::DMatch> matchDescriptors(
-      const cv::Mat &descriptors_1,
-      const cv::Mat &descriptors_2) const override;
-
     /** Remove outliers between matches. Uses a heuristic based approach as a
      *  first pass to determine good matches. Determines the fundamental
      *  matrix to act as a mask for further refinement.
@@ -174,6 +166,31 @@ class BruteForceMatcher : public DescriptorMatcher {
      */
     std::vector<cv::DMatch> removeOutliers(
       std::vector<std::vector<cv::DMatch>> &matches) override;
+
+
+    /** Matches keypoints descriptors between two images using the
+     *  BruteForceMatcher.
+     *
+     *  @param descriptors_1 the descriptors extracted from the first image.
+     *  @param descriptors_2 the descriptors extracted from the second image.
+     *
+     *  @return vector containing the best matches.
+     */
+    std::vector<cv::DMatch> matchDescriptors(
+      const cv::Mat &descriptors_1,
+      const cv::Mat &descriptors_2) const override;
+
+    /** Match keypoint descriptors between two images, using
+     *  k-nearest-neighbours search
+     *
+     *  @param descriptors_1 the descriptors extracted from the first image.
+     *  @param descriptors_2 the descriptors extracted from the second image.
+     *
+     *  @return vector of a vector containing the best two matches per keypoint.
+     */
+    std::vector<std::vector<cv::DMatch>> knnMatchDescriptors(
+      const cv::Mat &descriptors_1,
+      const cv::Mat &descriptors_2) const override;
 
  private:
     /** The pointer to the wrapped cv::BFMatcher object */

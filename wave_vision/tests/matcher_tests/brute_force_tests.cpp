@@ -11,7 +11,7 @@ const auto TEST_IMAGE_1 = "tests/data/image_center.png";
 const auto TEST_IMAGE_2 = "tests/data/image_right.png";
 
 // Checks that correct configuration can be loaded
-TEST(BFTests, GoodInitialization) {
+TEST(BFTests, DISABLED_GoodInitialization) {
     ASSERT_NO_THROW(BruteForceMatcher bfmatcher(TEST_CONFIG));
 }
 
@@ -38,7 +38,7 @@ TEST(BFTests, DefaultConstructorTest) {
 
 TEST(BFTests, CustomParamsConstructorTest) {
     int norm_type = cv::NORM_L2;
-    bool cross_check = true;
+    bool cross_check = false;
     bool ratio_rejection = true;
     double ratio_test_heuristic = 0.8;
     int rejection_heuristic = 5;
@@ -64,7 +64,7 @@ TEST(BFTests, CustomParamsConstructorTest) {
 
 TEST(BFTests, DISABLED_CustomYamlConstructorTest) {
     int norm_type = cv::NORM_HAMMING;
-    bool cross_check = true;
+    bool cross_check = false;
     bool ratio_rejection = true;
     double ratio_test_heuristic = 0.8;
     int rejection_heuristic = 5;
@@ -80,6 +80,12 @@ TEST(BFTests, DISABLED_CustomYamlConstructorTest) {
     ASSERT_EQ(ratio_rejection, config.ratio_rejection);
     ASSERT_EQ(ratio_test_heuristic, config.ratio_test_heuristic);
     ASSERT_EQ(rejection_heuristic, config.rejection_heuristic);
+}
+
+TEST(BFTests, SameCrossCheckRatioRejection) {
+    BFMatcherParams config(cv::NORM_HAMMING, true, true, 0.8, 5);
+
+    ASSERT_THROW(BruteForceMatcher bfmatcher(config), std::invalid_argument);
 }
 
 TEST(BFTests, BadNormType) {
@@ -167,7 +173,7 @@ TEST(BFTests, DISABLED_MatchDescriptors) {
     cv::waitKey(0);
 }
 
-TEST(BFTests, MatchDescriptorsRejection) {
+TEST(BFTests, DISABLED_MatchDescriptorsRejection) {
     std::vector<cv::DMatch> matches;
     std::vector<cv::DMatch> good_matches;
     cv::Mat img_with_matches;
@@ -202,4 +208,42 @@ TEST(BFTests, MatchDescriptorsRejection) {
 
     cv::waitKey(0);
 }
+
+TEST(BFTests, DISABLED_KnnMatchDescriptors) {
+    std::vector<std::vector<cv::DMatch>> matches;
+    std::vector<cv::DMatch> good_matches;
+    cv::Mat img_with_matches;
+
+    cv::Mat image_1, image_2;
+    std::vector<cv::KeyPoint> keypoints_1, keypoints_2;
+    cv::Mat descriptors_1, descriptors_2;
+    FASTDetector fast;
+    BRISKDescriptor brisk;
+    BruteForceMatcher bfmatcher;
+
+    image_1 = cv::imread(TEST_IMAGE_1, cv::IMREAD_COLOR);
+    image_2 = cv::imread(TEST_IMAGE_2, cv::IMREAD_COLOR);
+    keypoints_1 = fast.detectFeatures(image_1);
+    keypoints_2 = fast.detectFeatures(image_2);
+    descriptors_1 = brisk.extractDescriptors(image_1, keypoints_1);
+    descriptors_2 = brisk.extractDescriptors(image_2, keypoints_2);
+
+    // Use KNN Matcher to match
+    matches = bfmatcher.knnMatchDescriptors(descriptors_1, descriptors_2);
+
+    // Reject outliers using ratio method
+    good_matches = bfmatcher.removeOutliers(matches);
+
+    // Test has been confirmed visually
+    cv::drawMatches(image_1,
+                    keypoints_1,
+                    image_2,
+                    keypoints_2,
+                    good_matches,
+                    img_with_matches);
+
+    cv::imshow("good_matches", img_with_matches);
+
+    cv::waitKey(0);
 }
+}  // namespace wave

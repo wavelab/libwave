@@ -57,6 +57,19 @@ void BruteForceMatcher::checkConfiguration(
           "Norm type is not one of the acceptable values!");
     }
 
+    // If ratio rejection is true, cross check must be false.
+    if (check_config.cross_check) {
+        if (check_config.ratio_rejection) {
+            throw std::invalid_argument(
+              "Both cross_check and ratio_rejection are true!");
+        }
+    } else {
+        if (!(check_config.ratio_rejection)) {
+            throw std::invalid_argument(
+              "Both cross_check and ratio_rejection are false!");
+        }
+    }
+
     // Check the value of the ratio_test heuristic
     if (check_config.ratio_test_heuristic < 0.0 ||
         check_config.ratio_test_heuristic > 1.0) {
@@ -95,11 +108,20 @@ std::vector<cv::DMatch> BruteForceMatcher::removeOutliers(
 
 std::vector<cv::DMatch> BruteForceMatcher::removeOutliers(
   std::vector<std::vector<cv::DMatch>> &matches) {
-    std::vector<cv::DMatch> good_matches = matches[0];
+    std::vector<cv::DMatch> good_matches;
+    float ratio;
+
+    for (auto &match : matches) {
+        // Calculate ratio between two best matches. Accept if greater than
+        // ratio test heuristic
+        ratio = match[0].distance / match[1].distance;
+        if (ratio <= this->current_config.ratio_test_heuristic) {
+            good_matches.push_back(match[0]);
+        }
+    }
 
     return good_matches;
 }
-
 
 std::vector<cv::DMatch> BruteForceMatcher::matchDescriptors(
   const cv::Mat &descriptors_1, const cv::Mat &descriptors_2) const {
@@ -119,6 +141,29 @@ std::vector<cv::DMatch> BruteForceMatcher::matchDescriptors(
     // Determine matches between sets of descriptors
     this->brute_force_matcher->match(
       descriptors_1, descriptors_2, matches, mask);
+
+    return matches;
+}
+
+std::vector<std::vector<cv::DMatch>> BruteForceMatcher::knnMatchDescriptors(
+  const cv::Mat &descriptors_1, const cv::Mat &descriptors_2) const {
+    std::vector<std::vector<cv::DMatch>> matches;
+
+    int k = 2;  // two best matches, for use with ratio test
+
+    /** Mask variable, currently unused.
+     *
+     *  The mask variable indicates which descriptors can be matched between the
+     *  two sets. As per OpenCV docs "queryDescriptors[i] can be matched with
+     *  trainDescriptors[j] only if masks.at<uchar>(i,j) is non-zero.
+     *
+     *  In the libwave wrapper, queryDescriptors and trainDescriptors are
+     *  referred to as descriptors_1 and descriptors_2.
+     */
+    cv::InputOutputArray mask = cv::noArray();
+
+    this->brute_force_matcher->knnMatch(
+      descriptors_1, descriptors_2, matches, k, mask, false);
 
     return matches;
 }

@@ -35,16 +35,6 @@ class DescriptorMatcher {
     ~DescriptorMatcher() = default;
 
  public:
-    /** Match keypoint descriptors between two images.
-     *
-     *  @param descriptors_1 the descriptors extracted from the first image.
-     *  @param descriptors_2 the descriptors extracted from the second image.
-     *
-     *  @return vector containing the best matches.
-     */
-    virtual std::vector<cv::DMatch> matchDescriptors(
-      const cv::Mat &descriptors_1, const cv::Mat &descriptors_2) const = 0;
-
     /** Remove outliers between matches using various outlier rejection methods.
      *  Outlier rejection methods are specified within the MatcherParams struct.
      *  Uses a heuristic based approach as a first pass to determine good
@@ -67,6 +57,27 @@ class DescriptorMatcher {
      */
     virtual std::vector<cv::DMatch> removeOutliers(
       std::vector<std::vector<cv::DMatch>> &matches) = 0;
+
+    /** Match keypoint descriptors between two images.
+     *
+     *  @param descriptors_1 the descriptors extracted from the first image.
+     *  @param descriptors_2 the descriptors extracted from the second image.
+     *
+     *  @return vector containing the best matches.
+     */
+    virtual std::vector<cv::DMatch> matchDescriptors(
+      const cv::Mat &descriptors_1, const cv::Mat &descriptors_2) const = 0;
+
+    /** Match keypoint descriptors between two images, using
+     *  k-nearest-neighbours search
+     *
+     *  @param descriptors_1 the descriptors extracted from the first image.
+     *  @param descriptors_2 the descriptors extracted from the second image.
+     *
+     *  @return vector of a vector containing the best two matches per keypoint.
+     */
+    virtual std::vector<std::vector<cv::DMatch>> knnMatchDescriptors(
+      const cv::Mat &descriptors_1, const cv::Mat &descriptors_2) const = 0;
 };
 
 }  // namespace wave

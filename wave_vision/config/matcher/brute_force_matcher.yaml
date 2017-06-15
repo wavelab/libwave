@@ -31,7 +31,7 @@ norm_type: 6
 # descriptor_2 is also the closest to descriptor_1.
 #
 # Recommended: true
-cross_check: true
+cross_check: false
 
 # Determines whether to use the ratio test or threshold-based distance
 # heuristic for outlier rejection.
