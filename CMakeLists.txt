@@ -32,6 +32,9 @@ ENDFOREACH()
 ADD_SUBDIRECTORY(deps/googletest)
 INCLUDE_DIRECTORIES(${gtest_SOURCE_DIR}/include/ ${gtest_SOURCE_DIR})
 
+# 3rd party modules
+ADD_SUBDIRECTORY(deps/aslam_cameras)
+
 # Define dependencies between modules
 # libwave_controls.a
 ADD_DEPENDENCIES(wave_controls wave_utils)
