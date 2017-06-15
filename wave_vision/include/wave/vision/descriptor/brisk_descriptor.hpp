@@ -24,7 +24,8 @@ namespace wave {
  *  brightness comparison tests to construct the descriptor.
  */
 struct BRISKDescriptorParams {
-    BRISKDescriptorParams(){};
+    /** Default Constructor */
+    BRISKDescriptorParams() {}
 
     BRISKDescriptorParams(std::vector<float> rlist,
                           std::vector<int> nlist,
@@ -49,15 +50,24 @@ struct BRISKDescriptorParams {
     std::vector<int> number_list = {1, 10, 14, 15, 20};
 
     /** d_max and d_min are threshold distances to classify a pair of points as
-     * a
-     *  \a long pair or a \a short pair. Short pairs are not used in the
+     *  a \a long pair or a \a short pair. Short pairs are not used in the
      *  brightness comparison, due to balancing effects of local gradients. The
      *  long pairs are not used in the assembly of the bit vector descriptor.
-     *  The value of dMax must be less than that of dMin.
      *
-     *  Recommended: d_max = 5.85f, d_min = 8.2f.
+     *
+     *  d_max specifies the maximum threshold for short pairs. The value of
+     *  d_max must be less than that of d_min.
+     *
+     *  Recommended: d_max = 5.85f
      */
     float d_max = 5.85f;
+
+    /** d_min specifies the minimum threshold for long pairs.
+     *
+     *  The value of d_min must be more than that of d_max.
+     *
+     *  Recommended:  d_min = 8.2f
+     */
     float d_min = 8.2f;
 
     /** OpenCV refers to this as a parameter for "index remapping of the bits."
@@ -83,8 +93,7 @@ class BRISKDescriptor : public DescriptorExtractor {
     *   linked .yaml file.
     *
     *   @param config_path is the path to a .yaml file, containing the desired
-    *   parameters for the BRISK Descriptor Extractor. The .yaml file can be
-    *   configured for both BRISKParams or BRISKParamsCustomPattern.
+    *   parameters for the BRISK Descriptor Extractor.
     */
     BRISKDescriptor(const std::string &config_path);
 
@@ -111,12 +120,12 @@ class BRISKDescriptor : public DescriptorExtractor {
     /** The pointer to the wrapped cv::BRISK object. */
     cv::Ptr<cv::BRISK> brisk_descriptor;
 
-    /** The current configuration, stored in a BRISKDescriptorParams struct */
+    /** The current configuration */
     BRISKDescriptorParams current_config;
 
     /** Checks whether the desired configuration is valid.
      *
-     *  @param check_config, containing the desired configuration values.
+     *  @param check_config containing the desired configuration values.
      */
     void checkConfiguration(const BRISKDescriptorParams &check_config);
 };
