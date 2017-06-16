@@ -26,6 +26,10 @@
 #include "wave/matching/matcher.hpp"
 #include "wave/matching/pcl_common.hpp"
 
+namespace wave {
+/** @addtogroup matching
+ *  @{ */
+
 struct NDTMatcherParams {
     NDTMatcherParams();
     NDTMatcherParams(const std::string &config_path);
@@ -34,10 +38,6 @@ struct NDTMatcherParams {
     double t_eps;
     float res;
 };
-
-namespace wave {
-/** @addtogroup matching
- *  @{ */
 
 class NDTMatcher : public Matcher<PCLPointCloud> {
  public:

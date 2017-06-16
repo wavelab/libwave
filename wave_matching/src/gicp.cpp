@@ -8,6 +8,7 @@ GICPMatcherParams::GICPMatcherParams() {
     this->max_iter = 100;
     this->r_eps = 1e-8;
     this->fit_eps = 1e-2;
+    this->res = 0.1;
 }
 
 GICPMatcherParams::GICPMatcherParams(const std::string &config_path) {

@@ -10,7 +10,8 @@
 
 #include <thread>
 #include <mutex>
-#include <map>
+#include <queue>
+#include <tuple>
 #include "wave/utils/math.hpp"
 #include "wave/matching/pcl_common.hpp"
 #include "wave/matching/matcher.hpp"
@@ -22,33 +23,48 @@ namespace wave {
 /**
  * Class is templated for different matcher types
  * @tparam T matcher type
+ * @tparam R matcher params type
  */
-template <typename T>
+template <typename T, typename R>
 class MultiMatcher {
  public:
-    MultiMatcher() : max_threads(2) {};
-    MultiMatcher(int n_threads) : max_threads(n_threads) {};
+    MultiMatcher(int n_threads = std::thread::hardware_concurrency(),
+                 int queue_s = 10,
+                 std::string path = "")
+        : n_thread(n_threads), queue_size(queue_s) {
+        this->initPool(path);
+    }
 
-    void insert(const PCLPointCloud &src, const PCLPointCloud &target);
+    /** Function to specify path to config file when spawning matchers
+     * If not called the default params are used for the matchers.
+     * @param config_path
+     */
+    void setConfig(const std::string &config_path) {
+        this->config = config_path;
+    }
+    void insert(const int &id,
+                const PCLPointCloud &src,
+                const PCLPointCloud &target);
     bool getResult(int id);
+
  private:
-    const int max_threads;
+    const int n_thread;
+    const int queue_size;
+    std::string config;
+    std::queue<std::tuple<int, PCLPointCloud, PCLPointCloud>> input;
+    std::queue<std::tuple<int, Eigen::Affine3d, Mat6>> output;
+    std::mutex ip_mutex;
+    std::mutex op_mutex;
+    std::vector<std::thread> pool;
+    std::vector<T> matchers;
 
     /** Function run by each worker thread
      * @param id pair of clouds to match
      */
-    void doMatch(int id);
-
-    std::map<int, std::pair<PCLPointCloud, PCLPointCloud>> input;
-    std::map<int, std::pair<Eigen::Affine3d, Mat6>> output;
-    std::mutex ip_mutex;
-    std::mutex op_mutex;
-
-    std::vector<std::shared_ptr<std::thread>> workers;
-
-    std::vector<T> matchers;
+    void spin(int threadid);
+    void initPool(std::string path);
 };
 
 }  // namespace wave
 
-#endif //WAVE_MULTI_MATCHER_HPP
+#endif  // WAVE_MULTI_MATCHER_HPP
