@@ -133,7 +133,7 @@ std::vector<cv::DMatch> BruteForceMatcher::matchDescriptors(
     /** Mask variable, currently unused.
      *
      *  The mask variable indicates which descriptors can be matched between the
-     *  two sets. As per OpenCV docs "queryDescriptaors[i] can be matched with
+     *  two sets. As per OpenCV docs "queryDescriptors[i] can be matched with
      *  trainDescriptors[j] only if masks.at<uchar>(i,j) is non-zero.
      *
      *  In the libwave wrapper, queryDescriptors and trainDescriptors are

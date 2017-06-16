@@ -53,7 +53,6 @@ TEST(BFTests, CustomParamsConstructorTest) {
     ASSERT_EQ(custom_config.norm_type, config.norm_type);
     ASSERT_EQ(custom_config.use_knn, config.use_knn);
     ASSERT_EQ(custom_config.ratio_threshold, config.ratio_threshold);
-    ASSERT_EQ(custom_config.distance_threshold, config.distance_threshold);
 }
 
 TEST(BFTests, CustomYamlConstructorTest) {
