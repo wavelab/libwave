@@ -5,12 +5,21 @@ namespace wave {
 
 // Default constructor. Struct may be default or user defined.
 BruteForceMatcher::BruteForceMatcher(const BFMatcherParams &config) {
+    bool cross_check;
+
     // Ensure parameters are valid
     this->checkConfiguration(config);
 
+    // If using knn search, cross_check must be false
+    if (config.use_knn) {
+        cross_check = false;
+    } else {
+        cross_check = true;
+    }
+
     // Create cv::BFMatcher object with the desired parameters
     this->brute_force_matcher =
-      cv::BFMatcher::create(config.norm_type, config.cross_check);
+      cv::BFMatcher::create(config.norm_type, cross_check);
 
     // Store configuration parameters within member struct
     this->current_config = config;
@@ -23,13 +32,14 @@ BruteForceMatcher::BruteForceMatcher(const std::string &config_path) {
     // Configuration parameters
     BFMatcherParams config;
 
+    bool cross_check;
+
     // Add parameters to parser, to be loaded. If path cannot be found, throw an
     // exception.
     parser.addParam("norm_type", &config.norm_type);
-    parser.addParam("cross_check", &config.cross_check);
-    parser.addParam("ratio_rejection", &config.ratio_rejection);
-    parser.addParam("ratio_test_heuristic", &config.ratio_test_heuristic);
-    parser.addParam("rejection_heuristic", &config.rejection_heuristic);
+    parser.addParam("use_knn", &config.use_knn);
+    parser.addParam("ratio_threshold", &config.ratio_threshold);
+    parser.addParam("distance_threshold", &config.distance_threshold);
 
     if (parser.load(config_path) != 0) {
         throw std::invalid_argument(
@@ -39,9 +49,16 @@ BruteForceMatcher::BruteForceMatcher(const std::string &config_path) {
     // Confirm configuration is valid
     this->checkConfiguration(config);
 
+    // If using knn search, cross_check must be false
+    if (config.use_knn) {
+        cross_check = false;
+    } else {
+        cross_check = true;
+    }
+
     // Create cv::BFMatcher object with the desired parameters
     this->brute_force_matcher =
-      cv::BFMatcher::create(config.norm_type, config.cross_check);
+      cv::BFMatcher::create(config.norm_type, cross_check);
 
     // Store configuration parameters within member struct
     this->current_config = config;
@@ -57,35 +74,21 @@ void BruteForceMatcher::checkConfiguration(
           "Norm type is not one of the acceptable values!");
     }
 
-    // If ratio rejection is true, cross check must be false.
-    if (check_config.cross_check) {
-        if (check_config.ratio_rejection) {
-            throw std::invalid_argument(
-              "Both cross_check and ratio_rejection are true!");
-        }
-    } else {
-        if (!(check_config.ratio_rejection)) {
-            throw std::invalid_argument(
-              "Both cross_check and ratio_rejection are false!");
-        }
-    }
-
     // Check the value of the ratio_test heuristic
-    if (check_config.ratio_test_heuristic < 0.0 ||
-        check_config.ratio_test_heuristic > 1.0) {
+    if (check_config.ratio_threshold < 0.0 ||
+        check_config.ratio_threshold > 1.0) {
         throw std::invalid_argument(
-          "Ratio test heuristic is not an acceptable value!");
+          "ratio_threshold is not an appropriate value!");
     }
 
     // Check the value of the threshold distance heuristic
-    if (check_config.rejection_heuristic < 0) {
-        throw std::invalid_argument(
-          "Threshold distance heuristic is not an acceptable value!");
+    if (check_config.distance_threshold < 0) {
+        throw std::invalid_argument("distance_threshold is a negative value!");
     }
 }
 
 std::vector<cv::DMatch> BruteForceMatcher::removeOutliers(
-  std::vector<cv::DMatch> &matches) {
+  std::vector<cv::DMatch> &matches) const {
     std::vector<cv::DMatch> good_matches;
     float min_distance;
 
@@ -98,7 +101,7 @@ std::vector<cv::DMatch> BruteForceMatcher::removeOutliers(
     // distance
     for (auto &match : matches) {
         if (match.distance <=
-            this->current_config.rejection_heuristic * min_distance) {
+            this->current_config.distance_threshold * min_distance) {
             good_matches.push_back(match);
         }
     }
@@ -107,15 +110,15 @@ std::vector<cv::DMatch> BruteForceMatcher::removeOutliers(
 }
 
 std::vector<cv::DMatch> BruteForceMatcher::removeOutliers(
-  std::vector<std::vector<cv::DMatch>> &matches) {
+  std::vector<std::vector<cv::DMatch>> &matches) const {
     std::vector<cv::DMatch> good_matches;
     float ratio;
 
     for (auto &match : matches) {
-        // Calculate ratio between two best matches. Accept if greater than
-        // ratio test heuristic
+        // Calculate ratio between two best matches. Accept if less than
+        // ratio heuristic
         ratio = match[0].distance / match[1].distance;
-        if (ratio <= this->current_config.ratio_test_heuristic) {
+        if (ratio <= this->current_config.ratio_threshold) {
             good_matches.push_back(match[0]);
         }
     }
@@ -125,12 +128,12 @@ std::vector<cv::DMatch> BruteForceMatcher::removeOutliers(
 
 std::vector<cv::DMatch> BruteForceMatcher::matchDescriptors(
   const cv::Mat &descriptors_1, const cv::Mat &descriptors_2) const {
-    std::vector<cv::DMatch> matches;
+    std::vector<cv::DMatch> good_matches;
 
     /** Mask variable, currently unused.
      *
      *  The mask variable indicates which descriptors can be matched between the
-     *  two sets. As per OpenCV docs "queryDescriptors[i] can be matched with
+     *  two sets. As per OpenCV docs "queryDescriptaors[i] can be matched with
      *  trainDescriptors[j] only if masks.at<uchar>(i,j) is non-zero.
      *
      *  In the libwave wrapper, queryDescriptors and trainDescriptors are
@@ -138,34 +141,26 @@ std::vector<cv::DMatch> BruteForceMatcher::matchDescriptors(
      */
     cv::InputOutputArray mask = cv::noArray();
 
-    // Determine matches between sets of descriptors
-    this->brute_force_matcher->match(
-      descriptors_1, descriptors_2, matches, mask);
+    if (current_config.use_knn) {
+        std::vector<std::vector<cv::DMatch>> matches;
+        int k = 2;
 
-    return matches;
-}
+        this->brute_force_matcher->knnMatch(
+          descriptors_1, descriptors_2, matches, k, mask);
 
-std::vector<std::vector<cv::DMatch>> BruteForceMatcher::knnMatchDescriptors(
-  const cv::Mat &descriptors_1, const cv::Mat &descriptors_2) const {
-    std::vector<std::vector<cv::DMatch>> matches;
+        this->removeOutliers(matches);
 
-    int k = 2;  // two best matches, for use with ratio test
+    } else {
+        std::vector<cv::DMatch> matches;
 
-    /** Mask variable, currently unused.
-     *
-     *  The mask variable indicates which descriptors can be matched between the
-     *  two sets. As per OpenCV docs "queryDescriptors[i] can be matched with
-     *  trainDescriptors[j] only if masks.at<uchar>(i,j) is non-zero.
-     *
-     *  In the libwave wrapper, queryDescriptors and trainDescriptors are
-     *  referred to as descriptors_1 and descriptors_2.
-     */
-    cv::InputOutputArray mask = cv::noArray();
+        // Determine matches between sets of descriptors
+        this->brute_force_matcher->match(
+          descriptors_1, descriptors_2, matches, mask);
 
-    this->brute_force_matcher->knnMatch(
-      descriptors_1, descriptors_2, matches, k, mask, false);
+        good_matches = this->removeOutliers(matches);
+    }
 
-    return matches;
+    return good_matches;
 }
 
 }  // namespace wave

@@ -25,15 +25,13 @@ struct BFMatcherParams {
 
     /** Constructor using user-defined parameters */
     BFMatcherParams(int norm_type,
-                    bool cross_check,
-                    bool ratio_rejection,
-                    double ratio_test_heuristic,
-                    int rejection_heuristic)
+                    bool use_knn,
+                    double ratio_threshold,
+                    int distance_threshold)
         : norm_type(norm_type),
-          cross_check(cross_check),
-          ratio_rejection(ratio_rejection),
-          ratio_test_heuristic(ratio_test_heuristic),
-          rejection_heuristic(rejection_heuristic) {}
+          use_knn(use_knn),
+          ratio_threshold(ratio_threshold),
+          distance_threshold(distance_threshold) {}
 
     /** Norm type to use for distance calculation between feature descriptors.
      *
@@ -60,60 +58,43 @@ struct BFMatcherParams {
      */
     int norm_type = cv::NORM_HAMMING;
 
-    /** This boolean enables or disables the cross-checking functionality, which
-     *  looks to remove false matches. If true, the closest match to
-     *  descriptor_1 from descriptor_2 will only be reported if the object in
-     *  descriptor_2 is also the closest to descriptor_1.
+    /** Determines whether to use a k-nearest-neighbours match.
      *
-     *  Must be __false__ if ratio_rejection is true, and vice versa!
+     *  Matcher can conduct a knn match with the best 2 matches for each
+     *  descriptor. This uses the ratio test (@param ratio_threshold)
+     *  to discard outliers.
      *
-     *  Recommended: false
-     */
-    bool cross_check = false;
-
-    /** Determines whether to use the ratio test or threshold-based distance
-     *  heuristic for outlier rejection.
-     *
-     *  Must be __false__ if cross_check is true, and vice versa!
+     *  If false, the matcher uses a distance heuristic
+     *  (@param distance_threshold) to discard poor matches. This also
+     *  incorporates cross checking between matches.
      *
      *  Recommended: true.
      */
-    bool ratio_rejection = true;
+    bool use_knn = true;
 
     /** Specifies heuristic for the ratio test, illustrated by Dr. David G. Lowe
      *  in his paper _Distinctive Image Features from Scale-Invariant Keypoints_
      *  (2004). The test takes the ratio of the closest keypoint distance
-     *  to that of the second closest neighbour. If the ratio is greater than
-     * the
-     *  heuristic, it is discarded.
+     *  to that of the second closest neighbour. If the ratio is less than
+     *  the heuristic, it is discarded.
      *
      *  A value of 0.8 was shown by Dr. Lowe to reject 90% of the false matches,
      *  and discard only 5% of the correct matches.
      *
-     *  Recommended: 0.8. Must be between 0 and 1. Only used if @param
-     *  ratio_rejection is true.
+     *  Recommended: 0.8. Must be between 0 and 1.
      */
-    double ratio_test_heuristic = 0.8;
+    double ratio_threshold = 0.8;
 
-    /** Specifies the rejection heuristic for good matches.
+    /** Specifies the distance threshold for good matches.
      *
      *  Matches will only be kept if the descriptor distance is less than or
-     *  equal to the product of the rejection heuristic and the _minimum_ of all
-     *  descriptor distances. The greater the heuristic, the more matches will
+     *  equal to the product of the distance threshold and the _minimum_ of all
+     *  descriptor distances. The greater the value, the more matches will
      *  be kept.
      *
-     *  Recommended: 5. Must be greater than or equal to zero. Only used if
-     *  @param ratio_rejection is false.
+     *  Recommended: 5. Must be greater than or equal to zero.
      */
-    int rejection_heuristic = 5;
-
-    /**
-     *
-     * Options:
-     * cv::RANSAC: Random Sample Consensus estimation
-     * cv::LMEDS:
-     */
-    // int estimator = cv::RANSAC;
+    int distance_threshold = 5;
 };
 
 class BruteForceMatcher : public DescriptorMatcher {
@@ -145,28 +126,25 @@ class BruteForceMatcher : public DescriptorMatcher {
     }
 
     /** Remove outliers between matches. Uses a heuristic based approach as a
-     *  first pass to determine good matches. Determines the fundamental
-     *  matrix to act as a mask for further refinement.
+     *  first pass to determine good matches.
      *
      *  @param matches the unfiltered matches computed from two images.
      *
      *  @return the matches with outliers removed.
      */
     std::vector<cv::DMatch> removeOutliers(
-      std::vector<cv::DMatch> &matches) override;
+      std::vector<cv::DMatch> &matches) const override;
 
     /** Overloaded method, which takes in a vector of a vector of matches. This
      *  is designed to be used with the knnMatchDescriptors method, and uses the
-     *  ratio test as a first pass to determine good matches. Determines the
-     *  fundamental matrix to act as a mask for further refinement.
+     *  ratio test as a first pass to determine good matches.
      *
      *  @param matches the unfiltered matches computed from two images.
      *
      *  @return the matches with outliers removed.
      */
     std::vector<cv::DMatch> removeOutliers(
-      std::vector<std::vector<cv::DMatch>> &matches) override;
-
+      std::vector<std::vector<cv::DMatch>> &matches) const override;
 
     /** Matches keypoints descriptors between two images using the
      *  BruteForceMatcher.
@@ -179,19 +157,6 @@ class BruteForceMatcher : public DescriptorMatcher {
     std::vector<cv::DMatch> matchDescriptors(
       const cv::Mat &descriptors_1,
       const cv::Mat &descriptors_2) const override;
-
-    /** Match keypoint descriptors between two images, using
-     *  k-nearest-neighbours search
-     *
-     *  @param descriptors_1 the descriptors extracted from the first image.
-     *  @param descriptors_2 the descriptors extracted from the second image.
-     *
-     *  @return vector of a vector containing the best two matches per keypoint.
-     */
-    std::vector<std::vector<cv::DMatch>> knnMatchDescriptors(
-      const cv::Mat &descriptors_1,
-      const cv::Mat &descriptors_2) const override;
-
  private:
     /** The pointer to the wrapped cv::BFMatcher object */
     cv::Ptr<cv::BFMatcher> brute_force_matcher;

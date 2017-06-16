@@ -45,7 +45,7 @@ class DescriptorMatcher {
      *  @return the matches with outliers removed.
      */
     virtual std::vector<cv::DMatch> removeOutliers(
-      std::vector<cv::DMatch> &matches) = 0;
+      std::vector<cv::DMatch> &matches) const = 0;
 
     /** Overloaded method, which takes in a vector of a vector of matches. This
      *  is designed to be used with the knnMatchDescriptors method, and uses the
@@ -56,7 +56,7 @@ class DescriptorMatcher {
      *  @return the matches with outliers removed.
      */
     virtual std::vector<cv::DMatch> removeOutliers(
-      std::vector<std::vector<cv::DMatch>> &matches) = 0;
+      std::vector<std::vector<cv::DMatch>> &matches) const = 0;
 
     /** Match keypoint descriptors between two images.
      *
@@ -66,17 +66,6 @@ class DescriptorMatcher {
      *  @return vector containing the best matches.
      */
     virtual std::vector<cv::DMatch> matchDescriptors(
-      const cv::Mat &descriptors_1, const cv::Mat &descriptors_2) const = 0;
-
-    /** Match keypoint descriptors between two images, using
-     *  k-nearest-neighbours search
-     *
-     *  @param descriptors_1 the descriptors extracted from the first image.
-     *  @param descriptors_2 the descriptors extracted from the second image.
-     *
-     *  @return vector of a vector containing the best two matches per keypoint.
-     */
-    virtual std::vector<std::vector<cv::DMatch>> knnMatchDescriptors(
       const cv::Mat &descriptors_1, const cv::Mat &descriptors_2) const = 0;
 };
 

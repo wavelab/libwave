@@ -25,40 +25,40 @@
 #
 norm_type: 6
 
-# This boolean enables or disables the cross-checking functionality, which
-# looks to remove false matches. If true, the closest match to
-# descriptor_1 from descriptor_2 will only be reported if the object in
-# descriptor_2 is also the closest to descriptor_1.
+# Determines whether to use a k-nearest-neighbours match.
 #
-# Recommended: true
-cross_check: false
-
-# Determines whether to use the ratio test or threshold-based distance
-# heuristic for outlier rejection.
+# Matcher can conduct a knn match with the best 2 matches for each
+# descriptor. This uses the ratio test (@param ratio_threshold)
+# to discard outliers.
+#
+# If false, the matcher uses a distance heuristic
+# (@param distance_threshold) to discard poor matches. This also
+# incorporates cross checking between matches.
 #
 # Recommended: true.
-ratio_rejection: true
+#
+use_knn: true
 
 # Specifies heuristic for the ratio test, illustrated by Dr. David G. Lowe
 # in his paper _Distinctive Image Features from Scale-Invariant Keypoints_
 # (2004). The test takes the ratio of the closest keypoint distance
-# to that of the second closest neighbour. If the ratio is greater than the
-# heuristic, it is discarded.
+# to that of the second closest neighbour. If the ratio is less than
+# the heuristic, it is discarded.
 #
-# A value of 0.8 was shown by Dr. Lowe to reject 90% of the false matches,
-# and discard only 5% of the correct matches.
+# A value of 0.8 was shown by Dr. Lowe to reject 90% of the false matches, and
+# discard only 5% of the correct matches.
 #
-# Recommended: 0.8. Must be between 0 and 1. Only used if ratio_rejection is true.
-ratio_test_heuristic: 0.8
+# Recommended: 0.8. Must be between 0 and 1.
+#
+ratio_threshold: 0.8
 
-# Specifies the rejection heuristic for good matches.
+# Specifies the distance threshold for good matches.
 #
 # Matches will only be kept if the descriptor distance is less than or
-# equal to the product of the rejection heuristic and the _minimum_ of all
-# descriptor distances. The greater the heuristic, the more matches will
+# equal to the product of the distance threshold and the _minimum_ of all
+# descriptor distances. The greater the value, the more matches will
 # be kept.
 #
-# Recommended: 5. Must be greater than or equal to zero. Only used if
-# ratio_rejection is false.
+# Recommended: 5. Must be greater than or equal to zero.
 #
-rejection_heuristic: 5
+distance_threshold: 5

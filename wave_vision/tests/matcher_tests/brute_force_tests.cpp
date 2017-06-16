@@ -11,7 +11,7 @@ const auto TEST_IMAGE_1 = "tests/data/image_center.png";
 const auto TEST_IMAGE_2 = "tests/data/image_right.png";
 
 // Checks that correct configuration can be loaded
-TEST(BFTests, DISABLED_GoodInitialization) {
+TEST(BFTests, GoodInitialization) {
     ASSERT_NO_THROW(BruteForceMatcher bfmatcher(TEST_CONFIG));
 }
 
@@ -30,89 +30,70 @@ TEST(BFTests, DefaultConstructorTest) {
     auto config = bfmatcher.getConfiguration();
 
     ASSERT_EQ(check_config.norm_type, config.norm_type);
-    ASSERT_EQ(check_config.cross_check, config.cross_check);
-    ASSERT_EQ(check_config.ratio_rejection, config.ratio_rejection);
-    ASSERT_EQ(check_config.ratio_test_heuristic, config.ratio_test_heuristic);
-    ASSERT_EQ(check_config.rejection_heuristic, config.rejection_heuristic);
+    ASSERT_EQ(check_config.use_knn, config.use_knn);
+    ASSERT_EQ(check_config.ratio_threshold, config.ratio_threshold);
+    ASSERT_EQ(check_config.distance_threshold, config.distance_threshold);
 }
 
 TEST(BFTests, CustomParamsConstructorTest) {
     int norm_type = cv::NORM_L2;
-    bool cross_check = false;
-    bool ratio_rejection = true;
-    double ratio_test_heuristic = 0.8;
-    int rejection_heuristic = 5;
+    bool use_knn = false;
+    double ratio_threshold = 0.8;
+    int distance_threshold = 5;
 
 
     // Place defined values into config struct and create BruteForceMatcher
     BFMatcherParams custom_config(norm_type,
-                                  cross_check,
-                                  ratio_rejection,
-                                  ratio_test_heuristic,
-                                  rejection_heuristic);
+                                  use_knn,
+                                  ratio_threshold,
+                                  distance_threshold);
 
     BruteForceMatcher bfmatcher(custom_config);
 
     BFMatcherParams config = bfmatcher.getConfiguration();
 
     ASSERT_EQ(custom_config.norm_type, config.norm_type);
-    ASSERT_EQ(cross_check, config.cross_check);
-    ASSERT_EQ(ratio_rejection, config.ratio_rejection);
-    ASSERT_EQ(ratio_test_heuristic, config.ratio_test_heuristic);
-    ASSERT_EQ(rejection_heuristic, config.rejection_heuristic);
+    ASSERT_EQ(custom_config.use_knn, config.use_knn);
+    ASSERT_EQ(custom_config.ratio_threshold, config.ratio_threshold);
+    ASSERT_EQ(custom_config.distance_threshold, config.distance_threshold);
 }
 
-TEST(BFTests, DISABLED_CustomYamlConstructorTest) {
+TEST(BFTests, CustomYamlConstructorTest) {
     int norm_type = cv::NORM_HAMMING;
-    bool cross_check = false;
-    bool ratio_rejection = true;
-    double ratio_test_heuristic = 0.8;
-    int rejection_heuristic = 5;
+    bool use_knn = true;
+    double ratio_threshold = 0.8;
+    int distance_threshold = 5;
 
     BruteForceMatcher bfmatcher(TEST_CONFIG);
 
     BFMatcherParams config = bfmatcher.getConfiguration();
 
-    std::cout << config.ratio_test_heuristic << std::endl;
-
     ASSERT_EQ(norm_type, config.norm_type);
-    ASSERT_EQ(cross_check, config.cross_check);
-    ASSERT_EQ(ratio_rejection, config.ratio_rejection);
-    ASSERT_EQ(ratio_test_heuristic, config.ratio_test_heuristic);
-    ASSERT_EQ(rejection_heuristic, config.rejection_heuristic);
-}
-
-TEST(BFTests, SameCrossCheckRatioRejection) {
-    BFMatcherParams config(cv::NORM_HAMMING, true, true, 0.8, 5);
-
-    ASSERT_THROW(BruteForceMatcher bfmatcher(config), std::invalid_argument);
+    ASSERT_EQ(use_knn, config.use_knn);
+    ASSERT_EQ(ratio_threshold, config.ratio_threshold);
+    ASSERT_EQ(distance_threshold, config.distance_threshold);
 }
 
 TEST(BFTests, BadNormType) {
     int bad_norm_type_neg = -1;
     int bad_norm_type_high = 8;
     int bad_norm_type_nd = 3;
-    bool ratio_rejection = true;
-    double ratio_test_heuristic = 0.8;
-    int rejection_heuristic = 5;
-
-    bool cross_check = false;
+    bool use_knn = true;
+    double ratio_threshold = 0.8;
+    int distance_threshold = 5;
 
     auto config_neg = BFMatcherParams(bad_norm_type_neg,
-                                      cross_check,
-                                      ratio_rejection,
-                                      ratio_test_heuristic,
-                                      rejection_heuristic);
+                                      use_knn,
+                                      ratio_threshold,
+                                      distance_threshold);
     auto config_high = BFMatcherParams(bad_norm_type_high,
-                                       cross_check,
-                                       ratio_rejection,
-                                       ratio_test_heuristic,
-                                       rejection_heuristic);
+                                       use_knn,
+                                       ratio_threshold,
+                                       distance_threshold);
     auto config_nd = BFMatcherParams(bad_norm_type_nd,
-                                     cross_check,
-                                     ratio_rejection,
-                                     ratio_test_heuristic,
-                                     rejection_heuristic);
+                                     use_knn,
+                                     ratio_threshold,
+                                     distance_threshold);
 
     ASSERT_THROW(BruteForceMatcher bfmatcher(config_neg),
                  std::invalid_argument);
@@ -125,8 +106,8 @@ TEST(BFTests, BadRatioTestHeuristic) {
     BFMatcherParams bad_rth_neg;
     BFMatcherParams bad_rth_high;
 
-    bad_rth_neg.ratio_test_heuristic = -0.5;
-    bad_rth_high.ratio_test_heuristic = 1.5;
+    bad_rth_neg.ratio_threshold = -0.5;
+    bad_rth_high.ratio_threshold = 1.5;
 
     ASSERT_THROW(BruteForceMatcher bfmatcher_neg(bad_rth_neg),
                  std::invalid_argument);
@@ -137,13 +118,13 @@ TEST(BFTests, BadRatioTestHeuristic) {
 TEST(BFTests, BadRejectionHeuristic) {
     BFMatcherParams bad_rh_neg;
 
-    bad_rh_neg.rejection_heuristic = -1;
+    bad_rh_neg.distance_threshold = -1;
 
     ASSERT_THROW(BruteForceMatcher bfmatcher_neg(bad_rh_neg),
                  std::invalid_argument);
 }
 
-TEST(BFTests, DISABLED_MatchDescriptors) {
+TEST(BFTests, DISABLED_DistanceMatchDescriptors) {
     std::vector<cv::DMatch> matches;
     cv::Mat img_with_matches;
 
@@ -152,7 +133,10 @@ TEST(BFTests, DISABLED_MatchDescriptors) {
     cv::Mat descriptors_1, descriptors_2;
     FASTDetector fast;
     BRISKDescriptor brisk;
-    BruteForceMatcher bfmatcher;
+
+    BFMatcherParams config(cv::NORM_HAMMING, false, 0.8, 5);
+
+    BruteForceMatcher bfmatcher(config);
 
     image_1 = cv::imread(TEST_IMAGE_1, cv::IMREAD_COLOR);
     image_2 = cv::imread(TEST_IMAGE_2, cv::IMREAD_COLOR);
@@ -169,42 +153,6 @@ TEST(BFTests, DISABLED_MatchDescriptors) {
       image_1, keypoints_1, image_2, keypoints_2, matches, img_with_matches);
 
     cv::imshow("matches", img_with_matches);
-
-    cv::waitKey(0);
-}
-
-TEST(BFTests, DISABLED_MatchDescriptorsRejection) {
-    std::vector<cv::DMatch> matches;
-    std::vector<cv::DMatch> good_matches;
-    cv::Mat img_with_matches;
-
-    cv::Mat image_1, image_2;
-    std::vector<cv::KeyPoint> keypoints_1, keypoints_2;
-    cv::Mat descriptors_1, descriptors_2;
-    FASTDetector fast;
-    BRISKDescriptor brisk;
-    BruteForceMatcher bfmatcher;
-
-    image_1 = cv::imread(TEST_IMAGE_1, cv::IMREAD_COLOR);
-    image_2 = cv::imread(TEST_IMAGE_2, cv::IMREAD_COLOR);
-    keypoints_1 = fast.detectFeatures(image_1);
-    keypoints_2 = fast.detectFeatures(image_2);
-    descriptors_1 = brisk.extractDescriptors(image_1, keypoints_1);
-    descriptors_2 = brisk.extractDescriptors(image_2, keypoints_2);
-
-    // Match descriptors from image 1 and image 2
-    matches = bfmatcher.matchDescriptors(descriptors_1, descriptors_2);
-
-    good_matches = bfmatcher.removeOutliers(matches);
-
-    cv::drawMatches(image_1,
-                    keypoints_1,
-                    image_2,
-                    keypoints_2,
-                    good_matches,
-                    img_with_matches);
-
-    cv::imshow("good matches", img_with_matches);
 
     cv::waitKey(0);
 }
@@ -229,10 +177,7 @@ TEST(BFTests, DISABLED_KnnMatchDescriptors) {
     descriptors_2 = brisk.extractDescriptors(image_2, keypoints_2);
 
     // Use KNN Matcher to match
-    matches = bfmatcher.knnMatchDescriptors(descriptors_1, descriptors_2);
-
-    // Reject outliers using ratio method
-    good_matches = bfmatcher.removeOutliers(matches);
+    good_matches = bfmatcher.matchDescriptors(descriptors_1, descriptors_2);
 
     // Test has been confirmed visually
     cv::drawMatches(image_1,
