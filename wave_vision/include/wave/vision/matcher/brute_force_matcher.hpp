@@ -157,6 +157,7 @@ class BruteForceMatcher : public DescriptorMatcher {
     std::vector<cv::DMatch> matchDescriptors(
       const cv::Mat &descriptors_1,
       const cv::Mat &descriptors_2) const override;
+
  private:
     /** The pointer to the wrapped cv::BFMatcher object */
     cv::Ptr<cv::BFMatcher> brute_force_matcher;

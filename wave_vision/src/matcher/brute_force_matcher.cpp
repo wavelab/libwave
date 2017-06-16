@@ -146,9 +146,9 @@ std::vector<cv::DMatch> BruteForceMatcher::matchDescriptors(
         int k = 2;
 
         this->brute_force_matcher->knnMatch(
-          descriptors_1, descriptors_2, matches, k, mask);
+          descriptors_1, descriptors_2, matches, k, mask, false);
 
-        this->removeOutliers(matches);
+        good_matches = this->removeOutliers(matches);
 
     } else {
         std::vector<cv::DMatch> matches;

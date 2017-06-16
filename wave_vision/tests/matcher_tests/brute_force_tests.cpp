@@ -43,10 +43,8 @@ TEST(BFTests, CustomParamsConstructorTest) {
 
 
     // Place defined values into config struct and create BruteForceMatcher
-    BFMatcherParams custom_config(norm_type,
-                                  use_knn,
-                                  ratio_threshold,
-                                  distance_threshold);
+    BFMatcherParams custom_config(
+      norm_type, use_knn, ratio_threshold, distance_threshold);
 
     BruteForceMatcher bfmatcher(custom_config);
 
@@ -82,18 +80,12 @@ TEST(BFTests, BadNormType) {
     double ratio_threshold = 0.8;
     int distance_threshold = 5;
 
-    auto config_neg = BFMatcherParams(bad_norm_type_neg,
-                                      use_knn,
-                                      ratio_threshold,
-                                      distance_threshold);
-    auto config_high = BFMatcherParams(bad_norm_type_high,
-                                       use_knn,
-                                       ratio_threshold,
-                                       distance_threshold);
-    auto config_nd = BFMatcherParams(bad_norm_type_nd,
-                                     use_knn,
-                                     ratio_threshold,
-                                     distance_threshold);
+    auto config_neg = BFMatcherParams(
+      bad_norm_type_neg, use_knn, ratio_threshold, distance_threshold);
+    auto config_high = BFMatcherParams(
+      bad_norm_type_high, use_knn, ratio_threshold, distance_threshold);
+    auto config_nd = BFMatcherParams(
+      bad_norm_type_nd, use_knn, ratio_threshold, distance_threshold);
 
     ASSERT_THROW(BruteForceMatcher bfmatcher(config_neg),
                  std::invalid_argument);
