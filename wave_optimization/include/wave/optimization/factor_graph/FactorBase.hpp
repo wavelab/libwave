@@ -27,7 +27,11 @@ class FactorBase {
 
     /** Evaluate this factor to obtain residuals and jacobians.
      *
-     * Types of `Factor` implement this function.`
+     * This function is not meant to be called by users. It is called by the
+     * back-end optimizer which works with pointers to pointers of C-style
+     * arrays. For clarity and type safety, it would be preferable `Factor`
+     * class
+     * implemented this method, providing the needed conversions.
      *
      * This interface is based on Ceres' `CostFunction`. See
      * http://ceres-solver.org/nnls_modeling.htmlmarch#costfunction
