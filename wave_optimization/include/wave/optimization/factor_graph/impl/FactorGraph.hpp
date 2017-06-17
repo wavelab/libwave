@@ -1,23 +1,45 @@
 namespace wave {
 
+namespace internal {
+
+/**
+ * Trivial measurement function for a prior, f(X) = X
+ */
+template <typename V>
+inline bool identityMeasurementFunction(
+  const V &variable,
+  ResultOut<FactorVariable<V>::Size> result,
+  JacobianOut<FactorVariable<V>::Size, FactorVariable<V>::Size> jacobian) {
+    result = variable;
+
+    if (jacobian) {
+        jacobian.setIdentity();
+    }
+
+    return true;
+}
+
+}  // namespace internal
+
 // Constructors
-FactorGraph::FactorGraph() {}
+inline FactorGraph::FactorGraph() {}
 
 // Capacity
 
-FactorGraph::size_type FactorGraph::countFactors() const noexcept {
+inline FactorGraph::size_type FactorGraph::countFactors() const noexcept {
     return this->factors.size();
 }
 
-bool FactorGraph::empty() const noexcept {
+inline bool FactorGraph::empty() const noexcept {
     return this->factors.empty();
 }
 
 // Modifiers
+
 template <typename FuncType, typename MeasType, typename... VarTypes>
-void FactorGraph::addFactor(FuncType f,
-                            const MeasType &meas,
-                            std::shared_ptr<VarTypes>... variables) {
+inline void FactorGraph::addFactor(FuncType f,
+                                   const MeasType &measurement,
+                                   std::shared_ptr<VarTypes>... variables) {
     using FactorType = Factor<MeasType, VarTypes...>;
 
     // Give a nice error message if the function type is wrong
@@ -26,28 +48,39 @@ void FactorGraph::addFactor(FuncType f,
       "The given measurement function is of incorrect type");
 
     this->factors.emplace_back(
-      std::make_shared<FactorType>(f, meas, std::move(variables)...));
+      std::make_shared<FactorType>(f, measurement, std::move(variables)...));
 };
+
+template <typename MeasType>
+inline void FactorGraph::addPrior(
+  const MeasType &measurement,
+  std::shared_ptr<typename MeasType::VarType> variable) {
+    return this->addFactor(
+      internal::identityMeasurementFunction<typename MeasType::ViewType>,
+      measurement,
+      std::move(variable));
+}
 
 // Iterators
 
-typename FactorGraph::iterator FactorGraph::begin() noexcept {
+inline typename FactorGraph::iterator FactorGraph::begin() noexcept {
     return this->factors.begin();
 }
 
-typename FactorGraph::iterator FactorGraph::end() noexcept {
+inline typename FactorGraph::iterator FactorGraph::end() noexcept {
     return this->factors.end();
 }
 
-typename FactorGraph::const_iterator FactorGraph::begin() const noexcept {
+inline typename FactorGraph::const_iterator FactorGraph::begin() const
+  noexcept {
     return this->factors.begin();
 }
 
-typename FactorGraph::const_iterator FactorGraph::end() const noexcept {
+inline typename FactorGraph::const_iterator FactorGraph::end() const noexcept {
     return this->factors.end();
 }
 
-std::ostream &operator<<(std::ostream &os, const FactorGraph &graph) {
+inline std::ostream &operator<<(std::ostream &os, const FactorGraph &graph) {
     os << "FactorGraph " << graph.countFactors() << " factors [";
     const auto N = graph.countFactors();
     for (auto i = 0 * N; i < N; ++i) {

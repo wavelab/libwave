@@ -1,5 +1,7 @@
 #include "wave/wave_test.hpp"
 #include "wave/optimization/factor_graph/Factor.hpp"
+#include "wave/optimization/factor_graph/FactorVariable.hpp"
+#include "wave/optimization/factor_graph/FactorGraph.hpp"
 #include "example_instances.hpp"
 
 namespace wave {
@@ -11,7 +13,7 @@ TEST(FactorTest, evaluate) {
     using Landmark2DVar = FactorVariable<Landmark2D>;
 
 
-    DistanceToLandmarkFactor f{DistanceMeasurement{meas},
+    DistanceToLandmarkFactor f{DistanceMeasurement{meas, 0.0},
                                std::make_shared<Pose2DVar>(),
                                std::make_shared<Landmark2DVar>()};
 
@@ -44,7 +46,7 @@ TEST(FactorTest, evaluate) {
 TEST(FactorTest, print) {
     auto v1 = std::make_shared<Pose2DVar>();
     auto v2 = std::make_shared<Landmark2DVar>();
-    auto meas = DistanceMeasurement{0.0};
+    auto meas = DistanceMeasurement{0.0, 0.0};
 
     auto factor = DistanceToLandmarkFactor{meas, v1, v2};
 
@@ -58,7 +60,7 @@ TEST(FactorTest, print) {
 }
 
 TEST(FactorTest, evaluateCostFunction) {
-    auto meas = DistanceMeasurement{1.23};
+    auto meas = DistanceMeasurement{1.23, 0.0};
     DistanceToLandmarkFactor f{
       meas, std::make_shared<Pose2DVar>(), std::make_shared<Landmark2DVar>()};
 
@@ -87,6 +89,33 @@ TEST(FactorTest, evaluateCostFunction) {
       VectorsNear, expected_jac_pose, Eigen::Map<Vec3>{out_jac_pose});
     EXPECT_PRED2(
       VectorsNear, expected_jac_landmark, Eigen::Map<Vec2>{out_jac_landmark});
+}
+
+TEST(FactorTest, idealMeasurement) {
+    using MeasType = FactorMeasurement<double, ZeroNoise>;
+    using VarType = FactorVariable<double>;
+    const auto &func = internal::identityMeasurementFunction<double>;
+    using FactorType = Factor<MeasType, VarType>;
+    auto v = std::make_shared<VarType>();
+
+    // Linking a variable to a factor with ZeroNoise measurement marks it fixed
+    FactorType{func, MeasType{1.2}, v};
+
+    EXPECT_TRUE(v->isFixed());
+}
+
+TEST(FactorTest, idealMeasurementConflict) {
+    using MeasType = FactorMeasurement<double, ZeroNoise>;
+    using VarType = FactorVariable<double>;
+    const auto &func = internal::identityMeasurementFunction<double>;
+    using FactorType = Factor<MeasType, VarType>;
+    auto v = std::make_shared<VarType>();
+
+    // The first factor marks the variable fixed
+    FactorType{func, MeasType{1.2}, v};
+
+    // The second one finds it is already fixed; there must be a conflict
+    EXPECT_THROW(FactorType(func, MeasType{1.2}, v), std::runtime_error);
 }
 
 }  // namespace wave

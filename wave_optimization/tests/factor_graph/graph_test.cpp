@@ -10,7 +10,7 @@ TEST(FactorGraph, add) {
     FactorGraph graph;
     auto p = std::make_shared<Pose2DVar>();
     auto l = std::make_shared<Landmark2DVar>();
-    auto m = DistanceMeasurement{2.3};
+    auto m = DistanceMeasurement{2.3, 0.0};
 
     graph.addFactor(distanceMeasurementFunction, m, p, l);
 
@@ -26,11 +26,63 @@ TEST(FactorGraph, capacity) {
 
     auto p = std::make_shared<Pose2DVar>();
     auto l = std::make_shared<Landmark2DVar>();
-    auto m = DistanceMeasurement{2.3};
+    auto m = DistanceMeasurement{2.3, 0.0};
     graph.addFactor(distanceMeasurementFunction, m, p, l);
 
     EXPECT_EQ(1u, graph.countFactors());
     EXPECT_FALSE(graph.empty());
+}
+
+TEST(FactorGraph, addPrior) {
+    const auto test_meas = Vec2{1.2, 3.4};
+    const auto test_stddev = Vec2{0.01, 0.01};
+    const auto test_val = Vec2{1.23, 3.38};
+
+    // Prepare arguments to add unary factor
+    FactorGraph graph;
+    auto p = std::make_shared<Landmark2DVar>();
+    auto m = FactorMeasurement<Landmark2D>{test_meas, test_stddev};
+
+    // Prepare arguments in a form matching ceres calls
+    Vec2 test_residual;
+    Mat2 test_jac;
+    const double *const params[] = {test_val.data()};
+    double *jacs[] = {test_jac.data()};
+
+    // Add the factor, retrieve the pointer to it, and verity
+    graph.addPrior(m, p);
+    auto factor = *graph.begin();
+    ASSERT_NE(nullptr, factor);
+
+    EXPECT_TRUE(factor->evaluateRaw(params, test_residual.data(), jacs));
+    EXPECT_PRED2(VectorsNear, test_val - test_meas, test_residual);
+    EXPECT_PRED2(MatricesNear, Mat2::Identity(), test_jac);
+}
+
+TEST(FactorGraph, addPriorOfSize1) {
+    const auto test_meas = 1.2;
+    const auto test_stddev = 0.01;
+    const auto test_val = 1.23;
+
+    // Prepare arguments to add unary factor
+    FactorGraph graph;
+    auto p = std::make_shared<FactorVariable<double>>();
+    auto m = FactorMeasurement<double>{test_meas, test_stddev};
+
+    // Prepare arguments in a form matching ceres calls
+    double test_residual;
+    double test_jac;
+    const double *const params[] = {&test_val};
+    double *jacs[] = {&test_jac};
+
+    // Add the factor, retrieve the pointer to it, and verity
+    graph.addPrior(m, p);
+    auto factor = *graph.begin();
+    ASSERT_NE(nullptr, factor);
+
+    EXPECT_TRUE(factor->evaluateRaw(params, &test_residual, jacs));
+    EXPECT_DOUBLE_EQ(test_val - test_meas, test_residual);
+    EXPECT_DOUBLE_EQ(1.0, test_jac);
 }
 
 TEST(FactorGraph, triangulationSim) {
@@ -58,7 +110,7 @@ TEST(FactorGraph, triangulationSim) {
         pose_vars.push_back(p);
         for (auto i = 0u; i < landmark_vars.size(); ++i) {
             auto distance = double{(true_l_pos[i] - pose.head<2>()).norm()};
-            auto meas = DistanceMeasurement{distance};
+            auto meas = DistanceMeasurement{distance, 0.0};
             graph.addFactor(
               distanceMeasurementFunction, meas, p, landmark_vars[i]);
         }
@@ -85,9 +137,9 @@ TEST(GraphTest, print) {
 
     auto graph = FactorGraph{};
 
-    auto m1 = DistanceMeasurement{0.0};
-    auto m2 = DistanceMeasurement{1.1};
-    auto m3 = DistanceMeasurement{2.2};
+    auto m1 = DistanceMeasurement{0.0, 0.0};
+    auto m2 = DistanceMeasurement{1.1, 0.0};
+    auto m3 = DistanceMeasurement{2.2, 0.0};
 
     graph.addFactor(distanceMeasurementFunction, m1, v1, l);
     graph.addFactor(distanceMeasurementFunction, m2, v2, l);
