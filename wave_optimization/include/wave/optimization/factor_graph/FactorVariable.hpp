@@ -52,15 +52,15 @@ class FactorVariable : public FactorVariableBase {
      * Actually initializes to zero to avoid problems with garbage floats
      * @todo move setting of initial value elsewhere
      */
-    FactorVariable() : storage{MappedType::Zero()}, value{storage.data()} {}
+    FactorVariable() : storage{MappedType::Zero()}, value{storage} {}
 
     /** Construct with initial value */
     explicit FactorVariable(MappedType &&initial)
-        : storage{std::move(initial)}, value{storage.data()} {}
+        : storage{std::move(initial)}, value{storage} {}
 
     /** Construct copying initial value */
     explicit FactorVariable(const MappedType &initial)
-        : storage{initial}, value{storage.data()} {}
+        : storage{initial}, value{storage} {}
 
     /** Return the number of scalar values in the variable. */
     int size() const noexcept override {
@@ -69,24 +69,10 @@ class FactorVariable : public FactorVariableBase {
 
     /** Return a raw pointer to the start of the internal storage. */
     const double *data() const noexcept override {
-        return this->storage.data();
+        return this->value.data();
     }
     double *data() noexcept override {
-        return this->storage.data();
-    }
-
-    /** Marks as constant during optimization
-     * @todo replace with unary factors for priors
-     * */
-    void setFixed(bool c) noexcept {
-        this->fixed = c;
-    }
-
-    /** Whether this has been marked constant during optimization
-     * @todo replace with unary factors for priors
-     */
-    bool isFixed() const noexcept override {
-        return this->fixed;
+        return this->value.data();
     }
 
     void print(std::ostream &os) const override {
@@ -100,10 +86,47 @@ class FactorVariable : public FactorVariableBase {
  public:
     /** */
     ViewType value;
-
- private:
-    bool fixed = false;
 };
+
+/**
+ * Special case variable of size 1
+ */
+template <>
+class FactorVariable<double> : public FactorVariableBase {
+ public:
+    using ViewType = double;
+    using MappedType = double;
+    constexpr static int Size = 1;
+
+    /** Default construct with uninitialized estimate
+     * Actually initializes to zero to avoid problems with garbage floats
+     * @todo move setting of initial value elsewhere
+     */
+    FactorVariable() : value{0} {}
+
+    /** Construct with initial value */
+    explicit FactorVariable(double initial) : value{initial} {}
+
+    /** Return the number of scalar values in the variable. */
+    int size() const noexcept override {
+        return Size;
+    }
+
+    /** Return a raw pointer to the start of the internal storage. */
+    const double *data() const noexcept override {
+        return &this->value;
+    }
+    double *data() noexcept override {
+        return &this->value;
+    }
+
+    void print(std::ostream &os) const override {
+        os << "FactorVariable";
+    }
+
+    double value;
+};
+
 
 /** @} group optimization */
 }  // namespace wave

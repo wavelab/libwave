@@ -28,15 +28,21 @@ class OutputMap : public Eigen::Map<T> {
     inline explicit operator bool() const noexcept {
         return this->data() != nullptr;
     }
+
+    template <typename OtherDerived>
+    OutputMap &operator=(const Eigen::MatrixBase<OtherDerived> &other) {
+        this->Eigen::Map<T>::operator=(other);
+        return *this;
+    }
 };
 
 /** Type of jacobian output parameters for `Factor::evaluate()`. */
 template <int Rows, int Cols>
 using JacobianOut = OutputMap<Eigen::Matrix<double, Rows, Cols>>;
 
-/** Type of residual output parameter for `Factor::evaluate()`. */
+/** Type of measurement output parameter for `Factor::evaluate()`. */
 template <int Size>
-using ResidualsOut = OutputMap<Eigen::Matrix<double, Size, 1>>;
+using ResultOut = OutputMap<Eigen::Matrix<double, Size, 1>>;
 
 /** @} group optimization */
 }  // namespace wave

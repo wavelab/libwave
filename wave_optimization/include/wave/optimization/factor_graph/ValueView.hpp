@@ -15,8 +15,7 @@ namespace wave {
 /** @addtogroup optimization
  *  @{ */
 
-
-/*
+/**
  * A structure mapping useful types to an underlying value buffer.
  *
  * While variables and values are fundamental to the factor graph approach, a
@@ -48,13 +47,15 @@ class ValueView {
      */
     explicit ValueView(double *const d) : dataptr{d} {}
 
+    /** Construct to map the given mapped Eigen matrix */
+    explicit ValueView(MappedType &m) : dataptr{m.data()} {}
+
     /** Return the size of the underlying value */
     constexpr int size() const noexcept {
         return Size;
     }
 
-    /** Return a raw pointer to the start of the internal vector.
-     */
+    /** Return a raw pointer to the start of the internal vector */
     const double *data() const {
         return this->dataptr;
     }

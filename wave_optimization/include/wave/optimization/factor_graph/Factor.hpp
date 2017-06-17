@@ -18,9 +18,9 @@ namespace wave {
 /** @addtogroup optimization
  *  @{ */
 
-template <int NumResiduals, int... VariableSizes>
+template <int ResidualSize, int... VariableSizes>
 class FactorCostFunction
-  : public ceres::SizedCostFunction<NumResiduals, VariableSizes...> {
+  : public ceres::SizedCostFunction<ResidualSize, VariableSizes...> {
  public:
     explicit FactorCostFunction(
       std::function<bool(double const *const *, double *, double **)> fn)
@@ -49,23 +49,32 @@ class FactorCostFunction
  * To define a factor, derive an instance of this template and define
  * `calculate()` with the appropriate parameters.
  *
- * @tparam NumResiduals The dimension of the residual vector
- * @tparam VarTypes The list of variables typed operated on by this factor
+ * @tparam ResidualSize The dimension of the residual vector
+ * @tparam MeasType The type of measurement used by this factor
+ * @tparam VarTypes The list of variables types operated on by this factor
  */
-template <int NumResiduals, typename... VarTypes>
+template <typename MeasType, typename... VarTypes>
 class Factor : public FactorBase {
-    using FactorType = Factor<NumResiduals, VarTypes...>;
+    using FactorType = Factor<MeasType, VarTypes...>;
 
  public:
     constexpr static int NumVars = sizeof...(VarTypes);
-    constexpr static int ResidualSize = NumResiduals;
-    using ResidualType = Eigen::Matrix<double, NumResiduals, 1>;
+    constexpr static int ResidualSize = MeasType::Size;
+    using ResidualType = Eigen::Matrix<double, ResidualSize, 1>;
     using VarArrayType = FactorBase::VarVectorType;
+    using FuncType = bool(const typename VarTypes::ViewType &...,
+                          ResultOut<ResidualSize>,
+                          JacobianOut<ResidualSize, VarTypes::Size>...);
+
     using const_iterator = typename VarArrayType::const_iterator;
 
-    /** Construct the factor with the given variables */
-    explicit Factor(std::shared_ptr<VarTypes>... variable_ptrs)
-        : variable_ptrs{{variable_ptrs...}} {}
+    /** Construct the factor with the given measurement and variables */
+    explicit Factor(FuncType f,
+                    MeasType meas,
+                    std::shared_ptr<VarTypes>... variable_ptrs)
+        : measurement_function{f},
+          measurement{meas},
+          variable_ptrs{{variable_ptrs...}} {}
 
     ~Factor() override = default;
 
@@ -73,7 +82,7 @@ class Factor : public FactorBase {
         return NumVars;
     }
     int numResiduals() const override {
-        return NumResiduals;
+        return ResidualSize;
     }
 
     std::unique_ptr<ceres::CostFunction> costFunction() override {
@@ -83,34 +92,9 @@ class Factor : public FactorBase {
                             std::placeholders::_2,
                             std::placeholders::_3);
         return std::unique_ptr<ceres::CostFunction>{
-          new FactorCostFunction<NumResiduals, VarTypes::ViewType::Size...>{
+          new FactorCostFunction<ResidualSize, VarTypes::ViewType::Size...>{
             fn}};
     }
-
-    /**
-     * Calculate residuals and jacobians at the given variable values.
-     * Override this function with the correct parameters for your derived type.
-     *
-     * @param[in] variables each variable this factor links
-     * @param[out] residuals residuals calculated using the given variables
-     * @param[out] jacobians
-     * @parblock
-     * Jacobian matrices with respect to each variable. There is one jacobian
-     * parameter for each variable parameter, in the same order.
-     * @endparblock
-     *
-     * @note  Each residual and jacobian parameter is a special map object which
-     * may evaluate to false to indicate the jacobian should not be calculated
-     * on this call. Wrap calculation and assignment of each parameter `j` in a
-     * conditional, `if (j) {...}`.
-     *
-     * @return true if calculation was successful, false on failure
-     */
-    virtual bool evaluate(
-      const typename VarTypes::ViewType &... variables,
-      ResidualsOut<NumResiduals> residuals,
-      JacobianOut<NumResiduals, VarTypes::Size>... jacobians) const
-      noexcept = 0;
 
     bool evaluateRaw(double const *const *parameters,
                      double *residuals,
@@ -126,6 +110,11 @@ class Factor : public FactorBase {
     void print(std::ostream &os) const override;
 
  private:
+    FuncType *measurement_function;
+
+    /** Storage of the measurement */
+    MeasType measurement;
+
     /** Pointers to the variables this factor is linked to */
     VarArrayType variable_ptrs;
 };

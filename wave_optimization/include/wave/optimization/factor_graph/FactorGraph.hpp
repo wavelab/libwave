@@ -39,8 +39,10 @@ class FactorGraph {
 
     // Modifiers
 
-    template <typename FactorType, typename... Args>
-    void addFactor(Args &&... args);
+    template <typename FunctionType, typename MeasType, typename... VarTypes>
+    void addFactor(FunctionType f,
+                   const MeasType &meas,
+                   std::shared_ptr<VarTypes>... variables);
 
     // Iterators
 

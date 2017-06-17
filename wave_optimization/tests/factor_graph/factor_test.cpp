@@ -11,8 +11,9 @@ TEST(FactorTest, evaluate) {
     using Landmark2DVar = FactorVariable<Landmark2D>;
 
 
-    DistanceToLandmarkFactor f{
-      meas, std::make_shared<Pose2DVar>(), std::make_shared<Landmark2DVar>()};
+    DistanceToLandmarkFactor f{DistanceMeasurement{meas},
+                               std::make_shared<Pose2DVar>(),
+                               std::make_shared<Landmark2DVar>()};
 
     // Prepare sample C-style arrays as used by Ceres
     const double param_pose[3] = {1.1, 2.2, 3.3};
@@ -43,8 +44,9 @@ TEST(FactorTest, evaluate) {
 TEST(FactorTest, print) {
     auto v1 = std::make_shared<Pose2DVar>();
     auto v2 = std::make_shared<Landmark2DVar>();
+    auto meas = DistanceMeasurement{0.0};
 
-    auto factor = DistanceToLandmarkFactor{0.0, v1, v2};
+    auto factor = DistanceToLandmarkFactor{meas, v1, v2};
 
     std::stringstream expected;
     expected << "[Factor arity 2, variables: ";
@@ -56,7 +58,7 @@ TEST(FactorTest, print) {
 }
 
 TEST(FactorTest, evaluateCostFunction) {
-    auto meas = 1.23;
+    auto meas = DistanceMeasurement{1.23};
     DistanceToLandmarkFactor f{
       meas, std::make_shared<Pose2DVar>(), std::make_shared<Landmark2DVar>()};
 
@@ -72,7 +74,7 @@ TEST(FactorTest, evaluateCostFunction) {
     // Calculate expected values (use analytic jacobians)
     auto dist =
       std::sqrt((1.1 - 4.4) * (1.1 - 4.4) + (2.2 - 5.5) * (2.2 - 5.5));
-    auto expected_residual = dist - meas;
+    auto expected_residual = dist - 1.23;
     Vec3 expected_jac_pose{(1.1 - 4.4) / dist, (2.2 - 5.5) / dist, 0};
     Vec2 expected_jac_landmark{(1.1 - 4.4) / dist, (2.2 - 5.5) / dist};
 
@@ -86,6 +88,5 @@ TEST(FactorTest, evaluateCostFunction) {
     EXPECT_PRED2(
       VectorsNear, expected_jac_landmark, Eigen::Map<Vec2>{out_jac_landmark});
 }
-
 
 }  // namespace wave
