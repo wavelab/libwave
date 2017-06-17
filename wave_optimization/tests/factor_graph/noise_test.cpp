@@ -46,6 +46,11 @@ TEST(NoiseTest, fullNoise) {
 TEST(NoiseTest, zeroNoise) {
     static_assert(std::is_empty<ZeroNoise>::value,
                   "ZeroNoise expected to be have no data members.");
+
+    auto n = ZeroNoise{};
+
+    EXPECT_THROW(n.covariance(), std::logic_error);
+    EXPECT_THROW(n.inverseSqrtCov(), std::logic_error);
 }
 
 }  // namespace wave

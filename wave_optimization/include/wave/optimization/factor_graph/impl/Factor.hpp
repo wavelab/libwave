@@ -141,7 +141,9 @@ bool Factor<M, V...>::evaluateRaw(double const *const *parameters,
       internal::make_index_sequence<sizeof...(V)>());
 
     if (ok) {
-        results = results - this->measurement;
+        // Calculate the normalized residual
+        const auto &L = this->measurement.noise.inverseSqrtCov();
+        results = L * (results - this->measurement);
     }
     return ok;
 }

@@ -10,7 +10,7 @@ TEST(FactorGraph, add) {
     FactorGraph graph;
     auto p = std::make_shared<Pose2DVar>();
     auto l = std::make_shared<Landmark2DVar>();
-    auto m = DistanceMeasurement{2.3, 0.0};
+    auto m = DistanceMeasurement{2.3, 1.0};
 
     graph.addFactor(distanceMeasurementFunction, m, p, l);
 
@@ -26,7 +26,7 @@ TEST(FactorGraph, capacity) {
 
     auto p = std::make_shared<Pose2DVar>();
     auto l = std::make_shared<Landmark2DVar>();
-    auto m = DistanceMeasurement{2.3, 0.0};
+    auto m = DistanceMeasurement{2.3, 1.0};
     graph.addFactor(distanceMeasurementFunction, m, p, l);
 
     EXPECT_EQ(1u, graph.countFactors());
@@ -37,6 +37,8 @@ TEST(FactorGraph, addPrior) {
     const auto test_meas = Vec2{1.2, 3.4};
     const auto test_stddev = Vec2{0.01, 0.01};
     const auto test_val = Vec2{1.23, 3.38};
+    // The expected residuals are normalized
+    const Vec2 expected_res = (test_val - test_meas).cwiseQuotient(test_stddev);
 
     // Prepare arguments to add unary factor
     FactorGraph graph;
@@ -55,7 +57,7 @@ TEST(FactorGraph, addPrior) {
     ASSERT_NE(nullptr, factor);
 
     EXPECT_TRUE(factor->evaluateRaw(params, test_residual.data(), jacs));
-    EXPECT_PRED2(VectorsNear, test_val - test_meas, test_residual);
+    EXPECT_PRED2(VectorsNear, expected_res, test_residual);
     EXPECT_PRED2(MatricesNear, Mat2::Identity(), test_jac);
 }
 
@@ -63,6 +65,7 @@ TEST(FactorGraph, addPriorOfSize1) {
     const auto test_meas = 1.2;
     const auto test_stddev = 0.01;
     const auto test_val = 1.23;
+    const auto expected_res = (test_val - test_meas) / test_stddev;
 
     // Prepare arguments to add unary factor
     FactorGraph graph;
@@ -81,7 +84,7 @@ TEST(FactorGraph, addPriorOfSize1) {
     ASSERT_NE(nullptr, factor);
 
     EXPECT_TRUE(factor->evaluateRaw(params, &test_residual, jacs));
-    EXPECT_DOUBLE_EQ(test_val - test_meas, test_residual);
+    EXPECT_DOUBLE_EQ(expected_res, test_residual);
     EXPECT_DOUBLE_EQ(1.0, test_jac);
 }
 
@@ -110,7 +113,7 @@ TEST(FactorGraph, triangulationSim) {
         pose_vars.push_back(p);
         for (auto i = 0u; i < landmark_vars.size(); ++i) {
             auto distance = double{(true_l_pos[i] - pose.head<2>()).norm()};
-            auto meas = DistanceMeasurement{distance, 0.0};
+            auto meas = DistanceMeasurement{distance, 1.0};
             graph.addFactor(
               distanceMeasurementFunction, meas, p, landmark_vars[i]);
         }
@@ -137,9 +140,9 @@ TEST(GraphTest, print) {
 
     auto graph = FactorGraph{};
 
-    auto m1 = DistanceMeasurement{0.0, 0.0};
-    auto m2 = DistanceMeasurement{1.1, 0.0};
-    auto m3 = DistanceMeasurement{2.2, 0.0};
+    auto m1 = DistanceMeasurement{0.0, 1.0};
+    auto m2 = DistanceMeasurement{1.1, 1.0};
+    auto m3 = DistanceMeasurement{2.2, 1.0};
 
     graph.addFactor(distanceMeasurementFunction, m1, v1, l);
     graph.addFactor(distanceMeasurementFunction, m2, v2, l);
