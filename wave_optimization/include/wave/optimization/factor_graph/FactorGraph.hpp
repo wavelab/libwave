@@ -53,8 +53,12 @@ class FactorGraph {
      */
     template <typename FuncType, typename MeasType, typename... VarTypes>
     void addFactor(FuncType f,
-                   const MeasType &meas,
+                   const MeasType &measurement,
                    std::shared_ptr<VarTypes>... variables);
+
+    template <typename MeasType>
+    void addPrior(const MeasType &measurement,
+                  std::shared_ptr<typename MeasType::VarType> variable);
 
     // Iterators
 

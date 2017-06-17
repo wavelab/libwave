@@ -98,12 +98,9 @@ class Factor : public FactorBase {
     using const_iterator = typename VarArrayType::const_iterator;
 
     /** Construct with the given function, measurement and variables. */
-    explicit Factor(FuncType f,
-                    MeasType meas,
-                    std::shared_ptr<VarTypes>... variable_ptrs)
-        : measurement_function{f},
-          measurement{meas},
-          variable_ptrs{{variable_ptrs...}} {}
+    explicit Factor(FuncType measurement_function,
+                    MeasType measurement,
+                    std::shared_ptr<VarTypes>... variable_ptrs);
 
     ~Factor() override = default;
 
@@ -121,8 +118,7 @@ class Factor : public FactorBase {
                             std::placeholders::_2,
                             std::placeholders::_3);
         return std::unique_ptr<ceres::CostFunction>{
-          new FactorCostFunction<ResidualSize, VarTypes::ViewType::Size...>{
-            fn}};
+          new FactorCostFunction<ResidualSize, VarTypes::Size...>{fn}};
     }
 
     bool evaluateRaw(double const *const *parameters,
@@ -139,6 +135,12 @@ class Factor : public FactorBase {
     void print(std::ostream &os) const override;
 
  private:
+    /** Set each variable fixed
+     * @throw std::runtime_error if one is already fixed
+     */
+    void setVariablesFixed();
+
+
     FuncType *measurement_function;
 
     /** Storage of the measurement */
@@ -153,4 +155,4 @@ class Factor : public FactorBase {
 
 #include "impl/Factor.hpp"
 
-#endif
+#endif  // WAVE_OPTIMIZATION_FACTOR_GRAPH_PERFECT_PRIOR_HPP

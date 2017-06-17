@@ -1,6 +1,6 @@
 #include "wave/wave_test.hpp"
 #include "wave/optimization/factor_graph/FactorVariable.hpp"
-
+#include "wave/optimization/factor_graph/FactorMeasurement.hpp"
 
 namespace wave {
 
@@ -85,6 +85,27 @@ TEST(VariableTest, moveAssign) {
 
     ASSERT_NE(&a, &b);
     EXPECT_NE(a.data(), b.data());
+}
+
+TEST(VariableTest, setFixed) {
+    // Construct and initialize a variable
+    auto var = FactorVariable<ValueView<2>>{Vec2{1.1, 2.2}};
+
+    EXPECT_FALSE(var.isFixed());
+
+    var.setFixed(true);
+    EXPECT_TRUE(var.isFixed());
+
+    var.setFixed(false);
+    EXPECT_FALSE(var.isFixed());
+}
+
+TEST(MeasurementTest, constructFromRvalue) {
+    auto meas = FactorMeasurement<ValueView<2>>{Vec2{1.1, 2.2}, Vec2{0.1, 0.2}};
+    const auto expected_val = Vec2{1.1, 2.2};
+    EXPECT_EQ(2, meas.size());
+    EXPECT_PRED2(
+      VectorsNear, expected_val, Eigen::Map<Vec2>{meas.value.data()});
 }
 
 }  // namespace wave

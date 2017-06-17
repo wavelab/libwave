@@ -48,7 +48,9 @@ struct make_index_sequence : make_index_sequence<N - 1, N - 1, Indices...> {};
 template <int... Indices>
 struct make_index_sequence<0, Indices...> : index_sequence<Indices...> {};
 
-/** Constructs a FactorValue mapping the given raw array.
+/** Constructs a ValueView mapping the given raw array.
+ *
+ * Applies for values of size > 1
  *
  * @tparam V the type of FactorVariable
  * @tparam I the index of the variable in this factor
@@ -56,7 +58,8 @@ struct make_index_sequence<0, Indices...> : index_sequence<Indices...> {};
  * @return a FactorValue mapping the Ith array
  */
 template <typename V, int I>
-const typename V::ViewType make_value(double const *const *parameters) {
+inline typename std::enable_if<(V::Size > 1), const typename V::ViewType>::type
+make_value(double const *const *parameters) {
     /* The array is const, but ValueView maps non-const arrays. It would be
      * complicated to have two variants of ValueView, one for const and one
      * for non-const arrays. In this case, we know that the ValueView itself
@@ -65,6 +68,16 @@ const typename V::ViewType make_value(double const *const *parameters) {
      * @todo: reconsider this cast */
     const auto ptr = const_cast<double *>(parameters[I]);
     return typename V::ViewType{ptr};
+}
+
+/** Constructs a ValueView mapping the given raw array.
+ *
+ * Specialization for values of size 1
+ */
+template <typename V, int I>
+inline typename std::enable_if<(V::Size == 1), const double &>::type make_value(
+  double const *const *parameters) {
+    return *parameters[I];
 }
 
 /** Constructs a jacobian output object mapping the given raw array.
@@ -101,6 +114,18 @@ bool callEvaluate(F measurement_function,
 }  // namespace internal
 
 template <typename M, typename... V>
+Factor<M, V...>::Factor(Factor::FuncType measurement_function,
+                        M measurement,
+                        std::shared_ptr<V>... variable_ptrs)
+    : measurement_function{measurement_function},
+      measurement{measurement},
+      variable_ptrs{{variable_ptrs...}} {
+    if (measurement.isFixed()) {
+        this->setVariablesFixed();
+    }
+}
+
+template <typename M, typename... V>
 bool Factor<M, V...>::evaluateRaw(double const *const *parameters,
                                   double *residuals,
                                   double **jacobians) const noexcept {
@@ -135,5 +160,18 @@ void Factor<M, V...>::print(std::ostream &os) const {
     }
     os << "]";
 }
+
+template <typename M, typename... V>
+void Factor<M, V...>::setVariablesFixed() {
+    for (const auto ptr : this->variable_ptrs) {
+        if (ptr->isFixed()) {
+            throw std::runtime_error(
+              "Factor::setVariablesFixed(): Variable was already fixed."
+              " This means there are conflicting ideal measurements.");
+        }
+        ptr->setFixed(true);
+    }
+}
+
 
 }  // namespace wave
