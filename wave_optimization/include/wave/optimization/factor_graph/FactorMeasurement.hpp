@@ -82,13 +82,13 @@ class FactorMeasurement<V, ZeroNoise> : public FactorVariable<V> {
 
 
 template <typename V, typename N>
-inline Eigen::Matrix<double, 1, FactorMeasurement<V, N>::Size> operator-(
-  const Eigen::Ref<Eigen::Matrix<double, 1, FactorMeasurement<V, N>::Size>>
+inline Eigen::Matrix<double, FactorMeasurement<V, N>::Size, 1> operator-(
+  const Eigen::Ref<Eigen::Matrix<double, FactorMeasurement<V, N>::Size, 1>>
     &lhs,
   const FactorMeasurement<V, N> &rhs) {
     return lhs -
            Eigen::Map<
-             const Eigen::Matrix<double, 1, FactorMeasurement<V, N>::Size>>{
+             const Eigen::Matrix<double, FactorMeasurement<V, N>::Size, 1>>{
              rhs.data()};
 }
 

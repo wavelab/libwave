@@ -13,7 +13,7 @@ TEST(FactorTest, evaluate) {
     using Landmark2DVar = FactorVariable<Landmark2D>;
 
 
-    DistanceToLandmarkFactor f{DistanceMeasurement{meas, 0.0},
+    DistanceToLandmarkFactor f{DistanceMeasurement{meas, 1.0},
                                std::make_shared<Pose2DVar>(),
                                std::make_shared<Landmark2DVar>()};
 
@@ -46,7 +46,7 @@ TEST(FactorTest, evaluate) {
 TEST(FactorTest, print) {
     auto v1 = std::make_shared<Pose2DVar>();
     auto v2 = std::make_shared<Landmark2DVar>();
-    auto meas = DistanceMeasurement{0.0, 0.0};
+    auto meas = DistanceMeasurement{0.0, 1.0};
 
     auto factor = DistanceToLandmarkFactor{meas, v1, v2};
 
@@ -60,7 +60,7 @@ TEST(FactorTest, print) {
 }
 
 TEST(FactorTest, evaluateCostFunction) {
-    auto meas = DistanceMeasurement{1.23, 0.0};
+    auto meas = DistanceMeasurement{1.23, 1.0};
     DistanceToLandmarkFactor f{
       meas, std::make_shared<Pose2DVar>(), std::make_shared<Landmark2DVar>()};
 

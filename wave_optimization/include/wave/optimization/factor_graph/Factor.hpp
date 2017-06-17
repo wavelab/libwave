@@ -140,7 +140,6 @@ class Factor : public FactorBase {
      */
     void setVariablesFixed();
 
-
     FuncType *measurement_function;
 
     /** Storage of the measurement */
