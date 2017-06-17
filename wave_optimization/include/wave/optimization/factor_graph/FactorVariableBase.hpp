@@ -22,12 +22,26 @@ class FactorVariableBase {
     virtual const double *data() const noexcept = 0;
     virtual double *data() noexcept = 0;
 
-    /** Whether this has been marked constant during optimization */
-    virtual bool isFixed() const noexcept = 0;
+    /** Marks as constant during optimization
+     * @todo replace with unary factors for priors
+     */
+    void setFixed(bool c) noexcept {
+        this->fixed = c;
+    }
+
+    /** Whether this has been marked constant during optimization
+     * @todo replace with unary factors for priors
+     */
+    bool isFixed() const noexcept {
+        return this->fixed;
+    }
 
     /** Print representation of the object for debugging.
      * Called by `operator<<`. */
     virtual void print(std::ostream &os) const = 0;
+
+ private:
+    bool fixed = false;
 };
 
 inline std::ostream &operator<<(std::ostream &os, const FactorVariableBase &v) {

@@ -10,8 +10,9 @@ TEST(FactorGraph, add) {
     FactorGraph graph;
     auto p = std::make_shared<Pose2DVar>();
     auto l = std::make_shared<Landmark2DVar>();
+    auto m = DistanceMeasurement{2.3};
 
-    graph.addFactor<DistanceToLandmarkFactor>(2.3, p, l);
+    graph.addFactor(distanceMeasurementFunction, m, p, l);
 
     ASSERT_EQ(1u, graph.countFactors());
 }
@@ -25,7 +26,8 @@ TEST(FactorGraph, capacity) {
 
     auto p = std::make_shared<Pose2DVar>();
     auto l = std::make_shared<Landmark2DVar>();
-    graph.addFactor<DistanceToLandmarkFactor>(2.3, p, l);
+    auto m = DistanceMeasurement{2.3};
+    graph.addFactor(distanceMeasurementFunction, m, p, l);
 
     EXPECT_EQ(1u, graph.countFactors());
     EXPECT_FALSE(graph.empty());
@@ -56,8 +58,9 @@ TEST(FactorGraph, triangulationSim) {
         pose_vars.push_back(p);
         for (auto i = 0u; i < landmark_vars.size(); ++i) {
             auto distance = double{(true_l_pos[i] - pose.head<2>()).norm()};
-            graph.addFactor<DistanceToLandmarkFactor>(
-              distance, p, landmark_vars[i]);
+            auto meas = DistanceMeasurement{distance};
+            graph.addFactor(
+              distanceMeasurementFunction, meas, p, landmark_vars[i]);
         }
     }
 
@@ -82,15 +85,19 @@ TEST(GraphTest, print) {
 
     auto graph = FactorGraph{};
 
-    graph.addFactor<DistanceToLandmarkFactor>(0.0, v1, l);
-    graph.addFactor<DistanceToLandmarkFactor>(1.1, v2, l);
-    graph.addFactor<DistanceToLandmarkFactor>(2.2, v3, l);
+    auto m1 = DistanceMeasurement{0.0};
+    auto m2 = DistanceMeasurement{1.1};
+    auto m3 = DistanceMeasurement{2.2};
+
+    graph.addFactor(distanceMeasurementFunction, m1, v1, l);
+    graph.addFactor(distanceMeasurementFunction, m2, v2, l);
+    graph.addFactor(distanceMeasurementFunction, m3, v3, l);
 
     // Currently factors are stored privately in graph, so make our own to
     // generate the expected string
-    auto f1 = DistanceToLandmarkFactor{0.0, v1, l};
-    auto f2 = DistanceToLandmarkFactor{1.1, v2, l};
-    auto f3 = DistanceToLandmarkFactor{2.2, v3, l};
+    auto f1 = DistanceToLandmarkFactor{m1, v1, l};
+    auto f2 = DistanceToLandmarkFactor{m2, v2, l};
+    auto f3 = DistanceToLandmarkFactor{m3, v3, l};
 
     std::stringstream expected;
     expected << "FactorGraph 3 factors [";

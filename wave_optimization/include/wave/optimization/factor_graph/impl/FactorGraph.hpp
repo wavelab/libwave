@@ -14,12 +14,20 @@ bool FactorGraph::empty() const noexcept {
 }
 
 // Modifiers
+template <typename FuncType, typename MeasType, typename... VarTypes>
+void FactorGraph::addFactor(FuncType f,
+                            const MeasType &meas,
+                            std::shared_ptr<VarTypes>... variables) {
+    using FactorType = Factor<MeasType, VarTypes...>;
 
-template <typename FactorType, typename... Args>
-void FactorGraph::addFactor(Args &&... args) {
+    // Give a nice error message if the function type is wrong
+    static_assert(
+      std::is_same<typename FactorType::FuncType *, FuncType>::value,
+      "The given measurement function is of incorrect type");
+
     this->factors.emplace_back(
-      std::make_shared<FactorType>(std::forward<Args>(args)...));
-}
+      std::make_shared<FactorType>(f, meas, std::move(variables)...));
+};
 
 // Iterators
 

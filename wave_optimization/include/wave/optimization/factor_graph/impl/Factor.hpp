@@ -85,37 +85,44 @@ JacobianOut<R, C> make_jacobian(double **jacobians) {
  * Factor type (known at compile time) and the provided array pointers (known
  * at run time).
  */
-template <int R, typename... V, int... Is>
-bool callEvaluate(const Factor<R, V...> &factor,
+template <class F, int R, typename... V, int... Is>
+bool callEvaluate(F measurement_function,
                   double const *const *parameters,
-                  double *residuals,
+                  const ResultOut<R> &results,
                   double **jacobians,
                   index_sequence<Is...>) noexcept {
     // Call evaluate, generating the correct type and number of the three kinds
     // of arguments: input values, output residuals, and output jacobians.
-    return factor.evaluate(make_value<V, Is>(parameters)...,
-                           ResidualsOut<R>{residuals},
-                           make_jacobian<R, V::Size, Is>(jacobians)...);
+    return measurement_function(make_value<V, Is>(parameters)...,
+                                results,
+                                make_jacobian<R, V::Size, Is>(jacobians)...);
 }
 
 }  // namespace internal
 
-template <int R, typename... V>
-bool Factor<R, V...>::evaluateRaw(double const *const *parameters,
+template <typename M, typename... V>
+bool Factor<M, V...>::evaluateRaw(double const *const *parameters,
                                   double *residuals,
                                   double **jacobians) const noexcept {
+    auto results = ResultOut<M::Size>{residuals};
+
     // Call a helper function. We need to do this to expand the index sequence
     // which we generate here. This approach is explained above.
-    return internal::callEvaluate<R, V...>(
-      *this,
+    auto ok = internal::callEvaluate<Factor<M, V...>::FuncType, M::Size, V...>(
+      this->measurement_function,
       parameters,
-      residuals,
+      results,
       jacobians,
       internal::make_index_sequence<sizeof...(V)>());
+
+    if (ok) {
+        results = results - this->measurement;
+    }
+    return ok;
 }
 
-template <int R, typename... V>
-void Factor<R, V...>::print(std::ostream &os) const {
+template <typename M, typename... V>
+void Factor<M, V...>::print(std::ostream &os) const {
     os << "[";
     os << "Factor arity " << NumVars << ", ";
     os << "variables: ";
@@ -128,6 +135,5 @@ void Factor<R, V...>::print(std::ostream &os) const {
     }
     os << "]";
 }
-
 
 }  // namespace wave
