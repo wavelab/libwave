@@ -19,6 +19,9 @@ namespace wave {
 /** @addtogroup optimization
  *  @{ */
 
+/**
+ * A graph representing connections between measurements and unknown variables
+ */
 class FactorGraph {
  public:
     // Types
@@ -32,15 +35,24 @@ class FactorGraph {
 
     // Capacity
 
-    /** Return number of factors in the graph */
+    /** Return the number of factors in the graph */
     size_type countFactors() const noexcept;
 
     bool empty() const noexcept;
 
     // Modifiers
 
-    template <typename FunctionType, typename MeasType, typename... VarTypes>
-    void addFactor(FunctionType f,
+    /** Add a factor with the given measurement function
+     *
+     * @param f The measurement function. See Factor::FuncType for the required
+     * signature.
+     * @param meas The FactorMeasurement stored in the factor. Its type must
+     * match the measurement function signature.
+     * @param variables Pointers to the FactorVariable%s used by the measurement
+     * function. Their types must match the measurement function signature.
+     */
+    template <typename FuncType, typename MeasType, typename... VarTypes>
+    void addFactor(FuncType f,
                    const MeasType &meas,
                    std::shared_ptr<VarTypes>... variables);
 
