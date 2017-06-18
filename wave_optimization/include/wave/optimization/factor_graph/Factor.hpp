@@ -13,6 +13,8 @@
 #include "wave/optimization/factor_graph/FactorVariableBase.hpp"
 #include "wave/optimization/factor_graph/FactorBase.hpp"
 #include "wave/optimization/factor_graph/OutputMap.hpp"
+#include "wave/optimization/factor_graph/FactorMeasurement.hpp"
+
 
 namespace wave {
 /** @addtogroup optimization
@@ -131,17 +133,78 @@ class Factor : public FactorBase {
         return this->variable_ptrs;
     }
 
+    /** Return true if this factor is a zero-noise prior */
+    bool isPerfectPrior() const noexcept override {
+        return false;
+    }
+
     /** Print a representation for debugging. Used by operator<< */
     void print(std::ostream &os) const override;
 
  private:
-    /** Set each variable fixed
-     * @throw std::runtime_error if one is already fixed
-     */
-    void setVariablesFixed();
-
     FuncType *measurement_function;
 
+    /** Storage of the measurement */
+    MeasType measurement;
+
+    /** Pointers to the variables this factor is linked to */
+    VarArrayType variable_ptrs;
+};
+
+template <typename VarType>
+class PerfectPrior : public FactorBase {
+    using FactorType = PerfectPrior<VarType>;
+    using ViewType = typename VarType::ViewType;
+    using MeasType = FactorMeasurement<ViewType, void>;
+
+ public:
+    constexpr static int NumVars = 1;
+    constexpr static int ResidualSize = MeasType::Size;
+    using ResidualType = Eigen::Matrix<double, ResidualSize, 1>;
+    using VarArrayType = FactorBase::VarVectorType;
+    using const_iterator = typename VarArrayType::const_iterator;
+
+    /** Construct with the given measurement and variable. */
+    explicit PerfectPrior(MeasType measurement,
+                          std::shared_ptr<VarType> variable_ptr)
+        : measurement{measurement}, variable_ptrs{variable_ptr} {
+        // Assign to the variable
+        variable_ptr->value.asVector() = measurement.value.asVector();
+    }
+
+    ~PerfectPrior() override = default;
+
+    int size() const override {
+        return NumVars;
+    }
+
+    int numResiduals() const override {
+        return ResidualSize;
+    }
+
+    std::unique_ptr<ceres::CostFunction> costFunction() override {
+        return nullptr;
+    }
+
+    bool evaluateRaw(double const *const *, double *, double **) const
+      noexcept override {
+        return false;
+    }
+
+    /** Get a reference to the vector of variable pointers */
+    const VarVectorType &variables() const noexcept override {
+        return this->variable_ptrs;
+    }
+
+    /** Return true if this factor is a zero-noise prior */
+    bool isPerfectPrior() const noexcept override {
+        return true;
+    }
+
+    /** Print a representation for debugging. Used by operator<< */
+    void print(std::ostream &os) const override {}
+
+ private:
     /** Storage of the measurement */
     MeasType measurement;
 

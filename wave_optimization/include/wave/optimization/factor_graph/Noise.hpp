@@ -90,27 +90,6 @@ class DiagonalNoise<1> {
     double stddev;
 };
 
-/**
- * Struct representing the special case of zero noise.
- *
- * Its member functions always throw, and are not expected to be called. Any
- * measurements attached to factors with a ZeroNoise measurement are marked
- * constant, and should never be evaluated by the optimizer.
- *
- * @todo make sure this assumption holds up
- */
-class ZeroNoise {
- public:
-    double inverseSqrtCov() const {
-        throw std::logic_error("Special ZeroNoise type has no covariance");
-    }
-
-    double covariance() const {
-        throw std::logic_error("Special ZeroNoise type has no covariance");
-    };
-};
-
-
 /** @} group optimization */
 }  // namespace wave
 

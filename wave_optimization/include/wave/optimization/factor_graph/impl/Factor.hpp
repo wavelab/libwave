@@ -97,18 +97,22 @@ JacobianOut<R, C> make_jacobian(double **jacobians) {
 /** Calls Factor::evaluate() with the necessary arguments generated from the
  * Factor type (known at compile time) and the provided array pointers (known
  * at run time).
+ *
+ * Calling a separate function expands the given index sequence - this approach
+ * is explained above in the documentation for `index_sequence`.
  */
-template <class F, int R, typename... V, int... Is>
-bool callEvaluate(F measurement_function,
+template <typename M, typename... V, int... Is>
+bool callEvaluate(typename Factor<M, V...>::FuncType measurement_function,
                   double const *const *parameters,
-                  const ResultOut<R> &results,
+                  ResultOut<M::Size> &residuals,
                   double **jacobians,
                   index_sequence<Is...>) noexcept {
     // Call evaluate, generating the correct type and number of the three kinds
     // of arguments: input values, output residuals, and output jacobians.
-    return measurement_function(make_value<V, Is>(parameters)...,
-                                results,
-                                make_jacobian<R, V::Size, Is>(jacobians)...);
+    return measurement_function(
+      make_value<V, Is>(parameters)...,
+      residuals,
+      make_jacobian<M::Size, V::Size, Is>(jacobians)...);
 }
 
 }  // namespace internal
@@ -119,32 +123,31 @@ Factor<M, V...>::Factor(Factor::FuncType measurement_function,
                         std::shared_ptr<V>... variable_ptrs)
     : measurement_function{measurement_function},
       measurement{measurement},
-      variable_ptrs{{variable_ptrs...}} {
-    if (measurement.isFixed()) {
-        this->setVariablesFixed();
-    }
-}
+      variable_ptrs{{variable_ptrs...}} {}
 
+// Definition of evaluateRaw for regular factor (not perfect prior)
 template <typename M, typename... V>
 bool Factor<M, V...>::evaluateRaw(double const *const *parameters,
-                                  double *residuals,
+                                  double *raw_residuals,
                                   double **jacobians) const noexcept {
-    auto results = ResultOut<M::Size>{residuals};
+    // Map the raw residuals array to an OutputMap, allowing easy assignment
+    auto residuals = ResultOut<M::Size>{raw_residuals};
 
-    // Call a helper function. We need to do this to expand the index sequence
-    // which we generate here. This approach is explained above.
-    auto ok = internal::callEvaluate<Factor<M, V...>::FuncType, M::Size, V...>(
+    // Call a helper function, specialized for this factor's type. This helps
+    // by expanding the index sequence we create here (see `index_sequence`).
+    bool ok = internal::callEvaluate<M, V...>(
       this->measurement_function,
       parameters,
-      results,
+      residuals,
       jacobians,
       internal::make_index_sequence<sizeof...(V)>());
 
     if (ok) {
         // Calculate the normalized residual
-        const auto &L = this->measurement.noise.inverseSqrtCov();
-        results = L * (results - this->measurement);
+        const auto &L = measurement.noise.inverseSqrtCov();
+        residuals = L * (residuals - measurement);
     }
+
     return ok;
 }
 
@@ -162,18 +165,5 @@ void Factor<M, V...>::print(std::ostream &os) const {
     }
     os << "]";
 }
-
-template <typename M, typename... V>
-void Factor<M, V...>::setVariablesFixed() {
-    for (const auto ptr : this->variable_ptrs) {
-        if (ptr->isFixed()) {
-            throw std::runtime_error(
-              "Factor::setVariablesFixed(): Variable was already fixed."
-              " This means there are conflicting ideal measurements.");
-        }
-        ptr->setFixed(true);
-    }
-}
-
 
 }  // namespace wave

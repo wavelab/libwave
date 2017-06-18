@@ -55,6 +55,16 @@ class ValueView {
         return Size;
     }
 
+    /** Return an Eigen Map to the data */
+    Eigen::Map<const MappedType> asVector() const {
+        return Eigen::Map<const MappedType>{this->dataptr};
+    }
+
+    /** Return an Eigen Map to the data */
+    Eigen::Map<MappedType> asVector() {
+        return Eigen::Map<MappedType>{this->dataptr};
+    }
+
     /** Return a raw pointer to the start of the internal vector */
     const double *data() const {
         return this->dataptr;

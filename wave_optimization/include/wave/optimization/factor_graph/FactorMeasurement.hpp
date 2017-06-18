@@ -34,52 +34,46 @@ class FactorMeasurement : public FactorVariable<V> {
     constexpr static int Size = Base::Size;
 
     /** Construct with initial value and initial noise value*/
-    explicit FactorMeasurement(MappedType &&initial,
-                               typename NoiseType::InitType &&noise)
+    explicit FactorMeasurement(MappedType initial,
+                               typename NoiseType::InitType noise_value)
+        : Base{std::move(initial)}, noise{std::move(noise_value)} {}
+
+
+    /** Construct with initial value and initial noise object*/
+    explicit FactorMeasurement(MappedType initial, NoiseType noise)
         : Base{std::move(initial)}, noise{std::move(noise)} {}
 
-    /** Construct copying initial value and initial noise value*/
-    explicit FactorMeasurement(const MappedType &initial,
-                               const typename NoiseType::InitType &noise)
-        : Base{initial}, noise{noise} {}
-
-    /** Construct with initial value and initial noise value*/
-    explicit FactorMeasurement(MappedType &&initial, NoiseType &&noise)
-        : Base{std::move(initial)}, noise{std::move(noise)} {}
-
-    /** Construct copying initial value and initial noise value*/
-    explicit FactorMeasurement(const MappedType &initial,
-                               const NoiseType &noise)
-        : Base{initial}, noise{noise} {}
+    /** Construct with initial value and no noise
+     * Only allowed when NoiseType is void*/
+    explicit FactorMeasurement(MappedType initial) : Base{std::move(initial)} {
+        static_assert(std::is_void<NoiseType>::value,
+                      "A noise value must be provided as the second argument");
+    }
 
     NoiseType noise;
 };
 
+
 /**
  * Partially specialized FactorMeasurement with zero noise
+ *
+ * This specialization can be constructed with a measured value only, without
+ * needing to specify noise.
  */
 template <typename V>
-class FactorMeasurement<V, ZeroNoise> : public FactorVariable<V> {
+class FactorMeasurement<V, void> : public FactorVariable<V> {
     using Base = FactorVariable<V>;
 
  public:
+    using VarType = Base;
     using ViewType = typename Base::ViewType;
-    using NoiseType = ZeroNoise;
+    using NoiseType = void;
     using MappedType = typename Base::MappedType;
     constexpr static int Size = Base::Size;
 
-    /** Construct with initial value */
-    explicit FactorMeasurement(MappedType &&initial)
-        : Base{std::move(initial)} {
-        this->setFixed(true);
-    }
-
-    /** Construct copying initial value  */
-    explicit FactorMeasurement(const MappedType &initial) : Base{initial} {}
-
-    ZeroNoise noise;
+    /** Construct with initial value and no noise */
+    explicit FactorMeasurement(MappedType initial) : Base{std::move(initial)} {}
 };
-
 
 template <typename V, typename N>
 inline Eigen::Matrix<double, FactorMeasurement<V, N>::Size, 1> operator-(

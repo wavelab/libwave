@@ -57,18 +57,11 @@ class FactorVariable : public FactorVariableBase {
     FactorVariable() noexcept : storage{MappedType::Zero()}, value{storage} {}
 
     /** Construct with initial value */
-    explicit FactorVariable(MappedType &&initial) noexcept
-      : storage{std::move(initial)},
-        value{storage} {}
-
-    /** Construct copying initial value */
-    explicit FactorVariable(const MappedType &initial) noexcept
-      : storage{initial},
-        value{storage} {}
+    explicit FactorVariable(MappedType initial)
+        : storage{std::move(initial)}, value{storage} {}
 
     // Because `value` is a map holding a pointer to another member, we must
     // define a custom copy constructor (and the rest of the rule of five)
-
     /** Copy constructor */
     FactorVariable(const FactorVariable &other) noexcept
       : FactorVariable{other.storage} {}
@@ -99,7 +92,6 @@ class FactorVariable : public FactorVariableBase {
     ~FactorVariable() override = default;
 
     // Access
-
 
     /** Return the number of scalar values in the variable. */
     int size() const noexcept override {
