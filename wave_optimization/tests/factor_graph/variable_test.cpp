@@ -87,19 +87,6 @@ TEST(VariableTest, moveAssign) {
     EXPECT_NE(a.data(), b.data());
 }
 
-TEST(VariableTest, setFixed) {
-    // Construct and initialize a variable
-    auto var = FactorVariable<ValueView<2>>{Vec2{1.1, 2.2}};
-
-    EXPECT_FALSE(var.isFixed());
-
-    var.setFixed(true);
-    EXPECT_TRUE(var.isFixed());
-
-    var.setFixed(false);
-    EXPECT_FALSE(var.isFixed());
-}
-
 TEST(MeasurementTest, constructFromRvalue) {
     auto meas = FactorMeasurement<ValueView<2>>{Vec2{1.1, 2.2}, Vec2{0.1, 0.2}};
     const auto expected_val = Vec2{1.1, 2.2};

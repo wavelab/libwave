@@ -31,15 +31,17 @@ void addFactorToProblem(ceres::Problem &problem, FactorBase &factor) {
         // @todo can add local parametrization in this call
         problem.AddParameterBlock(v->data(), v->size());
 
-        // Set parameter blocks constant if the variable is so marked
-        if (v->isFixed()) {
+        // Set parameter blocks constant if the factor is a zero-noise prior
+        if (factor.isPerfectPrior()) {
             problem.SetParameterBlockConstant(v->data());
         }
     }
 
     // Give ceres the cost function and its parameter blocks.
-    problem.AddResidualBlock(
-      factor.costFunction().release(), nullptr, data_ptrs);
+    if (!factor.isPerfectPrior()) {
+        problem.AddResidualBlock(
+          factor.costFunction().release(), nullptr, data_ptrs);
+    }
 }
 
 /**

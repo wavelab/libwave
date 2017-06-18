@@ -53,6 +53,8 @@ TEST(FactorGraph, addPrior) {
 
     // Add the factor, retrieve the pointer to it, and verity
     graph.addPrior(m, p);
+    EXPECT_EQ(1u, graph.countFactors());
+
     auto factor = *graph.begin();
     ASSERT_NE(nullptr, factor);
 
@@ -80,12 +82,44 @@ TEST(FactorGraph, addPriorOfSize1) {
 
     // Add the factor, retrieve the pointer to it, and verity
     graph.addPrior(m, p);
+    EXPECT_EQ(1u, graph.countFactors());
+
     auto factor = *graph.begin();
     ASSERT_NE(nullptr, factor);
 
     EXPECT_TRUE(factor->evaluateRaw(params, &test_residual, jacs));
     EXPECT_DOUBLE_EQ(expected_res, test_residual);
     EXPECT_DOUBLE_EQ(1.0, test_jac);
+}
+
+TEST(FactorGraph, addPerfectPrior) {
+    const auto test_meas = Vec2{1.2, 3.4};
+    const auto test_val = Vec2{1.23, 3.38};
+
+    // Prepare arguments to add unary factor
+    FactorGraph graph;
+    auto p = std::make_shared<Landmark2DVar>();
+
+    // Prepare arguments in a form matching ceres calls
+    Vec2 test_residual;
+    Mat2 test_jac;
+    const double *const params[] = {test_val.data()};
+    double *jacs[] = {test_jac.data()};
+
+    // Add the factor
+    graph.addPerfectPrior(test_meas, p);
+    EXPECT_EQ(1u, graph.countFactors());
+
+    // The variable should now be marked constant
+    //    EXPECT_TRUE(p->isFixed());
+
+    // Retrieve a pointer to the factor we just (indirectly) added
+    auto factor = *graph.begin();
+    ASSERT_NE(nullptr, factor);
+
+    // We cannot evaluate a factor that is a perfect prior
+    // Since evaluateRaw is nothrow, the program will die
+    EXPECT_FALSE(factor->evaluateRaw(params, test_residual.data(), jacs));
 }
 
 TEST(FactorGraph, triangulationSim) {
@@ -101,12 +135,16 @@ TEST(FactorGraph, triangulationSim) {
     // Construct variables and add them to the graph
     auto landmark_vars = std::vector<std::shared_ptr<Landmark2DVar>>{};
     auto pose_vars = std::vector<std::shared_ptr<Pose2DVar>>{};
+
     FactorGraph graph;
-    for (const auto &l : true_l_pos) {
-        landmark_vars.push_back(std::make_shared<Landmark2DVar>(l));
+
+    for (const auto &l_pos : true_l_pos) {
+        auto l = std::make_shared<Landmark2DVar>();
+        landmark_vars.push_back(l);
         // For now, landmark positions are exactly known.
-        landmark_vars.back()->setFixed(true);
+        graph.addPerfectPrior(l_pos, l);
     }
+
     for (const auto &pose : true_poses) {
         // Make uninitialized Variable
         auto p = std::make_shared<Pose2DVar>();
@@ -119,7 +157,8 @@ TEST(FactorGraph, triangulationSim) {
         }
     }
 
-    EXPECT_EQ(true_poses.size() * true_l_pos.size(), graph.countFactors());
+    // Expect one factor for each measurement, plus the three priors
+    EXPECT_EQ(3 + true_poses.size() * true_l_pos.size(), graph.countFactors());
 
     // Fill the variables with values
     evaluateGraph(graph);
