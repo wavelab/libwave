@@ -8,6 +8,7 @@
 
 #include "wave/optimization/factor_graph/FactorVariable.hpp"
 #include "wave/optimization/factor_graph/Noise.hpp"
+#include "wave/optimization/factor_graph/OutputMap.hpp"
 
 namespace wave {
 /** @addtogroup optimization
@@ -77,9 +78,10 @@ class FactorMeasurement<V, void> : public FactorVariable<V> {
 
 template <typename V, typename N>
 inline Eigen::Matrix<double, FactorMeasurement<V, N>::Size, 1> operator-(
-  const Eigen::Ref<Eigen::Matrix<double, FactorMeasurement<V, N>::Size, 1>>
-    &lhs,
+  const ResultOut<FactorMeasurement<V, N>::Size> &lhs,
   const FactorMeasurement<V, N> &rhs) {
+    // We need to accept the specific ResultOut type (instead of a generic Eigen
+    // map) as for some reason they are not converted with Eigen 3.2. See #151
     return lhs -
            Eigen::Map<
              const Eigen::Matrix<double, FactorMeasurement<V, N>::Size, 1>>{
