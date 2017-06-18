@@ -110,16 +110,49 @@ TEST(FactorGraph, addPerfectPrior) {
     graph.addPerfectPrior(test_meas, p);
     EXPECT_EQ(1u, graph.countFactors());
 
-    // The variable should now be marked constant
-    //    EXPECT_TRUE(p->isFixed());
+    // The variable should have the measured value immediately
+    // @todo this may change
+    EXPECT_PRED2(VectorsNear, test_meas, Eigen::Map<Vec2>(p->data()));
 
     // Retrieve a pointer to the factor we just (indirectly) added
     auto factor = *graph.begin();
     ASSERT_NE(nullptr, factor);
 
+    EXPECT_TRUE(factor->isPerfectPrior());
+
     // We cannot evaluate a factor that is a perfect prior
-    // Since evaluateRaw is nothrow, the program will die
     EXPECT_FALSE(factor->evaluateRaw(params, test_residual.data(), jacs));
+}
+
+TEST(FactorGraph, addPerfectPriorOfSize1) {
+    const auto test_meas = 1.2;
+    const auto test_val = 1.23;
+
+    // Prepare arguments to add unary factor
+    FactorGraph graph;
+    auto p = std::make_shared<FactorVariable<double>>();
+
+    // Prepare arguments in a form matching ceres calls
+    double test_residual;
+    double test_jac;
+    const double *const params[] = {&test_val};
+    double *jacs[] = {&test_jac};
+
+    // Add the factor
+    graph.addPerfectPrior(test_meas, p);
+    EXPECT_EQ(1u, graph.countFactors());
+
+    // The variable should have the measured value immediately
+    // @todo this may change
+    EXPECT_DOUBLE_EQ(test_meas, *p->data());
+
+    auto factor = *graph.begin();
+    ASSERT_NE(nullptr, factor);
+
+    EXPECT_TRUE(factor->isPerfectPrior());
+
+    // We cannot evaluate a factor that is a perfect prior
+    EXPECT_FALSE(factor->evaluateRaw(params, &test_residual, jacs));
 }
 
 TEST(FactorGraph, triangulationSim) {

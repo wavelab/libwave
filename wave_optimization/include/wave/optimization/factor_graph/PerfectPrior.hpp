@@ -79,7 +79,11 @@ class PerfectPrior : public FactorBase {
     }
 
     /** Print a representation for debugging. Used by operator<< */
-    void print(std::ostream &os) const override {}
+    void print(std::ostream &os) const override {
+        os << "[Perfect prior for variable ";
+        const auto &v = this->variable_ptrs.front();
+        os << *v << "(" << v << ")]";
+    }
 
  private:
     /** Storage of the measurement */
