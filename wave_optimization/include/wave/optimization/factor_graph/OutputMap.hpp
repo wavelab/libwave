@@ -46,7 +46,7 @@ class OutputMap : public Eigen::Map<T> {
     template <typename ViewType,
               typename MappedType = typename ViewType::MappedType>
     OutputMap &operator=(const ViewType &v) {
-        this->Eigen::Map<T>::operator=(Eigen::Map<const MappedType>{v.data()});
+        this->Eigen::Map<T>::operator=(v.asVector());
         return *this;
     }
 
