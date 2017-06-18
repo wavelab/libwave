@@ -44,9 +44,11 @@ class FactorBase {
      * Called by `operator<<`. */
     virtual void print(std::ostream &os) const = 0;
 
+    /** The arity (number of variables connected) of the factor */
     virtual int size() const = 0;
-    virtual int numResiduals() const = 0;
-    virtual std::unique_ptr<ceres::CostFunction> costFunction() = 0;
+
+    /** The dimension of the measurement and residual vector */
+    virtual int residualSize() const = 0;
 
     /** Get a reference to the vector of variable pointers */
     virtual const VarVectorType &variables() const noexcept = 0;
