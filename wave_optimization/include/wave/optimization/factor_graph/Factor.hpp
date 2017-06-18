@@ -20,24 +20,6 @@ namespace wave {
 /** @addtogroup optimization
  *  @{ */
 
-template <int ResidualSize, int... VariableSizes>
-class FactorCostFunction
-  : public ceres::SizedCostFunction<ResidualSize, VariableSizes...> {
- public:
-    explicit FactorCostFunction(
-      std::function<bool(double const *const *, double *, double **)> fn)
-        : f_evaluate{std::move(fn)} {}
-
-    bool Evaluate(double const *const *parameters,
-                  double *residuals,
-                  double **jacobians) const override {
-        return f_evaluate(parameters, residuals, jacobians);
-    }
-
- private:
-    std::function<bool(double const *const *, double *, double **)> f_evaluate;
-};
-
 /**
  * Template for factors of different variable types.
  *
@@ -109,18 +91,8 @@ class Factor : public FactorBase {
     int size() const override {
         return NumVars;
     }
-    int numResiduals() const override {
+    int residualSize() const override {
         return ResidualSize;
-    }
-
-    std::unique_ptr<ceres::CostFunction> costFunction() override {
-        auto fn = std::bind(&FactorType::evaluateRaw,
-                            this,
-                            std::placeholders::_1,
-                            std::placeholders::_2,
-                            std::placeholders::_3);
-        return std::unique_ptr<ceres::CostFunction>{
-          new FactorCostFunction<ResidualSize, VarTypes::Size...>{fn}};
     }
 
     bool evaluateRaw(double const *const *parameters,
@@ -178,12 +150,8 @@ class PerfectPrior : public FactorBase {
         return NumVars;
     }
 
-    int numResiduals() const override {
+    int residualSize() const override {
         return ResidualSize;
-    }
-
-    std::unique_ptr<ceres::CostFunction> costFunction() override {
-        return nullptr;
     }
 
     bool evaluateRaw(double const *const *, double *, double **) const
