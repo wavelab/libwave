@@ -24,13 +24,20 @@ struct traits {};
  */
 template <int S>
 class FullNoise {
+    using SquareMat = Eigen::Matrix<double, S, S>;
+
  public:
-    explicit FullNoise(Eigen::Matrix<double, S, S> cov) : covariance_mat{cov} {}
+    /** The type accepted by the constructor */
+    using InitType = SquareMat;
+
+    /** Construct with the given covariance matrix */
+    explicit FullNoise(InitType cov)
+        : covariance_mat{cov},
+          // Pre-calculate inverse sqrt covariance, used in normalization
+          inverse_sqrt_cov{SquareMat{cov.llt().matrixL()}.inverse()} {}
 
     Eigen::Matrix<double, S, S> inverseSqrtCov() const {
-        const auto L =
-          Eigen::Matrix<double, S, S>{this->covariance_mat.llt().matrixL()};
-        return L.inverse();
+        return this->inverse_sqrt_cov;
     };
 
     Eigen::Matrix<double, S, S> covariance() const {
@@ -38,7 +45,8 @@ class FullNoise {
     };
 
  private:
-    Eigen::Matrix<double, S, S> covariance_mat;
+    const SquareMat covariance_mat;
+    const SquareMat inverse_sqrt_cov;
 };
 
 /**
@@ -47,25 +55,29 @@ class FullNoise {
  */
 template <int S>
 class DiagonalNoise {
+    using DiagonalMat = Eigen::DiagonalMatrix<double, S>;
+
  public:
-    // Decide which type must be passed in the constructor
-    // Normally it's an Eigen vector, but for size-one values accept a double.
+    /** The type accepted by the constructor */
     using InitType = Eigen::Matrix<double, S, 1>;
 
-    explicit DiagonalNoise(const InitType &sigma)
-        : covariance_mat{sigma.cwiseProduct(sigma)} {}
+    /** Construct with the given vector of standard devations (sigmas) */
+    explicit DiagonalNoise(const InitType &stddev)
+        : covariance_mat{stddev.cwiseProduct(stddev)},
+          // Pre-calculate inverse sqrt covariance, used in normalization
+          inverse_sqrt_cov{stddev.cwiseInverse()} {}
 
-    Eigen::DiagonalMatrix<double, S> inverseSqrtCov() const {
-        return Eigen::DiagonalMatrix<double, S>{
-          this->covariance_mat.diagonal().cwiseSqrt().cwiseInverse()};
-    };
-
-    Eigen::DiagonalMatrix<double, S> covariance() const {
+    DiagonalMat covariance() const {
         return this->covariance_mat;
     };
 
+    DiagonalMat inverseSqrtCov() const {
+        return this->inverse_sqrt_cov;
+    };
+
  private:
-    Eigen::DiagonalMatrix<double, S> covariance_mat;
+    const DiagonalMat covariance_mat;
+    const DiagonalMat inverse_sqrt_cov;
 };
 
 /**
@@ -74,17 +86,19 @@ class DiagonalNoise {
 template <>
 class DiagonalNoise<1> {
  public:
+    /** The type accepted by the constructor */
     using InitType = double;
 
+    /** Construct with the given standard devations (sigma) */
     explicit DiagonalNoise<1>(double stddev) : stddev{stddev} {}
-
-    double inverseSqrtCov() const {
-        return 1. / this->stddev;
-    }
 
     double covariance() const {
         return this->stddev * this->stddev;
     };
+
+    double inverseSqrtCov() const {
+        return 1. / this->stddev;
+    }
 
  private:
     double stddev;

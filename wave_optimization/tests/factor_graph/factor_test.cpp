@@ -43,6 +43,63 @@ TEST(FactorTest, evaluate) {
       VectorsNear, expected_jac_landmark, Eigen::Map<Vec2>{out_jac_landmark});
 }
 
+
+TEST(FactorTest, evaluateSize1) {
+    // Demonstrate construction of a simple unary factor with size-1 measurement
+    // This also shows that the measurement function can be a lambda
+    auto func = [](
+      const double &v, ResultOut<1> result, JacobianOut<1, 1> jac) -> bool {
+        result = v * 2;
+        jac(0, 0) = -1.1;
+        return true;
+    };
+    const auto meas_val = 1.2;
+    const auto meas_stddev = 0.1;
+    auto meas = FactorMeasurement<double>{meas_val, meas_stddev};
+    auto var = std::make_shared<FactorVariable<double>>();
+    auto factor = Factor<FactorMeasurement<double>, FactorVariable<double>>{
+      func, meas, var};
+    EXPECT_EQ(1, factor.size());
+    EXPECT_EQ(1, factor.residualSize());
+    ASSERT_EQ(1u, factor.variables().size());
+    EXPECT_EQ(var, factor.variables().front());
+    EXPECT_FALSE(factor.isPerfectPrior());
+
+
+    // Prepare sample C-style arrays as used by Ceres
+    double test_residual;
+    double test_jac;
+    double test_val = 1.09;
+    const double *const params[] = {&test_val};
+    double *jacs[] = {&test_jac};
+
+    // evaluate the factor
+    EXPECT_TRUE(factor.evaluateRaw(params, &test_residual, jacs));
+
+    // Compare the result. We expect the residual to be L(f(X) - Z)
+    // In this case that is (2x - Z)/stddev
+    EXPECT_DOUBLE_EQ((test_val * 2 - meas_val) / meas_stddev, test_residual);
+    EXPECT_DOUBLE_EQ(-1.1, test_jac);
+}
+
+
+TEST(FactorTest, constructPerfectPrior) {
+    // Test that using a perfect prior immediately sets the variable's value
+    // @todo this may change
+
+    // Note explicitly constructing PerfectPrior is not intended for users -
+    // They should use FactorGraph::addPerfectPrior. That is why this test does
+    // some non-intuitive preparation (e.g. constructing a FactorMeasurement)
+    using MeasType = FactorMeasurement<double, void>;
+    using VarType = FactorVariable<double>;
+    auto v = std::make_shared<VarType>();
+
+    auto factor = PerfectPrior<VarType>{MeasType{1.2}, v};
+    EXPECT_DOUBLE_EQ(1.2, v->value);
+
+    EXPECT_TRUE(factor.isPerfectPrior());
+}
+
 TEST(FactorTest, print) {
     auto v1 = std::make_shared<Pose2DVar>();
     auto v2 = std::make_shared<Landmark2DVar>();
@@ -59,19 +116,19 @@ TEST(FactorTest, print) {
     EXPECT_EQ(expected.str(), ss.str());
 }
 
-TEST(FactorTest, perfectPrior) {
-    // Test that using a perfect prior immediately sets the variable's value
-    // Note explicitly constructing PerfectPrior is not intended for users -
-    // They should use FactorGraph::addPerfectPrior. That is why this test does
-    // some non-intuitive preparation (e.g. constructing a FactorMeasurement)
+TEST(FactorTest, printPerfectPrior) {
     using MeasType = FactorMeasurement<double, void>;
     using VarType = FactorVariable<double>;
-    const auto &func = internal::identityMeasurementFunction<double>;
-    using FactorType = PerfectPrior<VarType>;
     auto v = std::make_shared<VarType>();
+    auto factor = PerfectPrior<VarType>{MeasType{1.2}, v};
 
-    PerfectPrior<VarType>{MeasType{1.2}, v};
-    EXPECT_DOUBLE_EQ(1.2, v->value);
+    std::stringstream expected;
+    expected << "[Perfect prior for variable ";
+    expected << *v << "(" << v << ")]";
+
+    std::stringstream ss;
+    ss << factor;
+    EXPECT_EQ(expected.str(), ss.str());
 }
 
 }  // namespace wave

@@ -4,7 +4,7 @@
 namespace wave {
 
 TEST(NoiseTest, diagonalNoise) {
-    const auto stddev = Vec2{1.1, 2.2};
+    const DiagonalNoise<2>::InitType stddev = Vec2{1.1, 2.2};
     Eigen::Matrix2d expected_cov, expected_inv;
     expected_cov << 1.1 * 1.1, 0, 0, 2.2 * 2.2;
     expected_inv << 1 / 1.1, 0, 0, 1 / 2.2;
@@ -19,7 +19,7 @@ TEST(NoiseTest, diagonalNoise) {
 }
 
 TEST(NoiseTest, singleNoise) {
-    const auto stddev = 1.1;
+    const DiagonalNoise<1>::InitType stddev = 1.1;
 
     auto n = DiagonalNoise<1>{stddev};
     EXPECT_DOUBLE_EQ(stddev * stddev, n.covariance());
@@ -27,7 +27,7 @@ TEST(NoiseTest, singleNoise) {
 }
 
 TEST(NoiseTest, fullNoise) {
-    auto cov = Mat2{};
+    FullNoise<2>::InitType cov = Mat2{};
     cov << 3.3, 1.1, 1.1, 4.4;
 
     auto n = FullNoise<2>{cov};
