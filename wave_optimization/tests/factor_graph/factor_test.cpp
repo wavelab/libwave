@@ -59,32 +59,19 @@ TEST(FactorTest, print) {
     EXPECT_EQ(expected.str(), ss.str());
 }
 
-// TEST(FactorTest, idealMeasurement) {
-//    using MeasType = FactorMeasurement<double, ZeroNoise>;
-//    using VarType = FactorVariable<double>;
-//    const auto &func = internal::identityMeasurementFunction<double>;
-//    using FactorType = Factor<MeasType, VarType>;
-//    auto v = std::make_shared<VarType>();
-//
-//    // Linking a variable to a factor with ZeroNoise measurement marks it
-//    fixed
-//    FactorType{func, MeasType{1.2}, v};
-//
-//    EXPECT_TRUE(v->isFixed());
-//}
-//
-// TEST(FactorTest, idealMeasurementConflict) {
-//    using MeasType = FactorMeasurement<double, ZeroNoise>;
-//    using VarType = FactorVariable<double>;
-//    const auto &func = internal::identityMeasurementFunction<double>;
-//    using FactorType = Factor<MeasType, VarType>;
-//    auto v = std::make_shared<VarType>();
-//
-//    // The first factor marks the variable fixed
-//    FactorType{func, MeasType{1.2}, v};
-//
-//    // The second one finds it is already fixed; there must be a conflict
-//    EXPECT_THROW(FactorType(func, MeasType{1.2}, v), std::runtime_error);
-//}
+TEST(FactorTest, perfectPrior) {
+    // Test that using a perfect prior immediately sets the variable's value
+    // Note explicitly constructing PerfectPrior is not intended for users -
+    // They should use FactorGraph::addPerfectPrior. That is why this test does
+    // some non-intuitive preparation (e.g. constructing a FactorMeasurement)
+    using MeasType = FactorMeasurement<double, void>;
+    using VarType = FactorVariable<double>;
+    const auto &func = internal::identityMeasurementFunction<double>;
+    using FactorType = PerfectPrior<VarType>;
+    auto v = std::make_shared<VarType>();
+
+    PerfectPrior<VarType>{MeasType{1.2}, v};
+    EXPECT_DOUBLE_EQ(1.2, v->value);
+}
 
 }  // namespace wave

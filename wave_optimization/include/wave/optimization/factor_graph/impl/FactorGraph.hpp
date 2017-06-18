@@ -1,4 +1,5 @@
 #include "wave/optimization/factor_graph/FactorMeasurement.hpp"
+#include "wave/optimization/factor_graph/PerfectPrior.hpp"
 
 namespace wave {
 
