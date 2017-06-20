@@ -151,7 +151,7 @@ TEST(BFTests, BadFmMethod) {
                  std::invalid_argument);
 }
 
-TEST(BFTests, DistanceMatchDescriptors) {
+TEST(BFTests, DISABLED_DistanceMatchDescriptors) {
     std::vector<cv::DMatch> matches;
     cv::Mat img_with_matches;
 
@@ -185,10 +185,8 @@ TEST(BFTests, DistanceMatchDescriptors) {
     cv::waitKey(0);
 }
 
-TEST(BFTests, KnnMatchDescriptors) {
-    std::vector<std::vector<cv::DMatch>> matches;
-    std::vector<cv::DMatch> good_matches;
-    good_matches.clear();
+TEST(BFTests, DISABLED_KnnMatchDescriptors) {
+    std::vector<cv::DMatch> matches;
     cv::Mat img_with_matches;
 
     cv::Mat image_1, image_2;
@@ -206,26 +204,20 @@ TEST(BFTests, KnnMatchDescriptors) {
     descriptors_2 = brisk.extractDescriptors(image_2, keypoints_2);
 
     // Use KNN Matcher to match
-    good_matches = bfmatcher.matchDescriptors(
+    matches = bfmatcher.matchDescriptors(
       descriptors_1, descriptors_2, keypoints_1, keypoints_2);
 
     // Test has been confirmed visually
-    cv::drawMatches(image_1,
-                    keypoints_1,
-                    image_2,
-                    keypoints_2,
-                    good_matches,
-                    img_with_matches);
+    cv::drawMatches(
+      image_1, keypoints_1, image_2, keypoints_2, matches, img_with_matches);
 
     cv::imshow("good_matches", img_with_matches);
 
     cv::waitKey(0);
 }
 
-TEST(BFTests, 8Point) {
-    std::vector<std::vector<cv::DMatch>> matches;
-    std::vector<cv::DMatch> good_matches;
-    good_matches.clear();
+TEST(BFTests, DISABLED_8Point) {
+    std::vector<cv::DMatch> matches;
     cv::Mat img_with_matches;
 
     cv::Mat image_1, image_2;
@@ -246,26 +238,20 @@ TEST(BFTests, 8Point) {
     descriptors_2 = brisk.extractDescriptors(image_2, keypoints_2);
 
     // Use KNN Matcher to match
-    good_matches = bfmatcher.matchDescriptors(
+    matches = bfmatcher.matchDescriptors(
       descriptors_1, descriptors_2, keypoints_1, keypoints_2);
 
     // Test has been confirmed visually
-    cv::drawMatches(image_1,
-                    keypoints_1,
-                    image_2,
-                    keypoints_2,
-                    good_matches,
-                    img_with_matches);
+    cv::drawMatches(
+      image_1, keypoints_1, image_2, keypoints_2, matches, img_with_matches);
 
-    cv::imshow("good_matches", img_with_matches);
+    cv::imshow("matches", img_with_matches);
 
     cv::waitKey(0);
 }
 
-TEST(BFTest, 7Point) {
-    std::vector<std::vector<cv::DMatch>> matches;
-    std::vector<cv::DMatch> good_matches;
-    good_matches.clear();
+TEST(BFTests, DISABLED_7Point) {
+    std::vector<cv::DMatch> matches;
     cv::Mat img_with_matches;
 
     cv::Mat image_1, image_2;
@@ -286,26 +272,21 @@ TEST(BFTest, 7Point) {
     descriptors_2 = brisk.extractDescriptors(image_2, keypoints_2);
 
     // Use KNN Matcher to match
-    good_matches = bfmatcher.matchDescriptors(
+    matches = bfmatcher.matchDescriptors(
       descriptors_1, descriptors_2, keypoints_1, keypoints_2);
 
+
     // Test has been confirmed visually
-    cv::drawMatches(image_1,
-                    keypoints_1,
-                    image_2,
-                    keypoints_2,
-                    good_matches,
-                    img_with_matches);
+    cv::drawMatches(
+      image_1, keypoints_1, image_2, keypoints_2, matches, img_with_matches);
 
     cv::imshow("good_matches", img_with_matches);
 
     cv::waitKey(0);
 }
 
-TEST(BFTest, LMEDS) {
-    std::vector<std::vector<cv::DMatch>> matches;
-    std::vector<cv::DMatch> good_matches;
-    good_matches.clear();
+TEST(BFTests, DISABLED_LMEDS) {
+    std::vector<cv::DMatch> matches;
     cv::Mat img_with_matches;
 
     cv::Mat image_1, image_2;
@@ -326,20 +307,17 @@ TEST(BFTest, LMEDS) {
     descriptors_2 = brisk.extractDescriptors(image_2, keypoints_2);
 
     // Use KNN Matcher to match
-    good_matches = bfmatcher.matchDescriptors(
+    matches = bfmatcher.matchDescriptors(
       descriptors_1, descriptors_2, keypoints_1, keypoints_2);
 
+    std::cout << "LMEDS: " << matches.size() << std::endl;
+
     // Test has been confirmed visually
-    cv::drawMatches(image_1,
-                    keypoints_1,
-                    image_2,
-                    keypoints_2,
-                    good_matches,
-                    img_with_matches);
+    cv::drawMatches(
+      image_1, keypoints_1, image_2, keypoints_2, matches, img_with_matches);
 
     cv::imshow("good_matches", img_with_matches);
 
     cv::waitKey(0);
 }
-
 }  // namespace wave
