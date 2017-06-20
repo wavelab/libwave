@@ -11,7 +11,7 @@ void MultiMatcher<T, R>::initPool(std::string path) {
         } else {
             this->matchers = T(R(this->config));
         }
-        this->pool.push_back(std::thread(&this.spin, this, i));
+        this->pool.push_back(std::thread(&(this->spin), this, i));
     }
 }
 
