@@ -60,12 +60,12 @@ TEST(viewer, line_test) {
 TEST(viewer, pointcloud_intensity) {
     PointCloudDisplay display("intensity_test");
     display.startSpin();
-    pcl::PointCloud<pcl::PointXYZI>::Ptr cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
+    pcl::PointCloud<pcl::PointXYZI>::Ptr cloud =
+      boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
     pcl::io::loadPCDFile(TEST_SCAN, *cloud);
     display.addPointcloud(cloud, 1);
     std::this_thread::sleep_for(std::chrono::seconds(5));
     display.stopSpin();
-
 }
 
 }  // namespace wave

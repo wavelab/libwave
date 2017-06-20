@@ -44,7 +44,8 @@ void PointCloudDisplay::addPointcloud(const PCLPointCloud &cld, int id) {
     this->update_mutex.unlock();
 }
 
-void PointCloudDisplay::addPointcloud(const pcl::PointCloud<pcl::PointXYZI>::Ptr &cld, int id) {
+void PointCloudDisplay::addPointcloud(
+  const pcl::PointCloud<pcl::PointXYZI>::Ptr &cld, int id) {
     this->update_mutex.lock();
     this->cloudsi.emplace(CloudI{cld, id});
     this->update_mutex.unlock();
@@ -73,11 +74,14 @@ void PointCloudDisplay::updateInternal() {
 
     while (this->cloudsi.size() != 0) {
         const auto &cld = this->cloudsi.front();
-        pcl::visualization::PointCloudColorHandlerGenericField<pcl::PointXYZI> col_handler(cld.cloud, "intensity");
+        pcl::visualization::PointCloudColorHandlerGenericField<pcl::PointXYZI>
+          col_handler(cld.cloud, "intensity");
         if (this->viewer->contains(std::to_string(cld.id))) {
-            this->viewer->updatePointCloud(cld.cloud, col_handler, std::to_string(cld.id));
+            this->viewer->updatePointCloud(
+              cld.cloud, col_handler, std::to_string(cld.id));
         } else {
-            this->viewer->addPointCloud(cld.cloud, col_handler, std::to_string(cld.id));
+            this->viewer->addPointCloud(
+              cld.cloud, col_handler, std::to_string(cld.id));
         }
         this->cloudsi.pop();
     }
