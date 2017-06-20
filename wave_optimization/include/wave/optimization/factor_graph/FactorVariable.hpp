@@ -48,19 +48,58 @@ class FactorVariable : public FactorVariableBase {
     using MappedType = typename ViewType::MappedType;
     constexpr static int Size = ViewType::Size;
 
+    // Constructors
+
     /** Default construct with uninitialized estimate
      * Actually initializes to zero to avoid problems with garbage floats
      * @todo move setting of initial value elsewhere
      */
-    FactorVariable() : storage{MappedType::Zero()}, value{storage} {}
+    FactorVariable() noexcept : storage{MappedType::Zero()}, value{storage} {}
 
     /** Construct with initial value */
-    explicit FactorVariable(MappedType &&initial)
-        : storage{std::move(initial)}, value{storage} {}
+    explicit FactorVariable(MappedType &&initial) noexcept
+      : storage{std::move(initial)},
+        value{storage} {}
 
     /** Construct copying initial value */
-    explicit FactorVariable(const MappedType &initial)
-        : storage{initial}, value{storage} {}
+    explicit FactorVariable(const MappedType &initial) noexcept
+      : storage{initial},
+        value{storage} {}
+
+    // Because `value` is a map holding a pointer to another member, we must
+    // define a custom copy constructor (and the rest of the rule of five)
+
+    /** Copy constructor */
+    FactorVariable(const FactorVariable &other) noexcept
+      : FactorVariable{other.storage} {}
+
+    /** Move constructor */
+    FactorVariable(FactorVariable &&other) noexcept
+      : FactorVariable{std::move(other.storage)} {}
+
+    /** Copy assignment operator */
+    FactorVariable &operator=(const FactorVariable &other) noexcept {
+        auto temp = FactorVariable{other};
+        swap(*this, temp);
+        return *this;
+    }
+
+    /** Move assignment operator */
+    FactorVariable &operator=(FactorVariable &&other) noexcept {
+        auto temp = std::move(other);
+        swap(*this, temp);
+        return *this;
+    }
+
+    friend void swap(FactorVariable &lhs, FactorVariable &rhs) noexcept {
+        std::swap(lhs.storage, rhs.storage);
+        // Note: don't swap value
+    }
+
+    ~FactorVariable() override = default;
+
+    // Access
+
 
     /** Return the number of scalar values in the variable. */
     int size() const noexcept override {
