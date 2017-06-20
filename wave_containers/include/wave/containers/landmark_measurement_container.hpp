@@ -210,7 +210,7 @@ class LandmarkMeasurementContainer {
     typename internal::landmark_container<T>::type storage;
 };
 
-/** @} end of group */
+/** @} group containers */
 }  // namespace wave
 
 #include "impl/landmark_measurement_container.hpp"

@@ -33,6 +33,7 @@ class TwoWheelRobot2DModel {
     Vec3 update(const Vec2 &inputs, double dt);
 };
 
-/** @} end of group */
-}  // end of wave namespace
-#endif
+/** @} group kinematics */
+}  // namespace wave
+
+#endif  // WAVE_KINEMATICS_TWOWHEEL_HPP

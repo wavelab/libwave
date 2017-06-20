@@ -1,20 +1,30 @@
 dist: trusty
-sudo: required
+sudo: false
 
-language:
-    - c++
+language: cpp
 
 cache:
-    ccache: true
+  ccache: true
 
-before_install:
-    - bash scripts/ci/ci_check.bash
+addons:
+  apt:
+    sources:
+      - sourceline: 'ppa:lkoppel/robotics'
+    packages:
+      - libboost-dev
+      - libyaml-cpp-dev
+      - libeigen3-dev
+      - libpcl-dev
+      - libopencv-dev
+      - libceres-dev
+      - libkindr-dev
+      - clang-format-3.8
 
-install:
-    - sudo bash scripts/install/install_deps.bash
+before_script:
+  - bash scripts/ci/ci_check.bash
 
 script:
-    - bash scripts/ci/ci_run.bash
+  - bash scripts/ci/ci_run.bash
 
 notifications:
-    email: false
+  email: false

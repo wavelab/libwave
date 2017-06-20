@@ -310,4 +310,4 @@ void QuadrotorModel::printState(void) {
     printf("psi: %f\n", this->attitude(2));
 }
 
-}  // end of wave namespace
+}  // namespace wave
