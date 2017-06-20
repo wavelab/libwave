@@ -27,11 +27,13 @@ struct BFMatcherParams {
     BFMatcherParams(int norm_type,
                     bool use_knn,
                     double ratio_threshold,
-                    int distance_threshold)
+                    int distance_threshold,
+                    int fm_method)
         : norm_type(norm_type),
           use_knn(use_knn),
           ratio_threshold(ratio_threshold),
-          distance_threshold(distance_threshold) {}
+          distance_threshold(distance_threshold),
+          fm_method(fm_method) {}
 
     /** Norm type to use for distance calculation between feature descriptors.
      *
@@ -95,6 +97,18 @@ struct BFMatcherParams {
      *  Recommended: 5. Must be greater than or equal to zero.
      */
     int distance_threshold = 5;
+
+    /** Method to find the fundamental matrix and remove outliers.
+     *
+     *  Options:
+     *  cv::FM_7POINT: 7-point algorithm
+     *  cv::FM_8POINT: 8-point algorithm
+     *  cv::FM_LMEDS : least-median algorithm
+     *  cv::FM_RANSAC: RANSAC algorithm
+     *
+     *  Recommended: cv::FM_RANSAC.
+     */
+    int fm_method = cv::FM_RANSAC;
 };
 
 class BruteForceMatcher : public DescriptorMatcher {
@@ -125,27 +139,6 @@ class BruteForceMatcher : public DescriptorMatcher {
         return this->current_config;
     }
 
-    /** Remove outliers between matches. Uses a heuristic based approach as a
-     *  first pass to determine good matches.
-     *
-     *  @param matches the unfiltered matches computed from two images.
-     *
-     *  @return the matches with outliers removed.
-     */
-    std::vector<cv::DMatch> removeOutliers(
-      std::vector<cv::DMatch> &matches) const override;
-
-    /** Overloaded method, which takes in a vector of a vector of matches. This
-     *  is designed to be used with the knnMatchDescriptors method, and uses the
-     *  ratio test as a first pass to determine good matches.
-     *
-     *  @param matches the unfiltered matches computed from two images.
-     *
-     *  @return the matches with outliers removed.
-     */
-    std::vector<cv::DMatch> removeOutliers(
-      std::vector<std::vector<cv::DMatch>> &matches) const override;
-
     /** Matches keypoints descriptors between two images using the
      *  BruteForceMatcher.
      *
@@ -156,9 +149,43 @@ class BruteForceMatcher : public DescriptorMatcher {
      */
     std::vector<cv::DMatch> matchDescriptors(
       const cv::Mat &descriptors_1,
-      const cv::Mat &descriptors_2) const override;
+      const cv::Mat &descriptors_2,
+      const std::vector<cv::KeyPoint> &keypoints_1,
+      const std::vector<cv::KeyPoint> &keypoints_2) const override;
 
  private:
+    /** Overloaded method, which takes in a vector of a vector of matches. This
+     *  is designed to be used with the knnMatchDescriptors method, and uses the
+     *  ratio test to filter the matches.
+     *
+     *  @param matches the unfiltered matches computed from two images.
+     *
+     *  @return the filtered matches.
+     */
+    std::vector<cv::DMatch> filterMatches(
+      std::vector<std::vector<cv::DMatch>> &matches) const override;
+
+    /** Remove outliers between matches. Uses a heuristic based approach as a
+     *  first pass to determine good matches.
+     *
+     *  @param matches the unfiltered matches computed from two images.
+     *
+     *  @return the filtered matches.
+     */
+    std::vector<cv::DMatch> filterMatches(
+      std::vector<cv::DMatch> &matches) const override;
+
+    /** Remove outliers between matches, using epipolar constraints.
+     *
+     *  @param matches the unfiltered matches computed from two images.
+     *
+     *  @return the matches with outliers removed.
+     */
+    std::vector<cv::DMatch> removeOutliers(
+      const std::vector<cv::DMatch> &matches,
+      const std::vector<cv::KeyPoint> &keypoints_1,
+      const std::vector<cv::KeyPoint> &keypoints_2) const;
+
     /** The pointer to the wrapped cv::BFMatcher object */
     cv::Ptr<cv::BFMatcher> brute_force_matcher;
 

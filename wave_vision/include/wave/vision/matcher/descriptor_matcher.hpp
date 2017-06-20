@@ -34,30 +34,43 @@ class DescriptorMatcher {
     /** Destructor */
     ~DescriptorMatcher() = default;
 
- public:
-    /** Remove outliers between matches using various outlier rejection methods.
-     *  Outlier rejection methods are specified within the MatcherParams struct.
-     *  Uses a heuristic based approach as a first pass to determine good
-     *  matches.
+    /** Filter matches using a heuristic based method.
+     *
+     *  If the distance between matches is less than the defined heuristic, it
+     *  is rejected.
      *
      *  @param matches the unfiltered matches computed from two images.
      *
      *  @return the matches with outliers removed.
      */
-    virtual std::vector<cv::DMatch> removeOutliers(
+    virtual std::vector<cv::DMatch> filterMatches(
       std::vector<cv::DMatch> &matches) const = 0;
 
     /** Overloaded method, which takes in a vector of a vector of matches. This
      *  is designed to be used with the knnMatchDescriptors method, and uses the
-     *  ratio test as a first pass to determine good matches.
+     *  ratio test to filter the matches.
      *
      *  @param matches the unfiltered matches computed from two images.
      *
-     *  @return the matches with outliers removed.
+     *  @return the filtered matches.
      */
-    virtual std::vector<cv::DMatch> removeOutliers(
+    virtual std::vector<cv::DMatch> filterMatches(
       std::vector<std::vector<cv::DMatch>> &matches) const = 0;
 
+    /** Remove outliers between matches by using epipolar constraints. Outlier
+    *   rejection methods are specified within the MatcherParams struct.
+    *
+    *  @param matches the unfiltered matches computed from two images.
+    *
+    *  @return the matches with outliers removed.
+    */
+    virtual std::vector<cv::DMatch> removeOutliers(
+      const std::vector<cv::DMatch> &matches,
+      const std::vector<cv::KeyPoint> &keypoints_1,
+      const std::vector<cv::KeyPoint> &keypoints_2) const = 0;
+
+
+ public:
     /** Match keypoint descriptors between two images.
      *
      *  @param descriptors_1 the descriptors extracted from the first image.
@@ -66,7 +79,10 @@ class DescriptorMatcher {
      *  @return vector containing the best matches.
      */
     virtual std::vector<cv::DMatch> matchDescriptors(
-      const cv::Mat &descriptors_1, const cv::Mat &descriptors_2) const = 0;
+      const cv::Mat &descriptors_1,
+      const cv::Mat &descriptors_2,
+      const std::vector<cv::KeyPoint> &keypoints_1,
+      const std::vector<cv::KeyPoint> &keypoints_2) const = 0;
 };
 
 }  // namespace wave

@@ -10,12 +10,8 @@ BruteForceMatcher::BruteForceMatcher(const BFMatcherParams &config) {
     // Ensure parameters are valid
     this->checkConfiguration(config);
 
-    // If using knn search, cross_check must be false
-    if (config.use_knn) {
-        cross_check = false;
-    } else {
-        cross_check = true;
-    }
+    // Cross_check must be the opposite of use_knn
+    cross_check = !config.use_knn;
 
     // Create cv::BFMatcher object with the desired parameters
     this->brute_force_matcher =
@@ -49,12 +45,8 @@ BruteForceMatcher::BruteForceMatcher(const std::string &config_path) {
     // Confirm configuration is valid
     this->checkConfiguration(config);
 
-    // If using knn search, cross_check must be false
-    if (config.use_knn) {
-        cross_check = false;
-    } else {
-        cross_check = true;
-    }
+    // Cross_check must be the opposite of use_knn
+    cross_check = !config.use_knn;
 
     // Create cv::BFMatcher object with the desired parameters
     this->brute_force_matcher =
@@ -85,11 +77,23 @@ void BruteForceMatcher::checkConfiguration(
     if (check_config.distance_threshold < 0) {
         throw std::invalid_argument("distance_threshold is a negative value!");
     }
+
+    // Only acceptable values are 1, 2, 4, and 8
+    if (check_config.fm_method < cv::FM_7POINT ||
+        check_config.fm_method > cv::FM_RANSAC) {
+        throw std::invalid_argument("fm_method is not an acceptable value!");
+    }
+
+    if (check_config.fm_method == 3 ||
+        (check_config.fm_method > cv::FM_LMEDS &&
+         check_config.fm_method < cv::FM_RANSAC)) {
+        throw std::invalid_argument("fm_method is not an acceptable value!");
+    }
 }
 
-std::vector<cv::DMatch> BruteForceMatcher::removeOutliers(
+std::vector<cv::DMatch> BruteForceMatcher::filterMatches(
   std::vector<cv::DMatch> &matches) const {
-    std::vector<cv::DMatch> good_matches;
+    std::vector<cv::DMatch> filt_matches;
     float min_distance;
 
     // Sort matches by distance in increasing order
@@ -102,16 +106,16 @@ std::vector<cv::DMatch> BruteForceMatcher::removeOutliers(
     for (auto &match : matches) {
         if (match.distance <=
             this->current_config.distance_threshold * min_distance) {
-            good_matches.push_back(match);
+            filt_matches.push_back(match);
         }
     }
 
-    return good_matches;
+    return filt_matches;
 }
 
-std::vector<cv::DMatch> BruteForceMatcher::removeOutliers(
+std::vector<cv::DMatch> BruteForceMatcher::filterMatches(
   std::vector<std::vector<cv::DMatch>> &matches) const {
-    std::vector<cv::DMatch> good_matches;
+    std::vector<cv::DMatch> filt_matches;
     float ratio;
 
     for (auto &match : matches) {
@@ -119,7 +123,37 @@ std::vector<cv::DMatch> BruteForceMatcher::removeOutliers(
         // ratio heuristic
         ratio = match[0].distance / match[1].distance;
         if (ratio <= this->current_config.ratio_threshold) {
-            good_matches.push_back(match[0]);
+            filt_matches.push_back(match[0]);
+        }
+    }
+
+    return filt_matches;
+}
+
+std::vector<cv::DMatch> BruteForceMatcher::removeOutliers(
+  const std::vector<cv::DMatch> &matches,
+  const std::vector<cv::KeyPoint> &keypoints_1,
+  const std::vector<cv::KeyPoint> &keypoints_2) const {
+    std::vector<cv::DMatch> good_matches;
+    std::vector<cv::Point2f> fp1, fp2;
+
+    // Take all good keypoints from matches, convert to cv::Point2f
+    for (auto &match : matches) {
+        fp1.push_back(keypoints_1.at(match.queryIdx).pt);
+        fp2.push_back(keypoints_2.at(match.trainIdx).pt);
+    }
+
+    // Find fundamental matrix
+    std::vector<uchar> mask;
+    cv::Mat fundamental_matrix;
+
+    fundamental_matrix =
+      cv::findFundamentalMat(fp1, fp2, cv::FM_RANSAC, 3., 0.99, mask);
+
+    // Only retain the inliers matches
+    for (size_t i = 0; i < mask.size(); i++) {
+        if (mask.at(i) != 0) {
+            good_matches.push_back(matches.at(i));
         }
     }
 
@@ -127,8 +161,12 @@ std::vector<cv::DMatch> BruteForceMatcher::removeOutliers(
 }
 
 std::vector<cv::DMatch> BruteForceMatcher::matchDescriptors(
-  const cv::Mat &descriptors_1, const cv::Mat &descriptors_2) const {
+  const cv::Mat &descriptors_1,
+  const cv::Mat &descriptors_2,
+  const std::vector<cv::KeyPoint> &keypoints_1,
+  const std::vector<cv::KeyPoint> &keypoints_2) const {
     std::vector<cv::DMatch> good_matches;
+    std::vector<cv::DMatch> filt_matches;
 
     /** Mask variable, currently unused.
      *
@@ -148,7 +186,7 @@ std::vector<cv::DMatch> BruteForceMatcher::matchDescriptors(
         this->brute_force_matcher->knnMatch(
           descriptors_1, descriptors_2, matches, k, mask, false);
 
-        good_matches = this->removeOutliers(matches);
+        filt_matches = this->filterMatches(matches);
 
     } else {
         std::vector<cv::DMatch> matches;
@@ -157,8 +195,10 @@ std::vector<cv::DMatch> BruteForceMatcher::matchDescriptors(
         this->brute_force_matcher->match(
           descriptors_1, descriptors_2, matches, mask);
 
-        good_matches = this->removeOutliers(matches);
+        filt_matches = this->filterMatches(matches);
     }
+
+    good_matches = this->removeOutliers(filt_matches, keypoints_1, keypoints_2);
 
     return good_matches;
 }

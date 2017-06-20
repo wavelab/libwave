@@ -1,6 +1,6 @@
 # Configuration parameters for Brute Force matcher
 
-# Norm type to use for distance calculation between feature descriptors.
+#  Norm type to use for distance calculation between feature descriptors.
 #
 #  Options:
 #  1: cv::NORM_INF, l-infinity norm
@@ -62,3 +62,15 @@ ratio_threshold: 0.8
 # Recommended: 5. Must be greater than or equal to zero.
 #
 distance_threshold: 5
+
+#  Method to find the fundamental matrix and remove outliers.
+#
+#  Options:
+#  1: cv::FM_7POINT, 7-point algorithm
+#  2: cv::FM_8POINT, 8-point algorithm
+#  4: cv::FM_LMEDS, least-median algorithm
+#  8: cv::FM_RANSAC, RANSAC algorithm
+#
+#  Recommended: 8 (cv::FM_RANSAC).
+#
+fm_method: 8
