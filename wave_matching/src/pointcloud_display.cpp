@@ -9,13 +9,12 @@ PointCloudDisplay::PointCloudDisplay(const std::string &name) {
 
 void PointCloudDisplay::startSpin() {
     this->continueFlag.test_and_set(std::memory_order_relaxed);
-    this->viewer_thread =
-      std::make_shared<std::thread>(&PointCloudDisplay::spin, this);
+    this->viewer_thread = std::thread(&PointCloudDisplay::spin, this);
 }
 
 void PointCloudDisplay::stopSpin() {
     this->continueFlag.clear(std::memory_order_relaxed);
-    this->viewer_thread->join();
+    this->viewer_thread.join();
 }
 
 void PointCloudDisplay::spin() {

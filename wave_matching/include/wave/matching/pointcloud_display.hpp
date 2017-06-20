@@ -90,7 +90,7 @@ class PointCloudDisplay {
      */
     void spin();
 
-    std::shared_ptr<std::thread> viewer_thread;  ///< worker thread
+    std::thread viewer_thread;
 
     /**
      * Used to stop worker thread

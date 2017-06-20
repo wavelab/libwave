@@ -7,7 +7,7 @@ SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Wextra")
 # CMAKE SETTINGS
 LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 INCLUDE(cmake/WaveUtils.cmake)
-ENABLE_TESTING()`
+ENABLE_TESTING()
 
 
 # The sub-libraries, each of which is in a subdirectory of the same name

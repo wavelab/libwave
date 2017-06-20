@@ -13,8 +13,7 @@ const auto TEST_SCAN = "data/testscan.pcd";
 TEST(viewer, init_test) {
     PointCloudDisplay display("init_test");
     display.startSpin();
-    boost::this_thread::sleep(
-      boost::posix_time::microseconds(5000000));  // five seconds
+    std::this_thread::sleep_for(std::chrono::seconds(5));
     display.stopSpin();
 }
 
@@ -24,8 +23,7 @@ TEST(viewer, pointcloud_test) {
     PCLPointCloud cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
     pcl::io::loadPCDFile(TEST_SCAN, *cloud);
     display.addPointcloud(cloud, 1);
-    boost::this_thread::sleep(
-      boost::posix_time::microseconds(5000000));  // five seconds
+    std::this_thread::sleep_for(std::chrono::seconds(5));
     display.stopSpin();
 }
 
@@ -39,11 +37,9 @@ TEST(viewer, multiple_clouds_test) {
     for (int i = 0; i < 3; i++) {
         pcl::transformPointCloud(*cloud, *cloud, transform);
         display.addPointcloud(cloud, i + 2);
-        boost::this_thread::sleep(
-          boost::posix_time::microseconds(1000000));  // one seconds
+        std::this_thread::sleep_for(std::chrono::seconds(1));
     }
-    boost::this_thread::sleep(
-      boost::posix_time::microseconds(5000000));  // five seconds
+    std::this_thread::sleep_for(std::chrono::seconds(5));
     display.stopSpin();
 }
 
@@ -57,8 +53,7 @@ TEST(viewer, line_test) {
     for (int j = 0; j < 9; j++) {
         display.addLine(pts.at(j), pts.at(j + 1), j, j + 1);
     }
-    boost::this_thread::sleep(
-      boost::posix_time::microseconds(5000000));  // five seconds
+    std::this_thread::sleep_for(std::chrono::seconds(5));
     display.stopSpin();
 }
 
@@ -68,8 +63,7 @@ TEST(viewer, pointcloud_intensity) {
     pcl::PointCloud<pcl::PointXYZI>::Ptr cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
     pcl::io::loadPCDFile(TEST_SCAN, *cloud);
     display.addPointcloud(cloud, 1);
-    boost::this_thread::sleep(
-            boost::posix_time::microseconds(5000000));  // five seconds
+    std::this_thread::sleep_for(std::chrono::seconds(5));
     display.stopSpin();
 
 }
