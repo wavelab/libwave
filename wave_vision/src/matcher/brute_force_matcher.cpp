@@ -164,20 +164,10 @@ std::vector<cv::DMatch> BruteForceMatcher::matchDescriptors(
   const cv::Mat &descriptors_1,
   const cv::Mat &descriptors_2,
   const std::vector<cv::KeyPoint> &keypoints_1,
-  const std::vector<cv::KeyPoint> &keypoints_2) const {
+  const std::vector<cv::KeyPoint> &keypoints_2,
+  const cv::InputArray &mask) const {
     std::vector<cv::DMatch> good_matches;
-    std::vector<cv::DMatch> filt_matches;
-
-    /** Mask variable, currently unused.
-     *
-     *  The mask variable indicates which descriptors can be matched between the
-     *  two sets. As per OpenCV docs "queryDescriptors[i] can be matched with
-     *  trainDescriptors[j] only if masks.at<uchar>(i,j) is non-zero.
-     *
-     *  In the libwave wrapper, queryDescriptors and trainDescriptors are
-     *  referred to as descriptors_1 and descriptors_2.
-     */
-    cv::InputOutputArray mask = cv::noArray();
+    std::vector<cv::DMatch> filtered_matches;
 
     if (current_config.use_knn) {
         std::vector<std::vector<cv::DMatch>> matches;
@@ -186,7 +176,7 @@ std::vector<cv::DMatch> BruteForceMatcher::matchDescriptors(
         this->brute_force_matcher->knnMatch(
           descriptors_1, descriptors_2, matches, k, mask, false);
 
-        filt_matches = this->filterMatches(matches);
+        filtered_matches = this->filterMatches(matches);
 
     } else {
         std::vector<cv::DMatch> matches;
@@ -195,10 +185,11 @@ std::vector<cv::DMatch> BruteForceMatcher::matchDescriptors(
         this->brute_force_matcher->match(
           descriptors_1, descriptors_2, matches, mask);
 
-        filt_matches = this->filterMatches(matches);
+        filtered_matches = this->filterMatches(matches);
     }
 
-    good_matches = this->removeOutliers(filt_matches, keypoints_1, keypoints_2);
+    good_matches =
+      this->removeOutliers(filtered_matches, keypoints_1, keypoints_2);
 
     return good_matches;
 }

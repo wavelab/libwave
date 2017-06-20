@@ -144,6 +144,13 @@ class BruteForceMatcher : public DescriptorMatcher {
      *
      *  @param descriptors_1 the descriptors extracted from the first image.
      *  @param descriptors_2 the descriptors extracted from the second image.
+     *  @param keypoints_1 the keypoints detected in the first image
+     *  @param keypoints_2 the keypoints detected in the second image
+     *  @param mask The mask variable indicates which descriptors can be matched
+     *  between the two sets. As per OpenCV docs "queryDescriptors[i] can be
+     *  matched with trainDescriptors[j] only if masks.at<uchar>(i,j) is
+     *  non-zero. In the libwave wrapper, queryDescriptors are descriptors_1,
+     *  and trainDescriptors are descriptors_2.
      *
      *  @return vector containing the best matches.
      */
@@ -151,7 +158,8 @@ class BruteForceMatcher : public DescriptorMatcher {
       const cv::Mat &descriptors_1,
       const cv::Mat &descriptors_2,
       const std::vector<cv::KeyPoint> &keypoints_1,
-      const std::vector<cv::KeyPoint> &keypoints_2) const override;
+      const std::vector<cv::KeyPoint> &keypoints_2,
+      const cv::InputArray &mask) const override;
 
  private:
     /** Overloaded method, which takes in a vector of a vector of matches. This

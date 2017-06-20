@@ -165,6 +165,8 @@ TEST(BFTests, DISABLED_DistanceMatchDescriptors) {
 
     BruteForceMatcher bfmatcher(config);
 
+    cv::InputArray mask = cv::noArray();
+
     image_1 = cv::imread(TEST_IMAGE_1, cv::IMREAD_COLOR);
     image_2 = cv::imread(TEST_IMAGE_2, cv::IMREAD_COLOR);
     keypoints_1 = fast.detectFeatures(image_1);
@@ -174,7 +176,7 @@ TEST(BFTests, DISABLED_DistanceMatchDescriptors) {
 
     // Match descriptors from image 1 and image 2
     matches = bfmatcher.matchDescriptors(
-      descriptors_1, descriptors_2, keypoints_1, keypoints_2);
+      descriptors_1, descriptors_2, keypoints_1, keypoints_2, mask);
 
     // Test has been confirmed visually
     cv::drawMatches(
@@ -196,6 +198,8 @@ TEST(BFTests, DISABLED_KnnMatchDescriptors) {
     BRISKDescriptor brisk;
     BruteForceMatcher bfmatcher;
 
+    cv::InputArray mask = cv::noArray();
+
     image_1 = cv::imread(TEST_IMAGE_1, cv::IMREAD_COLOR);
     image_2 = cv::imread(TEST_IMAGE_2, cv::IMREAD_COLOR);
     keypoints_1 = fast.detectFeatures(image_1);
@@ -205,7 +209,7 @@ TEST(BFTests, DISABLED_KnnMatchDescriptors) {
 
     // Use KNN Matcher to match
     matches = bfmatcher.matchDescriptors(
-      descriptors_1, descriptors_2, keypoints_1, keypoints_2);
+      descriptors_1, descriptors_2, keypoints_1, keypoints_2, mask);
 
     // Test has been confirmed visually
     cv::drawMatches(
@@ -230,6 +234,8 @@ TEST(BFTests, DISABLED_8Point) {
     config.fm_method = cv::FM_8POINT;
     BruteForceMatcher bfmatcher(config);
 
+    cv::InputArray mask = cv::noArray();
+
     image_1 = cv::imread(TEST_IMAGE_1, cv::IMREAD_COLOR);
     image_2 = cv::imread(TEST_IMAGE_2, cv::IMREAD_COLOR);
     keypoints_1 = fast.detectFeatures(image_1);
@@ -239,7 +245,7 @@ TEST(BFTests, DISABLED_8Point) {
 
     // Use KNN Matcher to match
     matches = bfmatcher.matchDescriptors(
-      descriptors_1, descriptors_2, keypoints_1, keypoints_2);
+      descriptors_1, descriptors_2, keypoints_1, keypoints_2, mask);
 
     // Test has been confirmed visually
     cv::drawMatches(
@@ -264,6 +270,8 @@ TEST(BFTests, DISABLED_7Point) {
     config.fm_method = cv::FM_7POINT;
     BruteForceMatcher bfmatcher(config);
 
+    cv::InputArray mask = cv::noArray();
+
     image_1 = cv::imread(TEST_IMAGE_1, cv::IMREAD_COLOR);
     image_2 = cv::imread(TEST_IMAGE_2, cv::IMREAD_COLOR);
     keypoints_1 = fast.detectFeatures(image_1);
@@ -273,8 +281,7 @@ TEST(BFTests, DISABLED_7Point) {
 
     // Use KNN Matcher to match
     matches = bfmatcher.matchDescriptors(
-      descriptors_1, descriptors_2, keypoints_1, keypoints_2);
-
+      descriptors_1, descriptors_2, keypoints_1, keypoints_2, mask);
 
     // Test has been confirmed visually
     cv::drawMatches(
@@ -299,6 +306,8 @@ TEST(BFTests, DISABLED_LMEDS) {
     config.fm_method = cv::FM_LMEDS;
     BruteForceMatcher bfmatcher(config);
 
+    cv::InputArray mask = cv::noArray();
+
     image_1 = cv::imread(TEST_IMAGE_1, cv::IMREAD_COLOR);
     image_2 = cv::imread(TEST_IMAGE_2, cv::IMREAD_COLOR);
     keypoints_1 = fast.detectFeatures(image_1);
@@ -308,9 +317,7 @@ TEST(BFTests, DISABLED_LMEDS) {
 
     // Use KNN Matcher to match
     matches = bfmatcher.matchDescriptors(
-      descriptors_1, descriptors_2, keypoints_1, keypoints_2);
-
-    std::cout << "LMEDS: " << matches.size() << std::endl;
+      descriptors_1, descriptors_2, keypoints_1, keypoints_2, mask);
 
     // Test has been confirmed visually
     cv::drawMatches(
