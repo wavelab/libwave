@@ -4,12 +4,14 @@
 # numbers must be positive. Cannot be empty.
 #
 # Recommended: radius_list: [0.0, 2.465, 4.165, 6.29, 9.18]
+#
 radius_list: [0.0, 2.465, 4.165, 6.29, 9.18]
 
 # number_list defines the number of points in each circle. Must be the same
 # size as radius_list. All numbers must be positive. Cannot be empty.
 #
 # Recommended: number_list: [1, 10, 14, 15, 20]
+#
 number_list: [1, 10, 14, 15, 20]
 
 # d_max and d_min are threshold distances to classify a pair of points as a
@@ -19,7 +21,8 @@ number_list: [1, 10, 14, 15, 20]
 #
 # The value of d_max must be less than that of d_min.
 #
-# Recommended: d_max = 5.85, d_min = 8.2.
+# Recommended: d_max = 5.85, d_min = 8.2
+#
 d_max: 5.85
 d_min: 8.2
 

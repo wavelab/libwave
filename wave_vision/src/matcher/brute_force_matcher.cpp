@@ -21,7 +21,7 @@ BruteForceMatcher::BruteForceMatcher(const std::string &config_path) {
     ConfigParser parser;
 
     // Configuration parameters
-    auto config = BFMatcherParams{};
+    BFMatcherParams config;
 
     // Add parameters to parser, to be loaded. If path cannot be found, throw an
     // exception.

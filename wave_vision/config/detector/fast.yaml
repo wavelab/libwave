@@ -1,17 +1,26 @@
- # FAST Detector Configuration Parameters
+# FAST Detector Configuration Parameters
+# Threshold on difference between intensity of the central pixel, and pixels
+# in a circle (Bresenham radius 3) around this pixel. Value must be greater than
+# zero.
+#
+# Recommended: 10
+#
+threshold: 10
 
- # Threshold on difference between intensity of the central pixel, and pixels
- # in a circle (Bresenham radius 3) around this pixel.
- # 10 (recommended), must be greater than zero.
- threshold: 10
+# Removes keypoints in adjacent locations.
+#
+# Recommended: true
+#
+nonmax_suppression: true
 
- # Removes keypoints in adjacent locations
- # true (recommended), or false
- nonmax_supression: true
-
- # Neighbourhood, as defined in the paper by Rosten. May only be the following:
- # 0 = TYPE_5_8
- # 1 = TYPE_7_12
- # 2 = TYPE_9_16 (recommended)
- type: 2
-  
+# Neighbourhood, as defined in the paper by Rosten. TYPE_N_M refers to
+# the pixel circumference (M) and number of consecutive pixels (N) that
+# must be brighter or darker than the center pixel for the algorithm to
+# deem the point as a corner.
+#
+# Options:
+# 0: cv::FastFeatureDetector::TYPE_5_8
+# 1: cv::FastFeatureDetector::TYPE_7_12
+# 2: cv::FastFeatureDetector::TYPE_9_16 (recommended)
+#
+type: 2

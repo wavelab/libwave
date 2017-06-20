@@ -4,18 +4,6 @@
 namespace wave {
 
 // Default Constructor
-FASTDetector::FASTDetector() {
-    // Instantiate cv::FastFeatureDetector object with default values
-    int default_threshold = 10;
-    bool default_nonmax_suppression = true;
-    int default_type = 2;
-
-    // Create FastFeatureDetector with these parameters
-    this->fast_detector = cv::FastFeatureDetector::create(
-      default_threshold, default_nonmax_suppression, default_type);
-}
-
-// Constructor using FASTParams struct
 FASTDetector::FASTDetector(const FASTParams &config) {
     // Ensure parameters are valid
     this->checkConfiguration(config);
@@ -52,8 +40,6 @@ FASTDetector::FASTDetector(const std::string &config_path) {
       config.threshold, config.nonmax_suppression, config.type);
 }
 
-FASTDetector::~FASTDetector() {}
-
 void FASTDetector::checkConfiguration(const FASTParams &check_config) {
     // Check parameters. If invalid, throw an exception.
     if (check_config.threshold < 0) {
@@ -73,7 +59,7 @@ void FASTDetector::configure(const FASTParams &new_config) {
     this->fast_detector->setType(new_config.type);
 }
 
-FASTParams FASTDetector::getConfiguration() {
+FASTParams FASTDetector::getConfiguration() const {
     FASTParams current_config;
 
     // Obtain current configuration values using cv::FastFeatureDetector::get**
@@ -88,10 +74,8 @@ FASTParams FASTDetector::getConfiguration() {
 std::vector<cv::KeyPoint> FASTDetector::detectFeatures(const cv::Mat &image) {
     std::vector<cv::KeyPoint> keypoints;
 
-    this->loadImage(image);
-
     // Detect features in image, save values into keypoints.
-    this->fast_detector->detect(this->image, keypoints);
+    this->fast_detector->detect(image, keypoints);
 
     return keypoints;
 }
