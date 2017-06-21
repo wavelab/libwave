@@ -33,16 +33,14 @@ struct BRISKDescriptorParams {
         : radius_list(rlist), number_list(nlist), d_max(d_max), d_min(d_min) {}
 
     /** radius_list defines the radius of each subsequent circle (in pixels).
-     * All
-     *  numbers must be positive. Cannot be empty.
+     *  All numbers must be positive. Cannot be empty.
      *
      *  Recommended: radius_list = {0.0f, 2.47f, 4.17f, 6.29f, 9.18f}
      */
     std::vector<float> radius_list = {0.0f, 2.47f, 4.17f, 6.29f, 9.18f};
 
     /** number_list defines the number of points in each circle. Must be the
-     * same
-     *  size as radiusList. All numbers must be positive. Cannot be empty.
+     *  same size as radiusList. All numbers must be positive. Cannot be empty.
      *
      *  Recommended: number_list = {1, 10, 14, 15, 20};
      */
@@ -88,17 +86,17 @@ class BRISKDescriptor : public DescriptorExtractor {
       const BRISKDescriptorParams &config = BRISKDescriptorParams{});
 
     /** Constructs a BRISKDescriptor Extractor using parameters found in the
-    *   linked .yaml file.
-    *
-    *   @param config_path is the path to a .yaml file, containing the desired
-    *   parameters for the BRISK Descriptor Extractor.
-    */
+     *  linked .yaml file.
+     *
+     *  @param config_path is the path to a .yaml file, containing the desired
+     *  parameters for the BRISK Descriptor Extractor.
+     */
     BRISKDescriptor(const std::string &config_path);
 
     /** Returns the current configuration parameters being used by the
      *  BRISK Descriptor Extractor.
      *
-     * @return a struct containing the current configuration values.
+     *  @return a struct containing the current configuration values.
      */
     BRISKDescriptorParams getConfiguration() const;
 
@@ -107,6 +105,7 @@ class BRISKDescriptor : public DescriptorExtractor {
      *
      *  @param image the image to detect features in.
      *  @param keypoints the keypoints from the detected image
+     *
      *  @return an array containing the computed descriptors.
      */
     cv::Mat extractDescriptors(cv::Mat &image,

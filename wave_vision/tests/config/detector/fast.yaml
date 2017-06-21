@@ -1,4 +1,5 @@
 # FAST Detector Configuration Parameters
+
 # Threshold on difference between intensity of the central pixel, and pixels
 # in a circle (Bresenham radius 3) around this pixel. Value must be greater than
 # zero.

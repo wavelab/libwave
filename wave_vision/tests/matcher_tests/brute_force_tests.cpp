@@ -107,4 +107,4 @@ TEST(BFTests, DISABLED_MatchDescriptors) {
 
     cv::waitKey(0);
 }
-}
+}  // namespace wave

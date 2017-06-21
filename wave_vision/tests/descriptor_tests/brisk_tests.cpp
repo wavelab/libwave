@@ -9,7 +9,7 @@
 namespace wave {
 
 const auto TEST_CONFIG = "tests/config/descriptor/brisk.yaml";
-const auto TEST_IMAGE = "tests/data/lenna.png";
+const auto TEST_IMAGE = "tests/data/image_center.png";
 
 // Checks that correct configuration can be loaded
 TEST(BRISKTests, GoodInitialization) {
@@ -153,7 +153,7 @@ TEST(BRISKTests, CheckDistValues) {
     ASSERT_THROW(BRISKDescriptor brisk(swapped_dists), std::invalid_argument);
 }
 
-TEST(BRISKTests, DISABLED_ComputeDescriptors) {
+TEST(BRISKTests, ComputeDescriptors) {
     cv::Mat descriptors;
     cv::Mat image_with_keypoints;
 
@@ -169,11 +169,10 @@ TEST(BRISKTests, DISABLED_ComputeDescriptors) {
     ASSERT_GT(descriptors.total(), 0u);
 
     // Visual test to verify descriptors are being computed properly
-    cv::imshow("Lenna", image);
+    cv::imshow("Scene", image);
     cv::drawKeypoints(descriptors, keypoints, image_with_keypoints);
     cv::imshow("Descriptors", image_with_keypoints);
 
     cv::waitKey(0);
 }
-
 }  // namespace wave

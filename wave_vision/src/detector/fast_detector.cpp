@@ -79,5 +79,4 @@ std::vector<cv::KeyPoint> FASTDetector::detectFeatures(const cv::Mat &image) {
 
     return keypoints;
 }
-
 }  // namespace wave

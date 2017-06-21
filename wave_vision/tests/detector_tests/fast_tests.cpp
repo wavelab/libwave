@@ -5,7 +5,7 @@
 namespace wave {
 
 const auto TEST_CONFIG = "tests/config/detector/fast.yaml";
-const auto TEST_IMAGE = "tests/data/lenna.png";
+const auto TEST_IMAGE = "tests/data/image_center.png";
 
 // Checks that correct configuration can be loaded
 TEST(FASTTests, GoodInitialization) {
@@ -78,7 +78,7 @@ TEST(FASTTests, DISABLED_DetectImage) {
     std::vector<cv::KeyPoint> keypoints = detector.detectFeatures(image);
     ASSERT_NE(keypoints.size(), 0u);
 
-    cv::imshow("Lenna", image);
+    cv::imshow("Scene", image);
 
     // Visual test, to confirm that images are displayed properly
     // Draw Keypoints on image and display
