@@ -16,8 +16,7 @@ namespace wave {
 /** @addtogroup vision
  *  @{ */
 
-/** This struct contains the configuration parameters for the
- *  BRISKDescriptor extractor.
+/** Configuration parameters for the BRISK descriptor extractor.
  *
  *  The BRISK Descriptor creates a pattern of points organized as concentric
  *  circles around the keypoint. Each point in these rings are then used for
@@ -53,7 +52,6 @@ struct BRISKDescriptorParams {
      *  a \a long pair or a \a short pair. Short pairs are not used in the
      *  brightness comparison, due to balancing effects of local gradients. The
      *  long pairs are not used in the assembly of the bit vector descriptor.
-     *
      *
      *  d_max specifies the maximum threshold for short pairs. The value of
      *  d_max must be less than that of d_min.
@@ -97,8 +95,6 @@ class BRISKDescriptor : public DescriptorExtractor {
     */
     BRISKDescriptor(const std::string &config_path);
 
-    ~BRISKDescriptor();
-
     /** Returns the current configuration parameters being used by the
      *  BRISK Descriptor Extractor.
      *
@@ -109,8 +105,8 @@ class BRISKDescriptor : public DescriptorExtractor {
     /** Extracts descriptors from the keypoints in an image, using the BRISK
      *  extractor.
      *
-     *  @param image, the image to detect features in.
-     *  @param keypoints, the keypoints from the detected image
+     *  @param image the image to detect features in.
+     *  @param keypoints the keypoints from the detected image
      *  @return an array containing the computed descriptors.
      */
     cv::Mat extractDescriptors(cv::Mat &image,

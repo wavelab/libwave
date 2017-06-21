@@ -56,8 +56,6 @@ BRISKDescriptor::BRISKDescriptor(const std::string &config_path) {
     this->current_config = config;
 }
 
-BRISKDescriptor::~BRISKDescriptor() = default;
-
 void BRISKDescriptor::checkConfiguration(
   const BRISKDescriptorParams &check_config) {
     // Check that the size of radiusList and numberList are equal and positive
@@ -105,8 +103,6 @@ cv::Mat BRISKDescriptor::extractDescriptors(
   cv::Mat &image, std::vector<cv::KeyPoint> &keypoints) {
     cv::Mat descriptors;
 
-    // Call compute method, and return descriptors
-    this->loadImage(image);
     this->brisk_descriptor->compute(image, keypoints, descriptors);
 
     return descriptors;

@@ -21,8 +21,13 @@ number_list: [1, 10, 14, 15, 20]
 #
 # The value of d_max must be less than that of d_min.
 #
-# Recommended: d_max = 5.85, d_min = 8.2
+# Recommended: d_max = 5.85
 #
 d_max: 5.85
-d_min: 8.2
 
+# d_min specifies the minimum threshold for long pairs. The value of d_min must
+# be more than that of d_max.
+#
+# Recommended:  d_min = 8.2
+#
+d_min: 8.2

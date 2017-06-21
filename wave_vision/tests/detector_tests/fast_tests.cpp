@@ -24,9 +24,7 @@ TEST(FASTTests, BadThresholdConfiguration) {
     FASTParams bad_threshold_config;
     bad_threshold_config.threshold = -1;
 
-    FASTDetector detector(bad_threshold_config);
-
-    ASSERT_THROW(detector.configure(bad_threshold_config),
+    ASSERT_THROW(FASTDetector detector(bad_threshold_config),
                  std::invalid_argument);
 }
 
@@ -48,7 +46,6 @@ TEST(FASTTests, GoodCustomConfig) {
     FASTParams config;
 
     FASTDetector detector(config);
-
 }
 
 // Checks that correct configuration values can be set in detector, and also
