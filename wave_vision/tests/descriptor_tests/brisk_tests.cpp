@@ -11,31 +11,6 @@ namespace wave {
 const auto TEST_CONFIG = "tests/config/descriptor/brisk.yaml";
 const auto TEST_IMAGE = "tests/data/lenna.png";
 
-// Test fixture to load same image data
-class BRISKTest : public testing::Test {
- protected:
-    BRISKTest() {
-        initDetector();
-        initDescriptor();
-        this->image = cv::imread(TEST_IMAGE, cv::IMREAD_COLOR);
-        this->keypoints = this->fast.detectFeatures(this->image);
-    }
-    virtual ~BRISKTest() {}
-
-    void initDescriptor() {
-        this->brisk = BRISKDescriptor(TEST_CONFIG);
-    }
-
-    void initDetector() {
-        this->fast = FASTDetector();
-    }
-
-    cv::Mat image;
-    std::vector<cv::KeyPoint> keypoints;
-    FASTDetector fast;
-    BRISKDescriptor brisk;
-};
-
 // Checks that correct configuration can be loaded
 TEST(BRISKTests, GoodInitialization) {
     EXPECT_NO_THROW(BRISKDescriptor brisk(TEST_CONFIG));
@@ -178,21 +153,24 @@ TEST(BRISKTests, CheckDistValues) {
     ASSERT_THROW(BRISKDescriptor brisk(swapped_dists), std::invalid_argument);
 }
 
-TEST_F(BRISKTest, DISABLED_ComputeDescriptors) {
+TEST(BRISKTests, DISABLED_ComputeDescriptors) {
     cv::Mat descriptors;
     cv::Mat image_with_keypoints;
 
-    descriptors = this->brisk.extractDescriptors(this->image, this->keypoints);
+    cv::Mat image = cv::imread(TEST_IMAGE);
+    std::vector<cv::KeyPoint> keypoints;
+
+    FASTDetector fast;
+    BRISKDescriptor brisk;
+
+    keypoints = fast.detectFeatures(image);
+    descriptors = brisk.extractDescriptors(image, keypoints);
 
     ASSERT_GT(descriptors.total(), 0u);
 
     // Visual test to verify descriptors are being computed properly
-    cv::imshow("Lenna", this->image);
-    cv::drawKeypoints(descriptors,
-                      this->keypoints,
-                      image_with_keypoints,
-                      cv::Scalar::all(-1),
-                      cv::DrawMatchesFlags::DEFAULT);
+    cv::imshow("Lenna", image);
+    cv::drawKeypoints(descriptors, keypoints, image_with_keypoints);
     cv::imshow("Descriptors", image_with_keypoints);
 
     cv::waitKey(0);
