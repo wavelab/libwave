@@ -36,6 +36,7 @@ BruteForceMatcher::BruteForceMatcher(const std::string &config_path) {
     parser.addParam("use_knn", &config.use_knn);
     parser.addParam("ratio_threshold", &config.ratio_threshold);
     parser.addParam("distance_threshold", &config.distance_threshold);
+    parser.addParam("fm_method", &config.fm_method);
 
     if (parser.load(config_path) != 0) {
         throw std::invalid_argument(
@@ -147,8 +148,12 @@ std::vector<cv::DMatch> BruteForceMatcher::removeOutliers(
     std::vector<uchar> mask;
     cv::Mat fundamental_matrix;
 
-    fundamental_matrix =
-      cv::findFundamentalMat(fp1, fp2, cv::FM_RANSAC, 3., 0.99, mask);
+    fundamental_matrix = cv::findFundamentalMat(fp1,
+                                                fp2,
+                                                cv::FM_RANSAC,
+                                                this->current_config.fm_param_1,
+                                                this->current_config.fm_param_2,
+                                                mask);
 
     // Only retain the inliers matches
     for (size_t i = 0; i < mask.size(); i++) {
@@ -169,12 +174,15 @@ std::vector<cv::DMatch> BruteForceMatcher::matchDescriptors(
     std::vector<cv::DMatch> good_matches;
     std::vector<cv::DMatch> filtered_matches;
 
-    if (current_config.use_knn) {
+    if (this->current_config.use_knn) {
         std::vector<std::vector<cv::DMatch>> matches;
-        int k = 2;
 
-        this->brute_force_matcher->knnMatch(
-          descriptors_1, descriptors_2, matches, k, mask, false);
+        this->brute_force_matcher->knnMatch(descriptors_1,
+                                            descriptors_2,
+                                            matches,
+                                            this->current_config.k,
+                                            mask,
+                                            false);
 
         filtered_matches = this->filterMatches(matches);
 

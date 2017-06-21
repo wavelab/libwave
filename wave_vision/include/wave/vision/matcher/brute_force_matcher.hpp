@@ -109,6 +109,29 @@ struct BFMatcherParams {
      *  Recommended: cv::FM_RANSAC.
      */
     int fm_method = cv::FM_RANSAC;
+
+    // -------------------------------------------------------------------------
+
+    /** Default parameters that do not need to be modified */
+
+    /** Number of neighbours for the k-nearest neighbour search. As this is only
+     *  used for the ratio test, only want 2.
+     */
+    int k = 2;
+
+    /** Maximum distance from a point to an epipolar line in pixels. Any points
+     *  further are considered outliers. Only used for RANSAC.
+     *
+     *  Typical values: 1-3
+     */
+    double fm_param_1 = 3.0;
+
+    /** Desired confidence interval of the estimated fundamental matrix. Only
+     *  used for RANSAC or LMedS methods.
+     *
+     *  Default: 0.99
+     */
+    double fm_param_2 = 0.99;
 };
 
 class BruteForceMatcher : public DescriptorMatcher {
@@ -150,7 +173,7 @@ class BruteForceMatcher : public DescriptorMatcher {
      *  between the two sets. As per OpenCV docs "queryDescriptors[i] can be
      *  matched with trainDescriptors[j] only if masks.at<uchar>(i,j) is
      *  non-zero. In the libwave wrapper, queryDescriptors are descriptors_1,
-     *  and trainDescriptors are descriptors_2.
+     *  and trainDescriptors are descriptors_2. Default is cv::noArray().
      *
      *  @return vector containing the best matches.
      */
@@ -159,7 +182,7 @@ class BruteForceMatcher : public DescriptorMatcher {
       const cv::Mat &descriptors_2,
       const std::vector<cv::KeyPoint> &keypoints_1,
       const std::vector<cv::KeyPoint> &keypoints_2,
-      const cv::InputArray &mask) const override;
+      const cv::InputArray &mask = cv::noArray()) const override;
 
  private:
     /** Overloaded method, which takes in a vector of a vector of matches. This
