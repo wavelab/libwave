@@ -153,7 +153,7 @@ TEST(BRISKTests, CheckDistValues) {
     ASSERT_THROW(BRISKDescriptor brisk(swapped_dists), std::invalid_argument);
 }
 
-TEST(BRISKTests, ComputeDescriptors) {
+TEST(BRISKTests, DISABLED_ComputeDescriptors) {
     cv::Mat descriptors;
     cv::Mat image_with_keypoints;
 
