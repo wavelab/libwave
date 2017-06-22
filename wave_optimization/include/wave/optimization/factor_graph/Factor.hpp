@@ -6,35 +6,15 @@
 #ifndef WAVE_OPTIMIZATION_FACTOR_GRAPH_FACTOR_HPP
 #define WAVE_OPTIMIZATION_FACTOR_GRAPH_FACTOR_HPP
 
-#include <ceres/sized_cost_function.h>
-#include <memory>
-
 #include "wave/utils/math.hpp"
 #include "wave/optimization/factor_graph/FactorVariableBase.hpp"
 #include "wave/optimization/factor_graph/FactorBase.hpp"
 #include "wave/optimization/factor_graph/OutputMap.hpp"
 
+
 namespace wave {
 /** @addtogroup optimization
  *  @{ */
-
-template <int ResidualSize, int... VariableSizes>
-class FactorCostFunction
-  : public ceres::SizedCostFunction<ResidualSize, VariableSizes...> {
- public:
-    explicit FactorCostFunction(
-      std::function<bool(double const *const *, double *, double **)> fn)
-        : f_evaluate{std::move(fn)} {}
-
-    bool Evaluate(double const *const *parameters,
-                  double *residuals,
-                  double **jacobians) const override {
-        return f_evaluate(parameters, residuals, jacobians);
-    }
-
- private:
-    std::function<bool(double const *const *, double *, double **)> f_evaluate;
-};
 
 /**
  * Template for factors of different variable types.
@@ -98,31 +78,15 @@ class Factor : public FactorBase {
     using const_iterator = typename VarArrayType::const_iterator;
 
     /** Construct with the given function, measurement and variables. */
-    explicit Factor(FuncType f,
-                    MeasType meas,
-                    std::shared_ptr<VarTypes>... variable_ptrs)
-        : measurement_function{f},
-          measurement{meas},
-          variable_ptrs{{variable_ptrs...}} {}
-
-    ~Factor() override = default;
+    explicit Factor(FuncType measurement_function,
+                    MeasType measurement,
+                    std::shared_ptr<VarTypes>... variable_ptrs);
 
     int size() const override {
         return NumVars;
     }
-    int numResiduals() const override {
+    int residualSize() const override {
         return ResidualSize;
-    }
-
-    std::unique_ptr<ceres::CostFunction> costFunction() override {
-        auto fn = std::bind(&FactorType::evaluateRaw,
-                            this,
-                            std::placeholders::_1,
-                            std::placeholders::_2,
-                            std::placeholders::_3);
-        return std::unique_ptr<ceres::CostFunction>{
-          new FactorCostFunction<ResidualSize, VarTypes::ViewType::Size...>{
-            fn}};
     }
 
     bool evaluateRaw(double const *const *parameters,
@@ -133,6 +97,11 @@ class Factor : public FactorBase {
     /** Get a reference to the vector of variable pointers */
     const VarVectorType &variables() const noexcept override {
         return this->variable_ptrs;
+    }
+
+    /** Return true if this factor is a zero-noise prior */
+    bool isPerfectPrior() const noexcept override {
+        return false;
     }
 
     /** Print a representation for debugging. Used by operator<< */
@@ -153,4 +122,4 @@ class Factor : public FactorBase {
 
 #include "impl/Factor.hpp"
 
-#endif
+#endif  // WAVE_OPTIMIZATION_FACTOR_GRAPH_FACTOR_HPP

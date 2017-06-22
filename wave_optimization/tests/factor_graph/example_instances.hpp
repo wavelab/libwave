@@ -32,7 +32,10 @@ struct Pose2D : public ValueView<3> {
     // (https://gcc.gnu.org/bugzilla/show_bug.cgi?id=67054)
     explicit Pose2D(double *d) : ValueView<3>{d} {}
     explicit Pose2D(MappedType &m) : ValueView<3>{m} {}
-
+    Pose2D &operator=(const Pose2D &other) {
+        this->ValueView<3>::operator=(other);
+        return *this;
+    }
     using Vec1 = Eigen::Matrix<double, 1, 1>;
 
     Eigen::Map<const Vec2> position{dataptr};
@@ -51,6 +54,10 @@ struct Landmark2D : public ValueView<2> {
     // (https://gcc.gnu.org/bugzilla/show_bug.cgi?id=67054)
     explicit Landmark2D(double *d) : ValueView<2>{d} {}
     explicit Landmark2D(MappedType &m) : ValueView<2>{m} {}
+    Landmark2D &operator=(const Landmark2D &other) {
+        this->ValueView<2>::operator=(other);
+        return *this;
+    }
 
     Eigen::Map<const Vec2> position{dataptr};
 };

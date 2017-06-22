@@ -50,9 +50,25 @@ class ValueView {
     /** Construct to map the given mapped Eigen matrix */
     explicit ValueView(MappedType &m) : dataptr{m.data()} {}
 
+    /** Copy the value of another ValueView */
+    ValueView &operator=(const ValueView<S> &other) {
+        this->asVector() = other.asVector();
+        return *this;
+    }
+
     /** Return the size of the underlying value */
     constexpr int size() const noexcept {
         return Size;
+    }
+
+    /** Return an Eigen Map to the data */
+    Eigen::Map<const MappedType> asVector() const {
+        return Eigen::Map<const MappedType>{this->dataptr};
+    }
+
+    /** Return an Eigen Map to the data */
+    Eigen::Map<MappedType> asVector() {
+        return Eigen::Map<MappedType>{this->dataptr};
     }
 
     /** Return a raw pointer to the start of the internal vector */

@@ -7,48 +7,87 @@
 #define WAVE_OPTIMIZATION_FACTOR_GRAPH_MEASUREMENT_HPP
 
 #include "wave/optimization/factor_graph/FactorVariable.hpp"
-
+#include "wave/optimization/factor_graph/Noise.hpp"
+#include "wave/optimization/factor_graph/OutputMap.hpp"
 
 namespace wave {
 /** @addtogroup optimization
  *  @{ */
 
-/**
- * A measurement associated with a Factor
- *
- * @tparam V the type of ValueView representing the measurement's value
- * @todo a Noise parameter will be added here
- */
+/** The default NoiseType parameter to FactorMeasurement */
 template <typename V>
+using DefaultNoiseType = DiagonalNoise<FactorVariable<V>::Size>;
+
+/**
+ * A measurement, with associated noise, associated with a Factor
+ * @tparam V the type of ValueView representing the measurement's value
+ * @tparam NoiseTmpl the type of noise
+ */
+template <typename V, typename N = DefaultNoiseType<V>>
 class FactorMeasurement : public FactorVariable<V> {
     using Base = FactorVariable<V>;
 
  public:
+    using VarType = Base;
     using ViewType = typename Base::ViewType;
+    using NoiseType = N;
     using MappedType = typename Base::MappedType;
     constexpr static int Size = Base::Size;
 
-    /** Construct with initial value */
-    explicit FactorMeasurement(MappedType &&initial)
-        : Base{std::move(initial)} {}
+    /** Construct with initial value and initial noise value*/
+    explicit FactorMeasurement(MappedType initial,
+                               typename NoiseType::InitType noise_value)
+        : Base{std::move(initial)}, noise{std::move(noise_value)} {}
 
-    /** Construct copying initial value  */
-    explicit FactorMeasurement(const MappedType &initial) : Base{initial} {}
+
+    /** Construct with initial value and initial noise object*/
+    explicit FactorMeasurement(MappedType initial, NoiseType noise)
+        : Base{std::move(initial)}, noise{std::move(noise)} {}
+
+    /** Construct with initial value and no noise
+     * Only allowed when NoiseType is void*/
+    explicit FactorMeasurement(MappedType initial) : Base{std::move(initial)} {
+        static_assert(std::is_void<NoiseType>::value,
+                      "A noise value must be provided as the second argument");
+    }
+
+    NoiseType noise;
 };
 
-/** Subtract a measurement from the result of a measurement function
- * @return the difference: the non-normalized residual
+
+/**
+ * Partially specialized FactorMeasurement with zero noise
+ *
+ * This specialization can be constructed with a measured value only, without
+ * needing to specify noise.
  */
 template <typename V>
-inline Eigen::Matrix<double, 1, FactorMeasurement<V>::Size> operator-(
-  const ResultOut<FactorMeasurement<V>::Size> &lhs,
-  const FactorMeasurement<V> &rhs) {
-    // We need to accept the specific types and manually convert them, as Eigen
-    // 3.2 is not as great at automatically converting things. See #151
-    return lhs - Eigen::Map<
-                   const Eigen::Matrix<double, 1, FactorMeasurement<V>::Size>>{
-                   rhs.data()};
+class FactorMeasurement<V, void> : public FactorVariable<V> {
+    using Base = FactorVariable<V>;
+
+ public:
+    using VarType = Base;
+    using ViewType = typename Base::ViewType;
+    using NoiseType = void;
+    using MappedType = typename Base::MappedType;
+    constexpr static int Size = Base::Size;
+
+    /** Construct with initial value and no noise */
+    explicit FactorMeasurement(MappedType initial) : Base{std::move(initial)} {}
+};
+
+template <typename V, typename N>
+inline Eigen::Matrix<double, FactorMeasurement<V, N>::Size, 1> operator-(
+  const ResultOut<FactorMeasurement<V, N>::Size> &lhs,
+  const FactorMeasurement<V, N> &rhs) {
+    // We need to accept the specific ResultOut type (instead of a generic Eigen
+    // map) as for some reason they are not converted with Eigen 3.2. See #151
+    return lhs -
+           Eigen::Map<
+             const Eigen::Matrix<double, FactorMeasurement<V, N>::Size, 1>>{
+             rhs.data()};
 }
+
 
 /** @} group optimization */
 }  // namespace wave
