@@ -37,8 +37,9 @@ TEST(FactorGraph, addPrior) {
     const auto test_meas = Vec2{1.2, 3.4};
     const auto test_stddev = Vec2{0.01, 0.01};
     const auto test_val = Vec2{1.23, 3.38};
-    // The expected residuals are normalized
+    // The expected results are normalized
     const Vec2 expected_res = (test_val - test_meas).cwiseQuotient(test_stddev);
+    const Mat2 expected_jac = Mat2::Identity() / 0.01;
 
     // Prepare arguments to add unary factor
     FactorGraph graph;
@@ -60,14 +61,16 @@ TEST(FactorGraph, addPrior) {
 
     EXPECT_TRUE(factor->evaluateRaw(params, test_residual.data(), jacs));
     EXPECT_PRED2(VectorsNear, expected_res, test_residual);
-    EXPECT_PRED2(MatricesNear, Mat2::Identity(), test_jac);
+    EXPECT_PRED2(MatricesNear, expected_jac, test_jac);
 }
 
 TEST(FactorGraph, addPriorOfSize1) {
     const auto test_meas = 1.2;
     const auto test_stddev = 0.01;
     const auto test_val = 1.23;
+    // The expected results are normalized
     const auto expected_res = (test_val - test_meas) / test_stddev;
+    const auto expected_jac = 1.0 / test_stddev;
 
     // Prepare arguments to add unary factor
     FactorGraph graph;
@@ -89,7 +92,7 @@ TEST(FactorGraph, addPriorOfSize1) {
 
     EXPECT_TRUE(factor->evaluateRaw(params, &test_residual, jacs));
     EXPECT_DOUBLE_EQ(expected_res, test_residual);
-    EXPECT_DOUBLE_EQ(1.0, test_jac);
+    EXPECT_DOUBLE_EQ(expected_jac, test_jac);
 }
 
 TEST(FactorGraph, addPerfectPrior) {

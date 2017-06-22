@@ -115,6 +115,34 @@ bool callEvaluate(typename Factor<M, V...>::FuncType measurement_function,
       make_jacobian<M::Size, V::Size, Is>(jacobians)...);
 }
 
+template <typename T, int R, int C>
+void multiplyJacobian(const T &L, JacobianOut<R, C> jac) {
+    if (jac) {
+        jac = L * jac;
+    }
+};
+
+/** Calls Factor::evaluate() with the necessary arguments generated from the
+ * Factor type (known at compile time) and the provided array pointers (known
+ * at run time).
+ *
+ * Calling a separate function expands the given index sequence - this approach
+ * is explained in the documentation for `index_sequence`.
+ */
+template <typename M, typename... V, int... Is>
+void normalize(const M &measurement,
+               ResultOut<M::Size> &residuals,
+               double **jacobians,
+               index_sequence<Is...>) noexcept {
+    // Calculate the normalized residual
+    const auto &L = measurement.noise.inverseSqrtCov();
+    residuals = L * (residuals - measurement);
+    // Call multiplyJacobian for each jacobian pointer
+    auto loop = {
+      (multiplyJacobian(L, make_jacobian<M::Size, V::Size, Is>(jacobians)),
+       0)...};
+    (void) loop;  // ignore unused variable warning
+}
 }  // namespace internal
 
 template <typename M, typename... V>
@@ -142,10 +170,13 @@ bool Factor<M, V...>::evaluateRaw(double const *const *parameters,
       jacobians,
       internal::make_index_sequence<sizeof...(V)>());
 
+
     if (ok) {
-        // Calculate the normalized residual
-        const auto &L = measurement.noise.inverseSqrtCov();
-        residuals = L * (residuals - measurement);
+        internal::normalize<M, V...>(
+          this->measurement,
+          residuals,
+          jacobians,
+          internal::make_index_sequence<sizeof...(V)>());
     }
 
     return ok;
