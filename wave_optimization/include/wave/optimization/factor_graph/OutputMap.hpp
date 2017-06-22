@@ -64,7 +64,8 @@ class OutputMap : public Eigen::Map<T> {
 
 /** Type of jacobian output parameters for `Factor::evaluate()`. */
 template <int Rows, int Cols>
-using JacobianOut = OutputMap<Eigen::Matrix<double, Rows, Cols>>;
+using JacobianOut =
+  OutputMap<Eigen::Matrix<double, Rows, Cols, Eigen::RowMajor>>;
 
 /** Type of measurement output parameter for `Factor::evaluate()`. */
 template <int Size>

@@ -95,4 +95,16 @@ TEST(MeasurementTest, constructFromRvalue) {
       VectorsNear, expected_val, Eigen::Map<Vec2>{meas.value.data()});
 }
 
+TEST(OutputMapTest, jacobianMap) {
+    // A raw matrix stored in row-major order (as used by ceres)
+    double buf[] = {1, 2, 3, 4, 5, 6, 7, 8};
+
+    auto map = JacobianOut<2, 4>{buf};
+
+    EXPECT_DOUBLE_EQ(5, map(1, 0));
+
+    map(1, 0) = 9.9;
+    EXPECT_DOUBLE_EQ(9.9, buf[4]);
+}
+
 }  // namespace wave
