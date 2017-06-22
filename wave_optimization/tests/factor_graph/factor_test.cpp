@@ -79,7 +79,8 @@ TEST(FactorTest, evaluateSize1) {
     // Compare the result. We expect the residual to be L(f(X) - Z)
     // In this case that is (2x - Z)/stddev
     EXPECT_DOUBLE_EQ((test_val * 2 - meas_val) / meas_stddev, test_residual);
-    EXPECT_DOUBLE_EQ(-1.1, test_jac);
+    // We expect the jacobian to be normalized as well
+    EXPECT_DOUBLE_EQ(-1.1 / meas_stddev, test_jac);
 }
 
 
