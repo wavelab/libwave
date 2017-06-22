@@ -12,8 +12,7 @@ class MultiTest : public testing::Test {
  protected:
     MultiTest() {}
 
-    virtual ~MultiTest() {
-    }
+    virtual ~MultiTest() {}
 
     virtual void SetUp() {
         this->cld = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
@@ -38,7 +37,7 @@ TEST_F(MultiTest, simultaneousmatching) {
         *(dupes[i]) = *(this->cld);
     }
     for (int i = 0; i < 8; i++) {
-        this->matcher.insert(i, dupes[i], dupes[i+1]);
+        this->matcher.insert(i, dupes[i], dupes[i + 1]);
     }
     while (!this->matcher.done()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(50));

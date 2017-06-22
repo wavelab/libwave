@@ -84,16 +84,16 @@ void MultiMatcher<T, R>::insert(const int &id,
 }
 
 template <class T, class R>
-bool MultiMatcher<T, R>::done() {
-    {
-        std::unique_lock<std::mutex> lockcnt(this->cnt_mutex);
-        if (this->remaining_matches == 0) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-};
+bool MultiMatcher<T, R>::done(){
+  {std::unique_lock<std::mutex> lockcnt(this->cnt_mutex);
+if (this->remaining_matches == 0) {
+    return true;
+} else {
+    return false;
+}
+}
+}
+;
 
 }  // namespace wave
 

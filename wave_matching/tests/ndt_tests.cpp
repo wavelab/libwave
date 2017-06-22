@@ -25,7 +25,8 @@ class NDTTest : public testing::Test {
         pcl::io::loadPCDFile(TEST_SCAN, *(this->ref));
     }
 
-    void initMatcher(const NDTMatcherParams params, const Eigen::Affine3d perturb) {
+    void initMatcher(const NDTMatcherParams params,
+                     const Eigen::Affine3d perturb) {
         this->matcher = new NDTMatcher(params);
         pcl::transformPointCloud(*(this->ref), *(this->target), perturb);
         this->matcher->setup(this->ref, this->target);
