@@ -38,7 +38,6 @@ ADD_LIBRARY(
     src/gicp.cpp
     src/icp.cpp
     src/ndt.cpp
-    src/multi_matcher.cpp
 )
 TARGET_LINK_LIBRARIES(wave_matching ${WAVE_MATCHING_DEPS})
 
@@ -48,6 +47,7 @@ WAVE_ADD_TEST(
     tests/icp_tests.cpp
     tests/ndt_tests.cpp
     tests/gicp_tests.cpp
+    tests/multi_matcher_tests.cpp
     DISABLED  # Don't run this test for now
 )
 TARGET_LINK_LIBRARIES(

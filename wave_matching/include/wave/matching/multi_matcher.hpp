@@ -10,6 +10,7 @@
 
 #include <thread>
 #include <mutex>
+#include <condition_variable>
 #include <queue>
 #include <tuple>
 #include "wave/utils/math.hpp"
@@ -32,8 +33,12 @@ class MultiMatcher {
                  int queue_s = 10,
                  std::string path = "")
         : n_thread(n_threads), queue_size(queue_s) {
+        this->stop = false;
+        this->remaining_matches = 0;
         this->initPool(path);
     }
+
+    ~MultiMatcher();
 
     /** Function to specify path to config file when spawning matchers
      * If not called the default params are used for the matchers.
@@ -45,18 +50,24 @@ class MultiMatcher {
     void insert(const int &id,
                 const PCLPointCloud &src,
                 const PCLPointCloud &target);
-    bool getResult(int id);
+    bool done();
+    bool getResult();
 
  private:
     const int n_thread;
     const int queue_size;
+    int remaining_matches;
     std::string config;
     std::queue<std::tuple<int, PCLPointCloud, PCLPointCloud>> input;
     std::queue<std::tuple<int, Eigen::Affine3d, Mat6>> output;
-    std::mutex ip_mutex;
-    std::mutex op_mutex;
     std::vector<std::thread> pool;
     std::vector<T> matchers;
+
+    // Synchronization
+    std::mutex ip_mutex, op_mutex, cnt_mutex;
+    std::condition_variable ip_condition;
+    std::condition_variable op_condition;
+    bool stop;
 
     /** Function run by each worker thread
      * @param id pair of clouds to match
@@ -68,3 +79,5 @@ class MultiMatcher {
 }  // namespace wave
 
 #endif  // WAVE_MULTI_MATCHER_HPP
+
+#include "wave/matching/impl/multi_matcher_impl.hpp"

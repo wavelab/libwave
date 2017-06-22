@@ -25,8 +25,8 @@ class ICPTest : public testing::Test {
         pcl::io::loadPCDFile(TEST_SCAN, *(this->ref));
     }
 
-    void initMatcher(const float res, const Affine3 perturb) {
-        this->matcher = new ICPMatcher(res, TEST_CONFIG);
+    void initMatcher(const ICPMatcherParams params, const Affine3 perturb) {
+        this->matcher = new ICPMatcher(params);
         pcl::transformPointCloud(*(this->ref), *(this->target), perturb);
         this->matcher->setup(this->ref, this->target);
     }
@@ -37,7 +37,7 @@ class ICPTest : public testing::Test {
 };
 
 TEST(ICPTests, initialization) {
-    ICPMatcher matcher(0.1f, TEST_CONFIG);
+    ICPMatcher matcher(ICPMatcherParams());
 }
 
 // Zero displacement without downsampling
@@ -49,7 +49,9 @@ TEST_F(ICPTest, fullResNullMatch) {
     // setup
     perturb = Affine3::Identity();
     perturb.translation() << 0, 0, 0;
-    this->initMatcher(-1, perturb);
+    ICPMatcherParams params(TEST_CONFIG);
+    params.res = -1;
+    this->initMatcher(params, perturb);
 
     // test and assert
     match_success = matcher->match();
@@ -67,7 +69,9 @@ TEST_F(ICPTest, nullDisplacement) {
     // setup
     perturb = Affine3::Identity();
     perturb.translation() << 0, 0, 0;
-    this->initMatcher(0.05f, perturb);
+    ICPMatcherParams params(TEST_CONFIG);
+    params.res = 0.05f;
+    this->initMatcher(params, perturb);
 
     // test and assert
     match_success = matcher->match();
@@ -85,7 +89,9 @@ TEST_F(ICPTest, smallDisplacement) {
     // setup
     perturb = Affine3::Identity();
     perturb.translation() << 0.2, 0, 0;
-    this->initMatcher(0.05f, perturb);
+    ICPMatcherParams params(TEST_CONFIG);
+    params.res = 0.05f;
+    this->initMatcher(params, perturb);
 
     // test and assert
     match_success = matcher->match();

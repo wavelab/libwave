@@ -47,10 +47,10 @@ class Matcher {
 
     virtual ~Matcher() {}
 
-    const Eigen::Affine3d &getResult() {
+    const Eigen::Affine3d getResult() {
         return this->result;
     };
-    const Eigen::MatrixXd &getInfo() {
+    const Eigen::MatrixXd getInfo() {
         return this->information;
     };
     float getRes() {
