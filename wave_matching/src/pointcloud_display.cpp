@@ -1,5 +1,5 @@
 #include "wave/matching/pointcloud_display.hpp"
-#include "wave/utils/logging.hpp"
+#include "wave/utils/log.hpp"
 
 namespace wave {
 
