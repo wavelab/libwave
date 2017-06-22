@@ -1,5 +1,5 @@
 #!/bin/bash
-DATA_PATH=/data
+DATA_PATH=$HOME/data
 KITTI_URL=http://kitti.is.tue.mpg.de/kitti
 
 DATASETS=(
@@ -25,10 +25,10 @@ setup_dirs_and_permissions() {
     set_download_cmd
 
     echo "Creating dataset path at [$DATA_PATH]"
-    sudo mkdir -p $DATA_PATH
+    mkdir -p $DATA_PATH
 
     echo "Setting $USER the owner of [$DATA_PATH]"
-    sudo chown $USER:$USER $DATA_PATH
+    chown $USER:$USER $DATA_PATH
 }
 
 download_and_unpack() {
@@ -48,5 +48,14 @@ download_and_unpack() {
 
 
 # MAIN
-setup_dirs_and_permissions
-download_and_unpack
+echo "You are about to download large amounts of data (40+GB) into [$DATA_PATH]"
+read -r -p "Continue? [y/N] " RESPONSE
+case "$RESPONSE" in
+    [yY][eE][sS]|[yY]) 
+        setup_dirs_and_permissions
+        download_and_unpack
+        ;;
+    *)
+        echo "Terminated!";
+        ;;
+esac
