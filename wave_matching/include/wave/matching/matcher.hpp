@@ -81,7 +81,7 @@ class Matcher {
     }
 
     virtual void estimateInfo() {
-        this->information = MatX::Identity(6, 6);
+        this->information = Mat6::Identity(6, 6);
     }
 
  protected:
