@@ -65,6 +65,13 @@ class GraphSlam2d : public ::testing::Test {
         }
     }
 
+    // Make an estimate for a landmark position using the first pose it was
+    // measured from
+    Vec2 getLandmarkEstimate(const Pose2D &pose, const RangeBearing &meas) {
+        auto angle = pose.orientation + meas.bearing;
+        return pose.position + Vec2{cos(angle), sin(angle)};
+    }
+
     // Ground truth landmark positions, held in zero-noise "measurements"
     std::vector<FactorMeasurement<Landmark2D, void>> true_landmarks;
 
@@ -83,13 +90,21 @@ TEST_F(GraphSlam2d, example) {
     auto poses = std::vector<std::shared_ptr<Pose2DVar>>{};
     auto landmarks = std::vector<std::shared_ptr<Landmark2DVar>>{};
     for (auto i = 0u; i < this->true_poses.size(); ++i) {
-        poses.push_back(std::make_shared<Pose2DVar>());
+        // Initialize the variable with an estimated pose
+        // We need reasonable estimates for the algorithm to succeed, because
+        // the problem is not convex. Typically this might come from a motion
+        // model, but for now just use the noisy truth.
+        const auto initial_estimate =
+          this->true_poses[i].value.asVector() + 5 * Vec3::Random();
+        poses.push_back(std::make_shared<Pose2DVar>(initial_estimate));
     }
     for (auto i = 0u; i < this->true_landmarks.size(); ++i) {
-        // @todo: the variables are still initialized to zero, and the distance
-        // measurement has undefined jacobian singular at 0... manually
-        // initialize them non-zero for now.
-        landmarks.push_back(std::make_shared<Landmark2DVar>(Vec2{1., 1.}));
+        // Initialize the variable with an estimated pose
+        // For now, get the estimate from the first measurement and the first
+        // pose estimate
+        const auto &meas = this->measurements[0].at(i).value;
+        auto estimate = this->getLandmarkEstimate(poses[0]->value, meas);
+        landmarks.push_back(std::make_shared<Landmark2DVar>(estimate));
     }
 
     // Add factors for each measurement
@@ -117,8 +132,8 @@ TEST_F(GraphSlam2d, example) {
         EXPECT_PRED3(
           VectorsNearWithPrec, truth.position, estimate.position, 0.1)
           << "pose #" << i;
-        EXPECT_NEAR(truth.orientation[0], estimate.orientation[0], 0.04)
-          << "pose #" << i;
+        EXPECT_NEAR(truth.orientation, estimate.orientation, 0.04) << "pose #"
+                                                                   << i;
     }
 
     for (auto i = 0u; i < this->true_landmarks.size(); ++i) {

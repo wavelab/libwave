@@ -36,10 +36,9 @@ struct Pose2D : public ValueView<3> {
         this->ValueView<3>::operator=(other);
         return *this;
     }
-    using Vec1 = Eigen::Matrix<double, 1, 1>;
 
     Eigen::Map<const Vec2> position{dataptr};
-    Eigen::Map<const Vec1> orientation{dataptr + 2};
+    double &orientation{*(dataptr + 2)};
 };
 
 /**
@@ -142,7 +141,7 @@ inline bool measureRangeBearing(const Pose2D &pose,
                                 JacobianOut<2, 2> j_landmark) noexcept {
     Vec2 diff = landmark.position - pose.position;
     double distance = diff.norm();
-    double bearing = atan2(diff.y(), diff.x()) - pose.orientation.value();
+    double bearing = atan2(diff.y(), diff.x()) - pose.orientation;
 
     result[0] = distance;
     result[1] = bearing;

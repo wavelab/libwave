@@ -89,6 +89,7 @@ void evaluateGraph(FactorGraph &graph) {
     // Solve the problem, and write the estimated values to the variables
     // in the graph
     ceres::Solve(options, &problem, &summary);
+    std::cout << summary.FullReport() << std::endl;
 }
 
 /** @} group optimization */
