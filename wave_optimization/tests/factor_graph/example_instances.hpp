@@ -36,10 +36,9 @@ struct Pose2D : public ValueView<3> {
         this->ValueView<3>::operator=(other);
         return *this;
     }
-    using Vec1 = Eigen::Matrix<double, 1, 1>;
 
     Eigen::Map<const Vec2> position{dataptr};
-    Eigen::Map<const Vec1> orientation{dataptr + 2};
+    double &orientation{*(dataptr + 2)};
 };
 
 /**
@@ -61,6 +60,22 @@ struct Landmark2D : public ValueView<2> {
 
     Eigen::Map<const Vec2> position{dataptr};
 };
+
+/*
+ * Combined distance and angle observation
+ */
+struct RangeBearing : public ValueView<2> {
+    explicit RangeBearing(double *d) : ValueView<2>{d} {}
+    explicit RangeBearing(MappedType &m) : ValueView<2>{m} {}
+    RangeBearing &operator=(const RangeBearing &other) {
+        this->ValueView<2>::operator=(other);
+        return *this;
+    }
+
+    double &range{*dataptr};
+    double &bearing{*(dataptr + 1)};
+};
+
 
 /** Define variable types for each value type */
 using Pose2DVar = FactorVariable<Pose2D>;
@@ -115,6 +130,37 @@ class DistanceToLandmarkFactor
         : Factor<DistanceMeasurement, Pose2DVar, Landmark2DVar>{
             distanceMeasurementFunction, meas, std::move(p), std::move(l)} {}
 };
+
+
+/** Measurement function giving a distance and orientation
+ */
+inline bool measureRangeBearing(const Pose2D &pose,
+                                const Landmark2D &landmark,
+                                ResultOut<2> result,
+                                JacobianOut<2, 3> j_pose,
+                                JacobianOut<2, 2> j_landmark) noexcept {
+    Vec2 diff = landmark.position - pose.position;
+    double distance = diff.norm();
+    double bearing = atan2(diff.y(), diff.x()) - pose.orientation;
+
+    result[0] = distance;
+    result[1] = bearing;
+
+    // For each jacobian, check that optimizer requested it
+    // (just as you would check pointers from ceres)
+    if (j_pose) {
+        const auto d2 = distance * distance;
+        j_pose.row(0) << -diff.transpose() / distance, 0;
+        j_pose.row(1) << diff.y() / d2, -diff.x() / d2, -1;
+    }
+    if (j_landmark) {
+        const auto d2 = distance * distance;
+        j_landmark.row(0) << diff.transpose() / distance;
+        j_landmark.row(1) << -diff.y() / d2, diff.x() / d2;
+    }
+
+    return true;
+}
 
 /** @} group optimization */
 }  // namespace wave
