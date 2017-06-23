@@ -17,10 +17,35 @@ inline bool VectorsNear(const VecX &v1, const VecX &v2) {
     return v1.isApprox(v2);
 }
 
+
+/** Predicate to check if vectors are equal within the given precision.
+ * Use with EXPECT_PRED3
+ * @note The comparison is multiplicative, and `prec` is not a linear tolerance.
+ * See the documentation for Eigen's `isApprox()`. Specifically, `isApprox(a,b)`
+ * checks for:
+ * @f[ \| a - b \| \leq p \min(\| a\|, \| b\|) @f]
+ * where @f$ p @f$ is the given precision.
+ */
+inline bool VectorsNearWithPrec(const VecX &v1, const VecX &v2, double prec) {
+    return v1.isApprox(v2, prec);
+}
+
 /** Predicate to check if matrices are approximately equal.
  * Use with EXPECT_PRED2 */
 inline bool MatricesNear(const MatX &m1, const MatX &m2) {
     return m1.isApprox(m2);
+}
+
+/** Predicate to check if matrices are equal within the given precision.
+ * Use with EXPECT_PRED3
+ * @note The comparison is multiplicative, and `prec` is not a linear tolerance.
+ * See the documentation for Eigen's `isApprox()`. Specifically, `isApprox(a,b)`
+ * checks for:
+ * @f[ \| a - b \| \leq p \min(\| a\|, \| b\|) @f]
+ * where @f$ p @f$ is the given precision.
+ */
+inline bool MatricesNearWithPrec(const MatX &m1, const MatX &m2, double prec) {
+    return m1.isApprox(m2, prec);
 }
 
 }  // namespace wave
