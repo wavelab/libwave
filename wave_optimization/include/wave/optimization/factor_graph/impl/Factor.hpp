@@ -70,14 +70,47 @@ make_value(double const *const *parameters) {
     return typename V::ViewType{ptr};
 }
 
+
 /** Constructs a ValueView mapping the given raw array.
  *
  * Specialization for values of size 1
  */
 template <typename V, int I>
 inline typename std::enable_if<(V::Size == 1), const double &>::type make_value(
-  double const *const *parameters) {
+        double const *const *parameters) {
     return *parameters[I];
+}
+
+/** Constructs a ValueView mapping the given raw array.
+ *
+ * Applies for values of size > 1
+ *
+ * @tparam V the type of FactorVariable
+ * @tparam T the scalar type used by the optimizer
+ * @param param the pointer provided by the optimizer
+ * @return a FactorValue mapping the given array
+ */
+template <typename V, typename T>
+inline typename std::enable_if<(V::Size > 1), const typename V::ViewType>::type
+make_value(T const *const param) {
+    /* The array is const, but ValueView maps non-const arrays. It would be
+     * complicated to have two variants of ValueView, one for const and one
+     * for non-const arrays. In this case, we know that the ValueView itself
+     * is const, and it won't modify the array itself - thus, nothing will
+     * modify the array, and it's "safe" to cast away the constness. Still,
+     * @todo: reconsider this cast */
+    const auto ptr = const_cast<T *>(param);
+    return typename V::ViewType{ptr};
+}
+
+/** Constructs a ValueView mapping the given raw array.
+ *
+ * Specialization for values of size 1
+ */
+template <typename V, typename T>
+inline typename std::enable_if<(V::Size == 1), const T &>::type make_value(
+        T const *const param) {
+    return *param;
 }
 
 /** Constructs a jacobian output object mapping the given raw array.
@@ -179,6 +212,26 @@ bool Factor<M, V...>::evaluateRaw(double const *const *parameters,
           internal::make_index_sequence<sizeof...(V)>());
     }
 
+    return ok;
+}
+
+template <typename M, typename... V>
+template <typename T>
+bool Factor<M, V...>::evaluateRaw(tmp::replace<T, V> const  *const... parameters, T *raw_residuals) const
+  noexcept {
+    auto residuals = ResultOut<M::Size>{raw_residuals};
+
+    // Call the measurement function
+    bool ok = measurement_function(
+            internal::make_value<V>(parameters)...,
+            residuals,
+            internal::make_jacobian<M::Size, V::Size, 0>(nullptr)...);
+    // @todo remove jacobian
+    if (ok) {
+        // Calculate the normalized residual
+        const auto &L = this->measurement.noise.inverseSqrtCov();
+        residuals = L * (residuals - this->measurement);
+    }
     return ok;
 }
 

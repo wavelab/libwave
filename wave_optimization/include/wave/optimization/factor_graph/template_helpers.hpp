@@ -1,7 +1,7 @@
 /**
  * @file
  * @ingroup optimization
- * Internal: utility functions for template metaprogramming
+ * Utility functions for template metaprogramming
  */
 
 #ifndef WAVE_OPTIMIZATION_FACTOR_GRAPH_TEMPLATE_HELPERS_HPP
@@ -12,7 +12,20 @@ namespace wave {
 /** @addtogroup optimization
  *  @{ */
 
-namespace internal {}  // namespace internal
+namespace tmp {
+
+/**
+ * Directly replace a type.
+ *
+ * Meant to be used to make parameter packs of a single  type, of the same
+ * number of arguments as another type parameter pack.
+ *
+ * For example, `replace<int, T>...` becomes `int...` of the same length.
+ */
+template <typename To, typename From>
+using replace = To;
+
+}  // namespace tmp
 /** @} group optimization */
 }  // namespace wave
 

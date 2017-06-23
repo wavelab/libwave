@@ -10,6 +10,7 @@
 #include "wave/optimization/factor_graph/FactorVariableBase.hpp"
 #include "wave/optimization/factor_graph/FactorBase.hpp"
 #include "wave/optimization/factor_graph/OutputMap.hpp"
+#include "wave/optimization/factor_graph/template_helpers.hpp"
 
 
 namespace wave {
@@ -93,6 +94,8 @@ class Factor : public FactorBase {
                      double *residuals,
                      double **jacobians) const noexcept override;
 
+    template <typename T>
+    bool evaluateRaw(tmp::replace<T, VarTypes> const  *const... parameters, T *residuals) const noexcept;
 
     /** Get a reference to the vector of variable pointers */
     const VarVectorType &variables() const noexcept override {
