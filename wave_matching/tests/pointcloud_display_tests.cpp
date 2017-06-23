@@ -3,7 +3,7 @@
 
 #include "wave/wave_test.hpp"
 #include "wave/matching/pointcloud_display.hpp"
-#include "wave/utils/logging.hpp"
+#include "wave/utils/log.hpp"
 #include "wave/utils/math.hpp"
 
 namespace wave {

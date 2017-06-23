@@ -111,6 +111,7 @@ TEST_F(ICPTest, smallinfo) {
     auto info = matcher->getInfo();
     double diff = (matcher->getResult().matrix() - perturb.matrix()).norm();
     EXPECT_TRUE(match_success);
+    EXPECT_GT(info(0,0), 0);
     EXPECT_LT(diff, this->threshold);
 }
 
