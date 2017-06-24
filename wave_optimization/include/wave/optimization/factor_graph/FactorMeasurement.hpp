@@ -39,6 +39,10 @@ class FactorMeasurement : public FactorVariable<V> {
                                typename NoiseType::InitType noise_value)
         : Base{std::move(initial)}, noise{std::move(noise_value)} {}
 
+    /** Construct with initial value, only for variables of size one*/
+    explicit FactorMeasurement(double initial,
+                               typename NoiseType::InitType noise_value)
+        : Base{initial}, noise{std::move(noise_value)} {}
 
     /** Construct with initial value and initial noise object*/
     explicit FactorMeasurement(MappedType initial, NoiseType noise)
@@ -74,22 +78,10 @@ class FactorMeasurement<V, void> : public FactorVariable<V> {
 
     /** Construct with initial value and no noise */
     explicit FactorMeasurement(MappedType initial) : Base{std::move(initial)} {}
+
+    /** Construct with initial value, only for variables of size one*/
+    explicit FactorMeasurement(double initial) : Base{initial} {}
 };
-
-template <typename V, typename N>
-inline Eigen::Matrix<double, FactorMeasurement<V, N>::Size, 1> operator-(
-  const V &lhs, const FactorMeasurement<V, N> &rhs) {
-    return lhs -
-           Eigen::Map<
-             const Eigen::Matrix<double, FactorMeasurement<V, N>::Size, 1>>{
-             rhs.data()};
-}
-
-template <typename N>
-inline double operator-(const double &lhs,
-                        const FactorMeasurement<double, N> &rhs) {
-    return lhs - *rhs.data();
-}
 
 /** @} group optimization */
 }  // namespace wave

@@ -64,37 +64,6 @@ TEST(FactorGraph, addPrior) {
     EXPECT_PRED2(MatricesNear, expected_jac, test_jac);
 }
 
-TEST(FactorGraph, addPriorOfSize1) {
-    const auto test_meas = 1.2;
-    const auto test_stddev = 0.01;
-    const auto test_val = 1.23;
-    // The expected results are normalized
-    const auto expected_res = (test_val - test_meas) / test_stddev;
-    const auto expected_jac = 1.0 / test_stddev;
-
-    // Prepare arguments to add unary factor
-    FactorGraph graph;
-    auto p = std::make_shared<FactorVariable<double>>();
-    auto m = FactorMeasurement<double>{test_meas, test_stddev};
-
-    // Prepare arguments in a form matching ceres calls
-    double test_residual;
-    double test_jac;
-    const double *const params[] = {&test_val};
-    double *jacs[] = {&test_jac};
-
-    // Add the factor, retrieve the pointer to it, and verity
-    graph.addPrior(m, p);
-    EXPECT_EQ(1u, graph.countFactors());
-
-    auto factor = *graph.begin();
-    ASSERT_NE(nullptr, factor);
-
-    EXPECT_TRUE(factor->evaluateRaw(params, &test_residual, jacs));
-    EXPECT_DOUBLE_EQ(expected_res, test_residual);
-    EXPECT_DOUBLE_EQ(expected_jac, test_jac);
-}
-
 TEST(FactorGraph, addPerfectPrior) {
     const auto test_meas = Vec2{1.2, 3.4};
     const auto test_val = Vec2{1.23, 3.38};
@@ -125,37 +94,6 @@ TEST(FactorGraph, addPerfectPrior) {
 
     // We cannot evaluate a factor that is a perfect prior
     EXPECT_FALSE(factor->evaluateRaw(params, test_residual.data(), jacs));
-}
-
-TEST(FactorGraph, addPerfectPriorOfSize1) {
-    const auto test_meas = 1.2;
-    const auto test_val = 1.23;
-
-    // Prepare arguments to add unary factor
-    FactorGraph graph;
-    auto p = std::make_shared<FactorVariable<double>>();
-
-    // Prepare arguments in a form matching ceres calls
-    double test_residual;
-    double test_jac;
-    const double *const params[] = {&test_val};
-    double *jacs[] = {&test_jac};
-
-    // Add the factor
-    graph.addPerfectPrior(test_meas, p);
-    EXPECT_EQ(1u, graph.countFactors());
-
-    // The variable should have the measured value immediately
-    // @todo this may change
-    EXPECT_DOUBLE_EQ(test_meas, *p->data());
-
-    auto factor = *graph.begin();
-    ASSERT_NE(nullptr, factor);
-
-    EXPECT_TRUE(factor->isPerfectPrior());
-
-    // We cannot evaluate a factor that is a perfect prior
-    EXPECT_FALSE(factor->evaluateRaw(params, &test_residual, jacs));
 }
 
 TEST(FactorGraph, triangulationSim) {

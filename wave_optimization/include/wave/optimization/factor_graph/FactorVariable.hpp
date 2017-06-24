@@ -60,6 +60,10 @@ class FactorVariable : public FactorVariableBase {
     explicit FactorVariable(MappedType initial)
         : storage{std::move(initial)}, value{storage} {}
 
+    /** Construct with initial value, only for variables of size one*/
+    explicit FactorVariable(double initial)
+        : storage{initial}, value{storage} {}
+
     // Because `value` is a map holding a pointer to another member, we must
     // define a custom copy constructor (and the rest of the rule of five)
     /** Copy constructor */
@@ -118,46 +122,6 @@ class FactorVariable : public FactorVariableBase {
     /** */
     ViewType value;
 };
-
-/**
- * Special case variable of size 1
- */
-template <>
-class FactorVariable<double> : public FactorVariableBase {
- public:
-    using ViewType = double;
-    using MappedType = double;
-    constexpr static int Size = 1;
-
-    /** Default construct with uninitialized estimate
-     * Actually initializes to zero to avoid problems with garbage floats
-     * @todo move setting of initial value elsewhere
-     */
-    FactorVariable() : value{0} {}
-
-    /** Construct with initial value */
-    explicit FactorVariable(double initial) : value{initial} {}
-
-    /** Return the number of scalar values in the variable. */
-    int size() const noexcept override {
-        return Size;
-    }
-
-    /** Return a raw pointer to the start of the internal storage. */
-    const double *data() const noexcept override {
-        return &this->value;
-    }
-    double *data() noexcept override {
-        return &this->value;
-    }
-
-    void print(std::ostream &os) const override {
-        os << "FactorVariable";
-    }
-
-    double value;
-};
-
 
 /** @} group optimization */
 }  // namespace wave

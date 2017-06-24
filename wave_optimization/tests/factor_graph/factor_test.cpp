@@ -35,40 +35,6 @@ TEST(FactorTest, evaluateRaw) {
     EXPECT_DOUBLE_EQ(expected_residual, out_residuals[0]);
 }
 
-
-TEST(FactorTest, evaluateSize1) {
-    // Demonstrate construction of a simple unary factor with size-1 measurement
-    // This also shows that the measurement function can be a lambda
-    auto func = [](const double &v, double &result) -> bool {
-        result = v * 2;
-        return true;
-    };
-    const auto meas_val = 1.2;
-    const auto meas_stddev = 0.1;
-    auto meas = FactorMeasurement<double>{meas_val, meas_stddev};
-    auto var = std::make_shared<FactorVariable<double>>();
-    auto factor = Factor<FactorMeasurement<double>, FactorVariable<double>>{
-      func, meas, var};
-    EXPECT_EQ(1, factor.size());
-    EXPECT_EQ(1, factor.residualSize());
-    ASSERT_EQ(1u, factor.variables().size());
-    EXPECT_EQ(var, factor.variables().front());
-    EXPECT_FALSE(factor.isPerfectPrior());
-
-
-    // Prepare sample C-style inputs as used by Ceres
-    double test_residual;
-    double test_val = 1.09;
-
-    // evaluate the factor
-    EXPECT_TRUE(factor.evaluateRaw(&test_val, &test_residual));
-
-    // Compare the result. We expect the residual to be L(f(X) - Z)
-    // In this case that is (2x - Z)/stddev
-    EXPECT_DOUBLE_EQ((test_val * 2 - meas_val) / meas_stddev, test_residual);
-}
-
-
 TEST(FactorTest, constructPerfectPrior) {
     // Test that using a perfect prior immediately sets the variable's value
     // @todo this may change
@@ -76,12 +42,12 @@ TEST(FactorTest, constructPerfectPrior) {
     // Note explicitly constructing PerfectPrior is not intended for users -
     // They should use FactorGraph::addPerfectPrior. That is why this test does
     // some non-intuitive preparation (e.g. constructing a FactorMeasurement)
-    using MeasType = FactorMeasurement<double, void>;
-    using VarType = FactorVariable<double>;
+    using MeasType = FactorMeasurement<Distance, void>;
+    using VarType = FactorVariable<Distance>;
     auto v = std::make_shared<VarType>();
 
     auto factor = PerfectPrior<VarType>{MeasType{1.2}, v};
-    EXPECT_DOUBLE_EQ(1.2, v->value);
+    EXPECT_DOUBLE_EQ(1.2, v->value.asVector().value());
 
     EXPECT_TRUE(factor.isPerfectPrior());
 }
@@ -103,8 +69,8 @@ TEST(FactorTest, print) {
 }
 
 TEST(FactorTest, printPerfectPrior) {
-    using MeasType = FactorMeasurement<double, void>;
-    using VarType = FactorVariable<double>;
+    using MeasType = FactorMeasurement<Distance, void>;
+    using VarType = FactorVariable<Distance>;
     auto v = std::make_shared<VarType>();
     auto factor = PerfectPrior<VarType>{MeasType{1.2}, v};
 

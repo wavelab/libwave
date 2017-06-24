@@ -69,8 +69,7 @@ class PerfectPrior : public FactorBase {
     }
 
     template <typename T>
-    bool evaluateRaw(VarType const *const parameters, T *residuals) const
-      noexcept {
+    bool evaluateRaw(VarType const *const, T *) const noexcept {
         return false;
     }
 

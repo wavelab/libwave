@@ -65,9 +65,10 @@ struct Landmark2D : public ValueView<2> {
 /** Define variable types for each value type */
 using Pose2DVar = FactorVariable<Pose2D>;
 using Landmark2DVar = FactorVariable<Landmark2D>;
+using Distance = ValueView<1>;
 
 
-using DistanceMeasurement = FactorMeasurement<double>;
+using DistanceMeasurement = FactorMeasurement<Distance>;
 
 
 /** Calculate distance and jacobians
@@ -84,10 +85,10 @@ using DistanceMeasurement = FactorMeasurement<double>;
  */
 inline bool distanceMeasurementFunction(const Pose2D &pose,
                                         const Landmark2D &landmark,
-                                        double &result) noexcept {
+                                        Distance &result) noexcept {
     Vec2 diff = pose.position - landmark.position;
     double distance = diff.norm();
-    result = distance;
+    result.asVector()[0] = distance;
     return true;
 }
 
