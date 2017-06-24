@@ -9,16 +9,8 @@ namespace internal {
  * Trivial measurement function for a prior, f(X) = X
  */
 template <typename V>
-inline bool identityMeasurementFunction(
-  const V &variable,
-  ResultOut<FactorVariable<V>::Size> result,
-  JacobianOut<FactorVariable<V>::Size, FactorVariable<V>::Size> jacobian) {
+inline bool identityMeasurementFunction(const V &variable, V &result) {
     result = variable;
-
-    if (jacobian) {
-        jacobian.setIdentity();
-    }
-
     return true;
 }
 

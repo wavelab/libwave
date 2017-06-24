@@ -25,20 +25,11 @@ class FactorBase {
 
     virtual ~FactorBase() = default;
 
-    /** Evaluate this factor to obtain residuals and jacobians.
-     *
-     * This function is not meant to be called by users. It is called by the
-     * back-end optimizer which works with pointers to pointers of C-style
-     * arrays. For clarity and type safety, it would be preferable `Factor`
-     * class
-     * implemented this method, providing the needed conversions.
-     *
-     * This interface is based on Ceres' `CostFunction`. See
-     * http://ceres-solver.org/nnls_modeling.htmlmarch#costfunction
+    /** Return a Ceres cost function object which computes the residuals of
+     * this factor.
      */
-    virtual bool evaluateRaw(double const *const *parameters,
-                             double *residuals,
-                             double **jacobians) const noexcept = 0;
+    virtual std::unique_ptr<ceres::CostFunction> costFunction() const
+      noexcept = 0;
 
     /** Print representation of the object for debugging.
      * Called by `operator<<`. */

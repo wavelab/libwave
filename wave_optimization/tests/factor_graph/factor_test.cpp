@@ -39,10 +39,8 @@ TEST(FactorTest, evaluateRaw) {
 TEST(FactorTest, evaluateSize1) {
     // Demonstrate construction of a simple unary factor with size-1 measurement
     // This also shows that the measurement function can be a lambda
-    auto func = [](
-      const double &v, ResultOut<1> result, JacobianOut<1, 1> jac) -> bool {
+    auto func = [](const double &v, double &result) -> bool {
         result = v * 2;
-        jac(0, 0) = -1.1;
         return true;
     };
     const auto meas_val = 1.2;
@@ -58,21 +56,16 @@ TEST(FactorTest, evaluateSize1) {
     EXPECT_FALSE(factor.isPerfectPrior());
 
 
-    // Prepare sample C-style arrays as used by Ceres
+    // Prepare sample C-style inputs as used by Ceres
     double test_residual;
-    double test_jac;
     double test_val = 1.09;
-    const double *const params[] = {&test_val};
-    double *jacs[] = {&test_jac};
 
     // evaluate the factor
-    EXPECT_TRUE(factor.evaluateRaw(params, &test_residual, jacs));
+    EXPECT_TRUE(factor.evaluateRaw(&test_val, &test_residual));
 
     // Compare the result. We expect the residual to be L(f(X) - Z)
     // In this case that is (2x - Z)/stddev
     EXPECT_DOUBLE_EQ((test_val * 2 - meas_val) / meas_stddev, test_residual);
-    // We expect the jacobian to be normalized as well
-    EXPECT_DOUBLE_EQ(-1.1 / meas_stddev, test_jac);
 }
 
 

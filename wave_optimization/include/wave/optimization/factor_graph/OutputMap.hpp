@@ -62,14 +62,6 @@ class OutputMap : public Eigen::Map<T> {
     };
 };
 
-/** Type of jacobian output parameters for `Factor::evaluate()`. */
-template <int Rows, int Cols>
-using JacobianOut = OutputMap<Eigen::Matrix<double, Rows, Cols>>;
-
-/** Type of measurement output parameter for `Factor::evaluate()`. */
-template <int Size>
-using ResultOut = OutputMap<Eigen::Matrix<double, Size, 1>>;
-
 /** @} group optimization */
 }  // namespace wave
 

@@ -73,8 +73,7 @@ class Factor : public FactorBase {
      * @return true if calculation was successful, false on error
      */
     using FuncType = bool(const typename VarTypes::ViewType &...,
-                          ResultOut<ResidualSize>,
-                          JacobianOut<ResidualSize, VarTypes::Size>...);
+                          typename MeasType::ViewType &);
 
     using const_iterator = typename VarArrayType::const_iterator;
 
@@ -90,12 +89,11 @@ class Factor : public FactorBase {
         return ResidualSize;
     }
 
-    bool evaluateRaw(double const *const *parameters,
-                     double *residuals,
-                     double **jacobians) const noexcept override;
+    std::unique_ptr<ceres::CostFunction> costFunction() const noexcept override;
 
     template <typename T>
-    bool evaluateRaw(tmp::replace<T, VarTypes> const  *const... parameters, T *residuals) const noexcept;
+    bool evaluateRaw(tmp::replace<T, VarTypes> const *const... parameters,
+                     T *residuals) const noexcept;
 
     /** Get a reference to the vector of variable pointers */
     const VarVectorType &variables() const noexcept override {
@@ -118,6 +116,16 @@ class Factor : public FactorBase {
 
     /** Pointers to the variables this factor is linked to */
     VarArrayType variable_ptrs;
+};
+
+template <typename M, typename... V>
+struct FactorCostFunctor {
+    template <typename T>
+    bool operator()(tmp::replace<T, V> const *const... parameters,
+                    T *raw_residuals) const {
+        return factor->evaluateRaw(parameters..., raw_residuals);
+    }
+    Factor<M, V...> const *const factor;
 };
 
 /** @} group optimization */

@@ -63,8 +63,14 @@ class PerfectPrior : public FactorBase {
         return ResidualSize;
     }
 
-    bool evaluateRaw(double const *const *, double *, double **) const
+    std::unique_ptr<ceres::CostFunction> costFunction() const
       noexcept override {
+        throw std::logic_error("PerfectPrior has no cost function");
+    }
+
+    template <typename T>
+    bool evaluateRaw(VarType const *const parameters, T *residuals) const
+      noexcept {
         return false;
     }
 

@@ -84,22 +84,10 @@ using DistanceMeasurement = FactorMeasurement<double>;
  */
 inline bool distanceMeasurementFunction(const Pose2D &pose,
                                         const Landmark2D &landmark,
-                                        ResultOut<1> result,
-                                        JacobianOut<1, 3> j_pose,
-                                        JacobianOut<1, 2> j_landmark) noexcept {
+                                        double &result) noexcept {
     Vec2 diff = pose.position - landmark.position;
     double distance = diff.norm();
-    result(0) = distance;
-
-    // For each jacobian, check that optimizer requested it
-    // (just as you would check pointers from ceres)
-    if (j_pose) {
-        j_pose << diff.transpose() / distance, 0;
-    }
-    if (j_landmark) {
-        j_landmark << diff.transpose() / distance;
-    }
-
+    result = distance;
     return true;
 }
 
