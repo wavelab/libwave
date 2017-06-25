@@ -34,11 +34,12 @@ namespace wave {
  *
  * @tparam VarType The type of factor variable we have prior information on
  */
-template <typename VarType>
+template <template <typename> class V>
 class PerfectPrior : public FactorBase {
-    using FactorType = PerfectPrior<VarType>;
-    using ViewType = typename VarType::ViewType;
-    using MeasType = FactorMeasurement<ViewType, void>;
+    using FactorType = PerfectPrior<V>;
+    using VarType = FactorVariable<V>;
+    using ValueType = typename VarType::ValueType;
+    using MeasType = FactorMeasurement<V, void>;
 
  public:
     constexpr static int NumVars = 1;

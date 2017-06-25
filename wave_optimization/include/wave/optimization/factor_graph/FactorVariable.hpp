@@ -10,7 +10,7 @@
 
 #include "wave/utils/math.hpp"
 #include "wave/optimization/factor_graph/FactorVariableBase.hpp"
-#include "wave/optimization/factor_graph/ValueView.hpp"
+#include "wave/optimization/factor_graph/FactorValue.hpp"
 
 namespace wave {
 /** @addtogroup optimization
@@ -41,12 +41,10 @@ using VariableId = int;
  * `orientation`. In the Factor's evaluation function, these objects can then be
  * used as independent Eigen vectors.
  */
-template <typename V>
+template <template <typename> class V>
 class FactorVariable : public FactorVariableBase {
  public:
-    using ViewType = V;
-    using MappedType = typename ViewType::MappedType;
-    constexpr static int Size = ViewType::Size;
+    using ValueType = V<double>;
 
     // Constructors
 
@@ -54,44 +52,15 @@ class FactorVariable : public FactorVariableBase {
      * Actually initializes to zero to avoid problems with garbage floats
      * @todo move setting of initial value elsewhere
      */
-    FactorVariable() noexcept : storage{MappedType::Zero()}, value{storage} {}
+    FactorVariable() noexcept : value{ValueType::Zero()} {}
 
     /** Construct with initial value */
-    explicit FactorVariable(MappedType initial)
-        : storage{std::move(initial)}, value{storage} {}
+    explicit FactorVariable(ValueType initial)
+        : value{std::move(initial)} {}
 
     /** Construct with initial value, only for variables of size one*/
     explicit FactorVariable(double initial)
-        : storage{initial}, value{storage} {}
-
-    // Because `value` is a map holding a pointer to another member, we must
-    // define a custom copy constructor (and the rest of the rule of five)
-    /** Copy constructor */
-    FactorVariable(const FactorVariable &other) noexcept
-      : FactorVariable{other.storage} {}
-
-    /** Move constructor */
-    FactorVariable(FactorVariable &&other) noexcept
-      : FactorVariable{std::move(other.storage)} {}
-
-    /** Copy assignment operator */
-    FactorVariable &operator=(const FactorVariable &other) noexcept {
-        auto temp = FactorVariable{other};
-        swap(*this, temp);
-        return *this;
-    }
-
-    /** Move assignment operator */
-    FactorVariable &operator=(FactorVariable &&other) noexcept {
-        auto temp = std::move(other);
-        swap(*this, temp);
-        return *this;
-    }
-
-    friend void swap(FactorVariable &lhs, FactorVariable &rhs) noexcept {
-        std::swap(lhs.storage, rhs.storage);
-        // Note: don't swap value
-    }
+        : value{initial} {}
 
     ~FactorVariable() override = default;
 
@@ -99,7 +68,7 @@ class FactorVariable : public FactorVariableBase {
 
     /** Return the number of scalar values in the variable. */
     int size() const noexcept override {
-        return Size;
+        return 0;
     }
 
     /** Return a raw pointer to the start of the internal storage. */
@@ -114,13 +83,8 @@ class FactorVariable : public FactorVariableBase {
         os << "FactorVariable";
     }
 
- private:
-    /** Internal buffer holding the parameter estimate */
-    MappedType storage;
-
- public:
-    /** */
-    ViewType value;
+    /** The actual value buffer */
+    ValueType value;
 };
 
 /** @} group optimization */

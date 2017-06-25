@@ -56,13 +56,12 @@ inline void FactorGraph::addPrior(
       std::move(variable));
 }
 
-template <typename VarType>
-inline void FactorGraph::addPerfectPrior(
-  const typename VarType::MappedType &measured_value,
-  std::shared_ptr<VarType> variable) {
-    using MeasType = FactorMeasurement<typename VarType::ViewType, void>;
+template <template <typename> class V>
+inline void FactorGraph::addPerfectPrior(const V<double> &measured_value,
+                     std::shared_ptr<FactorVariable<V>> variable) {
+    using MeasType = FactorMeasurement<V, void>;
 
-    this->factors.emplace_back(std::make_shared<PerfectPrior<VarType>>(
+    this->factors.emplace_back(std::make_shared<PerfectPrior<V>>(
       MeasType{measured_value}, std::move(variable)));
 }
 

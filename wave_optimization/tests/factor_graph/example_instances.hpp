@@ -16,6 +16,16 @@ namespace wave {
 /** @addtogroup optimization
  *  @{ */
 
+
+template <typename T>
+using Position2D = FactorValue<T, 2>;
+
+template <typename T>
+using Orientation2D = FactorValue<T, 1>;
+
+template <typename T>
+using Distance = FactorValue<T, 1>;
+
 /**
  * Specialized variable representing a 2D pose.
  *
@@ -26,48 +36,18 @@ namespace wave {
  * this work, by automatically generating these mappings using some fancy boost
  * libraries.
  */
-struct Pose2D : public ValueView<3> {
-    // Use base class constructor
-    // We can't inherit constructors due to bug in gcc
-    // (https://gcc.gnu.org/bugzilla/show_bug.cgi?id=67054)
-    explicit Pose2D(double *d) : ValueView<3>{d} {}
-    explicit Pose2D(MappedType &m) : ValueView<3>{m} {}
-    Pose2D &operator=(const Pose2D &other) {
-        this->ValueView<3>::operator=(other);
-        return *this;
-    }
-    using Vec1 = Eigen::Matrix<double, 1, 1>;
+template <typename T>
+struct Pose2D : public ComposedValue<T, Position2D, Orientation2D> {
+    // Use base class constructors
+    using ComposedValue<T, Position2D, Orientation2D>::ComposedValue;
 
-    Eigen::Map<const Vec2> position{dataptr};
-    Eigen::Map<const Vec1> orientation{dataptr + 2};
-};
-
-/**
- * Specialized variable representing a 2D landmark position.
- *
- * In this example, references are assigned to parts of the underlying data
- * vector, allowing factor functions to operate on clearly named parameters.
- */
-struct Landmark2D : public ValueView<2> {
-    // Use base class constructor
-    // We can't inherit constructors due to bug in gcc
-    // (https://gcc.gnu.org/bugzilla/show_bug.cgi?id=67054)
-    explicit Landmark2D(double *d) : ValueView<2>{d} {}
-    explicit Landmark2D(MappedType &m) : ValueView<2>{m} {}
-    Landmark2D &operator=(const Landmark2D &other) {
-        this->ValueView<2>::operator=(other);
-        return *this;
-    }
-
-    Eigen::Map<const Vec2> position{dataptr};
+    Position2D<T>& position = std::get<0>(this->elements);
+    Orientation2D<T>& orientation = std::get<1>(this->elements);
 };
 
 /** Define variable types for each value type */
 using Pose2DVar = FactorVariable<Pose2D>;
-using Landmark2DVar = FactorVariable<Landmark2D>;
-using Distance = ValueView<1>;
-
-
+using Landmark2DVar = FactorVariable<Position2D>;
 using DistanceMeasurement = FactorMeasurement<Distance>;
 
 
@@ -83,12 +63,13 @@ using DistanceMeasurement = FactorMeasurement<Distance>;
  * @param[out] j_landmark
  * @return true on success
  */
-inline bool distanceMeasurementFunction(const Pose2D &pose,
-                                        const Landmark2D &landmark,
-                                        Distance &result) noexcept {
-    Vec2 diff = pose.position - landmark.position;
+template <typename T>
+inline bool distanceMeasurementFunction(const Pose2D<T> &pose,
+                                        const Position2D<T> &landmark_pos,
+                                        Distance<T> &result) noexcept {
+    Vec2 diff = pose.position - landmark_pos;
     double distance = diff.norm();
-    result.asVector()[0] = distance;
+    result = distance;
     return true;
 }
 

@@ -60,9 +60,9 @@ class FactorGraph {
     void addPrior(const MeasType &measurement,
                   std::shared_ptr<typename MeasType::VarType> variable);
 
-    template <typename VarType>
-    void addPerfectPrior(const typename VarType::MappedType &measured_value,
-                         std::shared_ptr<VarType> variable);
+    template <template <typename> class V>
+    void addPerfectPrior(const V<double> &measured_value,
+                         std::shared_ptr<FactorVariable<V>> variable);
 
     // Iterators
 

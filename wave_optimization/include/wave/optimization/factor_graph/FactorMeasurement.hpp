@@ -15,27 +15,25 @@ namespace wave {
  *  @{ */
 
 /** The default NoiseType parameter to FactorMeasurement */
-template <typename V>
-using DefaultNoiseType = DiagonalNoise<FactorVariable<V>::Size>;
+template <template <typename> class V>
+using DefaultNoiseType = DiagonalNoise<V<double>::Size>;
 
 /**
  * A measurement, with associated noise, associated with a Factor
  * @tparam V the type of ValueView representing the measurement's value
  * @tparam NoiseTmpl the type of noise
  */
-template <typename V, typename N = DefaultNoiseType<V>>
+template <template <typename> class V, typename N = DefaultNoiseType<V>>
 class FactorMeasurement : public FactorVariable<V> {
     using Base = FactorVariable<V>;
 
  public:
     using VarType = Base;
-    using ViewType = typename Base::ViewType;
+    using ValueType = typename Base::ValueType;
     using NoiseType = N;
-    using MappedType = typename Base::MappedType;
-    constexpr static int Size = Base::Size;
 
     /** Construct with initial value and initial noise value*/
-    explicit FactorMeasurement(MappedType initial,
+    explicit FactorMeasurement(ValueType initial,
                                typename NoiseType::InitType noise_value)
         : Base{std::move(initial)}, noise{std::move(noise_value)} {}
 
@@ -45,12 +43,12 @@ class FactorMeasurement : public FactorVariable<V> {
         : Base{initial}, noise{std::move(noise_value)} {}
 
     /** Construct with initial value and initial noise object*/
-    explicit FactorMeasurement(MappedType initial, NoiseType noise)
+    explicit FactorMeasurement(ValueType initial, NoiseType noise)
         : Base{std::move(initial)}, noise{std::move(noise)} {}
 
     /** Construct with initial value and no noise
      * Only allowed when NoiseType is void*/
-    explicit FactorMeasurement(MappedType initial) : Base{std::move(initial)} {
+    explicit FactorMeasurement(ValueType initial) : Base{std::move(initial)} {
         static_assert(std::is_void<NoiseType>::value,
                       "A noise value must be provided as the second argument");
     }
@@ -65,13 +63,13 @@ class FactorMeasurement : public FactorVariable<V> {
  * This specialization can be constructed with a measured value only, without
  * needing to specify noise.
  */
-template <typename V>
+template <template <typename> class V>
 class FactorMeasurement<V, void> : public FactorVariable<V> {
     using Base = FactorVariable<V>;
 
  public:
     using VarType = Base;
-    using ViewType = typename Base::ViewType;
+    using ValueType = typename Base::ValueType;
     using NoiseType = void;
     using MappedType = typename Base::MappedType;
     constexpr static int Size = Base::Size;
