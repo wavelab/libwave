@@ -18,7 +18,8 @@ TEST(FactorTest, evaluateRaw) {
                                std::make_shared<Landmark2DVar>()};
 
     // Prepare sample C-style arrays as used by Ceres
-    const double param_pose[3] = {1.1, 2.2, 3.3};
+    const double param_pose_position[2] = {1.1, 2.2};
+    const double param_pose_orientation[1] = {3.3};
     const double param_landmark[2] = {4.4, 5.5};
     double out_residuals[1];
 
@@ -30,7 +31,10 @@ TEST(FactorTest, evaluateRaw) {
     Vec2 expected_jac_landmark{(1.1 - 4.4) / dist, (2.2 - 5.5) / dist};
 
     // Call and compare
-    auto res = f.evaluateRaw(param_pose, param_landmark, out_residuals);
+    auto res = f.evaluateRaw(param_pose_position,
+                             param_pose_orientation,
+                             param_landmark,
+                             out_residuals);
     EXPECT_TRUE(res);
     EXPECT_DOUBLE_EQ(expected_residual, out_residuals[0]);
 }

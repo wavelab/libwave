@@ -13,8 +13,8 @@ namespace internal {
  * @param param the pointer provided by the optimizer
  * @return a FactorValue mapping the given array
  */
-template <template <typename> class V, typename T>
-inline V<Map<T>> make_value(T const *const param) {
+template <typename Vv, typename T>
+inline Vv make_value(T const *const param) {
     // The array is const, but ValueView maps non-const arrays. It would be
     // complicated to have two variants of ValueView, one for const and one
     // for non-const arrays. In this case, we know that the ValueView itself
@@ -22,8 +22,20 @@ inline V<Map<T>> make_value(T const *const param) {
     // modify the array, and it's "safe" to cast away the constness. Still,
     // @todo: reconsider this cast
     const auto ptr = const_cast<T *>(param);
-    return V<Map<T>>{ptr};
+    return Vv{ptr};
 }
+
+template <typename F, typename ValueTuple, typename T>
+struct FunctorHelper;
+
+template <typename F, typename Mv, typename... Vv, typename T>
+struct FunctorHelper<F, std::tuple<Mv, Vv...>, T> {
+    bool operator()(tmp::replace<T, Vv> const *const... params, Mv& residuals) {
+        return f(make_value<Vv, T>(params)..., residuals);
+    }
+    F f{};
+};
+
 
 template <typename Functor, typename SizeSeq>
 struct get_cost_function;
@@ -50,8 +62,7 @@ std::unique_ptr<ceres::CostFunction> Factor<F, M, V...>::costFunction() const
     using Functor = FactorCostFunctor<F, M, V...>;
     using CostFunction = internal::get_cost_function<
       F,
-      tmp::concat_index_sequence<tmp::index_sequence<M<double>::Size>,
-                                 typename V<double>::ValueSizes...>>;
+      internal::get_value_sizes<V<double>...>>;
     return std::unique_ptr<ceres::CostFunction>{
       new CostFunction{new Functor{this}}};
 }
@@ -59,14 +70,13 @@ std::unique_ptr<ceres::CostFunction> Factor<F, M, V...>::costFunction() const
 template <typename F,
           template <typename> class M,
           template <typename> class... V>
-template <typename T>
+template <typename... T>
 bool Factor<F, M, V...>::evaluateRaw(
-  tmp::replacet<T, V> const *const... parameters, T *raw_residuals) const
+  T const *const... parameters, T *raw_residuals) const
   noexcept {
-    auto residuals = internal::make_value<M>(raw_residuals);
-
+    auto residuals = internal::make_value<M<Map<T>>, T>(raw_residuals);
     // Call the measurement function
-    bool ok = F{}(internal::make_value<V>(parameters)..., residuals);
+    bool ok = internal::FunctorHelper<F, internal::get_value_types<M<Map<T>>, V<Map<T>>...>, T>{}(parameters..., residuals);
     if (ok) {
         // Calculate the normalized residual
         const auto &L = measurement.noise.inverseSqrtCov();

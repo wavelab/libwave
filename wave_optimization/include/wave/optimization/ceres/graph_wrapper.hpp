@@ -17,29 +17,6 @@ namespace wave {
 /** @addtogroup optimization
  *  @{ */
 
-/**
- * Ceres cost function wrapping `Factor::evaluateRaw`.
- */
-class FactorCostFunction : public ceres::CostFunction {
- public:
-    explicit FactorCostFunction(std::shared_ptr<FactorBase> factor)
-        : factor{factor} {
-        this->set_num_residuals(factor->residualSize());
-        for (const auto &var : factor->variables()) {
-            this->mutable_parameter_block_sizes()->push_back(var->size());
-        }
-    }
-
-    bool Evaluate(double const *const *parameters,
-                  double *residuals,
-                  double **jacobians) const override {
-        return factor->evaluateRaw(parameters, residuals, jacobians);
-    }
-
- private:
-    std::shared_ptr<FactorBase> factor;
-};
-
 void addFactorToProblem(ceres::Problem &problem,
                         std::shared_ptr<FactorBase> factor) {
     // We make a vector of residual block pointers and pass it to
@@ -63,8 +40,7 @@ void addFactorToProblem(ceres::Problem &problem,
 
     // Finally, give ceres the cost function and its parameter blocks.
     if (!factor->isPerfectPrior()) {
-        problem.AddResidualBlock(
-          new FactorCostFunction{std::move(factor)}, nullptr, data_ptrs);
+        problem.AddResidualBlock(factor->costFunction(), nullptr, data_ptrs);
     }
 }
 

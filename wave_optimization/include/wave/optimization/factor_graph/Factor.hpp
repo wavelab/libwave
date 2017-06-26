@@ -88,8 +88,8 @@ class Factor : public FactorBase {
 
     std::unique_ptr<ceres::CostFunction> costFunction() const noexcept override;
 
-    template <typename T>
-    bool evaluateRaw(tmp::replacet<T, V> const *const... parameters,
+    template <typename ...T>
+    bool evaluateRaw(T const *const... parameters,
                      T *residuals) const noexcept;
 
     /** Get a reference to the vector of variable pointers */

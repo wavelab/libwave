@@ -36,12 +36,16 @@ struct Map {};
  */
 template <typename Scalar, int S>
 struct FactorValue : Eigen::Matrix<Scalar, S, 1> {
+    using ValueSizes = tmp::index_sequence<S>;
+    using ValueTuple = std::tuple<FactorValue<Scalar, S>>;
     constexpr static int Size = S;
     using Eigen::Matrix<Scalar, S, 1>::Matrix;
 };
 
 template <typename Scalar, int S>
 struct FactorValue<Map<Scalar>, S> : Eigen::Map<FactorValue<Scalar, S>> {
+    using ValueSizes = tmp::index_sequence<S>;
+    using ValueTuple = std::tuple<FactorValue<Map<Scalar>, S>>;
     using Eigen::Map<FactorValue<Scalar, S>>::Map;
     using Eigen::Map<FactorValue<Scalar, S>>::operator=;
 };
@@ -49,8 +53,8 @@ struct FactorValue<Map<Scalar>, S> : Eigen::Map<FactorValue<Scalar, S>> {
 template <typename T, template <typename> class... ValueTypes>
 class ComposedValue {
  public:
+    using ValueSizes = tmp::concat_index_sequence<typename ValueTypes<T>::ValueSizes...>;
     using ValueTuple = std::tuple<ValueTypes<T>...>;
-    using ValueSizes = tmp::index_sequence<ValueTypes<T>::Size...>;
 
     ComposedValue() : elements{ValueTypes<T>::Zero()...} {}
     explicit ComposedValue(ValueTypes<T>... args)
@@ -63,8 +67,9 @@ class ComposedValue {
 template <typename Scalar, template <typename> class... ValueTypes>
 class ComposedValue<Map<Scalar>, ValueTypes...> {
  public:
+    using ValueSizes = tmp::concat_index_sequence<typename ValueTypes<Map<Scalar>>::ValueSizes...>;
     using ValueTuple = std::tuple<ValueTypes<Map<Scalar>>...>;
-    using ValueSizes = tmp::index_sequence<ValueTypes<Scalar>::Size...>;
+
     explicit ComposedValue(tmp::replacet<Scalar *, ValueTypes>... args)
         : elements{ValueTypes<Map<Scalar>>{args}...} {}
 
@@ -79,6 +84,18 @@ template <typename T>
 using FactorValue2 = FactorValue<T, 2>;
 template <typename T>
 using FactorValue3 = FactorValue<T, 3>;
+
+
+namespace internal {
+
+template <typename... ComposedOrValues>
+using get_value_types = tmp::tuple_cat_result<typename ComposedOrValues::ValueTuple...>;
+
+template <typename... ComposedOrValues>
+using get_value_sizes = tmp::concat_index_sequence<typename ComposedOrValues::ValueSizes...>;
+
+}  // namespace internal
+
 
 /** @} group optimization */
 }  // namespace wave
