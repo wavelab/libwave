@@ -83,4 +83,20 @@ using FactorValue3 = FactorValue<T, 3>;
 /** @} group optimization */
 }  // namespace wave
 
+
+/** @todo figure this out */
+namespace Eigen {
+namespace internal {
+
+template <typename Scalar, int S>
+struct traits<wave::FactorValue<Scalar, S>>
+  : traits<Eigen::Matrix<Scalar, S, 1>> {};
+
+template <typename Scalar, int S>
+struct traits<wave::FactorValue<wave::Map<Scalar>, S>>
+  : traits<Eigen::Map<wave::FactorValue<Scalar, S>>> {};
+
+}
+}
+
 #endif  // WAVE_OPTIMIZATION_FACTOR_GRAPH_VALUE_HPP

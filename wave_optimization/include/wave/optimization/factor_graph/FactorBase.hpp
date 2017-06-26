@@ -7,6 +7,8 @@
 #define WAVE_OPTIMIZATION_FACTOR_GRAPH_FACTORBASE_HPP
 
 #include <ceres/cost_function.h>
+#include "wave/optimization/factor_graph/FactorVariableBase.hpp"
+
 namespace wave {
 /** @addtogroup optimization
  *  @{ */
