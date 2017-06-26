@@ -25,22 +25,35 @@ inline Vv make_value(T const *const param) {
     return Vv{ptr};
 }
 
-template <typename T struct collapse
+//template <typename T, typename VSeq, typename ISeq>
+//struct make_composed_value;
 
-          template <typename F, template <typename> class M, typename TmplTuple>
-          struct FactorCostFunctor;
+template <typename T, template <typename> class V, int N, int... Is>
+inline V<Map<T>> make_composed_value(std::array<T const * const, N> ptrs,  tmp::index_sequence<Is...>) {
+    return V<Map<T>>{ptrs[Is]...};
+};
+
+//template <template <typename> class... Vv, int... Is>
+//struct collapse<tmp::tmpl_sequence<Vv...>, tmp::index_sequence<Is...>>
+//{
+//    using type = tmp::tmpl_sequence<get_value_indices
+//};
+
+template <typename F, template <typename> class M, typename TmplTuple, template <typename> class... V>
+struct FactorCostFunctor;
 
 template <typename F,
           template <typename> class M,
-          template <typename> class... Vv>
-struct FactorCostFunctor<F, M, tmp::tmpl_sequence<Vv...>> {
+          template <typename> class... Vv,
+          template <typename> class... V>
+struct FactorCostFunctor<F, M, tmp::tmpl_sequence<Vv...>, V...> {
     template <typename T>
     bool operator()(tmp::replacet<T, Vv> const *const... params,
                     T *raw_residuals) const {
         auto residuals = M<Map<T>>{raw_residuals};
 
         // Call the measurement function
-        bool ok = F{}(make_value<Vv<Map<T>>, T>(params)..., residuals);
+        bool ok = F{}(internal::make_composed_value<T, V, sizeof...(V), internal::get_value_indices<V>>(params)..., residuals);
         if (ok) {
             // Calculate the normalized residual
             const auto &L = this->meas.noise.inverseSqrtCov();
@@ -75,7 +88,7 @@ template <typename F,
 std::unique_ptr<ceres::CostFunction> Factor<F, M, V...>::costFunction() const
   noexcept {
     using Functor =
-      internal::FactorCostFunctor<F, M, internal::get_value_tmpls<V...>>;
+      internal::FactorCostFunctor<F, M, internal::expand_value_tmpls<V...>, V...>;
     using CostFunction = typename internal::
       get_cost_function<Functor, internal::get_value_sizes<M, V...>>::type;
     return std::unique_ptr<ceres::CostFunction>{

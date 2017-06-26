@@ -41,6 +41,7 @@ struct FactorValue : Eigen::Matrix<Scalar, S, 1> {
     using ValueSizes = tmp::index_sequence<S>;
     using ValueTuple = std::tuple<FactorValue<Scalar, S>>;
     using ValueTmpls = tmp::tmpl_sequence<Tmpl>;
+    constexpr static int NumValues = 1;
     constexpr static int Size = S;
     using Eigen::Matrix<Scalar, S, 1>::Matrix;
 };
@@ -52,6 +53,7 @@ struct FactorValue<Map<Scalar>, S> : Eigen::Map<FactorValue<Scalar, S>> {
     using ValueSizes = tmp::index_sequence<S>;
     using ValueTuple = std::tuple<FactorValue<Map<Scalar>, S>>;
     using ValueTmpls = tmp::tmpl_sequence<Tmpl>;
+    constexpr static int NumValues = 1;
     using Eigen::Map<FactorValue<Scalar, S>>::Map;
     using Eigen::Map<FactorValue<Scalar, S>>::operator=;
 };
@@ -63,6 +65,7 @@ class ComposedValue {
       typename tmp::concat_index_sequence<typename V<T>::ValueSizes...>::type;
     using ValueTuple = std::tuple<V<T>...>;
     using ValueTmpls = tmp::tmpl_sequence<V...>;
+    constexpr static int NumValues = sizeof...(V);
 
     ComposedValue() : elements{V<T>::Zero()...} {}
     explicit ComposedValue(V<T>... args) : elements{std::move(args)...} {}
@@ -78,6 +81,7 @@ class ComposedValue<Map<Scalar>, V...> {
       typename V<Map<Scalar>>::ValueSizes...>::type;
     using ValueTuple = std::tuple<V<Map<Scalar>>...>;
     using ValueTmpls = tmp::tmpl_sequence<V...>;
+    constexpr static int NumValues = sizeof...(V);
 
     explicit ComposedValue(tmp::replacet<Scalar *, V>... args)
         : elements{V<Map<Scalar>>{args}...} {}
@@ -117,12 +121,27 @@ template <template <typename...> class... ComposedOrValues>
 using get_value_sizes = typename tmp::concat_index_sequence<
   typename ComposedOrValues<double>::ValueSizes...>::type;
 
-template <template <typename...> class... ComposedOrValues>
-using get_value_tmpls = typename tmp::concat_tmpl_sequence<
-  typename ComposedOrValues<double>::ValueTmpls...>::type;
+//template <template <typename...> class... ComposedOrValues>
+//using get_value_tmpls = typename tmp::tmpl_sequence<
+//  typename ComposedOrValues<double>::ValueTmpls...>::type;
 
 template <template <typename...> class... ComposedOrValues>
-using get_value_indices =
+using expand_value_tmpls = typename tmp::concat_tmpl_sequence<
+        typename ComposedOrValues<double>::ValueTmpls...>::type;
+
+template <int S, typename... Seqs>
+struct get_value_indices_impl;
+
+template <int S, int Head, int... Tail, typename... Out>
+struct get_value_indices_impl<S, tmp::index_sequence<Head, Tail...>, tmp::type_sequence<Out...>>
+  : get_value_indices_impl<S + Head, tmp::index_sequence<Tail...>, tmp::type_sequence<Out..., tmp::make_index_sequence<Head, S>>>{};
+
+template <int S, int Head, typename... Out>
+struct get_value_indices_impl<S, tmp::index_sequence<Head>, tmp::type_sequence<Out...>>
+        : tmp::type_sequence<Out..., tmp::make_index_sequence<Head, S>>{};
+
+template <template <typename...> class... ComposedOrValues>
+using get_value_indices = typename get_value_indices_impl<0, tmp::index_sequence<ComposedOrValues<double>::NumValues...>>::type;
 
 }  // namespace internal
 

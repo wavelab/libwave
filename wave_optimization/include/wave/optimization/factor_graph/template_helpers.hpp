@@ -71,7 +71,9 @@ using replacet = To;
  * http://eli.thegreenplace.net/2014/variadic-templates-in-c
  */
 template <int... Indices>
-struct index_sequence {};
+struct index_sequence {
+    using type = index_sequence<Indices...>;
+};
 
 /** Generates an index_sequence<S, ..., S + N - 1> via recursion */
 template <int N, int S = 0, int... Indices>
@@ -84,12 +86,12 @@ struct make_index_sequence<0, S, Indices...> : index_sequence<Indices...> {};
 
 /** Generates an index_sequence with N repetitions of S */
 template <int N, int S, int... Indices>
-struct repeat_index_sequence
-        : repeat_index_sequence<N - 1, S, S, Indices...> {};
+struct repeat_index_sequence : repeat_index_sequence<N - 1, S, S, Indices...> {
+};
 
 // Final stop on the recursion train
 template <int S, int... Indices>
-struct make_index_sequence<0, S, Indices...> : index_sequence<Indices...> {};
+struct repeat_index_sequence<0, S, Indices...> : index_sequence<Indices...> {};
 
 /** Concatenates index sequences */
 template <typename... Seqs>
@@ -106,7 +108,13 @@ struct concat_index_sequence<index_sequence<I1...>> {
     using type = index_sequence<I1...>;
 };
 
-/** Similar to index_sequence, but for templates */
+/** A container for a sequence of types */
+template <typename... Types>
+struct type_sequence {
+    using type = type_sequence<Types...>;
+};
+
+/** A container for a sequence of templates */
 template <template <typename...> class... Templates>
 struct tmpl_sequence {};
 
