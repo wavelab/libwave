@@ -18,10 +18,6 @@ class FactorVariableBase {
     /** Return the number of scalar values in the variable. */
     virtual int size() const noexcept = 0;
 
-    /** Return a raw pointer to the start of the internal storage. */
-    virtual const double *data() const noexcept = 0;
-    virtual double *data() noexcept = 0;
-
     /** Print representation of the object for debugging.
      * Called by `operator<<`. */
     virtual void print(std::ostream &os) const = 0;

@@ -38,9 +38,6 @@ class FactorBase {
     /** The arity (number of variables connected) of the factor */
     virtual int size() const = 0;
 
-    /** The dimension of the measurement and residual vector */
-    virtual int residualSize() const = 0;
-
     /** Get a reference to the vector of variable pointers */
     virtual const VarVectorType &variables() const noexcept = 0;
 

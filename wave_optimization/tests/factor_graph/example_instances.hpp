@@ -41,8 +41,8 @@ struct Pose2D : public ComposedValue<T, Position2D, Orientation2D> {
     // Use base class constructors
     using ComposedValue<T, Position2D, Orientation2D>::ComposedValue;
 
-    Position2D<T>& position = std::get<0>(this->elements);
-    Orientation2D<T>& orientation = std::get<1>(this->elements);
+    Position2D<T> &position = std::get<0>(this->elements);
+    Orientation2D<T> &orientation = std::get<1>(this->elements);
 };
 
 /** Define variable types for each value type */
@@ -63,28 +63,23 @@ using DistanceMeasurement = FactorMeasurement<Distance>;
  * @param[out] j_landmark
  * @return true on success
  */
-template <typename T>
-inline bool distanceMeasurementFunction(const Pose2D<T> &pose,
-                                        const Position2D<T> &landmark_pos,
-                                        Distance<T> &result) noexcept {
-    Vec2 diff = pose.position - landmark_pos;
-    double distance = diff.norm();
-    result = distance;
-    return true;
-}
+struct DistanceMeasurementFunctor {
+    template <typename T>
+    inline bool operator()(const Pose2D<T> &pose,
+                           const Position2D<T> &landmark_pos,
+                           Distance<T> &result) noexcept {
+        Vec2 diff = pose.position - landmark_pos;
+        double distance = diff.norm();
+        result = distance;
+        return true;
+    }
+};
 
 /**
  * Factor representing a distance measurement between a 2D pose and landmark.
  */
-class DistanceToLandmarkFactor
-  : public Factor<DistanceMeasurement, Pose2DVar, Landmark2DVar> {
- public:
-    explicit DistanceToLandmarkFactor(DistanceMeasurement meas,
-                                      std::shared_ptr<Pose2DVar> p,
-                                      std::shared_ptr<Landmark2DVar> l)
-        : Factor<DistanceMeasurement, Pose2DVar, Landmark2DVar>{
-            distanceMeasurementFunction, meas, std::move(p), std::move(l)} {}
-};
+using DistanceToLandmarkFactor =
+  Factor<DistanceMeasurementFunctor, Distance, Pose2D, Position2D>;
 
 /** @} group optimization */
 }  // namespace wave

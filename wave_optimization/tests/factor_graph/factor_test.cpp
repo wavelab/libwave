@@ -10,7 +10,7 @@ TEST(FactorTest, evaluateRaw) {
     auto meas = 1.23;
 
     using Pose2DVar = FactorVariable<Pose2D>;
-    using Landmark2DVar = FactorVariable<Landmark2D>;
+    using Landmark2DVar = FactorVariable<Position2D>;
 
 
     DistanceToLandmarkFactor f{DistanceMeasurement{meas, 1.0},
@@ -46,8 +46,8 @@ TEST(FactorTest, constructPerfectPrior) {
     using VarType = FactorVariable<Distance>;
     auto v = std::make_shared<VarType>();
 
-    auto factor = PerfectPrior<VarType>{MeasType{1.2}, v};
-    EXPECT_DOUBLE_EQ(1.2, v->value.asVector().value());
+    auto factor = PerfectPrior<Distance>{MeasType{1.2}, v};
+    EXPECT_DOUBLE_EQ(1.2, v->value.value());
 
     EXPECT_TRUE(factor.isPerfectPrior());
 }
@@ -72,7 +72,7 @@ TEST(FactorTest, printPerfectPrior) {
     using MeasType = FactorMeasurement<Distance, void>;
     using VarType = FactorVariable<Distance>;
     auto v = std::make_shared<VarType>();
-    auto factor = PerfectPrior<VarType>{MeasType{1.2}, v};
+    auto factor = PerfectPrior<Distance>{MeasType{1.2}, v};
 
     std::stringstream expected;
     expected << "[Perfect prior for variable ";

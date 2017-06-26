@@ -31,34 +31,37 @@ inline bool FactorGraph::empty() const noexcept {
 
 // Modifiers
 
-template <typename FuncType, typename MeasType, typename... VarTypes>
-inline void FactorGraph::addFactor(FuncType f,
-                                   const MeasType &measurement,
-                                   std::shared_ptr<VarTypes>... variables) {
-    using FactorType = Factor<MeasType, VarTypes...>;
+template <typename Functor,
+          template <typename> class M,
+          template <typename> class... V>
+inline void FactorGraph::addFactor(
+  const M<double> &measurement,
+  std::shared_ptr<FactorVariable<V>>... variables) {
+    using FactorType = Factor<Functor, M, V...>;
 
     // Give a nice error message if the function type is wrong
-    static_assert(
-      std::is_same<typename FactorType::FuncType *, FuncType>::value,
-      "The given measurement function is of incorrect type");
+    using ExpectedFuncType = typename FactorType::FuncType;
+    using ActualFuncType = decltype(Functor::operator());
+    static_assert(std::is_same<ExpectedFuncType, ActualFuncType>::value,
+                  "The given measurement function is of incorrect type");
 
     this->factors.emplace_back(
-      std::make_shared<FactorType>(f, measurement, std::move(variables)...));
+      std::make_shared<FactorType>(measurement, std::move(variables)...));
 };
 
-template <typename MeasType>
-inline void FactorGraph::addPrior(
-  const MeasType &measurement,
-  std::shared_ptr<typename MeasType::VarType> variable) {
-    return this->addFactor(
-      internal::identityMeasurementFunction<typename MeasType::ViewType>,
-      measurement,
-      std::move(variable));
+
+template <template <typename> class M>
+inline void FactorGraph::addPrior(const M<double> &measurement,
+                                  std::shared_ptr<FactorVariable<M>> variable) {
+    return this->addFactor(internal::identityMeasurementFunction<M>,
+                           measurement,
+                           std::move(variable));
 }
 
 template <template <typename> class V>
-inline void FactorGraph::addPerfectPrior(const V<double> &measured_value,
-                     std::shared_ptr<FactorVariable<V>> variable) {
+inline void FactorGraph::addPerfectPrior(
+  const V<double> &measured_value,
+  std::shared_ptr<FactorVariable<V>> variable) {
     using MeasType = FactorMeasurement<V, void>;
 
     this->factors.emplace_back(std::make_shared<PerfectPrior<V>>(

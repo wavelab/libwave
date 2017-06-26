@@ -7,11 +7,11 @@
 #define WAVE_OPTIMIZATION_FACTOR_GRAPH_FACTOR_HPP
 
 #include "wave/utils/math.hpp"
-#include "wave/optimization/factor_graph/FactorVariableBase.hpp"
+#include "wave/optimization/factor_graph/FactorVariable.hpp"
 #include "wave/optimization/factor_graph/FactorBase.hpp"
 #include "wave/optimization/factor_graph/OutputMap.hpp"
 #include "wave/optimization/factor_graph/template_helpers.hpp"
-
+#include "FactorMeasurement.hpp"
 
 namespace wave {
 /** @addtogroup optimization
@@ -42,14 +42,14 @@ namespace wave {
  * @tparam MeasType The type of measurement used by this factor
  * @tparam VarTypes The list of variables types operated on by this factor
  */
-template <typename MeasType, typename... VarTypes>
+template <typename F,
+          template <typename> class M,
+          template <typename> class... V>
 class Factor : public FactorBase {
-    using FactorType = Factor<MeasType, VarTypes...>;
+    using FactorType = Factor<F, M, V...>;
 
  public:
-    constexpr static int NumVars = sizeof...(VarTypes);
-    constexpr static int ResidualSize = MeasType::Size;
-    using ResidualType = Eigen::Matrix<double, ResidualSize, 1>;
+    constexpr static int NumVars = sizeof...(V);
     using VarArrayType = FactorBase::VarVectorType;
 
     /** The deduced type the used-defined measurement function must have.
@@ -72,27 +72,23 @@ class Factor : public FactorBase {
      *
      * @return true if calculation was successful, false on error
      */
-    using FuncType = bool(const typename VarTypes::ViewType &...,
-                          typename MeasType::ViewType &);
+    template <typename T>
+    using FuncType = bool(const V<T> &..., M<T> &);
 
     using const_iterator = typename VarArrayType::const_iterator;
 
-    /** Construct with the given function, measurement and variables. */
-    explicit Factor(FuncType measurement_function,
-                    MeasType measurement,
-                    std::shared_ptr<VarTypes>... variable_ptrs);
+    /** Construct with the given measurement and variables. */
+    explicit Factor(FactorMeasurement<M> measurement,
+                    std::shared_ptr<FactorVariable<V>>... variable_ptrs);
 
     int size() const override {
         return NumVars;
-    }
-    int residualSize() const override {
-        return ResidualSize;
     }
 
     std::unique_ptr<ceres::CostFunction> costFunction() const noexcept override;
 
     template <typename T>
-    bool evaluateRaw(tmp::replace<T, VarTypes> const *const... parameters,
+    bool evaluateRaw(tmp::replacet<T, V> const *const... parameters,
                      T *residuals) const noexcept;
 
     /** Get a reference to the vector of variable pointers */
@@ -109,23 +105,23 @@ class Factor : public FactorBase {
     void print(std::ostream &os) const override;
 
  private:
-    FuncType *measurement_function;
-
     /** Storage of the measurement */
-    MeasType measurement;
+    FactorMeasurement<M> measurement;
 
     /** Pointers to the variables this factor is linked to */
     VarArrayType variable_ptrs;
 };
 
-template <typename M, typename... V>
+template <typename F,
+          template <typename> class M,
+          template <typename> class... V>
 struct FactorCostFunctor {
     template <typename T>
-    bool operator()(tmp::replace<T, V> const *const... parameters,
+    bool operator()(tmp::replacet<T, V> const *const... parameters,
                     T *raw_residuals) const {
         return factor->evaluateRaw(parameters..., raw_residuals);
     }
-    Factor<M, V...> const *const factor;
+    Factor<F, M, V...> const *const factor;
 };
 
 /** @} group optimization */

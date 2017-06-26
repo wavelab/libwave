@@ -51,14 +51,15 @@ class FactorGraph {
      * @param variables Pointers to the FactorVariable%s used by the measurement
      * function. Their types must match the measurement function signature.
      */
-    template <typename FuncType, typename MeasType, typename... VarTypes>
-    void addFactor(FuncType f,
-                   const MeasType &measurement,
-                   std::shared_ptr<VarTypes>... variables);
+    template <typename Functor,
+              template <typename> class M,
+              template <typename> class... V>
+    void addFactor(const M<double> &measurement,
+                   std::shared_ptr<FactorVariable<V>>... variables);
 
-    template <typename MeasType>
-    void addPrior(const MeasType &measurement,
-                  std::shared_ptr<typename MeasType::VarType> variable);
+    template <template <typename> class M>
+    void addPrior(const M<double> &measurement,
+                  std::shared_ptr<FactorVariable<M>> variable);
 
     template <template <typename> class V>
     void addPerfectPrior(const V<double> &measured_value,

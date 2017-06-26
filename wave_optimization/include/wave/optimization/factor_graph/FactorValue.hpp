@@ -47,20 +47,22 @@ struct FactorValue<Map<Scalar>, S> : Eigen::Map<FactorValue<Scalar, S>> {
 };
 
 
-template <typename T, template<typename> class... ValueTypes>
+template <typename T, template <typename> class... ValueTypes>
 class ComposedValue {
  public:
-    explicit ComposedValue(ValueTypes<T>... args) : elements{std::move(args)...} {}
+    ComposedValue() : elements{ValueTypes<T>::Zero()...} {}
+    explicit ComposedValue(ValueTypes<T>... args)
+        : elements{std::move(args)...} {}
 
  protected:
     std::tuple<ValueTypes<T>...> elements;
 };
 
-template <typename Scalar, template<typename> class... ValueTypes>
+template <typename Scalar, template <typename> class... ValueTypes>
 class ComposedValue<Map<Scalar>, ValueTypes...> {
  public:
-    explicit ComposedValue(tmp::replacet<Scalar*, ValueTypes>... args) :
-            elements{ValueTypes<Map<Scalar>>{args}...} {}
+    explicit ComposedValue(tmp::replacet<Scalar *, ValueTypes>... args)
+        : elements{ValueTypes<Map<Scalar>>{args}...} {}
 
  protected:
     std::tuple<ValueTypes<Map<Scalar>>...> elements;

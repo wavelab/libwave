@@ -45,6 +45,7 @@ template <template <typename> class V>
 class FactorVariable : public FactorVariableBase {
  public:
     using ValueType = V<double>;
+    constexpr static int Size = 0;
 
     // Constructors
 
@@ -52,15 +53,13 @@ class FactorVariable : public FactorVariableBase {
      * Actually initializes to zero to avoid problems with garbage floats
      * @todo move setting of initial value elsewhere
      */
-    FactorVariable() noexcept : value{ValueType::Zero()} {}
+    FactorVariable() noexcept {}
 
     /** Construct with initial value */
-    explicit FactorVariable(ValueType initial)
-        : value{std::move(initial)} {}
+    explicit FactorVariable(ValueType initial) : value{std::move(initial)} {}
 
     /** Construct with initial value, only for variables of size one*/
-    explicit FactorVariable(double initial)
-        : value{initial} {}
+    explicit FactorVariable(double initial) : value{initial} {}
 
     ~FactorVariable() override = default;
 
@@ -68,15 +67,7 @@ class FactorVariable : public FactorVariableBase {
 
     /** Return the number of scalar values in the variable. */
     int size() const noexcept override {
-        return 0;
-    }
-
-    /** Return a raw pointer to the start of the internal storage. */
-    const double *data() const noexcept override {
-        return this->value.data();
-    }
-    double *data() noexcept override {
-        return this->value.data();
+        return Size;
     }
 
     void print(std::ostream &os) const override {

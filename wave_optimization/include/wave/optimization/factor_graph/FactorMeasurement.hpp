@@ -71,11 +71,10 @@ class FactorMeasurement<V, void> : public FactorVariable<V> {
     using VarType = Base;
     using ValueType = typename Base::ValueType;
     using NoiseType = void;
-    using MappedType = typename Base::MappedType;
     constexpr static int Size = Base::Size;
 
     /** Construct with initial value and no noise */
-    explicit FactorMeasurement(MappedType initial) : Base{std::move(initial)} {}
+    explicit FactorMeasurement(V<double> initial) : Base{std::move(initial)} {}
 
     /** Construct with initial value, only for variables of size one*/
     explicit FactorMeasurement(double initial) : Base{initial} {}

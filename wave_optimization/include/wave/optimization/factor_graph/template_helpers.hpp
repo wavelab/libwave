@@ -33,7 +33,7 @@ using replace = To;
  *
  * For example, `replace<int, T>...` becomes `int...` of the same length.
  */
-template <typename To, template<typename...> class From>
+template <typename To, template <typename...> class From>
 using replacet = To;
 
 }  // namespace tmp

@@ -26,28 +26,32 @@ inline typename V::ViewType make_value(T const *const param) {
 
 }  // namespace internal
 
-template <typename M, typename... V>
-Factor<M, V...>::Factor(Factor::FuncType measurement_function,
-                        M measurement,
-                        std::shared_ptr<V>... variable_ptrs)
-    : measurement_function{measurement_function},
-      measurement{measurement},
-      variable_ptrs{{variable_ptrs...}} {}
+template <typename F,
+          template <typename> class M,
+          template <typename> class... V>
+Factor<F, M, V...>::Factor(FactorMeasurement<M> measurement,
+                           std::shared_ptr<FactorVariable<V>>... variable_ptrs)
+    : measurement{measurement}, variable_ptrs{{variable_ptrs...}} {}
 
-template <typename M, typename... V>
-std::unique_ptr<ceres::CostFunction> Factor<M, V...>::costFunction() const
+template <typename F,
+          template <typename> class M,
+          template <typename> class... V>
+std::unique_ptr<ceres::CostFunction> Factor<F, M, V...>::costFunction() const
   noexcept {
-    using Functor = FactorCostFunctor<M, V...>;
+    using Functor = FactorCostFunctor<F, M, V...>;
     using CostFunction =
-      ceres::AutoDiffCostFunction<Functor, M::Size, V::Size...>;
+      ceres::AutoDiffCostFunction<Functor, M<double>::Size, V<double>::Size...>;
     return std::unique_ptr<ceres::CostFunction>{
       new CostFunction{new Functor{this}}};
 }
 
-template <typename M, typename... V>
+template <typename F,
+          template <typename> class M,
+          template <typename> class... V>
 template <typename T>
-bool Factor<M, V...>::evaluateRaw(tmp::replace<T, V> const *const... parameters,
-                                  T *raw_residuals) const noexcept {
+bool Factor<F, M, V...>::evaluateRaw(
+  tmp::replacet<T, V> const *const... parameters, T *raw_residuals) const
+  noexcept {
     auto residuals = internal::make_value<M>(raw_residuals);
 
     // Call the measurement function
@@ -62,8 +66,10 @@ bool Factor<M, V...>::evaluateRaw(tmp::replace<T, V> const *const... parameters,
     return ok;
 }
 
-template <typename M, typename... V>
-void Factor<M, V...>::print(std::ostream &os) const {
+template <typename F,
+          template <typename> class M,
+          template <typename> class... V>
+void Factor<F, M, V...>::print(std::ostream &os) const {
     os << "[";
     os << "Factor arity " << NumVars << ", ";
     os << "variables: ";

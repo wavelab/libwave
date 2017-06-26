@@ -43,8 +43,6 @@ class PerfectPrior : public FactorBase {
 
  public:
     constexpr static int NumVars = 1;
-    constexpr static int ResidualSize = MeasType::Size;
-    using ResidualType = Eigen::Matrix<double, ResidualSize, 1>;
     using VarArrayType = FactorBase::VarVectorType;
     using const_iterator = typename VarArrayType::const_iterator;
 
@@ -58,10 +56,6 @@ class PerfectPrior : public FactorBase {
 
     int size() const override {
         return NumVars;
-    }
-
-    int residualSize() const override {
-        return ResidualSize;
     }
 
     std::unique_ptr<ceres::CostFunction> costFunction() const
