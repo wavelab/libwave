@@ -1,4 +1,5 @@
 #include <ceres/autodiff_cost_function.h>
+#include "wave/optimization/factor_graph/template_helpers.hpp"
 
 namespace wave {
 
@@ -12,8 +13,8 @@ namespace internal {
  * @param param the pointer provided by the optimizer
  * @return a FactorValue mapping the given array
  */
-template <typename V, typename T>
-inline typename V::ViewType make_value(T const *const param) {
+template <template <typename> class V, typename T>
+inline V<Map<T>> make_value(T const *const param) {
     // The array is const, but ValueView maps non-const arrays. It would be
     // complicated to have two variants of ValueView, one for const and one
     // for non-const arrays. In this case, we know that the ValueView itself
@@ -21,8 +22,16 @@ inline typename V::ViewType make_value(T const *const param) {
     // modify the array, and it's "safe" to cast away the constness. Still,
     // @todo: reconsider this cast
     const auto ptr = const_cast<T *>(param);
-    return typename V::ViewType{ptr};
+    return V<Map<T>>{ptr};
 }
+
+template <typename Functor, typename SizeSeq>
+struct get_cost_function;
+
+template <typename Functor, int... ValueSizes>
+struct get_cost_function<Functor, tmp::index_sequence<ValueSizes...>> {
+    using type = ceres::AutoDiffCostFunction<Functor, ValueSizes...>;
+};
 
 }  // namespace internal
 
@@ -39,8 +48,10 @@ template <typename F,
 std::unique_ptr<ceres::CostFunction> Factor<F, M, V...>::costFunction() const
   noexcept {
     using Functor = FactorCostFunctor<F, M, V...>;
-    using CostFunction =
-      ceres::AutoDiffCostFunction<Functor, M<double>::Size, V<double>::Size...>;
+    using CostFunction = internal::get_cost_function<
+      F,
+      tmp::concat_index_sequence<tmp::index_sequence<M<double>::Size>,
+                                 typename V<double>::ValueSizes...>>;
     return std::unique_ptr<ceres::CostFunction>{
       new CostFunction{new Functor{this}}};
 }

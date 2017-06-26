@@ -7,8 +7,9 @@
 #define WAVE_OPTIMIZATION_FACTOR_GRAPH_FACTOR_HPP
 
 #include "wave/utils/math.hpp"
-#include "wave/optimization/factor_graph/FactorVariable.hpp"
 #include "wave/optimization/factor_graph/FactorBase.hpp"
+#include "wave/optimization/factor_graph/FactorValue.hpp"
+#include "wave/optimization/factor_graph/FactorVariable.hpp"
 #include "wave/optimization/factor_graph/OutputMap.hpp"
 #include "wave/optimization/factor_graph/template_helpers.hpp"
 #include "FactorMeasurement.hpp"
