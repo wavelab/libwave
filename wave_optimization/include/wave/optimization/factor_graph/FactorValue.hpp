@@ -51,6 +51,10 @@ struct FactorValue : Eigen::Matrix<Scalar, S, 1> {
     std::vector<Scalar *> blockData() noexcept {
         return {this->data()};
     }
+    FactorValue &operator=(double d) {
+        this->value() = d;
+        return *this;
+    }
 };
 
 template <typename Scalar, int S>
@@ -70,6 +74,10 @@ struct FactorValue<Map<Scalar>, S> : Eigen::Map<FactorValue<Scalar, S>> {
     }
     std::vector<Scalar *> blockData() noexcept {
         return {this->data()};
+    }
+    FactorValue &operator=(double d) {
+        (*this)[0] = d;
+        return *this;
     }
 };
 
@@ -212,9 +220,18 @@ struct traits<wave::FactorValue<Scalar, S>>
   : traits<Eigen::Matrix<Scalar, S, 1>> {};
 
 template <typename Scalar, int S>
+struct evaluator<wave::FactorValue<Scalar, S>>
+  : evaluator<Eigen::Matrix<Scalar, S, 1>> {};
+
+template <typename Scalar, int S>
 struct traits<wave::FactorValue<wave::Map<Scalar>, S>>
   : traits<Eigen::Map<wave::FactorValue<Scalar, S>>> {};
-}
-}
+
+template <typename Scalar, int S>
+struct evaluator<wave::FactorValue<wave::Map<Scalar>, S>>
+  : evaluator<Eigen::Map<wave::FactorValue<Scalar, S>>> {};
+
+}  // namespace internal
+}  // namespace Eigen
 
 #endif  // WAVE_OPTIMIZATION_FACTOR_GRAPH_VALUE_HPP
