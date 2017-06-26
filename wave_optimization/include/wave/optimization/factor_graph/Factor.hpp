@@ -88,9 +88,8 @@ class Factor : public FactorBase {
 
     std::unique_ptr<ceres::CostFunction> costFunction() const noexcept override;
 
-    template <typename ...T>
-    bool evaluateRaw(T const *const... parameters,
-                     T *residuals) const noexcept;
+    template <typename... Args>
+    bool evaluateRaw(Args... args) const noexcept;
 
     /** Get a reference to the vector of variable pointers */
     const VarVectorType &variables() const noexcept override {
@@ -111,18 +110,6 @@ class Factor : public FactorBase {
 
     /** Pointers to the variables this factor is linked to */
     VarArrayType variable_ptrs;
-};
-
-template <typename F,
-          template <typename> class M,
-          template <typename> class... V>
-struct FactorCostFunctor {
-    template <typename T>
-    bool operator()(tmp::replacet<T, V> const *const... parameters,
-                    T *raw_residuals) const {
-        return factor->evaluateRaw(parameters..., raw_residuals);
-    }
-    Factor<F, M, V...> const *const factor;
 };
 
 /** @} group optimization */

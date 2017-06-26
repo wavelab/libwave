@@ -73,10 +73,19 @@ using replacet = To;
 template <int... Indices>
 struct index_sequence {};
 
-// Generates an index_sequence<S, ..., S + N - 1> via recursion */
+/** Generates an index_sequence<S, ..., S + N - 1> via recursion */
 template <int N, int S = 0, int... Indices>
 struct make_index_sequence
   : make_index_sequence<N - 1, S, S + N - 1, Indices...> {};
+
+// Final stop on the recursion train
+template <int S, int... Indices>
+struct make_index_sequence<0, S, Indices...> : index_sequence<Indices...> {};
+
+/** Generates an index_sequence with N repetitions of S */
+template <int N, int S, int... Indices>
+struct repeat_index_sequence
+        : repeat_index_sequence<N - 1, S, S, Indices...> {};
 
 // Final stop on the recursion train
 template <int S, int... Indices>
@@ -93,7 +102,30 @@ struct concat_index_sequence<index_sequence<I1...>,
   : concat_index_sequence<index_sequence<I1..., I2...>, Seqs...> {};
 
 template <int... I1>
-struct concat_index_sequence<index_sequence<I1...>> : index_sequence<I1...> {};
+struct concat_index_sequence<index_sequence<I1...>> {
+    using type = index_sequence<I1...>;
+};
+
+/** Similar to index_sequence, but for templates */
+template <template <typename...> class... Templates>
+struct tmpl_sequence {};
+
+/** Concatenates template sequences */
+template <typename... Seqs>
+struct concat_tmpl_sequence;
+
+// Recurse forwards, always adding the second sequence to the first
+template <template <typename...> class... T1,
+          template <typename...> class... T2,
+          typename... Seqs>
+struct concat_tmpl_sequence<tmpl_sequence<T1...>, tmpl_sequence<T2...>, Seqs...>
+  : concat_tmpl_sequence<tmpl_sequence<T1..., T2...>, Seqs...> {};
+
+// Base case: only one sequence left
+template <template <typename...> class... T1>
+struct concat_tmpl_sequence<tmpl_sequence<T1...>> {
+    using type = tmpl_sequence<T1...>;
+};
 
 
 /** Inspects function argument and return types */

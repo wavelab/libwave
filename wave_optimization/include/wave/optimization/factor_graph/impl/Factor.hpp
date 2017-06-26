@@ -25,17 +25,32 @@ inline Vv make_value(T const *const param) {
     return Vv{ptr};
 }
 
-template <typename F, typename ValueTuple, typename T>
-struct FunctorHelper;
+template <typename T struct collapse
 
-template <typename F, typename Mv, typename... Vv, typename T>
-struct FunctorHelper<F, std::tuple<Mv, Vv...>, T> {
-    bool operator()(tmp::replace<T, Vv> const *const... params, Mv& residuals) {
-        return f(make_value<Vv, T>(params)..., residuals);
+          template <typename F, template <typename> class M, typename TmplTuple>
+          struct FactorCostFunctor;
+
+template <typename F,
+          template <typename> class M,
+          template <typename> class... Vv>
+struct FactorCostFunctor<F, M, tmp::tmpl_sequence<Vv...>> {
+    template <typename T>
+    bool operator()(tmp::replacet<T, Vv> const *const... params,
+                    T *raw_residuals) const {
+        auto residuals = M<Map<T>>{raw_residuals};
+
+        // Call the measurement function
+        bool ok = F{}(make_value<Vv<Map<T>>, T>(params)..., residuals);
+        if (ok) {
+            // Calculate the normalized residual
+            const auto &L = this->meas.noise.inverseSqrtCov();
+            residuals = L * (residuals - this->meas.value);
+        }
+        return ok;
     }
-    F f{};
-};
 
+    const FactorMeasurement<M> &meas;
+};
 
 template <typename Functor, typename SizeSeq>
 struct get_cost_function;
@@ -59,30 +74,12 @@ template <typename F,
           template <typename> class... V>
 std::unique_ptr<ceres::CostFunction> Factor<F, M, V...>::costFunction() const
   noexcept {
-    using Functor = FactorCostFunctor<F, M, V...>;
-    using CostFunction = internal::get_cost_function<
-      F,
-      internal::get_value_sizes<V<double>...>>;
+    using Functor =
+      internal::FactorCostFunctor<F, M, internal::get_value_tmpls<V...>>;
+    using CostFunction = typename internal::
+      get_cost_function<Functor, internal::get_value_sizes<M, V...>>::type;
     return std::unique_ptr<ceres::CostFunction>{
-      new CostFunction{new Functor{this}}};
-}
-
-template <typename F,
-          template <typename> class M,
-          template <typename> class... V>
-template <typename... T>
-bool Factor<F, M, V...>::evaluateRaw(
-  T const *const... parameters, T *raw_residuals) const
-  noexcept {
-    auto residuals = internal::make_value<M<Map<T>>, T>(raw_residuals);
-    // Call the measurement function
-    bool ok = internal::FunctorHelper<F, internal::get_value_types<M<Map<T>>, V<Map<T>>...>, T>{}(parameters..., residuals);
-    if (ok) {
-        // Calculate the normalized residual
-        const auto &L = measurement.noise.inverseSqrtCov();
-        residuals = L * (residuals - measurement.value);
-    }
-    return ok;
+      new CostFunction{new Functor{this->measurement}}};
 }
 
 template <typename F,
