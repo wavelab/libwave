@@ -13,33 +13,30 @@ namespace internal {
  * @param param the pointer provided by the optimizer
  * @return a FactorValue mapping the given array
  */
-template <typename Vv, typename T>
-inline Vv make_value(T const *const param) {
+
+template <typename T, template <typename> class V, int N, int... Is>
+inline V<Map<T>> make_composed_value(const std::array<T const *const, N> &ptrs,
+                                     tmp::index_sequence<Is...>) {
     // The array is const, but ValueView maps non-const arrays. It would be
     // complicated to have two variants of ValueView, one for const and one
     // for non-const arrays. In this case, we know that the ValueView itself
     // is const, and it won't modify the array itself - thus, nothing will
     // modify the array, and it's "safe" to cast away the constness. Still,
     // @todo: reconsider this cast
-    const auto ptr = const_cast<T *>(param);
-    return Vv{ptr};
+    return V<Map<T>>{const_cast<T *>(ptrs[Is])...};
 }
 
-//template <typename T, typename VSeq, typename ISeq>
-//struct make_composed_value;
+template <typename T, template <typename> class V, int N, typename ISeq, int I>
+inline V<Map<T>> make_composed_value1(
+  const std::array<T const *const, N> &ptrs) {
+    return make_composed_value<T, V, N>(ptrs, ISeq{});
+}
 
-template <typename T, template <typename> class V, int N, int... Is>
-inline V<Map<T>> make_composed_value(std::array<T const * const, N> ptrs,  tmp::index_sequence<Is...>) {
-    return V<Map<T>>{ptrs[Is]...};
-};
 
-//template <template <typename> class... Vv, int... Is>
-//struct collapse<tmp::tmpl_sequence<Vv...>, tmp::index_sequence<Is...>>
-//{
-//    using type = tmp::tmpl_sequence<get_value_indices
-//};
-
-template <typename F, template <typename> class M, typename TmplTuple, template <typename> class... V>
+template <typename F,
+          template <typename> class M,
+          typename TmplTuple,
+          template <typename> class... V>
 struct FactorCostFunctor;
 
 template <typename F,
@@ -47,13 +44,30 @@ template <typename F,
           template <typename> class... Vv,
           template <typename> class... V>
 struct FactorCostFunctor<F, M, tmp::tmpl_sequence<Vv...>, V...> {
+    constexpr static int N = sizeof...(Vv);
+
+    template <typename T, typename... ISeq, int... Is>
+    bool callF(const std::array<T const *const, N> &ptrs,
+               M<Map<T>> &residuals,
+               tmp::type_sequence<ISeq...> &&,
+               tmp::index_sequence<Is...> &&) const noexcept {
+        F f;
+        return f(internal::make_composed_value1<T, V, N, ISeq, Is>(ptrs)...,
+                 residuals);
+    }
+
+
     template <typename T>
-    bool operator()(tmp::replacet<T, Vv> const *const... params,
+    bool operator()(tmp::replacet<T, Vv> const *const... raw_params,
                     T *raw_residuals) const {
         auto residuals = M<Map<T>>{raw_residuals};
 
         // Call the measurement function
-        bool ok = F{}(internal::make_composed_value<T, V, sizeof...(V), internal::get_value_indices<V>>(params)..., residuals);
+        const auto &params = std::array<T const *const, N>{{raw_params...}};
+        bool ok = this->callF(params,
+                              residuals,
+                              internal::get_value_indices<V...>{},
+                              tmp::make_index_sequence<sizeof...(V)>{});
         if (ok) {
             // Calculate the normalized residual
             const auto &L = this->meas.noise.inverseSqrtCov();
@@ -87,8 +101,8 @@ template <typename F,
           template <typename> class... V>
 std::unique_ptr<ceres::CostFunction> Factor<F, M, V...>::costFunction() const
   noexcept {
-    using Functor =
-      internal::FactorCostFunctor<F, M, internal::expand_value_tmpls<V...>, V...>;
+    using Functor = internal::
+      FactorCostFunctor<F, M, internal::expand_value_tmpls<V...>, V...>;
     using CostFunction = typename internal::
       get_cost_function<Functor, internal::get_value_sizes<M, V...>>::type;
     return std::unique_ptr<ceres::CostFunction>{

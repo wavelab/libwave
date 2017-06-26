@@ -66,9 +66,14 @@ class FactorVariable : public FactorVariableBase {
     // Access
 
     /** Return the number of scalar values in the variable. */
-    int size() const noexcept override {
-        return Size;
+    std::vector<int> blockSizes() const noexcept override {
+        return value.blockSizes();
     }
+
+    std::vector<double *> blockData() noexcept override {
+        return value.blockData();
+    }
+
 
     void print(std::ostream &os) const override {
         os << "FactorVariable";

@@ -114,6 +114,21 @@ struct type_sequence {
     using type = type_sequence<Types...>;
 };
 
+/** Extracts the element at position I from the type_sequence */
+template <int I, typename Seq>
+struct type_sequence_element;
+
+// Start of recursion. Move head of sequence forward as S counts down
+template <int I, typename Head, typename... Tail>
+struct type_sequence_element<I, type_sequence<Head, Tail...>>
+  : type_sequence_element<I - 1, type_sequence<Tail...>> {};
+
+//  Base case
+template <typename Head, typename... Tail>
+struct type_sequence_element<0, type_sequence<Head, Tail...>> {
+    using type = Head;
+};
+
 /** A container for a sequence of templates */
 template <template <typename...> class... Templates>
 struct tmpl_sequence {};

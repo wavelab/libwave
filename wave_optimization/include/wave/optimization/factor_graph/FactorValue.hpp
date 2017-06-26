@@ -44,6 +44,13 @@ struct FactorValue : Eigen::Matrix<Scalar, S, 1> {
     constexpr static int NumValues = 1;
     constexpr static int Size = S;
     using Eigen::Matrix<Scalar, S, 1>::Matrix;
+
+    std::vector<int> blockSizes() const noexcept {
+        return {Size};
+    }
+    std::vector<Scalar *> blockData() noexcept {
+        return {this->data()};
+    }
 };
 
 template <typename Scalar, int S>
@@ -54,8 +61,16 @@ struct FactorValue<Map<Scalar>, S> : Eigen::Map<FactorValue<Scalar, S>> {
     using ValueTuple = std::tuple<FactorValue<Map<Scalar>, S>>;
     using ValueTmpls = tmp::tmpl_sequence<Tmpl>;
     constexpr static int NumValues = 1;
+    constexpr static int Size = S;
     using Eigen::Map<FactorValue<Scalar, S>>::Map;
     using Eigen::Map<FactorValue<Scalar, S>>::operator=;
+
+    std::vector<int> blockSizes() const noexcept {
+        return {Size};
+    }
+    std::vector<Scalar *> blockData() noexcept {
+        return {this->data()};
+    }
 };
 
 template <typename T, template <typename> class... V>
@@ -70,8 +85,22 @@ class ComposedValue {
     ComposedValue() : elements{V<T>::Zero()...} {}
     explicit ComposedValue(V<T>... args) : elements{std::move(args)...} {}
 
+    std::vector<int> blockSizes() const noexcept {
+        return {V<T>::Size...};
+    }
+
+    template <int... Is>
+    std::vector<T *> blockDataImpl(tmp::index_sequence<Is...>) noexcept {
+        return {std::get<Is>(this->elements).data()...};
+    }
+
+    std::vector<T *> blockData() noexcept {
+        return this->blockDataImpl(tmp::make_index_sequence<NumValues>{});
+    }
+
  protected:
     ValueTuple elements;
+    std::vector<T *> dataptrs;
 };
 
 template <typename Scalar, template <typename> class... V>
@@ -85,6 +114,19 @@ class ComposedValue<Map<Scalar>, V...> {
 
     explicit ComposedValue(tmp::replacet<Scalar *, V>... args)
         : elements{V<Map<Scalar>>{args}...} {}
+
+    std::vector<int> blockSizes() const noexcept {
+        return {V<Scalar>::Size...};
+    }
+
+    template <int... Is>
+    std::vector<Scalar *> blockDataImpl(tmp::index_sequence<Is...>) noexcept {
+        return {std::get<Is>(this->elements).data()...};
+    }
+
+    std::vector<Scalar *> blockData() noexcept {
+        return this->blockDataImpl(tmp::make_index_sequence<NumValues>{});
+    }
 
  protected:
     ValueTuple elements;
@@ -121,27 +163,38 @@ template <template <typename...> class... ComposedOrValues>
 using get_value_sizes = typename tmp::concat_index_sequence<
   typename ComposedOrValues<double>::ValueSizes...>::type;
 
-//template <template <typename...> class... ComposedOrValues>
-//using get_value_tmpls = typename tmp::tmpl_sequence<
+// template <template <typename...> class... ComposedOrValues>
+// using get_value_tmpls = typename tmp::tmpl_sequence<
 //  typename ComposedOrValues<double>::ValueTmpls...>::type;
 
 template <template <typename...> class... ComposedOrValues>
 using expand_value_tmpls = typename tmp::concat_tmpl_sequence<
-        typename ComposedOrValues<double>::ValueTmpls...>::type;
+  typename ComposedOrValues<double>::ValueTmpls...>::type;
 
-template <int S, typename... Seqs>
+template <int S, typename ISeq, typename OutSeq = tmp::type_sequence<>>
 struct get_value_indices_impl;
 
 template <int S, int Head, int... Tail, typename... Out>
-struct get_value_indices_impl<S, tmp::index_sequence<Head, Tail...>, tmp::type_sequence<Out...>>
-  : get_value_indices_impl<S + Head, tmp::index_sequence<Tail...>, tmp::type_sequence<Out..., tmp::make_index_sequence<Head, S>>>{};
+struct get_value_indices_impl<S,
+                              tmp::index_sequence<Head, Tail...>,
+                              tmp::type_sequence<Out...>>
+  : get_value_indices_impl<
+      S + Head,
+      tmp::index_sequence<Tail...>,
+      tmp::type_sequence<Out...,
+                         typename tmp::make_index_sequence<Head, S>::type>> {};
 
 template <int S, int Head, typename... Out>
-struct get_value_indices_impl<S, tmp::index_sequence<Head>, tmp::type_sequence<Out...>>
-        : tmp::type_sequence<Out..., tmp::make_index_sequence<Head, S>>{};
+struct get_value_indices_impl<S,
+                              tmp::index_sequence<Head>,
+                              tmp::type_sequence<Out...>>
+  : tmp::type_sequence<Out...,
+                       typename tmp::make_index_sequence<Head, S>::type> {};
 
 template <template <typename...> class... ComposedOrValues>
-using get_value_indices = typename get_value_indices_impl<0, tmp::index_sequence<ComposedOrValues<double>::NumValues...>>::type;
+using get_value_indices = typename get_value_indices_impl<
+  0,
+  tmp::index_sequence<ComposedOrValues<double>::NumValues...>>::type;
 
 }  // namespace internal
 
