@@ -95,7 +95,6 @@ struct traits<wave::FactorValue<Scalar, S>>
 template <typename Scalar, int S>
 struct traits<wave::FactorValue<wave::Map<Scalar>, S>>
   : traits<Eigen::Map<wave::FactorValue<Scalar, S>>> {};
-
 }
 }
 

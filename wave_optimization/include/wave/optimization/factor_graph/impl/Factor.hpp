@@ -66,13 +66,11 @@ bool Factor<F, M, V...>::evaluateRaw(
     auto residuals = internal::make_value<M>(raw_residuals);
 
     // Call the measurement function
-    bool ok =
-      measurement_function(internal::make_value<V>(parameters)..., residuals);
+    bool ok = F{}(internal::make_value<V>(parameters)..., residuals);
     if (ok) {
         // Calculate the normalized residual
         const auto &L = measurement.noise.inverseSqrtCov();
-        residuals.asVector() =
-          L * (residuals.asVector() - measurement.value.asVector());
+        residuals = L * (residuals - measurement.value);
     }
     return ok;
 }
