@@ -25,7 +25,9 @@ void addFactorToProblem(ceres::Problem &problem,
     auto data_ptrs = std::vector<double *>{};
 
     for (const auto &v : factor->variables()) {
-        data_ptrs.push_back(v->data());
+        const auto& v_ptrs = v->blockData();
+        data_ptrs.insert(data_ptrs.end(), v_ptrs.begin(), v_ptrs.end());
+
 
         // Explicitly adding parameters "causes additional correctness
         // checking"
