@@ -3,6 +3,34 @@
 
 namespace wave {
 
+// Filesystem based constructor for BRISKDescriptorParams
+BRISKDescriptorParams::BRISKDescriptorParams(const std::string &config_path) {
+    // Extract parameters from .yaml file.
+    ConfigParser parser;
+
+    std::vector<float> radius_list;
+    std::vector<int> number_list;
+    float d_max;
+    float d_min;
+
+    // Add parameters to parser, to be loaded. If path cannot be found,
+    // throw an exception
+    parser.addParam("radius_list", &radius_list);
+    parser.addParam("number_list", &number_list);
+    parser.addParam("d_max", &d_max);
+    parser.addParam("d_min", &d_min);
+
+    if (parser.load(config_path) != 0) {
+        throw std::invalid_argument(
+          "Failed to Load BRISKDescriptorParams Configuration");
+    }
+
+    this->radius_list = radius_list;
+    this->number_list = number_list;
+    this->d_max = d_max;
+    this->d_min = d_min;
+}
+
 // Default constructor. Struct may be default or user defined.
 BRISKDescriptor::BRISKDescriptor(const BRISKDescriptorParams &config) {
     // Ensure parameters are valid
