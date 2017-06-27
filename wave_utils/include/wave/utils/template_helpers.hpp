@@ -75,64 +75,23 @@ struct index_sequence {
     using type = index_sequence<Indices...>;
 };
 
-/** Generates an index_sequence<S, ..., S + N - 1> via recursion */
-template <int N, int S = 0, int... Indices>
-struct make_index_sequence
-  : make_index_sequence<N - 1, S, S + N - 1, Indices...> {};
-
-// Final stop on the recursion train
-template <int S, int... Indices>
-struct make_index_sequence<0, S, Indices...> : index_sequence<Indices...> {};
-
-/** Generates an index_sequence with N repetitions of S */
-template <int N, int S, int... Indices>
-struct repeat_index_sequence : repeat_index_sequence<N - 1, S, S, Indices...> {
-};
-
-// Final stop on the recursion train
-template <int S, int... Indices>
-struct repeat_index_sequence<0, S, Indices...> : index_sequence<Indices...> {};
-
-/** Concatenates index sequences */
+/** Concatenates any number of index sequences into one */
 template <typename... Seqs>
 struct concat_index_sequence;
 
-template <int... I1, int... I2, typename... Seqs>
-struct concat_index_sequence<index_sequence<I1...>,
-                             index_sequence<I2...>,
-                             Seqs...>
-  : concat_index_sequence<index_sequence<I1..., I2...>, Seqs...> {};
-
-template <int... I1>
-struct concat_index_sequence<index_sequence<I1...>> {
-    using type = index_sequence<I1...>;
-};
-
-/** Sum up the arguments */
+/** Sums up the arguments.
+ *  The result is placed in the static member `value`.
+ */
 template <int...>
 struct sum;
 
-template <int Head, int... Tail>
-struct sum<Head, Tail...> {
-    static constexpr int value = Head + sum<Tail...>::value;
-};
-
-template <int Head>
-struct sum<Head> {
-    static constexpr int value = Head;
-};
-
-
-/** Sums up an index sequence> */
+/** Sums up the integers in an index sequence */
 template <typename Seq>
 struct sum_index_sequence;
 
-template <int... Is>
-struct sum_index_sequence<index_sequence<Is...>> {
-    static constexpr int value = sum<Is...>::value;
-};
-
-/** Construct a vector from an index sequence */
+/** Constructs a vector from an index sequence
+ * Note this is a runtime function.
+ */
 template <int... Is>
 inline std::vector<int> vectorFromSequence(index_sequence<Is...>) {
     return {Is...};
@@ -163,18 +122,6 @@ struct type_sequence_element<0, type_sequence<Head, Tail...>> {
 template <typename T>
 struct function_traits;
 
-template <typename R, typename... Args>
-struct function_traits<R (*)(Args...)> {
-    constexpr static int arity = sizeof...(Args);
-    using return_type = R;
-
-    template <int I>
-    using arg_type = typename std::tuple_element<I, std::tuple<Args...>>::type;
-
-    using arg_types = std::tuple<Args...>;
-};
-
-
 /** Get the result type of concatenating some tuples */
 template <typename... Tuples>
 using tuple_cat_result =
@@ -183,5 +130,7 @@ using tuple_cat_result =
 }  // namespace tmp
 /** @} group optimization */
 }  // namespace wave
+
+#include "impl/template_helpers.hpp"
 
 #endif  // WAVE_OPTIMIZATION_FACTOR_GRAPH_TEMPLATE_HELPERS_HPP
