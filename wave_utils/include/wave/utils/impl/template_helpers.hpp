@@ -61,6 +61,18 @@ struct function_traits<R (*)(Args...)> {
     using arg_types = std::tuple<Args...>;
 };
 
+// Recurse forward along the sequence
+template <typename Head, typename... Tail, template <typename> class F>
+struct check_all<type_sequence<Head, Tail...>, F> {
+    static constexpr bool value =
+      F<Head>::value && check_all<type_sequence<Tail...>, F>::value;
+};
+
+// Base case: last element of sequence
+template <typename Head, template <typename> class F>
+struct check_all<type_sequence<Head>, F> {
+    static constexpr bool value = F<Head>::value;
+};
 
 }  // namespace tmp
 }  // namespace wave

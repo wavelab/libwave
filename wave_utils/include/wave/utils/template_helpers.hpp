@@ -1,6 +1,6 @@
 /**
  * @file
- * @ingroup optimization
+ * @ingroup utils
  * Utility functions for template metaprogramming
  */
 
@@ -9,7 +9,7 @@
 
 
 namespace wave {
-/** @addtogroup optimization
+/** @addtogroup utils
  *  @{ */
 
 namespace tmp {
@@ -112,8 +112,17 @@ template <typename... Tuples>
 using tuple_cat_result =
   typename function_traits<decltype(std::tuple_cat<Tuples...>) *>::return_type;
 
+/** Gets the result of instantiating the template F with each type in Seq
+
+ * F must define a boolean member `value`. Then,
+ * `check_all<type_sequence<A, B, C>, F>::value` is equivalent to
+ * `F<A>::value && F<B>::value && F<C>::value`.
+ */
+template <typename Seq, template <typename> class F>
+struct check_all;
+
 }  // namespace tmp
-/** @} group optimization */
+/** @} group utils */
 }  // namespace wave
 
 #include "impl/template_helpers.hpp"
