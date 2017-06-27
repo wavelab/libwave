@@ -159,28 +159,6 @@ struct type_sequence_element<0, type_sequence<Head, Tail...>> {
     using type = Head;
 };
 
-/** A container for a sequence of templates */
-template <template <typename...> class... Templates>
-struct tmpl_sequence {};
-
-/** Concatenates template sequences */
-template <typename... Seqs>
-struct concat_tmpl_sequence;
-
-// Recurse forwards, always adding the second sequence to the first
-template <template <typename...> class... T1,
-          template <typename...> class... T2,
-          typename... Seqs>
-struct concat_tmpl_sequence<tmpl_sequence<T1...>, tmpl_sequence<T2...>, Seqs...>
-  : concat_tmpl_sequence<tmpl_sequence<T1..., T2...>, Seqs...> {};
-
-// Base case: only one sequence left
-template <template <typename...> class... T1>
-struct concat_tmpl_sequence<tmpl_sequence<T1...>> {
-    using type = tmpl_sequence<T1...>;
-};
-
-
 /** Inspects function argument and return types */
 template <typename T>
 struct function_traits;
