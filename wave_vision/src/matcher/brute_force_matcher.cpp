@@ -44,14 +44,10 @@ void BruteForceMatcher::checkConfiguration(
     }
 
     // Only acceptable values are 1, 2, 4, and 8
-    if (check_config.fm_method < cv::FM_7POINT ||
-        check_config.fm_method > cv::FM_RANSAC) {
-        throw std::invalid_argument("fm_method is not an acceptable value!");
-    }
-
-    if (check_config.fm_method == 3 ||
-        (check_config.fm_method > cv::FM_LMEDS &&
-         check_config.fm_method < cv::FM_RANSAC)) {
+    if (check_config.fm_method != cv::FM_7POINT &&
+        check_config.fm_method != cv::FM_8POINT &&
+        check_config.fm_method != cv::FM_LMEDS &&
+        check_config.fm_method != cv::FM_RANSAC) {
         throw std::invalid_argument("fm_method is not an acceptable value!");
     }
 }
