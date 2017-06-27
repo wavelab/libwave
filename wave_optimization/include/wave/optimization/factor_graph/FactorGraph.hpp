@@ -14,6 +14,7 @@
 #include "wave/utils/utils.hpp"
 #include "wave/optimization/factor_graph/Factor.hpp"
 #include "wave/optimization/factor_graph/FactorVariable.hpp"
+#include "wave/optimization/ceres/CeresOptimizer.hpp"
 
 namespace wave {
 /** @addtogroup optimization
@@ -21,6 +22,9 @@ namespace wave {
 
 /**
  * A graph representing connections between measurements and unknown variables
+ *
+ * The FactorGraph uses an optimizer backend. Currently the only optimizer
+ * available is Ceres.
  */
 class FactorGraph {
  public:
@@ -86,6 +90,7 @@ class FactorGraph {
 
  private:
     std::vector<std::shared_ptr<FactorBase>> factors;
+    Ceres
 };
 
 /** @} group optimization */

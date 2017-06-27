@@ -1,7 +1,7 @@
 #include "wave/wave_test.hpp"
 #include "wave/optimization/factor_graph/FactorGraph.hpp"
 #include "example_instances.hpp"
-#include "wave/optimization/ceres/graph_wrapper.hpp"
+#include "wave/optimization/ceres/CeresOptimizer.hpp"
 
 namespace wave {
 
@@ -52,7 +52,7 @@ TEST(FactorGraph, addPrior) {
     const double *const params[] = {test_val.data()};
     double *jacs[] = {test_jac.data()};
 
-    // Add the factor, retrieve the pointer to it, and verity
+    // Add the factor, retrieve the pointer to it, and verify
     graph.addPrior(m, p);
     EXPECT_EQ(1u, graph.countFactors());
 
