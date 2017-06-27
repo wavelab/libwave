@@ -22,7 +22,8 @@ struct FactorValueAlias;
 
 template <typename V, typename = void>
 struct factor_value_traits {
-    constexpr static int NumVals = 1;
+    constexpr static int NumValues = 1;
+    using ValueTuple = std::tuple<V>;
     using BlockSizes = tmp::index_sequence<V::SizeAtCompileTime>;
     constexpr static int TotalSize = V::SizeAtCompileTime;
     static std::vector<double *> blockData(V &v) {
@@ -36,12 +37,13 @@ struct factor_value_traits_nested;
 template <typename V>
 struct factor_value_traits<
   V,
-  std::conditional<false, void, typename V::ValueTuple>>
+  typename std::conditional<false, typename V::ValueTuple, void>::type>
   : factor_value_traits_nested<V, typename V::ValueTuple> {};
 
 template <typename V, typename... Nested>
 struct factor_value_traits_nested<V, std::tuple<Nested...>> {
-    constexpr static int NumVals = sizeof...(Nested);
+    constexpr static int NumValues = sizeof...(Nested);
+    using ValueTuple = std::tuple<Nested...>;
     using BlockSizes = typename tmp::concat_index_sequence<
       typename factor_value_traits<Nested>::BlockSizes...>::type;
     constexpr static int TotalSize = tmp::sum_index_sequence<BlockSizes>::value;
@@ -134,17 +136,13 @@ template <typename... ComposedOrValues>
 using get_value_types =
   tmp::tuple_cat_result<typename ComposedOrValues::ValueTuple...>;
 
-template <template <typename...> class... ComposedOrValues>
+template <template <typename...> class... V>
 using get_value_sizes = typename tmp::concat_index_sequence<
-  typename ComposedOrValues<double>::ValueSizes...>::type;
+  typename internal::factor_value_traits<V<double>>::BlockSizes...>::type;
 
-// template <template <typename...> class... ComposedOrValues>
-// using get_value_tmpls = typename tmp::tmpl_sequence<
-//  typename ComposedOrValues<double>::ValueTmpls...>::type;
-
-template <template <typename...> class... ComposedOrValues>
-using expand_value_tmpls = typename tmp::concat_tmpl_sequence<
-  typename ComposedOrValues<double>::ValueTmpls...>::type;
+template <template <typename...> class... V>
+using expand_value_tmpls = typename tmp::tuple_cat_result<
+  typename internal::factor_value_traits<V<double>>::ValueTuple...>;
 
 template <int S, typename ISeq, typename OutSeq = tmp::type_sequence<>>
 struct get_value_indices_impl;
@@ -166,10 +164,11 @@ struct get_value_indices_impl<S,
   : tmp::type_sequence<Out...,
                        typename tmp::make_index_sequence<Head, S>::type> {};
 
-template <template <typename...> class... ComposedOrValues>
+template <template <typename...> class... V>
 using get_value_indices = typename get_value_indices_impl<
   0,
-  tmp::index_sequence<ComposedOrValues<double>::NumValues...>>::type;
+  typename tmp::index_sequence<
+    internal::factor_value_traits<V<double>>::NumValues...>>::type;
 
 }  // namespace internal
 

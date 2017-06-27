@@ -39,15 +39,15 @@ inline V<T, FactorValueOptions::Map> make_composed_value1(
 
 template <typename F,
           template <typename...> class M,
-          typename TmplTuple,
+          typename VTuple,
           template <typename...> class... V>
 struct FactorCostFunctor;
 
 template <typename F,
           template <typename...> class M,
-          template <typename...> class... Vv,
+          typename... Vv,
           template <typename...> class... V>
-struct FactorCostFunctor<F, M, tmp::tmpl_sequence<Vv...>, V...> {
+struct FactorCostFunctor<F, M, std::tuple<Vv...>, V...> {
     constexpr static int N = sizeof...(Vv);
 
     template <typename T, typename... ISeq, int... Is>
@@ -62,7 +62,7 @@ struct FactorCostFunctor<F, M, tmp::tmpl_sequence<Vv...>, V...> {
 
 
     template <typename T>
-    bool operator()(tmp::replacet<T, Vv> const *const... raw_params,
+    bool operator()(tmp::replace<T, Vv> const *const... raw_params,
                     T *raw_residuals) const {
         auto residuals = M<T, FactorValueOptions::Map>{raw_residuals};
 

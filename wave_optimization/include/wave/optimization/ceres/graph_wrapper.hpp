@@ -26,17 +26,19 @@ void addFactorToProblem(ceres::Problem &problem,
 
     for (const auto &v : factor->variables()) {
         const auto &v_ptrs = v->blockData();
+        const auto &v_sizes = v->blockSizes();
         data_ptrs.insert(data_ptrs.end(), v_ptrs.begin(), v_ptrs.end());
 
+        for (auto i = 0u; i < v_ptrs.size(); ++i) {
+            // Explicitly adding parameters "causes additional correctness
+            // checking"
+            // @todo can add local parametrization in this call
+            problem.AddParameterBlock(v_ptrs[i], v_sizes[i]);
 
-        // Explicitly adding parameters "causes additional correctness
-        // checking"
-        // @todo can add local parametrization in this call
-        problem.AddParameterBlock(v->data(), v->size());
-
-        // Set parameter blocks constant if the factor is a zero-noise prior
-        if (factor->isPerfectPrior()) {
-            problem.SetParameterBlockConstant(v->data());
+            // Set parameter blocks constant if the factor is a zero-noise prior
+            if (factor->isPerfectPrior()) {
+                problem.SetParameterBlockConstant(v_ptrs[i]);
+            }
         }
     }
 

@@ -64,10 +64,10 @@ using DistanceMeasurement = FactorMeasurement<Distance>;
  * @return true on success
  */
 struct DistanceMeasurementFunctor {
-    template <typename T>
-    inline bool operator()(const Pose2D<T> &pose,
-                           const Position2D<T> &landmark_pos,
-                           Distance<T> &result) noexcept {
+    template <typename T, typename O = void>
+    inline bool operator()(const Pose2D<T, O> &pose,
+                           const Position2D<T, O> &landmark_pos,
+                           Distance<T, O> &result) noexcept {
         Eigen::Matrix<T, 2, 1> diff = pose.position - landmark_pos;
         result[0] = diff.norm();
         return true;
