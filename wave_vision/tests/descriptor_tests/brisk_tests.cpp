@@ -13,20 +13,20 @@ const auto TEST_IMAGE = "tests/data/image_center.png";
 
 // Checks that correct configuration can be loaded
 TEST(BRISKTests, GoodInitialization) {
-    EXPECT_NO_THROW(BRISKDescriptor brisk(TEST_CONFIG));
+    EXPECT_NO_THROW(BRISKDescriptor brisk);
 }
 
 // Checks that incorrect configuration path throws an exception
 TEST(BRISKTests, BadInitialization) {
     const std::string bad_path = "bad_path";
 
-    ASSERT_THROW(BRISKDescriptor brisk(bad_path), std::invalid_argument);
+    ASSERT_THROW(BRISKDescriptorParams config(bad_path), std::invalid_argument);
 }
 
 TEST(BRISKTests, DefaultConstructorTest) {
-    BRISKDescriptor brisk;
+    BRISKDescriptorParams check_config;
+    BRISKDescriptor brisk(check_config);
 
-    auto check_config = BRISKDescriptorParams{};
 
     auto config = brisk.getConfiguration();
 
@@ -70,7 +70,8 @@ TEST(BRISKTests, CustomYamlConstructorTest) {
     float d_max = 5.85f;
     float d_min = 8.2f;
 
-    BRISKDescriptor brisk(TEST_CONFIG);
+    BRISKDescriptorParams input_config(TEST_CONFIG);
+    BRISKDescriptor brisk(input_config);
 
     BRISKDescriptorParams config = brisk.getConfiguration();
 

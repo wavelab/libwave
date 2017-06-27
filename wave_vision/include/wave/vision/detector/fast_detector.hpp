@@ -26,6 +26,34 @@ struct FASTParams {
           nonmax_suppression(nonmax_suppression),
           type(type) {}
 
+    /** Constructor using parameters extracted from a configuration file.
+     *
+     *  @param config_path the path to the location of the configuration file
+     */
+    FASTParams(const std::string &config_path) {
+        // Extract parameters from .yaml file.
+        ConfigParser parser;
+
+        int threshold;
+        bool nonmax_suppression;
+        int type;
+
+        // Add parameters to parser, to be loaded. If path cannot be found,
+        // throw an exception.
+        parser.addParam("threshold", &threshold);
+        parser.addParam("nonmax_suppression", &nonmax_suppression);
+        parser.addParam("type", &type);
+
+        if (parser.load(config_path) != 0) {
+            throw std::invalid_argument(
+              "Failed to Load FASTParams Configuration");
+        }
+
+        this->threshold = threshold;
+        this->nonmax_suppression = nonmax_suppression;
+        this->type = type;
+    }
+
     /** Threshold on difference between intensity of the central pixel, and
      *  pixels in a circle (Bresenham radius 3) around this pixel. Must be
      *  greater than zero.
@@ -71,14 +99,6 @@ class FASTDetector : public FeatureDetector {
      *  implementation.
      */
     FASTDetector(const FASTParams &config = FASTParams{});
-
-    /** Constructs a FastFeatureDetector using parameters extracted from the
-     *  fast.yaml configuration file
-     *
-     *  @param config_path the path to the location of the fast.yaml config
-     *  file
-     */
-    explicit FASTDetector(const std::string &config_path);
 
     /** Reconfigures the FastFeatureDetector object with new values requested by
      *  the user

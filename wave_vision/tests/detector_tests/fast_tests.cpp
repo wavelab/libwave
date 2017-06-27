@@ -51,7 +51,8 @@ TEST(FASTTests, GoodCustomConfig) {
 // Checks that correct configuration values can be set in detector, and also
 // read from getConfiguration function.
 TEST(FASTTests, GoodPathConfiguration) {
-    FASTDetector detector(TEST_CONFIG);
+    FASTParams config(TEST_CONFIG);
+    FASTDetector detector(config);
 
     FASTParams input_config{10, true, 2};
     FASTParams output_config;

@@ -13,33 +13,6 @@ FASTDetector::FASTDetector(const FASTParams &config) {
       config.threshold, config.nonmax_suppression, config.type);
 }
 
-// Constructor using .yaml file, located at config_path.
-FASTDetector::FASTDetector(const std::string &config_path) {
-    // Extract parameters from .yaml file.
-    ConfigParser parser;
-
-    // Configuration parameters
-    FASTParams config;
-
-    // Add parameters to parser, to be loaded. If path cannot be found, throw an
-    // exception.
-    parser.addParam("threshold", &config.threshold);
-    parser.addParam("nonmax_suppression", &config.nonmax_suppression);
-    parser.addParam("type", &config.type);
-
-    if (parser.load(config_path) != 0) {
-        throw std::invalid_argument(
-          "Failed to Load FASTDetector Configuration");
-    }
-
-    // Verify configuration values
-    this->checkConfiguration(config);
-
-    // Create FastFeatureDetector with these parameters
-    this->fast_detector = cv::FastFeatureDetector::create(
-      config.threshold, config.nonmax_suppression, config.type);
-}
-
 void FASTDetector::checkConfiguration(const FASTParams &check_config) {
     // Check parameters. If invalid, throw an exception.
     if (check_config.threshold < 0) {

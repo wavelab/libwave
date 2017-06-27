@@ -32,6 +32,37 @@ struct BRISKDescriptorParams {
                           float d_min)
         : radius_list(rlist), number_list(nlist), d_max(d_max), d_min(d_min) {}
 
+    /** Constructor using parameters extracted from a configuration file.
+     *
+     *  @param config_path the path to the location of the configuration file
+     */
+    BRISKDescriptorParams(const std::string &config_path) {
+        // Extract parameters from .yaml file.
+        ConfigParser parser;
+
+        std::vector<float> radius_list;
+        std::vector<int> number_list;
+        float d_max;
+        float d_min;
+
+        // Add parameters to parser, to be loaded. If path cannot be found,
+        // throw an exception
+        parser.addParam("radius_list", &radius_list);
+        parser.addParam("number_list", &number_list);
+        parser.addParam("d_max", &d_max);
+        parser.addParam("d_min", &d_min);
+
+        if (parser.load(config_path) != 0) {
+            throw std::invalid_argument(
+              "Failed to Load BRISKDescriptor Configuration");
+        }
+
+        this->radius_list = radius_list;
+        this->number_list = number_list;
+        this->d_max = d_max;
+        this->d_min = d_min;
+    }
+
     /** radius_list defines the radius of each subsequent circle (in pixels).
      *  All numbers must be positive. Cannot be empty.
      *
@@ -84,14 +115,6 @@ class BRISKDescriptor : public DescriptorExtractor {
      */
     explicit BRISKDescriptor(
       const BRISKDescriptorParams &config = BRISKDescriptorParams{});
-
-    /** Constructs a BRISKDescriptor Extractor using parameters found in the
-     *  linked .yaml file.
-     *
-     *  @param config_path is the path to a .yaml file, containing the desired
-     *  parameters for the BRISK Descriptor Extractor.
-     */
-    BRISKDescriptor(const std::string &config_path);
 
     /** Returns the current configuration parameters being used by the
      *  BRISK Descriptor Extractor.

@@ -29,6 +29,31 @@ struct BFMatcherParams {
     BFMatcherParams(int norm_type, bool cross_check)
         : norm_type(norm_type), cross_check(cross_check) {}
 
+    /** Constructor using parameters extracted from a configuration file.
+     *
+     *  @param config_path the path to the location of the configuration file
+     */
+    BFMatcherParams(const std::string &config_path) {
+        // Extract parameters from .yaml file.
+        ConfigParser parser;
+
+        int norm_type;
+        bool cross_check;
+
+        // Add parameters to parser, to be loaded. If path cannot be found,
+        // throw an exception
+        parser.addParam("norm_type", &norm_type);
+        parser.addParam("cross_check", &cross_check);
+
+        if (parser.load(config_path) != 0) {
+            throw std::invalid_argument(
+              "Failed to Load BRISKDescriptor Configuration");
+        }
+
+        this->norm_type = norm_type;
+        this->cross_check = cross_check;
+    }
+
     /** Norm type to use for distance calculation between feature descriptors.
      *
      *  Options:
@@ -74,14 +99,6 @@ class BruteForceMatcher {
      */
     explicit BruteForceMatcher(
       const BFMatcherParams &config = BFMatcherParams{});
-
-    /** Constructs a BruteForceMatcher using parameters found in the
-     *  linked .yaml file.
-     *
-     *  @param config_path is the path to a .yaml file, containing the desired
-     *  parameters for the BruteForceMatcher.
-     */
-    BruteForceMatcher(const std::string &config_path);
 
     /** Returns the current configuration parameters being used by the
      *  DescriptorMatcher.
