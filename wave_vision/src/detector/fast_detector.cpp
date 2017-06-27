@@ -19,8 +19,7 @@ FASTParams::FASTParams(const std::string &config_path) {
     parser.addParam("type", &type);
 
     if (parser.load(config_path) != 0) {
-        throw std::invalid_argument(
-                "Failed to Load FASTParams Configuration");
+        throw std::invalid_argument("Failed to Load FASTParams Configuration");
     }
 
     this->threshold = threshold;

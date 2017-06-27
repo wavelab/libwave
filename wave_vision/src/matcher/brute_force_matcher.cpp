@@ -25,7 +25,7 @@ BFMatcherParams::BFMatcherParams(const std::string &config_path) {
 
     if (parser.load(config_path) != 0) {
         throw std::invalid_argument(
-                "Failed to Load BRISKDescriptor Configuration");
+          "Failed to Load BFMatcherParams Configuration");
     }
 
     this->norm_type = norm_type;
