@@ -55,9 +55,9 @@ struct FactorCostFunctor<F, M, std::tuple<Vv...>, V...> {
                M<T, FactorValueOptions::Map> &residuals,
                tmp::type_sequence<ISeq...> &&,
                tmp::index_sequence<Is...> &&) const noexcept {
-        F f;
-        return f(internal::make_composed_value1<T, V, N, ISeq, Is>(ptrs)...,
-                 residuals);
+        return F::evaluate(
+          internal::make_composed_value1<T, V, N, ISeq, Is>(ptrs)...,
+          residuals);
     }
 
 

@@ -65,9 +65,9 @@ using DistanceMeasurement = FactorMeasurement<Distance>;
  */
 struct DistanceMeasurementFunctor {
     template <typename T, typename O = void>
-    inline bool operator()(const Pose2D<T, O> &pose,
-                           const Position2D<T, O> &landmark_pos,
-                           Distance<T, O> &result) noexcept {
+    static bool evaluate(const Pose2D<T, O> &pose,
+                         const Position2D<T, O> &landmark_pos,
+                         Distance<T, O> &result) noexcept {
         Eigen::Matrix<T, 2, 1> diff = pose.position - landmark_pos;
         result[0] = diff.norm();
         return true;

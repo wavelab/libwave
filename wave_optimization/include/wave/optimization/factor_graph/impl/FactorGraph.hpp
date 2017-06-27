@@ -30,8 +30,6 @@ inline bool FactorGraph::empty() const noexcept {
 }
 
 // Modifiers
-template<typename T>
-class TD;
 template <typename Functor,
           template <typename...> class M,
           template <typename...> class... V>
@@ -42,9 +40,7 @@ inline void FactorGraph::addFactor(
 
     // Give a nice error message if the function type is wrong
     using ExpectedFuncType = typename FactorType::template FuncType<double>;
-    using ActualFuncType = decltype(&Functor::template operator()<double>);
-    TD<ExpectedFuncType> x;
-    TD<ActualFuncType> y;
+    using ActualFuncType = decltype(&Functor::template evaluate<double>);
     static_assert(std::is_same<ExpectedFuncType, ActualFuncType>::value,
                   "The given measurement function is of incorrect type");
 
