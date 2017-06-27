@@ -56,11 +56,11 @@ std::vector<cv::DMatch> BruteForceMatcher::filterMatches(
   std::vector<cv::DMatch> &matches) const {
     std::vector<cv::DMatch> filt_matches;
     float min_distance;
+    std::vector<cv::DMatch>::iterator closest_match;
 
-    // Sort matches by distance in increasing order
-    std::sort(matches.begin(), matches.end());
-
-    min_distance = matches.begin()->distance;
+    // Determine closest match
+    closest_match = std::min_element(matches.begin(), matches.end());
+    min_distance = closest_match->distance;
 
     // Keep any match that is less than the rejection heuristic times minimum
     // distance
