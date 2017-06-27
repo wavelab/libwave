@@ -110,8 +110,10 @@ class BRISKDescriptor : public DescriptorExtractor {
     /** Default constructor. The user can also specify their own struct with
      *  desired values. If no struct is provided, default values are used.
      *
-     *  @param config contains the desired parameter values for a BRISKParams
-     *  implementation. Uses default values if not specified.
+     *  @param config
+     *  \parblock contains the desired parameter values. Uses default values if
+     *  not specified.
+     *  \endparblock
      */
     explicit BRISKDescriptor(
       const BRISKDescriptorParams &config = BRISKDescriptorParams{});

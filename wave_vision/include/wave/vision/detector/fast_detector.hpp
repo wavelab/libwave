@@ -95,8 +95,7 @@ class FASTDetector : public FeatureDetector {
     /** Default constructor. The user can also specify their own struct with
      *  desired values. If no struct is provided, default values are used.
      *
-     *  @param config contains the desired parameter values for a FASTParams
-     *  implementation.
+     *  @param config contains the desired parameter values
      */
     FASTDetector(const FASTParams &config = FASTParams{});
 

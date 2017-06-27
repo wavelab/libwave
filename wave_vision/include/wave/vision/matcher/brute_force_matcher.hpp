@@ -6,12 +6,10 @@
 #ifndef WAVE_VISION_BRUTE_FORCE_MATCHER_HPP
 #define WAVE_VISION_BRUTE_FORCE_MATCHER_HPP
 
-/** C++ Headers */
 #include <algorithm>
 #include <string>
 #include <vector>
 
-/** Libwave Headers */
 #include "wave/utils/utils.hpp"
 #include "wave/vision/matcher/descriptor_matcher.hpp"
 
@@ -174,8 +172,11 @@ class BruteForceMatcher : public DescriptorMatcher {
     /** Default constructor. The user can also specify their own struct with
      *  desired values. If no struct is provided, default values are used.
      *
-     *  @param config contains the desired parameter values for a BRISKParams
-     *  implementation. Uses default values if not specified.
+     *  @param config
+     *  \parblock
+     *  contains the desired parameter values. Uses default values if not
+     *  specified.
+     *  \endparblock
      */
     explicit BruteForceMatcher(
       const BFMatcherParams &config = BFMatcherParams{});
@@ -183,7 +184,7 @@ class BruteForceMatcher : public DescriptorMatcher {
     /** Returns the current configuration parameters being used by the
      *  DescriptorMatcher.
      *
-     * @return a struct containing the current configuration values.
+     *  @return a struct containing the current configuration values.
      */
     BFMatcherParams getConfiguration() const {
         return this->current_config;
@@ -196,11 +197,13 @@ class BruteForceMatcher : public DescriptorMatcher {
      *  @param descriptors_2 the descriptors extracted from the second image.
      *  @param keypoints_1 the keypoints detected in the first image
      *  @param keypoints_2 the keypoints detected in the second image
-     *  @param mask The mask variable indicates which descriptors can be matched
-     *  between the two sets. As per OpenCV docs "queryDescriptors[i] can be
-     *  matched with trainDescriptors[j] only if masks.at<uchar>(i,j) is
-     *  non-zero. In the libwave wrapper, queryDescriptors are descriptors_1,
-     *  and trainDescriptors are descriptors_2. Default is cv::noArray().
+     *  @param mask
+     *  \parblock indicates which descriptors can be matched between the two
+     *  sets. As per OpenCV docs "queryDescriptors[i] can be matched with
+     *  trainDescriptors[j] only if masks.at<uchar>(i,j) is non-zero. In the
+     *  libwave wrapper, queryDescriptors are descriptors_1, and
+     *  trainDescriptors are descriptors_2. Default is cv::noArray().
+     *  \endparblock
      *
      *  @return vector containing the best matches.
      */

@@ -6,13 +6,10 @@
 #ifndef WAVE_VISION_DESCRIPTOR_MATCHER_HPP
 #define WAVE_VISION_DESCRIPTOR_MATCHER_HPP
 
-/** C++ Headers */
 #include <exception>
 
-/** Third Party Headers */
 #include <opencv2/opencv.hpp>
 
-/** Libwave Headers */
 #include "wave/utils/utils.hpp"
 
 namespace wave {
@@ -79,11 +76,13 @@ class DescriptorMatcher {
      *  @param descriptors_2 the descriptors extracted from the second image.
      *  @param keypoints_1 the keypoints detected in the first image
      *  @param keypoints_2 the keypoints detected in the second image
-     *  @param mask The mask variable indicates which descriptors can be matched
-     *  between the two sets. As per OpenCV docs "queryDescriptors[i] can be
-     *  matched with trainDescriptors[j] only if masks.at<uchar>(i,j) is
-     *  non-zero. In the libwave wrapper, queryDescriptors are descriptors_1,
-     *  and trainDescriptors are descriptors_2.
+     *  @param mask
+     *  \parblock indicates which descriptors can be matched between the two
+     *  sets. As per OpenCV docs "queryDescriptors[i] can be matched with
+     *  trainDescriptors[j] only if masks.at<uchar>(i,j) is non-zero. In the
+     *  libwave wrapper, queryDescriptors are descriptors_1, and
+     *  trainDescriptors are descriptors_2. Default is cv::noArray().
+     *  \endparblock
      *
      *  @return vector containing the best matches.
      */
