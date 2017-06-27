@@ -67,13 +67,13 @@ class FactorVariable : public FactorVariableBase {
 
     /** Return the number of scalar values in the variable. */
     std::vector<int> blockSizes() const noexcept override {
-        return value.blockSizes();
+        return tmp::vectorFromSequence(
+          typename internal::factor_value_traits<ValueType>::BlockSizes{});
     }
 
     std::vector<double *> blockData() noexcept override {
-        return value.blockData();
+        return internal::factor_value_traits<ValueType>::blockData(this->value);
     }
-
 
     void print(std::ostream &os) const override {
         os << "FactorVariable";

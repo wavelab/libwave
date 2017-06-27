@@ -108,6 +108,36 @@ struct concat_index_sequence<index_sequence<I1...>> {
     using type = index_sequence<I1...>;
 };
 
+/** Sum up the arguments */
+template <int...>
+struct sum;
+
+template <int Head, int... Tail>
+struct sum<Head, Tail...> {
+    static constexpr int value = Head + sum<Tail...>::value;
+};
+
+template <int Head>
+struct sum<Head> {
+    static constexpr int value = Head;
+};
+
+
+/** Sums up an index sequence> */
+template <typename Seq>
+struct sum_index_sequence;
+
+template <int Head, int... Is>
+struct sum_index_sequence<index_sequence<Is...>> {
+    static constexpr int value = sum<Is...>::value;
+};
+
+/** Construct a vector from an index sequence */
+template <int... Is>
+inline std::vector<int> vectorFromSequence(index_sequence<Is...>) {
+    return {Is...};
+}
+
 /** A container for a sequence of types */
 template <typename... Types>
 struct type_sequence {

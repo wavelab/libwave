@@ -20,6 +20,37 @@ namespace internal {
 template <typename T, typename O, int S>
 struct FactorValueAlias;
 
+template <typename V, typename = void>
+struct factor_value_traits {
+    constexpr static int NumVals = 1;
+    using BlockSizes = tmp::index_sequence<V::SizeAtCompileTime>;
+    constexpr static int TotalSize = V::SizeAtCompileTime;
+    static std::vector<double *> blockData(V &v) {
+        return {v.data()};
+    }
+};
+
+template <typename, typename>
+struct factor_value_traits_nested;
+
+template <typename V>
+struct factor_value_traits<
+  V,
+  std::conditional<false, void, typename V::ValueTuple>>
+  : factor_value_traits_nested<V, typename V::ValueTuple> {};
+
+template <typename V, typename... Nested>
+struct factor_value_traits_nested<V, std::tuple<Nested...>> {
+    constexpr static int NumVals = sizeof...(Nested);
+    using BlockSizes = typename tmp::concat_index_sequence<
+      typename factor_value_traits<Nested>::BlockSizes...>::type;
+    constexpr static int TotalSize = tmp::sum_index_sequence<BlockSizes>::value;
+    static std::vector<double *> blockData(V &v) {
+        return {v.blockData()};
+    }
+};
+
+
 }  // namespace internal
 
 struct FactorValueOptions {
@@ -45,57 +76,25 @@ template <typename Scalar, typename Options, int Size>
 using FactorValue =
   typename internal::FactorValueAlias<Scalar, Options, Size>::type;
 
-template <typename Scalar,
-          typename Options,
-          template <typename...> class... ValueTypes>
+template <typename Scalar, typename Options, template <typename...> class... V>
 class ComposedValue {
  public:
     using ValueSizes = typename tmp::concat_index_sequence<
-      typename ValueTypes<Scalar, Options>::ValueSizes...>::type;
-    using ValueTuple = std::tuple<ValueTypes<Scalar, Options>...>;
-    using ValueTmpls = tmp::tmpl_sequence<ValueTypes...>;
-    constexpr static int NumValues = sizeof...(ValueTypes);
-
-    ComposedValue() : elements{ValueTypes<Scalar, Options>::Zero()...} {}
-    explicit ComposedValue(ValueTypes<Scalar, Options>... args)
-        : elements{std::move(args)...} {}
-
-    std::vector<int> blockSizes() const noexcept {
-        return {ValueTypes<Scalar, Options>::Size...};
-    }
-
-    template <int... Is>
-    std::vector<Scalar *> blockDataImpl(tmp::index_sequence<Is...>) noexcept {
-        return {std::get<Is>(this->elements).data()...};
-    }
-
-    std::vector<Scalar *> blockData() noexcept {
-        return this->blockDataImpl(tmp::make_index_sequence<NumValues>{});
-    }
-
- protected:
-    ValueTuple elements;
-};
-
-template <typename Scalar, template <typename...> class... V>
-class ComposedValue<Scalar, FactorValueOptions::Map, V...> {
- public:
-    using ValueSizes = typename tmp::concat_index_sequence<
-      typename V<Scalar, FactorValueOptions::Map>::ValueSizes...>::type;
-    using ValueTuple = std::tuple<V<Scalar, FactorValueOptions::Map>...>;
+      typename V<Scalar, Options>::ValueSizes...>::type;
+    using ValueTuple = std::tuple<V<Scalar, Options>...>;
     using ValueTmpls = tmp::tmpl_sequence<V...>;
     constexpr static int NumValues = sizeof...(V);
 
-    explicit ComposedValue(tmp::replacet<Scalar *, V>... args)
-        : elements{V<Scalar, FactorValueOptions::Map>{args}...} {}
+    ComposedValue() : blocks{V<Scalar, Options>::Zero()...} {}
+    explicit ComposedValue(V<Scalar, Options>... args)
+        : blocks{std::move(args)...} {}
 
-    std::vector<int> blockSizes() const noexcept {
-        return {V<Scalar, FactorValueOptions::Map>::Size...};
-    }
+    explicit ComposedValue(tmp::replacet<Scalar *, V>... args)
+        : blocks{V<Scalar, FactorValueOptions::Map>{args}...} {}
 
     template <int... Is>
     std::vector<Scalar *> blockDataImpl(tmp::index_sequence<Is...>) noexcept {
-        return {std::get<Is>(this->elements).data()...};
+        return {std::get<Is>(this->blocks).data()...};
     }
 
     std::vector<Scalar *> blockData() noexcept {
@@ -103,7 +102,7 @@ class ComposedValue<Scalar, FactorValueOptions::Map, V...> {
     }
 
  protected:
-    ValueTuple elements;
+    ValueTuple blocks;
 };
 
 /** Generic instances */
