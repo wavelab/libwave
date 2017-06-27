@@ -32,10 +32,10 @@ inline bool FactorGraph::empty() const noexcept {
 // Modifiers
 
 template <typename Functor,
-          template <typename> class M,
-          template <typename> class... V>
+          template <typename...> class M,
+          template <typename...> class... V>
 inline void FactorGraph::addFactor(
-  const M<double> &measurement,
+  const FactorMeasurement<M> &measurement,
   std::shared_ptr<FactorVariable<V>>... variables) {
     using FactorType = Factor<Functor, M, V...>;
 
@@ -50,15 +50,15 @@ inline void FactorGraph::addFactor(
 };
 
 
-template <template <typename> class M>
-inline void FactorGraph::addPrior(const M<double> &measurement,
+template <template <typename...> class M>
+inline void FactorGraph::addPrior(const FactorMeasurement<M> &measurement,
                                   std::shared_ptr<FactorVariable<M>> variable) {
     return this->addFactor(internal::identityMeasurementFunction<M>,
                            measurement,
                            std::move(variable));
 }
 
-template <template <typename> class V>
+template <template <typename...> class V>
 inline void FactorGraph::addPerfectPrior(
   const V<double> &measured_value,
   std::shared_ptr<FactorVariable<V>> variable) {

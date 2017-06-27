@@ -44,7 +44,8 @@ void addFactorToProblem(ceres::Problem &problem,
 
     // Finally, give ceres the cost function and its parameter blocks.
     if (!factor->isPerfectPrior()) {
-        problem.AddResidualBlock(factor->costFunction(), nullptr, data_ptrs);
+        problem.AddResidualBlock(
+          factor->costFunction().release(), nullptr, data_ptrs);
     }
 }
 

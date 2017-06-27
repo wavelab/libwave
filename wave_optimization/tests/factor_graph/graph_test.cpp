@@ -12,7 +12,7 @@ TEST(FactorGraph, add) {
     auto l = std::make_shared<Landmark2DVar>();
     auto m = DistanceMeasurement{2.3, 1.0};
 
-    graph.addFactor(distanceMeasurementFunction, m, p, l);
+    graph.addFactor<DistanceMeasurementFunctor>(m, p, l);
 
     ASSERT_EQ(1u, graph.countFactors());
 }
@@ -27,7 +27,7 @@ TEST(FactorGraph, capacity) {
     auto p = std::make_shared<Pose2DVar>();
     auto l = std::make_shared<Landmark2DVar>();
     auto m = DistanceMeasurement{2.3, 1.0};
-    graph.addFactor(distanceMeasurementFunction, m, p, l);
+    graph.addFactor<DistanceMeasurementFunctor>(m, p, l);
 
     EXPECT_EQ(1u, graph.countFactors());
     EXPECT_FALSE(graph.empty());
@@ -44,7 +44,7 @@ TEST(FactorGraph, addPrior) {
     // Prepare arguments to add unary factor
     FactorGraph graph;
     auto p = std::make_shared<Landmark2DVar>();
-    auto m = FactorMeasurement<Landmark2D>{test_meas, test_stddev};
+    auto m = FactorMeasurement<Position2D>{test_meas, test_stddev};
 
     // Prepare arguments in a form matching ceres calls
     Vec2 test_residual;
