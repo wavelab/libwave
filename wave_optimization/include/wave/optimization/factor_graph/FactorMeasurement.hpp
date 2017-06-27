@@ -15,15 +15,15 @@ namespace wave {
  *  @{ */
 
 /** The default NoiseType parameter to FactorMeasurement */
-template <template <typename> class V>
-using DefaultNoiseType = DiagonalNoise<V<double>::Size>;
+template <template <typename...> class V>
+using DefaultNoiseType = DiagonalNoise<V<double>::SizeAtCompileTime>;
 
 /**
  * A measurement, with associated noise, associated with a Factor
  * @tparam V the type of ValueView representing the measurement's value
  * @tparam NoiseTmpl the type of noise
  */
-template <template <typename> class V, typename N = DefaultNoiseType<V>>
+template <template <typename...> class V, typename N = DefaultNoiseType<V>>
 class FactorMeasurement : public FactorVariable<V> {
     using Base = FactorVariable<V>;
 

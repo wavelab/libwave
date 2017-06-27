@@ -7,7 +7,6 @@
 #define WAVE_OPTIMIZATION_FACTOR_GRAPH_VALUE_HPP
 
 #include <iostream>
-
 #include "wave/utils/math.hpp"
 #include "wave/optimization/factor_graph/FactorVariableBase.hpp"
 #include "wave/optimization/factor_graph/template_helpers.hpp"
@@ -16,8 +15,16 @@ namespace wave {
 /** @addtogroup optimization
  *  @{ */
 
-template <typename T>
-struct Map {};
+namespace internal {
+
+template <typename T, typename O, int S>
+struct FactorValueAlias;
+
+}  // namespace internal
+
+struct FactorValueOptions {
+    struct Map;
+};
 
 /**
  * A structure mapping useful types to an underlying value buffer.
@@ -34,97 +41,56 @@ struct Map {};
  *
  * @todo add more syntactic sugar
  */
-template <typename Scalar, int S>
-struct FactorValue : Eigen::Matrix<Scalar, S, 1> {
-    template <typename U>
-    using Tmpl = FactorValue<U, S>;
-    using ValueSizes = tmp::index_sequence<S>;
-    using ValueTuple = std::tuple<FactorValue<Scalar, S>>;
-    using ValueTmpls = tmp::tmpl_sequence<Tmpl>;
-    constexpr static int NumValues = 1;
-    constexpr static int Size = S;
-    using Eigen::Matrix<Scalar, S, 1>::Matrix;
+template <typename Scalar, typename Options, int Size>
+using FactorValue =
+  typename internal::FactorValueAlias<Scalar, Options, Size>::type;
 
-    std::vector<int> blockSizes() const noexcept {
-        return {Size};
-    }
-    std::vector<Scalar *> blockData() noexcept {
-        return {this->data()};
-    }
-    FactorValue &operator=(double d) {
-        this->value() = d;
-        return *this;
-    }
-};
-
-template <typename Scalar, int S>
-struct FactorValue<Map<Scalar>, S> : Eigen::Map<FactorValue<Scalar, S>> {
-    template <typename U>
-    using Tmpl = FactorValue<U, S>;
-    using ValueSizes = tmp::index_sequence<S>;
-    using ValueTuple = std::tuple<FactorValue<Map<Scalar>, S>>;
-    using ValueTmpls = tmp::tmpl_sequence<Tmpl>;
-    constexpr static int NumValues = 1;
-    constexpr static int Size = S;
-    using Eigen::Map<FactorValue<Scalar, S>>::Map;
-    using Eigen::Map<FactorValue<Scalar, S>>::operator=;
-
-    std::vector<int> blockSizes() const noexcept {
-        return {Size};
-    }
-    std::vector<Scalar *> blockData() noexcept {
-        return {this->data()};
-    }
-    FactorValue &operator=(double d) {
-        (*this)[0] = d;
-        return *this;
-    }
-};
-
-template <typename T, template <typename> class... V>
+template <typename Scalar,
+          typename Options,
+          template <typename...> class... ValueTypes>
 class ComposedValue {
  public:
-    using ValueSizes =
-      typename tmp::concat_index_sequence<typename V<T>::ValueSizes...>::type;
-    using ValueTuple = std::tuple<V<T>...>;
-    using ValueTmpls = tmp::tmpl_sequence<V...>;
-    constexpr static int NumValues = sizeof...(V);
+    using ValueSizes = typename tmp::concat_index_sequence<
+      typename ValueTypes<Scalar, Options>::ValueSizes...>::type;
+    using ValueTuple = std::tuple<ValueTypes<Scalar, Options>...>;
+    using ValueTmpls = tmp::tmpl_sequence<ValueTypes...>;
+    constexpr static int NumValues = sizeof...(ValueTypes);
 
-    ComposedValue() : elements{V<T>::Zero()...} {}
-    explicit ComposedValue(V<T>... args) : elements{std::move(args)...} {}
+    ComposedValue() : elements{ValueTypes<Scalar, Options>::Zero()...} {}
+    explicit ComposedValue(ValueTypes<Scalar, Options>... args)
+        : elements{std::move(args)...} {}
 
     std::vector<int> blockSizes() const noexcept {
-        return {V<T>::Size...};
+        return {ValueTypes<Scalar, Options>::Size...};
     }
 
     template <int... Is>
-    std::vector<T *> blockDataImpl(tmp::index_sequence<Is...>) noexcept {
+    std::vector<Scalar *> blockDataImpl(tmp::index_sequence<Is...>) noexcept {
         return {std::get<Is>(this->elements).data()...};
     }
 
-    std::vector<T *> blockData() noexcept {
+    std::vector<Scalar *> blockData() noexcept {
         return this->blockDataImpl(tmp::make_index_sequence<NumValues>{});
     }
 
  protected:
     ValueTuple elements;
-    std::vector<T *> dataptrs;
 };
 
-template <typename Scalar, template <typename> class... V>
-class ComposedValue<Map<Scalar>, V...> {
+template <typename Scalar, template <typename...> class... V>
+class ComposedValue<Scalar, FactorValueOptions::Map, V...> {
  public:
     using ValueSizes = typename tmp::concat_index_sequence<
-      typename V<Map<Scalar>>::ValueSizes...>::type;
-    using ValueTuple = std::tuple<V<Map<Scalar>>...>;
+      typename V<Scalar, FactorValueOptions::Map>::ValueSizes...>::type;
+    using ValueTuple = std::tuple<V<Scalar, FactorValueOptions::Map>...>;
     using ValueTmpls = tmp::tmpl_sequence<V...>;
     constexpr static int NumValues = sizeof...(V);
 
     explicit ComposedValue(tmp::replacet<Scalar *, V>... args)
-        : elements{V<Map<Scalar>>{args}...} {}
+        : elements{V<Scalar, FactorValueOptions::Map>{args}...} {}
 
     std::vector<int> blockSizes() const noexcept {
-        return {V<Scalar>::Size...};
+        return {V<Scalar, FactorValueOptions::Map>::Size...};
     }
 
     template <int... Is>
@@ -141,12 +107,12 @@ class ComposedValue<Map<Scalar>, V...> {
 };
 
 /** Generic instances */
-template <typename T>
-using FactorValue1 = FactorValue<T, 1>;
-template <typename T>
-using FactorValue2 = FactorValue<T, 2>;
-template <typename T>
-using FactorValue3 = FactorValue<T, 3>;
+template <typename T, typename O = void>
+using FactorValue1 = FactorValue<T, O, 1>;
+template <typename T, typename O = void>
+using FactorValue2 = FactorValue<T, O, 2>;
+template <typename T, typename O = void>
+using FactorValue3 = FactorValue<T, O, 3>;
 
 
 namespace internal {
@@ -210,28 +176,6 @@ using get_value_indices = typename get_value_indices_impl<
 /** @} group optimization */
 }  // namespace wave
 
-
-/** @todo figure this out */
-namespace Eigen {
-namespace internal {
-
-template <typename Scalar, int S>
-struct traits<wave::FactorValue<Scalar, S>>
-  : traits<Eigen::Matrix<Scalar, S, 1>> {};
-
-template <typename Scalar, int S>
-struct evaluator<wave::FactorValue<Scalar, S>>
-  : evaluator<Eigen::Matrix<Scalar, S, 1>> {};
-
-template <typename Scalar, int S>
-struct traits<wave::FactorValue<wave::Map<Scalar>, S>>
-  : traits<Eigen::Map<wave::FactorValue<Scalar, S>>> {};
-
-template <typename Scalar, int S>
-struct evaluator<wave::FactorValue<wave::Map<Scalar>, S>>
-  : evaluator<Eigen::Map<wave::FactorValue<Scalar, S>>> {};
-
-}  // namespace internal
-}  // namespace Eigen
+#include "impl/FactorValue.hpp"
 
 #endif  // WAVE_OPTIMIZATION_FACTOR_GRAPH_VALUE_HPP

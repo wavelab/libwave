@@ -17,14 +17,14 @@ namespace wave {
  *  @{ */
 
 
-template <typename T>
-using Position2D = FactorValue<T, 2>;
+template <typename T, typename O = void>
+using Position2D = FactorValue<T, O, 2>;
 
-template <typename T>
-using Orientation2D = FactorValue<T, 1>;
+template <typename T, typename O = void>
+using Orientation2D = FactorValue<T, O, 1>;
 
-template <typename T>
-using Distance = FactorValue<T, 1>;
+template <typename T, typename O = void>
+using Distance = FactorValue<T, O, 1>;
 
 /**
  * Specialized variable representing a 2D pose.
@@ -36,13 +36,13 @@ using Distance = FactorValue<T, 1>;
  * this work, by automatically generating these mappings using some fancy boost
  * libraries.
  */
-template <typename T>
-struct Pose2D : public ComposedValue<T, Position2D, Orientation2D> {
+template <typename T, typename O = void>
+struct Pose2D : public ComposedValue<T, O, Position2D, Orientation2D> {
     // Use base class constructors
     using ComposedValue<T, Position2D, Orientation2D>::ComposedValue;
 
-    Position2D<T> &position = std::get<0>(this->elements);
-    Orientation2D<T> &orientation = std::get<1>(this->elements);
+    Position2D<T, O> &position = std::get<0>(this->elements);
+    Orientation2D<T, O> &orientation = std::get<1>(this->elements);
 };
 
 /** Define variable types for each value type */
@@ -68,9 +68,8 @@ struct DistanceMeasurementFunctor {
     inline bool operator()(const Pose2D<T> &pose,
                            const Position2D<T> &landmark_pos,
                            Distance<T> &result) noexcept {
-        Vec2 diff = pose.position - landmark_pos;
-        double distance = diff.norm();
-        result = distance;
+        Eigen::Matrix<T, 2, 1> diff = pose.position - landmark_pos;
+        result[0] = diff.norm();
         return true;
     }
 };

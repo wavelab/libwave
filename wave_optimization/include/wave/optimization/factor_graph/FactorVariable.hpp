@@ -41,7 +41,7 @@ using VariableId = int;
  * `orientation`. In the Factor's evaluation function, these objects can then be
  * used as independent Eigen vectors.
  */
-template <template <typename> class V>
+template <template <typename...> class V>
 class FactorVariable : public FactorVariableBase {
  public:
     using ValueType = V<double>;

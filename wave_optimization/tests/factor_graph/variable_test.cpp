@@ -9,8 +9,8 @@ TEST(ValueTest, constructFromRawData) {
     double buf[3] = {7.7, 8.8, 9.9};
     auto expected = Vec3{7.7, 8.8, 9.9};
 
-    auto val = FactorValue<double, 3>{buf};
-    static_assert(3u == FactorValue<double, 3>::Size, "");
+    auto val = FactorValue3<double>{buf};
+    static_assert(3u == FactorValue3<double>::SizeAtCompileTime, "");
     EXPECT_EQ(3, val.size());
 
     EXPECT_PRED2(VectorsNear, expected, Eigen::Map<Vec3>{val.data()});
@@ -18,7 +18,7 @@ TEST(ValueTest, constructFromRawData) {
 
 TEST(ValueTest, print) {
     double buf[2] = {7.7, 8.8};
-    auto val = FactorValue<double, 2>{buf};
+    auto val = FactorValue2<double>{buf};
     std::stringstream ss, ss2;
     ss << val;
     EXPECT_STREQ("ValueView<2>", ss.str().c_str());
