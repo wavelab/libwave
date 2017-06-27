@@ -21,42 +21,6 @@ BruteForceMatcher::BruteForceMatcher(const BFMatcherParams &config) {
     this->current_config = config;
 }
 
-BruteForceMatcher::BruteForceMatcher(const std::string &config_path) {
-    // Extract parameters from .yaml file.
-    ConfigParser parser;
-
-    // Configuration parameters
-    BFMatcherParams config;
-
-    bool cross_check;
-
-    // Add parameters to parser, to be loaded. If path cannot be found, throw an
-    // exception.
-    parser.addParam("norm_type", &config.norm_type);
-    parser.addParam("use_knn", &config.use_knn);
-    parser.addParam("ratio_threshold", &config.ratio_threshold);
-    parser.addParam("distance_threshold", &config.distance_threshold);
-    parser.addParam("fm_method", &config.fm_method);
-
-    if (parser.load(config_path) != 0) {
-        throw std::invalid_argument(
-          "Failed to load BruteForceMatcher configuration! Path not found.");
-    }
-
-    // Confirm configuration is valid
-    this->checkConfiguration(config);
-
-    // Cross_check must be the opposite of use_knn
-    cross_check = !config.use_knn;
-
-    // Create cv::BFMatcher object with the desired parameters
-    this->brute_force_matcher =
-      cv::BFMatcher::create(config.norm_type, cross_check);
-
-    // Store configuration parameters within member struct
-    this->current_config = config;
-}
-
 void BruteForceMatcher::checkConfiguration(
   const BFMatcherParams &check_config) {
     // Check that the value of norm_type is one of the valid values

@@ -12,20 +12,19 @@ const auto TEST_IMAGE_2 = "tests/data/image_right.png";
 
 // Checks that correct configuration can be loaded
 TEST(BFTests, GoodInitialization) {
-    ASSERT_NO_THROW(BruteForceMatcher bfmatcher(TEST_CONFIG));
+    ASSERT_NO_THROW(BruteForceMatcher bfmatcher);
 }
 
 // Checks that incorrect configuration path throws an exception
 TEST(BFTests, BadInitialization) {
     const std::string bad_path = "bad_path";
 
-    ASSERT_THROW(BruteForceMatcher bfmatcher(bad_path), std::invalid_argument);
+    ASSERT_THROW(BFMatcherParams config(bad_path), std::invalid_argument);
 }
 
 TEST(BFTests, DefaultConstructorTest) {
-    BruteForceMatcher bfmatcher;
-
-    auto check_config = BFMatcherParams{};
+    BFMatcherParams check_config(TEST_CONFIG);
+    BruteForceMatcher bfmatcher(check_config);
 
     auto config = bfmatcher.getConfiguration();
 
@@ -65,7 +64,8 @@ TEST(BFTests, CustomYamlConstructorTest) {
     int distance_threshold = 5;
     int fm_method = cv::FM_RANSAC;
 
-    BruteForceMatcher bfmatcher(TEST_CONFIG);
+    BFMatcherParams input_config(TEST_CONFIG);
+    BruteForceMatcher bfmatcher(input_config);
 
     BFMatcherParams config = bfmatcher.getConfiguration();
 
