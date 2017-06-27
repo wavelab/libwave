@@ -3,6 +3,31 @@
 
 namespace wave {
 
+// Filesystem constructor for FASTParams struct
+FASTParams::FASTParams(const std::string &config_path) {
+    // Extract parameters from .yaml file.
+    ConfigParser parser;
+
+    int threshold;
+    bool nonmax_suppression;
+    int type;
+
+    // Add parameters to parser, to be loaded. If path cannot be found,
+    // throw an exception.
+    parser.addParam("threshold", &threshold);
+    parser.addParam("nonmax_suppression", &nonmax_suppression);
+    parser.addParam("type", &type);
+
+    if (parser.load(config_path) != 0) {
+        throw std::invalid_argument(
+                "Failed to Load FASTParams Configuration");
+    }
+
+    this->threshold = threshold;
+    this->nonmax_suppression = nonmax_suppression;
+    this->type = type;
+}
+
 // Default Constructor
 FASTDetector::FASTDetector(const FASTParams &config) {
     // Ensure parameters are valid
