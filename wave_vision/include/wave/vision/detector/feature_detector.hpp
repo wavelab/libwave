@@ -17,47 +17,28 @@ namespace wave {
 /** @addtogroup vision
  *  @{ */
 
-/**
- * Representation of a generic feature detector.
+/** Representation of a generic feature detector.
  *
- * Internally, this class, and all derived classes are wrapping various
- * detectors implemented in OpenCV. Further reference on OpenCV's Feature
- * Detectors can be found [here][opencv_feature_detectors].
+ *  Internally, this class, and all derived classes are wrapping various
+ *  detectors implemented in OpenCV. Further reference on OpenCV's Feature
+ *  Detectors can be found [here][opencv_feature_detectors].
  *
- * [opencv_feature_detectors]:
- * http://docs.opencv.org/trunk/d5/d51/group__features2d__main.html
+ *  [opencv_feature_detectors]:
+ *  http://docs.opencv.org/trunk/d5/d51/group__features2d__main.html
  */
 class FeatureDetector {
  public:
-    virtual ~FeatureDetector() {}
-
-    /** Function to return current image being detected
+    /** Detects features in an image. Calls a different detector depending on
+     *  the derived class.
      *
-     *  @return the image (in matrix form).
-     */
-    virtual cv::Mat &getImage() {
-        return this->image;
-    }
-
-    /** Virtual function to detect features in an image. Calls a different
-     *  detector depending on the derived class.
+     *  @param image the image to detect features in.
      *
-     *  @param image, the image to detect features in.
      *  @return a vector of the detected keypoints.
      */
     virtual std::vector<cv::KeyPoint> detectFeatures(const cv::Mat &image) = 0;
 
  protected:
-    /** The image currently being detected. */
-    cv::Mat image;
-
-    /** Function to set image within the member variables.
-     *
-     *  @param source_image, the image to load.
-     */
-    virtual void loadImage(const cv::Mat &source_image) {
-        this->image = source_image;
-    }
+    virtual ~FeatureDetector() = default;
 };
 
 /** @} group vision */

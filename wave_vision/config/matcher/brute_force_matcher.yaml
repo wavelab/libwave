@@ -31,4 +31,5 @@ norm_type: 6
 # descriptor_2 is also the closest to descriptor_1.
 #
 # Recommended: false
+#
 cross_check: false
