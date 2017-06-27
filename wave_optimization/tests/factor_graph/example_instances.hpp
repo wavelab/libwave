@@ -39,10 +39,10 @@ using Distance = FactorValue<T, O, 1>;
 template <typename T, typename O = void>
 struct Pose2D : public ComposedValue<T, O, Position2D, Orientation2D> {
     // Use base class constructors
-    using ComposedValue<T, Position2D, Orientation2D>::ComposedValue;
+    using ComposedValue<T, O, Position2D, Orientation2D>::ComposedValue;
 
-    Position2D<T, O> &position = std::get<0>(this->elements);
-    Orientation2D<T, O> &orientation = std::get<1>(this->elements);
+    Position2D<T, O> &position = this->template block<0>();
+    Orientation2D<T, O> &orientation = this->template block<1>();
 };
 
 /** Define variable types for each value type */

@@ -79,11 +79,7 @@ using FactorValue =
 template <typename Scalar, typename Options, template <typename...> class... V>
 class ComposedValue {
  public:
-    using ValueSizes = typename tmp::concat_index_sequence<
-      typename V<Scalar, Options>::ValueSizes...>::type;
     using ValueTuple = std::tuple<V<Scalar, Options>...>;
-    using ValueTmpls = tmp::tmpl_sequence<V...>;
-    constexpr static int NumValues = sizeof...(V);
 
     ComposedValue() : blocks{V<Scalar, Options>::Zero()...} {}
     explicit ComposedValue(V<Scalar, Options>... args)
@@ -98,10 +94,16 @@ class ComposedValue {
     }
 
     std::vector<Scalar *> blockData() noexcept {
-        return this->blockDataImpl(tmp::make_index_sequence<NumValues>{});
+        return this->blockDataImpl(tmp::make_index_sequence<sizeof...(V)>{});
     }
 
  protected:
+    template <int I>
+    typename std::tuple_element<I, ValueTuple>::type &block() noexcept {
+        return std::get<I>(this->blocks);
+    }
+
+ private:
     ValueTuple blocks;
 };
 

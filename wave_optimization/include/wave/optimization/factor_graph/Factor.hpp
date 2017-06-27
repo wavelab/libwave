@@ -44,8 +44,8 @@ namespace wave {
  * @tparam VarTypes The list of variables types operated on by this factor
  */
 template <typename F,
-          template <typename> class M,
-          template <typename> class... V>
+          template <typename...> class M,
+          template <typename...> class... V>
 class Factor : public FactorBase {
     using FactorType = Factor<F, M, V...>;
 

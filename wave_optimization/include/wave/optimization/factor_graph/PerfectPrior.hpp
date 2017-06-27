@@ -34,7 +34,7 @@ namespace wave {
  *
  * @tparam VarType The type of factor variable we have prior information on
  */
-template <template <typename> class V>
+template <template <typename...> class V>
 class PerfectPrior : public FactorBase {
     using FactorType = PerfectPrior<V>;
     using VarType = FactorVariable<V>;

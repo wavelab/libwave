@@ -127,7 +127,7 @@ struct sum<Head> {
 template <typename Seq>
 struct sum_index_sequence;
 
-template <int Head, int... Is>
+template <int... Is>
 struct sum_index_sequence<index_sequence<Is...>> {
     static constexpr int value = sum<Is...>::value;
 };

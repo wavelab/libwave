@@ -63,7 +63,7 @@ class FactorMeasurement : public FactorVariable<V> {
  * This specialization can be constructed with a measured value only, without
  * needing to specify noise.
  */
-template <template <typename> class V>
+template <template <typename...> class V>
 class FactorMeasurement<V, void> : public FactorVariable<V> {
     using Base = FactorVariable<V>;
 

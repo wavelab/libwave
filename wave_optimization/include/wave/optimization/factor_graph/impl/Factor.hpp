@@ -14,41 +14,45 @@ namespace internal {
  * @return a FactorValue mapping the given array
  */
 
-template <typename T, template <typename> class V, int N, int... Is>
-inline V<Map<T>> make_composed_value(const std::array<T const *const, N> &ptrs,
-                                     tmp::index_sequence<Is...>) {
+template <typename T, template <typename...> class V, int N, int... Is>
+inline V<T, FactorValueOptions::Map> make_composed_value(
+  const std::array<T const *const, N> &ptrs, tmp::index_sequence<Is...>) {
     // The array is const, but ValueView maps non-const arrays. It would be
     // complicated to have two variants of ValueView, one for const and one
     // for non-const arrays. In this case, we know that the ValueView itself
     // is const, and it won't modify the array itself - thus, nothing will
     // modify the array, and it's "safe" to cast away the constness. Still,
     // @todo: reconsider this cast
-    return V<Map<T>>{const_cast<T *>(ptrs[Is])...};
+    return V<T, FactorValueOptions::Map>{const_cast<T *>(ptrs[Is])...};
 }
 
-template <typename T, template <typename> class V, int N, typename ISeq, int I>
-inline V<Map<T>> make_composed_value1(
+template <typename T,
+          template <typename...> class V,
+          int N,
+          typename ISeq,
+          int I>
+inline V<T, FactorValueOptions::Map> make_composed_value1(
   const std::array<T const *const, N> &ptrs) {
     return make_composed_value<T, V, N>(ptrs, ISeq{});
 }
 
 
 template <typename F,
-          template <typename> class M,
+          template <typename...> class M,
           typename TmplTuple,
-          template <typename> class... V>
+          template <typename...> class... V>
 struct FactorCostFunctor;
 
 template <typename F,
-          template <typename> class M,
-          template <typename> class... Vv,
-          template <typename> class... V>
+          template <typename...> class M,
+          template <typename...> class... Vv,
+          template <typename...> class... V>
 struct FactorCostFunctor<F, M, tmp::tmpl_sequence<Vv...>, V...> {
     constexpr static int N = sizeof...(Vv);
 
     template <typename T, typename... ISeq, int... Is>
     bool callF(const std::array<T const *const, N> &ptrs,
-               M<Map<T>> &residuals,
+               M<T, FactorValueOptions::Map> &residuals,
                tmp::type_sequence<ISeq...> &&,
                tmp::index_sequence<Is...> &&) const noexcept {
         F f;
@@ -60,7 +64,7 @@ struct FactorCostFunctor<F, M, tmp::tmpl_sequence<Vv...>, V...> {
     template <typename T>
     bool operator()(tmp::replacet<T, Vv> const *const... raw_params,
                     T *raw_residuals) const {
-        auto residuals = M<Map<T>>{raw_residuals};
+        auto residuals = M<T, FactorValueOptions::Map>{raw_residuals};
 
         // Call the measurement function
         const auto &params = std::array<T const *const, N>{{raw_params...}};
@@ -90,15 +94,15 @@ struct get_cost_function<Functor, tmp::index_sequence<ValueSizes...>> {
 }  // namespace internal
 
 template <typename F,
-          template <typename> class M,
-          template <typename> class... V>
+          template <typename...> class M,
+          template <typename...> class... V>
 Factor<F, M, V...>::Factor(FactorMeasurement<M> measurement,
                            std::shared_ptr<FactorVariable<V>>... variable_ptrs)
     : measurement{measurement}, variable_ptrs{{variable_ptrs...}} {}
 
 template <typename F,
-          template <typename> class M,
-          template <typename> class... V>
+          template <typename...> class M,
+          template <typename...> class... V>
 std::unique_ptr<ceres::CostFunction> Factor<F, M, V...>::costFunction() const
   noexcept {
     using Functor = internal::
@@ -110,8 +114,8 @@ std::unique_ptr<ceres::CostFunction> Factor<F, M, V...>::costFunction() const
 }
 
 template <typename F,
-          template <typename> class M,
-          template <typename> class... V>
+          template <typename...> class M,
+          template <typename...> class... V>
 void Factor<F, M, V...>::print(std::ostream &os) const {
     os << "[";
     os << "Factor arity " << NumVars << ", ";
