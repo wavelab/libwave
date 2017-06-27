@@ -9,7 +9,7 @@
 #include <iostream>
 #include "wave/utils/math.hpp"
 #include "wave/optimization/factor_graph/FactorVariableBase.hpp"
-#include "wave/optimization/factor_graph/template_helpers.hpp"
+#include "wave/utils/template_helpers.hpp"
 
 namespace wave {
 /** @addtogroup optimization

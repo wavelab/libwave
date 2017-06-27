@@ -1,5 +1,5 @@
 #include <ceres/autodiff_cost_function.h>
-#include "wave/optimization/factor_graph/template_helpers.hpp"
+#include "wave/utils/template_helpers.hpp"
 
 namespace wave {
 
