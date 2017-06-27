@@ -8,11 +8,15 @@ namespace internal {
 /**
  * Trivial measurement function for a prior, f(X) = X
  */
-template <typename V>
-inline bool identityMeasurementFunction(const V &variable, V &result) {
-    result = variable;
-    return true;
-}
+template <template <typename...> class V>
+struct IdentityMeasurementFunctor {
+    template <typename T, typename O = void>
+    static bool evaluate(const V<T, O> &variable, V<T, O> &result) {
+        result = variable;
+        return true;
+    }
+};
+
 
 }  // namespace internal
 
@@ -52,9 +56,8 @@ inline void FactorGraph::addFactor(
 template <template <typename...> class M>
 inline void FactorGraph::addPrior(const FactorMeasurement<M> &measurement,
                                   std::shared_ptr<FactorVariable<M>> variable) {
-    return this->addFactor(internal::identityMeasurementFunction<M>,
-                           measurement,
-                           std::move(variable));
+    return this->addFactor<internal::IdentityMeasurementFunctor<M>>(
+      measurement, std::move(variable));
 }
 
 template <template <typename...> class V>

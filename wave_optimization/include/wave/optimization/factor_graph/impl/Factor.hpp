@@ -43,6 +43,9 @@ template <typename F,
           template <typename...> class... V>
 struct FactorCostFunctor;
 
+template <typename... T>
+struct Debug;
+
 template <typename F,
           template <typename...> class M,
           typename... Vv,
@@ -55,7 +58,7 @@ struct FactorCostFunctor<F, M, std::tuple<Vv...>, V...> {
                M<T, FactorValueOptions::Map> &residuals,
                tmp::type_sequence<ISeq...> &&,
                tmp::index_sequence<Is...> &&) const noexcept {
-        return F::evaluate(
+        return F::template evaluate<T, FactorValueOptions::Map>(
           internal::make_composed_value1<T, V, N, ISeq, Is>(ptrs)...,
           residuals);
     }

@@ -43,7 +43,7 @@ class FactorBase {
     /** Get a reference to the vector of variable pointers */
     virtual const VarVectorType &variables() const noexcept = 0;
 
-    /** Return true if this factor is a zero-noise prior */
+    /** Rturn true if this factor is a zero-noise prior */
     virtual bool isPerfectPrior() const noexcept = 0;
 };
 

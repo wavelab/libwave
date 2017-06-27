@@ -88,9 +88,6 @@ class Factor : public FactorBase {
 
     std::unique_ptr<ceres::CostFunction> costFunction() const noexcept override;
 
-    template <typename... Args>
-    bool evaluateRaw(Args... args) const noexcept;
-
     /** Get a reference to the vector of variable pointers */
     const VarVectorType &variables() const noexcept override {
         return this->variable_ptrs;
