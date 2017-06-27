@@ -61,9 +61,16 @@ class FactorGraph {
     void addPrior(const FactorMeasurement<M> &measurement,
                   std::shared_ptr<FactorVariable<M>> variable);
 
+    // Note the first argument must be written as
+    // `typename FactorVariable<V>::ValueType`, and not simply `V<double>`,
+    // because of an esoteric name deduction problem. See
+    // https://stackoverflow.com/questions/41642359
+    // http://www.open-std.org/jtc1/sc22/wg21/docs/cwg_active.html#1979
+
     template <template <typename...> class V>
-    void addPerfectPrior(const V<double> &measured_value,
-                         std::shared_ptr<FactorVariable<V>> variable);
+    void addPerfectPrior(
+      const typename FactorVariable<V>::ValueType &measured_value,
+      std::shared_ptr<FactorVariable<V>> variable);
 
     // Iterators
 

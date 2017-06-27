@@ -73,8 +73,8 @@ class Factor : public FactorBase {
      *
      * @return true if calculation was successful, false on error
      */
-    template <typename T>
-    using FuncType = bool(const V<T> &..., M<T> &);
+    template <typename T, typename O = void>
+    using FuncType = bool(*)(const V<T, O> &..., M<T, O> &);
 
     using const_iterator = typename VarArrayType::const_iterator;
 
