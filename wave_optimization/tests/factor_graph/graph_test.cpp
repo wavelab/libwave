@@ -79,6 +79,21 @@ TEST(FactorGraph, addPerfectPrior) {
     // @todo? evaluate
 }
 
+
+TEST(FactorGraph, addPerfectPriorConflict) {
+    const auto test_meas = Position2D<double>{1.2, 3.4};
+    //    const auto test_val = Position2D<double>{1.23, 3.38};
+
+    // Prepare arguments to add unary factor
+    FactorGraph graph;
+    auto p = std::make_shared<Landmark2DVar>();
+
+    // Add the factor
+    graph.addPerfectPrior(test_meas, p);
+    // Add it again
+    EXPECT_THROW(graph.addPerfectPrior(test_meas, p), std::logic_error);
+}
+
 TEST(FactorGraph, triangulationSim) {
     // Simulate a robot passing by a landmark
     // First generate "true" data

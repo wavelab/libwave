@@ -130,17 +130,28 @@ void CeresOptimizer::addFactor(std::shared_ptr<Factor<F, M, V...>> factor) {
 template <template <typename...> class V>
 inline void CeresOptimizer::addPerfectPrior(
   std::shared_ptr<PerfectPrior<V>> factor) {
+    // Although a pefect prior acts on only one variable, it may be composed of
+    // multiple FactorValues. Get all the data pointers.
+    const auto &v = factor->variables().front();
     auto data_ptrs = std::vector<double *>{};
-    for (const auto &v : factor->variables()) {
-        const auto &v_ptrs = v->blockData();
-        const auto &v_sizes = v->blockSizes();
-        data_ptrs.insert(data_ptrs.end(), v_ptrs.begin(), v_ptrs.end());
-        for (auto i = 0u; i < v_ptrs.size(); ++i) {
-            this->problem.AddParameterBlock(v_ptrs[i], v_sizes[i]);
+    const auto &v_ptrs = v->blockData();
+    const auto &v_sizes = v->blockSizes();
+    data_ptrs.insert(data_ptrs.end(), v_ptrs.begin(), v_ptrs.end());
+    for (auto i = 0u; i < v_ptrs.size(); ++i) {
+        // Add parameter blocks to the problem, and set them constant since
+        // this is a zero-noise prior
+        this->problem.AddParameterBlock(v_ptrs[i], v_sizes[i]);
 
-            // Set parameter blocks constant since this is a zero-noise prior
-            this->problem.SetParameterBlockConstant(v_ptrs[i]);
+        // First, check that the block is not already constant - if so, there's
+        // a conflict
+        if (this->problem.IsParameterBlockConstant(v_ptrs[i])) {
+            throw std::logic_error(
+              "Parameter block of ceres problem is already marked constant. "
+              "Probably, multiple perfect priors have been added to the same "
+              "variables");
         }
+
+        this->problem.SetParameterBlockConstant(v_ptrs[i]);
     }
 }
 

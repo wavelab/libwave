@@ -33,6 +33,8 @@ class CeresOptimizer {
     void addFactor(std::shared_ptr<Factor<F, M, V...>> factor);
 
     /** Add a perfect prior
+     *
+     * @throw std::logic_error if an affected parameter is already set constant
      */
     template <template <typename...> class V>
     void addPerfectPrior(std::shared_ptr<PerfectPrior<V>> factor);
