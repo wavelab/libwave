@@ -19,9 +19,11 @@ TEST(ValueTest, constructFromRawData) {
 TEST(ValueTest, print) {
     double buf[2] = {7.7, 8.8};
     auto val = FactorValue2<double>{buf};
-    std::stringstream ss, ss2;
+    std::stringstream ss;
     ss << val;
-    EXPECT_STREQ("ValueView<2>", ss.str().c_str());
+
+    // For now, the result matches printing an Eigen vector
+    EXPECT_STREQ("7.7\n8.8", ss.str().c_str());
 }
 
 TEST(VariableTest, constructDefault) {
