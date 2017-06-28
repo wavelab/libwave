@@ -45,6 +45,15 @@ struct Pose2D : public ComposedValue<T, O, Position2D, Orientation2D> {
     Orientation2D<T, O> &orientation = this->template block<1>();
 };
 
+template <typename T, typename O = void>
+struct RangeBearing : public ComposedValue<T, O, Distance, Orientation2D> {
+    // Use base class constructors
+    using ComposedValue<T, O, Distance, Orientation2D>::ComposedValue;
+
+    Distance<T, O> &range = this->template block<0>();
+    Orientation2D<T, O> &bearing = this->template block<1>();
+};
+
 /** Define variable types for each value type */
 using Pose2DVar = FactorVariable<Pose2D>;
 using Landmark2DVar = FactorVariable<Position2D>;
@@ -73,6 +82,19 @@ struct DistanceMeasurementFunctor {
         return true;
     }
 };
+
+
+struct RangeBearingMeasurementFunctor {
+    template <typename T, typename O = void>
+    static bool evaluate(const Pose2D<T, O> &pose,
+                         const Position2D<T, O> &landmark,
+                         RangeBearing<T, O>& result) noexcept {
+    Eigen::Matrix<T, 2, 1> diff = landmark.position - pose.position;
+    result.range = diff.norm();
+    result.bearing = atan2(diff.y(), diff.x()) - pose.orientation.value();
+}
+};
+
 
 /**
  * Factor representing a distance measurement between a 2D pose and landmark.

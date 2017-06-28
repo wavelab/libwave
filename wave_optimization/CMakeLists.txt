@@ -26,3 +26,11 @@ TARGET_LINK_LIBRARIES(${PROJECT_NAME}_tests
                       ${PROJECT_NAME}
                       wave_utils
                       ${CERES_LIBRARIES})
+
+WAVE_ADD_TEST(${PROJECT_NAME}_examples
+    tests/factor_graph/graph_slam_2d.cpp)
+
+TARGET_LINK_LIBRARIES(${PROJECT_NAME}_examples
+    ${PROJECT_NAME}
+    wave_kinematics
+    ${CERES_LIBRARIES})
