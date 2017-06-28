@@ -48,7 +48,7 @@ class FactorGraph {
 
     /** Add a factor with the given measurement function
      *
-     * @param f The measurement function. See Factor::FuncType for the required
+     * @param f The measurement function. See Factor::evaluate for the required
      * signature.
      * @param meas The FactorMeasurement stored in the factor. Its type must
      * match the measurement function signature.

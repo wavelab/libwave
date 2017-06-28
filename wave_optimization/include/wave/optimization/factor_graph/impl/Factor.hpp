@@ -13,10 +13,10 @@ template <typename F,
           template <typename...> class M,
           template <typename...> class... V>
 template <typename T, typename O>
-bool Factor<F, M, V...>::evaluate(const V<T, O> &... variables,
+bool Factor<F, M, V...>::evaluate(const V<T, O> &... parameters,
                                   M<T, O> &residuals) const noexcept {
     // Call the measurement function
-    bool ok = F::template evaluate<T, O>(variables..., residuals);
+    bool ok = F::template evaluate<T, O>(parameters..., residuals);
 
     if (ok) {
         // Calculate the normalized residual

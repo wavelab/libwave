@@ -34,7 +34,7 @@ namespace wave {
  *
  * These three things are stored in a Factor. Most of the work in defining a
  * factor is defining a measurement function.
- * See Factor::FuncType for the required function signature.
+ * See Factor::evaluate for the required function signature.
  *
  * It is typically unnecessary to directly instantiate or derive this template;
  * instead, use FactorGraph::addFactor.
@@ -52,29 +52,6 @@ class Factor : public FactorBase {
     constexpr static int NumVars = sizeof...(V);
     using VarArrayType = FactorBase::VarVectorType;
 
-    /** The deduced type the used-defined measurement function must have.
-     *
-     * The user-defined measurement function must have the following signature:
-     *
-     * @param[in] variables each variable this function operates on, passed in
-     * as the correspoing `ValueView` object
-     * @param[out] residuals residuals calculated using the given variables
-     * @param[out] jacobians
-     * @parblock
-     * Jacobian matrices with respect to each variable. There is one jacobian
-     * parameter for each variable parameter, in the same order.
-     * @endparblock
-     *
-     * @note  Each residual and jacobian output parameter is a special map
-     * object which may evaluate to false to indicate the jacobian should not be
-     * calculated on this call. Wrap calculation and assignment of each
-     * parameter `j` in a conditional: `if (j) {...}`.
-     *
-     * @return true if calculation was successful, false on error
-     */
-    template <typename T, typename O = void>
-    using FuncType = bool (*)(const V<T, O> &..., M<T, O> &);
-
     using const_iterator = typename VarArrayType::const_iterator;
 
     /** Construct with the given measurement and variables. */
@@ -85,8 +62,31 @@ class Factor : public FactorBase {
         return NumVars;
     }
 
+    /** Calculate normalized residuals at the given parameters
+     *
+     * Calls the user-supplied measurement function (the `evaluate` method of
+     * the functor type `F`) with the given inputs. Then calculates normalized
+     * residuals using this factor's measurement, adjusting for uncertainty.
+     *
+     * @note The user-supplied `evaluate` function template must match this one
+     * in signature and template parameters (except that the user-supplied
+     * function must be `static`). `V` and `M` should be replaced with the
+     * `FactorValue` templates corresponding to this Factor's variables and
+     * measurement.
+     *
+     * @tparam T The scalar type used in this calculation. If declaring
+     * variables to hold intermediate calculations (e.g., Eigen matrices), use
+     * `T` instead of `double`.
+     * @tparam O A type holding information used internally by libwave. Users
+     * don't need to do anything with this type except include it in the
+     * parameters.
+     *
+     * @param[in] parameters values for each variable this function operates on
+     * @param[out] residuals normalized residuals
+     * @return true if calculation was successful, false on error
+     */
     template <typename T, typename O = void>
-    bool evaluate(const V<T, O> &... variables, M<T, O> &residuals) const
+    bool evaluate(const V<T, O> &... parameters, M<T, O> &residuals) const
       noexcept;
 
     /** Get a reference to the vector of variable pointers */
