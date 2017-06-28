@@ -19,7 +19,8 @@ SET(LIBWAVE_MODULES
     wave_matching
     wave_optimization
     wave_vision
-    wave_utils)
+    wave_utils
+    wave_odometry)
 
 FOREACH(dir ${LIBWAVE_MODULES})
     INCLUDE_DIRECTORIES(${dir}/include)
@@ -51,6 +52,9 @@ ADD_DEPENDENCIES(wave_optimization wave_utils)
 # libwave_vision.a
 ADD_DEPENDENCIES(wave_vision wave_utils)
 
+# libwave_odometry.a
+ADD_DEPENDENCIES(wave_odometry wave_utils)
+
 # libwave library
 SET(LIBWAVE_MODULE_LIBS
     ${CMAKE_BINARY_DIR}/wave_controls/libwave_controls.a
@@ -59,7 +63,8 @@ SET(LIBWAVE_MODULE_LIBS
     ${CMAKE_BINARY_DIR}/wave_matching/libwave_matching.a
     ${CMAKE_BINARY_DIR}/wave_optimization/libwave_optimization.a
     ${CMAKE_BINARY_DIR}/wave_utils/libwave_utils.a
-    ${CMAKE_BINARY_DIR}/wave_vision/libwave_vision.a)
+    ${CMAKE_BINARY_DIR}/wave_vision/libwave_vision.a
+    ${CMAKE_BINARY_DIR}/wave_odometry/libwave_odometry.a)
 
 IF(BUILD_SHARED_LIBS)
     # SHARED LIBRARY
