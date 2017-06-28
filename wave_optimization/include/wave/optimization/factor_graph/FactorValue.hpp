@@ -62,12 +62,13 @@ class FactorValue : public Eigen::Matrix<Scalar, Size, 1> {
     // Must redefine default constructor since we define other constructors
     FactorValue() : Base{} {}
 
-    /** Allow constructing a size-1 value from double */
-    FactorValue(double d) : Base{d} {}
+    /** Allow constructing a size-1 value from a scalar */
+    FactorValue(Scalar d) : Base{d} {}
 
-    /** Allow assigning to a size-1 value from double */
-    FactorValue &operator=(double d) {
-        this->value() = d;
+    /** Allow assigning to a size-1 value from a scalar */
+    FactorValue &operator=(Scalar d) {
+        static_assert(Size == 1, "Can only assign scalar to values of size 1");
+        (*this)[0] = d;
         return *this;
     }
 };
@@ -83,8 +84,9 @@ class FactorValue<Scalar, FactorValueOptions::Map, Size>
     using Base::operator=;
 
     /** Allow assigning to a size-1 value from double */
-    FactorValue &operator=(double d) {
-        this->value() = d;
+    FactorValue &operator=(Scalar d) {
+        static_assert(Size == 1, "Can only assign scalar to values of size 1");
+        (*this)[0] = d;
         return *this;
     }
 };

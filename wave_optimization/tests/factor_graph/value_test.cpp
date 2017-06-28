@@ -4,6 +4,12 @@
 namespace wave {
 
 TEST(FactorValue, construct) {
+    // Default construct an uninitialized FactorValue
+    auto val = FactorValue<double, void, 3>{};
+    EXPECT_EQ(3u, val.size());
+}
+
+TEST(FactorValue, constructFromVector) {
     // Construct a FactorValue from an Eigen Vector, copying it
     auto vec = Vec3{7.7, 8.8, 9.9};
     auto val = FactorValue<double, void, 3>{vec};
@@ -12,7 +18,13 @@ TEST(FactorValue, construct) {
     EXPECT_PRED2(VectorsNear, vec, val);
 }
 
-TEST(FactorValue, constructDouble) {
+TEST(FactorValue, constructFromList) {
+    // Construct a size-1 FactorValue from a double
+    auto val = FactorValue<double, void, 3>{1.1, 2.2, 3.3};
+    EXPECT_EQ(Vec3(1.1, 2.2, 3.3), val);
+}
+
+TEST(FactorValue, constructFromScalar) {
     // Construct a size-1 FactorValue from a double
     auto val = FactorValue<double, void, 1>{1.1};
     EXPECT_EQ(1.1, val[0]);
@@ -30,16 +42,21 @@ TEST(FactorValue, constructFromRaw) {
     EXPECT_PRED2(VectorsNear, expected, val);
 }
 
-TEST(FactorValue, constructMap) {
-    // Construct a mapped value mapping a raw buffer
-    double buf[3] = {7.7, 8.8, 9.9};
-    auto expected = Vec3{7.7, 8.8, 9.9};
+TEST(FactorValue, assign) {
+    auto a = FactorValue<double, void, 2>{};
+    auto b = FactorValue<double, void, 2>{1.2, 3.4};
 
-    auto val = FactorValue<double, FactorValueOptions::Map, 3>{buf};
-    static_assert(3u == FactorValue3<double>::SizeAtCompileTime, "");
-    EXPECT_EQ(3, val.size());
-    EXPECT_EQ(buf, val.data());
-    EXPECT_PRED2(VectorsNear, expected, val);
+    a = b;
+
+    EXPECT_EQ(a, b);
+    EXPECT_NE(a.data(), b.data());
+}
+
+TEST(FactorValue, assignFromScalar) {
+    // Assign to a size-1 FactorValue from a double
+    auto val = FactorValue<double, void, 1>{1.1};
+    val = 2.2;
+    EXPECT_EQ(2.2, val[0]);
 }
 
 TEST(FactorValue, print) {
@@ -51,5 +68,38 @@ TEST(FactorValue, print) {
     // For now, the result matches printing an Eigen vector
     EXPECT_STREQ("7.7\n8.8", ss.str().c_str());
 }
+
+TEST(MappedFactorValue, constructFromRaw) {
+    // Construct a mapped value mapping a raw buffer
+    double buf[3] = {7.7, 8.8, 9.9};
+    auto expected = Vec3{7.7, 8.8, 9.9};
+
+    auto val = FactorValue<double, FactorValueOptions::Map, 3>{buf};
+    static_assert(3u == FactorValue3<double>::SizeAtCompileTime, "");
+    EXPECT_EQ(3, val.size());
+    EXPECT_EQ(buf, val.data());
+    EXPECT_PRED2(VectorsNear, expected, val);
+}
+
+
+TEST(MappedFactorValue, assign) {
+    auto a = FactorValue<double, void, 2>{};
+    auto map = FactorValue<double, FactorValueOptions::Map, 2>{a.data()};
+    auto b = FactorValue<double, void, 2>{1.2, 3.4};
+
+    map = b;
+
+    EXPECT_EQ(a, b);
+    EXPECT_NE(a.data(), b.data());
+}
+
+TEST(MappedFactorValue, assignFromScalar) {
+    // Assign to a size-1 FactorValue from a double
+    double x = 0;
+    auto val = FactorValue<double, FactorValueOptions::Map, 1>{&x};
+    val = 2.2;
+    EXPECT_EQ(2.2, val[0]);
+}
+
 
 }  // namespace wave
