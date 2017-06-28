@@ -103,12 +103,6 @@ class ComposedValue {
 
     explicit ComposedValue(tmp::replacet<Scalar *, V>... args)
         : blocks{V<Scalar, FactorValueOptions::Map>{args}...} {}
-
-    template <int... Is>
-    std::vector<Scalar *> blockDataImpl(tmp::index_sequence<Is...>) noexcept {
-        return {std::get<Is>(this->blocks).data()...};
-    }
-
     std::vector<Scalar *> blockData() noexcept {
         return this->blockDataImpl(tmp::make_index_sequence<sizeof...(V)>{});
     }
@@ -120,6 +114,11 @@ class ComposedValue {
     }
 
  private:
+    template <int... Is>
+    std::vector<Scalar *> blockDataImpl(tmp::index_sequence<Is...>) noexcept {
+        return {std::get<Is>(this->blocks).data()...};
+    }
+
     ValueTuple blocks;
 };
 
