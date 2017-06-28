@@ -12,20 +12,21 @@ INCLUDE_DIRECTORIES(${CERES_INCLUDE_DIRS})
 
 # LIBRARY
 ADD_LIBRARY(wave_optimization
-            STATIC
-            src/ceres/ceres_examples.cpp)
+    STATIC
+    src/ceres/ceres_examples.cpp)
 
 # UNIT TESTS
 WAVE_ADD_TEST(${PROJECT_NAME}_tests
-              tests/ceres/ceres_examples_test.cpp
-              tests/factor_graph/factor_test.cpp
-              tests/factor_graph/graph_test.cpp
-              tests/factor_graph/variable_test.cpp
-              tests/factor_graph/noise_test.cpp)
+    tests/ceres/ceres_examples_test.cpp
+    tests/factor_graph/value_test.cpp
+    tests/factor_graph/factor_test.cpp
+    tests/factor_graph/graph_test.cpp
+    tests/factor_graph/variable_test.cpp
+    tests/factor_graph/noise_test.cpp)
 TARGET_LINK_LIBRARIES(${PROJECT_NAME}_tests
-                      ${PROJECT_NAME}
-                      wave_utils
-                      ${CERES_LIBRARIES})
+    ${PROJECT_NAME}
+    wave_utils
+    ${CERES_LIBRARIES})
 
 WAVE_ADD_TEST(${PROJECT_NAME}_examples
     tests/factor_graph/graph_slam_2d.cpp)
