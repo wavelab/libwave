@@ -119,20 +119,28 @@ void CeresOptimizer::addFactor(std::shared_ptr<Factor<F, M, V...>> factor) {
             // checking"
             // @todo can add local parametrization in this call
             this->problem.AddParameterBlock(v_ptrs[i], v_sizes[i]);
-
-            // Set parameter blocks constant if the factor is a zero-noise prior
-            if (factor->isPerfectPrior()) {
-                this->problem.SetParameterBlockConstant(v_ptrs[i]);
-            }
         }
     }
 
     // Finally, give ceres the cost function and its parameter blocks.
-    if (!factor->isPerfectPrior()) {
-        this->problem.AddResidualBlock(
-          internal::costFunctionForFactor(std::move(factor)),
-          nullptr,
-          data_ptrs);
+    this->problem.AddResidualBlock(
+      internal::costFunctionForFactor(std::move(factor)), nullptr, data_ptrs);
+}
+
+template <template <typename...> class V>
+inline void CeresOptimizer::addPerfectPrior(
+  std::shared_ptr<PerfectPrior<V>> factor) {
+    auto data_ptrs = std::vector<double *>{};
+    for (const auto &v : factor->variables()) {
+        const auto &v_ptrs = v->blockData();
+        const auto &v_sizes = v->blockSizes();
+        data_ptrs.insert(data_ptrs.end(), v_ptrs.begin(), v_ptrs.end());
+        for (auto i = 0u; i < v_ptrs.size(); ++i) {
+            this->problem.AddParameterBlock(v_ptrs[i], v_sizes[i]);
+
+            // Set parameter blocks constant since this is a zero-noise prior
+            this->problem.SetParameterBlockConstant(v_ptrs[i]);
+        }
     }
 }
 
@@ -145,8 +153,6 @@ inline void CeresOptimizer::evaluateGraph() {
     // Solve the problem, and write the estimated values to the variables
     // in the graph
     ceres::Solve(options, &this->problem, &summary);
-
-    std::cout << summary.FullReport() << std::endl;
 }
 
 }  // namespace wave

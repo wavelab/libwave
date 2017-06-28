@@ -7,9 +7,8 @@
 #define WAVE_OPTIMIZATION_FACTOR_GRAPH_PERFECT_PRIOR_HPP
 
 #include "wave/optimization/factor_graph/FactorVariableBase.hpp"
-#include "wave/optimization/factor_graph/FactorBase.hpp"
+#include "wave/optimization/factor_graph/Factor.hpp"
 #include "wave/optimization/factor_graph/FactorMeasurement.hpp"
-
 
 namespace wave {
 /** @addtogroup optimization
@@ -36,7 +35,6 @@ namespace wave {
  */
 template <template <typename...> class V>
 class PerfectPrior : public FactorBase {
-    using FactorType = PerfectPrior<V>;
     using VarType = FactorVariable<V>;
     using ValueType = typename VarType::ValueType;
     using MeasType = FactorMeasurement<V, void>;
@@ -58,10 +56,12 @@ class PerfectPrior : public FactorBase {
         return NumVars;
     }
 
-    template <typename T>
-    bool evaluateRaw(VarType const *const, T *) const noexcept {
+    template <typename T, typename O = void>
+    bool evaluate(const V<T, O> &, V<T, O> &) const noexcept {
+        // Perfect prior should not be evaluated - normalized residuals would
+        // be undefined
         return false;
-    }
+    };
 
     /** Get a reference to the vector of variable pointers */
     const VarVectorType &variables() const noexcept override {

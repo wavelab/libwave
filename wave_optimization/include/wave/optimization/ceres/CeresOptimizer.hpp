@@ -12,6 +12,8 @@
 #include <ceres/ceres.h>
 #include <functional>
 #include "wave/optimization/factor_graph/Factor.hpp"
+#include "wave/optimization/factor_graph/PerfectPrior.hpp"
+
 
 namespace wave {
 /** @addtogroup optimization
@@ -29,6 +31,11 @@ class CeresOptimizer {
               template <typename...> class M,
               template <typename...> class... V>
     void addFactor(std::shared_ptr<Factor<F, M, V...>> factor);
+
+    /** Add a perfect prior
+     */
+    template <template <typename...> class V>
+    void addPerfectPrior(std::shared_ptr<PerfectPrior<V>> factor);
 
     /** Actually optimize over the graph.
      *

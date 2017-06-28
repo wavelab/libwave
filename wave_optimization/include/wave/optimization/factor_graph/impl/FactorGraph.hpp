@@ -17,7 +17,6 @@ struct IdentityMeasurementFunctor {
     }
 };
 
-
 }  // namespace internal
 
 // Constructors
@@ -36,46 +35,57 @@ template <typename T>
 struct Debug;
 
 // Modifiers
+template <typename FactorType>
+inline void FactorGraph::addFactor(const std::shared_ptr<FactorType> &factor) {
+    // Give a nice error message immediately if the function type is wrong
+    using MemberFuncType = decltype(&FactorType::template evaluate<double>);
+    using ExpectedFuncType = typename tmp::clean_method<MemberFuncType>::type;
+    using ActualFuncType =
+      decltype(FactorType::Functor::template evaluate<double>);
+    static_assert(std::is_same<ExpectedFuncType, ActualFuncType>::value,
+                  "The given measurement function is of incorrect type");
+
+    this->factors.push_back(factor);
+
+    // Add to the back-end optimizer
+    optimizer.addFactor(factor);
+}
+
 template <typename Functor,
           template <typename...> class M,
           template <typename...> class... V>
 inline void FactorGraph::addFactor(
   const FactorMeasurement<M> &measurement,
   std::shared_ptr<FactorVariable<V>>... variables) {
-    using FactorType = Factor<Functor, M, V...>;
+    using FType = Factor<Functor, M, V...>;
 
-    // Give a nice error message immediately if the function type is wrong
-    using MemberFuncType = decltype(&FactorType::template evaluate<double>);
-    using ExpectedFuncType = typename tmp::clean_method<MemberFuncType>::type;
-    using ActualFuncType = decltype(Functor::template evaluate<double>);
-    static_assert(std::is_same<ExpectedFuncType, ActualFuncType>::value,
-                  "The given measurement function is of incorrect type");
-
-    auto factor =
-      std::make_shared<FactorType>(measurement, std::move(variables)...);
-
-    this->factors.push_back(factor);
-
-    // Add to the back-end optimizer
-    optimizer.addFactor(factor);
+    return this->addFactor(std::make_shared<FType>(measurement, variables...));
 };
 
 
 template <template <typename...> class M>
 inline void FactorGraph::addPrior(const FactorMeasurement<M> &measurement,
                                   std::shared_ptr<FactorVariable<M>> variable) {
-    return this->addFactor<internal::IdentityMeasurementFunctor<M>>(
-      measurement, std::move(variable));
+    using FType = Factor<internal::IdentityMeasurementFunctor<M>, M, M>;
+
+    return this->addFactor(
+      std::make_shared<FType>(measurement, std::move(variable)));
 }
 
 template <template <typename...> class V>
 inline void FactorGraph::addPerfectPrior(
   const typename FactorVariable<V>::ValueType &measured_value,
   std::shared_ptr<FactorVariable<V>> variable) {
+    using FType = PerfectPrior<V>;
     using MeasType = FactorMeasurement<V, void>;
 
-    this->factors.emplace_back(std::make_shared<PerfectPrior<V>>(
-      MeasType{measured_value}, std::move(variable)));
+    auto factor =
+      std::make_shared<FType>(MeasType{measured_value}, std::move(variable));
+
+    this->factors.push_back(factor);
+
+    // Add to the back-end optimizer
+    optimizer.addPerfectPrior(factor);
 }
 
 inline void FactorGraph::evaluate() {

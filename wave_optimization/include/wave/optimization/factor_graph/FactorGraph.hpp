@@ -46,6 +46,9 @@ class FactorGraph {
 
     // Modifiers
 
+    template <typename FactorType>
+    void addFactor(const std::shared_ptr<FactorType> &factor);
+
     /** Add a factor with the given measurement function
      *
      * @param f The measurement function. See Factor::evaluate for the required

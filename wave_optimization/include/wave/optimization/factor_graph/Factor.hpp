@@ -46,9 +46,8 @@ template <typename F,
           template <typename...> class M,
           template <typename...> class... V>
 class Factor : public FactorBase {
-    using FactorType = Factor<F, M, V...>;
-
  public:
+    using Functor = F;
     constexpr static int NumVars = sizeof...(V);
     using VarArrayType = FactorBase::VarVectorType;
 
