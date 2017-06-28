@@ -88,7 +88,7 @@ TEST(FASTTests, DISABLED_DetectImage) {
                       keypoints,
                       image_with_keypoints,
                       cv::Scalar::all(-1),
-                      cv::DrawMatchesFlags::DEFAULT);
+                      cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
     cv::imshow("Detection Test", image_with_keypoints);
 
     cv::waitKey(0);

@@ -179,8 +179,12 @@ TEST(BFTests, DISABLED_DistanceMatchDescriptors) {
       descriptors_1, descriptors_2, keypoints_1, keypoints_2, mask);
 
     // Test has been confirmed visually
-    cv::drawMatches(
-      image_1, keypoints_1, image_2, keypoints_2, matches, img_with_matches);
+    cv::drawMatches(image_1,
+                    keypoints_1,
+                    image_2,
+                    keypoints_2,
+                    matches,
+                    img_with_matches);
 
     cv::imshow("matches", img_with_matches);
 

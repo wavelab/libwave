@@ -1,0 +1,4 @@
+#define WAVE_TRACKER_HPP
+#ifndef WAVE_TRACKER_HPP
+
+#endif //WAVE_TRACKER_HPP

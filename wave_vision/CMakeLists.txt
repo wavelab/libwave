@@ -30,6 +30,7 @@ ADD_LIBRARY(
     src/detector/fast_detector.cpp
     src/descriptor/brisk_descriptor.cpp
     src/matcher/brute_force_matcher.cpp
+    src/tracker/tracker.cpp
 )
 TARGET_LINK_LIBRARIES(wave_vision ${WAVE_VISION_DEPS})
 
@@ -38,6 +39,7 @@ WAVE_ADD_TEST(${PROJECT_NAME}_tests
               tests/detector_tests/fast_tests.cpp
               tests/descriptor_tests/brisk_tests.cpp
               tests/matcher_tests/brute_force_tests.cpp
+              tests/tracker_tests/tracker_tests.cpp
               tests/dataset_tests.cpp
               tests/utils_tests.cpp)
 TARGET_LINK_LIBRARIES(
