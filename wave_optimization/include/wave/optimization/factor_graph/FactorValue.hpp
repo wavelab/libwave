@@ -17,38 +17,17 @@ namespace wave {
 
 namespace internal {
 
+/** Traits template for FactorValue types.
+ *
+ * It is used in templates that can accept FactorValue%s and ComposedValue%s
+ * interchangably.
+ *
+ * @tparam V an instantiated FactorValue or ComposedValue class
+ *
+ * The other parameter is used internally for deduction.
+ */
 template <typename V, typename = void>
-struct factor_value_traits {
-    constexpr static int NumValues = 1;
-    using ValueTuple = std::tuple<V>;
-    using BlockSizes = tmp::index_sequence<V::SizeAtCompileTime>;
-    constexpr static int TotalSize = V::SizeAtCompileTime;
-    static std::vector<double *> blockData(V &v) {
-        return {v.data()};
-    }
-};
-
-template <typename, typename>
-struct factor_value_traits_nested;
-
-template <typename V>
-struct factor_value_traits<
-  V,
-  typename std::conditional<false, typename V::ValueTuple, void>::type>
-  : factor_value_traits_nested<V, typename V::ValueTuple> {};
-
-template <typename V, typename... Nested>
-struct factor_value_traits_nested<V, std::tuple<Nested...>> {
-    constexpr static int NumValues = sizeof...(Nested);
-    using ValueTuple = std::tuple<Nested...>;
-    using BlockSizes = typename tmp::concat_index_sequence<
-      typename factor_value_traits<Nested>::BlockSizes...>::type;
-    constexpr static int TotalSize = tmp::sum_index_sequence<BlockSizes>::value;
-    static std::vector<double *> blockData(V &v) {
-        return {v.blockData()};
-    }
-};
-
+struct factor_value_traits;
 
 }  // namespace internal
 
