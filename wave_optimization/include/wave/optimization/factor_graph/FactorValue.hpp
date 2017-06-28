@@ -17,9 +17,6 @@ namespace wave {
 
 namespace internal {
 
-template <typename T, typename O, int S>
-struct FactorValueAlias;
-
 template <typename V, typename = void>
 struct factor_value_traits {
     constexpr static int NumValues = 1;
@@ -75,8 +72,43 @@ struct FactorValueOptions {
  * @todo add more syntactic sugar
  */
 template <typename Scalar, typename Options, int Size>
-using FactorValue =
-  typename internal::FactorValueAlias<Scalar, Options, Size>::type;
+class FactorValue : public Eigen::Matrix<Scalar, Size, 1> {
+ public:
+    using Base = Eigen::Matrix<Scalar, Size, 1>;
+
+    // Inherit base constructors and assignment
+    using Base::Base;
+    using Base::operator=;
+
+    // Must redefine default constructor since we define other constructors
+    FactorValue() : Base{} {}
+
+    /** Allow constructing a size-1 value from double */
+    FactorValue(double d) : Base{d} {}
+
+    /** Allow assigning to a size-1 value from double */
+    FactorValue &operator=(double d) {
+        this->value() = d;
+        return *this;
+    }
+};
+
+template <typename Scalar, int Size>
+class FactorValue<Scalar, FactorValueOptions::Map, Size>
+  : public Eigen::Map<Eigen::Matrix<Scalar, Size, 1>> {
+ public:
+    using Base = Eigen::Map<Eigen::Matrix<Scalar, Size, 1>>;
+
+    // Inherit base constructors and assignment
+    using Base::Base;
+    using Base::operator=;
+
+    /** Allow assigning to a size-1 value from double */
+    FactorValue &operator=(double d) {
+        this->value() = d;
+        return *this;
+    }
+};
 
 template <typename Scalar, typename Options, template <typename...> class... V>
 class ComposedValue {

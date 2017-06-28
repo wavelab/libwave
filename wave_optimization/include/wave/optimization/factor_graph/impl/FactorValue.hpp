@@ -16,5 +16,19 @@ struct FactorValueAlias<T, FactorValueOptions::Map, S> {
 
 }  // namespace internal
 
-
 }  // namespace wave
+
+
+namespace Eigen {
+namespace internal {
+
+template <typename T, typename O, int S>
+struct traits<wave::FactorValue<T, O, S>>
+  : traits<typename wave::FactorValue<T, O, S>::Base> {};
+
+template <typename T, typename O, int S>
+struct evaluator<wave::FactorValue<T, O, S>>
+  : evaluator<typename wave::FactorValue<T, O, S>::Base> {};
+
+}  // namespace internal
+}  // namespace Eigen

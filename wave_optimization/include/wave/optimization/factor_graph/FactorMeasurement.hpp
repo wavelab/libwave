@@ -16,7 +16,8 @@ namespace wave {
 
 /** The default NoiseType parameter to FactorMeasurement */
 template <template <typename...> class V>
-using DefaultNoiseType = DiagonalNoise<internal::factor_value_traits<V<double>>::TotalSize>;
+using DefaultNoiseType =
+  DiagonalNoise<internal::factor_value_traits<V<double>>::TotalSize>;
 
 /**
  * A measurement, with associated noise, associated with a Factor

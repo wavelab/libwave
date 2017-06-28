@@ -88,11 +88,11 @@ struct RangeBearingMeasurementFunctor {
     template <typename T, typename O = void>
     static bool evaluate(const Pose2D<T, O> &pose,
                          const Position2D<T, O> &landmark,
-                         RangeBearing<T, O>& result) noexcept {
-    Eigen::Matrix<T, 2, 1> diff = landmark.position - pose.position;
-    result.range = diff.norm();
-    result.bearing = atan2(diff.y(), diff.x()) - pose.orientation.value();
-}
+                         RangeBearing<T, O> &result) noexcept {
+        Eigen::Matrix<T, 2, 1> diff = landmark.position - pose.position;
+        result.range = diff.norm();
+        result.bearing = atan2(diff.y(), diff.x()) - pose.orientation.value();
+    }
 };
 
 

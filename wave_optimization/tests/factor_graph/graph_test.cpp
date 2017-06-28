@@ -35,7 +35,7 @@ TEST(FactorGraph, capacity) {
 TEST(FactorGraph, addPrior) {
     const auto test_meas = Vec2{1.2, 3.4};
     const auto test_stddev = Vec2{0.01, 0.01};
-    const auto test_val = Vec2{1.23, 3.38};
+    const auto test_val = Position2D<double>{1.23, 3.38};
     // The expected results are normalized
     const Vec2 expected_res = (test_val - test_meas).cwiseQuotient(test_stddev);
 

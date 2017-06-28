@@ -50,14 +50,14 @@ class GraphSlam2d : public ::testing::Test {
 
         for (auto k = 0u; k < this->true_landmarks.size(); ++k) {
             RangeBearing<double> result;
-            RangeBearingMeasurementFunctor::evaluate(pose,
-                                this->true_landmarks[k].value,
-                                result);
+            RangeBearingMeasurementFunctor::evaluate(
+              pose, this->true_landmarks[k].value, result);
 
             // Store a measurement for all landmarks for now
             // Add noise
             RangeBearing<double> stddev{0.05, 0.01};
-            RangeBearing<double> noisy = result + stddev.unaryExpr(&gaussianNoise);
+            RangeBearing<double> noisy =
+              result + stddev.unaryExpr(&gaussianNoise);
             auto meas = FactorMeasurement<RangeBearing>{noisy, stddev};
             this->measurements.back().emplace(k, meas);
         }
