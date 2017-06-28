@@ -1,7 +1,6 @@
 #include "wave/wave_test.hpp"
 #include "wave/optimization/factor_graph/FactorGraph.hpp"
 #include "example_instances.hpp"
-#include "wave/optimization/ceres/CeresOptimizer.hpp"
 
 namespace wave {
 
@@ -36,11 +35,9 @@ TEST(FactorGraph, capacity) {
 TEST(FactorGraph, addPrior) {
     const auto test_meas = Vec2{1.2, 3.4};
     const auto test_stddev = Vec2{0.01, 0.01};
-    //    const auto test_val = Vec2{1.23, 3.38};
-    //    // The expected results are normalized
-    //    const Vec2 expected_res = (test_val -
-    //    test_meas).cwiseQuotient(test_stddev);
-    //    const Mat2 expected_jac = Mat2::Identity() / 0.01;
+    const auto test_val = Vec2{1.23, 3.38};
+    // The expected results are normalized
+    const Vec2 expected_res = (test_val - test_meas).cwiseQuotient(test_stddev);
 
     // Prepare arguments to add unary factor
     FactorGraph graph;
@@ -51,7 +48,18 @@ TEST(FactorGraph, addPrior) {
     graph.addPrior(m, p);
     EXPECT_EQ(1u, graph.countFactors());
 
-    // @todo? evaluate
+    // Retrieve a pointer to the factor we just (indirectly) added
+    // @todo this test relies on internal details
+    using ExpectedType =
+      Factor<internal::IdentityMeasurementFunctor<Position2D>,
+             Position2D,
+             Position2D>;
+    auto factor = std::dynamic_pointer_cast<ExpectedType>(*graph.begin());
+    ASSERT_NE(nullptr, factor);
+
+    auto out = Position2D<double>{};
+    EXPECT_TRUE(factor->evaluate<double>(test_val, out));
+    EXPECT_PRED2(VectorsNear, expected_res, out);
 }
 
 TEST(FactorGraph, addPerfectPrior) {
@@ -71,12 +79,15 @@ TEST(FactorGraph, addPerfectPrior) {
     EXPECT_PRED2(VectorsNear, test_meas, p->value);
 
     // Retrieve a pointer to the factor we just (indirectly) added
-    auto factor = *graph.begin();
+    auto factor =
+      std::dynamic_pointer_cast<PerfectPrior<Position2D>>(*graph.begin());
     ASSERT_NE(nullptr, factor);
 
     EXPECT_TRUE(factor->isPerfectPrior());
 
-    // @todo? evaluate
+    // Expect that we can't evaluate it
+    auto out = Position2D<double>{};
+    EXPECT_FALSE(factor->evaluate<double>(Position2D<double>(), out));
 }
 
 
