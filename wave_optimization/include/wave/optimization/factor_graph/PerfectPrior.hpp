@@ -58,11 +58,6 @@ class PerfectPrior : public FactorBase {
         return NumVars;
     }
 
-    std::unique_ptr<ceres::CostFunction> costFunction() const
-      noexcept override {
-        throw std::logic_error("PerfectPrior has no cost function");
-    }
-
     template <typename T>
     bool evaluateRaw(VarType const *const, T *) const noexcept {
         return false;

@@ -135,7 +135,7 @@ TEST(FactorGraph, triangulationSim) {
     EXPECT_EQ(3 + true_poses.size() * true_l_pos.size(), graph.countFactors());
 
     // Fill the variables with values
-    evaluateGraph(graph);
+    graph.evaluate();
 
     // Make sure the poses were triangulated correctly
     for (auto i = 0u; i < true_l_pos.size(); ++i) {
@@ -151,7 +151,7 @@ TEST(GraphTest, print) {
     auto v2 = std::make_shared<Pose2DVar>();
     auto v3 = std::make_shared<Pose2DVar>();
 
-    auto graph = FactorGraph{};
+    auto &&graph = FactorGraph{};
 
     auto m1 = DistanceMeasurement{0.0, 1.0};
     auto m2 = DistanceMeasurement{1.1, 1.0};

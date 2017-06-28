@@ -76,6 +76,8 @@ class FactorGraph {
       const typename FactorVariable<V>::ValueType &measured_value,
       std::shared_ptr<FactorVariable<V>> variable);
 
+    void evaluate();
+
     // Iterators
 
     /** Return iterator over factors */
@@ -90,7 +92,7 @@ class FactorGraph {
 
  private:
     std::vector<std::shared_ptr<FactorBase>> factors;
-    Ceres
+    CeresOptimizer optimizer;
 };
 
 /** @} group optimization */

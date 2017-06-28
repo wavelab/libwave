@@ -86,7 +86,9 @@ class Factor : public FactorBase {
         return NumVars;
     }
 
-    std::unique_ptr<ceres::CostFunction> costFunction() const noexcept override;
+    template <typename T, typename O = void>
+    bool evaluate(const V<T, O> &... variables, M<T, O> &residuals) const
+      noexcept;
 
     /** Get a reference to the vector of variable pointers */
     const VarVectorType &variables() const noexcept override {

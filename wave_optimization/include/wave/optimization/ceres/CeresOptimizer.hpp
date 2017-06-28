@@ -22,14 +22,13 @@ namespace wave {
  */
 class CeresOptimizer {
  public:
-
     /** Add a factor of the corresponding type
      * @see Factor
      */
     template <typename F,
-    template <typename...> class M,
-    template <typename...> class... V>
-    void addFactor(const Factor<F, M, V...>& factor);
+              template <typename...> class M,
+              template <typename...> class... V>
+    void addFactor(const Factor<F, M, V...> &factor);
 
     /** Actually optimize over the graph.
      *
@@ -41,7 +40,6 @@ class CeresOptimizer {
 
  private:
     ceres::Problem problem;
-
 };
 
 /** @} group optimization */

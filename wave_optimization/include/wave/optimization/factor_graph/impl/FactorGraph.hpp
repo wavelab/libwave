@@ -48,8 +48,13 @@ inline void FactorGraph::addFactor(
     static_assert(std::is_same<ExpectedFuncType, ActualFuncType>::value,
                   "The given measurement function is of incorrect type");
 
-    this->factors.emplace_back(
-      std::make_shared<FactorType>(measurement, std::move(variables)...));
+    auto factor =
+      std::make_shared<FactorType>(measurement, std::move(variables)...);
+
+    this->factors.push_back(factor);
+
+    // Add to the back-end optimizer
+    optimizer.addFactor(*factor);
 };
 
 
@@ -69,6 +74,11 @@ inline void FactorGraph::addPerfectPrior(
     this->factors.emplace_back(std::make_shared<PerfectPrior<V>>(
       MeasType{measured_value}, std::move(variable)));
 }
+
+inline void FactorGraph::evaluate() {
+    this->optimizer.evaluateGraph();
+}
+
 
 // Iterators
 

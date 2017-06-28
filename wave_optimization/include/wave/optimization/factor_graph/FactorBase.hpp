@@ -27,12 +27,6 @@ class FactorBase {
 
     virtual ~FactorBase() = default;
 
-    /** Return a Ceres cost function object which computes the residuals of
-     * this factor.
-     */
-    virtual std::unique_ptr<ceres::CostFunction> costFunction() const
-      noexcept = 0;
-
     /** Print representation of the object for debugging.
      * Called by `operator<<`. */
     virtual void print(std::ostream &os) const = 0;
