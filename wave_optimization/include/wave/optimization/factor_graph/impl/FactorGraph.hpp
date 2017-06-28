@@ -54,7 +54,7 @@ inline void FactorGraph::addFactor(
     this->factors.push_back(factor);
 
     // Add to the back-end optimizer
-    optimizer.addFactor(*factor);
+    optimizer.addFactor(factor);
 };
 
 

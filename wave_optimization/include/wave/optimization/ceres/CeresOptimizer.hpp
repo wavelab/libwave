@@ -28,7 +28,7 @@ class CeresOptimizer {
     template <typename F,
               template <typename...> class M,
               template <typename...> class... V>
-    void addFactor(const Factor<F, M, V...> &factor);
+    void addFactor(std::shared_ptr<Factor<F, M, V...>> factor);
 
     /** Actually optimize over the graph.
      *

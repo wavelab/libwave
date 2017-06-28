@@ -66,12 +66,12 @@ class FactorCostFunctor<F, M, std::tuple<Vv...>, V...> {
                       M<T, FactorValueOptions::Map> &residuals,
                       tmp::type_sequence<ISeq...> &&,
                       tmp::index_sequence<Is...> &&) const noexcept {
-        return factor.template evaluate<T, FactorValueOptions::Map>(
+        return factor->template evaluate<T, FactorValueOptions::Map>(
           make_composed_value1<T, V, N, ISeq, Is>(ptrs)..., residuals);
     }
 
  public:
-    const Factor<F, M, V...> &factor;
+    std::shared_ptr<Factor<F, M, V...>> factor;
 };
 
 template <typename Functor, typename SizeSeq>
@@ -85,7 +85,8 @@ struct CostFunctionAlias<Functor, tmp::index_sequence<ValueSizes...>> {
 template <typename F,
           template <typename...> class M,
           template <typename...> class... V>
-ceres::CostFunction *costFunctionForFactor(const Factor<F, M, V...> &factor) {
+ceres::CostFunction *costFunctionForFactor(
+  std::shared_ptr<Factor<F, M, V...>> factor) {
     using Functor =
       FactorCostFunctor<F, M, internal::expand_value_tmpls<V...>, V...>;
 
@@ -93,7 +94,7 @@ ceres::CostFunction *costFunctionForFactor(const Factor<F, M, V...> &factor) {
       typename CostFunctionAlias<Functor,
                                  internal::get_value_sizes<M, V...>>::type;
 
-    return new CostFunction{new Functor{factor}};
+    return new CostFunction{new Functor{std::move(factor)}};
 }
 
 }  // namespace internal
@@ -102,13 +103,13 @@ ceres::CostFunction *costFunctionForFactor(const Factor<F, M, V...> &factor) {
 template <typename F,
           template <typename...> class M,
           template <typename...> class... V>
-void CeresOptimizer::addFactor(const Factor<F, M, V...> &factor) {
+void CeresOptimizer::addFactor(std::shared_ptr<Factor<F, M, V...>> factor) {
     // We make a vector of residual block pointers and pass it to
     // AddResidualBlock because Ceres' implementation forms a vector
     // anyway.
     auto data_ptrs = std::vector<double *>{};
 
-    for (const auto &v : factor.variables()) {
+    for (const auto &v : factor->variables()) {
         const auto &v_ptrs = v->blockData();
         const auto &v_sizes = v->blockSizes();
         data_ptrs.insert(data_ptrs.end(), v_ptrs.begin(), v_ptrs.end());
@@ -120,16 +121,18 @@ void CeresOptimizer::addFactor(const Factor<F, M, V...> &factor) {
             this->problem.AddParameterBlock(v_ptrs[i], v_sizes[i]);
 
             // Set parameter blocks constant if the factor is a zero-noise prior
-            if (factor.isPerfectPrior()) {
+            if (factor->isPerfectPrior()) {
                 this->problem.SetParameterBlockConstant(v_ptrs[i]);
             }
         }
     }
 
     // Finally, give ceres the cost function and its parameter blocks.
-    if (!factor.isPerfectPrior()) {
+    if (!factor->isPerfectPrior()) {
         this->problem.AddResidualBlock(
-          internal::costFunctionForFactor(factor), nullptr, data_ptrs);
+          internal::costFunctionForFactor(std::move(factor)),
+          nullptr,
+          data_ptrs);
     }
 }
 

@@ -11,7 +11,6 @@
 #include "wave/optimization/factor_graph/FactorValue.hpp"
 #include "wave/optimization/factor_graph/FactorVariable.hpp"
 #include "wave/optimization/factor_graph/OutputMap.hpp"
-#include "wave/utils/template_helpers.hpp"
 #include "FactorMeasurement.hpp"
 
 namespace wave {
