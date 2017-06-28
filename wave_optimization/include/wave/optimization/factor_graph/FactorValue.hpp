@@ -84,6 +84,7 @@ class ComposedValue {
     using ValueTuple = std::tuple<V<Scalar, Options>...>;
 
     ComposedValue() : blocks{V<Scalar, Options>::Zero()...} {}
+
     explicit ComposedValue(V<Scalar, Options>... args)
         : blocks{std::move(args)...} {}
 

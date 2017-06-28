@@ -36,47 +36,31 @@ TEST(FactorGraph, capacity) {
 TEST(FactorGraph, addPrior) {
     const auto test_meas = Vec2{1.2, 3.4};
     const auto test_stddev = Vec2{0.01, 0.01};
-    const auto test_val = Vec2{1.23, 3.38};
-    // The expected results are normalized
-    const Vec2 expected_res = (test_val - test_meas).cwiseQuotient(test_stddev);
-    const Mat2 expected_jac = Mat2::Identity() / 0.01;
+    //    const auto test_val = Vec2{1.23, 3.38};
+    //    // The expected results are normalized
+    //    const Vec2 expected_res = (test_val -
+    //    test_meas).cwiseQuotient(test_stddev);
+    //    const Mat2 expected_jac = Mat2::Identity() / 0.01;
 
     // Prepare arguments to add unary factor
     FactorGraph graph;
     auto p = std::make_shared<Landmark2DVar>();
     auto m = FactorMeasurement<Position2D>{test_meas, test_stddev};
 
-    // Prepare arguments in a form matching ceres calls
-    Vec2 test_residual;
-    Mat2 test_jac;
-    const double *const params[] = {test_val.data()};
-    double *jacs[] = {test_jac.data()};
-
-    // Add the factor, retrieve the pointer to it, and verify
+    // Add the factor
     graph.addPrior(m, p);
     EXPECT_EQ(1u, graph.countFactors());
 
-    auto factor = *graph.begin();
-    ASSERT_NE(nullptr, factor);
-
-    //    EXPECT_TRUE(factor->evaluateRaw(params, test_residual.data(), jacs));
-    EXPECT_PRED2(VectorsNear, expected_res, test_residual);
-    EXPECT_PRED2(MatricesNear, expected_jac, test_jac);
+    // @todo? evaluate
 }
 
 TEST(FactorGraph, addPerfectPrior) {
     const auto test_meas = Position2D<double>{1.2, 3.4};
-    const auto test_val = Position2D<double>{1.23, 3.38};
+    //    const auto test_val = Position2D<double>{1.23, 3.38};
 
     // Prepare arguments to add unary factor
     FactorGraph graph;
     auto p = std::make_shared<Landmark2DVar>();
-
-    // Prepare arguments in a form matching ceres calls
-    Vec2 test_residual;
-    Mat2 test_jac;
-    const double *const params[] = {test_val.data()};
-    double *jacs[] = {test_jac.data()};
 
     // Add the factor
     graph.addPerfectPrior(test_meas, p);
@@ -92,8 +76,7 @@ TEST(FactorGraph, addPerfectPrior) {
 
     EXPECT_TRUE(factor->isPerfectPrior());
 
-    // We cannot evaluate a factor that is a perfect prior
-    //    EXPECT_FALSE(factor->evaluateRaw(params, test_residual.data(), jacs));
+    // @todo? evaluate
 }
 
 TEST(FactorGraph, triangulationSim) {
@@ -145,7 +128,7 @@ TEST(FactorGraph, triangulationSim) {
     }
 }
 
-TEST(GraphTest, print) {
+TEST(FactorGraph, print) {
     auto l = std::make_shared<Landmark2DVar>();
     auto v1 = std::make_shared<Pose2DVar>();
     auto v2 = std::make_shared<Pose2DVar>();

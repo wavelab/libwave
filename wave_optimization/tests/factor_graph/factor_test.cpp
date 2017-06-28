@@ -6,7 +6,7 @@
 
 namespace wave {
 
-TEST(FactorTest, evaluateRaw) {
+TEST(FactorTest, evaluate) {
     auto meas = 1.23;
 
     using Pose2DVar = FactorVariable<Pose2D>;
@@ -17,26 +17,20 @@ TEST(FactorTest, evaluateRaw) {
                                std::make_shared<Pose2DVar>(),
                                std::make_shared<Landmark2DVar>()};
 
-    // Prepare sample C-style arrays as used by Ceres
-    const double param_pose_position[2] = {1.1, 2.2};
-    const double param_pose_orientation[1] = {3.3};
-    const double param_landmark[2] = {4.4, 5.5};
-    double out_residuals[1];
+    // Prepare test inputs
+    auto param_pose =
+      Pose2D<double>{Position2D<double>{1.1, 2.2}, Orientation2D<double>{3.3}};
+    auto param_landmark = Position2D<double>{4.4, 5.5};
+    auto residual = Distance<double>{};
 
     // Calculate expected values (use analytic jacobians)
-    auto dist =
-      std::sqrt((1.1 - 4.4) * (1.1 - 4.4) + (2.2 - 5.5) * (2.2 - 5.5));
+    auto dist = std::hypot(1.1 - 4.4, 2.2 - 5.5);
     auto expected_residual = dist - meas;
-    Vec3 expected_jac_pose{(1.1 - 4.4) / dist, (2.2 - 5.5) / dist, 0};
-    Vec2 expected_jac_landmark{(1.1 - 4.4) / dist, (2.2 - 5.5) / dist};
 
-    //    // Call and compare
-    //    auto res = f.evaluateRaw(param_pose_position,
-    //                             param_pose_orientation,
-    //                             param_landmark,
-    //                             out_residuals);
-    //    EXPECT_TRUE(res);
-    //    EXPECT_DOUBLE_EQ(expected_residual, out_residuals[0]);
+    // Call and compare
+    auto res = f.evaluate(param_pose, param_landmark, residual);
+    EXPECT_TRUE(res);
+    EXPECT_DOUBLE_EQ(expected_residual, residual.value());
 }
 
 TEST(FactorTest, constructPerfectPrior) {

@@ -145,6 +145,8 @@ inline void CeresOptimizer::evaluateGraph() {
     // Solve the problem, and write the estimated values to the variables
     // in the graph
     ceres::Solve(options, &this->problem, &summary);
+
+    std::cout << summary.FullReport() << std::endl;
 }
 
 }  // namespace wave
