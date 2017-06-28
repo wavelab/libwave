@@ -74,5 +74,30 @@ struct check_all<type_sequence<Head>, F> {
     static constexpr bool value = F<Head>::value;
 };
 
+template <typename T>
+struct remove_member_pointer {
+    using type = T;
+};
+template <typename T, typename U>
+struct remove_member_pointer<T U::*> {
+    using type = T;
+};
+
+template <typename T>
+struct remove_method_const {
+    using type = T;
+};
+
+template <typename R, typename... Args>
+struct remove_method_const<R(Args...) const> {
+    using type = R(Args...);
+};
+
+template <typename T>
+struct clean_method {
+    using type = typename remove_method_const<
+      typename remove_member_pointer<T>::type>::type;
+};
+
 }  // namespace tmp
 }  // namespace wave

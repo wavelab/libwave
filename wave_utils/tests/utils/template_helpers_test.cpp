@@ -67,6 +67,17 @@ struct Test_check_all {
     static_assert(check_all<seq2, std::is_pointer>::value, "");
 };
 
+struct Test_clean_method_t {
+    struct Foo {
+        bool f(int, int);
+    };
+
+    static_assert(
+      std::is_same<bool(int, int),
+                   typename clean_method<decltype(&Foo::f)>::type>::value,
+      "");
+};
+
 }  // namespace tmp
 
 // Runtime tests

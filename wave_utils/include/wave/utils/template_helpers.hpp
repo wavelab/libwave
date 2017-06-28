@@ -121,6 +121,14 @@ using tuple_cat_result =
 template <typename Seq, template <typename> class F>
 struct check_all;
 
+/** Remove pointer-to-member and const qualification (if const) from a
+ * pointer-to-member-function type.
+ *
+ * For example, `int (Foo::*)(int, int)` becomes `(int)(int, int)`
+ * */
+template <typename T>
+struct clean_method;
+
 }  // namespace tmp
 /** @} group utils */
 }  // namespace wave

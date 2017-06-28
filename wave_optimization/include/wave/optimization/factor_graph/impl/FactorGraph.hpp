@@ -32,6 +32,8 @@ inline FactorGraph::size_type FactorGraph::countFactors() const noexcept {
 inline bool FactorGraph::empty() const noexcept {
     return this->factors.empty();
 }
+template <typename T>
+struct Debug;
 
 // Modifiers
 template <typename Functor,
@@ -42,9 +44,10 @@ inline void FactorGraph::addFactor(
   std::shared_ptr<FactorVariable<V>>... variables) {
     using FactorType = Factor<Functor, M, V...>;
 
-    // Give a nice error message if the function type is wrong
-    using ExpectedFuncType = typename FactorType::template FuncType<double>;
-    using ActualFuncType = decltype(&Functor::template evaluate<double>);
+    // Give a nice error message immediately if the function type is wrong
+    using MemberFuncType = decltype(&FactorType::template evaluate<double>);
+    using ExpectedFuncType = typename tmp::clean_method<MemberFuncType>::type;
+    using ActualFuncType = decltype(Functor::template evaluate<double>);
     static_assert(std::is_same<ExpectedFuncType, ActualFuncType>::value,
                   "The given measurement function is of incorrect type");
 
