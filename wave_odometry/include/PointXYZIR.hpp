@@ -20,10 +20,16 @@ struct PointXYZIR {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 } EIGEN_ALIGN16;
 
-POINT_CLOUD_REGISTER_POINT_STRUCT(PointXYZIR, (float, x, x)
-        (float, y, y)
-        (float, z, z)
-        (uint8_t, intensity, intensity)
-        (uint8_t, ring, ring))
 
-#endif //WAVE_POINTTYPE_HPP
+// clang-format off
+
+POINT_CLOUD_REGISTER_POINT_STRUCT(PointXYZIR,
+                                     (float, x, x)
+                                     (float, y, y)
+                                     (float, z, z)
+                                     (uint8_t, intensity, intensity)
+                                     (uint8_t, ring, ring))
+
+// clang-format on
+
+#endif  // WAVE_POINTTYPE_HPP
