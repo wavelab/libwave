@@ -31,7 +31,7 @@ namespace wave {
  *  @{ */
 
 struct NDTMatcherParams {
-    NDTMatcherParams() {};
+    NDTMatcherParams(){};
     NDTMatcherParams(const std::string &config_path);
 
     int step_size = 3;
