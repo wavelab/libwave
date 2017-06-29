@@ -31,11 +31,11 @@ class MultiMatcher {
  public:
     MultiMatcher(int n_threads = std::thread::hardware_concurrency(),
                  int queue_s = 10,
-                 std::string path = "")
-        : n_thread(n_threads), queue_size(queue_s) {
+                 R params = R())
+        : n_thread(n_threads), queue_size(queue_s), config(params) {
         this->stop = false;
         this->remaining_matches = 0;
-        this->initPool(path);
+        this->initPool(params);
     }
 
     ~MultiMatcher();
@@ -57,7 +57,7 @@ class MultiMatcher {
     const int n_thread;
     const int queue_size;
     int remaining_matches;
-    std::string config;
+    R config;
     std::queue<std::tuple<int, PCLPointCloud, PCLPointCloud>> input;
     std::queue<std::tuple<int, Eigen::Affine3d, Mat6>> output;
     std::vector<std::thread> pool;
@@ -73,7 +73,7 @@ class MultiMatcher {
      * @param id pair of clouds to match
      */
     void spin(int threadid);
-    void initPool(std::string path);
+    void initPool(R params);
 };
 
 }  // namespace wave

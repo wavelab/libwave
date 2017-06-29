@@ -31,13 +31,13 @@ NDTMatcher::NDTMatcher(NDTMatcherParams params1) : params(params1) {
     if (this->params.res < this->min_res) {
         LOG_ERROR("Invalid resolution given, using minimum");
         this->params.res = this->min_res;
-    } else {
-        this->resolution = this->params.res;
     }
+
+    this->resolution = this->params.res;
 
     this->ndt.setTransformationEpsilon(this->params.t_eps);
     this->ndt.setStepSize(this->params.step_size);
-    this->ndt.setResolution(this->resolution);
+    this->ndt.setResolution(this->params.res);
     this->ndt.setMaximumIterations(this->params.max_iter);
 }
 

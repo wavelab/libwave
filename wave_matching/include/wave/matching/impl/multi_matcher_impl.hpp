@@ -16,15 +16,12 @@ MultiMatcher<T, R>::~MultiMatcher() {
 }
 
 template <class T, class R>
-void MultiMatcher<T, R>::initPool(std::string path) {
-    this->config = path;
+void MultiMatcher<T, R>::initPool(R params) {
+    this->config = params;
     for (int i = 0; i < this->n_thread; i++) {
-        if (this->config.empty()) {
-            this->matchers.push_back(T(R()));
-        } else {
-            this->matchers.push_back(T(R(this->config)));
-        }
-        this->pool.push_back(std::thread(&MultiMatcher<T, R>::spin, this, i));
+        this->matchers.emplace_back(T(R(this->config)));
+        this->pool.emplace_back(
+          std::thread(&MultiMatcher<T, R>::spin, this, i));
     }
 }
 
@@ -70,7 +67,7 @@ void MultiMatcher<T, R>::insert(const int &id,
                                 const PCLPointCloud &target) {
     {
         std::unique_lock<std::mutex> lock(this->ip_mutex);
-        while (this->input.size() >= this->queue_size) {
+        while (this->input.size() >= static_cast<size_t>(this->queue_size)) {
             this->ip_condition.wait(lock);
         }
         this->input.emplace(id, src, target);

@@ -48,7 +48,6 @@ WAVE_ADD_TEST(
     tests/ndt_tests.cpp
     tests/gicp_tests.cpp
     tests/multi_matcher_tests.cpp
-    DISABLED  # Don't run this test for now
 )
 TARGET_LINK_LIBRARIES(
     ${PROJECT_NAME}_tests

@@ -51,7 +51,6 @@ TEST_F(NDTTest, fullResNullMatch) {
     perturb = Affine3::Identity();
     perturb.translation() << 0, 0, 0;
     NDTMatcherParams params(TEST_CONFIG);
-    params.res = -1;
     this->initMatcher(params, perturb);
 
     // test and assert
@@ -72,7 +71,7 @@ TEST_F(NDTTest, nullDisplacement) {
     perturb.translation() << 0, 0, 0;
 
     NDTMatcherParams params(TEST_CONFIG);
-    params.res = 2.5f;
+    params.res = 0.1f;
     this->initMatcher(params, perturb);
 
     // test and assert
@@ -92,7 +91,7 @@ TEST_F(NDTTest, smallDisplacement) {
     perturb = Affine3::Identity();
     perturb.translation() << 0.2, 0, 0;
     NDTMatcherParams params(TEST_CONFIG);
-    params.res = 2.5f;
+    params.res = 0.3f;
     this->initMatcher(params, perturb);
 
     // test and assert
