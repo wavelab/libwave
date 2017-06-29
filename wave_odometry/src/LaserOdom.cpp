@@ -1,5 +1,5 @@
 #include <type_traits>
-#include "LaserOdom.hpp"
+#include "wave/odometry/LaserOdom.hpp"
 
 namespace wave {
 
@@ -16,6 +16,7 @@ void LaserOdom::flagNearbyPoints(const unlong ring, const unlong index) {
         if (this->l2sqrd(this->cur_scan.at(ring).at(index - j),
                          this->cur_scan.at(ring).at(index - j - 1)) >
             this->param.keypt_radius) {
+
             break;
         }
         this->cur_curve.at(ring).at(index - j - 1).first = false;
@@ -44,14 +45,14 @@ PointType LaserOdom::scale(const PointType &pt, const float scale) {
 
 LaserOdom::LaserOdom(const LaserOdomParams params) : param(params) {
     auto n_ring = static_cast<size_t>(param.n_ring);
-    this->cur_scan.reserve(n_ring);
-    this->cur_curve.reserve(n_ring);
-    this->filter.reserve(n_ring);
+    this->cur_scan.resize(n_ring);
+    this->cur_curve.resize(n_ring);
+    this->filter.resize(n_ring);
 }
 
-void LaserOdom::addPoints(std::vector<PointXYZIR> pts,
+void LaserOdom::addPoints(const std::vector<PointXYZIR>& pts,
                           const int tick,
-                          const TimeType stamp) {
+                          TimeType stamp) {
     if (tick == 0) {  // Start of a new scan
         if (this->initialized) {
             this->undistort();
@@ -77,10 +78,10 @@ PointType LaserOdom::applyIMU(const PointType &p, int tick) {
     return pt;
 }
 
-void LaserOdom::rollover(const TimeType stamp) {
+void LaserOdom::rollover(TimeType stamp) {
     this->prv_time = this->cur_time;
     this->cur_time = stamp;
-    this->resetIMU(stamp);
+//    this->resetIMU(stamp);
     for (unlong i = 0; i < this->param.n_ring; i++) {
         this->cur_curve.at(i).clear();
         this->cur_scan.at(i).clear();
@@ -89,7 +90,7 @@ void LaserOdom::rollover(const TimeType stamp) {
 
 void LaserOdom::undistort() {
     this->generateFeatures();
-    this->match();
+//    this->match();
 }
 
 /*
@@ -117,6 +118,9 @@ void LaserOdom::generateFeatures() {
              iter--) {
             if ((iter->second < this->param.edge_tol) ||
                 (edge_cnt >= this->param.n_edge)) {
+                if (iter == this->filter.at(i).end()) {
+                    continue;
+                }
                 break;
             } else if (this->cur_curve.at(i).at(iter->first).first) {
                 this->edges.push_back(this->cur_scan.at(i).at(iter->first));
@@ -147,6 +151,9 @@ void LaserOdom::computeCurvature() {
     for (unlong i = 0; i < this->param.n_ring; i++) {
         auto n_pts = this->cur_scan.at(i).size();
         this->cur_curve.at(i).resize(n_pts);
+        if(n_pts < this->param.knn + 1) {
+            continue;
+        }
         for (unlong j = this->param.knn; j < n_pts - this->param.knn; j++) {
             float diffX = 0, diffY = 0, diffZ = 0;
             for (unlong k = 1; k <= this->param.knn; k++) {
@@ -172,6 +179,9 @@ void LaserOdom::prefilter() {
     for (unlong i = 0; i < this->param.n_ring; i++) {
         auto n_pts = this->cur_curve.at(i).size();
         auto max_pts = n_pts - this->param.knn;
+        if(n_pts < this->param.knn + 1) {
+            continue;
+        }
         for (unlong j = this->param.knn; j < max_pts; j++) {
             auto delforward = this->l2sqrd(this->cur_scan.at(i).at(j),
                                            this->cur_scan.at(i).at(j + 1));
@@ -194,8 +204,7 @@ void LaserOdom::prefilter() {
                             this->cur_curve.at(i).at(j - k).first = false;
                         }
                     } else {
-                        // todo(ben) See if this <= is actually correct
-                        for (unlong k = 1; k <= this->param.knn + 1; k++) {
+                        for (unlong k = 1; k <= this->param.knn; k++) {
                             this->cur_curve.at(i).at(j + k).first = false;
                         }
                     }
@@ -203,8 +212,7 @@ void LaserOdom::prefilter() {
             }
             // This section excludes any points whose nearby surface is
             // near to parallel to the laser
-            auto dis = this->l2sqrd(this->cur_scan.at(i).at(j),
-                                    this->cur_scan.at(i).at(j - 1));
+            auto dis = this->l2sqrd(this->cur_scan.at(i).at(j));
             if ((delforward > (this->param.parallel_tol) * dis) &&
                 (delback > (this->param.parallel_tol * dis))) {
                 this->cur_curve.at(i).at(j).first = false;

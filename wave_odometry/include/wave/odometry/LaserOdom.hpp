@@ -7,7 +7,7 @@
 #include <chrono>
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
-#include "PointXYZIR.hpp"
+#include "wave/odometry/PointXYZIR.hpp"
 #include "wave/containers/measurement_container.hpp"
 #include "wave/containers/measurement.hpp"
 #include "wave/utils/math.hpp"
@@ -38,11 +38,11 @@ struct LaserOdomParams {
 class LaserOdom {
  public:
     LaserOdom(const LaserOdomParams params);
-    void addPoints(std::vector<PointXYZIR> pts,
+    void addPoints(const std::vector<PointXYZIR> &pts,
                    const int tick,
-                   const TimeType stamp);
+                   TimeType stamp);
     void addIMU(std::vector<double> linacc, Quaternion orientation);
-
+    pcl::PointCloud<PointType> edges, flats;
  private:
     LaserOdomParams param;
     bool initialized = false;
@@ -50,8 +50,8 @@ class LaserOdom {
     void transformToStart();
 
     void undistort();
-    void rollover(const TimeType stamp);
-    void resetIMU(const TimeType stamp);
+    void rollover(TimeType stamp);
+    void resetIMU(TimeType stamp);
     void computeCurvature();
     void prefilter();
     void generateFeatures();
@@ -71,7 +71,7 @@ class LaserOdom {
     std::vector<std::vector<std::pair<bool, float>>> cur_curve;
     std::vector<std::vector<std::pair<unlong, float>>> filter;
     std::vector<pcl::PointCloud<PointType>> cur_scan;
-    pcl::PointCloud<PointType> edges, flats, prv_edges, prv_flats;
+    pcl::PointCloud<PointType> prv_edges, prv_flats;
 };
 
 }  // namespace wave

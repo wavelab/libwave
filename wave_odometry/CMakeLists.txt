@@ -23,12 +23,15 @@ LINK_DIRECTORIES(
     ${PCL_LIBRARY_DIRS})
 
 # UNIT TESTS
-#WAVE_ADD_TEST(${PROJECT_NAME}_tests
-#        tests/ceres/ceres_examples_test.cpp)
+WAVE_ADD_TEST(${PROJECT_NAME}_tests
+        tests/laserodom_tests.cpp)
 TARGET_LINK_LIBRARIES(
-    #${PROJECT_NAME}_tests
+    ${PROJECT_NAME}_tests
     ${PROJECT_NAME}
     wave_utils
     ${CERES_LIBRARIES}
     ${PCL_LIBRARIES}
 )
+
+# Copy the test data
+file(COPY tests/data DESTINATION ${PROJECT_BINARY_DIR}/tests)

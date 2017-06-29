@@ -14,8 +14,8 @@
  */
 struct PointXYZIR {
     PCL_ADD_POINT4D;
-    uint8_t intensity;
-    uint8_t ring;
+    float intensity;
+    uint16_t ring;
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 } EIGEN_ALIGN16;
@@ -27,8 +27,8 @@ POINT_CLOUD_REGISTER_POINT_STRUCT(PointXYZIR,
                                      (float, x, x)
                                      (float, y, y)
                                      (float, z, z)
-                                     (uint8_t, intensity, intensity)
-                                     (uint8_t, ring, ring))
+                                     (float, intensity, intensity)
+                                     (uint16_t, ring, ring))
 
 // clang-format on
 
