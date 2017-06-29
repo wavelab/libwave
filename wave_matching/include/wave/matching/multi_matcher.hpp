@@ -70,7 +70,7 @@ class MultiMatcher {
     bool stop;
 
     /** Function run by each worker thread
-     * @param id pair of clouds to match
+     * @param threadid pair of clouds to match
      */
     void spin(int threadid);
     void initPool(R params);

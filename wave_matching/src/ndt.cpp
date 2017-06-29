@@ -3,13 +3,6 @@
 
 namespace wave {
 
-NDTMatcherParams::NDTMatcherParams() {
-    this->step_size = 3;
-    this->max_iter = 100;
-    this->t_eps = 1e-8;
-    this->res = 5;
-}
-
 NDTMatcherParams::NDTMatcherParams(const std::string &config_path) {
     ConfigParser parser;
     parser.addParam("step_size", &this->step_size);
@@ -28,9 +21,9 @@ NDTMatcher::NDTMatcher(NDTMatcherParams params1) : params(params1) {
     this->target = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
     this->final = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
 
-    if (this->params.res < this->min_res) {
+    if (this->params.res < this->params.min_res) {
         LOG_ERROR("Invalid resolution given, using minimum");
-        this->params.res = this->min_res;
+        this->params.res = this->params.min_res;
     }
 
     this->resolution = this->params.res;

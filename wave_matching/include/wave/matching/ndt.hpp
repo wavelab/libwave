@@ -31,12 +31,14 @@ namespace wave {
  *  @{ */
 
 struct NDTMatcherParams {
-    NDTMatcherParams();
+    NDTMatcherParams() {};
     NDTMatcherParams(const std::string &config_path);
 
-    int step_size, max_iter;
-    double t_eps;
-    float res;
+    int step_size = 3;
+    int max_iter = 100;
+    double t_eps = 1e-8;
+    float res = 5;
+    const float min_res = 0.05f;
 };
 
 class NDTMatcher : public Matcher<PCLPointCloud> {
@@ -74,7 +76,6 @@ class NDTMatcher : public Matcher<PCLPointCloud> {
      * pointcloud after matching, so the "final" member is used as a sink for
      * it. */
     PCLPointCloud ref, target, final;
-    const float min_res = 0.05f;
     NDTMatcherParams params;
 };
 

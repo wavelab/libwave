@@ -21,7 +21,6 @@ class MultiTest : public testing::Test {
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr cld;
     MultiMatcher<ICPMatcher, ICPMatcherParams> matcher;
-    const float threshold = 0.1;
 };
 
 // Tests that threads are created and destroyed properly
