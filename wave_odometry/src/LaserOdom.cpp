@@ -3,6 +3,25 @@
 
 namespace wave {
 
+void LaserOdom::flagNearbyPoints(const unlong ring, const unlong index) {
+    for (unlong j = 0; j < this->param.knn; j++) {
+        if (this->l2sqrd(this->cur_scan.at(ring).at(index + j),
+                         this->cur_scan.at(ring).at(index + j + 1)) >
+            this->param.keypt_radius) {
+            break;
+        }
+        this->cur_curve.at(ring).at(index + j + 1).first = false;
+    }
+    for (unlong j = 0; j < this->param.knn; j++) {
+        if (this->l2sqrd(this->cur_scan.at(ring).at(index - j),
+                         this->cur_scan.at(ring).at(index - j - 1)) >
+            this->param.keypt_radius) {
+            break;
+        }
+        this->cur_curve.at(ring).at(index - j - 1).first = false;
+    }
+}
+
 float LaserOdom::l2sqrd(const PointType &p1, const PointType &p2) {
     float dx = p1.x - p2.x;
     float dy = p1.y - p2.y;
@@ -24,9 +43,10 @@ PointType LaserOdom::scale(const PointType &pt, const float scale) {
 }
 
 LaserOdom::LaserOdom(const LaserOdomParams params) : param(params) {
-    this->cur_scan.reserve(param.n_ring);
-    this->cur_curve.reserve(this->param.n_ring);
-    this->filter.reserve(this->param.n_ring);
+    auto n_ring = static_cast<size_t>(param.n_ring);
+    this->cur_scan.reserve(n_ring);
+    this->cur_curve.reserve(n_ring);
+    this->filter.reserve(n_ring);
 }
 
 void LaserOdom::addPoints(std::vector<PointXYZIR> pts,
@@ -59,10 +79,9 @@ PointType LaserOdom::applyIMU(const PointType &p, int tick) {
 
 void LaserOdom::rollover(const TimeType stamp) {
     this->prv_time = this->cur_time;
-    this->prv_scan.swap(this->cur_scan);
     this->cur_time = stamp;
     this->resetIMU(stamp);
-    for (int i = 0; i < this->param.n_ring; i++) {
+    for (unlong i = 0; i < this->param.n_ring; i++) {
         this->cur_curve.at(i).clear();
         this->cur_scan.at(i).clear();
     }
@@ -73,21 +92,59 @@ void LaserOdom::undistort() {
     this->match();
 }
 
+/*
+ * The gist of the features is too pick out high and low curvature scores.
+ * However, to spread the features out, when selecting a feature invalidate
+ * nearby points
+ */
 void LaserOdom::generateFeatures() {
     this->computeCurvature();
     this->prefilter();
-    for (int i = 0; i < this->param.n_ring; i++) {
+    this->edges.clear();
+    this->flats.clear();
+    for (unlong i = 0; i < this->param.n_ring; i++) {
         std::sort(this->filter.at(i).begin(),
                   this->filter.at(i).end(),
                   [](const std::pair<unlong, float> lhs,
                      const std::pair<unlong, float> rhs) {
-                      return lhs.second < rhs.first;
+                      return lhs.second < rhs.second;
                   });
+        int edge_cnt = 0, flat_cnt = 0;
+
+        // Pick out edge points
+        for (auto iter = this->filter.at(i).end();
+             iter > this->filter.at(i).begin();
+             iter--) {
+            if ((iter->second < this->param.edge_tol) ||
+                (edge_cnt >= this->param.n_edge)) {
+                break;
+            } else if (this->cur_curve.at(i).at(iter->first).first) {
+                this->edges.push_back(this->cur_scan.at(i).at(iter->first));
+                this->cur_curve.at(i).at(iter->first).first = false;
+                this->flagNearbyPoints(i, iter->first);
+                edge_cnt++;
+            }
+        }
+
+        // Pick out flat points
+        for (auto iter = this->filter.at(i).begin();
+             iter < this->filter.at(i).end();
+             iter++) {
+            if ((iter->second > this->param.flat_tol) ||
+                (flat_cnt >= this->param.n_flat)) {
+                break;
+            } else if (this->cur_curve.at(i).at(iter->first).first) {
+                this->flats.push_back(this->cur_scan.at(i).at(iter->first));
+                this->cur_curve.at(i).at(iter->first).first = false;
+                this->flagNearbyPoints(i, iter->first);
+                flat_cnt++;
+            }
+        }
     }
 }
 
 void LaserOdom::computeCurvature() {
-    for (int i = 0; i < this->param.n_ring; i++) {
+    for (unlong i = 0; i < this->param.n_ring; i++) {
         auto n_pts = this->cur_scan.at(i).size();
         this->cur_curve.at(i).resize(n_pts);
         for (unlong j = this->param.knn; j < n_pts - this->param.knn; j++) {
@@ -112,7 +169,7 @@ void LaserOdom::computeCurvature() {
 // This part filters out points that will not provide salient features. See
 // paper for details
 void LaserOdom::prefilter() {
-    for (int i = 0; i < this->param.n_ring; i++) {
+    for (unlong i = 0; i < this->param.n_ring; i++) {
         auto n_pts = this->cur_curve.at(i).size();
         auto max_pts = n_pts - this->param.knn;
         for (unlong j = this->param.knn; j < max_pts; j++) {
@@ -148,10 +205,10 @@ void LaserOdom::prefilter() {
             // near to parallel to the laser
             auto dis = this->l2sqrd(this->cur_scan.at(i).at(j),
                                     this->cur_scan.at(i).at(j - 1));
-            if ((delforward > (this->param.parallel_tol) * dis)
-                && (delback > (this->param.parallel_tol * dis))) {
-                    this->cur_curve.at(i).at(j).first = false;
-                }
+            if ((delforward > (this->param.parallel_tol) * dis) &&
+                (delback > (this->param.parallel_tol * dis))) {
+                this->cur_curve.at(i).at(j).first = false;
+            }
         }
         // now store each selected point for sorting
         this->filter.at(i).resize(max_pts);
