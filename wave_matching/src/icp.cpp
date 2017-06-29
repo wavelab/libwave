@@ -3,18 +3,6 @@
 
 namespace wave {
 
-ICPMatcherParams::ICPMatcherParams() {
-    // some fairly general defaults
-    this->max_corr = 3;
-    this->max_iter = 100;
-    this->t_eps = 1e-8;
-    this->fit_eps = 1e-2;
-    this->lidar_ang_covar = 7.78e-9;
-    this->lidar_lin_covar = 2.5e-4;
-    this->covar_estimator = ICPMatcherParams::covar_method::LUM;
-    this->res = 0.1;
-}
-
 ICPMatcherParams::ICPMatcherParams(const std::string &config_path) {
     ConfigParser parser;
     int covar_est_temp;

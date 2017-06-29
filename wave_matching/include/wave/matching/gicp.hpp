@@ -28,24 +28,33 @@ namespace wave {
  *  @{ */
 
 struct GICPMatcherParams {
-    GICPMatcherParams();
     GICPMatcherParams(const std::string &config_path);
+    GICPMatcherParams() {}
 
-    int corr_rand, max_iter;
-    double r_eps, fit_eps;
-    float res;
+    int corr_rand = 10;
+    int max_iter = 100;
+    double r_eps = 1e-8;
+    double fit_eps = 1e-2;
+    float res = 0.1;
 };
 
 class GICPMatcher : public Matcher<PCLPointCloud> {
  public:
     explicit GICPMatcher(GICPMatcherParams params1);
-    /** hey there
-     *
-     * Its some function
-     * @param ref
+
+    /** sets the reference pointcloud for the matcher
+     * @param ref - Pointcloud
      */
     void setRef(const PCLPointCloud &ref);
+
+    /** sets the target (or scene) pointcloud for the matcher
+     * @param targer - Pointcloud
+     */
     void setTarget(const PCLPointCloud &target);
+
+    /** runs the matcher, blocks until finished.
+     * Returns true if successful
+     */
     bool match();
 
  private:

@@ -48,8 +48,21 @@ class NDTMatcher : public Matcher<PCLPointCloud> {
      */
     explicit NDTMatcher(NDTMatcherParams params1);
     ~NDTMatcher();
+
+    /** sets the reference pointcloud for the matcher
+     * @param ref - Pointcloud
+     */
     void setRef(const PCLPointCloud &ref);
+
+    /** sets the target (or scene) pointcloud for the matcher
+     * @param targer - Pointcloud
+     */
     void setTarget(const PCLPointCloud &target);
+
+    /** runs the matcher, blocks until finished.
+     * Note that this version of ndt is SLOW
+     * Returns true if successful
+     */
     bool match();
 
  private:
