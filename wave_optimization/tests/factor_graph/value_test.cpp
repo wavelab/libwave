@@ -101,6 +101,41 @@ TEST(FactorValue, assignMappedFromScalar) {
     EXPECT_EQ(2.2, val[0]);
 }
 
+TEST(FactorValue, constructSquare) {
+    Mat2 mat;
+    mat << 1.1, 2.2, 3.3, 4.4;
+    auto val = FactorValue<double, FactorValueOptions::Square, 2>{mat};
+
+    EXPECT_EQ(mat, val);
+    EXPECT_NE(mat.data(), val.data());
+    EXPECT_EQ(4u, val.size());
+    EXPECT_EQ(2u, val.rows());
+    EXPECT_EQ(2u, val.cols());
+}
+
+TEST(FactorValue, constructSquareSize1) {
+    FactorValue<double, FactorValueOptions::Square, 1> val{1.1};
+
+    EXPECT_EQ(1.1, val[0]);
+}
+
+TEST(FactorValue, assignSquareSize1) {
+    FactorValue<double, FactorValueOptions::Square, 1> val;
+    val = 2.3;
+
+    EXPECT_EQ(2.3, val[0]);
+}
+
+TEST(FactorValue, initializeSquare) {
+    Mat2 mat;
+    mat << 1.1, 2.2, 3.3, 4.4;
+    FactorValue<double, FactorValueOptions::Square, 2> val;
+    val << 1.1, 2.2, 3.3, 4.4;
+
+    EXPECT_EQ(mat, val);
+    EXPECT_NE(mat.data(), val.data());
+}
+
 struct ComposedValueTest : public ::testing::Test {
     // Define a sample composed value (use aliases for sized FactorValue)
     template <typename T, typename O = void>

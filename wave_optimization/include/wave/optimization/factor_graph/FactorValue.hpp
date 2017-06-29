@@ -33,6 +33,7 @@ struct factor_value_traits;
 
 struct FactorValueOptions {
     struct Map;
+    struct Square;
 };
 
 /**
@@ -91,6 +92,32 @@ class FactorValue<Scalar, FactorValueOptions::Map, Size>
     }
 };
 
+/** Specialization for Square option */
+template <typename Scalar, int Size>
+class FactorValue<Scalar, FactorValueOptions::Square, Size>
+  : public Eigen::Matrix<Scalar, Size, Size> {
+ public:
+    using Base = Eigen::Matrix<Scalar, Size, Size>;
+
+    // Inherit base constructors and assignment
+    using Base::Base;
+    using Base::operator=;
+
+    // Must redefine default constructor since we define other constructors
+    FactorValue() : Base{} {}
+
+    /** Allow constructing a size-1 value from a scalar */
+    FactorValue(Scalar d) : Base{d} {}
+
+    /** Allow assigning to a size-1 value from a scalar */
+    FactorValue &operator=(Scalar d) {
+        static_assert(Size == 1, "Can only assign scalar to values of size 1");
+        (*this)[0] = d;
+        return *this;
+    }
+};
+
+
 template <typename Scalar, typename Options, template <typename...> class... V>
 class ComposedValue {
  public:
@@ -133,17 +160,6 @@ using FactorValue3 = FactorValue<T, O, 3>;
 
 namespace internal {
 
-// template <template <typename...> class ComposedOrValue>
-// struct tmpl_type;
-//
-// template <template <typename, template <typename> class...> class Tmpl>
-// struct tmpl_type {
-//};
-//
-// template <template <typename... V> class C, true>
-// struct tmpl_type {
-//    using type = typename tmp::concat_tmpl_sequence<V...>::type;
-//};
 
 template <typename... ComposedOrValues>
 using get_value_types =
