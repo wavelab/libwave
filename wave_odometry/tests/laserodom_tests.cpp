@@ -1,6 +1,9 @@
 #include <pcl/io/pcd_io.h>
+#include <chrono>
 #include "wave/wave_test.hpp"
+#include "wave/utils/log.hpp"
 #include "wave/odometry/LaserOdom.hpp"
+#include "wave/matching/pointcloud_display.hpp"
 
 namespace wave {
 
@@ -23,33 +26,63 @@ TEST(laserodom, Init) {
     LaserOdom odom(LaserOdomParams());
 }
 
-TEST_F(OdomTestFile, LoadPCD) {
+// This is less of a test and more something that can be
+// played with to see how changing parameters affects which
+// points are selected as keypoints
+
+TEST_F(OdomTestFile, VisualizeFeatures) {
+    PointCloudDisplay display("odom");
+    display.startSpin();
     LaserOdomParams params;
+    params.n_flat = 20;
+    params.n_edge = 20;
     LaserOdom odom(params);
     std::vector<PointXYZIR> vec;
+    pcl::PointCloud<pcl::PointXYZI>::Ptr vizref(
+      new pcl::PointCloud<pcl::PointXYZI>),
+      vizedge(new pcl::PointCloud<pcl::PointXYZI>),
+      vizflats(new pcl::PointCloud<pcl::PointXYZI>);
     int counter = 0;
     auto timepoint = std::chrono::steady_clock::now();
     for (auto iter = this->ref.begin(); iter < this->ref.end(); iter++) {
-        PointXYZIR pt;
+        pcl::PointXYZI pt;
         pt.x = iter->x;
         pt.y = iter->y;
         pt.z = iter->z;
-        pt.intensity = iter->intensity;
-        pt.ring = iter->ring;
-        vec.push_back(pt);
+        pt.intensity = 0;
+        vizref->push_back(pt);
+        vec.push_back(*iter);
         if (counter == 0) {
             odom.addPoints(vec, 0, timepoint);
             vec.clear();
-        } else if (counter%12 == 0) {
+        } else if (counter % 12 == 0) {
             odom.addPoints(vec, 1, timepoint);
             vec.clear();
         }
         counter++;
     }
     // Now add points with a tick of 0 to trigger feature extraction
+    auto start = std::chrono::steady_clock::now();
     odom.addPoints(vec, 0, timepoint);
-    pcl::io::savePCDFile("edges", odom.edges);
-    pcl::io::savePCDFile("flats", odom.flats);
+    auto extract_time = std::chrono::duration_cast<std::chrono::milliseconds>(
+      std::chrono::steady_clock::now() - start);
+    LOG_INFO("Feature extraction took %lu ms", extract_time.count());
+
+    for (auto iter = odom.edges.begin(); iter < odom.edges.end(); iter++) {
+        pcl::PointXYZI pt = *iter;
+        pt.intensity = 1;
+        vizedge->push_back(pt);
+    }
+    for (auto iter = odom.flats.begin(); iter < odom.flats.end(); iter++) {
+        pcl::PointXYZI pt = *iter;
+        pt.intensity = 2;
+        vizedge->push_back(pt);
+    }
+
+    display.addPointcloud(vizedge, 1);
+    display.addPointcloud(vizflats, 2);
+    cin.get();
+    display.stopSpin();
 }
 
 }  // namespace wave
