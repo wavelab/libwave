@@ -90,4 +90,82 @@ TEST(TemplateHelpers, vectorFromSequence) {
     EXPECT_EQ(expected, vec);
 };
 
+// sample functor for the next test
+struct DoubleInPlace {
+    template <typename T>
+    void operator()(T &t) const {
+        t = 2 * t;
+    }
+};
+
+TEST(TemplateHelpers, applyToTuple) {
+    auto t = std::tuple<double, unsigned, float>{2.5, 1u, 2.9f};
+
+    tmp::applyToTuple(t, DoubleInPlace{});
+    EXPECT_DOUBLE_EQ(2 * 2.5, std::get<0>(t));
+    EXPECT_EQ(2u, std::get<1>(t));
+    EXPECT_FLOAT_EQ(2 * 2.9f, std::get<2>(t));
+};
+
+// sample functor for the next test
+struct Double {
+    template <typename T>
+    T operator()(const T &t) const {
+        return 2 * t;
+    }
+};
+
+TEST(TemplateHelpers, transformTuple) {
+    const auto t = std::tuple<double, unsigned, float>{2.5, 1u, 2.9f};
+
+    auto res = tmp::transformTuple(t, Double{});
+    EXPECT_DOUBLE_EQ(2 * 2.5, std::get<0>(res));
+    EXPECT_EQ(2u, std::get<1>(res));
+    EXPECT_FLOAT_EQ(2 * 2.9f, std::get<2>(res));
+};
+
+// sample functor for the next test
+struct AddPointer {
+    template <typename T>
+    const T *operator()(const T &t) const {
+        return &t;
+    }
+};
+
+TEST(TemplateHelpers, transformTupleChangingType) {
+    const auto t = std::tuple<double, float>{2.5, 2.9f};
+
+    auto res = tmp::transformTuple(t, AddPointer{});
+    EXPECT_EQ(&std::get<0>(t), std::get<0>(res));
+    EXPECT_EQ(&std::get<1>(t), std::get<1>(res));
+};
+
+// sample functor for the next test
+struct Divide {
+    template <typename T>
+    T operator()(const T &a, const T &b) const {
+        return a / b;
+    }
+};
+
+TEST(TemplateHelpers, transformTupleBinary) {
+    const auto a = std::tuple<double, unsigned, float>{2.5, 10u, 2.9f};
+    const auto b = std::tuple<double, unsigned, float>{3.7, 3u, -1.2f};
+
+    auto res = tmp::transformTuple(a, b, Divide{});
+    EXPECT_DOUBLE_EQ(std::get<0>(a) / std::get<0>(b), std::get<0>(res));
+    EXPECT_EQ(std::get<1>(a) / std::get<1>(b), std::get<1>(res));
+    EXPECT_FLOAT_EQ(std::get<2>(a) / std::get<2>(b), std::get<2>(res));
+};
+
+TEST(TemplateHelpers, transformTupleTmplWithBinaryFunctorTemplate) {
+    const auto a = std::tuple<double, unsigned, float>{2.5, 10u, 2.9f};
+    const auto b = std::tuple<double, unsigned, float>{3.7, 3u, -1.2f};
+
+    auto res = tmp::transformTupleTmpl<std::divides>(a, b);
+    EXPECT_DOUBLE_EQ(std::get<0>(a) / std::get<0>(b), std::get<0>(res));
+    EXPECT_EQ(std::get<1>(a) / std::get<1>(b), std::get<1>(res));
+    EXPECT_FLOAT_EQ(std::get<2>(a) / std::get<2>(b), std::get<2>(res));
+};
+
 }  // namespace wave

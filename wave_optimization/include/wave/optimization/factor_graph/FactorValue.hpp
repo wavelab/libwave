@@ -130,8 +130,15 @@ class ComposedValue {
 
     explicit ComposedValue(tmp::replacet<Scalar *, V>... args)
         : blocks{V<Scalar, FactorValueOptions::Map>{args}...} {}
+
     std::vector<Scalar *> blockData() noexcept {
         return this->blockDataImpl(tmp::make_index_sequence<sizeof...(V)>{});
+    }
+
+    ComposedValue &operator-=(const ComposedValue &rhs) {
+        this->blocks =
+          tmp::transformTupleTmpl<std::minus>(this->blocks, rhs.blocks);
+        return *this;
     }
 
  protected:
@@ -148,6 +155,14 @@ class ComposedValue {
 
     ValueTuple blocks;
 };
+
+// Arithmetic operators
+template <typename T, typename O, template <typename...> class... V>
+const ComposedValue<T, O, V...> operator-(
+  const ComposedValue<T, O, V...> &lhs, const ComposedValue<T, O, V...> &rhs) {
+    return ComposedValue<T, O, V...>{lhs} -= rhs;
+};
+
 
 /** Generic instances */
 template <typename T, typename O = void>

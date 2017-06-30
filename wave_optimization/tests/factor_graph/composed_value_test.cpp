@@ -55,4 +55,38 @@ TEST_F(ComposedValueTest, constructMapped) {
       "");
 }
 
+TEST_F(ComposedValueTest, subtractCompound) {
+    auto a0 = 1.1;
+    auto a1 = Vec2{2.2, 3.3};
+    auto a2 = Vec3{4.4, 5.5, 6.6};
+    auto b0 = 0.9;
+    auto b1 = Vec2{0.8, 0.7};
+    auto b2 = Vec3{0.6, 0.5, 0.4};
+
+    auto a = Composed<double>{a0, a1, a2};
+    const auto b = Composed<double>{b0, b1, b2};
+    a -= b;
+
+    EXPECT_EQ(a0 - b0, a.b0[0]);
+    EXPECT_EQ(a1 - b1, a.b1);
+    EXPECT_EQ(a2 - b2, a.b2);
+}
+
+TEST_F(ComposedValueTest, subtract) {
+    auto a0 = 1.1;
+    auto a1 = Vec2{2.2, 3.3};
+    auto a2 = Vec3{4.4, 5.5, 6.6};
+    auto b0 = 0.9;
+    auto b1 = Vec2{0.8, 0.7};
+    auto b2 = Vec3{0.6, 0.5, 0.4};
+
+    const auto a = Composed<double>{a0, a1, a2};
+    const auto b = Composed<double>{b0, b1, b2};
+    auto c = a - b;
+
+    EXPECT_EQ(a0 - b0, c.b0[0]);
+    EXPECT_EQ(a1 - b1, c.b1);
+    EXPECT_EQ(a2 - b2, c.b2);
+}
+
 }  // namespace wave
