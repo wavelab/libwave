@@ -5,13 +5,19 @@ namespace wave {
 struct ComposedValueTest : public ::testing::Test {
     // Define a sample composed value (use aliases for sized FactorValue)
     template <typename T, typename O = void>
-    struct Composed
-      : ComposedValue<T, O, FactorValue1, FactorValue2, FactorValue3> {
-        using Base =
-          ComposedValue<T, O, FactorValue1, FactorValue2, FactorValue3>;
+    struct Composed : ComposedValue<Composed<T, O>,
+                                    T,
+                                    O,
+                                    FactorValue1,
+                                    FactorValue2,
+                                    FactorValue3> {
+        using Base = ComposedValue<Composed<T, O>,
+                                   T,
+                                   O,
+                                   FactorValue1,
+                                   FactorValue2,
+                                   FactorValue3>;
         using Base::Base;
-        Composed() = default;
-        Composed(const Base &base) : Base{base} {}
         FactorValue<T, O, 1> &b0 = this->template block<0>();
         FactorValue<T, O, 2> &b1 = this->template block<1>();
         FactorValue<T, O, 3> &b2 = this->template block<2>();
@@ -85,7 +91,7 @@ TEST_F(ComposedValueTest, subtract) {
 
     const auto a = Composed<double>{a0, a1, a2};
     const auto b = Composed<double>{b0, b1, b2};
-    Composed<double> c = a - b;
+    auto c = a - b;
 
     EXPECT_DOUBLE_EQ(a0 - b0, c.b0[0]);
     EXPECT_EQ(a1 - b1, c.b1);

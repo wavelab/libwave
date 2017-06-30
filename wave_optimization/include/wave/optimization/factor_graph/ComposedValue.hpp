@@ -12,7 +12,10 @@ namespace wave {
 /** @addtogroup optimization
  *  @{ */
 
-template <typename Scalar, typename Options, template <typename...> class... V>
+template <typename Derived,
+          typename Scalar,
+          typename Options,
+          template <typename...> class... V>
 class ComposedValue {
  public:
     using ValueTuple = std::tuple<V<Scalar, Options>...>;
@@ -31,14 +34,14 @@ class ComposedValue {
 
     // Arithmetic operators
 
-    ComposedValue &operator-=(const ComposedValue &rhs) {
+    Derived &operator-=(const Derived &rhs) {
         this->blocks =
           tmp::transformTupleTmpl<std::minus>(this->blocks, rhs.blocks);
-        return *this;
+        return static_cast<Derived &>(*this);
     }
 
-    const ComposedValue operator-(const ComposedValue &rhs) const {
-        return ComposedValue{*this} -= rhs;
+    const Derived operator-(const Derived &rhs) const {
+        return Derived{*static_cast<Derived const *>(this)} -= rhs;
     }
 
  protected:
