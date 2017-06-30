@@ -61,6 +61,63 @@ struct function_traits<R (*)(Args...)> {
     using arg_types = std::tuple<Args...>;
 };
 
+namespace internal {
+template <typename Tuple, typename F, int... Is>
+void applyToTupleHelper(Tuple &tuple, const F &f, index_sequence<Is...>) {
+    auto loop = {(f(std::get<Is>(tuple)), 0)...};
+    (void) loop;
+}
+
+template <typename Tuple, typename F, int... Is>
+result_of_transform_t<Tuple, F> transformTupleHelper(const Tuple &tuple,
+                                                     const F &f,
+                                                     index_sequence<Is...>) {
+    return result_of_transform_t<Tuple, F>{f(std::get<Is>(tuple))...};
+}
+
+template <typename A, typename B, typename F, int... Is>
+result_of_transform_t<A, B, F> transformTupleHelper(const A &a,
+                                                    const B &b,
+                                                    const F &f,
+                                                    index_sequence<Is...>) {
+    return result_of_transform_t<A, B, F>{
+      f(std::get<Is>(a), std::get<Is>(b))...};
+}
+}  // namespace internal
+
+template <typename Tuple, typename F>
+void applyToTuple(Tuple &tuple, const F &f) {
+    internal::applyToTupleHelper(
+      tuple, f, make_index_sequence<std::tuple_size<Tuple>::value>{});
+};
+
+
+template <typename... T, typename F>
+struct result_of_transform<std::tuple<T...>, F> {
+    using type = std::tuple<decltype(std::declval<F>()(std::declval<T>()))...>;
+};
+
+template <typename... A, typename... B, typename F>
+struct result_of_transform<std::tuple<A...>, std::tuple<B...>, F> {
+    using type = std::tuple<decltype(
+      std::declval<F>()(std::declval<A>(), std::declval<B>()))...>;
+};
+
+template <typename Tuple, typename F>
+result_of_transform_t<Tuple, F> transformTuple(const Tuple &tuple, const F &f) {
+    return internal::transformTupleHelper(
+      tuple, f, make_index_sequence<std::tuple_size<Tuple>::value>{});
+};
+
+template <typename A, typename B, typename F>
+result_of_transform_t<A, B, F> transformTuple(const A &tuple_a,
+                                              const B &tuple_b,
+                                              const F &f) {
+    return internal::transformTupleHelper(
+      tuple_a, tuple_b, f, make_index_sequence<std::tuple_size<A>::value>{});
+};
+
+
 // Recurse forward along the sequence
 template <typename Head, typename... Tail, template <typename> class F>
 struct check_all<type_sequence<Head, Tail...>, F> {

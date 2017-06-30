@@ -112,6 +112,31 @@ template <typename... Tuples>
 using tuple_cat_result =
   typename function_traits<decltype(std::tuple_cat<Tuples...>) *>::return_type;
 
+/** Apply the functor F to each element in a tuple in-place
+ * F::operator() should return void.
+ */
+template <typename Tuple, typename F>
+void applyToTuple(Tuple &tuple, const F &f);
+
+/* The return type of `transformTuple` with arguments of the given type */
+template <typename, typename, typename = void>
+struct result_of_transform;
+
+template <typename... T>
+using result_of_transform_t = typename result_of_transform<T...>::type;
+
+/** Apply the functor F to each element in a tuple and return the new tuple */
+template <typename Tuple, typename F>
+result_of_transform_t<Tuple, F> transformTuple(const Tuple &tuple, const F &f);
+
+/** Apply the functor F to each pair of elements in two tuples
+ * @return the new tuple */
+template <typename A, typename B, typename F>
+result_of_transform_t<A, B, F> transformTuple(const A &tuple_a,
+                                              const B &tuple_b,
+                                              const F &f);
+
+
 /** Gets the result of instantiating the template F with each type in Seq
 
  * F must define a boolean member `value`. Then,
