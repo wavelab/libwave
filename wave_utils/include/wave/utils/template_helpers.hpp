@@ -136,6 +136,25 @@ result_of_transform_t<A, B, F> transformTuple(const A &tuple_a,
                                               const B &tuple_b,
                                               const F &f);
 
+/* The return type of `transformTuple` with arguments of the given type */
+template <typename, template <typename> class>
+struct result_of_transform_tmpl;
+
+template <typename T, template <typename> class F>
+using result_of_transform_tmpl_t =
+  typename result_of_transform_tmpl<T, F>::type;
+
+/** Apply the templated functor F to each pair of elements in two tuples
+ *
+ * This is meant to be used with function objects such as std::plus and
+ * std::minus, which are class templates (as opposed to classes with a
+ * templated operator() )
+ *
+ * @return the new tuple
+ */
+template <template <typename> class F, typename T>
+result_of_transform_tmpl_t<T, F> transformTupleTmpl(const T &tuple_a,
+                                                    const T &tuple_b);
 
 /** Gets the result of instantiating the template F with each type in Seq
 

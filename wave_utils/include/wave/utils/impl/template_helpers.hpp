@@ -83,6 +83,15 @@ result_of_transform_t<A, B, F> transformTupleHelper(const A &a,
     return result_of_transform_t<A, B, F>{
       f(std::get<Is>(a), std::get<Is>(b))...};
 }
+
+template <template <typename> class F, typename T, int... Is>
+result_of_transform_tmpl_t<T, F> transformTupleTmplHelper(
+  const T &a, const T &b, index_sequence<Is...>) {
+    return result_of_transform_tmpl_t<T, F>{
+      F<typename std::tuple_element<Is, T>::type>{}(std::get<Is>(a),
+                                                    std::get<Is>(b))...};
+}
+
 }  // namespace internal
 
 template <typename Tuple, typename F>
@@ -115,6 +124,21 @@ result_of_transform_t<A, B, F> transformTuple(const A &tuple_a,
                                               const F &f) {
     return internal::transformTupleHelper(
       tuple_a, tuple_b, f, make_index_sequence<std::tuple_size<A>::value>{});
+};
+
+/* The return type of `transformTuple` with arguments of the given type */
+template <typename... T, template <typename> class F>
+struct result_of_transform_tmpl<std::tuple<T...>, F> {
+    using type = std::tuple<decltype(
+      std::declval<F<T>>()(std::declval<T>(), std::declval<T>()))...>;
+};
+
+
+template <template <typename> class F, typename T>
+result_of_transform_tmpl_t<T, F> transformTupleTmpl(const T &tuple_a,
+                                                    const T &tuple_b) {
+    return internal::transformTupleTmplHelper<F>(
+      tuple_a, tuple_b, make_index_sequence<std::tuple_size<T>::value>{});
 };
 
 
