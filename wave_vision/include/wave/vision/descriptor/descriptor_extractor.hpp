@@ -29,21 +29,11 @@ namespace wave {
  */
 class DescriptorExtractor {
  public:
-    virtual ~DescriptorExtractor() = default;
-
-    /** Function to return the current image being detected
+    /** Extracts keypoint descriptors from an image. Calls a different extractor
+     *  depending on the derived class.
      *
-     * @return the image (in matrix form).
-     */
-    virtual cv::Mat &getimage() {
-        return this->image;
-    }
-
-    /** Virtual function to extract keypoint descriptors from an image. Calls a
-     *  different extractor depending on the derived class.
-     *
-     *  @param image, the image to extract keypoints from.
-     *  @param keypoints, the keypoints detected in the image.
+     *  @param image the image to extract keypoints from.
+     *  @param keypoints the keypoints detected in the image.
      *
      *  @return descriptors, the computed keypoint descriptors.
      */
@@ -51,16 +41,8 @@ class DescriptorExtractor {
       cv::Mat &image, std::vector<cv::KeyPoint> &keypoints) = 0;
 
  protected:
-    /** The image from which to extract descriptors */
-    cv::Mat image;
-
-    /** Function to set image within the member variable
-     *
-     *  @param source_image, the image to load
-     */
-    virtual void loadImage(const cv::Mat &source_image) {
-        this->image = source_image;
-    };
+    /** Destructor */
+    ~DescriptorExtractor() = default;
 };
 
 /** @} group vision */

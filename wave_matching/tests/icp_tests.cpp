@@ -100,4 +100,25 @@ TEST_F(ICPTest, smallDisplacement) {
     EXPECT_LT(diff, this->threshold);
 }
 
-}  // namespace wave
+// Small information using voxel downsampling
+TEST_F(ICPTest, smallinfo) {
+    Affine3 perturb;
+    Affine3 result;
+    bool match_success = false;
+
+    // setup
+    perturb = Affine3::Identity();
+    perturb.translation() << 0.2, 0, 0;
+    this->initMatcher(0.05f, perturb);
+
+    // test and assert
+    match_success = matcher->match();
+    matcher->estimateInfo();
+    auto info = matcher->getInfo();
+    double diff = (matcher->getResult().matrix() - perturb.matrix()).norm();
+    EXPECT_TRUE(match_success);
+    EXPECT_GT(info(0, 0), 0);
+    EXPECT_LT(diff, this->threshold);
+}
+
+}  // end of namespace wave
