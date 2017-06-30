@@ -16,8 +16,7 @@ namespace wave {
 /** @addtogroup vision
  *  @{ */
 
-/** This struct contains the configuration parameters for the
- *  BRISKDescriptor extractor.
+/** Configuration parameters for the BRISK descriptor extractor.
  *
  *  The BRISK Descriptor creates a pattern of points organized as concentric
  *  circles around the keypoint. Each point in these rings are then used for
@@ -33,17 +32,21 @@ struct BRISKDescriptorParams {
                           float d_min)
         : radius_list(rlist), number_list(nlist), d_max(d_max), d_min(d_min) {}
 
+    /** Constructor using parameters extracted from a configuration file.
+     *
+     *  @param config_path the path to the location of the configuration file
+     */
+    BRISKDescriptorParams(const std::string &config_path);
+
     /** radius_list defines the radius of each subsequent circle (in pixels).
-     * All
-     *  numbers must be positive. Cannot be empty.
+     *  All numbers must be positive. Cannot be empty.
      *
      *  Recommended: radius_list = {0.0f, 2.47f, 4.17f, 6.29f, 9.18f}
      */
     std::vector<float> radius_list = {0.0f, 2.47f, 4.17f, 6.29f, 9.18f};
 
     /** number_list defines the number of points in each circle. Must be the
-     * same
-     *  size as radiusList. All numbers must be positive. Cannot be empty.
+     *  same size as radiusList. All numbers must be positive. Cannot be empty.
      *
      *  Recommended: number_list = {1, 10, 14, 15, 20};
      */
@@ -53,7 +56,6 @@ struct BRISKDescriptorParams {
      *  a \a long pair or a \a short pair. Short pairs are not used in the
      *  brightness comparison, due to balancing effects of local gradients. The
      *  long pairs are not used in the assembly of the bit vector descriptor.
-     *
      *
      *  d_max specifies the maximum threshold for short pairs. The value of
      *  d_max must be less than that of d_min.
@@ -83,34 +85,27 @@ class BRISKDescriptor : public DescriptorExtractor {
     /** Default constructor. The user can also specify their own struct with
      *  desired values. If no struct is provided, default values are used.
      *
-     *  @param config contains the desired parameter values for a BRISKParams
-     *  implementation. Uses default values if not specified.
+     *  @param config
+     *  \parblock contains the desired parameter values. Uses default values if
+     *  not specified.
+     *  \endparblock
      */
     explicit BRISKDescriptor(
       const BRISKDescriptorParams &config = BRISKDescriptorParams{});
 
-    /** Constructs a BRISKDescriptor Extractor using parameters found in the
-    *   linked .yaml file.
-    *
-    *   @param config_path is the path to a .yaml file, containing the desired
-    *   parameters for the BRISK Descriptor Extractor.
-    */
-    BRISKDescriptor(const std::string &config_path);
-
-    ~BRISKDescriptor();
-
     /** Returns the current configuration parameters being used by the
      *  BRISK Descriptor Extractor.
      *
-     * @return a struct containing the current configuration values.
+     *  @return a struct containing the current configuration values.
      */
     BRISKDescriptorParams getConfiguration() const;
 
     /** Extracts descriptors from the keypoints in an image, using the BRISK
      *  extractor.
      *
-     *  @param image, the image to detect features in.
-     *  @param keypoints, the keypoints from the detected image
+     *  @param image the image to detect features in.
+     *  @param keypoints the keypoints from the detected image
+     *
      *  @return an array containing the computed descriptors.
      */
     cv::Mat extractDescriptors(cv::Mat &image,

@@ -3,19 +3,31 @@
 
 namespace wave {
 
-// Default Constructor
-FASTDetector::FASTDetector() {
-    // Instantiate cv::FastFeatureDetector object with default values
-    int default_threshold = 10;
-    bool default_nonmax_suppression = true;
-    int default_type = 2;
+// Filesystem constructor for FASTParams struct
+FASTParams::FASTParams(const std::string &config_path) {
+    // Extract parameters from .yaml file.
+    ConfigParser parser;
 
-    // Create FastFeatureDetector with these parameters
-    this->fast_detector = cv::FastFeatureDetector::create(
-      default_threshold, default_nonmax_suppression, default_type);
+    int threshold;
+    bool nonmax_suppression;
+    int type;
+
+    // Add parameters to parser, to be loaded. If path cannot be found,
+    // throw an exception.
+    parser.addParam("threshold", &threshold);
+    parser.addParam("nonmax_suppression", &nonmax_suppression);
+    parser.addParam("type", &type);
+
+    if (parser.load(config_path) != 0) {
+        throw std::invalid_argument("Failed to Load FASTParams Configuration");
+    }
+
+    this->threshold = threshold;
+    this->nonmax_suppression = nonmax_suppression;
+    this->type = type;
 }
 
-// Constructor using FASTParams struct
+// Default Constructor
 FASTDetector::FASTDetector(const FASTParams &config) {
     // Ensure parameters are valid
     this->checkConfiguration(config);
@@ -24,35 +36,6 @@ FASTDetector::FASTDetector(const FASTParams &config) {
     this->fast_detector = cv::FastFeatureDetector::create(
       config.threshold, config.nonmax_suppression, config.type);
 }
-
-// Constructor using .yaml file, located at config_path.
-FASTDetector::FASTDetector(const std::string &config_path) {
-    // Extract parameters from .yaml file.
-    ConfigParser parser;
-
-    // Configuration parameters
-    FASTParams config;
-
-    // Add parameters to parser, to be loaded. If path cannot be found, throw an
-    // exception.
-    parser.addParam("threshold", &config.threshold);
-    parser.addParam("nonmax_suppression", &config.nonmax_suppression);
-    parser.addParam("type", &config.type);
-
-    if (parser.load(config_path) != 0) {
-        throw std::invalid_argument(
-          "Failed to Load FASTDetector Configuration");
-    }
-
-    // Verify configuration values
-    this->checkConfiguration(config);
-
-    // Create FastFeatureDetector with these parameters
-    this->fast_detector = cv::FastFeatureDetector::create(
-      config.threshold, config.nonmax_suppression, config.type);
-}
-
-FASTDetector::~FASTDetector() {}
 
 void FASTDetector::checkConfiguration(const FASTParams &check_config) {
     // Check parameters. If invalid, throw an exception.
@@ -73,7 +56,7 @@ void FASTDetector::configure(const FASTParams &new_config) {
     this->fast_detector->setType(new_config.type);
 }
 
-FASTParams FASTDetector::getConfiguration() {
+FASTParams FASTDetector::getConfiguration() const {
     FASTParams current_config;
 
     // Obtain current configuration values using cv::FastFeatureDetector::get**
@@ -88,12 +71,9 @@ FASTParams FASTDetector::getConfiguration() {
 std::vector<cv::KeyPoint> FASTDetector::detectFeatures(const cv::Mat &image) {
     std::vector<cv::KeyPoint> keypoints;
 
-    this->loadImage(image);
-
     // Detect features in image, save values into keypoints.
-    this->fast_detector->detect(this->image, keypoints);
+    this->fast_detector->detect(image, keypoints);
 
     return keypoints;
 }
-
 }  // namespace wave
