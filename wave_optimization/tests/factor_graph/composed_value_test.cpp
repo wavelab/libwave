@@ -1,5 +1,5 @@
 #include "wave/wave_test.hpp"
-#include "wave/optimization/factor_graph/FactorValue.hpp"
+#include "wave/optimization/factor_graph/ComposedValue.hpp"
 
 namespace wave {
 struct ComposedValueTest : public ::testing::Test {

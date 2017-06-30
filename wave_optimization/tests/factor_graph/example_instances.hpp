@@ -11,6 +11,7 @@
 #include "wave/optimization/factor_graph/Factor.hpp"
 #include "wave/optimization/factor_graph/FactorVariable.hpp"
 #include "wave/optimization/factor_graph/FactorMeasurement.hpp"
+#include "wave/optimization/factor_graph/ComposedValue.hpp"
 
 namespace wave {
 /** @addtogroup optimization
