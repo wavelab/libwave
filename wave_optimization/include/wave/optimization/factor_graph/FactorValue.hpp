@@ -135,10 +135,16 @@ class ComposedValue {
         return this->blockDataImpl(tmp::make_index_sequence<sizeof...(V)>{});
     }
 
+    // Arithmetic operators
+
     ComposedValue &operator-=(const ComposedValue &rhs) {
         this->blocks =
           tmp::transformTupleTmpl<std::minus>(this->blocks, rhs.blocks);
         return *this;
+    }
+
+    const ComposedValue operator-(const ComposedValue &rhs) const {
+        return ComposedValue{*this} -= rhs;
     }
 
  protected:
@@ -154,13 +160,6 @@ class ComposedValue {
     }
 
     ValueTuple blocks;
-};
-
-// Arithmetic operators
-template <typename T, typename O, template <typename...> class... V>
-const ComposedValue<T, O, V...> operator-(
-  const ComposedValue<T, O, V...> &lhs, const ComposedValue<T, O, V...> &rhs) {
-    return ComposedValue<T, O, V...>{lhs} -= rhs;
 };
 
 
