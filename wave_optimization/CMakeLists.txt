@@ -19,6 +19,7 @@ ADD_LIBRARY(wave_optimization
 WAVE_ADD_TEST(${PROJECT_NAME}_tests
     tests/ceres/ceres_examples_test.cpp
     tests/factor_graph/value_test.cpp
+    tests/factor_graph/composed_value_test.cpp
     tests/factor_graph/factor_test.cpp
     tests/factor_graph/graph_test.cpp
     tests/factor_graph/variable_test.cpp
