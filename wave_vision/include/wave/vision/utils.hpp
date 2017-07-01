@@ -43,6 +43,14 @@ Vec2 focal_length(double hfov,
  */
 void projection_matrix(const Mat3 &K, const Mat3 &R, const Vec3 &t, MatX &P);
 
+/** Convert a vector of keypoints to a vector of Vec2
+ *
+ * @param keypoints input keypoints
+ * @param vec_keypoints converted keypoints
+ */
+void convertKeypoints(const std::vector<cv::KeyPoint> &keypoints,
+                      std::vector<Vec2> &vec_keypoints);
+
 /** @} group vision */
 }  // namespace wave
 
