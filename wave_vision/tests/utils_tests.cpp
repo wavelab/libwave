@@ -48,6 +48,22 @@ TEST(VisionCommon, projection_matrix) {
     EXPECT_PRED2(MatricesNear, expected, P);
 }
 
+TEST(VisionCommon, convert_single_keypoint) {
+    cv::KeyPoint keypoint1(5.f, 5.f, 1.f);
+    cv::KeyPoint keypoint2(-1.f, 2.f, 1.f);
+
+    Vec2 conv1;
+    Vec2 conv2;
+
+    convertKeypoints(keypoint1, conv1);
+    convertKeypoints(keypoint2, conv2);
+
+    ASSERT_EQ(keypoint1.pt.x, conv1(0));
+    ASSERT_EQ(keypoint1.pt.y, conv1(1));
+    ASSERT_EQ(keypoint2.pt.x, conv2(0));
+    ASSERT_EQ(keypoint2.pt.y, conv2(1));
+}
+
 TEST(VisionCommon, convert_keypoints) {
     cv::KeyPoint keypoint1(5.f, 5.f, 1.f);
     cv::KeyPoint keypoint2(7.f, 2.f, 1.f);

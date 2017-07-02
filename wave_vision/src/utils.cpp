@@ -27,10 +27,19 @@ void projection_matrix(const Mat3 &K, const Mat3 &R, const Vec3 &t, MatX &P) {
     P = K * extrinsics;
 }
 
+void convertKeypoints(const cv::KeyPoint &keypoint, Vec2 &vec_keypoints) {
+    Vec2 v(keypoint.pt.x, keypoint.pt.y);
+
+    vec_keypoints = v;
+}
+
 void convertKeypoints(const std::vector<cv::KeyPoint> &keypoints,
                       std::vector<Vec2> &vec_keypoints) {
+    Vec2 v;
+
     for (const auto &k : keypoints) {
-        Vec2 v(k.pt.x, k.pt.y);
+        v(0) = k.pt.x;
+        v(1) = k.pt.y;
 
         vec_keypoints.emplace_back(v);
     }
