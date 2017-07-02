@@ -88,7 +88,7 @@ Tracker<TDetector, TDescriptor, TMatcher>::offlineTracker() {
 
             // Prune id_map of any expired feature tracks
             id_map_it = id_map.begin();
-            for(id_map_it; id_map_it != id_map.end(); id_map_it++) {
+            for (id_map_it; id_map_it != id_map.end(); id_map_it++) {
                 // If the last image seen is NOT the current image
                 if (id_map_it->second.last_image != img_count) {
                     id_map.erase(id_map_it);
