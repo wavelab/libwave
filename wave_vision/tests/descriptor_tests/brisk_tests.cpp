@@ -1,5 +1,6 @@
 // C++ Headers
 #include <algorithm>
+#include <chrono>
 
 // Libwave Headers
 #include "wave/wave_test.hpp"
@@ -164,8 +165,16 @@ TEST(BRISKTests, DISABLED_ComputeDescriptors) {
     FASTDetector fast;
     BRISKDescriptor brisk;
 
+    auto start = std::chrono::steady_clock::now();
+
     keypoints = fast.detectFeatures(image);
     descriptors = brisk.extractDescriptors(image, keypoints);
+
+    auto extract_time = std::chrono::duration_cast<std::chrono::milliseconds>(
+      std::chrono::steady_clock::now() - start);
+    LOG_INFO("Feature extraction and description took %lu ms\n",
+             extract_time.count());
+
 
     ASSERT_GT(descriptors.total(), 0u);
 

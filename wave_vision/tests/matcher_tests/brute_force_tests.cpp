@@ -1,3 +1,5 @@
+#include <chrono>
+
 // Libwave Headers
 #include "wave/wave_test.hpp"
 #include "wave/vision/detector/fast_detector.hpp"
@@ -169,6 +171,9 @@ TEST(BFTests, DISABLED_DistanceMatchDescriptors) {
 
     image_1 = cv::imread(TEST_IMAGE_1, cv::IMREAD_COLOR);
     image_2 = cv::imread(TEST_IMAGE_2, cv::IMREAD_COLOR);
+
+    auto start = std::chrono::steady_clock::now();
+
     keypoints_1 = fast.detectFeatures(image_1);
     keypoints_2 = fast.detectFeatures(image_2);
     descriptors_1 = brisk.extractDescriptors(image_1, keypoints_1);
@@ -178,13 +183,14 @@ TEST(BFTests, DISABLED_DistanceMatchDescriptors) {
     matches = bfmatcher.matchDescriptors(
       descriptors_1, descriptors_2, keypoints_1, keypoints_2, mask);
 
+    auto extract_time = std::chrono::duration_cast<std::chrono::milliseconds>(
+      std::chrono::steady_clock::now() - start);
+    LOG_INFO("Feature extraction took %lu ms", extract_time.count());
+
+
     // Test has been confirmed visually
-    cv::drawMatches(image_1,
-                    keypoints_1,
-                    image_2,
-                    keypoints_2,
-                    matches,
-                    img_with_matches);
+    cv::drawMatches(
+      image_1, keypoints_1, image_2, keypoints_2, matches, img_with_matches);
 
     cv::imshow("matches", img_with_matches);
 
@@ -206,6 +212,9 @@ TEST(BFTests, DISABLED_KnnMatchDescriptors) {
 
     image_1 = cv::imread(TEST_IMAGE_1, cv::IMREAD_COLOR);
     image_2 = cv::imread(TEST_IMAGE_2, cv::IMREAD_COLOR);
+
+    auto start = std::chrono::steady_clock::now();
+
     keypoints_1 = fast.detectFeatures(image_1);
     keypoints_2 = fast.detectFeatures(image_2);
     descriptors_1 = brisk.extractDescriptors(image_1, keypoints_1);
@@ -214,6 +223,11 @@ TEST(BFTests, DISABLED_KnnMatchDescriptors) {
     // Use KNN Matcher to match
     matches = bfmatcher.matchDescriptors(
       descriptors_1, descriptors_2, keypoints_1, keypoints_2, mask);
+
+    auto extract_time = std::chrono::duration_cast<std::chrono::milliseconds>(
+      std::chrono::steady_clock::now() - start);
+    LOG_INFO("Feature extraction, description, and matching took %lu ms\n",
+             extract_time.count());
 
     // Test has been confirmed visually
     cv::drawMatches(
