@@ -18,6 +18,9 @@ struct ComposedValueTest : public ::testing::Test {
                                    FactorValue2,
                                    FactorValue3>;
         using Base::Base;
+        Composed() = default;
+        // The copy constructor must not copy the reference members
+        Composed(const Composed &rhs) : Base{rhs} {}
         FactorValue<T, O, 1> &b0 = this->template block<0>();
         FactorValue<T, O, 2> &b1 = this->template block<1>();
         FactorValue<T, O, 3> &b2 = this->template block<2>();
