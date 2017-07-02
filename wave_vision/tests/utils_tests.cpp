@@ -48,7 +48,6 @@ TEST(VisionCommon, projection_matrix) {
     EXPECT_PRED2(MatricesNear, expected, P);
 }
 
-<<<<<<< f3267ec496a4189a5daf4ae2a3b29869ecf0ac4d
 TEST(VisionCommon, convert_single_keypoint) {
     cv::KeyPoint keypoint1(5.f, 5.f, 1.f);
     cv::KeyPoint keypoint2(-1.f, 2.f, 1.f);
