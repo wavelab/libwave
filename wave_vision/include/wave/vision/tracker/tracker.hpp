@@ -10,7 +10,6 @@
 #include <string>
 #include <vector>
 
-#include <boost/bimap.hpp>
 #include <opencv2/opencv.hpp>
 
 #include "wave/vision/utils.hpp"

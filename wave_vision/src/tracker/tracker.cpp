@@ -1,6 +1,5 @@
 #include "wave/vision/tracker/tracker.hpp"
 
-
 namespace wave {
 template <typename TDetector, typename TDescriptor, typename TMatcher>
 void Tracker<TDetector, TDescriptor, TMatcher>::detectAndCompute(
@@ -32,6 +31,7 @@ Tracker<TDetector, TDescriptor, TMatcher>::offlineTracker() {
 
     // Map corresponding IDs with FeatureTrack objects
     std::map<size_t, FeatureTrack> id_map;
+    std::map<size_t, FeatureTrack>::iterator id_map_it;
     std::vector<FeatureTrack> curr_track;  // Current feature track
     std::vector<std::vector<FeatureTrack>>
       feature_tracks;  // All feature tracks
@@ -84,6 +84,15 @@ Tracker<TDetector, TDescriptor, TMatcher>::offlineTracker() {
 
                 // Add associated track to current tracks in image.
                 curr_track.push_back(id_map[id]);
+            }
+
+            // Prune id_map of any expired feature tracks
+            id_map_it = id_map.begin();
+            for(id_map_it; id_map_it != id_map.end(); id_map_it++) {
+                // If the last image seen is NOT the current image
+                if (id_map_it->second.last_image != img_count) {
+                    id_map.erase(id_map_it);
+                }
             }
 
             // Add current image tracks to the list of feature tracks, and reset
