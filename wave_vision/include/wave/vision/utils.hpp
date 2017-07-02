@@ -43,10 +43,7 @@ Vec2 focal_length(double hfov,
  */
 void projection_matrix(const Mat3 &K, const Mat3 &R, const Vec3 &t, MatX &P);
 
-/** Convert a single cv::KeyPoint to a Vec2
-=======
-/** Convert a single cv::KeyPoint to a Vec2 object
->>>>>>> Add in single keypoint conversion
+/** Convert a single cv::KeyPoint to  Vec2
  *
  * @param keypoint input keypoint
  * @param vec_keypoints converted keypoint
