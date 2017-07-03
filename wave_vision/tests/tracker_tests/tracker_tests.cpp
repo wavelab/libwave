@@ -3,6 +3,4 @@
 #include "wave/vision/matcher/brute_force_matcher.hpp"
 #include "wave/vision/tracker/tracker.hpp"
 
-namespace wave {
-
-}
+namespace wave {}
