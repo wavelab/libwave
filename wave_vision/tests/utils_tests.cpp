@@ -55,8 +55,8 @@ TEST(VisionCommon, convert_single_keypoint) {
     Vec2 conv1;
     Vec2 conv2;
 
-    convertKeypoints(keypoint1, conv1);
-    convertKeypoints(keypoint2, conv2);
+    convertKeypoint(keypoint1, conv1);
+    convertKeypoint(keypoint2, conv2);
 
     ASSERT_EQ(keypoint1.pt.x, conv1(0));
     ASSERT_EQ(keypoint1.pt.y, conv1(1));

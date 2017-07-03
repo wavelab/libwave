@@ -48,7 +48,7 @@ void projection_matrix(const Mat3 &K, const Mat3 &R, const Vec3 &t, MatX &P);
  * @param keypoint input keypoint
  * @param vec_keypoints converted keypoint
  */
-void convertKeypoints(const cv::KeyPoint &keypoint, Vec2 &vec_keypoints);
+void convertKeypoint(const cv::KeyPoint &keypoint, Vec2 &vec_keypoint);
 
 /** Convert a vector of keypoints to a vector of Vec2
  *
