@@ -58,6 +58,13 @@ void convertKeypoint(const cv::KeyPoint &keypoint, Vec2 &vec_keypoint);
 void convertKeypoints(const std::vector<cv::KeyPoint> &keypoints,
                       std::vector<Vec2> &vec_keypoints);
 
+/** Reads images from file into a vector
+ *
+ * @param images_path location of images
+ * @return all read images
+ */
+std::vector<cv::Mat> readImageSequence(const std::string &images_path);
+
 /** @} group vision */
 }  // namespace wave
 

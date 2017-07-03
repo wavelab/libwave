@@ -38,4 +38,27 @@ void convertKeypoints(const std::vector<cv::KeyPoint> &keypoints,
         vec_keypoints.emplace_back(k.pt.x, k.pt.y);
     }
 }
+
+std::vector<cv::Mat> readImageSequence(const std::string &path) {
+    cv::String img_path(path);
+    std::vector<cv::String> files;
+    std::vector<cv::Mat> image_sequence;
+    int num_images;
+
+    cv::VideoCapture sequence(img_path, cv::CAP_IMAGES);
+
+    num_images = (int) sequence.get(cv::CAP_PROP_FRAME_COUNT);
+
+    if (sequence.isOpened()) {
+        for (double i = 0; i < num_images; ++i) {
+            cv::Mat image;
+            sequence >> image;
+            image_sequence.push_back(image);
+        }
+    } else {
+        throw std::length_error("No images in image sequence!");
+    }
+
+    return image_sequence;
+}
 }  // namespace wave

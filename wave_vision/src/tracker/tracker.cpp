@@ -12,7 +12,8 @@ void Tracker<TDetector, TDescriptor, TMatcher>::detectAndCompute(
 
 template <typename TDetector, typename TDescriptor, typename TMatcher>
 std::vector<std::vector<FeatureTrack>>
-Tracker<TDetector, TDescriptor, TMatcher>::offlineTracker() {
+Tracker<TDetector, TDescriptor, TMatcher>::offlineTracker(
+  const std::vector<cv::Mat> &image_sequence) {
     // Variables for detection and matching
     std::vector<cv::KeyPoint> prev_kp;
     std::vector<cv::KeyPoint> curr_kp;
@@ -31,19 +32,19 @@ Tracker<TDetector, TDescriptor, TMatcher>::offlineTracker() {
 
     // Map corresponding IDs with FeatureTrack objects
     std::map<size_t, FeatureTrack> id_map;
-    std::map<size_t, FeatureTrack>::iterator id_map_it;
+    std::map<size_t, FeatureTrack>::const_iterator id_map_it;
     std::vector<FeatureTrack> curr_track;  // Current feature track
     std::vector<std::vector<FeatureTrack>>
       feature_tracks;  // All feature tracks
 
-    if (!this->images.empty()) {
+    if (!image_sequence.empty()) {
         // Extract keypoints and descriptors from first image, store values
-        image_it = this->images.begin();
+        image_it = image_sequence.begin();
         this->detectAndCompute(*image_it, prev_kp, prev_desc);
         image_it++;
 
         // For remaining images
-        for (image_it; image_it != this->images.end(); image_it++) {
+        for (image_it; image_it != image_sequence.end(); image_it++) {
             this->detectAndCompute(*image_it, curr_kp, curr_desc);
             matches = this->matcher.matchDescriptors(
               prev_desc, curr_desc, prev_kp, curr_kp);
@@ -58,7 +59,7 @@ Tracker<TDetector, TDescriptor, TMatcher>::offlineTracker() {
                     curr_ids[m.trainIdx] = prev_ids.at(m.queryIdx);
                 } else {
                     // Else, assign new ID
-                    prev_ids[m.queryIdx] = generateFeatureID();
+                    prev_ids[m.queryIdx] = this->generateFeatureID();
                     curr_ids[m.trainIdx] = prev_ids.at(m.queryIdx);
                 }
 

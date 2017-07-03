@@ -42,17 +42,10 @@ class Tracker {
     Tracker(TDetector detector, TDescriptor descriptor, TMatcher matcher)
         : detector(detector), descriptor(descriptor), matcher(matcher) {}
 
-    /** Loads series of images into Tracker object for offline tracking.
-     *
-     * @param new_images the images to be loaded.
-     */
-    void addImageStream(const std::vector<cv::Mat> new_images) {
-        this->images = new_images;
-    };
-
     /** Offline method of image tracking, using list of images already loaded.
      */
-    std::vector<std::vector<FeatureTrack>> offlineTracker();
+    std::vector<std::vector<FeatureTrack>> offlineTracker(
+      const std::vector<cv::Mat> &image_sequence);
 
  private:
     size_t generateFeatureID() {
@@ -64,11 +57,11 @@ class Tracker {
                           std::vector<cv::KeyPoint> &keypoints,
                           cv::Mat &descriptor);
 
-    std::vector<cv::Mat> images;
     TDetector detector;
     TDescriptor descriptor;
     TMatcher matcher;
 };
+/** @} group vision */
 }  // namespace wave
 
 #endif  // WAVE_VISION_TRACKER_HPP

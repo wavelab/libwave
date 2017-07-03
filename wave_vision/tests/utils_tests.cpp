@@ -3,7 +3,8 @@
 
 namespace wave {
 
-const std::string TEST_IMAGE = "tests/data/lenna.png";
+const std::string IMG_FOLDER_PATH =
+  "tests/data/tracker_test_sequence/frame0057.jpg";
 
 TEST(VisionCommon, focal_length) {
     double f = focal_length(60, 640);
@@ -85,5 +86,17 @@ TEST(VisionCommon, convert_keypoints) {
     ASSERT_EQ(converted.at(1)(1), keypoint2.pt.y);
     ASSERT_EQ(converted.at(2)(0), keypoint3.pt.x);
     ASSERT_EQ(converted.at(2)(1), keypoint3.pt.y);
+}
+
+TEST(VisionCommon, read_image_sequence) {
+    // Test bad path
+    std::string bad_path = "bad_path";
+    ASSERT_THROW(readImageSequence(bad_path), std::length_error);
+
+    std::vector<cv::Mat> image_sequence;
+
+    image_sequence = readImageSequence(IMG_FOLDER_PATH);
+
+    ASSERT_EQ((int) image_sequence.size(), 21);
 }
 }  // namespace wave
