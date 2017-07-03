@@ -89,6 +89,13 @@ struct sum;
 template <typename Seq>
 struct sum_index_sequence;
 
+/** Holds the cumulative index of each input in the input sequence. For example,
+ * for an input index_sequence<2, 3, 3>, the output would be
+ * index_sequence<0, 2, 5>.
+ */
+template <typename Seq, typename Out = index_sequence<0>, int Count = 0>
+struct cumulative_index;
+
 /** Constructs a vector from an index sequence
  * Note this is a runtime function.
  */

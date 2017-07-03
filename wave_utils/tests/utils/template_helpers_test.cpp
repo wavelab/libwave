@@ -37,6 +37,13 @@ struct Test_concat_index_sequence {
                   "");
 };
 
+struct Test_cumulative_index_sequence {
+    using A = index_sequence<0, 1, 3, 2, 2>;
+    using expected = index_sequence<0, 0, 1, 4, 6>;
+    static_assert(
+      std::is_same<expected, typename cumulative_index<A>::type>::value, "");
+};
+
 struct Test_sum {
     static_assert(sum<0>::value == 0, "");
     static_assert(sum<1, 2, 3>::value == 6, "");

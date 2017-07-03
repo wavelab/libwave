@@ -49,6 +49,20 @@ struct sum_index_sequence<index_sequence<Is...>> {
     static constexpr int value = sum<Is...>::value;
 };
 
+// Recursively accumulate index
+template <int Head, int... Tail, int... Res, int Count>
+struct cumulative_index<index_sequence<Head, Tail...>,
+                        index_sequence<Res...>,
+                        Count>
+  : cumulative_index<index_sequence<Tail...>,
+                     index_sequence<Res..., Head + Count>,
+                     Head + Count> {};
+
+// Base case: the size of last entry doesn't matter
+template <int Tail, int... Res, int Count>
+struct cumulative_index<index_sequence<Tail>, index_sequence<Res...>, Count>
+  : index_sequence<Res...> {};
+
 // Specialization of function_traitss for regular function pointer
 template <typename R, typename... Args>
 struct function_traits<R (*)(Args...)> {
