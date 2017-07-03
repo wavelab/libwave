@@ -5,6 +5,72 @@ namespace wave {
 namespace internal {
 // Template helpers used only in this file
 
+/** Define an index_sequence of nested FactorValue sizes */
+template <template <typename...> class... V>
+using get_value_sizes = typename tmp::concat_index_sequence<
+  typename internal::factor_value_traits<V<double>>::BlockSizes...>::type;
+
+/** Concatenate the FactorValue types of each variable in a Factor into one
+ * std::tuple.
+ */
+template <template <typename...> class... V>
+using expand_value_tmpls = typename tmp::tuple_cat_result<
+  typename internal::factor_value_traits<V<double>>::ValueTuple...>;
+
+/**
+ * Define a type_sequence of index_sequences mapping nested values in a factor
+ * to entries in a flattened parameter list (as used by Ceres).
+ *
+ * For example, consider a factor of these three variables:
+ * 1. a simple variable with one value
+ * 2. a composed variable with four nested values
+ * 3. a composed variable with two nested values
+ *
+ * (note the flattened parameter list would have seven entries)
+ *
+ * The instantiation `get_value_indices<0, index_sequence<1, 4, 2>>` will
+ * produce a sequence `type_sequence<index_sequence<0>,
+ * index_sequence<1, 2, 3, 4>, index_sequence<5, 6>>` - meaning the 0th entry
+ * in the flattened list corresponds to the single value in the 0th variable,
+ * the 1st to 4th entries in the list corresponding the to 0th to 3rd entries in
+ * the 1st variable, etc.
+ *
+ * @tparam S the starting index (used for recursion; pass 0)
+ * @tparam ISeq the index_sequence of value sizes
+ * @tparam OutSeq used to build up the output; pass an empty sequence
+ */
+template <int S, typename ISeq, typename OutSeq = tmp::type_sequence<>>
+struct get_value_indices;
+
+// Recursively build output, consuming the first element in the input sequence
+template <int S, int Head, int... Tail, typename... Out>
+struct get_value_indices<S,
+                         tmp::index_sequence<Head, Tail...>,
+                         tmp::type_sequence<Out...>>
+  : get_value_indices<
+      S + Head,
+      tmp::index_sequence<Tail...>,
+      tmp::type_sequence<Out...,
+                         typename tmp::make_index_sequence<Head, S>::type>> {};
+
+// Base case: only one element in input sequence
+template <int S, int Head, typename... Out>
+struct get_value_indices<S,
+                         tmp::index_sequence<Head>,
+                         tmp::type_sequence<Out...>>
+  : tmp::type_sequence<Out...,
+                       typename tmp::make_index_sequence<Head, S>::type> {};
+
+/**
+ * Instantiates `get_value_indices` with the appropriate arguments for the given
+ * value types.
+ */
+template <template <typename...> class... V>
+using get_value_indices_t = typename get_value_indices<
+  0,
+  typename tmp::index_sequence<
+    internal::factor_value_traits<V<double>>::NumValues...>>::type;
+
 /** Constructs a FactorValue mapping the given raw array.
  *
  * @tparam V the FactorValue template
@@ -56,7 +122,7 @@ class FactorCostFunctor<F, M, std::tuple<Vv...>, V...> {
         const auto &params = std::array<T const *const, N>{{raw_params...}};
         return this->callEvaluate(params,
                                   residuals,
-                                  internal::get_value_indices<V...>{},
+                                  internal::get_value_indices_t<V...>{},
                                   tmp::make_index_sequence<sizeof...(V)>{});
     }
 

@@ -125,51 +125,6 @@ using FactorValue2 = FactorValue<T, O, 2>;
 template <typename T, typename O = void>
 using FactorValue3 = FactorValue<T, O, 3>;
 
-
-namespace internal {
-
-
-template <typename... ComposedOrValues>
-using get_value_types =
-  tmp::tuple_cat_result<typename ComposedOrValues::ValueTuple...>;
-
-template <template <typename...> class... V>
-using get_value_sizes = typename tmp::concat_index_sequence<
-  typename internal::factor_value_traits<V<double>>::BlockSizes...>::type;
-
-template <template <typename...> class... V>
-using expand_value_tmpls = typename tmp::tuple_cat_result<
-  typename internal::factor_value_traits<V<double>>::ValueTuple...>;
-
-template <int S, typename ISeq, typename OutSeq = tmp::type_sequence<>>
-struct get_value_indices_impl;
-
-template <int S, int Head, int... Tail, typename... Out>
-struct get_value_indices_impl<S,
-                              tmp::index_sequence<Head, Tail...>,
-                              tmp::type_sequence<Out...>>
-  : get_value_indices_impl<
-      S + Head,
-      tmp::index_sequence<Tail...>,
-      tmp::type_sequence<Out...,
-                         typename tmp::make_index_sequence<Head, S>::type>> {};
-
-template <int S, int Head, typename... Out>
-struct get_value_indices_impl<S,
-                              tmp::index_sequence<Head>,
-                              tmp::type_sequence<Out...>>
-  : tmp::type_sequence<Out...,
-                       typename tmp::make_index_sequence<Head, S>::type> {};
-
-template <template <typename...> class... V>
-using get_value_indices = typename get_value_indices_impl<
-  0,
-  typename tmp::index_sequence<
-    internal::factor_value_traits<V<double>>::NumValues...>>::type;
-
-}  // namespace internal
-
-
 /** @} group optimization */
 }  // namespace wave
 
