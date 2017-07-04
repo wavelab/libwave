@@ -45,7 +45,8 @@ Tracker<TDetector, TDescriptor, TMatcher>::offlineTracker(
         ++image_it;
 
         // For remaining images
-        for (image_it = image_it; image_it != image_sequence.end(); ++image_it) {
+        for (image_it = image_it; image_it != image_sequence.end();
+             ++image_it) {
             this->detectAndCompute(*image_it, curr_kp, curr_desc);
             matches = this->matcher.matchDescriptors(
               prev_desc, curr_desc, prev_kp, curr_kp);
