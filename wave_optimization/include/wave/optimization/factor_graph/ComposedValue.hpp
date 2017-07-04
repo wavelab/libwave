@@ -94,8 +94,15 @@ class ComposedValue<D<Scalar, FactorValueOptions::Square>, V...> {
 
     ComposedValue() : mat{ComposedMatrix::Zero()} {}
 
+    ComposedValue(ComposedMatrix matrix) : mat{std::move(matrix)} {}
+
     /** Initialize from pointer to raw array */
     explicit ComposedValue(Scalar *dataptr) : mat{dataptr} {}
+
+    /** Convert to Eigen Matrix */
+    ComposedMatrix toMatrix() const noexcept {
+        return this->mat;
+    }
 
     Scalar *data() noexcept {
         return this->mat.data();

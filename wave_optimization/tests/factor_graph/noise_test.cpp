@@ -54,10 +54,10 @@ TEST_F(NoiseTest, fullNoise) {
     Mat3 expected_inv;
     //@ todo fill in expected_inv using matlab result
 
-    auto res = Eigen::MatrixXd{n.covariance()};
+    auto res = n.covariance().toMatrix();
     EXPECT_PRED2(MatricesNear, cov, res);
 
-    res = Eigen::MatrixXd{n.inverseSqrtCov()};
+    res = n.inverseSqrtCov().toMatrix();
     EXPECT_PRED2(MatricesNear, expected_inv, res);
 }
 

@@ -25,12 +25,11 @@ struct traits {};
  * @tparam V FactorValue or ComposedValue template
  */
 template <template <typename...> class V>
-class FullNoise : V<double, FactorValueOptions::Square> {
-    using Base = V<double, FactorValueOptions::Square>;
-
+class FullNoise {
  public:
-    using Base::Size;
-    using MatrixType = typename Base::ComposedMatrix;
+    using ValueType = V<double, FactorValueOptions::Square>;
+    using MatrixType = typename ValueType::ComposedMatrix;
+    constexpr static int Size = ValueType::Size;
 
     /** Construct with the given covariance matrix */
     explicit FullNoise(MatrixType cov)
@@ -38,17 +37,17 @@ class FullNoise : V<double, FactorValueOptions::Square> {
           // Pre-calculate inverse sqrt covariance, used in normalization
           inverse_sqrt_cov{MatrixType{cov.llt().matrixL()}.inverse()} {}
 
-    MatrixType inverseSqrtCov() const {
+    ValueType inverseSqrtCov() const {
         return this->inverse_sqrt_cov;
     };
 
-    MatrixType covariance() const {
+    ValueType covariance() const {
         return this->covariance_mat;
     };
 
  private:
-    const MatrixType covariance_mat;
-    const MatrixType inverse_sqrt_cov;
+    const ValueType covariance_mat;
+    const ValueType inverse_sqrt_cov;
 };
 
 /**
