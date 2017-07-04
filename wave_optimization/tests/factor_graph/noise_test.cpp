@@ -20,26 +20,25 @@ struct NoiseTest : public ::testing::Test {
 
 
 TEST_F(NoiseTest, diagonalNoise) {
-    const DiagonalNoise<2>::InitType stddev = Vec2{1.1, 2.2};
-    Eigen::Matrix2d expected_cov, expected_inv;
-    expected_cov << 1.1 * 1.1, 0, 0, 2.2 * 2.2;
-    expected_inv << 1 / 1.1, 0, 0, 1 / 2.2;
+    const auto stddev = Vec3{1.1, 2.2, 3.3};
+    Mat3 expected_cov = Vec3{1.1 * 1.1, 2.2 * 2.2, 3.3 * 3.3}.asDiagonal();
+    Mat3 expected_inv = Vec3{1 / 1.1, 1 / 2.2, 1 / 3.3}.asDiagonal();
 
-    auto n = DiagonalNoise<2>{stddev};
+    auto n = DiagonalNoise<Composed>{stddev};
 
-    auto res = Eigen::MatrixXd{n.covariance()};
+    auto res = n.covariance().toMatrix();
     EXPECT_PRED2(MatricesNear, expected_cov, res);
 
-    res = Eigen::MatrixXd{n.inverseSqrtCov()};
+    res = n.inverseSqrtCov().toMatrix();
     EXPECT_PRED2(MatricesNear, expected_inv, res);
 }
 
 TEST_F(NoiseTest, singleNoise) {
-    const DiagonalNoise<1>::InitType stddev = 1.1;
+    auto stddev = 1.1;
 
-    auto n = DiagonalNoise<1>{stddev};
-    EXPECT_DOUBLE_EQ(stddev * stddev, n.covariance());
-    EXPECT_DOUBLE_EQ(1. / stddev, n.inverseSqrtCov());
+    auto n = DiagonalNoise<FactorValue1>{stddev};
+    EXPECT_DOUBLE_EQ(stddev * stddev, n.covariance()[0]);
+    EXPECT_DOUBLE_EQ(1. / stddev, n.inverseSqrtCov()[0]);
 }
 
 TEST_F(NoiseTest, fullNoise) {

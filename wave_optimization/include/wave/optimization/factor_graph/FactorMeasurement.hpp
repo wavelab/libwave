@@ -14,17 +14,12 @@ namespace wave {
 /** @addtogroup optimization
  *  @{ */
 
-/** The default NoiseType parameter to FactorMeasurement */
-template <template <typename...> class V>
-using DefaultNoiseType =
-  DiagonalNoise<internal::factor_value_traits<V<double>>::TotalSize>;
-
 /**
  * A measurement, with associated noise, associated with a Factor
  * @tparam V the type of ValueView representing the measurement's value
  * @tparam NoiseTmpl the type of noise
  */
-template <template <typename...> class V, typename N = DefaultNoiseType<V>>
+template <template <typename...> class V, typename N = DiagonalNoise<V>>
 class FactorMeasurement : public FactorVariable<V> {
     using Base = FactorVariable<V>;
 
@@ -35,12 +30,11 @@ class FactorMeasurement : public FactorVariable<V> {
 
     /** Construct with initial value and initial noise value*/
     explicit FactorMeasurement(ValueType initial,
-                               typename NoiseType::InitType noise_value)
+                               typename NoiseType::ValueType noise_value)
         : Base{std::move(initial)}, noise{std::move(noise_value)} {}
 
     /** Construct with initial value, only for variables of size one*/
-    explicit FactorMeasurement(double initial,
-                               typename NoiseType::InitType noise_value)
+    explicit FactorMeasurement(double initial, double noise_value)
         : Base{initial}, noise{std::move(noise_value)} {}
 
     /** Construct with initial value and initial noise object*/

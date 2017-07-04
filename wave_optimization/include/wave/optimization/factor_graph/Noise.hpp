@@ -52,57 +52,38 @@ class FullNoise {
 
 /**
  * Gaussian noise with diagonal covariance matrix
- * @tparam S dimension of the value
+ * @tparam V FactorValue or ComposedValue template
  */
-template <int S>
+template <template <typename...> class V>
 class DiagonalNoise {
-    using DiagonalMat = Eigen::DiagonalMatrix<double, S>;
-
  public:
-    /** The type accepted by the constructor */
-    using InitType = Eigen::Matrix<double, S, 1>;
+    using ValueType = V<double, void>;
+    using MatrixType = typename ValueType::ComposedMatrix;
+    using SquareValueType = V<double, FactorValueOptions::Square>;
+    constexpr static int Size = ValueType::Size;
 
     /** Construct with the given vector of standard devations (sigmas) */
-    explicit DiagonalNoise(const InitType &stddev)
+    explicit DiagonalNoise(const MatrixType &stddev)
         : covariance_mat{stddev.cwiseProduct(stddev)},
           // Pre-calculate inverse sqrt covariance, used in normalization
           inverse_sqrt_cov{stddev.cwiseInverse()} {}
 
-    DiagonalMat covariance() const {
-        return this->covariance_mat;
-    };
+    /** Construct from double (for value of size 1 only) */
+    explicit DiagonalNoise(double stddev)
+        : DiagonalNoise{Eigen::Matrix<double, 1, 1>{stddev}} {}
 
-    DiagonalMat inverseSqrtCov() const {
-        return this->inverse_sqrt_cov;
-    };
 
- private:
-    const DiagonalMat covariance_mat;
-    const DiagonalMat inverse_sqrt_cov;
-};
+    SquareValueType covariance() const {
+        return SquareValueType{this->covariance_mat.asDiagonal()};
+    }
 
-/**
- * Special case of noise for a single value
- */
-template <>
-class DiagonalNoise<1> {
- public:
-    /** The type accepted by the constructor */
-    using InitType = double;
-
-    /** Construct with the given standard devations (sigma) */
-    explicit DiagonalNoise<1>(double stddev) : stddev{stddev} {}
-
-    double covariance() const {
-        return this->stddev * this->stddev;
-    };
-
-    double inverseSqrtCov() const {
-        return 1. / this->stddev;
+    SquareValueType inverseSqrtCov() const {
+        return SquareValueType{this->inverse_sqrt_cov.asDiagonal()};
     }
 
  private:
-    double stddev;
+    const MatrixType covariance_mat;
+    const MatrixType inverse_sqrt_cov;
 };
 
 /** @} group optimization */
