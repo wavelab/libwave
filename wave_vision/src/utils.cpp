@@ -27,4 +27,15 @@ void projection_matrix(const Mat3 &K, const Mat3 &R, const Vec3 &t, MatX &P) {
     P = K * extrinsics;
 }
 
+void convertKeypoint(const cv::KeyPoint &keypoint, Vec2 &vec_keypoint) {
+    vec_keypoint(0) = keypoint.pt.x;
+    vec_keypoint(1) = keypoint.pt.y;
+}
+
+void convertKeypoints(const std::vector<cv::KeyPoint> &keypoints,
+                      std::vector<Vec2> &vec_keypoints) {
+    for (const auto &k : keypoints) {
+        vec_keypoints.emplace_back(k.pt.x, k.pt.y);
+    }
+}
 }  // namespace wave
