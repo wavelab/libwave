@@ -12,6 +12,7 @@ namespace wave {
 const auto TEST_CONFIG = "tests/config/matcher/brute_force_matcher.yaml";
 const auto TEST_IMAGE_1 = "tests/data/image_center.png";
 const auto TEST_IMAGE_2 = "tests/data/image_right.png";
+const auto FIRST_IMG_PATH = "tests/data/tracker_test_sequence/frame0057.jpg";
 
 // Checks that correct configuration can be loaded
 TEST(BFTests, GoodInitialization) {
@@ -367,17 +368,17 @@ TEST(BFTests, DISABLED_SequenceMatches) {
     prev_it = img_it;
     ++img_it;
 
-    for (img_it; img_it != image_sequence.end(); ++img_it) {
+    for (img_it = img_it; img_it != image_sequence.end(); ++img_it) {
         cv::Mat img_with_matches;
 
         curr_kp = detector.detectFeatures(*img_it);
         curr_desc = descriptor.extractDescriptors(*img_it, curr_kp);
         matches =
-                matcher.matchDescriptors(prev_desc, curr_desc, prev_kp, curr_kp);
+          matcher.matchDescriptors(prev_desc, curr_desc, prev_kp, curr_kp);
 
         // Test has been confirmed visually
         cv::drawMatches(
-                *prev_it, prev_kp, *img_it, curr_kp, matches, img_with_matches);
+          *prev_it, prev_kp, *img_it, curr_kp, matches, img_with_matches);
 
         cv::imshow("Sequential Matches", img_with_matches);
 
