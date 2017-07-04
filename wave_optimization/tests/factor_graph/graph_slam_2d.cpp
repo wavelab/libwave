@@ -57,7 +57,7 @@ class GraphSlam2d : public ::testing::Test {
             // Add noise
             RangeBearing<double> stddev{0.05, 0.01};
             RangeBearing<double> noisy =
-              result + stddev.unaryExpr(&gaussianNoise);
+              result + stddev.toMatrix().unaryExpr(&gaussianNoise);
             auto meas = FactorMeasurement<RangeBearing>{noisy, stddev};
             this->measurements.back().emplace(k, meas);
         }
@@ -75,7 +75,7 @@ class GraphSlam2d : public ::testing::Test {
 };
 
 TEST_F(GraphSlam2d, example) {
-    auto graph = FactorGraph{};
+    FactorGraph graph;
 
     // Make variables for each pose and landmark
     auto poses = std::vector<std::shared_ptr<Pose2DVar>>{};

@@ -43,6 +43,11 @@ class ComposedValue<D<Scalar, Options>, V...> {
     /** Initialize from pointer to raw array */
     explicit ComposedValue(Scalar *dataptr) : mat{dataptr} {}
 
+    /** Convert to Eigen vector */
+    ComposedMatrix toMatrix() const noexcept {
+        return this->mat;
+    }
+
     Scalar *data() noexcept {
         return this->mat.data();
     }
@@ -56,6 +61,17 @@ class ComposedValue<D<Scalar, Options>, V...> {
 
     const Derived operator-(const Derived &rhs) const {
         return Derived{*static_cast<Derived const *>(this)} -= rhs;
+    }
+
+    template <typename OtherDerived>
+    Derived &operator+=(const Eigen::MatrixBase<OtherDerived> &rhs) {
+        this->mat += rhs;
+        return static_cast<Derived &>(*this);
+    }
+
+    template <typename OtherDerived>
+    const Derived operator+(const Eigen::MatrixBase<OtherDerived> &rhs) const {
+        return Derived{*static_cast<Derived const *>(this)} += rhs;
     }
 
     template <int I>
