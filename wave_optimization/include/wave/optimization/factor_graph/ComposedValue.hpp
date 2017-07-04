@@ -35,6 +35,8 @@ class ComposedValue<D<Scalar, Options>, V...> {
 
     ComposedValue() : mat{ComposedMatrix::Zero()} {}
 
+    ComposedValue(ComposedMatrix matrix) : mat{std::move(matrix)} {}
+
     explicit ComposedValue(V<Scalar, Options>... args) {
         this->initMatrix(tmp::make_index_sequence<sizeof...(V)>{},
                          std::move(args)...);
@@ -43,24 +45,24 @@ class ComposedValue<D<Scalar, Options>, V...> {
     /** Initialize from pointer to raw array */
     explicit ComposedValue(Scalar *dataptr) : mat{dataptr} {}
 
-    /** Convert to Eigen vector */
-    ComposedMatrix toMatrix() const noexcept {
+    /** Assign from Eigen vector */
+    template <typename OtherDerived>
+    Derived &operator=(const Eigen::MatrixBase<OtherDerived> &rhs) {
+        this->mat = rhs;
+        return *static_cast<Derived *>(this);
+    }
+
+    /** Get reference to Eigen vector */
+    ComposedMatrix &matrix() noexcept {
+        return this->mat;
+    }
+
+    const ComposedMatrix &matrix() const noexcept {
         return this->mat;
     }
 
     Scalar *data() noexcept {
         return this->mat.data();
-    }
-
-    // Arithmetic operators
-
-    Derived &operator-=(const Derived &rhs) {
-        this->mat -= rhs.mat;
-        return static_cast<Derived &>(*this);
-    }
-
-    const Derived operator-(const Derived &rhs) const {
-        return Derived{*static_cast<Derived const *>(this)} -= rhs;
     }
 
     template <typename OtherDerived>
@@ -115,8 +117,12 @@ class ComposedValue<D<Scalar, FactorValueOptions::Square>, V...> {
     /** Initialize from pointer to raw array */
     explicit ComposedValue(Scalar *dataptr) : mat{dataptr} {}
 
-    /** Convert to Eigen Matrix */
-    ComposedMatrix toMatrix() const noexcept {
+    /** Get reference to Eigen Matrix */
+    ComposedMatrix &matrix() noexcept {
+        return this->mat;
+    }
+
+    const ComposedMatrix &matrix() const noexcept {
         return this->mat;
     }
 

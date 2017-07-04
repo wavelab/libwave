@@ -37,6 +37,7 @@
         using Base = wave::ComposedValue<name<T, O>,                           \
                                          WAVE_IMPL_GET_TYPE_LIST(attributes)>; \
         using Base::Base;                                                      \
+        using Base::operator=;                                                 \
         name() = default;                                                      \
         name(const name &rhs) : Base{rhs} {}                                   \
         WAVE_IMPL_DEFINE_MEMBERS(attributes)                                   \

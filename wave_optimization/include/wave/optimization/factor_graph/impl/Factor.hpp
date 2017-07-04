@@ -21,7 +21,8 @@ bool Factor<F, M, V...>::evaluate(const V<T, O> &... parameters,
     if (ok) {
         // Calculate the normalized residual
         const auto &L = this->measurement.noise.inverseSqrtCov();
-        residuals = L * (residuals - this->measurement.value);
+        residuals =
+          L.matrix() * (residuals.matrix() - this->measurement.value.matrix());
     }
     return ok;
 };

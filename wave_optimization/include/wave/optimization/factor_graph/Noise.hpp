@@ -71,8 +71,7 @@ class DiagonalNoise {
           inverse_sqrt_cov{stddev.cwiseInverse()} {}
 
     /** Construct with the given value, holding standard deviations*/
-    explicit DiagonalNoise(const ValueType &v)
-            : DiagonalNoise{v.toMatrix()} {}
+    explicit DiagonalNoise(const ValueType &v) : DiagonalNoise{v.matrix()} {}
 
     /** Construct from double (for value of size 1 only) */
     explicit DiagonalNoise(double stddev)

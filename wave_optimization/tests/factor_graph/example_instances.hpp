@@ -83,7 +83,8 @@ struct RangeBearingMeasurementFunctor {
                          RangeBearing<T, O> &result) noexcept {
         Eigen::Matrix<T, 2, 1> diff = landmark - pose.position;
         result.range[0] = diff.norm();
-        result.bearing[0] = atan2(diff.y(), diff.x()) - pose.orientation.value();
+        result.bearing[0] =
+          atan2(diff.y(), diff.x()) - pose.orientation.value();
         return true;
     }
 };
