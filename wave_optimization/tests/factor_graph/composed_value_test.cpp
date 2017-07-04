@@ -6,14 +6,10 @@ struct ComposedValueTest : public ::testing::Test {
     // Define a sample composed value (use aliases for sized FactorValue)
     template <typename T, typename O = void>
     struct Composed : ComposedValue<Composed<T, O>,
-                                    T,
-                                    O,
                                     FactorValue1,
                                     FactorValue2,
                                     FactorValue3> {
         using Base = ComposedValue<Composed<T, O>,
-                                   T,
-                                   O,
                                    FactorValue1,
                                    FactorValue2,
                                    FactorValue3>;

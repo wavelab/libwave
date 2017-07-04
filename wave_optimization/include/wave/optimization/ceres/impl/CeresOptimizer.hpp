@@ -202,14 +202,14 @@ inline void CeresOptimizer::addPerfectPrior(
 
     // First, check that the block is not already constant - if so, there's
     // a conflict
-        if (this->problem.IsParameterBlockConstant(ptr)) {
+    if (this->problem.IsParameterBlockConstant(ptr)) {
         throw std::logic_error(
           "Parameter block of ceres problem is already marked constant. "
           "Probably, multiple perfect priors have been added to the same "
           "variables");
-        }
+    }
 
-        this->problem.SetParameterBlockConstant(ptr);
+    this->problem.SetParameterBlockConstant(ptr);
 }
 
 inline void CeresOptimizer::evaluateGraph() {

@@ -38,18 +38,21 @@ using Distance = FactorValue<T, O, 1>;
  * libraries.
  */
 template <typename T, typename O = void>
-struct Pose2D : public ComposedValue<T, O, Position2D, Orientation2D> {
+struct Pose2D : public ComposedValue<Pose2D<T, O>, Position2D, Orientation2D> {
     // Use base class constructors
-    using ComposedValue<T, O, Position2D, Orientation2D>::ComposedValue;
+    using Base = ComposedValue<Pose2D<T, O>, Position2D, Orientation2D>;
+    using Base::Base;
 
     Position2D<T, O> &position = this->template block<0>();
     Orientation2D<T, O> &orientation = this->template block<1>();
 };
 
 template <typename T, typename O = void>
-struct RangeBearing : public ComposedValue<T, O, Distance, Orientation2D> {
+struct RangeBearing
+  : public ComposedValue<RangeBearing<T, O>, Distance, Orientation2D> {
     // Use base class constructors
-    using ComposedValue<T, O, Distance, Orientation2D>::ComposedValue;
+    using Base = ComposedValue<RangeBearing<T, O>, Distance, Orientation2D>;
+    using Base::Base;
 
     Distance<T, O> &range = this->template block<0>();
     Orientation2D<T, O> &bearing = this->template block<1>();

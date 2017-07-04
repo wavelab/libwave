@@ -12,11 +12,16 @@ namespace wave {
 /** @addtogroup optimization
  *  @{ */
 
-template <typename Derived,
+template <typename Derived, template <typename...> class... V>
+class ComposedValue;
+
+template <template <typename, typename> class D,
           typename Scalar,
           typename Options,
           template <typename...> class... V>
-class ComposedValue {
+class ComposedValue<D<Scalar, Options>, V...> {
+    using Derived = D<Scalar, Options>;
+
  public:
     using BlockSizes = tmp::index_sequence<V<Scalar>::SizeAtCompileTime...>;
     constexpr static int TotalSize = tmp::sum_index_sequence<BlockSizes>::value;
