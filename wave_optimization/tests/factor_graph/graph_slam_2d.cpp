@@ -37,7 +37,7 @@ class GraphSlam2d : public ::testing::Test {
             const auto angle = 0;
 
             // Store ground truth
-            this->true_poses.emplace_back(Vec3{x, y, angle});
+            this->true_poses.emplace_back(Pose2D<double>{{x, y}, angle});
 
             // Take noisy measurements of landmarks
             this->takeMeasurements(this->true_poses.back().value);
@@ -93,18 +93,17 @@ TEST_F(GraphSlam2d, example) {
     // Add factors for each measurement
     for (auto i = 0u; i < this->true_poses.size(); ++i) {
         for (const auto &meas : this->measurements[i]) {
-            graph.addFactor(measureRangeBearing,
-                            meas.second,
-                            poses[i],
-                            landmarks[meas.first]);
+            graph.addFactor<RangeBearingMeasurementFunctor>(
+              meas.second, poses[i], landmarks[meas.first]);
         }
     }
 
     // Add one more factor to constrain the first pose at the origin
-    graph.addPerfectPrior({5, 0, 0}, poses[0]);
+    const auto prior = Pose2D<double>{{5, 0}, 0};
+    graph.addPerfectPrior(prior, poses[0]);
 
     // Finally, evaluate the whole graph
-    evaluateGraph(graph);
+    graph.evaluate();
 
     // Check the results
     for (auto i = 0u; i < this->true_poses.size(); ++i) {
@@ -115,22 +114,10 @@ TEST_F(GraphSlam2d, example) {
     }
 
     for (auto i = 0u; i < this->true_landmarks.size(); ++i) {
-        const auto &truth = this->true_landmarks[i].value.position;
-        const auto &estimate = landmarks[i]->value.position;
+        const auto &truth = this->true_landmarks[i].value;
+        const auto &estimate = landmarks[i]->value;
         EXPECT_PRED3(VectorsNearWithPrec, truth, estimate, 0.1) << "landmark #"
                                                                 << i;
-    }
-}
-
-TEST(RangeBearing, jacobian) {
-    auto harness = makeMeasurementFunctionTestHarness(measureRangeBearing);
-
-    SCOPED_TRACE("testing measureRangeBearing()");
-
-    for (auto i = 0; i < 10; ++i) {
-        Vec3 pose = Vec3{0, 0, M_PI / 5. * i};
-        Vec2 landmark = 10. * Vec2::Random();
-        harness.testJacobiansAt(pose, landmark);
     }
 }
 

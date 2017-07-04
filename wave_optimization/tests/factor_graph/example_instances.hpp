@@ -81,7 +81,7 @@ struct RangeBearingMeasurementFunctor {
     static bool evaluate(const Pose2D<T, O> &pose,
                          const Position2D<T, O> &landmark,
                          RangeBearing<T, O> &result) noexcept {
-        Eigen::Matrix<T, 2, 1> diff = landmark.position - pose.position;
+        Eigen::Matrix<T, 2, 1> diff = landmark - pose.position;
         result.range = diff.norm();
         result.bearing = atan2(diff.y(), diff.x()) - pose.orientation.value();
     }
