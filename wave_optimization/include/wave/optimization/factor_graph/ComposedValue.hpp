@@ -131,6 +131,16 @@ class ComposedValue<D<Scalar, FactorValueOptions::Square>, V...> {
         return this->mat.template block<rows, cols>(i, j);
     }
 
+    /** Return a block given references to diagonal blocks */
+    template <typename T, typename O, int R, int C>
+    Eigen::Block<ComposedMatrix, R, C> block(
+      const Eigen::Ref<FactorValue<T, O, R>> &row_block,
+      const Eigen::Ref<FactorValue<T, O, C>> &col_block) {
+        const auto i = this->indexFromRef(row_block);
+        const auto j = this->indexFromRef(col_block);
+        return this->mat.template block<R, C>(i, j);
+    };
+
  private:
     ComposedMatrix mat;
 };

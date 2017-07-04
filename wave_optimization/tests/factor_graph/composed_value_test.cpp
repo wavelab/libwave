@@ -154,4 +154,23 @@ TEST_F(ComposedValueTest, blockSquare) {
     EXPECT_EQ(2, block01.cols());
 }
 
+TEST_F(ComposedValueTest, blockFromRefSquare) {
+    auto c = Composed<double, FactorValueOptions::Square>{};
+    EXPECT_EQ(4, c.block(c.b1, c.b1).size());
+
+    EXPECT_EQ(2, c.block(c.b1, c.b0).rows());
+    EXPECT_EQ(1, c.block(c.b1, c.b0).cols());
+
+
+    EXPECT_EQ(1, c.block(c.b0, c.b1).rows());
+    EXPECT_EQ(2, c.block(c.b0, c.b1).cols());
+}
+
+TEST_F(ComposedValueTest, blockFromRefSquareInvalid) {
+    auto other = Composed<double, FactorValueOptions::Square>{};
+    auto c = Composed<double, FactorValueOptions::Square>{};
+    EXPECT_THROW(c.block(c.b0, other.b2), std::logic_error);
+    EXPECT_THROW(other.block(c.b2, c.b2), std::logic_error);
+}
+
 }  // namespace wave
