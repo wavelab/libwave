@@ -71,9 +71,9 @@ TEST(VisionCommon, convert_keypoints) {
 
     std::vector<cv::KeyPoint> keypoints;
 
-    keypoints.emplace_back(keypoint1);
-    keypoints.emplace_back(keypoint2);
-    keypoints.emplace_back(keypoint3);
+    keypoints.push_back(keypoint1);
+    keypoints.push_back(keypoint2);
+    keypoints.push_back(keypoint3);
 
     std::vector<Vec2> converted;
 
