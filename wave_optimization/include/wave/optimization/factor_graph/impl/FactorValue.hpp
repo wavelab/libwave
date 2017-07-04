@@ -3,24 +3,17 @@ namespace internal {
 
 /** Specialization of factor_value_traits for types of ComposedValue. */
 template <typename, typename>
-struct factor_value_traits_nested;
+struct factor_value_traits_composed;
 
 template <typename V, typename... Nested>
-struct factor_value_traits_nested<V, std::tuple<Nested...>> {
-    constexpr static int NumValues = sizeof...(Nested);
-    using ValueTuple = std::tuple<Nested...>;
-    using BlockSizes = typename tmp::concat_index_sequence<
-      typename factor_value_traits<Nested>::BlockSizes...>::type;
-    constexpr static int TotalSize = tmp::sum_index_sequence<BlockSizes>::value;
+struct factor_value_traits_composed<V, std::tuple<Nested...>> {
+    using MatrixType = typename V::ComposedMatrix;
 };
 
 /** Specialization of factor_value_traits for types of FactorValue */
 template <typename V, typename>
 struct factor_value_traits {
-    constexpr static int NumValues = 1;
-    using ValueTuple = std::tuple<V>;
-    using BlockSizes = tmp::index_sequence<V::SizeAtCompileTime>;
-    constexpr static int TotalSize = V::SizeAtCompileTime;
+    using MatrixType = typename V::Base;
 };
 
 /** Uses factor_value_traits_nested if V::ValueTuple exists. See "SFINAE". */
@@ -28,7 +21,7 @@ template <typename V>
 struct factor_value_traits<
   V,
   typename std::conditional<false, typename V::ValueTuple, void>::type>
-  : factor_value_traits_nested<V, typename V::ValueTuple> {};
+  : factor_value_traits_composed<V, typename V::ValueTuple> {};
 
 
 }  // namespace internal

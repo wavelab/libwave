@@ -28,7 +28,8 @@ template <template <typename...> class V>
 class FullNoise {
  public:
     using ValueType = V<double, FactorValueOptions::Square>;
-    using MatrixType = typename ValueType::ComposedMatrix;
+    using MatrixType =
+      typename internal::factor_value_traits<ValueType>::MatrixType;
     constexpr static int Size = ValueType::Size;
 
     /** Construct with the given covariance matrix */
@@ -58,7 +59,8 @@ template <template <typename...> class V>
 class DiagonalNoise {
  public:
     using ValueType = V<double, void>;
-    using MatrixType = typename ValueType::ComposedMatrix;
+    using MatrixType =
+      typename internal::factor_value_traits<ValueType>::MatrixType;
     using SquareValueType = V<double, FactorValueOptions::Square>;
     constexpr static int Size = ValueType::Size;
 
