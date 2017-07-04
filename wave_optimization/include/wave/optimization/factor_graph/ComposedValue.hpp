@@ -24,8 +24,8 @@ class ComposedValue<D<Scalar, Options>, V...> {
 
  public:
     using BlockSizes = tmp::index_sequence<V<Scalar>::SizeAtCompileTime...>;
-    constexpr static int TotalSize = tmp::sum_index_sequence<BlockSizes>::value;
-    using ComposedMatrix = FactorValue<Scalar, Options, TotalSize>;
+    constexpr static int Size = tmp::sum_index_sequence<BlockSizes>::value;
+    using ComposedMatrix = FactorValue<Scalar, Options, Size>;
     using ValueTuple = std::tuple<V<Scalar, Options>...>;
     using ValueIndices = typename tmp::cumulative_index<BlockSizes>::type;
 

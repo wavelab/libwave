@@ -51,9 +51,10 @@ struct FactorValueOptions {
  *
  * @todo add more syntactic sugar
  */
-template <typename Scalar, typename Options, int Size>
-class FactorValue : public Eigen::Matrix<Scalar, Size, 1> {
+template <typename Scalar, typename Options, int S>
+class FactorValue : public Eigen::Matrix<Scalar, S, 1> {
  public:
+    constexpr static int Size = S;
     using Base = Eigen::Matrix<Scalar, Size, 1>;
 
     // Inherit base constructors and assignment
@@ -74,10 +75,11 @@ class FactorValue : public Eigen::Matrix<Scalar, Size, 1> {
     }
 };
 
-template <typename Scalar, int Size>
-class FactorValue<Scalar, FactorValueOptions::Map, Size>
-  : public Eigen::Map<Eigen::Matrix<Scalar, Size, 1>> {
+template <typename Scalar, int S>
+class FactorValue<Scalar, FactorValueOptions::Map, S>
+  : public Eigen::Map<Eigen::Matrix<Scalar, S, 1>> {
  public:
+    constexpr static int Size = S;
     using Base = Eigen::Map<Eigen::Matrix<Scalar, Size, 1>>;
 
     // Inherit base constructors and assignment
@@ -93,10 +95,11 @@ class FactorValue<Scalar, FactorValueOptions::Map, Size>
 };
 
 /** Specialization for Square option */
-template <typename Scalar, int Size>
-class FactorValue<Scalar, FactorValueOptions::Square, Size>
-  : public Eigen::Matrix<Scalar, Size, Size> {
+template <typename Scalar, int S>
+class FactorValue<Scalar, FactorValueOptions::Square, S>
+  : public Eigen::Matrix<Scalar, S, S> {
  public:
+    constexpr static int Size = S;
     using Base = Eigen::Matrix<Scalar, Size, Size>;
 
     // Inherit base constructors and assignment

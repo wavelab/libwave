@@ -16,7 +16,7 @@ class FactorVariableBase {
     virtual ~FactorVariableBase() = default;
 
     /** Return the number of scalar values in the variable. */
-    virtual std::vector<int> blockSizes() const noexcept = 0;
+    virtual int size() const noexcept = 0;
 
     virtual double *data() noexcept = 0;
 

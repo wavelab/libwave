@@ -42,9 +42,11 @@ struct Pose2D : public ComposedValue<Pose2D<T, O>, Position2D, Orientation2D> {
     // Use base class constructors
     using Base = ComposedValue<Pose2D<T, O>, Position2D, Orientation2D>;
     using Base::Base;
+    Pose2D() = default;
+    Pose2D(const Pose2D &rhs) : Base{rhs} {}
 
-    Position2D<T, O> &position = this->template block<0>();
-    Orientation2D<T, O> &orientation = this->template block<1>();
+    Ref<Position2D<T, O>> position = this->template block<0>();
+    Ref<Orientation2D<T, O>> orientation = this->template block<1>();
 };
 
 template <typename T, typename O = void>
@@ -53,9 +55,11 @@ struct RangeBearing
     // Use base class constructors
     using Base = ComposedValue<RangeBearing<T, O>, Distance, Orientation2D>;
     using Base::Base;
+    RangeBearing() = default;
+    RangeBearing(const RangeBearing &rhs) : Base{rhs} {}
 
-    Distance<T, O> &range = this->template block<0>();
-    Orientation2D<T, O> &bearing = this->template block<1>();
+    Ref<Distance<T, O>> range = this->template block<0>();
+    Ref<Orientation2D<T, O>> bearing = this->template block<1>();
 };
 
 /** Define variable types for each value type */

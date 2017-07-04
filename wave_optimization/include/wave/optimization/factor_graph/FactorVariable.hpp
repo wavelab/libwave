@@ -66,9 +66,8 @@ class FactorVariable : public FactorVariableBase {
     // Access
 
     /** Return the number of scalar values in the variable. */
-    std::vector<int> blockSizes() const noexcept override {
-        return tmp::vectorFromSequence(
-          typename internal::factor_value_traits<ValueType>::BlockSizes{});
+    int size() const noexcept override {
+        return ValueType::Size;
     }
 
     double *data() noexcept override {
