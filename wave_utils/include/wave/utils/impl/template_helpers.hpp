@@ -205,5 +205,49 @@ struct clean_method {
       typename remove_member_pointer<T>::type>::type;
 };
 
+namespace internal {
+template <int I = 0>
+struct array_sum_impl {
+    template <typename T, std::size_t N>
+    constexpr T operator()(std::array<T, N> array) const {
+        return std::get<I - 1>(array) + array_sum_impl<I - 1>{}(array);
+    }
+};
+
+template <>
+struct array_sum_impl<0> {
+    template <typename T, std::size_t N>
+    constexpr T operator()(std::array<T, N>) const {
+        return 0;
+    }
+};
+
+template <int I>
+struct cumulative_array_impl {
+    template <typename T, std::size_t N>
+    constexpr T operator()(std::array<T, N> array) const {
+        return std::get<I - 1>(array) + array_sum_impl<I - 1>{}(array);
+    }
+};
+
+template <typename T, std::size_t N, int... Is>
+constexpr std::array<T, N> cumulativeArrayImpl(std::array<T, N> in,
+                                               index_sequence<Is...>) {
+    // For each element, get the sum up to that element
+    return std::array<T, N>{{array_sum_impl<Is>{}(in)...}};
+}
+}  // namespace internal
+
+
+template <typename T, std::size_t N>
+constexpr T array_sum(std::array<T, N> array) {
+    return internal::array_sum_impl<N>{}(array);
+}
+
+template <typename T, std::size_t N>
+constexpr std::array<T, N> cumulative_array(std::array<T, N> in) {
+    return internal::cumulativeArrayImpl(in, make_index_sequence<N>{});
+};
+
 }  // namespace tmp
 }  // namespace wave

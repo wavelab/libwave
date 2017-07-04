@@ -184,6 +184,16 @@ struct check_all;
 template <typename T>
 struct clean_method;
 
+/** Get sum of an std::array */
+template <typename T, std::size_t N>
+constexpr T array_sum(std::array<T, N> array);
+
+/** Return an array with the cumulative index of each input in the input array.
+ * For example, for an input {2, 3, 3}, the output would be {0, 2, 5}.
+ */
+template <typename T, std::size_t N>
+constexpr std::array<T, N> cumulative_array(std::array<T, N> in);
+
 }  // namespace tmp
 /** @} group utils */
 }  // namespace wave

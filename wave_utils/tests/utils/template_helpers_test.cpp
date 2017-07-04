@@ -182,4 +182,17 @@ TEST(TemplateHelpers, transformTupleTmplWithBinaryFunctorTemplate) {
     EXPECT_FLOAT_EQ(std::get<2>(a) / std::get<2>(b), std::get<2>(res));
 };
 
+TEST(TemplateHelpers, arraySum) {
+    constexpr std::array<int, 4> array{{2, -20, 34, 5}};
+    constexpr auto res = tmp::array_sum(array);
+    EXPECT_EQ(21, res);
+};
+
+TEST(TemplateHelpers, cumulativeArray) {
+    constexpr std::array<int, 5> in{{0, 1, 3, 2, 10}};
+    auto expected = std::array<int, 5>{{0, 0, 1, 4, 6}};
+    constexpr auto res = tmp::cumulative_array(in);
+    EXPECT_EQ(expected, res);
+};
+
 }  // namespace wave
