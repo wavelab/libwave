@@ -2,6 +2,7 @@
 
 // Libwave Headers
 #include "wave/wave_test.hpp"
+#include "wave/vision/utils.hpp"
 #include "wave/vision/detector/fast_detector.hpp"
 #include "wave/vision/descriptor/brisk_descriptor.hpp"
 #include "wave/vision/matcher/brute_force_matcher.hpp"
@@ -344,5 +345,47 @@ TEST(BFTests, DISABLED_LMEDS) {
     cv::imshow("good_matches", img_with_matches);
 
     cv::waitKey(0);
+}
+
+TEST(BFTests, DISABLED_SequenceMatches) {
+    std::vector<cv::KeyPoint> prev_kp, curr_kp;
+    cv::Mat prev_desc, curr_desc;
+    std::vector<cv::DMatch> matches;
+    std::vector<cv::Mat> image_sequence;
+
+    FASTDetector detector;
+    BRISKDescriptor descriptor;
+    BruteForceMatcher matcher;
+
+    image_sequence = readImageSequence(FIRST_IMG_PATH);
+
+    std::vector<cv::Mat>::const_iterator prev_it;
+    std::vector<cv::Mat>::const_iterator img_it = image_sequence.begin();
+
+    prev_kp = detector.detectFeatures(*img_it);
+    prev_desc = descriptor.extractDescriptors(*img_it, prev_kp);
+    prev_it = img_it;
+    ++img_it;
+
+    for (img_it; img_it != image_sequence.end(); ++img_it) {
+        cv::Mat img_with_matches;
+
+        curr_kp = detector.detectFeatures(*img_it);
+        curr_desc = descriptor.extractDescriptors(*img_it, curr_kp);
+        matches =
+                matcher.matchDescriptors(prev_desc, curr_desc, prev_kp, curr_kp);
+
+        // Test has been confirmed visually
+        cv::drawMatches(
+                *prev_it, prev_kp, *img_it, curr_kp, matches, img_with_matches);
+
+        cv::imshow("Sequential Matches", img_with_matches);
+
+        cv::waitKey(0);
+
+        prev_kp = curr_kp;
+        prev_desc = curr_desc;
+        ++prev_it;
+    }
 }
 }  // namespace wave

@@ -97,7 +97,8 @@ Tracker<TDetector, TDescriptor, TMatcher>::offlineTracker(
                 id = curr_ids[m.trainIdx];
                 if (id_map.find(id) != id_map.end()) {
                     // If track exists, update measurements and last_img count
-                    id_map.at(id).measurement.push_back(curr_kp[m.trainIdx].pt);
+                    id_map.at(id).measurement.push_back(
+                      curr_kp.at(m.trainIdx).pt);
                     id_map.at(id).last_image = img_count;
                 } else {
                     FeatureTrack new_track;
