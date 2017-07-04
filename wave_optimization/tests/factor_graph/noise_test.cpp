@@ -20,6 +20,20 @@ struct NoiseTest : public ::testing::Test {
 
 
 TEST_F(NoiseTest, diagonalNoise) {
+    auto stddev = Composed<double>{1.1, {2.2, 3.3}};
+    Mat3 expected_cov = Vec3{1.1 * 1.1, 2.2 * 2.2, 3.3 * 3.3}.asDiagonal();
+    Mat3 expected_inv = Vec3{1 / 1.1, 1 / 2.2, 1 / 3.3}.asDiagonal();
+
+    auto n = DiagonalNoise<Composed>{stddev};
+
+    auto res = n.covariance().toMatrix();
+    EXPECT_PRED2(MatricesNear, expected_cov, res);
+
+    res = n.inverseSqrtCov().toMatrix();
+    EXPECT_PRED2(MatricesNear, expected_inv, res);
+}
+
+TEST_F(NoiseTest, diagonalNoiseFromVector) {
     const auto stddev = Vec3{1.1, 2.2, 3.3};
     Mat3 expected_cov = Vec3{1.1 * 1.1, 2.2 * 2.2, 3.3 * 3.3}.asDiagonal();
     Mat3 expected_inv = Vec3{1 / 1.1, 1 / 2.2, 1 / 3.3}.asDiagonal();

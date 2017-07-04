@@ -73,6 +73,11 @@ class FactorValue : public Eigen::Matrix<Scalar, S, 1> {
         (*this)[0] = d;
         return *this;
     }
+
+    /** Convert to Eigen vector */
+    Base toMatrix() const noexcept {
+        return *this;
+    }
 };
 
 template <typename Scalar, int S>
@@ -90,6 +95,11 @@ class FactorValue<Scalar, FactorValueOptions::Map, S>
     FactorValue &operator=(Scalar d) {
         static_assert(Size == 1, "Can only assign scalar to values of size 1");
         (*this)[0] = d;
+        return *this;
+    }
+
+    /** Convert to Eigen vector map */
+    Base toMatrix() noexcept {
         return *this;
     }
 };
