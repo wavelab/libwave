@@ -23,7 +23,7 @@ struct FeatureTrack {
     /** The assigned ID corresponding to this feature */
     size_t id;
     /** The pixel location of the feature in the sequence of images */
-    std::vector<Vec2> measurement;
+    std::vector<cv::Point2f> measurement;
     /** The first image the feature is seen in */
     size_t first_image;
     /** The last image the feature is seen in*/
@@ -49,6 +49,16 @@ class Tracker {
     std::vector<std::vector<FeatureTrack>> offlineTracker(
       const std::vector<cv::Mat> &image_sequence);
 
+    /** Visualizes feature tracks from offline tracking.
+     *
+     * @param feature_tracks vector of all FeatureTracks from offline tracking
+     * @param images the original images
+     * @return images with drawn feature tracks
+     */
+    std::vector<cv::Mat> drawFeatureTracks(
+      const std::vector<std::vector<FeatureTrack>> &feature_tracks,
+      const std::vector<cv::Mat> &images);
+
  private:
     size_t generateFeatureID() {
         static size_t id = 0;
@@ -62,6 +72,8 @@ class Tracker {
     TDetector detector;
     TDescriptor descriptor;
     TMatcher matcher;
+
+    std::map<size_t, FeatureTrack> id_map;
 };
 /** @} group vision */
 }  // namespace wave

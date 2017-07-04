@@ -30,12 +30,13 @@ TEST(TrackerTests, NoImages) {
     Tracker<FASTDetector, BRISKDescriptor, BruteForceMatcher> tracker(
       detector, descriptor, matcher);
 
-    // ASSERT_THROW(tracker.offlineTracker(image_sequence), std::length_error);
+    ASSERT_THROW(tracker.offlineTracker(image_sequence), std::length_error);
 }
 
-TEST(TrackerTests, OfflineTrackerTest) {
+TEST(TrackerTests, DISABLED_OfflineTrackerTest) {
     std::vector<cv::Mat> image_sequence;
     std::vector<std::vector<FeatureTrack>> feature_tracks;
+    std::vector<cv::Mat> drawn_images;
 
     FASTDetector detector;
     BRISKDescriptor descriptor;
@@ -47,5 +48,15 @@ TEST(TrackerTests, OfflineTrackerTest) {
     image_sequence = readImageSequence(FIRST_IMG_PATH);
 
     feature_tracks = tracker.offlineTracker(image_sequence);
+
+    drawn_images = tracker.drawFeatureTracks(feature_tracks, image_sequence);
+
+    for (const auto &img : drawn_images) {
+        cv::imshow("Feature Tracks", img);
+
+        cv::waitKey(0);
+    }
+
+    ASSERT_NE((int) feature_tracks.size(), 0);
 }
 }  // namespace wave

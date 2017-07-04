@@ -97,6 +97,6 @@ TEST(VisionCommon, read_image_sequence) {
 
     image_sequence = readImageSequence(IMG_FOLDER_PATH);
 
-    ASSERT_EQ((int) image_sequence.size(), 21);
+    ASSERT_EQ((int) image_sequence.size(), 10);
 }
 }  // namespace wave

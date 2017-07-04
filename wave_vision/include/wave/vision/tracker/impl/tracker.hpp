@@ -12,6 +12,35 @@ void Tracker<TDetector, TDescriptor, TMatcher>::detectAndCompute(
 }
 
 template <typename TDetector, typename TDescriptor, typename TMatcher>
+std::vector<cv::Mat>
+Tracker<TDetector, TDescriptor, TMatcher>::drawFeatureTracks(
+  const std::vector<std::vector<FeatureTrack>> &feature_tracks,
+  const std::vector<cv::Mat> &images) {
+    std::vector<cv::Mat> output_images = images;
+    std::vector<cv::Mat>::iterator img_it = output_images.begin()++;
+
+    // Define colour for arrows
+    cv::Scalar colour(255, 255, 0, 1);
+
+    for (const auto &img_tracks : feature_tracks) {
+        cv::Mat out_img = *img_it;
+
+        for (const auto &ft : img_tracks) {
+            std::vector<cv::Point2f> points = ft.measurement;
+            for (size_t i = 1; i < points.size(); ++i) {
+                cv::Point2f curr = points[i];
+                cv::Point2f prev = points[i - 1];
+                cv::arrowedLine(out_img, prev, curr, colour);
+            }
+        }
+
+        ++img_it;
+    }
+
+    return output_images;
+}
+
+template <typename TDetector, typename TDescriptor, typename TMatcher>
 std::vector<std::vector<FeatureTrack>>
 Tracker<TDetector, TDescriptor, TMatcher>::offlineTracker(
   const std::vector<cv::Mat> &image_sequence) {
@@ -53,7 +82,6 @@ Tracker<TDetector, TDescriptor, TMatcher>::offlineTracker(
 
             for (const auto &m : matches) {
                 size_t id;
-                Vec2 img_loc;
 
                 // Check to see if ID has already been assigned to keypoint
                 if (prev_ids.find(m.queryIdx) != prev_ids.end()) {
@@ -69,15 +97,13 @@ Tracker<TDetector, TDescriptor, TMatcher>::offlineTracker(
                 id = curr_ids[m.trainIdx];
                 if (id_map.find(id) != id_map.end()) {
                     // If track exists, update measurements and last_img count
-                    convertKeypoints(curr_kp[m.trainIdx], img_loc);
-                    id_map.at(id).measurement.push_back(img_loc);
+                    id_map.at(id).measurement.push_back(curr_kp[m.trainIdx].pt);
                     id_map.at(id).last_image = img_count;
                 } else {
                     FeatureTrack new_track;
-                    convertKeypoints(curr_kp[m.trainIdx], img_loc);
 
                     new_track.id = id;
-                    new_track.measurement.push_back(img_loc);
+                    new_track.measurement.push_back(curr_kp[m.trainIdx].pt);
                     new_track.first_image = img_count;
                     new_track.last_image = new_track.first_image;
 
