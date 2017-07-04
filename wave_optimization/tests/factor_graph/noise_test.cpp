@@ -3,7 +3,23 @@
 
 namespace wave {
 
-TEST(NoiseTest, diagonalNoise) {
+struct NoiseTest : public ::testing::Test {
+    // Define a sample composed value (use aliases for sized FactorValue)
+    template <typename T, typename O = void>
+    struct Composed
+      : ComposedValue<Composed<T, O>, FactorValue1, FactorValue2> {
+        using Base = ComposedValue<Composed<T, O>, FactorValue1, FactorValue2>;
+        using Base::Base;
+        Composed() = default;
+        // The copy constructor must not copy the reference members
+        Composed(const Composed &rhs) : Base{rhs} {}
+        Ref<FactorValue<T, O, 1>> b0 = this->template block<0>();
+        Ref<FactorValue<T, O, 2>> b1 = this->template block<1>();
+    };
+};
+
+
+TEST_F(NoiseTest, diagonalNoise) {
     const DiagonalNoise<2>::InitType stddev = Vec2{1.1, 2.2};
     Eigen::Matrix2d expected_cov, expected_inv;
     expected_cov << 1.1 * 1.1, 0, 0, 2.2 * 2.2;
@@ -18,7 +34,7 @@ TEST(NoiseTest, diagonalNoise) {
     EXPECT_PRED2(MatricesNear, expected_inv, res);
 }
 
-TEST(NoiseTest, singleNoise) {
+TEST_F(NoiseTest, singleNoise) {
     const DiagonalNoise<1>::InitType stddev = 1.1;
 
     auto n = DiagonalNoise<1>{stddev};
@@ -26,15 +42,17 @@ TEST(NoiseTest, singleNoise) {
     EXPECT_DOUBLE_EQ(1. / stddev, n.inverseSqrtCov());
 }
 
-TEST(NoiseTest, fullNoise) {
-    FullNoise<2>::InitType cov = Mat2{};
-    cov << 3.3, 1.1, 1.1, 4.4;
+TEST_F(NoiseTest, fullNoise) {
+    FullNoise<Composed>::MatrixType cov = Mat3::Ones();
+    cov(0, 0) = 3.3;
+    cov(1, 1) = 4.4;
+    cov(2, 2) = 5.5;
 
-    auto n = FullNoise<2>{cov};
+    auto n = FullNoise<Composed>{cov};
 
     // inverse of cholesky of cov calculated separately
-    Mat2 expected_inv;
-    expected_inv << 0.550481882563180, 0, -0.165976532577323, 0.497929597731969;
+    Mat3 expected_inv;
+    //@ todo fill in expected_inv using matlab result
 
     auto res = Eigen::MatrixXd{n.covariance()};
     EXPECT_PRED2(MatricesNear, cov, res);

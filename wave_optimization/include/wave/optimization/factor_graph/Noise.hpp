@@ -10,6 +10,8 @@
 
 #include "wave/utils/math.hpp"
 #include "wave/optimization/factor_graph/FactorVariableBase.hpp"
+#include "wave/optimization/factor_graph/ComposedValue.hpp"
+
 
 namespace wave {
 /** @addtogroup optimization
@@ -20,33 +22,33 @@ struct traits {};
 
 /**
  * Gaussian noise with full covariance matrix
- * @tparam S dimension of the value
+ * @tparam V FactorValue or ComposedValue template
  */
-template <int S>
-class FullNoise {
-    using SquareMat = Eigen::Matrix<double, S, S>;
+template <template <typename...> class V>
+class FullNoise : V<double, FactorValueOptions::Square> {
+    using Base = V<double, FactorValueOptions::Square>;
 
  public:
-    /** The type accepted by the constructor */
-    using InitType = SquareMat;
+    using Base::Size;
+    using MatrixType = typename Base::ComposedMatrix;
 
     /** Construct with the given covariance matrix */
-    explicit FullNoise(InitType cov)
+    explicit FullNoise(MatrixType cov)
         : covariance_mat{cov},
           // Pre-calculate inverse sqrt covariance, used in normalization
-          inverse_sqrt_cov{SquareMat{cov.llt().matrixL()}.inverse()} {}
+          inverse_sqrt_cov{MatrixType{cov.llt().matrixL()}.inverse()} {}
 
-    Eigen::Matrix<double, S, S> inverseSqrtCov() const {
+    MatrixType inverseSqrtCov() const {
         return this->inverse_sqrt_cov;
     };
 
-    Eigen::Matrix<double, S, S> covariance() const {
+    MatrixType covariance() const {
         return this->covariance_mat;
     };
 
  private:
-    const SquareMat covariance_mat;
-    const SquareMat inverse_sqrt_cov;
+    const MatrixType covariance_mat;
+    const MatrixType inverse_sqrt_cov;
 };
 
 /**

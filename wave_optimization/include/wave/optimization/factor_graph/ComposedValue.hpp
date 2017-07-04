@@ -66,7 +66,7 @@ class ComposedValue<D<Scalar, Options>, V...> {
         return this->mat.template segment<size>(i);
     }
 
- private:
+ protected:
     template <int... Is>
     void initMatrix(tmp::index_sequence<Is...>, V<Scalar, Options>... args) {
         auto loop = {(this->block<Is>() = std::move(args), 0)...};
@@ -141,13 +141,12 @@ class ComposedValue<D<Scalar, FactorValueOptions::Square>, V...> {
         return this->mat.template block<R, C>(i, j);
     };
 
- private:
+ protected:
     ComposedMatrix mat;
 };
 
 /** @} group optimization */
 }  // namespace wave
-
 
 #define WAVE_DEFINE_COMPOSED_VALUE(NAME, ATTRIBUTES) \
     WAVE_DEFINE_COMPOSED_VALUE_IMPL(NAME, ATTRIBUTES)

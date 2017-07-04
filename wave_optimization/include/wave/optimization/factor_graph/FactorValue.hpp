@@ -56,6 +56,7 @@ class FactorValue : public Eigen::Matrix<Scalar, S, 1> {
  public:
     constexpr static int Size = S;
     using Base = Eigen::Matrix<Scalar, Size, 1>;
+    using ComposedMatrix = Base;
 
     // Inherit base constructors and assignment
     using Base::Base;
@@ -81,6 +82,7 @@ class FactorValue<Scalar, FactorValueOptions::Map, S>
  public:
     constexpr static int Size = S;
     using Base = Eigen::Map<Eigen::Matrix<Scalar, Size, 1>>;
+    using ComposedMatrix = Base;
 
     // Inherit base constructors and assignment
     using Base::Base;
@@ -101,6 +103,7 @@ class FactorValue<Scalar, FactorValueOptions::Square, S>
  public:
     constexpr static int Size = S;
     using Base = Eigen::Matrix<Scalar, Size, Size>;
+    using ComposedMatrix = Base;
 
     // Inherit base constructors and assignment
     using Base::Base;
