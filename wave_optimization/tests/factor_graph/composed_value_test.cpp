@@ -25,7 +25,17 @@ struct ComposedValueTest : public ::testing::Test {
 
 
 TEST_F(ComposedValueTest, construct) {
-    Composed<double>{};
+    Composed<double> c{};
+    EXPECT_EQ(1, c.b0.size());
+    EXPECT_EQ(2, c.b1.size());
+    EXPECT_EQ(3, c.b2.size());
+
+    constexpr auto expected_indices = std::array<int, 3>{{0, 1, 3}};
+    constexpr auto expected_sizes = std::array<int, 3>{{1, 2, 3}};
+    constexpr auto indices = c.BlockIndices;
+    constexpr auto sizes = c.BlockSizes;
+    EXPECT_EQ(expected_indices, indices);
+    EXPECT_EQ(expected_sizes, sizes);
 }
 
 TEST_F(ComposedValueTest, constructFromLists) {
@@ -106,10 +116,12 @@ TEST_F(ComposedValueTest, constructSquare) {
     EXPECT_EQ(4, c.b1.size());
     EXPECT_EQ(9, c.b2.size());
 
-    const auto expected_indices = std::array<int, 3>{{0, 1, 3}};
-    const auto expected_sizes = std::array<int, 3>{{1, 2, 3}};
-    EXPECT_EQ(expected_indices, c.BlockIndices);
-    EXPECT_EQ(expected_sizes, c.BlockSizes);
+    constexpr auto expected_indices = std::array<int, 3>{{0, 1, 3}};
+    constexpr auto expected_sizes = std::array<int, 3>{{1, 2, 3}};
+    constexpr auto indices = c.BlockIndices;
+    constexpr auto sizes = c.BlockSizes;
+    EXPECT_EQ(expected_indices, indices);
+    EXPECT_EQ(expected_sizes, sizes);
 }
 
 TEST_F(ComposedValueTest, indexFromRefSquare) {

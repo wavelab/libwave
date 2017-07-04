@@ -24,8 +24,8 @@ class ComposedValue<D<Scalar, Options>, V...> {
     using Derived = D<Scalar, Options>;
 
  public:
-    constexpr static std::array<int, sizeof...(V)> BlockSizes{{
-      V<Scalar>::RowsAtCompileTime...}};
+    constexpr static std::array<int, sizeof...(V)> BlockSizes{
+      {V<Scalar>::RowsAtCompileTime...}};
     constexpr static int Size = tmp::array_sum(BlockSizes);
     constexpr static std::array<int, sizeof...(V)> BlockIndices =
       tmp::cumulative_array(BlockSizes);
@@ -61,8 +61,8 @@ class ComposedValue<D<Scalar, Options>, V...> {
     template <int I>
     Eigen::Ref<typename std::tuple_element<I, ValueTuple>::type>
     block() noexcept {
-        const auto i = BlockIndices[I];
-        const auto size = BlockSizes[I];
+        constexpr auto i = std::get<I>(BlockIndices);
+        constexpr auto size = std::get<I>(BlockSizes);
         return this->mat.template segment<size>(i);
     }
 
@@ -84,8 +84,8 @@ class ComposedValue<D<Scalar, FactorValueOptions::Square>, V...> {
     using Derived = D<Scalar, FactorValueOptions::Square>;
 
  public:
-    constexpr static std::array<int, sizeof...(V)> BlockSizes{{
-      V<Scalar>::RowsAtCompileTime...}};
+    constexpr static std::array<int, sizeof...(V)> BlockSizes{
+      {V<Scalar>::RowsAtCompileTime...}};
     constexpr static int Size = tmp::array_sum(BlockSizes);
     constexpr static std::array<int, sizeof...(V)> BlockIndices =
       tmp::cumulative_array(BlockSizes);
@@ -116,19 +116,18 @@ class ComposedValue<D<Scalar, FactorValueOptions::Square>, V...> {
     template <int I>
     Eigen::Ref<typename std::tuple_element<I, ValueTuple>::type>
     block() noexcept {
-        const auto i = BlockIndices[I];
-        const auto size = BlockSizes[I];
+        constexpr auto i = std::get<I>(BlockIndices);
+        constexpr auto size = std::get<I>(BlockSizes);
         return this->mat.template block<size, size>(i, i);
     }
 
     template <int I, int J>
-    Eigen::Block<ComposedMatrix,
-                 BlockSizes[I], BlockSizes[J]>
+    Eigen::Block<ComposedMatrix, BlockSizes[I], BlockSizes[J]>
     block() noexcept {
-        const auto i = BlockIndices[I];
-        const auto j = BlockIndices[J];
-        const auto rows = BlockSizes[I];
-        const auto cols = BlockSizes[J];
+        constexpr auto i = std::get<I>(BlockIndices);
+        constexpr auto j = std::get<J>(BlockIndices);
+        constexpr auto rows = std::get<I>(BlockSizes);
+        constexpr auto cols = std::get<J>(BlockSizes);
         return this->mat.template block<rows, cols>(i, j);
     }
 
