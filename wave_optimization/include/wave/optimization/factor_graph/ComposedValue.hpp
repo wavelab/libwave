@@ -24,11 +24,14 @@ class ComposedValue<D<Scalar, Options>, V...> {
     using Derived = D<Scalar, Options>;
 
  public:
-    using BlockSizes = tmp::index_sequence<V<Scalar>::SizeAtCompileTime...>;
-    constexpr static int Size = tmp::sum_index_sequence<BlockSizes>::value;
+    constexpr static std::array<int, sizeof...(V)> BlockSizes{{
+      V<Scalar>::RowsAtCompileTime...}};
+    constexpr static int Size = tmp::array_sum(BlockSizes);
+    constexpr static std::array<int, sizeof...(V)> BlockIndices =
+      tmp::cumulative_array(BlockSizes);
     using ComposedMatrix = FactorValue<Scalar, Options, Size>;
     using ValueTuple = std::tuple<V<Scalar, Options>...>;
-    using BlockIndices = typename tmp::cumulative_index<BlockSizes>::type;
+
 
     ComposedValue() : mat{ComposedMatrix::Zero()} {}
 
@@ -58,8 +61,8 @@ class ComposedValue<D<Scalar, Options>, V...> {
     template <int I>
     Eigen::Ref<typename std::tuple_element<I, ValueTuple>::type>
     block() noexcept {
-        const auto i = tmp::index_sequence_element<I, BlockIndices>::value;
-        const auto size = tmp::index_sequence_element<I, BlockSizes>::value;
+        const auto i = BlockIndices[I];
+        const auto size = BlockSizes[I];
         return this->mat.template segment<size>(i);
     }
 
@@ -81,12 +84,13 @@ class ComposedValue<D<Scalar, FactorValueOptions::Square>, V...> {
     using Derived = D<Scalar, FactorValueOptions::Square>;
 
  public:
-    using BlockSizes = tmp::index_sequence<V<Scalar>::SizeAtCompileTime...>;
-    constexpr static int Size = tmp::sum_index_sequence<BlockSizes>::value;
-    using ComposedMatrix =
-      Eigen::Matrix<Scalar, Size, Size>;
+    constexpr static std::array<int, sizeof...(V)> BlockSizes{{
+      V<Scalar>::RowsAtCompileTime...}};
+    constexpr static int Size = tmp::array_sum(BlockSizes);
+    constexpr static std::array<int, sizeof...(V)> BlockIndices =
+      tmp::cumulative_array(BlockSizes);
+    using ComposedMatrix = Eigen::Matrix<Scalar, Size, Size>;
     using ValueTuple = std::tuple<V<Scalar, FactorValueOptions::Square>...>;
-    using BlockIndices = typename tmp::cumulative_index<BlockSizes>::type;
 
     ComposedValue() : mat{ComposedMatrix::Zero()} {}
 
@@ -112,20 +116,19 @@ class ComposedValue<D<Scalar, FactorValueOptions::Square>, V...> {
     template <int I>
     Eigen::Ref<typename std::tuple_element<I, ValueTuple>::type>
     block() noexcept {
-        const auto i = tmp::index_sequence_element<I, BlockIndices>::value;
-        const auto size = tmp::index_sequence_element<I, BlockSizes>::value;
+        const auto i = BlockIndices[I];
+        const auto size = BlockSizes[I];
         return this->mat.template block<size, size>(i, i);
     }
 
     template <int I, int J>
     Eigen::Block<ComposedMatrix,
-                             tmp::index_sequence_element<I, BlockSizes>::value,
-                             tmp::index_sequence_element<J, BlockSizes>::value>
+                 BlockSizes[I], BlockSizes[J]>
     block() noexcept {
-        const auto i = tmp::index_sequence_element<I, BlockIndices>::value;
-        const auto j = tmp::index_sequence_element<J, BlockIndices>::value;
-        const auto rows = tmp::index_sequence_element<I, BlockSizes>::value;
-        const auto cols = tmp::index_sequence_element<J, BlockSizes>::value;
+        const auto i = BlockIndices[I];
+        const auto j = BlockIndices[J];
+        const auto rows = BlockSizes[I];
+        const auto cols = BlockSizes[J];
         return this->mat.template block<rows, cols>(i, j);
     }
 

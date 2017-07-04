@@ -106,16 +106,10 @@ TEST_F(ComposedValueTest, constructSquare) {
     EXPECT_EQ(4, c.b1.size());
     EXPECT_EQ(9, c.b2.size());
 
-    static_assert(
-      std::is_same<
-        tmp::index_sequence<0, 1, 3>,
-        Composed<double, FactorValueOptions::Square>::BlockIndices>::value,
-      "");
-    static_assert(
-      std::is_same<
-        tmp::index_sequence<1, 2, 3>,
-        Composed<double, FactorValueOptions::Square>::BlockSizes>::value,
-      "");
+    const auto expected_indices = std::array<int, 3>{{0, 1, 3}};
+    const auto expected_sizes = std::array<int, 3>{{1, 2, 3}};
+    EXPECT_EQ(expected_indices, c.BlockIndices);
+    EXPECT_EQ(expected_sizes, c.BlockSizes);
 }
 
 TEST_F(ComposedValueTest, indexFromRefSquare) {
