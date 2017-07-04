@@ -21,9 +21,9 @@ struct ComposedValueTest : public ::testing::Test {
         Composed() = default;
         // The copy constructor must not copy the reference members
         Composed(const Composed &rhs) : Base{rhs} {}
-        Eigen::Ref<FactorValue<T, O, 1>> b0 = this->template block<0>();
-        Eigen::Ref<FactorValue<T, O, 2>> b1 = this->template block<1>();
-        Eigen::Ref<FactorValue<T, O, 3>> b2 = this->template block<2>();
+        Ref<FactorValue<T, O, 1>> b0 = this->template block<0>();
+        Ref<FactorValue<T, O, 2>> b1 = this->template block<1>();
+        Ref<FactorValue<T, O, 3>> b2 = this->template block<2>();
     };
 };
 

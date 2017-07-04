@@ -40,6 +40,8 @@ typedef Eigen::MatrixXd MatX;
 typedef Eigen::Affine3d Affine3;
 
 typedef Eigen::Quaterniond Quaternion;
+
+using Eigen::Ref;
 #endif
 
 /** Generates random integer with a upper bound `ub` and lower bound `lb` using
