@@ -42,8 +42,10 @@ class Tracker {
     Tracker(TDetector detector, TDescriptor descriptor, TMatcher matcher)
         : detector(detector), descriptor(descriptor), matcher(matcher) {}
 
-    /** Offline method of image tracking, using list of images already loaded.
-     */
+    /** Destructor */
+    ~Tracker() = default;
+
+    /** Offline feature tracking, using list of images already loaded. */
     std::vector<std::vector<FeatureTrack>> offlineTracker(
       const std::vector<cv::Mat> &image_sequence);
 
@@ -63,5 +65,7 @@ class Tracker {
 };
 /** @} group vision */
 }  // namespace wave
+
+#include "impl/tracker.hpp"
 
 #endif  // WAVE_VISION_TRACKER_HPP

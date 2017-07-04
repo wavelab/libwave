@@ -9,7 +9,17 @@
 
 namespace wave {
 
-const auto IMAGES_PATH = "tests/data/tracker_test_sequence/frame0057.jpg";
+// Path to first image for image sequence
+const auto FIRST_IMG_PATH = "tests/data/tracker_test_sequence/frame0057.jpg";
+
+TEST(TrackerTests, ConstructorTest) {
+    FASTDetector detector;
+    BRISKDescriptor descriptor;
+    BruteForceMatcher matcher;
+
+    Tracker<FASTDetector, BRISKDescriptor, BruteForceMatcher> tracker(
+      detector, descriptor, matcher);
+}
 
 TEST(TrackerTests, NoImages) {
     std::vector<cv::Mat> image_sequence;
@@ -17,13 +27,25 @@ TEST(TrackerTests, NoImages) {
     BRISKDescriptor descriptor;
     BruteForceMatcher matcher;
 
-    // Tracker<FASTDetector, BRISKDescriptor, BruteForceMatcher> tracker(
-    //   detector, descriptor, matcher);
+    Tracker<FASTDetector, BRISKDescriptor, BruteForceMatcher> tracker(
+      detector, descriptor, matcher);
 
     // ASSERT_THROW(tracker.offlineTracker(image_sequence), std::length_error);
 }
 
 TEST(TrackerTests, OfflineTrackerTest) {
     std::vector<cv::Mat> image_sequence;
+    std::vector<std::vector<FeatureTrack>> feature_tracks;
+
+    FASTDetector detector;
+    BRISKDescriptor descriptor;
+    BruteForceMatcher matcher;
+
+    Tracker<FASTDetector, BRISKDescriptor, BruteForceMatcher> tracker(
+      detector, descriptor, matcher);
+
+    image_sequence = readImageSequence(FIRST_IMG_PATH);
+
+    feature_tracks = tracker.offlineTracker(image_sequence);
 }
 }  // namespace wave

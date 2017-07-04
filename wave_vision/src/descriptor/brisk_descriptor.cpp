@@ -91,7 +91,7 @@ BRISKDescriptorParams BRISKDescriptor::getConfiguration() const {
 }
 
 cv::Mat BRISKDescriptor::extractDescriptors(
-  cv::Mat &image, std::vector<cv::KeyPoint> &keypoints) {
+  const cv::Mat &image, std::vector<cv::KeyPoint> &keypoints) {
     cv::Mat descriptors;
 
     this->brisk_descriptor->compute(image, keypoints, descriptors);

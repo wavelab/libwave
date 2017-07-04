@@ -31,7 +31,6 @@ ADD_LIBRARY(
     src/detector/fast_detector.cpp
     src/descriptor/brisk_descriptor.cpp
     src/matcher/brute_force_matcher.cpp
-    src/tracker/tracker.cpp
 )
 TARGET_LINK_LIBRARIES(wave_vision ${WAVE_VISION_DEPS})
 

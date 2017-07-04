@@ -1,6 +1,7 @@
 #include "wave/vision/tracker/tracker.hpp"
 
 namespace wave {
+
 template <typename TDetector, typename TDescriptor, typename TMatcher>
 void Tracker<TDetector, TDescriptor, TMatcher>::detectAndCompute(
   const cv::Mat &image,
@@ -21,7 +22,7 @@ Tracker<TDetector, TDescriptor, TMatcher>::offlineTracker(
     cv::Mat curr_desc;
     std::vector<cv::DMatch> matches;
 
-    std::vector<cv::Mat>::iterator image_it;
+    std::vector<cv::Mat>::const_iterator image_it;
 
     // Variables for ID bookkeeping
 
@@ -32,7 +33,7 @@ Tracker<TDetector, TDescriptor, TMatcher>::offlineTracker(
 
     // Map corresponding IDs with FeatureTrack objects
     std::map<size_t, FeatureTrack> id_map;
-    std::map<size_t, FeatureTrack>::const_iterator id_map_it;
+    std::map<size_t, FeatureTrack>::iterator id_map_it;
     std::vector<FeatureTrack> curr_track;  // Current feature track
     std::vector<std::vector<FeatureTrack>>
       feature_tracks;  // All feature tracks
@@ -41,10 +42,10 @@ Tracker<TDetector, TDescriptor, TMatcher>::offlineTracker(
         // Extract keypoints and descriptors from first image, store values
         image_it = image_sequence.begin();
         this->detectAndCompute(*image_it, prev_kp, prev_desc);
-        image_it++;
+        ++image_it;
 
         // For remaining images
-        for (image_it; image_it != image_sequence.end(); image_it++) {
+        for (image_it = image_it; image_it != image_sequence.end(); ++image_it) {
             this->detectAndCompute(*image_it, curr_kp, curr_desc);
             matches = this->matcher.matchDescriptors(
               prev_desc, curr_desc, prev_kp, curr_kp);
@@ -88,8 +89,8 @@ Tracker<TDetector, TDescriptor, TMatcher>::offlineTracker(
             }
 
             // Prune id_map of any expired feature tracks
-            id_map_it = id_map.begin();
-            for (id_map_it; id_map_it != id_map.end(); id_map_it++) {
+            for (id_map_it = id_map.begin(); id_map_it != id_map.end();
+                 ++id_map_it) {
                 // If the last image seen is NOT the current image
                 if (id_map_it->second.last_image != img_count) {
                     id_map.erase(id_map_it);
@@ -108,7 +109,7 @@ Tracker<TDetector, TDescriptor, TMatcher>::offlineTracker(
             prev_kp = curr_kp;
             prev_desc = curr_desc;
 
-            img_count++;
+            ++img_count;
         }
     } else {
         throw std::length_error("No images loaded for image stream!");
