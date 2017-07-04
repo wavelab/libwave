@@ -23,23 +23,24 @@ void LaserOdom::flagNearbyPoints(const unlong ring, const unlong index) {
     }
 }
 
-float LaserOdom::l2sqrd(const PointType &p1, const PointType &p2) {
+float LaserOdom::l2sqrd(const PointXYZIT &p1, const PointXYZIT &p2) {
     float dx = p1.x - p2.x;
     float dy = p1.y - p2.y;
     float dz = p1.z - p2.z;
     return dx * dx + dy * dy + dz * dz;
 }
 
-float LaserOdom::l2sqrd(const PointType &pt) {
+float LaserOdom::l2sqrd(const PointXYZIT &pt) {
     return pt.x * pt.x + pt.y * pt.y + pt.z * pt.z;
 }
 
-PointType LaserOdom::scale(const PointType &pt, const float scale) {
-    PointType p;
+PointXYZIT LaserOdom::scale(const PointXYZIT &pt, const float scale) {
+    PointXYZIT p;
     p.x = pt.x * scale;
     p.y = pt.y * scale;
     p.z = pt.z * scale;
     p.intensity = pt.intensity;
+    p.tick = pt.tick;
     return p;
 }
 
@@ -62,18 +63,19 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR>& pts,
         }
     }
     for (PointXYZIR pt : pts) {
-        PointType p;
+        PointXYZIT p;
         p.x = pt.x;
         p.y = pt.y;
         p.z = pt.z;
         p.intensity = pt.intensity;
-        this->cur_scan.at(pt.ring).push_back(this->applyIMU(p, tick));
+        p.tick = tick;
+        this->cur_scan.at(pt.ring).push_back(this->applyIMU(p));
     }
 }
 
-PointType LaserOdom::applyIMU(const PointType &p, int tick) {
+PointXYZIT LaserOdom::applyIMU(const PointXYZIT &p) {
     // for now don't transform
-    PointType pt;
+    PointXYZIT pt;
     pt = p;
     return pt;
 }
@@ -90,7 +92,8 @@ void LaserOdom::rollover(TimeType stamp) {
 
 void LaserOdom::undistort() {
     this->generateFeatures();
-//    this->match();
+    this->findCorrespondences();
+    this->match();
 }
 
 /*

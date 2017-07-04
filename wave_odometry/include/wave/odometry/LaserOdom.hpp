@@ -8,6 +8,8 @@
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 #include "wave/odometry/PointXYZIR.hpp"
+#include "wave/odometry/PointXYZIT.hpp"
+#include "wave/odometry/laser_odom_residuals.hpp"
 #include "wave/containers/measurement_container.hpp"
 #include "wave/containers/measurement.hpp"
 #include "wave/utils/math.hpp"
@@ -40,7 +42,7 @@ class LaserOdom {
                    const int tick,
                    TimeType stamp);
     void addIMU(std::vector<double> linacc, Quaternion orientation);
-    pcl::PointCloud<PointType> edges, flats;
+    pcl::PointCloud<PointXYZIT> edges, flats;
 
  private:
     LaserOdomParams param;
@@ -54,23 +56,24 @@ class LaserOdom {
     void computeCurvature();
     void prefilter();
     void generateFeatures();
+    void findCorrespondences();
     void match();
 
-    PointType applyIMU(const PointType &pt, int tick);
+    PointXYZIT applyIMU(const PointXYZIT &pt);
 
     // store for the IMU integral
     MeasurementContainer<IMUMeasurement> imu_trans;
 
     std::vector<double> lin_vel = {0, 0, 0};
     TimeType prv_time, cur_time;
-    static float l2sqrd(const PointType &p1, const PointType &p2);
-    static float l2sqrd(const PointType &pt);
-    static PointType scale(const PointType &pt, const float scale);
+    static float l2sqrd(const PointXYZIT &p1, const PointXYZIT &p2);
+    static float l2sqrd(const PointXYZIT &pt);
+    static PointXYZIT scale(const PointXYZIT &pt, const float scale);
     void flagNearbyPoints(const unlong ring, const unlong index);
     std::vector<std::vector<std::pair<bool, float>>> cur_curve;
     std::vector<std::vector<std::pair<unlong, float>>> filter;
-    std::vector<pcl::PointCloud<PointType>> cur_scan;
-    pcl::PointCloud<PointType> prv_edges, prv_flats;
+    std::vector<pcl::PointCloud<PointXYZIT>> cur_scan;
+    pcl::PointCloud<PointXYZIT> prv_edges, prv_flats;
 };
 
 }  // namespace wave

@@ -1,5 +1,5 @@
-#ifndef WAVE_POINTXYZIR_HPP
-#define WAVE_POINTXYZIR_HPP
+#ifndef WAVE_POINTXYZIT_HPP
+#define WAVE_POINTXYZIT_HPP
 
 #define PCL_NO_PRECOMPILE
 #include <pcl/point_types.h>
@@ -8,13 +8,12 @@
 
 /*
  * Point with extra information
- * intensity for gradient features on a plane (hopefully)
- * ring for easier id
+ * tick for determining time in scan
  */
-struct PointXYZIR {
+struct PointXYZIT {
     PCL_ADD_POINT4D;
     float intensity;
-    uint16_t ring;
+    uint16_t tick;
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 } EIGEN_ALIGN16;
@@ -22,13 +21,13 @@ struct PointXYZIR {
 
 // clang-format off
 
-POINT_CLOUD_REGISTER_POINT_STRUCT(PointXYZIR,
+POINT_CLOUD_REGISTER_POINT_STRUCT(PointXYZIT,
                                      (float, x, x)
                                      (float, y, y)
                                      (float, z, z)
                                      (float, intensity, intensity)
-                                     (uint16_t, ring, ring))
+                                     (uint16_t, tick, tick))
 
 // clang-format on
 
-#endif  // WAVE_POINTXYZIR_HPP
+#endif  // WAVE_POINTXYZIT_HPP

@@ -16,29 +16,37 @@
 namespace wave {
 
 struct PointToLineError {
-    PointToLineError(double scl, double *p, double *pA, double *pB)
-        : scale(scl), pt(p), ptA(pA), ptB(pB) {}
+    PointToLineError() {}
     template <typename T>
-    bool operator()(const T *const trans, T *residuals) const {
+    bool operator()(const T *const trans,
+                    const T *const pt,
+                    const T *const ptA,
+                    const T *const ptB,
+                    const T *const scale,
+                    T *residuals) const {
         // trans[0,1,2] are the angle-axis rotation.
-        T p[3];
-        ceres::AngleAxisRotatePoint(trans, this->pt, p);
         // trans[3,4,5] are the translation.
-        p[0] += trans[3];
-        p[1] += trans[4];
-        p[2] += trans[5];
+        // pt[0,1,2] is the point
+        // ptA[0,1,2] & ptB[0,1,2] define the line
+        // scale scales the transform
+        T p[3];
+        T w[3] = {
+          scale[0] * trans[0], scale[0] * trans[1], scale[0] * trans[2]};
+        ceres::AngleAxisRotatePoint(w, pt, p);
+        // trans[3,4,5] are the translation.
+        p[0] += scale[0] * trans[3];
+        p[1] += scale[0] * trans[4];
+        p[2] += scale[0] * trans[5];
 
-        T int1 = (this->ptA[0] - this->pt[0]) * (this->ptB[1] - this->pt[1]) -
-                 (this->ptA[1] - this->pt[1]) * (this->ptB[0] - this->pt[0]);
-        T int2 = (this->ptA[0] - this->pt[0]) * (this->ptB[2] - this->pt[2]) -
-                 (this->ptA[2] - this->pt[2]) * (this->ptB[0] - this->pt[0]);
-        T int3 = (this->ptA[1] - this->pt[1]) * (this->ptB[2] - this->pt[2]) -
-                 (this->ptA[2] - this->pt[2]) * (this->ptB[1] - this->pt[1]);
-        T diff[3] = {this->ptA[0] - this->ptB[0],
-                     this->ptA[1] - this->ptB[1],
-                     this->ptA[2] - this->ptB[2]};
+        T int1 =
+          (ptA[0] - p[0]) * (ptB[1] - p[1]) - (ptA[1] - p[1]) * (ptB[0] - p[0]);
+        T int2 =
+          (ptA[0] - p[0]) * (ptB[2] - p[2]) - (ptA[2] - p[2]) * (ptB[0] - p[0]);
+        T int3 =
+          (ptA[1] - p[1]) * (ptB[2] - p[2]) - (ptA[2] - p[2]) * (ptB[1] - p[1]);
+        T diff[3] = {ptA[0] - ptB[0], ptA[1] - ptB[1], ptA[2] - ptB[2]};
 
-        residuals[0] = std::sqrt(
+        residuals[0] = ceres::sqrt(
           (int1 * int1 + int2 * int2 + int3 * int3) /
           (diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2]));
 
@@ -46,63 +54,56 @@ struct PointToLineError {
     }
     // Factory to hide the construction of the CostFunction object from
     // the client code.
-    static ceres::CostFunction *Create(const double scale,
-                                       const double *const point,
-                                       const double *const endpt1,
-                                       const double *const endpt2) {
-        return (new ceres::AutoDiffCostFunction<PointToLineError, 1, 6>(
-          new PointToLineError(scale, point, endpt1, endpt2)));
+    static ceres::CostFunction *Create() {
+        return (
+          new ceres::AutoDiffCostFunction<PointToLineError, 1, 6, 3, 3, 3, 1>(
+            new PointToLineError()));
     }
-    double scale;
-    double pt[3];
-    double ptA[3];
-    double ptB[3];
 };
 
 struct PointToPlaneError {
-    PointToPlaneError(double scl, double *p, double *pA, double *pB, double *pC)
-        : scale(scl), pt(p), ptA(pA), ptB(pB), ptC(pC) {}
+    PointToPlaneError() {}
     template <typename T>
-    bool operator()(const T *const trans, T *residuals) const {
+    bool operator()(const T *const trans,
+                    const T *const pt,
+                    const T *const ptA,
+                    const T *const ptB,
+                    const T *const ptC,
+                    const T *const scale,
+                    T *residuals) const {
         // trans[0,1,2] are the angle-axis rotation.
         T p[3];
-        ceres::AngleAxisRotatePoint(trans, this->pt, p);
+        T w[3] = {
+          scale[0] * trans[0], scale[0] * trans[1], scale[0] * trans[2]};
+        ceres::AngleAxisRotatePoint(w, pt, p);
         // trans[3,4,5] are the translation.
-        p[0] += trans[3];
-        p[1] += trans[4];
-        p[2] += trans[5];
+        p[0] += scale[0] * trans[3];
+        p[1] += scale[0] * trans[4];
+        p[2] += scale[0] * trans[5];
 
-        T int1 = (this->ptA[0] - this->ptB[0]) * (this->ptB[1] - this->ptC[1]) -
-                 (this->ptA[1] - this->ptB[1]) * (this->ptB[0] - this->ptC[0]);
-        T int2 = (this->ptA[0] - this->ptB[0]) * (this->ptB[2] - this->ptC[2]) -
-                 (this->ptA[2] - this->ptB[2]) * (this->ptB[0] - this->ptC[0]);
-        T int3 = (this->ptA[1] - this->ptB[1]) * (this->ptB[2] - this->ptC[2]) -
-                 (this->ptA[2] - this->ptB[2]) * (this->ptB[1] - this->ptC[1]);
-        T int4 = (this->ptB[0] - this->pt[0]) * (this->ptB[0] - this->pt[0]) +
-                 (this->ptB[1] - this->pt[1]) * (this->ptB[1] - this->pt[1]) +
-                 (this->ptB[2] - this->pt[2]) * (this->ptB[2] - this->pt[2]);
+        T int1 = (ptA[0] - ptB[0]) * (ptB[1] - ptC[1]) -
+                 (ptA[1] - ptB[1]) * (ptB[0] - ptC[0]);
+        T int2 = (ptA[0] - ptB[0]) * (ptB[2] - ptC[2]) -
+                 (ptA[2] - ptB[2]) * (ptB[0] - ptC[0]);
+        T int3 = (ptA[1] - ptB[1]) * (ptB[2] - ptC[2]) -
+                 (ptA[2] - ptB[2]) * (ptB[1] - ptC[1]);
+        T int4 = (ptB[0] - pt[0]) * (ptB[0] - pt[0]) +
+                 (ptB[1] - pt[1]) * (ptB[1] - pt[1]) +
+                 (ptB[2] - pt[2]) * (ptB[2] - pt[2]);
 
         residuals[0] =
-          std::sqrt((int4 + int1 * int1 + int2 * int2 + int3 * int3) /
-                    (int1 * int1 + int2 * int2 + int3 * int3));
+          ceres::sqrt((int4 + int1 * int1 + int2 * int2 + int3 * int3) /
+                      (int1 * int1 + int2 * int2 + int3 * int3));
 
         return true;
     }
     // Factory to hide the construction of the CostFunction object from
     // the client code.
-    static ceres::CostFunction *Create(const double scale,
-                                       const double *const point,
-                                       const double *const plpt1,
-                                       const double *const plpt2,
-                                       const double *const plpt3) {
-        return (new ceres::AutoDiffCostFunction<PointToLineError, 1, 6>(
-          new PointToLineError(scale, point, plpt1, plpt2, plpt3)));
+    static ceres::CostFunction *Create() {
+        return (new ceres::
+                  AutoDiffCostFunction<PointToPlaneError, 1, 6, 3, 3, 3, 3, 1>(
+                    new PointToPlaneError()));
     }
-    double scale;
-    double pt[3];
-    double ptA[3];
-    double ptB[3];
-    double ptC[3];
 };
 }
 
