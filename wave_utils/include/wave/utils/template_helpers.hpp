@@ -96,6 +96,10 @@ struct sum_index_sequence;
 template <typename Seq, typename Out = index_sequence<0>, int Count = 0>
 struct cumulative_index;
 
+/** Gets one element of an index sequence */
+template <int I, typename Seq>
+struct index_sequence_element;
+
 /** Constructs a vector from an index sequence
  * Note this is a runtime function.
  */

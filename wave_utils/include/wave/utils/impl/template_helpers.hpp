@@ -58,6 +58,17 @@ struct cumulative_index<index_sequence<Head, Tail...>,
                      index_sequence<Res..., Head + Count>,
                      Head + Count> {};
 
+// Recurse, counting down from requested element
+template <int I, int Head, int... Tail>
+struct index_sequence_element<I, index_sequence<Head, Tail...>>
+  : index_sequence_element<I - 1, index_sequence<Tail...>> {};
+
+// Base case
+template <int Head, int... Tail>
+struct index_sequence_element<0, index_sequence<Head, Tail...>> {
+    constexpr static int value = Head;
+};
+
 // Base case: the size of last entry doesn't matter
 template <int Tail, int... Res, int Count>
 struct cumulative_index<index_sequence<Tail>, index_sequence<Res...>, Count>

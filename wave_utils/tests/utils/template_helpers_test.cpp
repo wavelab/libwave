@@ -44,6 +44,13 @@ struct Test_cumulative_index_sequence {
       std::is_same<expected, typename cumulative_index<A>::type>::value, "");
 };
 
+struct Test_index_sequence_element {
+    using A = index_sequence<0, 1, 2, 3, 4>;
+    static_assert(0 == index_sequence_element<0, A>::value, "");
+    static_assert(2 == index_sequence_element<2, A>::value, "");
+    static_assert(4 == index_sequence_element<4, A>::value, "");
+};
+
 struct Test_sum {
     static_assert(sum<0>::value == 0, "");
     static_assert(sum<1, 2, 3>::value == 6, "");
