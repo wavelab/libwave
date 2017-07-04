@@ -105,9 +105,20 @@ TEST_F(ComposedValueTest, constructSquare) {
     EXPECT_EQ(1, c.b0.size());
     EXPECT_EQ(4, c.b1.size());
     EXPECT_EQ(9, c.b2.size());
+
+    static_assert(
+      std::is_same<
+        tmp::index_sequence<0, 1, 3>,
+        Composed<double, FactorValueOptions::Square>::BlockIndices>::value,
+      "");
+    static_assert(
+      std::is_same<
+        tmp::index_sequence<1, 2, 3>,
+        Composed<double, FactorValueOptions::Square>::BlockSizes>::value,
+      "");
 }
 
-TEST_F(ComposedValueTest, indexFromRef) {
+TEST_F(ComposedValueTest, indexFromRefSquare) {
     auto other = Composed<double, FactorValueOptions::Square>{};
     auto c = Composed<double, FactorValueOptions::Square>{};
     EXPECT_EQ(0, c.indexFromRef(c.b0));
@@ -119,6 +130,22 @@ TEST_F(ComposedValueTest, indexFromRef) {
     EXPECT_THROW(c.indexFromRef(other.b2), std::logic_error);
     EXPECT_THROW(other.indexFromRef(c.b0), std::logic_error);
     EXPECT_THROW(other.indexFromRef(c.b2), std::logic_error);
+}
+
+TEST_F(ComposedValueTest, blockSquare) {
+    auto c = Composed<double, FactorValueOptions::Square>{};
+    EXPECT_EQ(4, c.block<1>().size());
+
+    auto block11 = c.block<1, 1>();
+    EXPECT_EQ(4, block11.size());
+
+    auto block10 = c.block<1, 0>();
+    EXPECT_EQ(2, block10.rows());
+    EXPECT_EQ(1, block10.cols());
+
+    auto block01 = c.block<0, 1>();
+    EXPECT_EQ(1, block01.rows());
+    EXPECT_EQ(2, block01.cols());
 }
 
 }  // namespace wave
