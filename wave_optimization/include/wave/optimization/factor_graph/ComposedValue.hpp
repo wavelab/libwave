@@ -18,25 +18,30 @@ template <typename Derived,
           template <typename...> class... V>
 class ComposedValue {
  public:
+    using BlockSizes = tmp::index_sequence<V<Scalar>::SizeAtCompileTime...>;
+    constexpr static int TotalSize = tmp::sum_index_sequence<BlockSizes>::value;
+    using ComposedMatrix = FactorValue<Scalar, Options, TotalSize>;
     using ValueTuple = std::tuple<V<Scalar, Options>...>;
+    using ValueIndices = typename tmp::cumulative_index<BlockSizes>::type;
 
-    ComposedValue() : blocks{V<Scalar, Options>::Zero()...} {}
+    ComposedValue() : mat{ComposedMatrix::Zero()} {}
 
-    explicit ComposedValue(V<Scalar, Options>... args)
-        : blocks{std::move(args)...} {}
+    explicit ComposedValue(V<Scalar, Options>... args) {
+        this->initMatrix(tmp::make_index_sequence<sizeof...(V)>{},
+                         std::move(args)...);
+    }
 
-    explicit ComposedValue(tmp::replacet<Scalar *, V>... args)
-        : blocks{V<Scalar, FactorValueOptions::Map>{args}...} {}
+    /** Initialize from pointer to raw array (for Map variant only) */
+    explicit ComposedValue(Scalar *dataptr) : mat{dataptr} {}
 
-    std::vector<Scalar *> blockData() noexcept {
-        return this->blockDataImpl(tmp::make_index_sequence<sizeof...(V)>{});
+    Scalar *data() noexcept {
+        return this->mat.data();
     }
 
     // Arithmetic operators
 
     Derived &operator-=(const Derived &rhs) {
-        this->blocks =
-          tmp::transformTupleTmpl<std::minus>(this->blocks, rhs.blocks);
+        this->mat -= rhs.mat;
         return static_cast<Derived &>(*this);
     }
 
@@ -46,17 +51,21 @@ class ComposedValue {
 
  protected:
     template <int I>
-    typename std::tuple_element<I, ValueTuple>::type &block() noexcept {
-        return std::get<I>(this->blocks);
+    Eigen::Ref<typename std::tuple_element<I, ValueTuple>::type>
+    block() noexcept {
+        const auto i = tmp::index_sequence_element<I, ValueIndices>::value;
+        const auto size = tmp::index_sequence_element<I, BlockSizes>::value;
+        return this->mat.template segment<size>(i);
     }
 
  private:
     template <int... Is>
-    std::vector<Scalar *> blockDataImpl(tmp::index_sequence<Is...>) noexcept {
-        return {std::get<Is>(this->blocks).data()...};
+    void initMatrix(tmp::index_sequence<Is...>, V<Scalar, Options>... args) {
+        auto loop = {(this->block<Is>() = std::move(args), 0)...};
+        (void) loop;
     }
 
-    ValueTuple blocks;
+    ComposedMatrix mat;
 };
 
 /** @} group optimization */

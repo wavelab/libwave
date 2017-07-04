@@ -176,16 +176,12 @@ void CeresOptimizer::addFactor(std::shared_ptr<Factor<F, M, V...>> factor) {
     auto data_ptrs = std::vector<double *>{};
 
     for (const auto &v : factor->variables()) {
-        const auto &v_ptrs = v->blockData();
-        const auto &v_sizes = v->blockSizes();
-        data_ptrs.insert(data_ptrs.end(), v_ptrs.begin(), v_ptrs.end());
+        data_ptrs.push_back(v->data());
 
-        for (auto i = 0u; i < v_ptrs.size(); ++i) {
-            // Explicitly adding parameters "causes additional correctness
-            // checking"
-            // @todo can add local parametrization in this call
-            this->problem.AddParameterBlock(v_ptrs[i], v_sizes[i]);
-        }
+        // Explicitly adding parameters "causes additional correctness
+        // checking"
+        // @todo can add local parametrization in this call
+        this->problem.AddParameterBlock(v->data(), v->size());
     }
 
     // Finally, give ceres the cost function and its parameter blocks.
@@ -199,26 +195,21 @@ inline void CeresOptimizer::addPerfectPrior(
     // Although a pefect prior acts on only one variable, it may be composed of
     // multiple FactorValues. Get all the data pointers.
     const auto &v = factor->variables().front();
-    auto data_ptrs = std::vector<double *>{};
-    const auto &v_ptrs = v->blockData();
-    const auto &v_sizes = v->blockSizes();
-    data_ptrs.insert(data_ptrs.end(), v_ptrs.begin(), v_ptrs.end());
-    for (auto i = 0u; i < v_ptrs.size(); ++i) {
-        // Add parameter blocks to the problem, and set them constant since
-        // this is a zero-noise prior
-        this->problem.AddParameterBlock(v_ptrs[i], v_sizes[i]);
+    const auto ptr = v->data();
+    // Add parameter block to the problem, and set constant since this is
+    // a zero-noise prior
+    this->problem.AddParameterBlock(ptr, v->size());
 
-        // First, check that the block is not already constant - if so, there's
-        // a conflict
-        if (this->problem.IsParameterBlockConstant(v_ptrs[i])) {
-            throw std::logic_error(
-              "Parameter block of ceres problem is already marked constant. "
-              "Probably, multiple perfect priors have been added to the same "
-              "variables");
+    // First, check that the block is not already constant - if so, there's
+    // a conflict
+        if (this->problem.IsParameterBlockConstant(ptr)) {
+        throw std::logic_error(
+          "Parameter block of ceres problem is already marked constant. "
+          "Probably, multiple perfect priors have been added to the same "
+          "variables");
         }
 
-        this->problem.SetParameterBlockConstant(v_ptrs[i]);
-    }
+        this->problem.SetParameterBlockConstant(ptr);
 }
 
 inline void CeresOptimizer::evaluateGraph() {

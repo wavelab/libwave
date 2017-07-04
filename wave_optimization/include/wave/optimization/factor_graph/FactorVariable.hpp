@@ -71,8 +71,8 @@ class FactorVariable : public FactorVariableBase {
           typename internal::factor_value_traits<ValueType>::BlockSizes{});
     }
 
-    std::vector<double *> blockData() noexcept override {
-        return internal::factor_value_traits<ValueType>::blockData(this->value);
+    double *data() noexcept override {
+        return this->value.data();
     }
 
     void print(std::ostream &os) const override {

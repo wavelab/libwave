@@ -21,9 +21,9 @@ struct ComposedValueTest : public ::testing::Test {
         Composed() = default;
         // The copy constructor must not copy the reference members
         Composed(const Composed &rhs) : Base{rhs} {}
-        FactorValue<T, O, 1> &b0 = this->template block<0>();
-        FactorValue<T, O, 2> &b1 = this->template block<1>();
-        FactorValue<T, O, 3> &b2 = this->template block<2>();
+        Eigen::Ref<FactorValue<T, O, 1>> b0 = this->template block<0>();
+        Eigen::Ref<FactorValue<T, O, 2>> b1 = this->template block<1>();
+        Eigen::Ref<FactorValue<T, O, 3>> b2 = this->template block<2>();
     };
 };
 
@@ -41,9 +41,8 @@ TEST_F(ComposedValueTest, constructFromLists) {
 
 TEST_F(ComposedValueTest, getData) {
     auto c = Composed<double>{1.1, {2.2, 3.3}, {4.4, 5.5, 6.6}};
-    auto res = c.blockData();
-    auto expected =
-      std::vector<double *>{c.b0.data(), c.b1.data(), c.b2.data()};
+    auto res = c.data();
+    auto expected = c.b0.data();
     EXPECT_EQ(expected, res);
 }
 
@@ -52,17 +51,19 @@ TEST_F(ComposedValueTest, constructMapped) {
     auto a1 = Vec2{2.2, 3.3};
     auto a2 = Vec3{4.4, 5.5, 6.6};
 
-    auto c =
-      Composed<double, FactorValueOptions::Map>{&a0, a1.data(), a2.data()};
+    Vec6 buf;
+    buf << a0, a1, a2;
+
+    auto c = Composed<double, FactorValueOptions::Map>{buf.data()};
     EXPECT_EQ(a0, c.b0.value());
     EXPECT_EQ(a1, c.b1);
     EXPECT_EQ(a2, c.b2);
-    EXPECT_EQ(&a0, c.b0.data());
-    EXPECT_EQ(a1.data(), c.b1.data());
-    EXPECT_EQ(a2.data(), c.b2.data());
+    EXPECT_EQ(buf.data(), c.b0.data());
+    EXPECT_EQ(buf.data() + 1, c.b1.data());
+    EXPECT_EQ(buf.data() + 3, c.b2.data());
 
     static_assert(
-      std::is_same<FactorValue<double, FactorValueOptions::Map, 1> &,
+      std::is_same<Eigen::Ref<FactorValue<double, FactorValueOptions::Map, 1>>,
                    decltype(c.b0)>::value,
       "");
 }

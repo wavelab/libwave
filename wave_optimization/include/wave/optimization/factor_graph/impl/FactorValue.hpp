@@ -12,9 +12,6 @@ struct factor_value_traits_nested<V, std::tuple<Nested...>> {
     using BlockSizes = typename tmp::concat_index_sequence<
       typename factor_value_traits<Nested>::BlockSizes...>::type;
     constexpr static int TotalSize = tmp::sum_index_sequence<BlockSizes>::value;
-    static std::vector<double *> blockData(V &v) {
-        return {v.blockData()};
-    }
 };
 
 /** Specialization of factor_value_traits for types of FactorValue */
@@ -24,9 +21,6 @@ struct factor_value_traits {
     using ValueTuple = std::tuple<V>;
     using BlockSizes = tmp::index_sequence<V::SizeAtCompileTime>;
     constexpr static int TotalSize = V::SizeAtCompileTime;
-    static std::vector<double *> blockData(V &v) {
-        return {v.data()};
-    }
 };
 
 /** Uses factor_value_traits_nested if V::ValueTuple exists. See "SFINAE". */
