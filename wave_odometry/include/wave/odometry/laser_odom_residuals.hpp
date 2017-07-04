@@ -9,73 +9,100 @@
 #define WAVE_LASER_ODOM_RESIDUALS_HPP
 
 #include <ceres/ceres.h>
+#include <ceres/rotation.h>
 #include <Eigen/Core>
 #include "wave/geometry/rotation.hpp"
 
 namespace wave {
 
-class PointToLineFunction : public ceres::SizedCostFunction<1, 6> {
- public:
-    float scale;
-    float pt[3];
-    float ptA[3];
-    float ptB[3];
+struct PointToLineError {
+    PointToLineError(double scl, double *p, double *pA, double *pB)
+        : scale(scl), pt(p), ptA(pA), ptB(pB) {}
+    template <typename T>
+    bool operator()(const T *const trans, T *residuals) const {
+        // trans[0,1,2] are the angle-axis rotation.
+        T p[3];
+        ceres::AngleAxisRotatePoint(trans, this->pt, p);
+        // trans[3,4,5] are the translation.
+        p[0] += trans[3];
+        p[1] += trans[4];
+        p[2] += trans[5];
 
-    PointToLineFunction(float scl, float p[], float pA[], float pB[])
-        : scale(scl), pt(p), ptA(pA), ptB(pB){};
-    virtual ~PointToLineFunction() {}
-    virtual bool Evaluate(double const *const *parameters,
-                          double *residuals,
-                          double **jacobians) const {
-        Rotation R;
-        Vec3 w(parameters[0][3], parameters[0][4], parameters[0][5]);
-        R.setFromExpMap(this->scale * w);
+        T int1 = (this->ptA[0] - this->pt[0]) * (this->ptB[1] - this->pt[1]) -
+                 (this->ptA[1] - this->pt[1]) * (this->ptB[0] - this->pt[0]);
+        T int2 = (this->ptA[0] - this->pt[0]) * (this->ptB[2] - this->pt[2]) -
+                 (this->ptA[2] - this->pt[2]) * (this->ptB[0] - this->pt[0]);
+        T int3 = (this->ptA[1] - this->pt[1]) * (this->ptB[2] - this->pt[2]) -
+                 (this->ptA[2] - this->pt[2]) * (this->ptB[1] - this->pt[1]);
+        T diff[3] = {this->ptA[0] - this->ptB[0],
+                     this->ptA[1] - this->ptB[1],
+                     this->ptA[2] - this->ptB[2]};
 
-        // aliases to make matlab copy-paste easier
-        // clang-format off
-        float T1 = this->scale * parameters[0][0],
-                T2 = this->scale * parameters[0][1],
-                T3 = this->scale * parameters[0][2];
-        float &X1 = this->pt[0],
-            &X2 = this->pt[1],
-            &X3 = this->pt[2];
-        float &XA1 = this->ptA[0],
-            &XA2 = this->ptA[1],
-            &XA3 = this->ptA[2];
-        float &XB1 = this->ptB[0],
-            &XB2 = this->ptB[1],
-            &XB3 = this->ptB[2];
-        auto Rmat = R.toRotationMatrix();
+        residuals[0] = std::sqrt(
+          (int1 * int1 + int2 * int2 + int3 * int3) /
+          (diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2]));
 
-        // clang-format on
-        float inter1 =
-          ((T1 - XA1 + Rmat(0, 0) * X1 + Rmat(0, 1) * X2 + Rmat(0, 2) * X3) *
-             (T2 - XB2 + Rmat(1, 0) * X1 + Rmat(1, 1) * X2 + Rmat(1, 2) * X3) -
-           (T2 - XA2 + Rmat(1, 0) * X1 + Rmat(1, 1) * X2 + Rmat(1, 2) * X3) *
-             (T1 - XB1 + Rmat(0, 0) * X1 + Rmat(0, 1) * X2 + Rmat(0, 2) * X3));
-
-        float inter2 = ((T1 - XA1 + Rmat(0,0) * X1 + Rmat(0,1) * X2 + Rmat(0,2) * X3) *
-                          (T3 - XB3 + Rmat(2,0) * X1 + Rmat(2,1) * X2 + Rmat(2,2) * X3) -
-                        (T3 - XA3 + Rmat(2,0) * X1 + Rmat(2,1) * X2 + Rmat(2,2) * X3) *
-                          (T1 - XB1 + Rmat(0,0) * X1 + Rmat(0,1) * X2 + Rmat(0,2) * X3));
-
-        float inter3 = ((T2 - XA2 + Rmat(1,0) * X1 + Rmat(1,1) * X2 + Rmat(1,2) * X3) *
-                          (T3 - XB3 + Rmat(2,0) * X1 + Rmat(2,1) * X2 + Rmat(2,2) * X3) -
-                        (T3 - XA3 + Rmat(2,0) * X1 + Rmat(2,1) * X2 + Rmat(2,2) * X3) *
-                          (T2 - XB2 + Rmat(1,0) * X1 + Rmat(1,1) * X2 + Rmat(1,2) * X3));
-
-        float inter4 = ((XA1 - XB1)*(XA1 - XB1) + (XA2 - XB2)*(XA2 - XB2) + (XA3 - XB3)*(XA3 - XB3));
-
-        if (inter4 == 0f) {
-            return false;
-        }
-
-        residuals[0] = sqrt((inter1 * inter1 + inter2 * inter2 + inter3*inter3) / inter4);
-
-        if (jacobians != NULL && jacobians[0] != NULL) {
-            Mat3 J_exp = kindr::getJacobianOfExponentialMap(w);
-        }
+        return true;
     }
+    // Factory to hide the construction of the CostFunction object from
+    // the client code.
+    static ceres::CostFunction *Create(const double scale,
+                                       const double *const point,
+                                       const double *const endpt1,
+                                       const double *const endpt2) {
+        return (new ceres::AutoDiffCostFunction<PointToLineError, 1, 6>(
+          new PointToLineError(scale, point, endpt1, endpt2)));
+    }
+    double scale;
+    double pt[3];
+    double ptA[3];
+    double ptB[3];
+};
+
+struct PointToPlaneError {
+    PointToPlaneError(double scl, double *p, double *pA, double *pB, double *pC)
+        : scale(scl), pt(p), ptA(pA), ptB(pB), ptC(pC) {}
+    template <typename T>
+    bool operator()(const T *const trans, T *residuals) const {
+        // trans[0,1,2] are the angle-axis rotation.
+        T p[3];
+        ceres::AngleAxisRotatePoint(trans, this->pt, p);
+        // trans[3,4,5] are the translation.
+        p[0] += trans[3];
+        p[1] += trans[4];
+        p[2] += trans[5];
+
+        T int1 = (this->ptA[0] - this->ptB[0]) * (this->ptB[1] - this->ptC[1]) -
+                 (this->ptA[1] - this->ptB[1]) * (this->ptB[0] - this->ptC[0]);
+        T int2 = (this->ptA[0] - this->ptB[0]) * (this->ptB[2] - this->ptC[2]) -
+                 (this->ptA[2] - this->ptB[2]) * (this->ptB[0] - this->ptC[0]);
+        T int3 = (this->ptA[1] - this->ptB[1]) * (this->ptB[2] - this->ptC[2]) -
+                 (this->ptA[2] - this->ptB[2]) * (this->ptB[1] - this->ptC[1]);
+        T int4 = (this->ptB[0] - this->pt[0]) * (this->ptB[0] - this->pt[0]) +
+                 (this->ptB[1] - this->pt[1]) * (this->ptB[1] - this->pt[1]) +
+                 (this->ptB[2] - this->pt[2]) * (this->ptB[2] - this->pt[2]);
+
+        residuals[0] =
+          std::sqrt((int4 + int1 * int1 + int2 * int2 + int3 * int3) /
+                    (int1 * int1 + int2 * int2 + int3 * int3));
+
+        return true;
+    }
+    // Factory to hide the construction of the CostFunction object from
+    // the client code.
+    static ceres::CostFunction *Create(const double scale,
+                                       const double *const point,
+                                       const double *const plpt1,
+                                       const double *const plpt2,
+                                       const double *const plpt3) {
+        return (new ceres::AutoDiffCostFunction<PointToLineError, 1, 6>(
+          new PointToLineError(scale, point, plpt1, plpt2, plpt3)));
+    }
+    double scale;
+    double pt[3];
+    double ptA[3];
+    double ptB[3];
+    double ptC[3];
 };
 }
 
