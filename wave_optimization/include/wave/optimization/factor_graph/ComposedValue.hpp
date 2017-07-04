@@ -7,6 +7,7 @@
 #define WAVE_OPTIMIZATION_FACTOR_GRAPH_COMPOSEDVALUE_HPP
 
 #include "wave/optimization/factor_graph/FactorValue.hpp"
+#include "wave/optimization/factor_graph/impl/define_composed_value.hpp"
 
 namespace wave {
 /** @addtogroup optimization
@@ -75,5 +76,9 @@ class ComposedValue<D<Scalar, Options>, V...> {
 
 /** @} group optimization */
 }  // namespace wave
+
+
+#define WAVE_DEFINE_COMPOSED_VALUE(NAME, ATTRIBUTES) \
+    WAVE_DEFINE_COMPOSED_VALUE_IMPL(NAME, ATTRIBUTES)
 
 #endif  // WAVE_OPTIMIZATION_FACTOR_GRAPH_COMPOSEDVALUE_HPP
