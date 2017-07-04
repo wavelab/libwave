@@ -98,4 +98,27 @@ TEST_F(ComposedValueTest, subtract) {
     EXPECT_EQ(a2 - b2, c.b2);
 }
 
+// Test the Square option
+// Produces a ComposedValue with a square block for each nested value
+TEST_F(ComposedValueTest, constructSquare) {
+    Composed<double, FactorValueOptions::Square> c{};
+    EXPECT_EQ(1, c.b0.size());
+    EXPECT_EQ(4, c.b1.size());
+    EXPECT_EQ(9, c.b2.size());
+}
+
+TEST_F(ComposedValueTest, indexFromRef) {
+    auto other = Composed<double, FactorValueOptions::Square>{};
+    auto c = Composed<double, FactorValueOptions::Square>{};
+    EXPECT_EQ(0, c.indexFromRef(c.b0));
+    EXPECT_EQ(1, c.indexFromRef(c.b1));
+    EXPECT_EQ(3, c.indexFromRef(c.b2));
+
+    // Throw on out-of-bounds input
+    EXPECT_THROW(c.indexFromRef(other.b0), std::logic_error);
+    EXPECT_THROW(c.indexFromRef(other.b2), std::logic_error);
+    EXPECT_THROW(other.indexFromRef(c.b0), std::logic_error);
+    EXPECT_THROW(other.indexFromRef(c.b2), std::logic_error);
+}
+
 }  // namespace wave
