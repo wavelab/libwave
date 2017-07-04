@@ -94,7 +94,7 @@ Tracker<TDetector, TDescriptor, TMatcher>::offlineTracker(
                 }
 
                 // Check if ID has associated FeatureTrack.
-                id = curr_ids[m.trainIdx];
+                id = prev_ids.at(m.queryIdx);
                 if (id_map.find(id) != id_map.end()) {
                     // If track exists, update measurements and last_img count
                     id_map.at(id).measurement.push_back(
@@ -104,7 +104,7 @@ Tracker<TDetector, TDescriptor, TMatcher>::offlineTracker(
                     FeatureTrack new_track;
 
                     new_track.id = id;
-                    new_track.measurement.push_back(curr_kp[m.trainIdx].pt);
+                    new_track.measurement.push_back(curr_kp.at(m.trainIdx).pt);
                     new_track.first_image = img_count;
                     new_track.last_image = new_track.first_image;
 
@@ -113,15 +113,19 @@ Tracker<TDetector, TDescriptor, TMatcher>::offlineTracker(
                 }
 
                 // Add associated track to current tracks in image.
-                curr_track.push_back(id_map[id]);
+                curr_track.push_back(id_map.at(id));
             }
 
             // Prune id_map of any expired feature tracks
-            for (id_map_it = id_map.begin(); id_map_it != id_map.end();
-                 ++id_map_it) {
+            id_map_it = id_map.begin();
+            for (id_map_it = id_map.begin(); id_map_it != id_map.end();) {
                 // If the last image seen is NOT the current image
                 if (id_map_it->second.last_image != img_count) {
-                    id_map.erase(id_map_it);
+                    // Erase value in map
+                    id_map_it = id_map.erase(id_map_it);
+                } else {
+                    // Move to the next value
+                    id_map_it++;
                 }
             }
 

@@ -53,11 +53,8 @@ TEST(VisionCommon, convert_single_keypoint) {
     cv::KeyPoint keypoint1(5.f, 5.f, 1.f);
     cv::KeyPoint keypoint2(-1.f, 2.f, 1.f);
 
-    Vec2 conv1;
-    Vec2 conv2;
-
-    convertKeypoint(keypoint1, conv1);
-    convertKeypoint(keypoint2, conv2);
+    Vec2 conv1 = convertKeypoint(keypoint1);
+    Vec2 conv2 = convertKeypoint(keypoint2);
 
     ASSERT_EQ(keypoint1.pt.x, conv1(0));
     ASSERT_EQ(keypoint1.pt.y, conv1(1));
@@ -76,9 +73,7 @@ TEST(VisionCommon, convert_keypoints) {
     keypoints.push_back(keypoint2);
     keypoints.push_back(keypoint3);
 
-    std::vector<Vec2> converted;
-
-    convertKeypoints(keypoints, converted);
+    std::vector<Vec2> converted = convertKeypoints(keypoints);
 
     ASSERT_EQ(converted.at(0)(0), keypoint1.pt.x);
     ASSERT_EQ(converted.at(0)(1), keypoint1.pt.y);
