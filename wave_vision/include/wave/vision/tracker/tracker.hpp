@@ -19,14 +19,29 @@ namespace wave {
 /** @addtogroup vision
  *  @{ */
 
-struct FeatureTrack {
+class FeatureTrack {
+ public:
+    // Constructor
+    FeatureTrack() {}
+
+    // Destructor
+    ~FeatureTrack() = default;
+
+    /** Returns size of the measurement vector.
+     *
+     * @return size of the measurement vector
+     */
+    size_t size() const {
+        return this->measurement.size();
+    }
+
     /** The assigned ID corresponding to this feature */
     size_t id;
     /** The pixel location of the feature in the sequence of images */
     std::vector<cv::Point2f> measurement;
     /** The first image the feature is seen in */
     size_t first_image;
-    /** The last image the feature is seen in*/
+    /** The last image the feature is seen in */
     size_t last_image;
 };
 
@@ -49,7 +64,7 @@ class Tracker {
     std::vector<std::vector<FeatureTrack>> offlineTracker(
       const std::vector<cv::Mat> &image_sequence);
 
-    /** Visualizes feature tracks from offline tracking.
+    /** Draws feature tracks from offline tracking.
      *
      * @param feature_tracks vector of all FeatureTracks from offline tracking
      * @param images the original images

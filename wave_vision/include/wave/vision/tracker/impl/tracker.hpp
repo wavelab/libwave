@@ -17,24 +17,76 @@ Tracker<TDetector, TDescriptor, TMatcher>::drawFeatureTracks(
   const std::vector<std::vector<FeatureTrack>> &feature_tracks,
   const std::vector<cv::Mat> &images) {
     std::vector<cv::Mat> output_images = images;
+    cv::Mat out_img;
     std::vector<cv::Mat>::iterator img_it = output_images.begin()++;
 
+    // Define iterators for feature tracks
+    std::vector<std::vector<FeatureTrack>>::const_iterator curr_track =
+      feature_tracks.begin();
+    std::vector<std::vector<FeatureTrack>>::const_iterator prev_track;
+
     // Define colour for arrows
-    cv::Scalar colour(255, 255, 0, 1);
+    cv::Scalar colour(255, 255, 0);
+    int radius = 2;
 
-    for (const auto &img_tracks : feature_tracks) {
-        cv::Mat out_img = *img_it;
+    bool first_image = true;
 
-        for (const auto &ft : img_tracks) {
-            std::vector<cv::Point2f> points = ft.measurement;
-            for (size_t i = 1; i < points.size(); ++i) {
-                cv::Point2f curr = points[i];
-                cv::Point2f prev = points[i - 1];
-                cv::arrowedLine(out_img, prev, curr, colour);
+    for (; curr_track != feature_tracks.end(); ++curr_track) {
+        out_img = *img_it;
+
+        if (first_image) {
+            // Draw points for first image
+            // No previous image, hence logic slightly varies
+            for (const auto &ct : *curr_track) {
+                std::vector<cv::Point2f> points = ct.measurement;
+
+                if (ct.size() == 2) {
+                    cv::circle(out_img, points[0], radius, colour);
+                }
+            }
+
+            // Move to next image - logic changes
+            first_image = false;
+        } else {
+            // Draw arrows from previous track
+            for (const auto &pt : *prev_track) {
+                std::vector<cv::Point2f> points = pt.measurement;
+
+                // Draw arrowed lines for each track
+                for (size_t i = 1; i < points.size(); ++i) {
+                    cv::Point2f curr = points[i];
+                    cv::Point2f prev = points[i - 1];
+                    cv::arrowedLine(out_img, prev, curr, colour);
+                }
+            }
+
+            // Draw circles to show commencement of next tracks
+            for (const auto &ct : *curr_track) {
+                std::vector<cv::Point2f> points = ct.measurement;
+
+                // Draw circle
+                if (ct.size() == 2) {
+                    cv::circle(out_img, points[0], radius, colour);
+                }
             }
         }
 
+        // Increment iterators
+        prev_track = curr_track;
         ++img_it;
+    }
+
+    // Draw tracks on the last image
+    for (const auto &pt : *prev_track) {
+        out_img = *img_it;
+        std::vector<cv::Point2f> points = pt.measurement;
+
+        // Draw arrowed lines for each track
+        for (size_t i = 1; i < points.size(); ++i) {
+            cv::Point2f curr = points[i];
+            cv::Point2f prev = points[i - 1];
+            cv::arrowedLine(out_img, prev, curr, colour);
+        }
     }
 
     return output_images;
@@ -58,7 +110,7 @@ Tracker<TDetector, TDescriptor, TMatcher>::offlineTracker(
     // Maps corresponding keypoint indices to IDs
     std::map<int, size_t> prev_ids;
     std::map<int, size_t> curr_ids;
-    size_t img_count = 0;
+    size_t img_count = 1;
 
     // Map corresponding IDs with FeatureTrack objects
     std::map<size_t, FeatureTrack> id_map;
@@ -74,8 +126,7 @@ Tracker<TDetector, TDescriptor, TMatcher>::offlineTracker(
         ++image_it;
 
         // For remaining images
-        for (image_it = image_it; image_it != image_sequence.end();
-             ++image_it) {
+        for (; image_it != image_sequence.end(); ++image_it) {
             this->detectAndCompute(*image_it, curr_kp, curr_desc);
             matches = this->matcher.matchDescriptors(
               prev_desc, curr_desc, prev_kp, curr_kp);
@@ -104,9 +155,10 @@ Tracker<TDetector, TDescriptor, TMatcher>::offlineTracker(
                     FeatureTrack new_track;
 
                     new_track.id = id;
+                    new_track.measurement.push_back(prev_kp.at(m.queryIdx).pt);
                     new_track.measurement.push_back(curr_kp.at(m.trainIdx).pt);
-                    new_track.first_image = img_count;
-                    new_track.last_image = new_track.first_image;
+                    new_track.first_image = img_count - 1;
+                    new_track.last_image = img_count;
 
                     // Add new track to the id correspondence map
                     id_map[id] = new_track;

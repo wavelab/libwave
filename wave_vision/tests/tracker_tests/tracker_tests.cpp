@@ -33,7 +33,7 @@ TEST(TrackerTests, NoImages) {
     ASSERT_THROW(tracker.offlineTracker(image_sequence), std::length_error);
 }
 
-TEST(TrackerTests, OfflineTrackerTest) {
+TEST(TrackerTests, DISABLED_OfflineTrackerTest) {
     std::vector<cv::Mat> image_sequence;
     std::vector<std::vector<FeatureTrack>> feature_tracks;
     std::vector<cv::Mat> drawn_images;
@@ -51,11 +51,11 @@ TEST(TrackerTests, OfflineTrackerTest) {
 
     drawn_images = tracker.drawFeatureTracks(feature_tracks, image_sequence);
 
-    // for (const auto &img : drawn_images) {
-    //     cv::imshow("Feature Tracks", img);
+    for (const auto &img : drawn_images) {
+        cv::imshow("Feature Tracks", img);
 
-    //     cv::waitKey(0);
-    // }
+        cv::waitKey(0);
+    }
 
     ASSERT_NE((int) feature_tracks.size(), 0);
 }
