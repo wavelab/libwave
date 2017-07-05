@@ -2,11 +2,13 @@
 #define WAVE_LASERODOM_HPP
 
 #include <vector>
+#include <array>
 #include <algorithm>
 #include <utility>
 #include <chrono>
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
+#include "wave/odometry/kdtreetype.hpp"
 #include "wave/odometry/PointXYZIR.hpp"
 #include "wave/odometry/PointXYZIT.hpp"
 #include "wave/odometry/laser_odom_residuals.hpp"
@@ -43,6 +45,9 @@ class LaserOdom {
                    TimeType stamp);
     void addIMU(std::vector<double> linacc, Quaternion orientation);
     pcl::PointCloud<PointXYZIT> edges, flats;
+    // transform is stored as an axis-angle rotation [012] and a
+    // displacement [345]
+    std::array<double, 6> cur_transform;
 
  private:
     LaserOdomParams param;
@@ -56,7 +61,7 @@ class LaserOdom {
     void computeCurvature();
     void prefilter();
     void generateFeatures();
-    void findCorrespondences();
+    void buildTrees();
     void match();
 
     PointXYZIT applyIMU(const PointXYZIT &pt);
@@ -73,7 +78,9 @@ class LaserOdom {
     std::vector<std::vector<std::pair<bool, float>>> cur_curve;
     std::vector<std::vector<std::pair<unlong, float>>> filter;
     std::vector<pcl::PointCloud<PointXYZIT>> cur_scan;
-    pcl::PointCloud<PointXYZIT> prv_edges, prv_flats;
+    FeatureKDTree<double> prv_edges, prv_flats;
+    kd_tree_t* edge_idx;
+    kd_tree_t* flat_idx;
 };
 
 }  // namespace wave

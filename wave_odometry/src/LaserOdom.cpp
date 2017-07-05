@@ -49,6 +49,8 @@ LaserOdom::LaserOdom(const LaserOdomParams params) : param(params) {
     this->cur_scan.resize(n_ring);
     this->cur_curve.resize(n_ring);
     this->filter.resize(n_ring);
+    this->edge_idx = new kd_tree_t(3, this->prv_edges, nanoflann::KDTreeSingleIndexAdaptorParams(10));
+    this->flat_idx = new kd_tree_t(3, this->prv_flats, nanoflann::KDTreeSingleIndexAdaptorParams(10));
 }
 
 void LaserOdom::addPoints(const std::vector<PointXYZIR>& pts,
@@ -83,16 +85,57 @@ PointXYZIT LaserOdom::applyIMU(const PointXYZIT &p) {
 void LaserOdom::rollover(TimeType stamp) {
     this->prv_time = this->cur_time;
     this->cur_time = stamp;
-//    this->resetIMU(stamp);
+    this->resetIMU(stamp);
+    this->buildTrees();
     for (unlong i = 0; i < this->param.n_ring; i++) {
         this->cur_curve.at(i).clear();
         this->cur_scan.at(i).clear();
     }
 }
 
+void LaserOdom::buildTrees() {
+    this->prv_edges.points.clear();
+    this->prv_flats.points.clear();
+
+    Rotation rotation;
+    Vec3 wvec(this->cur_transform[0], this->cur_transform[1], this->cur_transform[2]);
+    Vec3 trans(this->cur_transform[3], this->cur_transform[4], this->cur_transform[5]);
+    auto magnitude = wvec.norm();
+
+    if (magnitude < 1e-5) {
+        rotation.setIdentity();
+    } else {
+        wvec.normalize();
+    }
+    for(PointXYZIT pt : this->edges) {
+        auto scale = ((float)pt.tick / (float)this->param.max_ticks) * this->param.scan_period;
+        if (scale*magnitude > 1e-5) {
+            rotation.setFromAngleAxis(scale*magnitude, wvec);
+            Vec3 temp(pt.x, pt.y, pt.z);
+            Vec3 transfed = rotation.rotate(temp) + scale*trans;
+            this->prv_edges.points.push_back(std::array<double, 3>{transfed(0), transfed(1), transfed(2)});
+        }
+    }
+
+    for(PointXYZIT pt : this->flats) {
+        auto scale = ((float)pt.tick / (float)this->param.max_ticks) * this->param.scan_period;
+        if (scale*magnitude > 1e-5) {
+            rotation.setFromAngleAxis(scale*magnitude, wvec);
+            Vec3 temp(pt.x, pt.y, pt.z);
+            Vec3 transfed = rotation.rotate(temp) + scale*trans;
+            this->prv_flats.points.push_back(std::array<double, 3>{transfed(0), transfed(1), transfed(2)});
+        }
+    }
+    this->edge_idx->buildIndex();
+    this->flat_idx->buildIndex();
+}
+
+void LaserOdom::match() {
+    ceres::Problem problem;
+}
+
 void LaserOdom::undistort() {
     this->generateFeatures();
-    this->findCorrespondences();
     this->match();
 }
 
