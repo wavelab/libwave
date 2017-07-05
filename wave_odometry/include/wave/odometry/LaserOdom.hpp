@@ -20,16 +20,16 @@ namespace wave {
 
 using IMUMeasurement = Measurement<Vec6, char>;
 using unlong = unsigned long;
-using PointType = pcl::PointXYZI;
 
 struct LaserOdomParams {
-    int opt_iters = 25;
+    int opt_iters = 25;          // How many times to refind correspondences
     float scan_period = 0.1;     // Seconds
     float occlusion_tol = 0.1;   // Don't know units
     float parallel_tol = 0.002;  // ditto
     float keypt_radius = 0.05;   // m2
     float edge_tol = 0.1;  // Edge features must have score higher than this
     float flat_tol = 0.1;  // Plane features must have score lower than this
+    float huber_delta = 3;
     int max_ticks = 3600;  // encoder ticks per revolution
     int n_edge = 40;       // How many edge features to pick out
     int n_flat = 100;      // How many plane features to pick out
@@ -44,7 +44,7 @@ class LaserOdom {
                    const int tick,
                    TimeType stamp);
     void addIMU(std::vector<double> linacc, Quaternion orientation);
-    pcl::PointCloud<PointXYZIT> edges, flats;
+    std::vector<PointXYZIT> edges, flats;
     // transform is stored as an axis-angle rotation [012] and a
     // displacement [345]
     std::array<double, 6> cur_transform;
@@ -64,23 +64,23 @@ class LaserOdom {
     void buildTrees();
     void match();
 
-    PointXYZIT applyIMU(const PointXYZIT &pt);
+    PCLPointXYZIT applyIMU(const PCLPointXYZIT &pt);
 
     // store for the IMU integral
     MeasurementContainer<IMUMeasurement> imu_trans;
 
     std::vector<double> lin_vel = {0, 0, 0};
     TimeType prv_time, cur_time;
-    static float l2sqrd(const PointXYZIT &p1, const PointXYZIT &p2);
-    static float l2sqrd(const PointXYZIT &pt);
-    static PointXYZIT scale(const PointXYZIT &pt, const float scale);
+    static float l2sqrd(const PCLPointXYZIT &p1, const PCLPointXYZIT &p2);
+    static float l2sqrd(const PCLPointXYZIT &pt);
+    static PCLPointXYZIT scale(const PCLPointXYZIT &pt, const float scale);
     void flagNearbyPoints(const unlong ring, const unlong index);
     std::vector<std::vector<std::pair<bool, float>>> cur_curve;
     std::vector<std::vector<std::pair<unlong, float>>> filter;
-    std::vector<pcl::PointCloud<PointXYZIT>> cur_scan;
+    std::vector<pcl::PointCloud<PCLPointXYZIT>> cur_scan;
     FeatureKDTree<double> prv_edges, prv_flats;
-    kd_tree_t* edge_idx;
-    kd_tree_t* flat_idx;
+    kd_tree_t *edge_idx;
+    kd_tree_t *flat_idx;
 };
 
 }  // namespace wave

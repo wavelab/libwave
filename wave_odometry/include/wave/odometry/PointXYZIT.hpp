@@ -10,7 +10,7 @@
  * Point with extra information
  * tick for determining time in scan
  */
-struct PointXYZIT {
+struct PCLPointXYZIT {
     PCL_ADD_POINT4D;
     float intensity;
     uint16_t tick;
@@ -21,7 +21,7 @@ struct PointXYZIT {
 
 // clang-format off
 
-POINT_CLOUD_REGISTER_POINT_STRUCT(PointXYZIT,
+POINT_CLOUD_REGISTER_POINT_STRUCT(PCLPointXYZIT,
                                      (float, x, x)
                                      (float, y, y)
                                      (float, z, z)
@@ -29,5 +29,13 @@ POINT_CLOUD_REGISTER_POINT_STRUCT(PointXYZIT,
                                      (uint16_t, tick, tick))
 
 // clang-format on
+
+struct PointXYZIT {
+    PointXYZIT(float x, float y, float z, float inten, uint16_t ticks)
+        : pt{x, y, z}, intensity(inten), tick(ticks) {}
+    double pt[3];
+    float intensity;
+    uint16_t tick;
+};
 
 #endif  // WAVE_POINTXYZIT_HPP
