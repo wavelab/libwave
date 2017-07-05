@@ -61,13 +61,13 @@ TEST(VOTestCamera, checkFeatures) {
 
 TEST(VOTestDataset, constructor) {
     // test default constructor
-    VOTestDataset dataset;
+    VOTestDatasetGenerator dataset;
 
     EXPECT_EQ(-1, dataset.camera.image_width);
     EXPECT_EQ(-1, dataset.camera.image_height);
 
     // test constructor with config file path as argument
-    VOTestDataset dataset2(TEST_CONFIG);
+    VOTestDatasetGenerator dataset2(TEST_CONFIG);
 
     EXPECT_EQ(640, dataset2.camera.image_width);
     EXPECT_EQ(640, dataset2.camera.image_height);
@@ -79,10 +79,18 @@ TEST(VOTestDataset, constructor) {
 }
 
 TEST(VOTestDataset, generateTestData) {
-    VOTestDataset dataset(TEST_CONFIG);
+    VOTestDatasetGenerator generator(TEST_CONFIG);
+    auto dataset = generator.generate();
+
+    EXPECT_EQ(100u, dataset.features.cols());
+}
+
+TEST(VOTestDataset, writeTestDataToFile) {
+    VOTestDatasetGenerator generator(TEST_CONFIG);
+    auto dataset = generator.generate();
 
     boost::filesystem::remove_all(TEST_OUTPUT);
-    dataset.generateTestData(TEST_OUTPUT);
+    recordTestData(dataset, TEST_OUTPUT);
     EXPECT_NO_THROW();
 }
 
