@@ -57,7 +57,7 @@ class GraphSlam2d : public ::testing::Test {
             // Add noise
             RangeBearing<double> stddev{0.05, 0.01};
             RangeBearing<double> noisy =
-              result + stddev.matrix().unaryExpr(&gaussianNoise);
+              result.matrix() + stddev.matrix().unaryExpr(&gaussianNoise);
             auto meas = FactorMeasurement<RangeBearing>{noisy, stddev};
             this->measurements.back().emplace(k, meas);
         }

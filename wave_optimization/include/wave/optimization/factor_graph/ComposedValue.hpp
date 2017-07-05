@@ -35,7 +35,9 @@ class ComposedValue<D<Scalar, Options>, V...> {
 
     ComposedValue() : mat{ComposedMatrix::Zero()} {}
 
-    ComposedValue(ComposedMatrix matrix) : mat{std::move(matrix)} {}
+    /** Construct from Eigen vector */
+    template <typename OtherDerived>
+    ComposedValue(const Eigen::MatrixBase<OtherDerived> &rhs) : mat{rhs} {}
 
     explicit ComposedValue(V<Scalar, Options>... args) {
         this->initMatrix(tmp::make_index_sequence<sizeof...(V)>{},
@@ -63,17 +65,6 @@ class ComposedValue<D<Scalar, Options>, V...> {
 
     Scalar *data() noexcept {
         return this->mat.data();
-    }
-
-    template <typename OtherDerived>
-    Derived &operator+=(const Eigen::MatrixBase<OtherDerived> &rhs) {
-        this->mat += rhs;
-        return static_cast<Derived &>(*this);
-    }
-
-    template <typename OtherDerived>
-    const Derived operator+(const Eigen::MatrixBase<OtherDerived> &rhs) const {
-        return Derived{*static_cast<Derived const *>(this)} += rhs;
     }
 
     template <int I>
