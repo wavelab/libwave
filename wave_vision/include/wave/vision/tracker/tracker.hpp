@@ -74,6 +74,9 @@ class Tracker {
       const std::vector<std::vector<FeatureTrack>> &feature_tracks,
       const std::vector<cv::Mat> &images);
 
+    /** Removes expired IDs from the ID map. */
+    void removeExpiredIDs();
+
  private:
     size_t generateFeatureID() {
         static size_t id = 0;
@@ -88,7 +91,10 @@ class Tracker {
     TDescriptor descriptor;
     TMatcher matcher;
 
+    std::map<int, size_t> prev_ids;
     std::map<size_t, FeatureTrack> id_map;
+
+    size_t img_count;
 };
 /** @} group vision */
 }  // namespace wave

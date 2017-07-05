@@ -12,6 +12,23 @@ void Tracker<TDetector, TDescriptor, TMatcher>::detectAndCompute(
 }
 
 template <typename TDetector, typename TDescriptor, typename TMatcher>
+void Tracker<TDetector, TDescriptor, TMatcher>::removeExpiredIDs() {
+    std::map<size_t, FeatureTrack>::iterator id_map_it;
+
+    id_map_it = this->id_map.begin();
+    for (id_map_it = this->id_map.begin(); id_map_it != this->id_map.end();) {
+        // If the last image seen is NOT the current image
+        if (this->id_map_it->second.last_image != this->img_count) {
+            // Erase value in map
+            id_map_it = this->id_map.erase(id_map_it);
+        } else {
+            // Move to the next value
+            id_map_it++;
+        }
+    }
+}
+
+template <typename TDetector, typename TDescriptor, typename TMatcher>
 std::vector<cv::Mat>
 Tracker<TDetector, TDescriptor, TMatcher>::drawFeatureTracks(
   const std::vector<std::vector<FeatureTrack>> &feature_tracks,
@@ -26,7 +43,7 @@ Tracker<TDetector, TDescriptor, TMatcher>::drawFeatureTracks(
     std::vector<std::vector<FeatureTrack>>::const_iterator prev_track;
 
     // Define colour for arrows
-    cv::Scalar colour(255, 255, 0);
+    cv::Scalar colour(0, 255, 255);  // yellow
     int radius = 2;
 
     bool first_image = true;
@@ -108,13 +125,9 @@ Tracker<TDetector, TDescriptor, TMatcher>::offlineTracker(
     // Variables for ID bookkeeping
 
     // Maps corresponding keypoint indices to IDs
-    std::map<int, size_t> prev_ids;
     std::map<int, size_t> curr_ids;
-    size_t img_count = 1;
 
     // Map corresponding IDs with FeatureTrack objects
-    std::map<size_t, FeatureTrack> id_map;
-    std::map<size_t, FeatureTrack>::iterator id_map_it;
     std::vector<FeatureTrack> curr_track;  // Current feature track
     std::vector<std::vector<FeatureTrack>>
       feature_tracks;  // All feature tracks
@@ -124,6 +137,8 @@ Tracker<TDetector, TDescriptor, TMatcher>::offlineTracker(
         image_it = image_sequence.begin();
         this->detectAndCompute(*image_it, prev_kp, prev_desc);
         ++image_it;
+
+        this->img_count++;
 
         // For remaining images
         for (; image_it != image_sequence.end(); ++image_it) {
@@ -135,50 +150,37 @@ Tracker<TDetector, TDescriptor, TMatcher>::offlineTracker(
                 size_t id;
 
                 // Check to see if ID has already been assigned to keypoint
-                if (prev_ids.find(m.queryIdx) != prev_ids.end()) {
+                if (this->prev_ids.find(m.queryIdx) != this->prev_ids.end()) {
                     // If so, assign that ID to current map.
-                    curr_ids[m.trainIdx] = prev_ids.at(m.queryIdx);
+                    curr_ids[m.trainIdx] = this->prev_ids.at(m.queryIdx);
                 } else {
                     // Else, assign new ID
-                    prev_ids[m.queryIdx] = this->generateFeatureID();
-                    curr_ids[m.trainIdx] = prev_ids.at(m.queryIdx);
+                    this->prev_ids[m.queryIdx] = this->generateFeatureID();
+                    curr_ids[m.trainIdx] = this->prev_ids.at(m.queryIdx);
                 }
 
                 // Check if ID has associated FeatureTrack.
-                id = prev_ids.at(m.queryIdx);
-                if (id_map.find(id) != id_map.end()) {
+                id = this->prev_ids.at(m.queryIdx);
+                if (this->id_map.find(id) != this->id_map.end()) {
                     // If track exists, update measurements and last_img count
-                    id_map.at(id).measurement.push_back(
+                    this->id_map.at(id).measurement.push_back(
                       curr_kp.at(m.trainIdx).pt);
-                    id_map.at(id).last_image = img_count;
+                    this->id_map.at(id).last_image = this->img_count;
                 } else {
                     FeatureTrack new_track;
 
                     new_track.id = id;
                     new_track.measurement.push_back(prev_kp.at(m.queryIdx).pt);
                     new_track.measurement.push_back(curr_kp.at(m.trainIdx).pt);
-                    new_track.first_image = img_count - 1;
-                    new_track.last_image = img_count;
+                    new_track.first_image = this->img_count - 1;
+                    new_track.last_image = this->img_count;
 
                     // Add new track to the id correspondence map
-                    id_map[id] = new_track;
+                    this->id_map[id] = new_track;
                 }
 
                 // Add associated track to current tracks in image.
-                curr_track.push_back(id_map.at(id));
-            }
-
-            // Prune id_map of any expired feature tracks
-            id_map_it = id_map.begin();
-            for (id_map_it = id_map.begin(); id_map_it != id_map.end();) {
-                // If the last image seen is NOT the current image
-                if (id_map_it->second.last_image != img_count) {
-                    // Erase value in map
-                    id_map_it = id_map.erase(id_map_it);
-                } else {
-                    // Move to the next value
-                    id_map_it++;
-                }
+                curr_track.push_back(this->id_map.at(id));
             }
 
             // Add current image tracks to the list of feature tracks, and reset
@@ -186,14 +188,14 @@ Tracker<TDetector, TDescriptor, TMatcher>::offlineTracker(
             curr_track.clear();
 
             // Set previous ID map to be the current one, and reset
-            prev_ids = curr_ids;
+            this->prev_ids = curr_ids;
             curr_ids.clear();
 
             // Update previous descriptors
             prev_kp = curr_kp;
             prev_desc = curr_desc;
 
-            ++img_count;
+            this->img_count++;
         }
     } else {
         throw std::length_error("No images loaded for image stream!");

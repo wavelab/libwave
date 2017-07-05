@@ -33,7 +33,7 @@ TEST(TrackerTests, NoImages) {
     ASSERT_THROW(tracker.offlineTracker(image_sequence), std::length_error);
 }
 
-TEST(TrackerTests, DISABLED_OfflineTrackerTest) {
+TEST(TrackerTests, OfflineTrackerTest) {
     std::vector<cv::Mat> image_sequence;
     std::vector<std::vector<FeatureTrack>> feature_tracks;
     std::vector<cv::Mat> drawn_images;
