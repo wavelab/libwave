@@ -18,6 +18,12 @@ class OdomTestFile : public testing::Test {
 
     virtual void SetUp() {
         pcl::io::loadPCDFile(TEST_SCAN, (this->ref));
+        // filter out points on the car
+        for(auto iter = this->ref.begin(); iter < this->ref.end(); iter++) {
+            if ((iter->x > -3) && (iter->x < 2.5) && (iter->y > -1) && (iter->y < 1)) {
+                this->ref.erase(iter);
+            }
+        }
     }
     pcl::PointCloud<PointXYZIR> ref;
 };
@@ -42,7 +48,7 @@ TEST_F(OdomTestFile, VisualizeFeatures) {
       new pcl::PointCloud<pcl::PointXYZI>),
       vizedge(new pcl::PointCloud<pcl::PointXYZI>),
       vizflats(new pcl::PointCloud<pcl::PointXYZI>);
-    int counter = 0;
+    int counter = 1;
     auto timepoint = std::chrono::steady_clock::now();
     for (auto iter = this->ref.begin(); iter < this->ref.end(); iter++) {
         pcl::PointXYZI pt;
@@ -52,10 +58,7 @@ TEST_F(OdomTestFile, VisualizeFeatures) {
         pt.intensity = 0;
         vizref->push_back(pt);
         vec.push_back(*iter);
-        if (counter == 0) {
-            odom.addPoints(vec, 0, timepoint);
-            vec.clear();
-        } else if (counter % 12 == 0) {
+        if (counter % 12 == 0) {
             odom.addPoints(vec, 1, timepoint);
             vec.clear();
         }
@@ -69,12 +72,19 @@ TEST_F(OdomTestFile, VisualizeFeatures) {
     LOG_INFO("Feature extraction took %lu ms", extract_time.count());
 
     for (auto iter = odom.edges.begin(); iter < odom.edges.end(); iter++) {
-        pcl::PointXYZI pt = *iter;
+        pcl::PointXYZI pt;
+        pt.x = iter->pt[0];
+        pt.y = iter->pt[1];
+        pt.z = iter->pt[2];
         pt.intensity = 1;
         vizedge->push_back(pt);
     }
     for (auto iter = odom.flats.begin(); iter < odom.flats.end(); iter++) {
-        pcl::PointXYZI pt = *iter;
+        pcl::PointXYZI pt;
+        pt.x = iter->pt[0];
+        pt.y = iter->pt[1];
+        pt.z = iter->pt[2];
+        pt.intensity = 1;
         pt.intensity = 2;
         vizedge->push_back(pt);
     }

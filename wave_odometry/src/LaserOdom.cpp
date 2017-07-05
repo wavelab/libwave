@@ -54,18 +54,23 @@ LaserOdom::LaserOdom(const LaserOdomParams params) : param(params) {
       3, this->prv_edges, nanoflann::KDTreeSingleIndexAdaptorParams(10));
     this->flat_idx = new kd_tree_t(
       3, this->prv_flats, nanoflann::KDTreeSingleIndexAdaptorParams(10));
+    this->cur_transform = {};
 }
 
 void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts,
                           const int tick,
                           TimeType stamp) {
-    if (tick == 0) {  // Start of a new scan
+    if (tick == 0) {  // Current scan has finished
+        this->generateFeatures();
         if (this->initialized) {
-            this->undistort();
-            this->rollover(stamp);
+            for (int i = 0; i < this->param.opt_iters; i++) {
+                // Should add a way to get out early if the correspondences don't change
+                this->match();
+            }
         } else {
             this->initialized = true;
         }
+        this->rollover(stamp);
     }
     for (PointXYZIR pt : pts) {
         PCLPointXYZIT p;
@@ -88,7 +93,7 @@ PCLPointXYZIT LaserOdom::applyIMU(const PCLPointXYZIT &p) {
 void LaserOdom::rollover(TimeType stamp) {
     this->prv_time = this->cur_time;
     this->cur_time = stamp;
-    this->resetIMU(stamp);
+    //this->resetIMU(stamp);
     this->buildTrees();
     for (unlong i = 0; i < this->param.n_ring; i++) {
         this->cur_curve.at(i).clear();
@@ -227,14 +232,6 @@ void LaserOdom::match() {
     options.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
     ceres::Solver::Summary summary;
     ceres::Solve(options, &problem, &summary);
-}
-
-void LaserOdom::undistort() {
-    this->generateFeatures();
-    for (int i = 0; i < this->param.opt_iters; i++) {
-        // Should add a way to get out early if the correspondences don't change
-        this->match();
-    }
 }
 
 /*

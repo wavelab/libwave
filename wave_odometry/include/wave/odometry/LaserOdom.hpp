@@ -55,7 +55,6 @@ class LaserOdom {
 
     void transformToStart();
 
-    void undistort();
     void rollover(TimeType stamp);
     void resetIMU(TimeType stamp);
     void computeCurvature();
