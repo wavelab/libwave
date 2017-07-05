@@ -71,7 +71,10 @@ class DiagonalNoise {
           inverse_sqrt_cov{stddev.cwiseInverse()} {}
 
     /** Construct with the given value, holding standard deviations*/
-    explicit DiagonalNoise(const ValueType &v) : DiagonalNoise{v.matrix()} {}
+    explicit DiagonalNoise(const ValueType &stddev)
+        : covariance_mat{stddev.matrix().cwiseProduct(stddev.matrix())},
+          // Pre-calculate inverse sqrt covariance, used in normalization
+          inverse_sqrt_cov{stddev.matrix().cwiseInverse()} {}
 
     /** Construct from double (for value of size 1 only) */
     explicit DiagonalNoise(double stddev)

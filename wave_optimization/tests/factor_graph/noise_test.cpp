@@ -26,10 +26,10 @@ TEST_F(NoiseTest, diagonalNoise) {
 
     auto n = DiagonalNoise<Composed>{stddev};
 
-    auto res = n.covariance().toMatrix();
+    auto res = n.covariance().matrix();
     EXPECT_PRED2(MatricesNear, expected_cov, res);
 
-    res = n.inverseSqrtCov().toMatrix();
+    res = n.inverseSqrtCov().matrix();
     EXPECT_PRED2(MatricesNear, expected_inv, res);
 }
 
@@ -40,10 +40,10 @@ TEST_F(NoiseTest, diagonalNoiseFromVector) {
 
     auto n = DiagonalNoise<Composed>{stddev};
 
-    auto res = n.covariance().toMatrix();
+    auto res = n.covariance().matrix();
     EXPECT_PRED2(MatricesNear, expected_cov, res);
 
-    res = n.inverseSqrtCov().toMatrix();
+    res = n.inverseSqrtCov().matrix();
     EXPECT_PRED2(MatricesNear, expected_inv, res);
 }
 
@@ -67,10 +67,10 @@ TEST_F(NoiseTest, fullNoise) {
     Mat3 expected_inv;
     //@ todo fill in expected_inv using matlab result
 
-    auto res = n.covariance().toMatrix();
+    auto res = n.covariance().matrix();
     EXPECT_PRED2(MatricesNear, cov, res);
 
-    res = n.inverseSqrtCov().toMatrix();
+    res = n.inverseSqrtCov().matrix();
     EXPECT_PRED2(MatricesNear, expected_inv, res);
 }
 
