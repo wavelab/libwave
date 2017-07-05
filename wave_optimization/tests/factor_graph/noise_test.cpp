@@ -58,9 +58,11 @@ TEST_F(NoiseTest, fullNoise) {
 
     auto n = FullNoise<Composed>{cov};
 
-    // inverse of cholesky of cov calculated separately
+    // expected result calculated separately, using `inv(chol(cov, 'lower'))`
     Mat3 expected_inv;
-    //@ todo fill in expected_inv using matlab result
+    expected_inv << 0.550481882563180, 0, 0,     //
+      -0.149711335415677, 0.494047406871736, 0,  //
+      -0.111593441609686, -0.0754896810889053, 0.443748038400870;
 
     EXPECT_PRED2(MatricesNear, cov, n.covariance());
     EXPECT_PRED2(MatricesNear, expected_inv, n.inverseSqrtCov());
