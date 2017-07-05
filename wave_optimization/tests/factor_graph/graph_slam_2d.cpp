@@ -50,7 +50,7 @@ class GraphSlam2d : public ::testing::Test {
 
         for (auto k = 0u; k < this->true_landmarks.size(); ++k) {
             RangeBearing<double> result;
-            RangeBearingMeasurementFunctor::evaluate(
+            RangeBearingMeasurementFunctor{}(
               pose, this->true_landmarks[k].value, result);
 
             // Store a measurement for all landmarks for now

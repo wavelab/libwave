@@ -11,7 +11,7 @@ namespace internal {
 template <template <typename...> class V>
 struct IdentityMeasurementFunctor {
     template <typename T, typename O = void>
-    static bool evaluate(const V<T, O> &variable, V<T, O> &result) {
+    bool operator()(const V<T, O> &variable, V<T, O> &result) const noexcept {
         result = variable;
         return true;
     }
@@ -31,17 +31,18 @@ inline FactorGraph::size_type FactorGraph::countFactors() const noexcept {
 inline bool FactorGraph::empty() const noexcept {
     return this->factors.empty();
 }
-template <typename T>
-struct Debug;
 
 // Modifiers
 template <typename FactorType>
 inline void FactorGraph::addFactor(const std::shared_ptr<FactorType> &factor) {
     // Give a nice error message immediately if the function type is wrong
-    using MemberFuncType = decltype(&FactorType::template evaluate<double>);
-    using ExpectedFuncType = typename tmp::clean_method<MemberFuncType>::type;
-    using ActualFuncType =
-      decltype(FactorType::Functor::template evaluate<double>);
+    using ExpectedMemberType = decltype(&FactorType::template evaluate<double>);
+    using ExpectedFuncType =
+      typename tmp::clean_method<ExpectedMemberType>::type;
+    using ActualMemberType =
+      decltype(&FactorType::Functor::template operator() < double >);
+    using ActualFuncType = typename tmp::clean_method<ActualMemberType>::type;
+
     static_assert(std::is_same<ExpectedFuncType, ActualFuncType>::value,
                   "The given measurement function is of incorrect type");
 

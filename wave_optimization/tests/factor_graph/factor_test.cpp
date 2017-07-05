@@ -28,7 +28,7 @@ TEST(FactorTest, evaluate) {
     auto expected_residual = dist - meas;
 
     // Call and compare
-    auto res = f.evaluate(param_pose, param_landmark, residual);
+    auto res = f(param_pose, param_landmark, residual);
     EXPECT_TRUE(res);
     EXPECT_DOUBLE_EQ(expected_residual, residual.value());
 }

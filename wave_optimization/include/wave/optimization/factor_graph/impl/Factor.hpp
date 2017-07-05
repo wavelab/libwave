@@ -16,7 +16,7 @@ template <typename T, typename O>
 bool Factor<F, M, V...>::evaluate(const V<T, O> &... parameters,
                                   M<T, O> &residuals) const noexcept {
     // Call the measurement function
-    bool ok = F::template evaluate<T, O>(parameters..., residuals);
+    bool ok = F{}(parameters..., residuals);
 
     if (ok) {
         // Calculate the normalized residual
