@@ -17,9 +17,9 @@ struct ComposedValueTest : public ::testing::Test {
         Composed() = default;
         // The copy constructor must not copy the reference members
         Composed(const Composed &rhs) : Base{rhs} {}
-        Ref<FactorValue<T, O, 1>> b0 = this->template block<0>();
-        Ref<FactorValue<T, O, 2>> b1 = this->template block<1>();
-        Ref<FactorValue<T, O, 3>> b2 = this->template block<2>();
+        Ref<FactorValue<T, O, 1>> b0 = this->template blockAtIndex<0>();
+        Ref<FactorValue<T, O, 2>> b1 = this->template blockAtIndex<1>();
+        Ref<FactorValue<T, O, 3>> b2 = this->template blockAtIndex<2>();
     };
 };
 
@@ -75,7 +75,7 @@ TEST_F(ComposedValueTest, constructMapped) {
 }
 
 // Test the Square option
-// Produces a ComposedValue with a square block for each nested value
+// Produces a ComposedValue with a square blockAtIndex for each nested value
 TEST_F(ComposedValueTest, constructSquare) {
     Composed<double, FactorValueOptions::Square> c{};
     EXPECT_EQ(1, c.b0.size());
@@ -106,37 +106,37 @@ TEST_F(ComposedValueTest, indexFromRefSquare) {
 
 TEST_F(ComposedValueTest, blockSquare) {
     auto c = Composed<double, FactorValueOptions::Square>{};
-    EXPECT_EQ(4, c.block<1>().size());
+    EXPECT_EQ(4, c.blockAtIndex<1>().size());
 
-    auto block11 = c.block<1, 1>();
+    auto block11 = c.blockAtIndex<1, 1>();
     EXPECT_EQ(4, block11.size());
 
-    auto block10 = c.block<1, 0>();
+    auto block10 = c.blockAtIndex<1, 0>();
     EXPECT_EQ(2, block10.rows());
     EXPECT_EQ(1, block10.cols());
 
-    auto block01 = c.block<0, 1>();
+    auto block01 = c.blockAtIndex<0, 1>();
     EXPECT_EQ(1, block01.rows());
     EXPECT_EQ(2, block01.cols());
 }
 
 TEST_F(ComposedValueTest, blockFromRefSquare) {
     auto c = Composed<double, FactorValueOptions::Square>{};
-    EXPECT_EQ(4, c.block(c.b1, c.b1).size());
+    EXPECT_EQ(4, c.blockAtIndex(c.b1, c.b1).size());
 
-    EXPECT_EQ(2, c.block(c.b1, c.b0).rows());
-    EXPECT_EQ(1, c.block(c.b1, c.b0).cols());
+    EXPECT_EQ(2, c.blockAtIndex(c.b1, c.b0).rows());
+    EXPECT_EQ(1, c.blockAtIndex(c.b1, c.b0).cols());
 
 
-    EXPECT_EQ(1, c.block(c.b0, c.b1).rows());
-    EXPECT_EQ(2, c.block(c.b0, c.b1).cols());
+    EXPECT_EQ(1, c.blockAtIndex(c.b0, c.b1).rows());
+    EXPECT_EQ(2, c.blockAtIndex(c.b0, c.b1).cols());
 }
 
 TEST_F(ComposedValueTest, blockFromRefSquareInvalid) {
     auto other = Composed<double, FactorValueOptions::Square>{};
     auto c = Composed<double, FactorValueOptions::Square>{};
-    EXPECT_THROW(c.block(c.b0, other.b2), std::logic_error);
-    EXPECT_THROW(other.block(c.b2, c.b2), std::logic_error);
+    EXPECT_THROW(c.blockAtIndex(c.b0, other.b2), std::logic_error);
+    EXPECT_THROW(other.blockAtIndex(c.b2, c.b2), std::logic_error);
 }
 
 }  // namespace wave

@@ -33,7 +33,8 @@ class FullNoise {
     constexpr static int Size = ValueType::Size;
 
     /** Construct with the given covariance matrix */
-    explicit FullNoise(MatrixType cov)
+    template <typename OtherDerived>
+    explicit FullNoise(const Eigen::MatrixBase<OtherDerived> &cov)
         : covariance_mat{cov},
           // Pre-calculate inverse sqrt covariance, used in normalization
           inverse_sqrt_cov{MatrixType{cov.llt().matrixL()}.inverse()} {}
@@ -65,16 +66,11 @@ class DiagonalNoise {
     constexpr static int Size = ValueType::Size;
 
     /** Construct with the given vector of standard devations (sigmas) */
-    explicit DiagonalNoise(const MatrixType &stddev)
+    template <typename OtherDerived>
+    explicit DiagonalNoise(const Eigen::MatrixBase<OtherDerived> &stddev)
         : covariance_mat{stddev.cwiseProduct(stddev)},
           // Pre-calculate inverse sqrt covariance, used in normalization
           inverse_sqrt_cov{stddev.cwiseInverse()} {}
-
-    /** Construct with the given value, holding standard deviations*/
-    explicit DiagonalNoise(const ValueType &stddev)
-        : covariance_mat{stddev.matrix().cwiseProduct(stddev.matrix())},
-          // Pre-calculate inverse sqrt covariance, used in normalization
-          inverse_sqrt_cov{stddev.matrix().cwiseInverse()} {}
 
     /** Construct from double (for value of size 1 only) */
     explicit DiagonalNoise(double stddev)

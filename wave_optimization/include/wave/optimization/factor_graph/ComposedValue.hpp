@@ -20,113 +20,88 @@ template <template <typename, typename> class D,
           typename Scalar,
           typename Options,
           template <typename...> class... V>
-class ComposedValue<D<Scalar, Options>, V...> {
+class ComposedValue<D<Scalar, Options>, V...>
+  : public FactorValue<Scalar,
+                       Options,
+                       tmp::sum<V<Scalar>::RowsAtCompileTime...>::value> {
     using Derived = D<Scalar, Options>;
 
  public:
+    using Base = FactorValue<Scalar,
+                             Options,
+                             tmp::sum<V<Scalar>::RowsAtCompileTime...>::value>;
+    using MatrixType = typename Base::Base;
     constexpr static std::array<int, sizeof...(V)> BlockSizes{
       {V<Scalar>::RowsAtCompileTime...}};
     constexpr static int Size = tmp::array_sum(BlockSizes);
     constexpr static std::array<int, sizeof...(V)> BlockIndices =
       tmp::cumulative_array(BlockSizes);
-    using ComposedMatrix = FactorValue<Scalar, Options, Size>;
     using ValueTuple = std::tuple<V<Scalar, Options>...>;
 
+    // Inherit base constructor
+    using Base::Base;
+    using Base::operator=;
 
-    ComposedValue() : mat{ComposedMatrix::Zero()} {}
-
-    /** Construct from Eigen vector */
-    template <typename OtherDerived>
-    ComposedValue(const Eigen::MatrixBase<OtherDerived> &rhs) : mat{rhs} {}
+    ComposedValue() : Base{Base::Zero()} {}
 
     explicit ComposedValue(V<Scalar, Options>... args) {
         this->initMatrix(tmp::make_index_sequence<sizeof...(V)>{},
                          std::move(args)...);
     }
 
-    /** Initialize from pointer to raw array */
-    explicit ComposedValue(Scalar *dataptr) : mat{dataptr} {}
-
-    /** Assign from Eigen vector */
-    template <typename OtherDerived>
-    Derived &operator=(const Eigen::MatrixBase<OtherDerived> &rhs) {
-        this->mat = rhs;
-        return *static_cast<Derived *>(this);
-    }
-
-    /** Get reference to Eigen vector */
-    ComposedMatrix &matrix() noexcept {
-        return this->mat;
-    }
-
-    const ComposedMatrix &matrix() const noexcept {
-        return this->mat;
-    }
-
-    Scalar *data() noexcept {
-        return this->mat.data();
-    }
+    // Make public some privately inherited methods
+    using Base::data;
 
     template <int I>
     Eigen::Ref<typename std::tuple_element<I, ValueTuple>::type>
-    block() noexcept {
+    blockAtIndex() noexcept {
         constexpr auto i = std::get<I>(BlockIndices);
         constexpr auto size = std::get<I>(BlockSizes);
-        return this->mat.template segment<size>(i);
+        return this->template segment<size>(i);
     }
 
  protected:
     template <int... Is>
     void initMatrix(tmp::index_sequence<Is...>, V<Scalar, Options>... args) {
-        auto loop = {(this->block<Is>() = std::move(args), 0)...};
+        auto loop = {(this->blockAtIndex<Is>() = std::move(args), 0)...};
         (void) loop;
     }
-
-    ComposedMatrix mat;
 };
 
 /** Specialization for square option */
 template <template <typename, typename> class D,
           typename Scalar,
           template <typename...> class... V>
-class ComposedValue<D<Scalar, FactorValueOptions::Square>, V...> {
+class ComposedValue<D<Scalar, FactorValueOptions::Square>, V...>
+  : public FactorValue<Scalar,
+                       FactorValueOptions::Square,
+                       tmp::sum<V<Scalar>::RowsAtCompileTime...>::value> {
     using Derived = D<Scalar, FactorValueOptions::Square>;
 
  public:
+    using Base = FactorValue<Scalar,
+                             FactorValueOptions::Square,
+                             tmp::sum<V<Scalar>::RowsAtCompileTime...>::value>;
+    using MatrixType = typename Base::Base;
     constexpr static std::array<int, sizeof...(V)> BlockSizes{
       {V<Scalar>::RowsAtCompileTime...}};
     constexpr static int Size = tmp::array_sum(BlockSizes);
     constexpr static std::array<int, sizeof...(V)> BlockIndices =
       tmp::cumulative_array(BlockSizes);
-    using ComposedMatrix = Eigen::Matrix<Scalar, Size, Size>;
     using ValueTuple = std::tuple<V<Scalar, FactorValueOptions::Square>...>;
 
-    ComposedValue() : mat{ComposedMatrix::Zero()} {}
+    // Inherit base constructor
+    using Base::Base;
+    using Base::operator=;
 
-    ComposedValue(ComposedMatrix matrix) : mat{std::move(matrix)} {}
-
-    /** Initialize from pointer to raw array */
-    explicit ComposedValue(Scalar *dataptr) : mat{dataptr} {}
-
-    /** Get reference to Eigen Matrix */
-    ComposedMatrix &matrix() noexcept {
-        return this->mat;
-    }
-
-    const ComposedMatrix &matrix() const noexcept {
-        return this->mat;
-    }
-
-    Scalar *data() noexcept {
-        return this->mat.data();
-    }
+    ComposedValue() : Base{Base::Zero()} {}
 
     /** Given a reference to a diagonal block of `mat`, determine the index */
     template <typename T>
     int indexFromRef(const Eigen::Ref<T> &ref) const {
         // Use low-level math for now
-        const auto diff = ref.data() - this->mat.data();
-        if (diff < 0 || diff >= this->mat.size()) {
+        const auto diff = ref.data() - this->data();
+        if (diff < 0 || diff >= this->size()) {
             throw std::logic_error(
               "ComposedValue::indexFromRef: invalid reference");
         }
@@ -135,34 +110,31 @@ class ComposedValue<D<Scalar, FactorValueOptions::Square>, V...> {
 
     template <int I>
     Eigen::Ref<typename std::tuple_element<I, ValueTuple>::type>
-    block() noexcept {
+    blockAtIndex() noexcept {
         constexpr auto i = std::get<I>(BlockIndices);
         constexpr auto size = std::get<I>(BlockSizes);
-        return this->mat.template block<size, size>(i, i);
+        return this->template block<size, size>(i, i);
     }
 
     template <int I, int J>
-    Eigen::Block<ComposedMatrix, BlockSizes[I], BlockSizes[J]>
-    block() noexcept {
+    Eigen::Block<MatrixType, BlockSizes[I], BlockSizes[J]>
+    blockAtIndex() noexcept {
         constexpr auto i = std::get<I>(BlockIndices);
         constexpr auto j = std::get<J>(BlockIndices);
         constexpr auto rows = std::get<I>(BlockSizes);
         constexpr auto cols = std::get<J>(BlockSizes);
-        return this->mat.template block<rows, cols>(i, j);
+        return this->template block<rows, cols>(i, j);
     }
 
-    /** Return a block given references to diagonal blocks */
+    /** Return a blockAtIndex given references to diagonal blocks */
     template <typename T, typename O, int R, int C>
-    Eigen::Block<ComposedMatrix, R, C> block(
+    Eigen::Block<MatrixType, R, C> blockAtIndex(
       const Eigen::Ref<FactorValue<T, O, R>> &row_block,
       const Eigen::Ref<FactorValue<T, O, C>> &col_block) {
         const auto i = this->indexFromRef(row_block);
         const auto j = this->indexFromRef(col_block);
-        return this->mat.template block<R, C>(i, j);
+        return this->template block<R, C>(i, j);
     };
-
- protected:
-    ComposedMatrix mat;
 };
 
 /** @} group optimization */

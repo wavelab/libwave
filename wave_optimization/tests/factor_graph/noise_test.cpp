@@ -13,8 +13,8 @@ struct NoiseTest : public ::testing::Test {
         Composed() = default;
         // The copy constructor must not copy the reference members
         Composed(const Composed &rhs) : Base{rhs} {}
-        Ref<FactorValue<T, O, 1>> b0 = this->template block<0>();
-        Ref<FactorValue<T, O, 2>> b1 = this->template block<1>();
+        Ref<FactorValue<T, O, 1>> b0 = this->template blockAtIndex<0>();
+        Ref<FactorValue<T, O, 2>> b1 = this->template blockAtIndex<1>();
     };
 };
 
@@ -26,11 +26,9 @@ TEST_F(NoiseTest, diagonalNoise) {
 
     auto n = DiagonalNoise<Composed>{stddev};
 
-    auto res = n.covariance().matrix();
-    EXPECT_PRED2(MatricesNear, expected_cov, res);
+    EXPECT_PRED2(MatricesNear, expected_cov, n.covariance());
 
-    res = n.inverseSqrtCov().matrix();
-    EXPECT_PRED2(MatricesNear, expected_inv, res);
+    EXPECT_PRED2(MatricesNear, expected_inv, n.inverseSqrtCov());
 }
 
 TEST_F(NoiseTest, diagonalNoiseFromVector) {
@@ -40,11 +38,8 @@ TEST_F(NoiseTest, diagonalNoiseFromVector) {
 
     auto n = DiagonalNoise<Composed>{stddev};
 
-    auto res = n.covariance().matrix();
-    EXPECT_PRED2(MatricesNear, expected_cov, res);
-
-    res = n.inverseSqrtCov().matrix();
-    EXPECT_PRED2(MatricesNear, expected_inv, res);
+    EXPECT_PRED2(MatricesNear, expected_cov, n.covariance());
+    EXPECT_PRED2(MatricesNear, expected_inv, n.inverseSqrtCov());
 }
 
 TEST_F(NoiseTest, singleNoise) {
@@ -67,11 +62,8 @@ TEST_F(NoiseTest, fullNoise) {
     Mat3 expected_inv;
     //@ todo fill in expected_inv using matlab result
 
-    auto res = n.covariance().matrix();
-    EXPECT_PRED2(MatricesNear, cov, res);
-
-    res = n.inverseSqrtCov().matrix();
-    EXPECT_PRED2(MatricesNear, expected_inv, res);
+    EXPECT_PRED2(MatricesNear, cov, n.covariance());
+    EXPECT_PRED2(MatricesNear, expected_inv, n.inverseSqrtCov());
 }
 
 }  // namespace wave

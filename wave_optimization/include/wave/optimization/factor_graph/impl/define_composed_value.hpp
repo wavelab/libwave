@@ -23,7 +23,7 @@
 
 #define WAVE_IMPL_DEFINE_MEMBER(r, _, i, tuple)                        \
     Ref<WAVE_IMPL_GET_TYPE(tuple) < T, O>> WAVE_IMPL_GET_NAME(tuple) = \
-      this->template block<i>();
+      this->template blockAtIndex<i>();
 
 #define WAVE_IMPL_DEFINE_MEMBERS(attributes) \
     BOOST_PP_SEQ_FOR_EACH_I(WAVE_IMPL_DEFINE_MEMBER, ~, attributes)

@@ -7,7 +7,7 @@ struct factor_value_traits_composed;
 
 template <typename V, typename... Nested>
 struct factor_value_traits_composed<V, std::tuple<Nested...>> {
-    using MatrixType = typename V::ComposedMatrix;
+    using MatrixType = typename V::MatrixType;
 };
 
 /** Specialization of factor_value_traits for types of FactorValue */
