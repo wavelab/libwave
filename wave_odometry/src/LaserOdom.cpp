@@ -176,6 +176,10 @@ void LaserOdom::match() {
         this->edge_idx->knnSearch(
           query.data(), 2, &ret_indices[0], &out_dist_sqr[0]);
 
+        if (out_dist_sqr.at(1) > this->param.max_correspondence_dist) {
+            continue;
+        }
+
         ceres::CostFunction *cost_function = PointToLineError::Create();
         problem.AddResidualBlock(
           cost_function,
@@ -207,6 +211,10 @@ void LaserOdom::match() {
 
         this->edge_idx->knnSearch(
           query.data(), 3, &ret_indices[0], &out_dist_sqr[0]);
+
+        if (out_dist_sqr.at(2) > this->param.max_correspondence_dist) {
+            continue;
+        }
 
         ceres::CostFunction *cost_function = PointToPlaneError::Create();
         problem.AddResidualBlock(

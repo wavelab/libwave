@@ -29,7 +29,8 @@ struct LaserOdomParams {
     float keypt_radius = 0.05;   // m2
     float edge_tol = 0.1;  // Edge features must have score higher than this
     float flat_tol = 0.1;  // Plane features must have score lower than this
-    float huber_delta = 3;
+    float huber_delta = 0.5;
+    float max_correspondence_dist = 3;  // correspondences greater than this are discarded
     int max_ticks = 3600;  // encoder ticks per revolution
     int n_edge = 40;       // How many edge features to pick out
     int n_flat = 100;      // How many plane features to pick out

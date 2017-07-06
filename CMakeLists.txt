@@ -53,7 +53,7 @@ ADD_DEPENDENCIES(wave_optimization wave_utils)
 ADD_DEPENDENCIES(wave_vision wave_utils)
 
 # libwave_odometry.a
-ADD_DEPENDENCIES(wave_odometry wave_utils)
+ADD_DEPENDENCIES(wave_odometry wave_utils wave_matching)
 
 # libwave library
 SET(LIBWAVE_MODULE_LIBS

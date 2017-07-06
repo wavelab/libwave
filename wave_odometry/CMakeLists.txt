@@ -24,6 +24,15 @@ ADD_LIBRARY(
 LINK_DIRECTORIES(
     ${PCL_LIBRARY_DIRS})
 
+TARGET_LINK_LIBRARIES(
+    ${PROJECT_NAME}
+    wave_utils
+    wave_matching
+    wave_geometry
+    ${CERES_LIBRARIES}
+    ${PCL_LIBRARIES}
+)
+
 # UNIT TESTS
 WAVE_ADD_TEST(${PROJECT_NAME}_tests
         tests/laserodom_tests.cpp)
@@ -35,6 +44,7 @@ TARGET_LINK_LIBRARIES(
     wave_geometry
     ${CERES_LIBRARIES}
     ${PCL_LIBRARIES}
+    pcap
 )
 
 # Copy the test data
