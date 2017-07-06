@@ -330,6 +330,15 @@ TEST_F(FilledLandmarkContainer, getTimeWindowSome) {
     }
 }
 
+TEST_F(FilledLandmarkContainer, getTimeWindowInstant) {
+    // Check case of window where `start == end`
+    const auto t = this->t_start + seconds(1);
+    auto res = this->m.getTimeWindow(t, t);
+
+    // Just ensure the result is not empty, don't worry about values here
+    EXPECT_EQ(1u, std::distance(res.first, res.second));
+}
+
 TEST_F(FilledLandmarkContainer, getLandmarkIDs) {
     auto ids = this->m.getLandmarkIDs();
 
