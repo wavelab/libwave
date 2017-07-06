@@ -194,7 +194,7 @@ LandmarkMeasurementContainer<T>::getLandmarkIDsInWindow(
       typename internal::landmark_container<T>::landmark_index>();
     auto unique_ids = std::vector<LandmarkIdType>{};
 
-    // Iterate over all measurements sorted by time, first then landmark_id.
+    // Iterate over all measurements sorted by time first, then landmark_id.
     // Copy landmark ids into a vector, skipping consecutive equal elements and
     // elements outside the desired time window.
     for (auto &meas : landmark_index) {

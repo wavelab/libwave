@@ -167,7 +167,12 @@ class LandmarkMeasurementContainer {
     /** Get a list of all unique landmark IDs in the container */
     std::vector<LandmarkIdType> getLandmarkIDs() const;
 
-    /** Get unique landmark IDs with measurements in the time window */
+    /** Get unique landmark IDs with measurements in the time window
+     *
+     * @return a vector of landmark IDs, in increasing order
+     *
+     * If `start > end`, the result will be empty.
+     */
     std::vector<LandmarkIdType> getLandmarkIDsInWindow(
       const TimeType &start, const TimeType &end) const;
 
@@ -178,12 +183,13 @@ class LandmarkMeasurementContainer {
     Track getTrack(const SensorIdType &s, const LandmarkIdType &id) const
       noexcept;
 
-    /** Get a sequnce of measurements of a landmark from one sensor, in the
-     * given
-     * time window.
+    /** Get a sequence of measurements of a landmark from one sensor, in the
+     * given time window.
      *
      * @return a vector of landmark measurements sorted by time
-      */
+     *
+     * If `start >= end`, the result will be empty.
+     */
     Track getTrackInWindow(const SensorIdType &s,
                            const LandmarkIdType &id,
                            const TimeType &start,

@@ -366,9 +366,10 @@ TEST_F(FilledLandmarkContainer, getLandmarkIdsInWindowEmpty) {
 TEST_F(FilledLandmarkContainer, getLandmarkIdsInWindowBackwards) {
     const auto t = this->t_start;
     // Check case of backwards window
-    auto ids = this->m.getLandmarkIDsInWindow(t + seconds(10), t);
+    auto ids = this->m.getLandmarkIDsInWindow(t + seconds(2), t);
     EXPECT_TRUE(ids.empty());
 }
+
 TEST_F(FilledLandmarkContainer, getLandmarkIdsInWindowAll) {
     // Check case of window containing all measurements
     const auto t = this->t_start;
@@ -392,6 +393,18 @@ TEST_F(FilledLandmarkContainer, getLandmarkIdsInWindowSome) {
     }
 }
 
+TEST_F(FilledLandmarkContainer, getLandmarkIdsInWindowInstant) {
+    const auto t = this->t_start + seconds(3);
+    // Check case of window where start == end.
+    // We expect it to return the landmarks at that instant
+    auto ids = this->m.getLandmarkIDsInWindow(t, t);
+    const auto expected = std::vector<LandmarkId>{2, 3, 4, 5};
+    ASSERT_EQ(expected.size(), ids.size());
+    for (auto i = 0u; i < ids.size(); ++i) {
+        EXPECT_EQ(expected[i], ids[i]);
+    }
+}
+
 TEST_F(FilledLandmarkContainer, getTrackInWindowEmpty) {
     // Check case of window with no measurements
     const auto t = this->t_start;
@@ -405,6 +418,14 @@ TEST_F(FilledLandmarkContainer, getTrackInWindowBackwards) {
     // Check case of backwards window
     auto track =
       this->m.getTrackInWindow(CameraSensors::Right, 4, t + seconds(10), t);
+    EXPECT_TRUE(track.empty());
+}
+
+TEST_F(FilledLandmarkContainer, getTrackInWindowInstant) {
+    const auto t = this->t_start + seconds(3);
+    // Check case where start == end
+    // Here (unlike in getLandmarkIDsInWindow) we expect empty result
+    auto track = this->m.getTrackInWindow(CameraSensors::Right, 4, t, t);
     EXPECT_TRUE(track.empty());
 }
 
