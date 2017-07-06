@@ -13,12 +13,11 @@ void Tracker<TDetector, TDescriptor, TMatcher>::detectAndCompute(
 
 template <typename TDetector, typename TDescriptor, typename TMatcher>
 void Tracker<TDetector, TDescriptor, TMatcher>::removeExpiredIDs() {
-    std::map<size_t, FeatureTrack>::iterator id_map_it;
+    std::map<size_t, FeatureTrack>::iterator id_map_it = this->id_map.begin();
 
-    id_map_it = this->id_map.begin();
     for (id_map_it = this->id_map.begin(); id_map_it != this->id_map.end();) {
-        // If the last image seen is NOT the current image
-        if (this->id_map_it->second.last_image != this->img_count) {
+        // If the feature was NOT observed in the current image
+        if (id_map_it->second.last_image != this->img_count) {
             // Erase value in map
             id_map_it = this->id_map.erase(id_map_it);
         } else {
@@ -29,178 +28,171 @@ void Tracker<TDetector, TDescriptor, TMatcher>::removeExpiredIDs() {
 }
 
 template <typename TDetector, typename TDescriptor, typename TMatcher>
-std::vector<cv::Mat>
-Tracker<TDetector, TDescriptor, TMatcher>::drawFeatureTracks(
-  const std::vector<std::vector<FeatureTrack>> &feature_tracks,
-  const std::vector<cv::Mat> &images) {
-    std::vector<cv::Mat> output_images = images;
-    cv::Mat out_img;
-    std::vector<cv::Mat>::iterator img_it = output_images.begin()++;
+std::map<int, size_t>
+Tracker<TDetector, TDescriptor, TMatcher>::registerKeypoints(
+  const std::vector<cv::DMatch> &matches) {
+    // Maps current keypoint indices to IDs
+    std::map<int, size_t> curr_ids;
 
-    // Define iterators for feature tracks
-    std::vector<std::vector<FeatureTrack>>::const_iterator curr_track =
-      feature_tracks.begin();
-    std::vector<std::vector<FeatureTrack>>::const_iterator prev_track;
-
-    // Define colour for arrows
-    cv::Scalar colour(0, 255, 255);  // yellow
-    int radius = 2;
-
-    bool first_image = true;
-
-    for (; curr_track != feature_tracks.end(); ++curr_track) {
-        out_img = *img_it;
-
-        if (first_image) {
-            // Draw points for first image
-            // No previous image, hence logic slightly varies
-            for (const auto &ct : *curr_track) {
-                std::vector<cv::Point2f> points = ct.measurement;
-
-                if (ct.size() == 2) {
-                    cv::circle(out_img, points[0], radius, colour);
-                }
-            }
-
-            // Move to next image - logic changes
-            first_image = false;
+    for (const auto &m : matches) {
+        // Check to see if ID has already been assigned to keypoint
+        if (this->prev_ids.find(m.queryIdx) != this->prev_ids.end()) {
+            // If so, assign that ID to current map.
+            curr_ids[m.trainIdx] = this->prev_ids.at(m.queryIdx);
         } else {
-            // Draw arrows from previous track
-            for (const auto &pt : *prev_track) {
-                std::vector<cv::Point2f> points = pt.measurement;
-
-                // Draw arrowed lines for each track
-                for (size_t i = 1; i < points.size(); ++i) {
-                    cv::Point2f curr = points[i];
-                    cv::Point2f prev = points[i - 1];
-                    cv::arrowedLine(out_img, prev, curr, colour);
-                }
-            }
-
-            // Draw circles to show commencement of next tracks
-            for (const auto &ct : *curr_track) {
-                std::vector<cv::Point2f> points = ct.measurement;
-
-                // Draw circle
-                if (ct.size() == 2) {
-                    cv::circle(out_img, points[0], radius, colour);
-                }
-            }
-        }
-
-        // Increment iterators
-        prev_track = curr_track;
-        ++img_it;
-    }
-
-    // Draw tracks on the last image
-    for (const auto &pt : *prev_track) {
-        out_img = *img_it;
-        std::vector<cv::Point2f> points = pt.measurement;
-
-        // Draw arrowed lines for each track
-        for (size_t i = 1; i < points.size(); ++i) {
-            cv::Point2f curr = points[i];
-            cv::Point2f prev = points[i - 1];
-            cv::arrowedLine(out_img, prev, curr, colour);
+            // Else, assign new ID
+            this->prev_ids[m.queryIdx] = this->generateFeatureID();
+            curr_ids[m.trainIdx] = this->prev_ids.at(m.queryIdx);
         }
     }
 
-    return output_images;
+    return curr_ids;
+}
+
+template <typename TDetector, typename TDescriptor, typename TMatcher>
+std::vector<FeatureTrack>
+Tracker<TDetector, TDescriptor, TMatcher>::generateFeatureTracks(
+  const std::vector<cv::KeyPoint> curr_kp,
+  const std::vector<cv::DMatch> matches) {
+    // Check if ID has associated FeatureTrack.
+    size_t id;
+    std::vector<FeatureTrack> curr_track;
+
+    for (const auto &m : matches) {
+        id = this->prev_ids.at(m.queryIdx);
+
+        if (this->id_map.find(id) != this->id_map.end()) {
+            // If track exists, update measurements and last_img count
+            this->id_map.at(id).measurement.push_back(
+              curr_kp.at(m.trainIdx).pt);
+            this->id_map.at(id).last_image = this->img_count;
+        } else {
+            FeatureTrack new_track;
+
+            new_track.id = id;
+            new_track.measurement.push_back(this->prev_kp.at(m.queryIdx).pt);
+            new_track.measurement.push_back(curr_kp.at(m.trainIdx).pt);
+            new_track.first_image = this->img_count - 1;
+            new_track.last_image = this->img_count;
+
+            // Add new track to the id correspondence map
+            this->id_map[id] = new_track;
+        }
+
+        // Add associated track to current tracks in image.
+        curr_track.push_back(this->id_map.at(id));
+    }
+
+    return curr_track;
+}
+
+template <typename TDetector, typename TDescriptor, typename TMatcher>
+std::vector<FeatureTrack> Tracker<TDetector, TDescriptor, TMatcher>::trackImage(
+  const cv::Mat &next_image) {
+    std::vector<FeatureTrack> curr_track;
+
+    // Check if this is the first image being tracked.
+    if (this->img_count == 0) {
+        // Detect features within first image. No tracks can be generated yet.
+        this->detectAndCompute(next_image, this->prev_kp, this->prev_desc);
+        this->img_count++;
+    } else {
+        // Variables for feature detection, description, and matching
+        std::vector<cv::KeyPoint> curr_kp;
+        cv::Mat curr_desc;
+        std::vector<cv::DMatch> matches;
+
+        // Variables for bookkeeping
+        std::map<int, size_t> curr_ids;
+
+        // Detect, describe, and match keypoints
+        this->detectAndCompute(next_image, curr_kp, curr_desc);
+        matches = this->matcher.matchDescriptors(
+          this->prev_desc, curr_desc, this->prev_kp, curr_kp);
+
+        // Register keypoints with IDs
+        curr_ids = this->registerKeypoints(matches);
+
+        // Obtain the new feature tracks
+        curr_track = this->generateFeatureTracks(curr_kp, matches);
+
+        // Remove any expired feature tracks
+        this->removeExpiredIDs();
+
+        // Set previous ID map to be the current one, and reset
+        this->prev_ids = curr_ids;
+
+        // Update previous keypoints and descriptors
+        this->prev_kp = curr_kp;
+        this->prev_desc = curr_desc;
+
+        this->img_count++;
+    }
+
+    return curr_track;
 }
 
 template <typename TDetector, typename TDescriptor, typename TMatcher>
 std::vector<std::vector<FeatureTrack>>
 Tracker<TDetector, TDescriptor, TMatcher>::offlineTracker(
   const std::vector<cv::Mat> &image_sequence) {
-    // Variables for detection and matching
-    std::vector<cv::KeyPoint> prev_kp;
-    std::vector<cv::KeyPoint> curr_kp;
-    cv::Mat prev_desc;
-    cv::Mat curr_desc;
-    std::vector<cv::DMatch> matches;
+    std::vector<cv::Mat>::const_iterator img_it;
 
-    std::vector<cv::Mat>::const_iterator image_it;
-
-    // Variables for ID bookkeeping
-
-    // Maps corresponding keypoint indices to IDs
-    std::map<int, size_t> curr_ids;
-
-    // Map corresponding IDs with FeatureTrack objects
-    std::vector<FeatureTrack> curr_track;  // Current feature track
-    std::vector<std::vector<FeatureTrack>>
-      feature_tracks;  // All feature tracks
+    // Current and all feature tracks
+    std::vector<FeatureTrack> curr_track;
+    std::vector<std::vector<FeatureTrack>> feature_tracks;
 
     if (!image_sequence.empty()) {
-        // Extract keypoints and descriptors from first image, store values
-        image_it = image_sequence.begin();
-        this->detectAndCompute(*image_it, prev_kp, prev_desc);
-        ++image_it;
+        for (img_it = image_sequence.begin(); img_it != image_sequence.end();
+             ++img_it) {
+            curr_track = trackImage(*img_it);
 
-        this->img_count++;
-
-        // For remaining images
-        for (; image_it != image_sequence.end(); ++image_it) {
-            this->detectAndCompute(*image_it, curr_kp, curr_desc);
-            matches = this->matcher.matchDescriptors(
-              prev_desc, curr_desc, prev_kp, curr_kp);
-
-            for (const auto &m : matches) {
-                size_t id;
-
-                // Check to see if ID has already been assigned to keypoint
-                if (this->prev_ids.find(m.queryIdx) != this->prev_ids.end()) {
-                    // If so, assign that ID to current map.
-                    curr_ids[m.trainIdx] = this->prev_ids.at(m.queryIdx);
-                } else {
-                    // Else, assign new ID
-                    this->prev_ids[m.queryIdx] = this->generateFeatureID();
-                    curr_ids[m.trainIdx] = this->prev_ids.at(m.queryIdx);
-                }
-
-                // Check if ID has associated FeatureTrack.
-                id = this->prev_ids.at(m.queryIdx);
-                if (this->id_map.find(id) != this->id_map.end()) {
-                    // If track exists, update measurements and last_img count
-                    this->id_map.at(id).measurement.push_back(
-                      curr_kp.at(m.trainIdx).pt);
-                    this->id_map.at(id).last_image = this->img_count;
-                } else {
-                    FeatureTrack new_track;
-
-                    new_track.id = id;
-                    new_track.measurement.push_back(prev_kp.at(m.queryIdx).pt);
-                    new_track.measurement.push_back(curr_kp.at(m.trainIdx).pt);
-                    new_track.first_image = this->img_count - 1;
-                    new_track.last_image = this->img_count;
-
-                    // Add new track to the id correspondence map
-                    this->id_map[id] = new_track;
-                }
-
-                // Add associated track to current tracks in image.
-                curr_track.push_back(this->id_map.at(id));
-            }
-
-            // Add current image tracks to the list of feature tracks, and reset
+            // Add current image tracks to the list of feature tracks
             feature_tracks.push_back(curr_track);
-            curr_track.clear();
-
-            // Set previous ID map to be the current one, and reset
-            this->prev_ids = curr_ids;
-            curr_ids.clear();
-
-            // Update previous descriptors
-            prev_kp = curr_kp;
-            prev_desc = curr_desc;
-
-            this->img_count++;
         }
     } else {
         throw std::length_error("No images loaded for image stream!");
     }
 
     return feature_tracks;
+}
+
+template <typename TDetector, typename TDescriptor, typename TMatcher>
+std::vector<cv::Mat>
+Tracker<TDetector, TDescriptor, TMatcher>::drawFeatureTracks(
+  const std::vector<std::vector<FeatureTrack>> &feature_tracks,
+  const std::vector<cv::Mat> &images) {
+    std::vector<cv::Mat> output_images = images;
+    cv::Mat out_img;
+    std::vector<cv::Mat>::iterator img_it = output_images.begin();
+
+    // Define iterators for feature tracks
+    std::vector<std::vector<FeatureTrack>>::const_iterator curr_track;
+
+    // Define colour for arrows
+    cv::Scalar colour(0, 255, 255);  // yellow
+
+    for (curr_track = feature_tracks.begin();
+         curr_track != feature_tracks.end();
+         ++curr_track) {
+        out_img = *img_it;
+
+        // Draw arrows from previous track
+        for (const auto &ct : *curr_track) {
+            std::vector<cv::Point2f> points = ct.measurement;
+
+            // Draw arrowed lines for each track
+            for (size_t i = 1; i < points.size(); ++i) {
+                cv::Point2f curr = points[i];
+                cv::Point2f prev = points[i - 1];
+                cv::arrowedLine(out_img, prev, curr, colour);
+            }
+        }
+
+        ++img_it;
+    }
+
+
+    return output_images;
 }
 }  // namespace wave

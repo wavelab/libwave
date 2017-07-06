@@ -6,7 +6,6 @@
 #ifndef WAVE_VISION_TRACKER_HPP
 #define WAVE_VISION_TRACKER_HPP
 
-#include <algorithm>
 #include <string>
 #include <vector>
 
@@ -77,6 +76,35 @@ class Tracker {
     /** Removes expired IDs from the ID map. */
     void removeExpiredIDs();
 
+    /** Registers the latest matched keypoints with IDs. Assigns a new ID if one
+     * has not already been provided.
+     *
+     * @param matches the matches between the current and previous images.
+     * @return the map corresponding current keypoints to IDs.
+     */
+    std::map<int, size_t> registerKeypoints(
+      const std::vector<cv::DMatch> &matches);
+
+    /** Generates the feature tracks in the current image.
+     *
+     * Generates the feature tracks in the current image, and also updates the
+     * correspondence map between the currently tracked features and their IDs.
+     *
+     * @param curr_kp the keypoints detected in the current image.
+     * @param matches the matches between the current and previous images.
+     * @return All feature tracks for the current image
+     */
+    std::vector<FeatureTrack> generateFeatureTracks(
+      const std::vector<cv::KeyPoint> curr_kp,
+      const std::vector<cv::DMatch> matches);
+
+    /** Track features within the next image in the sequence.
+     *
+     * @param next_image next image in the sequence.
+     * @return all feature tracks within the image.
+     */
+    std::vector<FeatureTrack> trackImage(const cv::Mat &next_image);
+
  private:
     size_t generateFeatureID() {
         static size_t id = 0;
@@ -92,9 +120,12 @@ class Tracker {
     TMatcher matcher;
 
     std::map<int, size_t> prev_ids;
+    std::vector<cv::KeyPoint> prev_kp;
+    cv::Mat prev_desc;
+
     std::map<size_t, FeatureTrack> id_map;
 
-    size_t img_count;
+    size_t img_count = 0;
 };
 /** @} group vision */
 }  // namespace wave
