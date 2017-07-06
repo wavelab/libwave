@@ -424,9 +424,13 @@ TEST_F(FilledLandmarkContainer, getTrackInWindowBackwards) {
 TEST_F(FilledLandmarkContainer, getTrackInWindowInstant) {
     const auto t = this->t_start + seconds(3);
     // Check case where start == end
-    // Here (unlike in getLandmarkIDsInWindow) we expect empty result
+    // We expect it to return a track of size 1, if there happens to be a
+    // measurement at that time point.
     auto track = this->m.getTrackInWindow(CameraSensors::Right, 4, t, t);
-    EXPECT_TRUE(track.empty());
+    ASSERT_EQ(1u, track.size());
+    EXPECT_EQ(t, track.front().time_point);
+    EXPECT_EQ(CameraSensors::Right, track.front().sensor_id);
+    EXPECT_EQ(4u, track.front().landmark_id);
 }
 
 TEST_F(FilledLandmarkContainer, getTrackInWindowAll) {

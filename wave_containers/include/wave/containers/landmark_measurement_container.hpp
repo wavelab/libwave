@@ -171,7 +171,7 @@ class LandmarkMeasurementContainer {
      *
      * @return a vector of landmark IDs, in increasing order
      *
-     * If `start > end`, the result will be empty.
+     * The window is inclusive. If `start > end`, the result will be empty.
      */
     std::vector<LandmarkIdType> getLandmarkIDsInWindow(
       const TimeType &start, const TimeType &end) const;
@@ -188,7 +188,7 @@ class LandmarkMeasurementContainer {
      *
      * @return a vector of landmark measurements sorted by time
      *
-     * If `start >= end`, the result will be empty.
+     * The window is inclusive. If `start > end`, the result will be empty.
      */
     Track getTrackInWindow(const SensorIdType &s,
                            const LandmarkIdType &id,

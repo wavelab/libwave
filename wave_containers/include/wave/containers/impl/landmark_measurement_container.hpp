@@ -228,7 +228,7 @@ LandmarkMeasurementContainer<T>::getTrackInWindow(const SensorIdType &s,
                                                   const TimeType &end) const
   noexcept {
     // Consider a "backwards" window empty
-    if (start >= end) {
+    if (start > end) {
         return Track{};
     }
 
