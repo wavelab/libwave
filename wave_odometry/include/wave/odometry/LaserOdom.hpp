@@ -31,7 +31,7 @@ struct LaserOdomParams {
     float flat_tol = 0.1;  // Plane features must have score lower than this
     float huber_delta = 0.5;
     float max_correspondence_dist = 3;  // correspondences greater than this are discarded
-    int max_ticks = 3600;  // encoder ticks per revolution
+    int max_ticks = 36000;  // encoder ticks per revolution
     int n_edge = 40;       // How many edge features to pick out
     int n_flat = 100;      // How many plane features to pick out
     unlong knn = 5;        // 1/2 nearest neighbours for computing curvature

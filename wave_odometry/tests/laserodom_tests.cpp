@@ -12,7 +12,12 @@ namespace wave {
 const std::string TEST_SCAN = "data/testscan.pcd";
 const std::string PCD_DIR = "data/lab.pcap";
 const std::string TEST_SEQUENCE_DIR = "data/sequence/";
+const int sequence_length = 35;
 
+union PackagedInfo {
+    float intensity;  // 4 bytes
+    uint16_t s[2];    // 4 bytes
+};
 
 // Fixture to load same pointcloud all the time
 class OdomTestFile : public testing::Test {
@@ -37,6 +42,7 @@ TEST(laserodom, Init) {
     LaserOdom odom(LaserOdomParams());
 }
 // This visualizes the sequence in order to check that my hacky packaging works
+// Should produce visualization coloured by encoder angle
 
 TEST(laserodom, VizSequence) {
     // Playback in visualizer
@@ -46,42 +52,78 @@ TEST(laserodom, VizSequence) {
     std::vector<pcl::PointCloud<pcl::PointXYZI>> clds;
     std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr> cldptr;
     pcl::PointCloud<pcl::PointXYZI> temp;
-    for (int i = 0; i<37; i++) {
+    for (int i = 0; i<sequence_length; i++) {
         pcl::io::loadPCDFile(TEST_SEQUENCE_DIR + std::to_string(i) + ".pcd", temp);
         clds.push_back(temp);
         pcl::PointCloud<pcl::PointXYZI>::Ptr ptr(new pcl::PointCloud<pcl::PointXYZI>);
+
+        for(size_t j = 0; j < clds.at(i).size(); j++) {
+            PackagedInfo info;
+            info.intensity = clds.at(i).at(j).intensity;
+
+            LOG_INFO("Encoder is %i", info.s[1]);
+            clds.at(i).at(j).intensity = static_cast<float>(info.s[1]);
+        }
         *ptr = clds.at(i);
         cldptr.push_back(ptr);
     }
 
-    for(int i = 0; i<37; i++) {
+    for(int i = 0; i<sequence_length; i++) {
         display.addPointcloud(cldptr.at(i), 0);
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     }
     display.stopSpin();
 }
 
-//TEST(OdomTest, StationaryLab) {
-//    // PCAP setup
-//    char errbuff[PCAP_ERRBUF_SIZE];
-//    pcap_t * pcap = pcap_open_offline(PCD_DIR.c_str(), errbuff);
-//    struct pcap_pkthdr *header;
-//    const u_char *data;
-//    u_int packetCount = 0;
-//
-//    // odom setup
-//    LaserOdomParams params;
-//    LaserOdom odom(params);
-//    std::vector<PointXYZIR> vec;
-//
-//    // Loop through and pass any point packets through to odom
-//    while (int returnValue = pcap_next_ex(pcap, &header, &data) >= 0) {
-//        if (header->len == 1248ul) {
-//            // Have a velodyne packet!
-//
-//        }
-//    }
-//}
+// This test is for odometry in approximately stationary scans
+TEST(OdomTest, StationaryLab) {
+    // Load entire sequence into memory
+    std::vector<pcl::PointCloud<PointXYZIR>> clds;
+    std::vector<pcl::PointCloud<PointXYZIR>::Ptr> cldptr;
+    pcl::PCLPointCloud2 temp;
+    pcl::PointCloud<PointXYZIR> temp2;
+    for (int i = 0; i<sequence_length; i++) {
+        pcl::io::loadPCDFile(TEST_SEQUENCE_DIR + std::to_string(i) + ".pcd", temp);
+        pcl::fromPCLPointCloud2(temp, temp2);
+        clds.push_back(temp2);
+        pcl::PointCloud<PointXYZIR>::Ptr ptr(new pcl::PointCloud<PointXYZIR>);
+        *ptr = clds.at(i);
+        cldptr.push_back(ptr);
+    }
+
+    // odom setup
+    LaserOdomParams params;
+    LaserOdom odom(params);
+    std::vector<PointXYZIR> vec;
+    uint16_t prev_enc = 0;
+
+    // Loop through pointclouds and send points grouped by encoder angle odom
+    for (int i = 0; i<sequence_length; i++) {
+        for (PointXYZIR pt : clds.at(i)) {
+            PointXYZIR recovered;
+            // unpackage intensity and encoder
+            PackagedInfo info;
+            info.intensity = pt.intensity;
+            printf("Encoder is %i", info.s[1]);
+
+            // copy remaining fields
+            memcpy(recovered.data, pt.data, 4);
+            recovered.ring = pt.ring;
+            recovered.intensity = static_cast<float>(info.s[0]);
+            printf("\n");
+            if (info.s[1] != prev_enc) {
+                if(vec.size() > 0) {
+                    std::chrono::microseconds dur(clds.at(i).header.stamp);
+                    TimeType stamp(dur);
+                    odom.addPoints(vec, prev_enc, stamp);
+                    vec.clear();
+                }
+                prev_enc = info.s[1];
+            }
+            vec.emplace_back(recovered);
+        }
+    }
+}
 
 // This is less of a test and more something that can be
 // played with to see how changing parameters affects which

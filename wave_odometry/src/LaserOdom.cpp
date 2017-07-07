@@ -64,7 +64,8 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts,
         this->generateFeatures();
         if (this->initialized) {
             for (int i = 0; i < this->param.opt_iters; i++) {
-                // Should add a way to get out early if the correspondences don't change
+                // Should add a way to get out early if the correspondences
+                // don't change
                 this->match();
             }
         } else {
@@ -93,7 +94,7 @@ PCLPointXYZIT LaserOdom::applyIMU(const PCLPointXYZIT &p) {
 void LaserOdom::rollover(TimeType stamp) {
     this->prv_time = this->cur_time;
     this->cur_time = stamp;
-    //this->resetIMU(stamp);
+    // this->resetIMU(stamp);
     this->buildTrees();
     for (unlong i = 0; i < this->param.n_ring; i++) {
         this->cur_curve.at(i).clear();
@@ -111,22 +112,20 @@ void LaserOdom::buildTrees() {
     Vec3 trans(
       this->cur_transform[3], this->cur_transform[4], this->cur_transform[5]);
     auto magnitude = wvec.norm();
+    wvec.normalize();
 
-    if (magnitude < 1e-5) {
-        rotation.setIdentity();
-    } else {
-        wvec.normalize();
-    }
     for (PointXYZIT pt : this->edges) {
         auto scale = ((float) pt.tick / (float) this->param.max_ticks) *
                      this->param.scan_period;
         if (scale * magnitude > 1e-5) {
             rotation.setFromAngleAxis(scale * magnitude, wvec);
-            Vec3 temp(pt.pt[0], pt.pt[1], pt.pt[2]);
-            Vec3 transfed = rotation.rotate(temp) + scale * trans;
-            this->prv_edges.points.push_back(
-              std::array<double, 3>{transfed(0), transfed(1), transfed(2)});
+        } else {
+            rotation.setIdentity();
         }
+        Vec3 temp(pt.pt[0], pt.pt[1], pt.pt[2]);
+        Vec3 transfed = rotation.rotate(temp) + scale * trans;
+        this->prv_edges.points.push_back(
+          std::array<double, 3>{transfed(0), transfed(1), transfed(2)});
     }
 
     for (PointXYZIT pt : this->flats) {
@@ -134,11 +133,14 @@ void LaserOdom::buildTrees() {
                      this->param.scan_period;
         if (scale * magnitude > 1e-5) {
             rotation.setFromAngleAxis(scale * magnitude, wvec);
-            Vec3 temp(pt.pt[0], pt.pt[1], pt.pt[2]);
-            Vec3 transfed = rotation.rotate(temp) + scale * trans;
-            this->prv_flats.points.push_back(
-              std::array<double, 3>{transfed(0), transfed(1), transfed(2)});
+        } else {
+            rotation.setIdentity();
         }
+
+        Vec3 temp(pt.pt[0], pt.pt[1], pt.pt[2]);
+        Vec3 transfed = rotation.rotate(temp) + scale * trans;
+        this->prv_flats.points.push_back(
+          std::array<double, 3>{transfed(0), transfed(1), transfed(2)});
     }
     this->edge_idx->buildIndex();
     this->flat_idx->buildIndex();
@@ -170,7 +172,11 @@ void LaserOdom::match() {
         Vec3 pt(this->edges.at(idx).pt[0],
                 this->edges.at(idx).pt[1],
                 this->edges.at(idx).pt[2]);
-        rotation.setFromAngleAxis(scale * magnitude, wvec);
+        if (magnitude < 1e-4) {
+            rotation.setIdentity();
+        } else {
+            rotation.setFromAngleAxis(scale * magnitude, wvec);
+        }
         Vec3 query = rotation.rotate(pt - scale * trans);
 
         this->edge_idx->knnSearch(
@@ -206,7 +212,11 @@ void LaserOdom::match() {
         Vec3 pt(this->flats.at(idx).pt[0],
                 this->flats.at(idx).pt[1],
                 this->flats.at(idx).pt[2]);
-        rotation.setFromAngleAxis(scale * magnitude, wvec);
+        if (magnitude < 1e-4) {
+            rotation.setIdentity();
+        } else {
+            rotation.setFromAngleAxis(scale * magnitude, wvec);
+        }
         Vec3 query = rotation.rotate(pt - scale * trans);
 
         this->edge_idx->knnSearch(
@@ -337,7 +347,7 @@ void LaserOdom::computeCurvature() {
 void LaserOdom::prefilter() {
     for (unlong i = 0; i < this->param.n_ring; i++) {
         auto n_pts = this->cur_curve.at(i).size();
-        auto max_pts = n_pts - this->param.knn;
+        int max_pts = (int)n_pts - (int)this->param.knn;
         if (n_pts < this->param.knn + 1) {
             continue;
         }
