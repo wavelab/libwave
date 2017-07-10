@@ -17,6 +17,13 @@ void PointCloudDisplay::stopSpin() {
     this->viewer_thread.join();
 }
 
+PointCloudDisplay::~PointCloudDisplay() {
+    this->continueFlag.clear(std::memory_order_relaxed);
+    if(this->viewer_thread.joinable()) {
+        this->viewer_thread.join();
+    }
+}
+
 void PointCloudDisplay::spin() {
     // Initialize viewer
     this->viewer =

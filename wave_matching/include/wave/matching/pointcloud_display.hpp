@@ -36,6 +36,8 @@ class PointCloudDisplay {
      */
     PointCloudDisplay(const std::string &name);
 
+    ~PointCloudDisplay();
+
     /**
      * Calling this launches the worker thread and opens
      * the visualization window

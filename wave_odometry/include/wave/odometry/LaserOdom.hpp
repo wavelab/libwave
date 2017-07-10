@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <utility>
 #include <chrono>
+#include <limits>
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 #include "wave/odometry/kdtreetype.hpp"
@@ -49,10 +50,12 @@ class LaserOdom {
     // transform is stored as an axis-angle rotation [012] and a
     // displacement [345]
     std::array<double, 6> cur_transform;
+    bool new_features = false;
 
  private:
     LaserOdomParams param;
     bool initialized = false;
+    int prv_tick = std::numeric_limits<int>::max();
 
     void transformToStart();
 

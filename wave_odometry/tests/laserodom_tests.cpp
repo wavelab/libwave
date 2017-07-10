@@ -12,12 +12,7 @@ namespace wave {
 const std::string TEST_SCAN = "data/testscan.pcd";
 const std::string PCD_DIR = "data/lab.pcap";
 const std::string TEST_SEQUENCE_DIR = "data/sequence/";
-const int sequence_length = 35;
-
-union PackagedInfo {
-    float intensity;  // 4 bytes
-    uint16_t s[2];    // 4 bytes
-};
+const int sequence_length = 13;
 
 // Fixture to load same pointcloud all the time
 class OdomTestFile : public testing::Test {
@@ -58,11 +53,9 @@ TEST(laserodom, VizSequence) {
         pcl::PointCloud<pcl::PointXYZI>::Ptr ptr(new pcl::PointCloud<pcl::PointXYZI>);
 
         for(size_t j = 0; j < clds.at(i).size(); j++) {
-            PackagedInfo info;
-            info.intensity = clds.at(i).at(j).intensity;
-
-            LOG_INFO("Encoder is %i", info.s[1]);
-            clds.at(i).at(j).intensity = static_cast<float>(info.s[1]);
+            float packed = clds.at(i).at(j).intensity;
+            uint16_t encoder = *static_cast<uint16_t*>(static_cast<void*>(&packed));
+            clds.at(i).at(j).intensity = static_cast<float>(encoder);
         }
         *ptr = clds.at(i);
         cldptr.push_back(ptr);
@@ -70,13 +63,33 @@ TEST(laserodom, VizSequence) {
 
     for(int i = 0; i<sequence_length; i++) {
         display.addPointcloud(cldptr.at(i), 0);
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
     display.stopSpin();
 }
 
+// See if packing data into a float works as I expect
+TEST(Packing_test, intsintofloat) {
+    uint16_t angle = 31226;
+    uint8_t intensity = 134;
+    float packed = 0;
+    uint8_t *dest = static_cast<uint8_t*>(static_cast<void*>(&packed));
+    memcpy(dest, &angle, 2);
+    memcpy(dest + 2, &intensity, 1);
+    uint16_t recovered_angle = *static_cast<uint16_t*>(static_cast<void*>(dest));
+    uint8_t recovered_in = *static_cast<uint8_t*>(static_cast<void*>(dest + 2));
+    ASSERT_EQ(angle, recovered_angle);
+    ASSERT_EQ(intensity, recovered_in);
+}
+
 // This test is for odometry in approximately stationary scans
 TEST(OdomTest, StationaryLab) {
+    // Have a display for visualizing feature extraction
+    pcl::PointCloud<pcl::PointXYZI>::Ptr vizedge(new pcl::PointCloud<pcl::PointXYZI>),
+            vizflats(new pcl::PointCloud<pcl::PointXYZI>);
+    PointCloudDisplay display("odom");
+    display.startSpin();
+
     // Load entire sequence into memory
     std::vector<pcl::PointCloud<PointXYZIR>> clds;
     std::vector<pcl::PointCloud<PointXYZIR>::Ptr> cldptr;
@@ -93,6 +106,8 @@ TEST(OdomTest, StationaryLab) {
 
     // odom setup
     LaserOdomParams params;
+    params.n_flat = 20;
+    params.n_edge = 10;
     LaserOdom odom(params);
     std::vector<PointXYZIR> vec;
     uint16_t prev_enc = 0;
@@ -102,27 +117,54 @@ TEST(OdomTest, StationaryLab) {
         for (PointXYZIR pt : clds.at(i)) {
             PointXYZIR recovered;
             // unpackage intensity and encoder
-            PackagedInfo info;
-            info.intensity = pt.intensity;
-            printf("Encoder is %i", info.s[1]);
+            uint8_t* src = static_cast<uint8_t*>(static_cast<void*>(&(pt.intensity)));
+            uint16_t encoder = *(static_cast<uint16_t*>(static_cast<void*>(src)));
+            uint8_t intensity = *(static_cast<uint8_t*>(static_cast<void*>(src + 2)));
 
             // copy remaining fields
-            memcpy(recovered.data, pt.data, 4);
+            recovered.x = pt.x;
+            recovered.y = pt.y;
+            recovered.z = pt.z;
             recovered.ring = pt.ring;
-            recovered.intensity = static_cast<float>(info.s[0]);
-            printf("\n");
-            if (info.s[1] != prev_enc) {
+            recovered.intensity = intensity;
+            if (encoder != prev_enc) {
                 if(vec.size() > 0) {
                     std::chrono::microseconds dur(clds.at(i).header.stamp);
                     TimeType stamp(dur);
                     odom.addPoints(vec, prev_enc, stamp);
+                    if (odom.new_features) {
+                        odom.new_features = false;
+                        vizedge->clear();
+                        vizflats->clear();
+                        for (auto iter = odom.edges.begin(); iter < odom.edges.end(); iter++) {
+                            pcl::PointXYZI pt;
+                            pt.x = iter->pt[0];
+                            pt.y = iter->pt[1];
+                            pt.z = iter->pt[2];
+                            pt.intensity = 1;
+                            vizedge->push_back(pt);
+                        }
+                        for (auto iter = odom.flats.begin(); iter < odom.flats.end(); iter++) {
+                            pcl::PointXYZI pt;
+                            pt.x = iter->pt[0];
+                            pt.y = iter->pt[1];
+                            pt.z = iter->pt[2];
+                            pt.intensity = 1;
+                            pt.intensity = 2;
+                            vizedge->push_back(pt);
+                        }
+                        display.addPointcloud(vizedge, 1);
+                        display.addPointcloud(vizflats, 2);
+                        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+                    }
                     vec.clear();
                 }
-                prev_enc = info.s[1];
+                prev_enc = encoder;
             }
             vec.emplace_back(recovered);
         }
     }
+    display.stopSpin();
 }
 
 // This is less of a test and more something that can be

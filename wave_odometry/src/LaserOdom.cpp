@@ -60,19 +60,17 @@ LaserOdom::LaserOdom(const LaserOdomParams params) : param(params) {
 void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts,
                           const int tick,
                           TimeType stamp) {
-    if (tick == 0) {  // Current scan has finished
-        this->generateFeatures();
-        if (this->initialized) {
+    if ((tick - this->prv_tick) < -2000) {   // tolerate minor nonlinearity error
+        this->generateFeatures();  // generate features on the current scan (empty is possible)
+        if (this->initialized) {  // there is a set of previous features from last scan
             for (int i = 0; i < this->param.opt_iters; i++) {
-                // Should add a way to get out early if the correspondences
-                // don't change
+                // Should add a way to get out early if the transform doesn't change
                 this->match();
             }
-        } else {
-            this->initialized = true;
         }
-        this->rollover(stamp);
+        this->rollover(stamp);  // set previous features to current features and zero-out current scan
     }
+
     for (PointXYZIR pt : pts) {
         PCLPointXYZIT p;
         p.x = pt.x;
@@ -82,6 +80,7 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts,
         p.tick = tick;
         this->cur_scan.at(pt.ring).push_back(this->applyIMU(p));
     }
+    this->prv_tick = tick;
 }
 
 PCLPointXYZIT LaserOdom::applyIMU(const PCLPointXYZIT &p) {
@@ -99,6 +98,11 @@ void LaserOdom::rollover(TimeType stamp) {
     for (unlong i = 0; i < this->param.n_ring; i++) {
         this->cur_curve.at(i).clear();
         this->cur_scan.at(i).clear();
+    }
+    if(!this->initialized) {
+        if((this->prv_edges.points.size() > this->param.n_edge) && (this->prv_flats.points.size() > this->param.n_flat)) {
+            this->initialized = true;
+        }
     }
 }
 
@@ -158,6 +162,7 @@ void LaserOdom::match() {
     Vec3 trans(
       this->cur_transform[3], this->cur_transform[4], this->cur_transform[5]);
     auto magnitude = wvec.norm();
+    wvec = wvec / magnitude;
 
     // Only need up to 3 nearest neighbours for point to plane matching
     // Point to line requires only 2
@@ -250,6 +255,7 @@ void LaserOdom::match() {
     options.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
     ceres::Solver::Summary summary;
     ceres::Solve(options, &problem, &summary);
+    LOG_INFO("%s", summary.FullReport().c_str());
 }
 
 /*
@@ -272,14 +278,11 @@ void LaserOdom::generateFeatures() {
         int edge_cnt = 0, flat_cnt = 0;
 
         // Pick out edge points
-        for (auto iter = this->filter.at(i).end();
-             iter > this->filter.at(i).begin();
-             iter--) {
+        for (auto iter = this->filter.at(i).rbegin();
+             iter < this->filter.at(i).rend();
+             iter++) {
             if ((iter->second < this->param.edge_tol) ||
                 (edge_cnt >= this->param.n_edge)) {
-                if (iter == this->filter.at(i).end()) {
-                    continue;
-                }
                 break;
             } else if (this->cur_curve.at(i).at(iter->first).first) {
                 this->edges.emplace_back(
@@ -314,6 +317,7 @@ void LaserOdom::generateFeatures() {
             }
         }
     }
+    this->new_features = true;
 }
 
 void LaserOdom::computeCurvature() {
