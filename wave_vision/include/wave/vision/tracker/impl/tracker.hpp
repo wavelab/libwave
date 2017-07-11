@@ -77,7 +77,7 @@ Tracker<TDetector, TDescriptor, TMatcher>::registerKeypoints(
 // Public Functions
 template <typename TDetector, typename TDescriptor, typename TMatcher>
 std::vector<FeatureTrack> Tracker<TDetector, TDescriptor, TMatcher>::getTracks(
-  const size_t &img_num) {
+  const size_t &img_num) const {
     std::vector<FeatureTrack> feature_tracks;
     std::vector<size_t> landmark_ids;
 
@@ -195,7 +195,7 @@ Tracker<TDetector, TDescriptor, TMatcher>::offlineTracker(
         for (img_it = image_sequence.begin(); img_it != image_sequence.end();
              ++img_it) {
             // Add image to tracker
-            addImage(*img_it);
+            this->addImage(*img_it);
 
             // Get tracks from this image (first should return a null track)
             curr_track = this->getTracks(num_images);
@@ -213,7 +213,7 @@ Tracker<TDetector, TDescriptor, TMatcher>::offlineTracker(
 
 template <typename TDetector, typename TDescriptor, typename TMatcher>
 cv::Mat Tracker<TDetector, TDescriptor, TMatcher>::drawTracks(
-  const size_t &img_num, const cv::Mat &image) {
+  const size_t &img_num, const cv::Mat &image) const {
     cv::Mat out_img = image;
 
     // Get the tracks for this image

@@ -80,7 +80,7 @@ class Tracker {
      * @param img_num the number of the image to obtain tracks from
      * @return tracks corresponding to all detected landmarks in the image.
      */
-    std::vector<FeatureTrack> getTracks(const size_t &img_num);
+    std::vector<FeatureTrack> getTracks(const size_t &img_num) const;
 
     /** Track features within an image (presumably the next in a sequence).
      *
@@ -94,7 +94,7 @@ class Tracker {
      * @param image the image to draw the tracks on
      * @return the image with the tracks illustrated as arrows.
      */
-    cv::Mat drawTracks(const size_t &img_num, const cv::Mat &image);
+    cv::Mat drawTracks(const size_t &img_num, const cv::Mat &image) const;
 
     /** Offline feature tracking, using list of images already loaded.
      *
@@ -109,7 +109,7 @@ class Tracker {
      *
      * @return the assigned ID.
      */
-    size_t generateFeatureID() {
+    size_t generateFeatureID() const {
         static size_t id = 0;
         return id++;
     }
