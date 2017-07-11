@@ -49,6 +49,7 @@ Tracker<TDetector, TDescriptor, TMatcher>::registerKeypoints(
             Vec2 prev_landmark = convertKeypoint(this->prev_kp.at(m.queryIdx));
             Vec2 curr_landmark = convertKeypoint(curr_kp.at(m.trainIdx));
 
+            // Find previous and current times from lookup table
             std::chrono::steady_clock::time_point prev_time =
               this->img_times.at(this->img_count - 1);
             std::chrono::steady_clock::time_point curr_time =
@@ -92,25 +93,29 @@ std::vector<FeatureTrack> Tracker<TDetector, TDescriptor, TMatcher>::getTracks(
 
         // For each ID, get the track.
         for (const auto &l : landmark_ids) {
-            // Looking for track from start of tracking.
+            // Looking for track from first image.
             std::chrono::steady_clock::time_point start_time =
               (this->img_times.begin())->second;
 
-            std::vector<LandmarkMeasurement<int>> id_track =
+            std::vector<LandmarkMeasurement<int>> tracks =
               this->landmarks.getTrackInWindow(
                 sensor_id, l, start_time, img_time);
 
             // Find image corresponding to start time
+            size_t first_image;
+
+            // Last image feature was seen in must be image requested.
+            size_t last_image = img_num;
+
+            // Iterators for time map and landmark measurements
             std::map<size_t,
                      std::chrono::steady_clock::time_point>::const_iterator
               times;
             std::vector<LandmarkMeasurement<int>>::const_iterator first =
-              id_track.begin();
+              tracks.begin();
 
-            size_t first_image;
-            // Last image feature was seen in must be image requested.
-            size_t last_image = img_num;
-
+            // Check if the time in the map corresponds to the time of the first
+            // landmark measurement
             for (times = this->img_times.begin();
                  times != this->img_times.end();
                  ++times) {
@@ -120,7 +125,7 @@ std::vector<FeatureTrack> Tracker<TDetector, TDescriptor, TMatcher>::getTracks(
             }
 
             // Create feature track for ID, and emplace back into vector
-            FeatureTrack curr_track(id_track, first_image, last_image);
+            FeatureTrack curr_track(tracks, first_image, last_image);
             feature_tracks.emplace_back(curr_track);
         }
     } else if (img_num == 0) {

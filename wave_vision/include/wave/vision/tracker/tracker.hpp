@@ -12,10 +12,10 @@
 
 #include <opencv2/opencv.hpp>
 
-#include "wave/vision/utils.hpp"
-#include "wave/utils/utils.hpp"
 #include "wave/containers/landmark_measurement.hpp"
 #include "wave/containers/landmark_measurement_container.hpp"
+#include "wave/utils/utils.hpp"
+#include "wave/vision/utils.hpp"
 
 namespace wave {
 /** @addtogroup vision
@@ -45,10 +45,15 @@ class FeatureTrack {
         return this->measurements.size();
     }
 
+    /** The id of the feature */
+    size_t id;
+
     /** All measurements of the feature */
     std::vector<LandmarkMeasurement<int>> measurements;
+
     /** The first image the feature is seen in */
     size_t first_image;
+
     /** The last image the feature is seen in */
     size_t last_image;
 };
@@ -67,18 +72,6 @@ class Tracker {
 
     /** Destructor */
     ~Tracker() = default;
-
-    /** Offline feature tracking, using list of images already loaded. */
-    std::vector<std::vector<FeatureTrack>> offlineTracker(
-      const std::vector<cv::Mat> &image_sequence);
-
-    /** Draw tracks for the requested image.
-     *
-     * @param img_num the number of the image within the sequence
-     * @param image the image to draw the tracks on
-     * @return the image with the tracks illustrated as arrows.
-     */
-    cv::Mat drawTracks(const size_t &img_num, const cv::Mat &image);
 
     /** Registers the latest matched keypoints with IDs. Assigns a new ID if one
      * has not already been provided.
@@ -104,12 +97,41 @@ class Tracker {
      */
     void addImage(const cv::Mat &image);
 
+    /** Draw tracks for the requested image.
+     *
+     * @param img_num the number of the image within the sequence
+     * @param image the image to draw the tracks on
+     * @return the image with the tracks illustrated as arrows.
+     */
+    cv::Mat drawTracks(const size_t &img_num, const cv::Mat &image);
+
+    /** Offline feature tracking, using list of images already loaded.
+     *
+     * @param image_sequence the sequence of images to analyze.
+     * @return the vector of FeatureTracks in each image.
+     */
+    std::vector<std::vector<FeatureTrack>> offlineTracker(
+      const std::vector<cv::Mat> &image_sequence);
+
  private:
+    /** Generate a new ID for each newly detected feature.
+     *
+     * @return the assigned ID.
+     */
     size_t generateFeatureID() {
         static size_t id = 0;
         return id++;
     }
 
+    /** Detect features and compute descriptors.
+     *
+     * Detects features and computes descriptors using the templated detector
+     * and descriptor.
+     *
+     * @param image
+     * @param keypoints
+     * @param descriptor
+     */
     void detectAndCompute(const cv::Mat &image,
                           std::vector<cv::KeyPoint> &keypoints,
                           cv::Mat &descriptor);
@@ -127,15 +149,16 @@ class Tracker {
     TDescriptor descriptor;
     TMatcher matcher;
 
-    std::map<int, size_t> prev_ids;
-    std::map<size_t, std::chrono::steady_clock::time_point> img_times;
-
     std::vector<cv::KeyPoint> prev_kp;
     cv::Mat prev_desc;
 
+    // Correspondence maps
+    std::map<int, size_t> prev_ids;
+    std::map<size_t, std::chrono::steady_clock::time_point> img_times;
+
+    // Measurement container variables
     std::chrono::steady_clock clock;
     LandmarkMeasurementContainer<LandmarkMeasurement<int>> landmarks;
-
     size_t img_count = 0;
 };
 /** @} group vision */
