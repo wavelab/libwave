@@ -27,10 +27,12 @@ class FeatureTrack {
     FeatureTrack() {}
 
     // Initializer list constructor
-    FeatureTrack(std::vector<LandmarkMeasurement<int>> measurements,
+    FeatureTrack(size_t id,
+                 std::vector<LandmarkMeasurement<int>> measurements,
                  size_t first_image,
                  size_t last_image)
-        : measurements(measurements),
+        : id(id),
+          measurements(measurements),
           first_image(first_image),
           last_image(last_image) {}
 
@@ -72,17 +74,6 @@ class Tracker {
 
     /** Destructor */
     ~Tracker() = default;
-
-    /** Registers the latest matched keypoints with IDs. Assigns a new ID if one
-     * has not already been provided.
-     *
-     * @param curr_kp the keypoints detected in the current image.
-     * @param matches the matches between the current and previous images.
-     * @return the map corresponding current keypoints to IDs.
-     */
-    std::map<int, size_t> registerKeypoints(
-      const std::vector<cv::KeyPoint> &curr_kp,
-      const std::vector<cv::DMatch> &matches);
 
     /** Get the tracks of all features in the requested image from the sequence.
      *
@@ -144,6 +135,17 @@ class Tracker {
       const std::chrono::steady_clock::time_point &current_time) {
         this->img_times[this->img_count] = current_time;
     }
+
+    /** Registers the latest matched keypoints with IDs. Assigns a new ID if one
+     * has not already been provided.
+     *
+     * @param curr_kp the keypoints detected in the current image.
+     * @param matches the matches between the current and previous images.
+     * @return the map corresponding current keypoints to IDs.
+     */
+    std::map<int, size_t> registerKeypoints(
+      const std::vector<cv::KeyPoint> &curr_kp,
+      const std::vector<cv::DMatch> &matches);
 
     TDetector detector;
     TDescriptor descriptor;

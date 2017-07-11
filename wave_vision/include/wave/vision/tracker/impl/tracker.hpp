@@ -2,6 +2,7 @@
 
 namespace wave {
 
+// Private Functions
 template <typename TDetector, typename TDescriptor, typename TMatcher>
 void Tracker<TDetector, TDescriptor, TMatcher>::detectAndCompute(
   const cv::Mat &image,
@@ -73,6 +74,7 @@ Tracker<TDetector, TDescriptor, TMatcher>::registerKeypoints(
     return curr_ids;
 }
 
+// Public Functions
 template <typename TDetector, typename TDescriptor, typename TMatcher>
 std::vector<FeatureTrack> Tracker<TDetector, TDescriptor, TMatcher>::getTracks(
   const size_t &img_num) {
@@ -82,7 +84,9 @@ std::vector<FeatureTrack> Tracker<TDetector, TDescriptor, TMatcher>::getTracks(
     // TODO add in ability to choose different camera.
     int sensor_id = 0;
 
-    if (img_num > 0) {
+    if (img_num > this->img_count) {
+        throw std::out_of_range("Image requested is in the future!");
+    } else if (img_num > 0) {
         // Find the time for this image
         std::chrono::steady_clock::time_point img_time =
           this->img_times.at(img_num);
@@ -124,14 +128,12 @@ std::vector<FeatureTrack> Tracker<TDetector, TDescriptor, TMatcher>::getTracks(
                 }
             }
 
-            // Create feature track for ID, and emplace back into vector
-            FeatureTrack curr_track(tracks, first_image, last_image);
-            feature_tracks.emplace_back(curr_track);
+            // Emplace new feature track back into vector
+            feature_tracks.emplace_back(l, tracks, first_image, last_image);
         }
-    } else if (img_num == 0) {
-        feature_tracks = {};
     } else {
-        throw std::invalid_argument("Image index cannot be a negative value!");
+        // img_num is zero, and there are no tracks.
+        feature_tracks = {};
     }
 
     return feature_tracks;
@@ -220,14 +222,8 @@ cv::Mat Tracker<TDetector, TDescriptor, TMatcher>::drawTracks(
     // Define colour for arrows
     cv::Scalar colour(0, 255, 255);  // yellow
 
-    size_t max_size = 0;
-
     // Draw all feature tracks on out_img
     for (const auto &ft : feature_tracks) {
-        if (ft.size() > max_size) {
-            max_size = ft.size();
-        }
-
         for (size_t i = 1; i < ft.size(); i++) {
             // Convert landmark values to cv::Point2f
             cv::Point2f prev = convertKeypoint(ft.measurements[i - 1].value);
