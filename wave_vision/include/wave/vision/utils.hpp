@@ -50,12 +50,40 @@ void projection_matrix(const Mat3 &K, const Mat3 &R, const Vec3 &t, MatX &P);
  */
 Vec2 convertKeypoint(const cv::KeyPoint &keypoint);
 
-/** Convert a vector of keypoints to a vector of Vec2
+/** Convert a single cv::Point2f to Vec2
+ *
+ * @param keypoint input keypoint
+ * @param vec_keypoints converted keypoint
+ */
+Vec2 convertKeypoint(const cv::Point2f &keypoint);
+
+/** Convert a single Vec2 to cv::Point2f
+ *
+ * @param keypoint input keypoint
+ * @param vec_keypoints converted keypoint
+ */
+cv::Point2f convertKeypoint(const Vec2 &keypoint);
+
+/** Convert a vector of cv::KeyPoint to a vector of Vec2
  *
  * @param keypoints input keypoints
  * @param vec_keypoints converted keypoints
  */
 std::vector<Vec2> convertKeypoints(const std::vector<cv::KeyPoint> &keypoints);
+
+/** Convert a vector of cv::Point2f to a vector of Vec2
+ *
+ * @param keypoints input keypoints
+ * @param vec_keypoints converted keypoints
+ */
+std::vector<Vec2> convertKeypoints(const std::vector<cv::Point2f> &keypoints);
+
+/** Convert a vector of Vec2 to a vector of cv::Point2f
+ *
+ * @param keypoints input keypoints
+ * @param vec_keypoints converted keypoints
+ */
+std::vector<cv::Point2f> convertKeypoints(const std::vector<Vec2> &keypoints);
 
 /** Reads images from file into a vector
  *
