@@ -117,10 +117,10 @@ TEST(Residual_test, pointToPlane) {
 // This test is for odometry in approximately stationary scans
 TEST(OdomTest, StationaryLab) {
     // Have a display for visualizing feature extraction
-    pcl::PointCloud<pcl::PointXYZI>::Ptr vizedge(new pcl::PointCloud<pcl::PointXYZI>),
-            vizflats(new pcl::PointCloud<pcl::PointXYZI>);
-    PointCloudDisplay display("odom");
-    display.startSpin();
+//    pcl::PointCloud<pcl::PointXYZI>::Ptr vizedge(new pcl::PointCloud<pcl::PointXYZI>),
+//            vizflats(new pcl::PointCloud<pcl::PointXYZI>);
+//    PointCloudDisplay display("odom");
+//    display.startSpin();
 
     // Load entire sequence into memory
     std::vector<pcl::PointCloud<PointXYZIR>> clds;
@@ -138,13 +138,18 @@ TEST(OdomTest, StationaryLab) {
 
     // odom setup
     LaserOdomParams params;
-    params.n_flat = 40;
-    params.n_edge = 20;
+    params.n_flat = 100;
+    params.n_edge = 40;
+    params.max_correspondence_dist = 1;
+    params.visualize = true;
     LaserOdom odom(params);
     std::vector<PointXYZIR> vec;
     uint16_t prev_enc = 0;
 
     // Loop through pointclouds and send points grouped by encoder angle odom
+    bool initialized = false;
+    double prev_transform[6];
+    double cur_transform[6];
     for (int i = 0; i<sequence_length; i++) {
         for (PointXYZIR pt : clds.at(i)) {
             PointXYZIR recovered;
@@ -164,31 +169,40 @@ TEST(OdomTest, StationaryLab) {
                     std::chrono::microseconds dur(clds.at(i).header.stamp);
                     TimeType stamp(dur);
                     odom.addPoints(vec, prev_enc, stamp);
-                    if (odom.new_features) {
-                        odom.new_features = false;
-                        vizedge->clear();
-                        vizflats->clear();
-                        for (auto iter = odom.edges.begin(); iter < odom.edges.end(); iter++) {
-                            pcl::PointXYZI pt;
-                            pt.x = iter->pt[0];
-                            pt.y = iter->pt[1];
-                            pt.z = iter->pt[2];
-                            pt.intensity = 1;
-                            vizedge->push_back(pt);
-                        }
-                        for (auto iter = odom.flats.begin(); iter < odom.flats.end(); iter++) {
-                            pcl::PointXYZI pt;
-                            pt.x = iter->pt[0];
-                            pt.y = iter->pt[1];
-                            pt.z = iter->pt[2];
-                            pt.intensity = 1;
-                            pt.intensity = 2;
-                            vizedge->push_back(pt);
-                        }
-                        display.addPointcloud(vizedge, 1);
-                        display.addPointcloud(vizflats, 2);
-                        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-                    }
+//                    if (odom.new_features) {
+//                        odom.new_features = false;
+//
+//                        if (initialized) {
+//                            memcpy(prev_transform, cur_transform, 48);
+//                            memcpy(cur_transform, odom.cur_transform.data(), 48);
+//                        } else {
+//                            memcpy(prev_transform, odom.cur_transform.data(), 48);
+//                            initialized = true;
+//                        }
+//
+//                        vizedge->clear();
+//                        vizflats->clear();
+//                        for (auto iter = odom.edges.begin(); iter < odom.edges.end(); iter++) {
+//                            pcl::PointXYZI pt;
+//                            pt.x = iter->pt[0];
+//                            pt.y = iter->pt[1];
+//                            pt.z = iter->pt[2];
+//                            pt.intensity = 1;
+//                            vizedge->push_back(pt);
+//                        }
+//                        for (auto iter = odom.flats.begin(); iter < odom.flats.end(); iter++) {
+//                            pcl::PointXYZI pt;
+//                            pt.x = iter->pt[0];
+//                            pt.y = iter->pt[1];
+//                            pt.z = iter->pt[2];
+//                            pt.intensity = 1;
+//                            pt.intensity = 2;
+//                            vizedge->push_back(pt);
+//                        }
+//                        display.addPointcloud(vizedge, 1);
+//                        display.addPointcloud(vizflats, 2);
+//                        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+//                    }
                     vec.clear();
                 }
                 prev_enc = encoder;
@@ -196,7 +210,7 @@ TEST(OdomTest, StationaryLab) {
             vec.emplace_back(recovered);
         }
     }
-    display.stopSpin();
+//    display.stopSpin();
 }
 
 // This is less of a test and more something that can be

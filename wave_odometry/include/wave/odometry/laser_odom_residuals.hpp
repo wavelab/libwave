@@ -93,20 +93,6 @@ struct PointToPlaneError {
 
         residuals[0] = num/den;
 
-//        T int1 = (ptA[0] - ptB[0]) * (ptB[1] - ptC[1]) -
-//                 (ptA[1] - ptB[1]) * (ptB[0] - ptC[0]);
-//        T int2 = (ptA[0] - ptB[0]) * (ptB[2] - ptC[2]) -
-//                 (ptA[2] - ptB[2]) * (ptB[0] - ptC[0]);
-//        T int3 = (ptA[1] - ptB[1]) * (ptB[2] - ptC[2]) -
-//                 (ptA[2] - ptB[2]) * (ptB[1] - ptC[1]);
-//        T int4 = (ptB[0] - p[0]) * (ptB[0] - p[0]) +
-//                 (ptB[1] - p[1]) * (ptB[1] - p[1]) +
-//                 (ptB[2] - p[2]) * (ptB[2] - p[2]);
-//
-//        residuals[0] =
-//          ceres::sqrt((int4 + int1 * int1 + int2 * int2 + int3 * int3) /
-//                      (int1 * int1 + int2 * int2 + int3 * int3));
-
         return true;
     }
     // Factory to hide the construction of the CostFunction object from

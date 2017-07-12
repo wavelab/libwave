@@ -9,6 +9,7 @@
 #include <limits>
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
+#include "wave/matching/pointcloud_display.hpp"
 #include "wave/odometry/kdtreetype.hpp"
 #include "wave/odometry/PointXYZIR.hpp"
 #include "wave/odometry/PointXYZIT.hpp"
@@ -26,8 +27,8 @@ struct LaserOdomParams {
     // Optimizer parameters
     int opt_iters = 25;          // How many times to refind correspondences
     float diff_tol = 1e-6;       // norm of transform vector must change by more than this to continue
-    float huber_delta = 0.5;
-    float max_correspondence_dist = 0.5;  // correspondences greater than this are discarded
+    float huber_delta = 0.1;
+    float max_correspondence_dist = 0.2;  // correspondences greater than this are discarded
 
     // Sensor parameters
     float scan_period = 0.1;     // Seconds
@@ -43,6 +44,7 @@ struct LaserOdomParams {
     int n_edge = 40;       // How many edge features to pick out per ring
     int n_flat = 100;      // How many plane features to pick out per ring
     unlong knn = 5;        // 1/2 nearest neighbours for computing curvature
+    bool visualize = false;   //Whether to run a visualization for debugging
 };
 
 class LaserOdom {
@@ -53,12 +55,19 @@ class LaserOdom {
                    TimeType stamp);
     void addIMU(std::vector<double> linacc, Quaternion orientation);
     std::vector<PointXYZIT> edges, flats;
+    FeatureKDTree<double> prv_edges, prv_flats;
     // transform is stored as an axis-angle rotation [012] and a
     // displacement [345]
+    // The transform is T_start_end
     std::array<double, 6> cur_transform;
     bool new_features = false;
 
  private:
+    // Visualizer elements, not allocated unless used
+    PointCloudDisplay* display;
+    pcl::PointCloud<pcl::PointXYZI>::Ptr prev_viz, cur_viz;
+    void updateViz();
+
     LaserOdomParams param;
     bool initialized = false;
     int prv_tick = std::numeric_limits<int>::max();
@@ -71,7 +80,7 @@ class LaserOdom {
     void prefilter();
     void generateFeatures();
     void buildTrees();
-    void match();
+    bool match();
 
     PCLPointXYZIT applyIMU(const PCLPointXYZIT &pt);
 
@@ -87,7 +96,6 @@ class LaserOdom {
     std::vector<std::vector<std::pair<bool, float>>> cur_curve;
     std::vector<std::vector<std::pair<unlong, float>>> filter;
     std::vector<pcl::PointCloud<PCLPointXYZIT>> cur_scan;
-    FeatureKDTree<double> prv_edges, prv_flats;
     kd_tree_t *edge_idx;
     kd_tree_t *flat_idx;
 };

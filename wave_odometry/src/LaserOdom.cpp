@@ -3,6 +3,7 @@
 #include <ceres/internal/eigen.h>
 #include <ceres/normal_prior.h>
 #include <ceres/rotation.h>
+#include <wave/matching/pointcloud_display.hpp>
 #include "wave/odometry/LaserOdom.hpp"
 
 namespace wave {
@@ -68,6 +69,15 @@ LaserOdom::LaserOdom(const LaserOdomParams params) : param(params) {
     this->flat_idx = new kd_tree_t(
       3, this->prv_flats, nanoflann::KDTreeSingleIndexAdaptorParams(10));
     this->cur_transform = {1e-4, 1e-4, 1e-4, 1e-4, 1e-4, 1e-4};
+    if (params.visualize) {
+        this->display = new PointCloudDisplay("laser odom");
+        this->display->startSpin();
+        // Allocate space for visualization clouds
+        this->prev_viz = boost::shared_ptr<pcl::PointCloud<pcl::PointXYZI>>(
+          new pcl::PointCloud<pcl::PointXYZI>);
+        this->cur_viz = boost::shared_ptr<pcl::PointCloud<pcl::PointXYZI>>(
+          new pcl::PointCloud<pcl::PointXYZI>);
+    }
 }
 
 void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts,
@@ -83,7 +93,9 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts,
                 if (i > 0) {
                     memcpy(prev_transform, this->cur_transform.data(), 48);
                 }
-                this->match();
+                if (!this->match()) {
+                    break;
+                }
                 LOG_INFO("\n%f \n%f \n%f \n%f \n%f \n%f",
                          this->cur_transform.at(0),
                          this->cur_transform.at(1),
@@ -99,7 +111,11 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts,
                     }
                 }
             }
+            if (this->param.visualize) {
+                this->updateViz();
+            }
         }
+
         this->rollover(stamp);  // set previous features to current features and
                                 // zero-out current scan
     }
@@ -114,6 +130,71 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts,
         this->cur_scan.at(pt.ring).push_back(this->applyIMU(p));
     }
     this->prv_tick = tick;
+}
+
+void LaserOdom::updateViz() {
+    // populate prev with points stored in kd tree
+    // These are already transformed to the start of the current scan
+    this->prev_viz->clear();
+    this->cur_viz->clear();
+    for (auto iter = this->prv_flats.points.begin();
+         iter != this->prv_flats.points.end();
+         iter++) {
+        pcl::PointXYZI pt;
+        pt.x = (*iter).at(0);
+        pt.y = (*iter).at(1);
+        pt.z = (*iter).at(2);
+        pt.intensity = 1;
+        this->prev_viz->push_back(pt);
+    }
+    for (auto iter = this->prv_edges.points.begin();
+         iter != this->prv_edges.points.end();
+         iter++) {
+        pcl::PointXYZI pt;
+        pt.x = (*iter).at(0);
+        pt.y = (*iter).at(1);
+        pt.z = (*iter).at(2);
+        pt.intensity = 1;
+        this->prev_viz->push_back(pt);
+    }
+
+    // For the current features, need to transform them to start of scan
+    for (auto iter = this->edges.begin(); iter != this->edges.end(); iter++) {
+        double pt[3];
+        double scale = ((float) iter->tick / (float) this->param.max_ticks);
+        double wvec[3] = {scale * this->cur_transform[0],
+                          scale * this->cur_transform[1],
+                          scale * this->cur_transform[2]};
+        ceres::AngleAxisRotatePoint(wvec, iter->pt, pt);
+        pt[0] += scale * this->cur_transform[3];
+        pt[1] += scale * this->cur_transform[4];
+        pt[2] += scale * this->cur_transform[5];
+        pcl::PointXYZI point;
+        point.x = pt[0];
+        point.y = pt[1];
+        point.z = pt[2];
+        point.intensity = 2;
+        this->prev_viz->push_back(point);
+    }
+    for (auto iter = this->flats.begin(); iter != this->flats.end(); iter++) {
+        double pt[3];
+        double scale = ((float) iter->tick / (float) this->param.max_ticks);
+        double wvec[3] = {scale * this->cur_transform[0],
+                          scale * this->cur_transform[1],
+                          scale * this->cur_transform[2]};
+        ceres::AngleAxisRotatePoint(wvec, iter->pt, pt);
+        pt[0] += scale * this->cur_transform[3];
+        pt[1] += scale * this->cur_transform[4];
+        pt[2] += scale * this->cur_transform[5];
+        pcl::PointXYZI point;
+        point.x = pt[0];
+        point.y = pt[1];
+        point.z = pt[2];
+        point.intensity = 2;
+        this->prev_viz->push_back(point);
+    }
+    this->display->addPointcloud(this->prev_viz, 0);
+    std::this_thread::sleep_for(std::chrono::milliseconds(10000));
 }
 
 PCLPointXYZIT LaserOdom::applyIMU(const PCLPointXYZIT &p) {
@@ -145,30 +226,31 @@ void LaserOdom::buildTrees() {
     this->prv_flats.points.clear();
 
     Rotation rotation;
-    Vec3 wvec(
-      this->cur_transform[0], this->cur_transform[1], this->cur_transform[2]);
+    Vec3 wvec(-this->cur_transform[0],
+              -this->cur_transform[1],
+              -this->cur_transform[2]);
     Vec3 trans(
       this->cur_transform[3], this->cur_transform[4], this->cur_transform[5]);
     auto magnitude = wvec.norm();
     wvec.normalize();
 
     for (PointXYZIT pt : this->edges) {
-        auto scale = ((float) pt.tick / (float) this->param.max_ticks) *
-                     this->param.scan_period;
+        auto scale = (((float) this->param.max_ticks - (float) pt.tick) /
+                      (float) this->param.max_ticks);
         if (scale * magnitude > ZERO_TOL) {
             rotation.setFromAngleAxis(scale * magnitude, wvec);
         } else {
             rotation.setIdentity();
         }
         Vec3 temp(pt.pt[0], pt.pt[1], pt.pt[2]);
-        Vec3 transfed = rotation.rotate(temp) + scale * trans;
+        Vec3 transfed = rotation.rotate(temp - scale * trans);
         this->prv_edges.points.push_back(
           std::array<double, 3>{transfed(0), transfed(1), transfed(2)});
     }
 
     for (PointXYZIT pt : this->flats) {
-        auto scale = ((float) pt.tick / (float) this->param.max_ticks) *
-                     this->param.scan_period;
+        auto scale = (((float) this->param.max_ticks - (float) pt.tick) /
+                      (float) this->param.max_ticks);
         if (scale * magnitude > ZERO_TOL) {
             rotation.setFromAngleAxis(scale * magnitude, wvec);
         } else {
@@ -176,7 +258,7 @@ void LaserOdom::buildTrees() {
         }
 
         Vec3 temp(pt.pt[0], pt.pt[1], pt.pt[2]);
-        Vec3 transfed = rotation.rotate(temp) + scale * trans;
+        Vec3 transfed = rotation.rotate(temp - scale * trans);
         this->prv_flats.points.push_back(
           std::array<double, 3>{transfed(0), transfed(1), transfed(2)});
     }
@@ -184,15 +266,14 @@ void LaserOdom::buildTrees() {
     this->flat_idx->buildIndex();
 }
 
-void LaserOdom::match() {
+bool LaserOdom::match() {
     ceres::Problem problem;
     ceres::LossFunction *p_LossFunction =
       new ceres::HuberLoss(this->param.huber_delta);
     Rotation rotation;
 
-    Vec3 wvec(-this->cur_transform[0],
-              -this->cur_transform[1],
-              -this->cur_transform[2]);
+    Vec3 wvec(
+      this->cur_transform[0], this->cur_transform[1], this->cur_transform[2]);
     Vec3 trans(
       this->cur_transform[3], this->cur_transform[4], this->cur_transform[5]);
     auto magnitude = wvec.norm();
@@ -218,7 +299,7 @@ void LaserOdom::match() {
         } else {
             rotation.setFromAngleAxis(scale * magnitude, wvec);
         }
-        Vec3 query = rotation.rotate(pt - scale * trans);
+        Vec3 query = rotation.rotate(pt) + scale * trans;
 
         this->edge_idx->knnSearch(
           query.data(), 2, &ret_indices[0], &out_dist_sqr[0]);
@@ -257,9 +338,9 @@ void LaserOdom::match() {
         } else {
             rotation.setFromAngleAxis(scale * magnitude, wvec);
         }
-        Vec3 query = rotation.rotate(pt - scale * trans);
+        Vec3 query = rotation.rotate(pt) + scale * trans;
 
-        this->edge_idx->knnSearch(
+        this->flat_idx->knnSearch(
           query.data(), 3, &ret_indices[0], &out_dist_sqr[0]);
 
         if (out_dist_sqr.at(2) > this->param.max_correspondence_dist) {
@@ -304,11 +385,15 @@ void LaserOdom::match() {
     auto max_residuals =
       this->param.n_ring * (this->param.n_flat + this->param.n_edge);
     if (problem.NumResidualBlocks() < max_residuals * 0.2) {
-        LOG_ERROR("Less than expected residuals");
+        LOG_ERROR("Less than expected residuals, resetting");
+        this->cur_transform = {1e-4, 1e-4, 1e-4, 1e-4, 1e-4, 1e-4};
+        this->initialized = false;
+        return false;
     } else {
         ceres::Solve(options, &problem, &summary);
-        //LOG_INFO("%s", summary.FullReport().c_str());
+        // LOG_INFO("%s", summary.FullReport().c_str());
     }
+    return true;
 }
 
 /*
