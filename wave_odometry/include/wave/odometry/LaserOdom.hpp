@@ -23,20 +23,26 @@ using IMUMeasurement = Measurement<Vec6, char>;
 using unlong = unsigned long;
 
 struct LaserOdomParams {
+    // Optimizer parameters
     int opt_iters = 25;          // How many times to refind correspondences
+    float diff_tol = 1e-6;       // norm of transform vector must change by more than this to continue
+    float huber_delta = 0.5;
+    float max_correspondence_dist = 0.5;  // correspondences greater than this are discarded
+
+    // Sensor parameters
     float scan_period = 0.1;     // Seconds
+    int max_ticks = 35999;  // encoder ticks per revolution
+    unlong n_ring = 32;    // number of laser-detector pairs
+
+    // Feature extraction parameters
     float occlusion_tol = 0.1;   // Don't know units
     float parallel_tol = 0.002;  // ditto
     float keypt_radius = 0.05;   // m2
     float edge_tol = 0.1;  // Edge features must have score higher than this
     float flat_tol = 0.1;  // Plane features must have score lower than this
-    float huber_delta = 0.5;
-    float max_correspondence_dist = 3;  // correspondences greater than this are discarded
-    int max_ticks = 36000;  // encoder ticks per revolution
-    int n_edge = 40;       // How many edge features to pick out
-    int n_flat = 100;      // How many plane features to pick out
+    int n_edge = 40;       // How many edge features to pick out per ring
+    int n_flat = 100;      // How many plane features to pick out per ring
     unlong knn = 5;        // 1/2 nearest neighbours for computing curvature
-    unlong n_ring = 32;    // number of laser-detector pairs
 };
 
 class LaserOdom {

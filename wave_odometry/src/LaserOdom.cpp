@@ -1,9 +1,22 @@
 #include <type_traits>
 #include <ceres/ceres.h>
+#include <ceres/internal/eigen.h>
+#include <ceres/normal_prior.h>
 #include <ceres/rotation.h>
 #include "wave/odometry/LaserOdom.hpp"
 
 namespace wave {
+
+const double ZERO_TOL = 1e-4;
+// This amount of rotation or less is approximated as zero
+
+double getDiff(double A[], double B[], int length) {
+    double retval = 0;
+    for (int i = 0; i < length; i++) {
+        retval += (A[i] - B[i]) * (A[i] - B[i]);
+    }
+    return std::sqrt(retval);
+}
 
 void LaserOdom::flagNearbyPoints(const unlong ring, const unlong index) {
     for (unlong j = 0; j < this->param.knn; j++) {
@@ -54,21 +67,41 @@ LaserOdom::LaserOdom(const LaserOdomParams params) : param(params) {
       3, this->prv_edges, nanoflann::KDTreeSingleIndexAdaptorParams(10));
     this->flat_idx = new kd_tree_t(
       3, this->prv_flats, nanoflann::KDTreeSingleIndexAdaptorParams(10));
-    this->cur_transform = {};
+    this->cur_transform = {1e-4, 1e-4, 1e-4, 1e-4, 1e-4, 1e-4};
 }
 
 void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts,
                           const int tick,
                           TimeType stamp) {
-    if ((tick - this->prv_tick) < -2000) {   // tolerate minor nonlinearity error
-        this->generateFeatures();  // generate features on the current scan (empty is possible)
-        if (this->initialized) {  // there is a set of previous features from last scan
+    if ((tick - this->prv_tick) < -2000) {  // tolerate minor nonlinearity error
+        this->generateFeatures();  // generate features on the current scan
+                                   // (empty is possible)
+        if (this->initialized) {   // there is a set of previous features from
+                                   // last scan
+            double prev_transform[6];
             for (int i = 0; i < this->param.opt_iters; i++) {
-                // Should add a way to get out early if the transform doesn't change
+                if (i > 0) {
+                    memcpy(prev_transform, this->cur_transform.data(), 48);
+                }
                 this->match();
+                LOG_INFO("\n%f \n%f \n%f \n%f \n%f \n%f",
+                         this->cur_transform.at(0),
+                         this->cur_transform.at(1),
+                         this->cur_transform.at(2),
+                         this->cur_transform.at(3),
+                         this->cur_transform.at(4),
+                         this->cur_transform.at(5));
+                if (i > 0) {
+                    double diff =
+                      getDiff(prev_transform, this->cur_transform.data(), 6);
+                    if (diff < this->param.diff_tol) {
+                        break;
+                    }
+                }
             }
         }
-        this->rollover(stamp);  // set previous features to current features and zero-out current scan
+        this->rollover(stamp);  // set previous features to current features and
+                                // zero-out current scan
     }
 
     for (PointXYZIR pt : pts) {
@@ -99,8 +132,9 @@ void LaserOdom::rollover(TimeType stamp) {
         this->cur_curve.at(i).clear();
         this->cur_scan.at(i).clear();
     }
-    if(!this->initialized) {
-        if((this->prv_edges.points.size() > this->param.n_edge) && (this->prv_flats.points.size() > this->param.n_flat)) {
+    if (!this->initialized) {
+        if ((this->prv_edges.points.size() >= this->param.n_edge) &&
+            (this->prv_flats.points.size() >= this->param.n_flat)) {
             this->initialized = true;
         }
     }
@@ -121,7 +155,7 @@ void LaserOdom::buildTrees() {
     for (PointXYZIT pt : this->edges) {
         auto scale = ((float) pt.tick / (float) this->param.max_ticks) *
                      this->param.scan_period;
-        if (scale * magnitude > 1e-5) {
+        if (scale * magnitude > ZERO_TOL) {
             rotation.setFromAngleAxis(scale * magnitude, wvec);
         } else {
             rotation.setIdentity();
@@ -135,7 +169,7 @@ void LaserOdom::buildTrees() {
     for (PointXYZIT pt : this->flats) {
         auto scale = ((float) pt.tick / (float) this->param.max_ticks) *
                      this->param.scan_period;
-        if (scale * magnitude > 1e-5) {
+        if (scale * magnitude > ZERO_TOL) {
             rotation.setFromAngleAxis(scale * magnitude, wvec);
         } else {
             rotation.setIdentity();
@@ -162,7 +196,10 @@ void LaserOdom::match() {
     Vec3 trans(
       this->cur_transform[3], this->cur_transform[4], this->cur_transform[5]);
     auto magnitude = wvec.norm();
-    wvec = wvec / magnitude;
+    if (magnitude > ZERO_TOL) {
+        // normalize rotation
+        wvec = wvec / magnitude;
+    }
 
     // Only need up to 3 nearest neighbours for point to plane matching
     // Point to line requires only 2
@@ -171,13 +208,12 @@ void LaserOdom::match() {
     // residual blocks for edges
     for (size_t idx = 0; idx < this->edges.size(); idx++) {
         double scale =
-          ((float) this->edges.at(idx).tick / (float) this->param.max_ticks) *
-          this->param.scan_period;
+          ((float) this->edges.at(idx).tick / (float) this->param.max_ticks);
 
         Vec3 pt(this->edges.at(idx).pt[0],
                 this->edges.at(idx).pt[1],
                 this->edges.at(idx).pt[2]);
-        if (magnitude < 1e-4) {
+        if (magnitude < ZERO_TOL) {
             rotation.setIdentity();
         } else {
             rotation.setFromAngleAxis(scale * magnitude, wvec);
@@ -211,13 +247,12 @@ void LaserOdom::match() {
     // residuals blocks for flats
     for (size_t idx = 0; idx < this->flats.size(); idx++) {
         double scale =
-          ((float) this->flats.at(idx).tick / (float) this->param.max_ticks) *
-          this->param.scan_period;
+          ((float) this->flats.at(idx).tick / (float) this->param.max_ticks);
 
         Vec3 pt(this->flats.at(idx).pt[0],
                 this->flats.at(idx).pt[1],
                 this->flats.at(idx).pt[2]);
-        if (magnitude < 1e-4) {
+        if (magnitude < ZERO_TOL) {
             rotation.setIdentity();
         } else {
             rotation.setFromAngleAxis(scale * magnitude, wvec);
@@ -251,11 +286,29 @@ void LaserOdom::match() {
         problem.SetParameterBlockConstant(&scale);
     }
 
+    // Add a normal prior to provide some regularization
+    // This is in effect a constant velocity model
+    //    ceres::Matrix stiffness(6, 6);
+    //    stiffness.setIdentity();
+    //    double vec[6];
+    //    memcpy(vec, this->cur_transform.data(), 6 * 8);
+    //    ceres::VectorRef initial(vec, 6, 1);
+    //    ceres::NormalPrior *diff_cost_function = new
+    //    ceres::NormalPrior(stiffness, initial);
+    //    problem.AddResidualBlock(diff_cost_function, NULL,
+    //    this->cur_transform.data());
+
     ceres::Solver::Options options;
     options.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
     ceres::Solver::Summary summary;
-    ceres::Solve(options, &problem, &summary);
-    LOG_INFO("%s", summary.FullReport().c_str());
+    auto max_residuals =
+      this->param.n_ring * (this->param.n_flat + this->param.n_edge);
+    if (problem.NumResidualBlocks() < max_residuals * 0.2) {
+        LOG_ERROR("Less than expected residuals");
+    } else {
+        ceres::Solve(options, &problem, &summary);
+        //LOG_INFO("%s", summary.FullReport().c_str());
+    }
 }
 
 /*
@@ -351,7 +404,7 @@ void LaserOdom::computeCurvature() {
 void LaserOdom::prefilter() {
     for (unlong i = 0; i < this->param.n_ring; i++) {
         auto n_pts = this->cur_curve.at(i).size();
-        int max_pts = (int)n_pts - (int)this->param.knn;
+        int max_pts = (int) n_pts - (int) this->param.knn;
         if (n_pts < this->param.knn + 1) {
             continue;
         }

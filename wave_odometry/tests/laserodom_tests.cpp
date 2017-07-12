@@ -5,12 +5,12 @@
 #include "wave/wave_test.hpp"
 #include "wave/utils/log.hpp"
 #include "wave/odometry/LaserOdom.hpp"
+#include "wave/odometry/laser_odom_residuals.hpp"
 #include "wave/matching/pointcloud_display.hpp"
 
 namespace wave {
 
 const std::string TEST_SCAN = "data/testscan.pcd";
-const std::string PCD_DIR = "data/lab.pcap";
 const std::string TEST_SEQUENCE_DIR = "data/sequence/";
 const int sequence_length = 13;
 
@@ -82,6 +82,38 @@ TEST(Packing_test, intsintofloat) {
     ASSERT_EQ(intensity, recovered_in);
 }
 
+// Check that residuals are providing correct distance with no transform parameters
+TEST(Residual_test, pointToLine) {
+    double trans[6] = {0, 0, 0, 0, 0, 0};
+    double ptA[3] = {2, 1, 4};
+    double ptB[3] = {-3, 1, 3.4};
+    double pt[3] = {1, 2, -4};
+    double scale = 0.5;
+    double residual = 0;
+
+    PointToLineError error;
+    error(trans, pt, ptA, ptB, &scale, &residual);
+
+    // Correct value coming from matlab calculation
+    ASSERT_NEAR(residual, 7.8875, 0.0001);
+}
+
+TEST(Residual_test, pointToPlane) {
+    double trans[6] = {0, 0, 0, 0, 0, 0};
+    double ptA[3] = {1, 1, 0};
+    double ptB[3] = {1, 3, 0};
+    double ptC[3] = {4, -1, 0};
+    double pt[3] = {1, 2, -4};
+    double scale = 0.5;
+    double residual = 0;
+
+    PointToPlaneError error;
+    error(trans, pt, ptA, ptB, ptC, &scale, &residual);
+
+    // Correct value coming from matlab calculation
+    ASSERT_NEAR(std::fabs(residual), 4, 0.0001);
+}
+
 // This test is for odometry in approximately stationary scans
 TEST(OdomTest, StationaryLab) {
     // Have a display for visualizing feature extraction
@@ -106,8 +138,8 @@ TEST(OdomTest, StationaryLab) {
 
     // odom setup
     LaserOdomParams params;
-    params.n_flat = 20;
-    params.n_edge = 10;
+    params.n_flat = 40;
+    params.n_edge = 20;
     LaserOdom odom(params);
     std::vector<PointXYZIR> vec;
     uint16_t prev_enc = 0;

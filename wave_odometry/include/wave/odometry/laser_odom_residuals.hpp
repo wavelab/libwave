@@ -81,19 +81,31 @@ struct PointToPlaneError {
         p[1] += scale[0] * trans[4];
         p[2] += scale[0] * trans[5];
 
-        T int1 = (ptA[0] - ptB[0]) * (ptB[1] - ptC[1]) -
-                 (ptA[1] - ptB[1]) * (ptB[0] - ptC[0]);
-        T int2 = (ptA[0] - ptB[0]) * (ptB[2] - ptC[2]) -
-                 (ptA[2] - ptB[2]) * (ptB[0] - ptC[0]);
-        T int3 = (ptA[1] - ptB[1]) * (ptB[2] - ptC[2]) -
-                 (ptA[2] - ptB[2]) * (ptB[1] - ptC[1]);
-        T int4 = (ptB[0] - pt[0]) * (ptB[0] - pt[0]) +
-                 (ptB[1] - pt[1]) * (ptB[1] - pt[1]) +
-                 (ptB[2] - pt[2]) * (ptB[2] - pt[2]);
+        T d_B[3] = {p[0] - ptB[0], p[1] - ptB[1], p[2] - ptB[2]};
+        T dBA[3] = {ptB[0] - ptA[0], ptB[1] - ptA[1], ptB[2] - ptA[2]};
+        T dBC[3] = {ptB[0] - ptC[0], ptB[1] - ptC[1], ptB[2] - ptC[2]};
 
-        residuals[0] =
-          ceres::sqrt((int4 + int1 * int1 + int2 * int2 + int3 * int3) /
-                      (int1 * int1 + int2 * int2 + int3 * int3));
+        T cBA_BC[3];
+        ceres::CrossProduct(dBA, dBC, cBA_BC);
+
+        T den = ceres::sqrt(cBA_BC[0]*cBA_BC[0] + cBA_BC[1]*cBA_BC[1] + cBA_BC[2]*cBA_BC[2]);
+        T num = cBA_BC[0]*d_B[0] + cBA_BC[1]*d_B[1] + cBA_BC[2]*d_B[2];
+
+        residuals[0] = num/den;
+
+//        T int1 = (ptA[0] - ptB[0]) * (ptB[1] - ptC[1]) -
+//                 (ptA[1] - ptB[1]) * (ptB[0] - ptC[0]);
+//        T int2 = (ptA[0] - ptB[0]) * (ptB[2] - ptC[2]) -
+//                 (ptA[2] - ptB[2]) * (ptB[0] - ptC[0]);
+//        T int3 = (ptA[1] - ptB[1]) * (ptB[2] - ptC[2]) -
+//                 (ptA[2] - ptB[2]) * (ptB[1] - ptC[1]);
+//        T int4 = (ptB[0] - p[0]) * (ptB[0] - p[0]) +
+//                 (ptB[1] - p[1]) * (ptB[1] - p[1]) +
+//                 (ptB[2] - p[2]) * (ptB[2] - p[2]);
+//
+//        residuals[0] =
+//          ceres::sqrt((int4 + int1 * int1 + int2 * int2 + int3 * int3) /
+//                      (int1 * int1 + int2 * int2 + int3 * int3));
 
         return true;
     }
