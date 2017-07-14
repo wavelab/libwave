@@ -139,7 +139,34 @@ TEST(Residual_test, pointToLineAnalytic) {
     EXPECT_NEAR(jacobian[0][3], -0.2212, 1e-4);
     EXPECT_NEAR(jacobian[0][4], 0, 1e-4);
     EXPECT_NEAR(jacobian[0][5], 0.9752, 1e-4);
+}
 
+TEST(Residual_test, pointToPlaneAnalytic) {
+    const double **trans;
+    trans = new const double*;
+    trans[0] = new const double[6]{0.5, 0.3, -0.2, 0.2, 5, 4};
+
+    double **jacobian;
+    jacobian = new double*;
+    jacobian[0] = new double[6];
+
+    double ptA[3] = {1, 1, 0};
+    double ptB[3] = {1, 3, 0};
+    double ptC[3] = {4, -1, 0};
+    double pt[3] = {1, 2, -4};
+    double scale = 1;
+    double residual = 0;
+
+    AnalyticalPointToPlane thing(pt, ptA, ptB, ptC, &scale);
+    thing.Evaluate(trans, &residual, jacobian);
+
+    EXPECT_NEAR(residual, 1.2087, 1e-4);
+    EXPECT_NEAR(jacobian[0][0], 3.5577, 1e-4);
+    EXPECT_NEAR(jacobian[0][1], -0.0643, 1e-4);
+    EXPECT_NEAR(jacobian[0][2], 0.5962, 1e-4);
+    EXPECT_NEAR(jacobian[0][3], 0, 1e-4);
+    EXPECT_NEAR(jacobian[0][4], 0, 1e-4);
+    EXPECT_NEAR(jacobian[0][5], 1, 1e-4);
 }
 
 // This test is for odometry in approximately stationary scans
@@ -160,8 +187,8 @@ TEST(OdomTest, StationaryLab) {
 
     // odom setup
     LaserOdomParams params;
-    params.n_flat = 20;
-    params.n_edge = 10;
+    params.n_flat = 0;
+    params.n_edge = 50;
     params.max_correspondence_dist = 5;
     params.visualize = true;
     LaserOdom odom(params);

@@ -168,7 +168,6 @@ void LaserOdom::updateViz() {
     // For the current features, need to transform them to start of scan
     std::vector<size_t> ret_indices(3);
     std::vector<double> out_dist_sqr(3);
-//    int arb_id_counter = 0;
 
     for (auto iter = this->edges.begin(); iter != this->edges.end(); iter++) {
         double pt[3];
@@ -180,29 +179,6 @@ void LaserOdom::updateViz() {
         pt[0] += scale * this->cur_transform[3];
         pt[1] += scale * this->cur_transform[4];
         pt[2] += scale * this->cur_transform[5];
-
-        //        this->edge_idx->knnSearch(pt, 2, &ret_indices[0],
-        //        &out_dist_sqr[0]);
-        //
-        //        if (out_dist_sqr.at(1) < this->param.max_correspondence_dist)
-        //        {
-        //            // draw correspondences
-        //            this->display->addLine(
-        //              pcl::PointXYZ(pt[0], pt[1], pt[2]),
-        //              pcl::PointXYZ(this->prv_edges.points.at(ret_indices[0]).at(0),
-        //                            this->prv_edges.points.at(ret_indices[0]).at(1),
-        //                            this->prv_edges.points.at(ret_indices[0]).at(2)),
-        //              arb_id_counter,
-        //              ret_indices[0]);
-        //            this->display->addLine(
-        //              pcl::PointXYZ(pt[0], pt[1], pt[2]),
-        //              pcl::PointXYZ(this->prv_edges.points.at(ret_indices[1]).at(0),
-        //                            this->prv_edges.points.at(ret_indices[1]).at(1),
-        //                            this->prv_edges.points.at(ret_indices[1]).at(2)),
-        //              arb_id_counter,
-        //              ret_indices[1]);
-        //            arb_id_counter++;
-        //        }
 
         pcl::PointXYZI point;
         point.x = pt[0];
@@ -222,36 +198,6 @@ void LaserOdom::updateViz() {
         pt[1] += scale * this->cur_transform[4];
         pt[2] += scale * this->cur_transform[5];
 
-        //        this->flat_idx->knnSearch(pt, 3, &ret_indices[0],
-        //        &out_dist_sqr[0]);
-        //
-        //        if (out_dist_sqr.at(2) < this->param.max_correspondence_dist)
-        //        {
-        //            // draw correspondences
-        //            this->display->addLine(
-        //              pcl::PointXYZ(pt[0], pt[1], pt[2]),
-        //              pcl::PointXYZ(this->prv_flats.points.at(ret_indices[0]).at(0),
-        //                            this->prv_flats.points.at(ret_indices[0]).at(1),
-        //                            this->prv_flats.points.at(ret_indices[0]).at(2)),
-        //              arb_id_counter,
-        //              ret_indices[0] + 30000);
-        //            this->display->addLine(
-        //              pcl::PointXYZ(pt[0], pt[1], pt[2]),
-        //              pcl::PointXYZ(this->prv_flats.points.at(ret_indices[1]).at(0),
-        //                            this->prv_flats.points.at(ret_indices[1]).at(1),
-        //                            this->prv_flats.points.at(ret_indices[1]).at(2)),
-        //              arb_id_counter,
-        //              ret_indices[1] + 30000);
-        //            this->display->addLine(
-        //              pcl::PointXYZ(pt[0], pt[1], pt[2]),
-        //              pcl::PointXYZ(this->prv_flats.points.at(ret_indices[2]).at(0),
-        //                            this->prv_flats.points.at(ret_indices[2]).at(1),
-        //                            this->prv_flats.points.at(ret_indices[2]).at(2)),
-        //              arb_id_counter,
-        //              ret_indices[2] + 30000);
-        //            arb_id_counter++;
-        //        }
-
         pcl::PointXYZI point;
         point.x = pt[0];
         point.y = pt[1];
@@ -260,7 +206,7 @@ void LaserOdom::updateViz() {
         this->prev_viz->push_back(point);
     }
     this->display->addPointcloud(this->prev_viz, 0);
-    std::this_thread::sleep_for(std::chrono::milliseconds(10000));
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 }
 
 PCLPointXYZIT LaserOdom::applyIMU(const PCLPointXYZIT &p) {
@@ -372,21 +318,13 @@ bool LaserOdom::match() {
         if (out_dist_sqr.at(1) > this->param.max_correspondence_dist) {
             continue;
         }
-        ceres::CostFunction *cost_function = PointToLineError::Create();
-        problem.AddResidualBlock(
-          cost_function,
-          NULL,  // p_LossFunction,
-          this->cur_transform.data(),
+        ceres::CostFunction *cost_function = new AnalyticalPointToLine(
           &(this->edges.at(idx).pt[0]),
           this->prv_edges.points.at(ret_indices.at(0)).data(),
           this->prv_edges.points.at(ret_indices.at(1)).data(),
           &scale);
-        problem.SetParameterBlockConstant(&(this->edges.at(idx).pt[0]));
-        problem.SetParameterBlockConstant(
-          this->prv_edges.points.at(ret_indices.at(0)).data());
-        problem.SetParameterBlockConstant(
-          this->prv_edges.points.at(ret_indices.at(1)).data());
-        problem.SetParameterBlockConstant(&scale);
+        problem.AddResidualBlock(
+          cost_function, p_LossFunction, this->cur_transform.data());
     }
 
     // residuals blocks for flats
@@ -410,24 +348,32 @@ bool LaserOdom::match() {
             continue;
         }
 
-        ceres::CostFunction *cost_function = PointToPlaneError::Create();
+//        ceres::CostFunction *cost_function = PointToPlaneError::Create();
+//        problem.AddResidualBlock(
+//          cost_function,
+//          NULL,  // p_LossFunction,
+//          this->cur_transform.data(),
+//          &(this->flats.at(ind).pt[0]),
+//          this->prv_flats.points.at(ret_indices.at(0)).data(),
+//          this->prv_flats.points.at(ret_indices.at(1)).data(),
+//          this->prv_flats.points.at(ret_indices.at(2)).data(),
+//          &scale);
+//        problem.SetParameterBlockConstant(&(this->flats.at(ind).pt[0]));
+//        problem.SetParameterBlockConstant(
+//          this->prv_flats.points.at(ret_indices.at(0)).data());
+//        problem.SetParameterBlockConstant(
+//          this->prv_flats.points.at(ret_indices.at(1)).data());
+//        problem.SetParameterBlockConstant(
+//          this->prv_flats.points.at(ret_indices.at(2)).data());
+//        problem.SetParameterBlockConstant(&scale);
+        ceres::CostFunction *cost_function = new AnalyticalPointToPlane(
+                &(this->flats.at(idx).pt[0]),
+                this->prv_flats.points.at(ret_indices.at(0)).data(),
+                this->prv_flats.points.at(ret_indices.at(1)).data(),
+                this->prv_flats.points.at(ret_indices.at(2)).data(),
+                &scale);
         problem.AddResidualBlock(
-          cost_function,
-          NULL,  // p_LossFunction,
-          this->cur_transform.data(),
-          &(this->flats.at(ind).pt[0]),
-          this->prv_flats.points.at(ret_indices.at(0)).data(),
-          this->prv_flats.points.at(ret_indices.at(1)).data(),
-          this->prv_flats.points.at(ret_indices.at(2)).data(),
-          &scale);
-        problem.SetParameterBlockConstant(&(this->flats.at(ind).pt[0]));
-        problem.SetParameterBlockConstant(
-          this->prv_flats.points.at(ret_indices.at(0)).data());
-        problem.SetParameterBlockConstant(
-          this->prv_flats.points.at(ret_indices.at(1)).data());
-        problem.SetParameterBlockConstant(
-          this->prv_flats.points.at(ret_indices.at(2)).data());
-        problem.SetParameterBlockConstant(&scale);
+                cost_function, p_LossFunction, this->cur_transform.data());
     }
 
     // Add a normal prior to provide some regularization
@@ -449,7 +395,7 @@ bool LaserOdom::match() {
       this->param.n_ring * (this->param.n_flat + this->param.n_edge);
     if (problem.NumResidualBlocks() < max_residuals * 0.2) {
         LOG_ERROR("Less than expected residuals, resetting");
-        this->cur_transform = {1e-4, 1e-4, 1e-4, 1e-4, 1e-4, 1e-4};
+        this->cur_transform = {0, 0, 0, 0, 0, 0};
         this->initialized = false;
         return false;
     } else {
