@@ -47,5 +47,6 @@ TARGET_LINK_LIBRARIES(
     wave_utils
     ${Boost_LIBRARIES}
 )
+
 # COPY TEST DATA
 FILE(COPY tests/data tests/config DESTINATION ${PROJECT_BINARY_DIR}/tests)
