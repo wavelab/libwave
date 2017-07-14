@@ -34,7 +34,7 @@ class PointCloudDisplay {
      * Default constructor
      * @param name: Display window title. Must be unique.
      */
-    PointCloudDisplay(const std::string &name);
+    PointCloudDisplay(const std::string &name, double radius = 0.2);
 
     ~PointCloudDisplay();
 
@@ -77,6 +77,8 @@ class PointCloudDisplay {
                  int id1,
                  int id2);
 
+    void removeAll();
+
  private:
     std::string display_name;
     /**
@@ -98,6 +100,7 @@ class PointCloudDisplay {
      * Used to stop worker thread
      */
     std::atomic_flag continueFlag = ATOMIC_FLAG_INIT;
+    std::atomic_flag resetLines = ATOMIC_FLAG_INIT;
     std::mutex update_mutex;  ///< Protects buffers
     /** Struct for cloud buffer */
     struct Cloud {
@@ -119,6 +122,7 @@ class PointCloudDisplay {
     std::queue<Cloud> clouds;
     std::queue<CloudI> cloudsi;
     std::queue<Line> lines;
+    double radius;  // radius for line endpoints.
 };
 
 }  // namespace wave

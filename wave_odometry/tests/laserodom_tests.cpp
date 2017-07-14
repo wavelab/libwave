@@ -11,8 +11,8 @@
 namespace wave {
 
 const std::string TEST_SCAN = "data/testscan.pcd";
-const std::string TEST_SEQUENCE_DIR = "data/sequence/";
-const int sequence_length = 13;
+const std::string TEST_SEQUENCE_DIR = "data/garage/";
+const int sequence_length = 20;
 
 // Fixture to load same pointcloud all the time
 class OdomTestFile : public testing::Test {
@@ -114,14 +114,36 @@ TEST(Residual_test, pointToPlane) {
     ASSERT_NEAR(std::fabs(residual), 4, 0.0001);
 }
 
+TEST(Residual_test, pointToLineAnalytic) {
+    const double **trans;
+    trans = new const double*;
+    trans[0] = new const double[6]{0.5, 0.3, -0.2, 0.2, 5, 4};
+
+    double **jacobian;
+    jacobian = new double*;
+    jacobian[0] = new double[6];
+
+    double ptA[3] = {1, 1, 0};
+    double ptB[3] = {1, 3, 0};
+    double pt[3] = {1, 2, -4};
+    double scale = 1;
+    double residual = 0;
+
+    AnalyticalPointToLine thing(pt, ptA, ptB, &scale);
+    thing.Evaluate(trans, &residual, jacobian);
+
+    EXPECT_NEAR(residual, 1.2394, 1e-4);
+    EXPECT_NEAR(jacobian[0][0], 3.2963, 1e-4);
+    EXPECT_NEAR(jacobian[0][1], 0.7104, 1e-4);
+    EXPECT_NEAR(jacobian[0][2], 1.1772, 1e-4);
+    EXPECT_NEAR(jacobian[0][3], -0.2212, 1e-4);
+    EXPECT_NEAR(jacobian[0][4], 0, 1e-4);
+    EXPECT_NEAR(jacobian[0][5], 0.9752, 1e-4);
+
+}
+
 // This test is for odometry in approximately stationary scans
 TEST(OdomTest, StationaryLab) {
-    // Have a display for visualizing feature extraction
-//    pcl::PointCloud<pcl::PointXYZI>::Ptr vizedge(new pcl::PointCloud<pcl::PointXYZI>),
-//            vizflats(new pcl::PointCloud<pcl::PointXYZI>);
-//    PointCloudDisplay display("odom");
-//    display.startSpin();
-
     // Load entire sequence into memory
     std::vector<pcl::PointCloud<PointXYZIR>> clds;
     std::vector<pcl::PointCloud<PointXYZIR>::Ptr> cldptr;
@@ -138,9 +160,9 @@ TEST(OdomTest, StationaryLab) {
 
     // odom setup
     LaserOdomParams params;
-    params.n_flat = 100;
-    params.n_edge = 40;
-    params.max_correspondence_dist = 1;
+    params.n_flat = 20;
+    params.n_edge = 10;
+    params.max_correspondence_dist = 5;
     params.visualize = true;
     LaserOdom odom(params);
     std::vector<PointXYZIR> vec;
@@ -169,40 +191,6 @@ TEST(OdomTest, StationaryLab) {
                     std::chrono::microseconds dur(clds.at(i).header.stamp);
                     TimeType stamp(dur);
                     odom.addPoints(vec, prev_enc, stamp);
-//                    if (odom.new_features) {
-//                        odom.new_features = false;
-//
-//                        if (initialized) {
-//                            memcpy(prev_transform, cur_transform, 48);
-//                            memcpy(cur_transform, odom.cur_transform.data(), 48);
-//                        } else {
-//                            memcpy(prev_transform, odom.cur_transform.data(), 48);
-//                            initialized = true;
-//                        }
-//
-//                        vizedge->clear();
-//                        vizflats->clear();
-//                        for (auto iter = odom.edges.begin(); iter < odom.edges.end(); iter++) {
-//                            pcl::PointXYZI pt;
-//                            pt.x = iter->pt[0];
-//                            pt.y = iter->pt[1];
-//                            pt.z = iter->pt[2];
-//                            pt.intensity = 1;
-//                            vizedge->push_back(pt);
-//                        }
-//                        for (auto iter = odom.flats.begin(); iter < odom.flats.end(); iter++) {
-//                            pcl::PointXYZI pt;
-//                            pt.x = iter->pt[0];
-//                            pt.y = iter->pt[1];
-//                            pt.z = iter->pt[2];
-//                            pt.intensity = 1;
-//                            pt.intensity = 2;
-//                            vizedge->push_back(pt);
-//                        }
-//                        display.addPointcloud(vizedge, 1);
-//                        display.addPointcloud(vizflats, 2);
-//                        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-//                    }
                     vec.clear();
                 }
                 prev_enc = encoder;
@@ -210,7 +198,6 @@ TEST(OdomTest, StationaryLab) {
             vec.emplace_back(recovered);
         }
     }
-//    display.stopSpin();
 }
 
 // This is less of a test and more something that can be

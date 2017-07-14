@@ -3,8 +3,13 @@
 
 namespace wave {
 
-PointCloudDisplay::PointCloudDisplay(const std::string &name) {
+PointCloudDisplay::PointCloudDisplay(const std::string &name, double rad    ) {
     this->display_name = name;
+    this->radius = rad;
+}
+
+void PointCloudDisplay::removeAll() {
+    this->resetLines.clear(std::memory_order_relaxed);
 }
 
 void PointCloudDisplay::startSpin() {
@@ -68,6 +73,10 @@ void PointCloudDisplay::addLine(const pcl::PointXYZ &pt1,
 }
 
 void PointCloudDisplay::updateInternal() {
+    if(!(this->resetLines.test_and_set(std::memory_order_relaxed))) {
+        this->viewer->removeAllShapes();
+        this->viewer->removeAllPointClouds();
+    }
     // add or update clouds in the viewer until the queue is empty
     while (this->clouds.size() != 0) {
         const auto &cld = this->clouds.front();
@@ -93,26 +102,25 @@ void PointCloudDisplay::updateInternal() {
         this->cloudsi.pop();
     }
 
-    double rad = 0.2;
     double hi = 200;
     double low = 0;
 
     while (this->lines.size() != 0) {
         const auto &line = this->lines.front();
-        if (this->viewer->contains(std::to_string(line.id1) + "pt")) {
-            this->viewer->updateSphere(
-              line.pt1, rad, hi, low, low, std::to_string(line.id1) + "pt");
-        } else {
-            this->viewer->addSphere(
-              line.pt1, rad, hi, low, low, std::to_string(line.id1) + "pt");
-        }
-        if (this->viewer->contains(std::to_string(line.id2) + "pt")) {
-            this->viewer->updateSphere(
-              line.pt2, rad, hi, low, low, std::to_string(line.id2) + "pt");
-        } else {
-            this->viewer->addSphere(
-              line.pt2, rad, hi, low, low, std::to_string(line.id2) + "pt");
-        }
+//        if (this->viewer->contains(std::to_string(line.id1) + "pt")) {
+//            this->viewer->updateSphere(
+//              line.pt1, this->radius, hi, low, low, std::to_string(line.id1) + "pt");
+//        } else {
+//            this->viewer->addSphere(
+//              line.pt1, this->radius, hi, low, low, std::to_string(line.id1) + "pt");
+//        }
+//        if (this->viewer->contains(std::to_string(line.id2) + "pt")) {
+//            this->viewer->updateSphere(
+//              line.pt2, this->radius, hi, low, low, std::to_string(line.id2) + "pt");
+//        } else {
+//            this->viewer->addSphere(
+//              line.pt2, this->radius, hi, low, low, std::to_string(line.id2) + "pt");
+//        }
         // Doesn't seem to be a way to update lines
         this->viewer->addLine(
           line.pt1,

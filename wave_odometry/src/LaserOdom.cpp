@@ -70,13 +70,18 @@ LaserOdom::LaserOdom(const LaserOdomParams params) : param(params) {
       3, this->prv_flats, nanoflann::KDTreeSingleIndexAdaptorParams(10));
     this->cur_transform = {1e-4, 1e-4, 1e-4, 1e-4, 1e-4, 1e-4};
     if (params.visualize) {
-        this->display = new PointCloudDisplay("laser odom");
+        this->display = new PointCloudDisplay("laser odom", 0.05);
         this->display->startSpin();
         // Allocate space for visualization clouds
         this->prev_viz = boost::shared_ptr<pcl::PointCloud<pcl::PointXYZI>>(
           new pcl::PointCloud<pcl::PointXYZI>);
         this->cur_viz = boost::shared_ptr<pcl::PointCloud<pcl::PointXYZI>>(
           new pcl::PointCloud<pcl::PointXYZI>);
+    }
+    this->scale_lookup.resize(this->param.max_ticks + 1,
+                              0);  // plus one is for 0 tick
+    for (int i = 0; i <= this->param.max_ticks; i++) {
+        this->scale_lookup.at(i) = (double) i / (double) this->param.max_ticks;
     }
 }
 
@@ -135,8 +140,10 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts,
 void LaserOdom::updateViz() {
     // populate prev with points stored in kd tree
     // These are already transformed to the start of the current scan
+    this->display->removeAll();
     this->prev_viz->clear();
     this->cur_viz->clear();
+
     for (auto iter = this->prv_flats.points.begin();
          iter != this->prv_flats.points.end();
          iter++) {
@@ -159,9 +166,13 @@ void LaserOdom::updateViz() {
     }
 
     // For the current features, need to transform them to start of scan
+    std::vector<size_t> ret_indices(3);
+    std::vector<double> out_dist_sqr(3);
+//    int arb_id_counter = 0;
+
     for (auto iter = this->edges.begin(); iter != this->edges.end(); iter++) {
         double pt[3];
-        double scale = ((float) iter->tick / (float) this->param.max_ticks);
+        double &scale = this->scale_lookup.at(iter->tick);
         double wvec[3] = {scale * this->cur_transform[0],
                           scale * this->cur_transform[1],
                           scale * this->cur_transform[2]};
@@ -169,6 +180,30 @@ void LaserOdom::updateViz() {
         pt[0] += scale * this->cur_transform[3];
         pt[1] += scale * this->cur_transform[4];
         pt[2] += scale * this->cur_transform[5];
+
+        //        this->edge_idx->knnSearch(pt, 2, &ret_indices[0],
+        //        &out_dist_sqr[0]);
+        //
+        //        if (out_dist_sqr.at(1) < this->param.max_correspondence_dist)
+        //        {
+        //            // draw correspondences
+        //            this->display->addLine(
+        //              pcl::PointXYZ(pt[0], pt[1], pt[2]),
+        //              pcl::PointXYZ(this->prv_edges.points.at(ret_indices[0]).at(0),
+        //                            this->prv_edges.points.at(ret_indices[0]).at(1),
+        //                            this->prv_edges.points.at(ret_indices[0]).at(2)),
+        //              arb_id_counter,
+        //              ret_indices[0]);
+        //            this->display->addLine(
+        //              pcl::PointXYZ(pt[0], pt[1], pt[2]),
+        //              pcl::PointXYZ(this->prv_edges.points.at(ret_indices[1]).at(0),
+        //                            this->prv_edges.points.at(ret_indices[1]).at(1),
+        //                            this->prv_edges.points.at(ret_indices[1]).at(2)),
+        //              arb_id_counter,
+        //              ret_indices[1]);
+        //            arb_id_counter++;
+        //        }
+
         pcl::PointXYZI point;
         point.x = pt[0];
         point.y = pt[1];
@@ -178,7 +213,7 @@ void LaserOdom::updateViz() {
     }
     for (auto iter = this->flats.begin(); iter != this->flats.end(); iter++) {
         double pt[3];
-        double scale = ((float) iter->tick / (float) this->param.max_ticks);
+        double &scale = this->scale_lookup.at(iter->tick);
         double wvec[3] = {scale * this->cur_transform[0],
                           scale * this->cur_transform[1],
                           scale * this->cur_transform[2]};
@@ -186,6 +221,37 @@ void LaserOdom::updateViz() {
         pt[0] += scale * this->cur_transform[3];
         pt[1] += scale * this->cur_transform[4];
         pt[2] += scale * this->cur_transform[5];
+
+        //        this->flat_idx->knnSearch(pt, 3, &ret_indices[0],
+        //        &out_dist_sqr[0]);
+        //
+        //        if (out_dist_sqr.at(2) < this->param.max_correspondence_dist)
+        //        {
+        //            // draw correspondences
+        //            this->display->addLine(
+        //              pcl::PointXYZ(pt[0], pt[1], pt[2]),
+        //              pcl::PointXYZ(this->prv_flats.points.at(ret_indices[0]).at(0),
+        //                            this->prv_flats.points.at(ret_indices[0]).at(1),
+        //                            this->prv_flats.points.at(ret_indices[0]).at(2)),
+        //              arb_id_counter,
+        //              ret_indices[0] + 30000);
+        //            this->display->addLine(
+        //              pcl::PointXYZ(pt[0], pt[1], pt[2]),
+        //              pcl::PointXYZ(this->prv_flats.points.at(ret_indices[1]).at(0),
+        //                            this->prv_flats.points.at(ret_indices[1]).at(1),
+        //                            this->prv_flats.points.at(ret_indices[1]).at(2)),
+        //              arb_id_counter,
+        //              ret_indices[1] + 30000);
+        //            this->display->addLine(
+        //              pcl::PointXYZ(pt[0], pt[1], pt[2]),
+        //              pcl::PointXYZ(this->prv_flats.points.at(ret_indices[2]).at(0),
+        //                            this->prv_flats.points.at(ret_indices[2]).at(1),
+        //                            this->prv_flats.points.at(ret_indices[2]).at(2)),
+        //              arb_id_counter,
+        //              ret_indices[2] + 30000);
+        //            arb_id_counter++;
+        //        }
+
         pcl::PointXYZI point;
         point.x = pt[0];
         point.y = pt[1];
@@ -235,8 +301,7 @@ void LaserOdom::buildTrees() {
     wvec.normalize();
 
     for (PointXYZIT pt : this->edges) {
-        auto scale = (((float) this->param.max_ticks - (float) pt.tick) /
-                      (float) this->param.max_ticks);
+        double &scale = this->scale_lookup.at(this->param.max_ticks - pt.tick);
         if (scale * magnitude > ZERO_TOL) {
             rotation.setFromAngleAxis(scale * magnitude, wvec);
         } else {
@@ -249,8 +314,7 @@ void LaserOdom::buildTrees() {
     }
 
     for (PointXYZIT pt : this->flats) {
-        auto scale = (((float) this->param.max_ticks - (float) pt.tick) /
-                      (float) this->param.max_ticks);
+        double &scale = this->scale_lookup.at(this->param.max_ticks - pt.tick);
         if (scale * magnitude > ZERO_TOL) {
             rotation.setFromAngleAxis(scale * magnitude, wvec);
         } else {
@@ -286,10 +350,11 @@ bool LaserOdom::match() {
     // Point to line requires only 2
     std::vector<size_t> ret_indices(3);
     std::vector<double> out_dist_sqr(3);
+
     // residual blocks for edges
-    for (size_t idx = 0; idx < this->edges.size(); idx++) {
-        double scale =
-          ((float) this->edges.at(idx).tick / (float) this->param.max_ticks);
+    size_t idx;
+    for (idx = 0; idx < this->edges.size(); idx++) {
+        double &scale = this->scale_lookup.at(this->edges.at(idx).tick);
 
         Vec3 pt(this->edges.at(idx).pt[0],
                 this->edges.at(idx).pt[1],
@@ -307,11 +372,10 @@ bool LaserOdom::match() {
         if (out_dist_sqr.at(1) > this->param.max_correspondence_dist) {
             continue;
         }
-
         ceres::CostFunction *cost_function = PointToLineError::Create();
         problem.AddResidualBlock(
           cost_function,
-          p_LossFunction,
+          NULL,  // p_LossFunction,
           this->cur_transform.data(),
           &(this->edges.at(idx).pt[0]),
           this->prv_edges.points.at(ret_indices.at(0)).data(),
@@ -326,13 +390,12 @@ bool LaserOdom::match() {
     }
 
     // residuals blocks for flats
-    for (size_t idx = 0; idx < this->flats.size(); idx++) {
-        double scale =
-          ((float) this->flats.at(idx).tick / (float) this->param.max_ticks);
+    for (size_t ind = 0; ind < this->flats.size(); ind++) {
+        double &scale = this->scale_lookup.at(this->flats.at(ind).tick);
 
-        Vec3 pt(this->flats.at(idx).pt[0],
-                this->flats.at(idx).pt[1],
-                this->flats.at(idx).pt[2]);
+        Vec3 pt(this->flats.at(ind).pt[0],
+                this->flats.at(ind).pt[1],
+                this->flats.at(ind).pt[2]);
         if (magnitude < ZERO_TOL) {
             rotation.setIdentity();
         } else {
@@ -350,14 +413,14 @@ bool LaserOdom::match() {
         ceres::CostFunction *cost_function = PointToPlaneError::Create();
         problem.AddResidualBlock(
           cost_function,
-          p_LossFunction,
+          NULL,  // p_LossFunction,
           this->cur_transform.data(),
-          &(this->flats.at(idx).pt[0]),
+          &(this->flats.at(ind).pt[0]),
           this->prv_flats.points.at(ret_indices.at(0)).data(),
           this->prv_flats.points.at(ret_indices.at(1)).data(),
           this->prv_flats.points.at(ret_indices.at(2)).data(),
           &scale);
-        problem.SetParameterBlockConstant(&(this->flats.at(idx).pt[0]));
+        problem.SetParameterBlockConstant(&(this->flats.at(ind).pt[0]));
         problem.SetParameterBlockConstant(
           this->prv_flats.points.at(ret_indices.at(0)).data());
         problem.SetParameterBlockConstant(

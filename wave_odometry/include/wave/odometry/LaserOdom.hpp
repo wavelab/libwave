@@ -71,6 +71,7 @@ class LaserOdom {
     LaserOdomParams param;
     bool initialized = false;
     int prv_tick = std::numeric_limits<int>::max();
+    std::vector<double> scale_lookup;
 
     void transformToStart();
 
