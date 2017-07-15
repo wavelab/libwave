@@ -122,12 +122,15 @@ LandmarkMap VOTestDatasetGenerator::generateLandmarks() {
 
 int VOTestDataset::outputLandmarks(const std::string &output_path) {
     // build landmark matrix
-    MatX data = MatX::Zero(this->landmarks.size(), 3);
+    auto data = MatX{this->landmarks.size(), 4};
 
-    for (auto const &landmark : this->landmarks) {
+    int i = 0;
+    for (const auto &landmark : this->landmarks) {
         const auto &landmark_id = landmark.first;
         const auto &point = landmark.second;
-        data.block(landmark_id, 0, 1, 3) = point.transpose();
+        data(i, 0) = landmark_id;
+        data.block<1, 3>(i, 1) = point.transpose();
+        ++i;
     }
 
     // output landmarks to file
@@ -172,13 +175,11 @@ int VOTestDataset::outputObserved(const std::string &output_dir) {
 
         // output observed features
         for (auto feature : state.features_observed) {
-            // feature in image frame
-            const auto &f_2d = feature.second;
-            obs_file << f_2d(0) << "," << f_2d(1) << std::endl;
-
-            // feature in world frame
+            const auto &f_2d = feature.second;  // feature in image frame
             const auto &landmark_id = feature.first;
-            obs_file << landmark_id << std::endl;
+
+            obs_file << landmark_id << "," << f_2d(0) << "," << f_2d(1)
+                     << std::endl;
         }
 
         // clean up and record features observed file path to index
@@ -193,14 +194,14 @@ int VOTestDataset::outputObserved(const std::string &output_dir) {
     return 0;
 }
 
-int VOTestDataset::outputRobotState(const std::string &save_path) {
+int VOTestDataset::outputRobotState(const std::string &output_path) {
     // pre-check
     if (this->states.empty()) {
         return -2;
     }
 
     // setup
-    std::ofstream state_file(save_path);
+    std::ofstream state_file(output_path);
 
     // state header
     // clang-format off
@@ -222,7 +223,6 @@ int VOTestDataset::outputRobotState(const std::string &save_path) {
         state_file << x(2) << ",";
         state_file << std::endl;
     }
-    state_file.close();
 
     return 0;
 }

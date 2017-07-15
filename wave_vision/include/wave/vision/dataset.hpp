@@ -98,16 +98,58 @@ struct VOTestInstant {
  */
 struct VOTestDataset {
     /** Ground truth 3D world features, where each column represents a feature
-     * and each row represents the feature position in x, y, z (NWU)  */
+     * and each row represents the landmark position in x, y, z (NWU)  */
     LandmarkMap landmarks;
 
     /** For each time step, a set of measurements */
     std::vector<VOTestInstant> states;
 
+    /**
+     * Writes ground truth landmarks, states, and observations to the given
+     * directory. If no errors occur, this is equivalent to calling
+     *
+     * ```
+     * outputLandmarks(output_dir + "/landmarks.dat");
+     * outputRobotState(output_dir + "/state.dat");
+     * outputObserved(output_dir);
+     * ```
+     *
+     * @return 0 on success
+     */
     int outputToFile(const std::string &output_dir);
+
+    /** Writes landmark ground truth to the given file.
+     *
+     * The output is in csv format with no header. Each row contains the
+     * landmark id and coordinates in x, y, z.
+     *
+     * @return 0 on success
+     */
     int outputLandmarks(const std::string &output_path);
-    int outputObserved(const std::string &output_path);
-    int outputRobotState(const std::string &output_dir);
+
+
+    /** Writes landmarks measurements to the given directory.
+     *
+     * For each timestep in the dataset, a file `observed_n.dat` is created
+     * in output_dir, where n is an index starting at zero. Additionally, a file
+     * index.dat is created holding a list of the `observed_*.dat` filenames.
+     *
+     * `observed_*.dat` is in csv format. The first row contains the time. The
+     * second row holds the robot 2d pose (x, y, theta). Each subsequent row
+     * holds a landmark id and pixel measurements in the image plane (u, v).
+     *
+     * @return 0 on success
+     */
+    int outputObserved(const std::string &output_dir);
+
+    /** Writes robot state group truth to the given file.
+     *
+     * The output is in csv format with a one-row header. Each row contains the
+     * time and 2d pose (x, y, theta).
+     *
+     * @return 0 on success
+     */
+    int outputRobotState(const std::string &output_path);
 };
 
 /**
