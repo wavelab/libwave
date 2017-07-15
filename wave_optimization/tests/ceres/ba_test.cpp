@@ -7,7 +7,7 @@ namespace wave {
 
 const std::string TEST_CONFIG = "tests/data/vo_test.yaml";
 
-static double **build_landmark_matrix(const VOTestDataset &dataset) {
+static double **build_landmark_matrix(const VOTestDatasetGenerator &dataset) {
     size_t nb_landmarks = dataset.landmarks.size();
     double **landmarks = (double **) malloc(sizeof(double *) * nb_landmarks);
 
@@ -91,7 +91,7 @@ TEST(BAResidual, constructor) {
 
 TEST(BAResidual, test) {
     // create vo dataset
-    VOTestDataset dataset;
+    VOTestDatasetGenerator dataset;
     dataset.configure(TEST_CONFIG);
     dataset.simulateVODataset();
     double **landmarks = build_landmark_matrix(dataset);
@@ -163,7 +163,7 @@ TEST(BAResidual, test) {
 
 TEST(BundleAdjustment, solve) {
     // create vo dataset
-    VOTestDataset dataset;
+    VOTestDatasetGenerator dataset;
     dataset.configure(TEST_CONFIG);
     dataset.simulateVODataset();
     double **landmarks = build_landmark_matrix(dataset);

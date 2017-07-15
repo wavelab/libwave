@@ -37,11 +37,11 @@ TEST(VOTestCamera, checkLandmarks) {
     Vec3 rpy{0, 0, 0};
     Vec3 t{0, 0, 0};
 
-    std::map<Vec3, int, VecComparator> landmarks;
-    landmarks.insert({Vec3::Random(), 1});
-    landmarks.insert({Vec3::Random(), 2});
-    landmarks.insert({Vec3::Random(), 3});
-    landmarks.insert({Vec3::Random(), 4});
+    LandmarkMap landmarks;
+    landmarks.emplace(1, Vec3::Random());
+    landmarks.emplace(2, Vec3::Random());
+    landmarks.emplace(3, Vec3::Random());
+    landmarks.emplace(4, Vec3::Random());
 
     // clang-format off
 		VOTestCamera camera;
@@ -54,19 +54,19 @@ TEST(VOTestCamera, checkLandmarks) {
     // clang-format on
 
     // test
-    std::vector<std::pair<Vec2, int>> observed;
+    std::vector<LandmarkObservation> observed;
     camera.checkLandmarks(0.1, landmarks, rpy, t, observed);
 }
 
 TEST(VOTestDataset, constructor) {
-    VOTestDataset dataset;
+    VOTestDatasetGenerator dataset;
 
     EXPECT_EQ(0, dataset.camera.image_width);
     EXPECT_EQ(0, dataset.camera.image_height);
 }
 
 TEST(VOTestDataset, configure) {
-    VOTestDataset dataset;
+    VOTestDatasetGenerator dataset;
     int retval;
 
     retval = dataset.configure(TEST_CONFIG);
@@ -79,21 +79,21 @@ TEST(VOTestDataset, configure) {
     EXPECT_FLOAT_EQ(0.0, dataset.camera.K(2, 1));
 }
 
-TEST(VOTestDataset, simulateVODataset) {
-    VOTestDataset dataset;
+TEST(VOTestDataset, generate) {
+    VOTestDatasetGenerator generator;
 
-    dataset.configure(TEST_CONFIG);
-    int retval = dataset.simulateVODataset();
-
-    EXPECT_EQ(0, retval);
+    generator.configure(TEST_CONFIG);
+    auto dataset = generator.generate();
 }
 
-TEST(VOTestDataset, generateTestData) {
-    VOTestDataset dataset;
+TEST(VOTestDataset, outputToFile) {
+    VOTestDatasetGenerator generator;
 
     remove_dir(TEST_OUTPUT);
-    dataset.configure(TEST_CONFIG);
-    int retval = dataset.generateTestData(TEST_OUTPUT);
+    generator.configure(TEST_CONFIG);
+    auto dataset = generator.generate();
+
+    int retval = dataset.outputToFile(TEST_OUTPUT);
     EXPECT_EQ(0, retval);
 }
 
