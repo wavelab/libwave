@@ -14,12 +14,11 @@ bool VOTestCamera::update(double dt) {
     return false;
 }
 
-int VOTestCamera::checkLandmarks(
-  double dt,
-  const std::map<Vec3, int, VecComparator> &landmarks,
-  const Vec3 &rpy,
-  const Vec3 &t,
-  std::vector<std::pair<Vec2, int>> &observed) {
+int VOTestCamera::checkLandmarks(double dt,
+                                 const LandmarkMap &landmarks,
+                                 const Vec3 &rpy,
+                                 const Vec3 &t,
+                                 std::vector<LandmarkObservation> &observed) {
     // pre-check
     if (this->update(dt) == false) {
         return 1;
@@ -37,7 +36,7 @@ int VOTestCamera::checkLandmarks(
     observed.clear();
     for (auto landmark : landmarks) {
         // convert feature in NWU to EDN coordinate system
-        Vec3 point = landmark.first;
+        const auto &point = landmark.second;
         Vec4 f_3d_edn{-point(1), -point(2), point(0), 1.0};
 
         // project 3D world point to 2D image plane
@@ -53,8 +52,7 @@ int VOTestCamera::checkLandmarks(
             // check to see if feature observed is within image plane
             if ((f_2d(0) < this->image_width) && (f_2d(0) > 0)) {
                 if ((f_2d(1) < this->image_height) && (f_2d(1) > 0)) {
-                    observed.push_back(
-                      {f_2d.block(0, 0, 2, 1), landmark.second});
+                    observed.emplace_back(landmark.first, f_2d.head<2>());
                 }
             }
         }
@@ -64,7 +62,7 @@ int VOTestCamera::checkLandmarks(
 }
 
 
-int VOTestDataset::configure(const std::string &config_file) {
+int VOTestDatasetGenerator::configure(const std::string &config_file) {
     ConfigParser parser;
     double fx, fy, cx, cy;
 
@@ -105,13 +103,10 @@ int VOTestDataset::configure(const std::string &config_file) {
     return 0;
 }
 
-int VOTestDataset::generateLandmarks() {
-    // pre-check
-    if (this->configured == false) {
-        return -1;
-    }
+LandmarkMap VOTestDatasetGenerator::generateLandmarks() {
+    LandmarkMap landmarks;
 
-    // generate random 3d features
+    // generate random 3d landmarks
     for (int i = 0; i < this->nb_landmarks; i++) {
         double x =
           randf(this->landmark_x_bounds(0), this->landmark_x_bounds(1));
@@ -119,25 +114,19 @@ int VOTestDataset::generateLandmarks() {
           randf(this->landmark_y_bounds(0), this->landmark_y_bounds(1));
         double z =
           randf(this->landmark_z_bounds(0), this->landmark_z_bounds(1));
-        this->landmarks.insert({Vec3{x, y, z}, i});
+        landmarks.emplace(i, Vec3{x, y, z});
     }
 
-    return 0;
+    return landmarks;
 }
 
 int VOTestDataset::outputLandmarks(const std::string &output_path) {
-    // pre-check
-    if (this->configured == false) {
-        return -1;
-    } else if ((int) this->landmarks.size() != this->nb_landmarks) {
-        return -2;
-    }
-
     // build landmark matrix
     MatX data = MatX::Zero(this->landmarks.size(), 3);
+
     for (auto const &landmark : this->landmarks) {
-        Vec3 point = landmark.first;
-        int landmark_id = landmark.second;
+        const auto &landmark_id = landmark.first;
+        const auto &point = landmark.second;
         data.block(landmark_id, 0, 1, 3) = point.transpose();
     }
 
@@ -151,9 +140,7 @@ int VOTestDataset::outputLandmarks(const std::string &output_path) {
 
 int VOTestDataset::outputObserved(const std::string &output_dir) {
     // pre-check
-    if (this->configured == false) {
-        return -1;
-    } else if (this->features_observed.size() == 0) {
+    if (this->states.empty()) {
         return -2;
     }
 
@@ -161,7 +148,7 @@ int VOTestDataset::outputObserved(const std::string &output_dir) {
     int index = 0;
     std::ofstream index_file(output_dir + "/index.dat");
 
-    for (auto observed : this->features_observed) {
+    for (auto state : this->states) {
         // build observed file path
         std::ostringstream oss("");
         oss << output_dir + "/observed_" << index << ".dat";
@@ -169,30 +156,28 @@ int VOTestDataset::outputObserved(const std::string &output_dir) {
 
         // create observed features file
         std::ofstream obs_file(obs_path);
-        if (obs_file.good() != true) {
+        if (!obs_file.good()) {
             LOG_ERROR("Failed to open [%s] to output observed features!",
                       obs_path.c_str());
             return -2;
         }
 
         // output header
-        auto state = this->robot_state[index];
-        double time = state.first;
-        Vec3 x = state.second;
+        const auto &pose = state.robot_pose;
         // clang-format off
-				obs_file << time << std::endl;             // time
-				obs_file << x(0) << "," << x(1) << "," << x(2) << std::endl;  // robot pose
-				obs_file << observed.size() << std::endl;  // number of features
+				obs_file << state.time << std::endl;
+				obs_file << pose.x() << "," << pose.y() << "," << pose.z() << std::endl;
+				obs_file << state.features_observed.size() << std::endl;
         // clang-format on
 
         // output observed features
-        for (auto feature : observed) {
+        for (auto feature : state.features_observed) {
             // feature in image frame
-            Vec2 f_2d = feature.first.transpose();
+            const auto &f_2d = feature.second;
             obs_file << f_2d(0) << "," << f_2d(1) << std::endl;
 
             // feature in world frame
-            int landmark_id = feature.second;
+            const auto &landmark_id = feature.first;
             obs_file << landmark_id << std::endl;
         }
 
@@ -210,9 +195,7 @@ int VOTestDataset::outputObserved(const std::string &output_dir) {
 
 int VOTestDataset::outputRobotState(const std::string &save_path) {
     // pre-check
-    if (this->configured == false) {
-        return -1;
-    } else if (this->robot_state.size() == 0) {
+    if (this->states.empty()) {
         return -2;
     }
 
@@ -229,9 +212,9 @@ int VOTestDataset::outputRobotState(const std::string &save_path) {
     // clang-format on
 
     // output robot state
-    for (auto state : this->robot_state) {
-        double t = state.first;
-        Vec3 x = state.second;
+    for (auto state : this->states) {
+        const auto t = state.time;
+        const auto &x = state.robot_pose;
 
         state_file << t << ",";
         state_file << x(0) << ",";
@@ -244,14 +227,10 @@ int VOTestDataset::outputRobotState(const std::string &save_path) {
     return 0;
 }
 
-int VOTestDataset::simulateVODataset() {
-    // pre-check
-    if (this->configured == false) {
-        return -1;
-    }
-
+VOTestDataset VOTestDatasetGenerator::generate() {
+    VOTestDataset dataset;
     // generate random 3D features
-    this->generateLandmarks();
+    dataset.landmarks = this->generateLandmarks();
 
     // calculate circle trajectory inputs
     double circle_radius = 0.5;
@@ -263,7 +242,6 @@ int VOTestDataset::simulateVODataset() {
 
     // simulate synthetic VO dataset
     double dt = 0.01;
-    double time = 0.0;
     TwoWheelRobot2DModel robot{Vec3{0.0, 0.0, 0.0}};
 
     for (int i = 0; i < 300; i++) {
@@ -273,34 +251,27 @@ int VOTestDataset::simulateVODataset() {
         // check features
         Vec3 rpy = Vec3{0.0, 0.0, x(2)};
         Vec3 t = Vec3{x(0), x(1), 0.0};
-        std::vector<std::pair<Vec2, int>> observed;
 
         // convert rpy and t from NWU to EDN coordinate system
         Vec3 rpy_edn, t_edn, x_edn;
         nwu2edn(rpy, rpy_edn);
         nwu2edn(t, t_edn);
         nwu2edn(x, x_edn);
+        auto instant = VOTestInstant{};
 
         int retval = this->camera.checkLandmarks(
-          dt, this->landmarks, rpy_edn, t_edn, observed);
+          dt, dataset.landmarks, rpy_edn, t_edn, instant.features_observed);
         if (retval == 0) {
-            this->robot_state.push_back({time, x});
-            this->features_observed.push_back(observed);
+            instant.time = i * dt;
+            instant.robot_pose = x;
+            dataset.states.push_back(instant);
         }
-
-        // update
-        time += dt;
     }
 
-    return 0;
+    return dataset;
 }
 
-int VOTestDataset::generateTestData(const std::string &output_dir) {
-    // pre-check
-    if (this->configured == false) {
-        return -1;
-    }
-
+int VOTestDataset::outputToFile(const std::string &output_dir) {
     // mkdir calibration directory
     int retval = mkdir(output_dir.c_str(), ACCESSPERMS);
     if (retval != 0) {
@@ -308,15 +279,13 @@ int VOTestDataset::generateTestData(const std::string &output_dir) {
         return -2;
     }
 
-    // output synthetic vo dataset
-    this->simulateVODataset();
+    // output this synthetic vo dataset
     if (this->outputLandmarks(output_dir + "/landmarks.dat") != 0)
         goto error;
     if (this->outputRobotState(output_dir + "/state.dat") != 0)
         goto error;
     if (this->outputObserved(output_dir) != 0)
         goto error;
-
     return 0;
 error:
     return -3;
