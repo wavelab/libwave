@@ -34,14 +34,23 @@ Vec2 focal_length(double hfov,
                   double image_width,
                   double image_height);
 
-/** Calculate camera projection matrix
+/** Measure a 3D point using a simple pinhole camera model.
  *
  * @param K camera intrinsic matrix
- * @param R camera rotation matrix
- * @param t camera position
- * @param[out] P camera projection matrix
+ * @param R_GC orientation of camera in world frame
+ * @param G_p_C_G translation from world origin to camera, in world frame
+ * @param G_p_F_G translation from world origin to feature, in world frame
+ * @param result measurement in image frame (pixels)
+ * @return true if feature is in front of the camera.
+ *
+ * @note this function is meant for testing; more sophisticated third-party
+ * camera models should normally be used.
  */
-void projection_matrix(const Mat3 &K, const Mat3 &R, const Vec3 &t, MatX &P);
+bool pinholeProject(const Mat3 &K,
+                    const Mat3 &R_GC,
+                    const Vec3 &G_p_C_G,
+                    const Vec3 &G_p_F_G,
+                    Vec2 &result);
 
 /** Convert a single cv::KeyPoint to Vec2
  *

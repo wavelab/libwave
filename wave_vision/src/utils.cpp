@@ -18,13 +18,33 @@ Vec2 focal_length(double hfov,
     return focal;
 }
 
-void projection_matrix(const Mat3 &K, const Mat3 &R, const Vec3 &t, MatX &P) {
-    MatX extrinsics(3, 4);
-    extrinsics.block(0, 0, 3, 3) = R;
-    extrinsics.block(0, 3, 3, 1) = t;
+bool pinholeProject(const Mat3 &K,
+                    const Mat3 &R_GC,
+                    const Vec3 &G_p_C_G,
+                    const Vec3 &G_p_F_G,
+                    Vec2 &result) {
+    // Note R_GC is is the orientation of the camera in the world frame.
+    // R_CG is the rotation that transforms *points* in the world frame to the
+    // camera frame.
+    Mat3 R_CG = R_GC.transpose();
 
-    P.resize(3, 4);
-    P = K * extrinsics;
+    // Make extrinsic matrix
+    MatX extrinsic(3, 4);
+    extrinsic.topLeftCorner<3, 3>() = R_CG;
+    extrinsic.topRightCorner<3, 1>() = -R_CG * G_p_C_G;
+    extrinsic(2, 3) = 1;
+
+    Vec4 landmark_homogeneous;
+    landmark_homogeneous << G_p_F_G, 1.;
+
+    // project
+    Vec3 homogeneous = K * extrinsic * landmark_homogeneous;
+
+    // get image coordinates from homogenous coordinates
+    result = homogeneous.head<2>() / homogeneous(2);
+
+    // check cheirality
+    return (homogeneous(2) > 0);
 }
 
 Vec2 convertKeypoint(const cv::KeyPoint &keypoint) {
