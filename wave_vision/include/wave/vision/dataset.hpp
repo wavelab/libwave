@@ -77,8 +77,11 @@ struct VOTestInstant {
     /** The corresponding camera frame, or -1 if no camera observations */
     int camera_frame = -1;
 
-    /** True robot pose in x, y, z (NWU) */
-    Vec3 robot_pose;
+    /** True robot position in x, y, z (NWU) */
+    Vec3 robot_p;
+
+    /** True robot orientation */
+    Quaternion robot_q;
 
     /** Feature observations where the first of each pair is the measurement in
      * the image frame, and the second is the landmark id */
@@ -131,9 +134,14 @@ struct VOTestDataset {
      * in output_dir, where n is an index starting at zero. Additionally, a file
      * index.dat is created holding a list of the `observed_*.dat` filenames.
      *
-     * `observed_*.dat` is in csv format. The first row contains the time. The
-     * second row holds the robot 2d pose (x, y, theta). Each subsequent row
-     * holds a landmark id and pixel measurements in the image plane (u, v).
+     * `observed_*.dat` is in csv format. There are four header rows:
+     * 1. time
+     * 2. robot position (x, y, z(
+     * 3. robot orientation (quaternion x, y, z, w)
+     * 4. M, the number of observations
+     *
+     * The next M rows each hold a landmark id and pixel measurements in the
+     * image plane (u, v).
      *
      * @throws std::runtime_error on failure
      */
@@ -141,8 +149,9 @@ struct VOTestDataset {
 
     /** Writes robot state group truth to the given file.
      *
-     * The output is in csv format with a one-row header. Each row contains the
-     * time and 2d pose (x, y, theta).
+     * The output is in csv format with a one-row header. Each row contains 8
+     * values: the time, the 3d position (x, y, z), and the quaternion
+     * orientation (x, y, z, w).
      *
      * @throws std::runtime_error on failure
      */

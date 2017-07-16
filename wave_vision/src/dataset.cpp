@@ -154,12 +154,12 @@ void VOTestDataset::outputObserved(const std::string &output_dir) {
         }
 
         // output header
-        const auto &pose = state.robot_pose;
-        // clang-format off
-				obs_file << state.time << std::endl;
-				obs_file << pose.x() << "," << pose.y() << "," << pose.z() << std::endl;
-				obs_file << state.features_observed.size() << std::endl;
-        // clang-format on
+        auto comma_format = Eigen::IOFormat{
+          Eigen::StreamPrecision, Eigen::DontAlignCols, ",", ","};
+        obs_file << state.time << std::endl;
+        obs_file << state.robot_p.format(comma_format) << std::endl;
+        obs_file << state.robot_q.coeffs().format(comma_format) << std::endl;
+        obs_file << state.features_observed.size() << std::endl;
 
         // output observed features
         for (auto feature : state.features_observed) {
@@ -190,23 +190,25 @@ void VOTestDataset::outputRobotState(const std::string &output_path) {
     std::ofstream state_file(output_path);
 
     // state header
-    // clang-format off
-		state_file << "time_step" << ",";
-		state_file << "x" << ",";
-		state_file << "y" << ",";
-		state_file << "theta" << ",";
-		state_file << std::endl;
-    // clang-format on
+    state_file << "time_step"
+               << ",";
+    state_file << "x"
+               << ",";
+    state_file << "y"
+               << ",";
+    state_file << "theta"
+               << ",";
+    state_file << std::endl;
 
     // output robot state
+    auto comma_format =
+      Eigen::IOFormat{Eigen::StreamPrecision, Eigen::DontAlignCols, ",", ","};
     for (auto state : this->states) {
         const auto t = state.time;
-        const auto &x = state.robot_pose;
 
         state_file << t << ",";
-        state_file << x(0) << ",";
-        state_file << x(1) << ",";
-        state_file << x(2) << ",";
+        state_file << state.robot_p.format(comma_format) << ",";
+        state_file << state.robot_q.coeffs().format(comma_format) << ",";
         state_file << std::endl;
     }
 }
@@ -240,24 +242,25 @@ VOTestDataset VOTestDatasetGenerator::generate() {
 
     for (int i = 0; i < 300; i++) {
         // update state
-        Vec3 x = robot.update(u, dt);
+        Vec3 pose2d = robot.update(u, dt);
 
         // check features
-        Vec3 rpy = Vec3{0.0, 0.0, x(2)};
-        Vec3 t = Vec3{x(0), x(1), 0.0};
+        Vec3 rpy = Vec3{0.0, 0.0, pose2d(2)};
+        Vec3 t = Vec3{pose2d(0), pose2d(1), 0.0};
 
         // convert rpy and t from NWU to EDN coordinate system
         Vec3 rpy_edn, t_edn, x_edn;
         nwu2edn(rpy, rpy_edn);
         nwu2edn(t, t_edn);
-        nwu2edn(x, x_edn);
+        nwu2edn(pose2d, x_edn);
         auto instant = VOTestInstant{};
 
         int retval = this->camera.checkLandmarks(
           dt, dataset.landmarks, rpy_edn, t_edn, instant.features_observed);
         if (retval == 0) {
             instant.time = i * dt;
-            instant.robot_pose = x;
+            instant.robot_p = Vec3{pose2d.x(), pose2d.y(), 0};
+            instant.robot_q = Eigen::AngleAxisd{pose2d.z(), Vec3::UnitZ()};
             dataset.states.push_back(instant);
         }
     }
