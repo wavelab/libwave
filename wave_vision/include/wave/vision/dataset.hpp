@@ -7,9 +7,6 @@
 #ifndef WAVE_VISION_DATASET_HPP
 #define WAVE_VISION_DATASET_HPP
 
-#include <sys/stat.h>
-#include <sys/types.h>
-
 #include "wave/utils/utils.hpp"
 #include "wave/vision/utils.hpp"
 #include "wave/kinematics/two_wheel.hpp"
@@ -114,18 +111,18 @@ struct VOTestDataset {
      * outputObserved(output_dir);
      * ```
      *
-     * @return 0 on success
+     * @throws std::runtime_error on failure
      */
-    int outputToFile(const std::string &output_dir);
+    void outputToFile(const std::string &output_dir);
 
     /** Writes landmark ground truth to the given file.
      *
      * The output is in csv format with no header. Each row contains the
      * landmark id and coordinates in x, y, z.
      *
-     * @return 0 on success
+     * @throws std::runtime_error on failure
      */
-    int outputLandmarks(const std::string &output_path);
+    void outputLandmarks(const std::string &output_path);
 
 
     /** Writes landmarks measurements to the given directory.
@@ -138,18 +135,18 @@ struct VOTestDataset {
      * second row holds the robot 2d pose (x, y, theta). Each subsequent row
      * holds a landmark id and pixel measurements in the image plane (u, v).
      *
-     * @return 0 on success
+     * @throws std::runtime_error on failure
      */
-    int outputObserved(const std::string &output_dir);
+    void outputObserved(const std::string &output_dir);
 
     /** Writes robot state group truth to the given file.
      *
      * The output is in csv format with a one-row header. Each row contains the
      * time and 2d pose (x, y, theta).
      *
-     * @return 0 on success
+     * @throws std::runtime_error on failure
      */
-    int outputRobotState(const std::string &output_path);
+    void outputRobotState(const std::string &output_path);
 };
 
 /**
@@ -160,7 +157,7 @@ struct VOTestDataset {
  */
 class VOTestDatasetGenerator {
  public:
-    int configure(const std::string &config_file);
+    void configure(const std::string &config_file);
 
     /** Generate random 3D landmarks in the world frame
      *

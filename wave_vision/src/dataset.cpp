@@ -1,3 +1,5 @@
+#include <boost/filesystem.hpp>
+
 #include "wave/vision/dataset.hpp"
 
 namespace wave {
@@ -61,16 +63,9 @@ int VOTestCamera::checkLandmarks(double dt,
     return 0;
 }
 
-
-int VOTestDatasetGenerator::configure(const std::string &config_file) {
+void VOTestDatasetGenerator::configure(const std::string &config_file) {
     ConfigParser parser;
     double fx, fy, cx, cy;
-
-    // pre-check
-    if (file_exists(config_file) == false) {
-        LOG_ERROR("File does not exist [%s]!", config_file.c_str());
-        return -1;
-    }
 
     // load config file
     parser.addParam("camera.image_width", &this->camera.image_width);
@@ -88,8 +83,7 @@ int VOTestDatasetGenerator::configure(const std::string &config_file) {
     parser.addParam("landmarks.z.min", &this->landmark_z_bounds(0));
     parser.addParam("landmarks.z.max", &this->landmark_z_bounds(1));
     if (parser.load(config_file) != 0) {
-        LOG_ERROR("Failed to load [%s]!", config_file.c_str());
-        return -2;
+        throw std::runtime_error("Failed to load " + config_file);
     }
 
     // set camera matrix
@@ -98,8 +92,6 @@ int VOTestDatasetGenerator::configure(const std::string &config_file) {
                     0.0, fy, cy,
                     0.0, 0.0, 1.0;
     // clang-format on
-
-    return 0;
 }
 
 LandmarkMap VOTestDatasetGenerator::generateLandmarks() {
@@ -119,7 +111,7 @@ LandmarkMap VOTestDatasetGenerator::generateLandmarks() {
     return landmarks;
 }
 
-int VOTestDataset::outputLandmarks(const std::string &output_path) {
+void VOTestDataset::outputLandmarks(const std::string &output_path) {
     // build landmark matrix
     auto data = MatX{this->landmarks.size(), 4};
 
@@ -134,16 +126,14 @@ int VOTestDataset::outputLandmarks(const std::string &output_path) {
 
     // output landmarks to file
     if (mat2csv(output_path, data) != 0) {
-        return -2;
+        throw std::runtime_error("Failed to write to " + output_path);
     }
-
-    return 0;
 }
 
-int VOTestDataset::outputObserved(const std::string &output_dir) {
+void VOTestDataset::outputObserved(const std::string &output_dir) {
     // pre-check
     if (this->states.empty()) {
-        return -2;
+        throw std::runtime_error("outputObserved: no states");
     }
 
     // output observed features
@@ -158,10 +148,9 @@ int VOTestDataset::outputObserved(const std::string &output_dir) {
 
         // create observed features file
         std::ofstream obs_file(obs_path);
-        if (!obs_file.good()) {
-            LOG_ERROR("Failed to open [%s] to output observed features!",
-                      obs_path.c_str());
-            return -2;
+        if (!obs_file) {
+            throw std::runtime_error("Failed to open " + obs_path +
+                                     " to output observed features!");
         }
 
         // output header
@@ -189,14 +178,12 @@ int VOTestDataset::outputObserved(const std::string &output_dir) {
 
     // clean up
     index_file.close();
-
-    return 0;
 }
 
-int VOTestDataset::outputRobotState(const std::string &output_path) {
+void VOTestDataset::outputRobotState(const std::string &output_path) {
     // pre-check
     if (this->states.empty()) {
-        return -2;
+        throw std::runtime_error("outputRobotState: no states");
     }
 
     // setup
@@ -222,8 +209,16 @@ int VOTestDataset::outputRobotState(const std::string &output_path) {
         state_file << x(2) << ",";
         state_file << std::endl;
     }
+}
 
-    return 0;
+void VOTestDataset::outputToFile(const std::string &output_dir) {
+    // mkdir calibration directory
+    boost::filesystem::create_directories(output_dir);
+
+    // output this synthetic vo dataset
+    this->outputLandmarks(output_dir + "/landmarks.dat");
+    this->outputRobotState(output_dir + "/state.dat");
+    this->outputObserved(output_dir);
 }
 
 VOTestDataset VOTestDatasetGenerator::generate() {
@@ -268,26 +263,6 @@ VOTestDataset VOTestDatasetGenerator::generate() {
     }
 
     return dataset;
-}
-
-int VOTestDataset::outputToFile(const std::string &output_dir) {
-    // mkdir calibration directory
-    int retval = mkdir(output_dir.c_str(), ACCESSPERMS);
-    if (retval != 0) {
-        LOG_ERROR("Failed to create dataset directory!");
-        return -2;
-    }
-
-    // output this synthetic vo dataset
-    if (this->outputLandmarks(output_dir + "/landmarks.dat") != 0)
-        goto error;
-    if (this->outputRobotState(output_dir + "/state.dat") != 0)
-        goto error;
-    if (this->outputObserved(output_dir) != 0)
-        goto error;
-    return 0;
-error:
-    return -3;
 }
 
 }  // namespace wave

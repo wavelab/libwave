@@ -67,10 +67,9 @@ TEST(VOTestDataset, constructor) {
 
 TEST(VOTestDataset, configure) {
     VOTestDatasetGenerator dataset;
-    int retval;
 
-    retval = dataset.configure(TEST_CONFIG);
-    EXPECT_EQ(0, retval);
+    EXPECT_NO_THROW(dataset.configure(TEST_CONFIG));
+
     EXPECT_EQ(640, dataset.camera.image_width);
     EXPECT_EQ(640, dataset.camera.image_height);
     EXPECT_FLOAT_EQ(554.25, dataset.camera.K(0, 0));
@@ -93,8 +92,7 @@ TEST(VOTestDataset, outputToFile) {
     generator.configure(TEST_CONFIG);
     auto dataset = generator.generate();
 
-    int retval = dataset.outputToFile(TEST_OUTPUT);
-    EXPECT_EQ(0, retval);
+    dataset.outputToFile(TEST_OUTPUT);
 }
 
 }  // namespace wave
