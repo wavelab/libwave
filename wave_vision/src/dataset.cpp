@@ -228,6 +228,8 @@ VOTestDataset VOTestDatasetGenerator::generate() {
     // generate random 3D features
     dataset.landmarks = this->generateLandmarks();
 
+    dataset.camera_K = this->camera.K;
+
     // calculate circle trajectory inputs
     double circle_radius = 0.5;
     double distance = 2 * M_PI * circle_radius;
