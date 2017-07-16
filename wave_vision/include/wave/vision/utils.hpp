@@ -46,11 +46,35 @@ Vec2 focal_length(double hfov,
  * @note this function is meant for testing; more sophisticated third-party
  * camera models should normally be used.
  */
-bool pinholeProject(const Mat3 &K,
-                    const Mat3 &R_GC,
-                    const Vec3 &G_p_C_G,
-                    const Vec3 &G_p_F_G,
-                    Vec2 &result);
+template <typename T>
+bool pinholeProject(const Eigen::Matrix<T, 3, 3> &K,
+                    const Eigen::Matrix<T, 3, 3> &R_GC,
+                    const Eigen::Matrix<T, 3, 1> &G_p_C_G,
+                    const Eigen::Matrix<T, 3, 1> &G_p_F_G,
+                    Eigen::Matrix<T, 2, 1> &result) {
+    // Note R_GC is is the orientation of the camera in the world frame.
+    // R_CG is the rotation that transforms *points* in the world frame to the
+    // camera frame.
+    Eigen::Matrix<T, 3, 3> R_CG = R_GC.transpose();
+
+    // Make extrinsic matrix
+    Eigen::Matrix<T, 3, 4> extrinsic{};
+    extrinsic.topLeftCorner(3, 3) = R_CG;
+    extrinsic.topRightCorner(3, 1) = -R_CG * G_p_C_G;
+    extrinsic(2, 3) = T(1.0);
+
+    Eigen::Matrix<T, 4, 1> landmark_homogeneous;
+    landmark_homogeneous << G_p_F_G, T(1);
+
+    // project
+    Eigen::Matrix<T, 3, 1> homogeneous = K * extrinsic * landmark_homogeneous;
+
+    // get image coordinates from homogenous coordinates
+    result = homogeneous.head(2) / homogeneous(2);
+
+    // check cheirality
+    return (homogeneous(2) > T(0));
+}
 
 /** Convert a single cv::KeyPoint to Vec2
  *
