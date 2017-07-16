@@ -99,7 +99,6 @@ int VOTestDatasetGenerator::configure(const std::string &config_file) {
                     0.0, 0.0, 1.0;
     // clang-format on
 
-    this->configured = true;
     return 0;
 }
 

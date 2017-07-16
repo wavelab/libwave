@@ -183,8 +183,6 @@ class VOTestDatasetGenerator {
      */
     VOTestDataset generate();
 
-    bool configured = false;
-
     VOTestCamera camera;
     int nb_landmarks = 0;
     Vec2 landmark_x_bounds = Vec2::Zero();
