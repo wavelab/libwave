@@ -7,14 +7,14 @@ namespace wave {
 
 const std::string TEST_CONFIG = "tests/data/vo_test.yaml";
 
-static double **build_landmark_matrix(const VOTestDatasetGenerator &dataset) {
+static double **build_landmark_matrix(const VOTestDataset &dataset) {
     size_t nb_landmarks = dataset.landmarks.size();
     double **landmarks = (double **) malloc(sizeof(double *) * nb_landmarks);
 
     MatX data = MatX::Zero(nb_landmarks, 3);
     for (auto const &landmark : dataset.landmarks) {
-        Vec3 point = landmark.first;
-        int landmark_id = landmark.second;
+        const auto& point = landmark.second;
+        const auto& landmark_id = landmark.first;
         data.block(landmark_id, 0, 1, 3) = point.transpose();
     }
 
@@ -32,22 +32,22 @@ static double **build_landmark_matrix(const VOTestDatasetGenerator &dataset) {
 }
 
 static VecX build_landmark_ids(
-  const std::vector<std::pair<Vec2, int>> &features_observed) {
+  const std::vector<LandmarkObservation> &features_observed) {
     VecX landmark_ids{features_observed.size()};
 
     for (size_t i = 0; i < features_observed.size(); i++) {
-        landmark_ids(i) = features_observed[i].second;
+        landmark_ids(i) = features_observed[i].first;
     }
 
     return landmark_ids;
 }
 
 static MatX build_feature_matrix(
-  const std::vector<std::pair<Vec2, int>> &features_observed) {
+  const std::vector<LandmarkObservation> &features_observed) {
     MatX features(features_observed.size(), 2);
 
     for (size_t i = 0; i < features_observed.size(); i++) {
-        features.block(i, 0, 1, 2) = features_observed[i].first.transpose();
+        features.block(i, 0, 1, 2) = features_observed[i].second.transpose();
     }
 
     return features;
@@ -89,41 +89,49 @@ TEST(BAResidual, constructor) {
     EXPECT_FLOAT_EQ(x(1), residual2.y);
 }
 
-TEST(BAResidual, test) {
+TEST(BAResidual, testResidual) {
     // create vo dataset
-    VOTestDatasetGenerator dataset;
-    dataset.configure(TEST_CONFIG);
-    dataset.simulateVODataset();
+    VOTestDatasetGenerator generator;
+    generator.configure(TEST_CONFIG);
+    auto dataset = generator.generate();
     double **landmarks = build_landmark_matrix(dataset);
 
     // translate
-    Vec3 t = dataset.robot_state[0].second;
+    const auto& t = dataset.states[0].robot_p;
     Vec3 t_edn;
-    nwu2edn(Vec3{t(0), t(1), 0.0}, t_edn);
+    nwu2edn(t, t_edn);
     double *t_vec = (double *) malloc(sizeof(double *) * 3);
     t_vec[0] = t_edn(0);
     t_vec[1] = t_edn(1);
     t_vec[2] = t_edn(2);
 
     // rotation
-    Vec3 euler{0.0, 0.0, t(2)};
-    Vec3 euler_edn;
-    nwu2edn(euler, euler_edn);
+    const auto& q_R = dataset.states[0].robot_q;
 
-    Quaternion q;
-    euler2quat(euler_edn, 123, q);
+    // Transform from NWU to EDN
+    // This involves the rotation sequence: -90 deg about initial x axis,
+    // 0, then -90 deg about initial z axis.
+    Quaternion q_CR = Quaternion{Eigen::AngleAxisd(-M_PI_2, Vec3::UnitZ()) *
+            Eigen::AngleAxisd(-M_PI_2, Vec3::UnitX())};
+    Quaternion q_camera = q_CR * q_R;
+    q_camera.normalize();
+
+    Vec3 test;
+    quat2euler(q_R, 321, test);
+    quat2euler(q_camera, 321, test);
+
     double *q_vec = (double *) malloc(sizeof(double *) * 4);
-    q_vec[0] = q.w();
-    q_vec[1] = q.x();
-    q_vec[2] = q.y();
-    q_vec[3] = q.z();
+    q_vec[0] = q_camera.w();
+    q_vec[1] = q_camera.x();
+    q_vec[2] = q_camera.y();
+    q_vec[3] = q_camera.z();
 
     double e[2] = {0.0, 0.0};
-    Vec2 feature = dataset.features_observed[0][0].first;
-    int landmark_id = dataset.features_observed[0][0].second;
+    const auto& feature = dataset.states[0].features_observed[0].second;
+    const auto& landmark_id = dataset.states[0].features_observed[0].first;
 
     // test and assert
-    BAResidual residual{dataset.camera.K, feature};
+    BAResidual residual{dataset.camera_K, feature};
     residual(q_vec, t_vec, landmarks[landmark_id], e);
     EXPECT_NEAR(0.0, e[0], 0.0001);
     EXPECT_NEAR(0.0, e[1], 0.0001);
@@ -163,9 +171,9 @@ TEST(BAResidual, test) {
 
 TEST(BundleAdjustment, solve) {
     // create vo dataset
-    VOTestDatasetGenerator dataset;
-    dataset.configure(TEST_CONFIG);
-    dataset.simulateVODataset();
+    VOTestDatasetGenerator generator;
+    generator.configure(TEST_CONFIG);
+    auto dataset = generator.generate();
     double **landmarks = build_landmark_matrix(dataset);
 
     // build bundle adjustment problem
@@ -173,11 +181,11 @@ TEST(BundleAdjustment, solve) {
     std::vector<double *> translations;
     std::vector<double *> rotations;
 
-    for (size_t i = 0; i < dataset.robot_state.size(); i++) {
+    for (size_t i = 0; i < dataset.states.size(); i++) {
         // translation
-        Vec3 t = dataset.robot_state[i].second;
+        const auto& t = dataset.states[i].robot_p;
         Vec3 t_edn;
-        nwu2edn(Vec3{t(0), t(1), 0.0}, t_edn);
+        nwu2edn(t, t_edn);
         double *t_vec = (double *) malloc(sizeof(double *) * 3);
         // t_vec[0] = t_edn(0);
         // t_vec[1] = t_edn(1);
@@ -187,16 +195,20 @@ TEST(BundleAdjustment, solve) {
         t_vec[2] = t_edn(2) + randf(-0.1, 0.1);
         translations.push_back(t_vec);
 
-        // rotation
-        Vec3 euler{0.0, 0.0, t(2)};
-        Vec3 euler_edn;
-        nwu2edn(euler, euler_edn);
-        euler_edn(0) = euler_edn(0) + randf(-0.1, 0.1);
-        euler_edn(1) = euler_edn(1) + randf(-0.1, 0.1);
-        euler_edn(2) = euler_edn(2) + randf(-0.1, 0.1);
+        // get rotation as quaternion
+        const auto& initial_q = dataset.states[i].robot_q;
 
-        Quaternion q;
-        euler2quat(euler_edn, 123, q);
+        // @todo: add some noise
+        auto noisy_q = initial_q;
+
+
+        // Transform from NWU to EDN
+        // This involves the rotation sequence: -90 deg about initial x axis,
+        // 0, then -90 deg about initial z axis.
+        Quaternion q_transform = Quaternion{Eigen::AngleAxisd(-M_PI_2, Vec3::UnitZ()) *
+                Eigen::AngleAxisd(-M_PI_2, Vec3::UnitX())};
+
+        Quaternion q = q_transform * noisy_q;
 
         double *q_vec = (double *) malloc(sizeof(double *) * 4);
         q_vec[0] = q.w();
@@ -206,10 +218,10 @@ TEST(BundleAdjustment, solve) {
         rotations.push_back(q_vec);
 
         // add camera
-        VecX landmark_ids = build_landmark_ids(dataset.features_observed[i]);
-        MatX features = build_feature_matrix(dataset.features_observed[i]);
+        VecX landmark_ids = build_landmark_ids(dataset.states[i].features_observed);
+        MatX features = build_feature_matrix(dataset.states[i].features_observed);
         ba.addCamera(
-          dataset.camera.K, features, landmark_ids, t_vec, q_vec, landmarks);
+          dataset.camera_K, features, landmark_ids, t_vec, q_vec, landmarks);
     }
 
     // test
