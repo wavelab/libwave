@@ -104,6 +104,9 @@ struct VOTestDataset {
     /** For each time step, a set of measurements */
     std::vector<VOTestInstant> states;
 
+    /** Pinhole camera intrinsic calibration matrix */
+    Mat3 camera_K;
+
     /**
      * Writes ground truth landmarks, states, and observations to the given
      * directory. If no errors occur, this is equivalent to calling
