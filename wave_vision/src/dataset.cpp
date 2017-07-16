@@ -16,50 +16,35 @@ bool VOTestCamera::update(double dt) {
     return false;
 }
 
-int VOTestCamera::checkLandmarks(double dt,
-                                 const LandmarkMap &landmarks,
-                                 const Vec3 &rpy,
-                                 const Vec3 &t,
-                                 std::vector<LandmarkObservation> &observed) {
+int VOTestCamera::observeLandmarks(double dt,
+                                   const LandmarkMap &landmarks,
+                                   const Quaternion &q_CG,
+                                   const Vec3 &G_p_C_G,
+                                   std::vector<LandmarkObservation> &observed) {
     // pre-check
     if (this->update(dt) == false) {
         return 1;
     }
 
-    // create rotation matrix from roll pitch yaw
-    Mat3 R;
-    euler2rot(rpy, 123, R);
-
-    // projection matrix
-    MatX P;
-    projection_matrix(this->K, R, -R * t, P);
+    // get rotation matrix from world frame to camera frame
+    Mat3 R_CG = q_CG.matrix();
 
     // check which landmarks in 3d are observable from camera
     observed.clear();
     for (auto landmark : landmarks) {
-        // convert feature in NWU to EDN coordinate system
         const auto &point = landmark.second;
-        Vec4 f_3d_edn{-point(1), -point(2), point(0), 1.0};
 
-        // project 3D world point to 2D image plane
-        Vec3 f_2d = P * f_3d_edn;
-
-        // check to see if feature is valid and infront of camera
-        if (f_2d(2) >= 1.0) {
-            // normalize pixels
-            f_2d(0) = f_2d(0) / f_2d(2);
-            f_2d(1) = f_2d(1) / f_2d(2);
-            f_2d(2) = f_2d(2) / f_2d(2);
-
+        // project 3D world point to 2D image plane, also checking cheirality
+        Vec2 meas;
+        auto in_front = pinholeProject(this->K, R_CG, G_p_C_G, point, meas);
+        if (in_front) {
             // check to see if feature observed is within image plane
-            if ((f_2d(0) < this->image_width) && (f_2d(0) > 0)) {
-                if ((f_2d(1) < this->image_height) && (f_2d(1) > 0)) {
-                    observed.emplace_back(landmark.first, f_2d.head<2>());
-                }
+            if (meas.x() < this->image_width && meas.x() > 0 &&
+                meas.y() < this->image_height && meas.y() > 0) {
+                observed.emplace_back(landmark.first, meas);
             }
         }
     }
-
     return 0;
 }
 
@@ -246,23 +231,24 @@ VOTestDataset VOTestDatasetGenerator::generate() {
         // update state
         Vec3 pose2d = robot.update(u, dt);
 
-        // check features
-        Vec3 rpy = Vec3{0.0, 0.0, pose2d(2)};
-        Vec3 t = Vec3{pose2d(0), pose2d(1), 0.0};
+        // convert 2d pose to 3d pose (pose of Body in Global frame)
+        auto G_p_B_G = Vec3{pose2d.x(), pose2d.y(), 0};
+        auto q_BG = Quaternion{Eigen::AngleAxisd{pose2d.z(), Vec3::UnitZ()}};
 
-        // convert rpy and t from NWU to EDN coordinate system
-        Vec3 rpy_edn, t_edn, x_edn;
-        nwu2edn(rpy, rpy_edn);
-        nwu2edn(t, t_edn);
-        nwu2edn(pose2d, x_edn);
         auto instant = VOTestInstant{};
 
-        int retval = this->camera.checkLandmarks(
-          dt, dataset.landmarks, rpy_edn, t_edn, instant.features_observed);
+        // Transform from robot Body frame to Camera frame
+        Quaternion q_CB = Eigen::AngleAxisd(-M_PI_2, Vec3::UnitZ()) *
+                          Eigen::AngleAxisd(0, Vec3::UnitY()) *
+                          Eigen::AngleAxisd(-M_PI_2, Vec3::UnitX());
+        Quaternion q_CG = q_CB * q_BG;
+
+        int retval = this->camera.observeLandmarks(
+          dt, dataset.landmarks, q_CG, G_p_B_G, instant.features_observed);
         if (retval == 0) {
             instant.time = i * dt;
-            instant.robot_p = Vec3{pose2d.x(), pose2d.y(), 0};
-            instant.robot_q = Eigen::AngleAxisd{pose2d.z(), Vec3::UnitZ()};
+            instant.robot_p = G_p_B_G;
+            instant.robot_q = q_BG;
             dataset.states.push_back(instant);
         }
     }

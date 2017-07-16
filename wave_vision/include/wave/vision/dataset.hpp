@@ -53,19 +53,21 @@ class VOTestCamera {
      */
     bool update(double dt);
 
-    /** Returns a list of observable 3D world landmarks
+    /** Gives a list of measurements of visible landmarks, if enough time has
+     * passed since the last frame
      *
      * @param dt Update time step
-     * @param features 3D world features to test (NWU)
-     * @param rpy Vector containing roll, pitch, yaw of camera (EDN)
-     * @param t Vector containining position in x, y and z (EDN)
+     * @param landmarks map of landmarks with 3D position in world frame
+     * @param q_CG orientation of camera in global frame
+     * @param G_p_C_G translation to camera from origin, in global frame
      * @param observed Observed 3D features in the image frame
+     * @returns 0 if observations were made, 1 if not enough time passed
      */
-    int checkLandmarks(double dt,
-                       const LandmarkMap &landmarks,
-                       const Vec3 &rpy,
-                       const Vec3 &t,
-                       std::vector<LandmarkObservation> &observed);
+    int observeLandmarks(double dt,
+                         const LandmarkMap &landmarks,
+                         const Quaternion &q_CG,
+                         const Vec3 &G_p_C_G,
+                         std::vector<LandmarkObservation> &observed);
 };
 
 
