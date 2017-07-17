@@ -93,33 +93,6 @@ TEST(BAResidual, testResidual) {
     EXPECT_NEAR(0.0, e[1], 0.0001);
 }
 
-// TEST(BundleAdjustment, addCamera) {
-//   // setup
-//   Mat3 K = Mat3::Identity();
-//   MatX features = MatX::Random(10, 2);
-//   VecX landmark_ids = VecX::Random(10);
-//   Vec3 cam_t{0.0, 0.0, 0.0};
-//   Quaternion cam_q{1.0, 0.0, 0.0, 0.0};
-//   double **landmarks = (double **) malloc(sizeof(double **) * 5);
-//   landmarks[0] = (double *) malloc(sizeof(double *) * 3);
-//   landmarks[1] = (double *) malloc(sizeof(double *) * 3);
-//   landmarks[2] = (double *) malloc(sizeof(double *) * 3);
-//   landmarks[3] = (double *) malloc(sizeof(double *) * 3);
-//   landmarks[4] = (double *) malloc(sizeof(double *) * 3);
-//
-//   // test and assert
-//   BundleAdjustment ba;
-//   ba.addCamera(K, features, landmark_ids, cam_t, cam_q, landmarks);
-//
-//   // clean up
-//   free(landmarks[0]);
-//   free(landmarks[1]);
-//   free(landmarks[2]);
-//   free(landmarks[3]);
-//   free(landmarks[4]);
-//   free(landmarks);
-// }
-
 TEST(BundleAdjustment, solve) {
     // create vo dataset
     VOTestDatasetGenerator generator;
