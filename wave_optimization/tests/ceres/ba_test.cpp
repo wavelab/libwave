@@ -96,16 +96,11 @@ TEST(BAResidual, testResidual) {
     double **landmarks = build_landmark_matrix(dataset);
 
     // translate
-    const auto &t = dataset.states[0].robot_G_p_B_G;
-    Vec3 t_edn = t;
-    //    nwu2edn(t, t_edn);
-    double *t_vec = (double *) malloc(sizeof(double *) * 3);
-    t_vec[0] = t_edn(0);
-    t_vec[1] = t_edn(1);
-    t_vec[2] = t_edn(2);
+    auto true_G_p_B_G = dataset.states[0].robot_G_p_B_G;
+    auto t_vec = true_G_p_B_G.data();
 
     // orientation of robot Body in Global frame
-    const auto &q_GB = dataset.states[0].robot_q_GB;
+    const auto q_GB = dataset.states[0].robot_q_GB;
 
     // rotate the body frame by this to get the camera frame
     // or, use this to transform points from camera frame to body frame
@@ -115,11 +110,7 @@ TEST(BAResidual, testResidual) {
 
     Quaternion q_GC = q_GB * q_BC;
 
-    double *q_vec = (double *) malloc(sizeof(double *) * 4);
-    q_vec[0] = q_GC.w();
-    q_vec[1] = q_GC.x();
-    q_vec[2] = q_GC.y();
-    q_vec[3] = q_GC.z();
+    auto q_vec = q_GC.coeffs().data();
 
     double e[2] = {0.0, 0.0};
     const auto &feature = dataset.states[0].features_observed[0].second;
@@ -133,8 +124,6 @@ TEST(BAResidual, testResidual) {
 
     // clean up
     free_2darray(landmarks, dataset.landmarks.size());
-    free(t_vec);
-    free(q_vec);
 }
 
 // TEST(BundleAdjustment, addCamera) {
@@ -173,51 +162,43 @@ TEST(BundleAdjustment, solve) {
 
     // build bundle adjustment problem
     BundleAdjustment ba;
-    std::vector<double *> translations;
-    std::vector<double *> rotations;
+    std::vector<Vec3> params_G_p_C_G;
+    std::vector<Quaternion> params_q_GC;
 
     for (size_t i = 0; i < dataset.states.size(); i++) {
         // translation
         const auto &true_G_p_C_G = dataset.states[i].robot_G_p_B_G;
         // add noise
-        Vec3 noisy_G_p_C_G = true_G_p_C_G + 0.1 * Vec3::Random();
-
-        double *t_vec = (double *) malloc(sizeof(double *) * 3);
-        t_vec[0] = noisy_G_p_C_G(0);
-        t_vec[1] = noisy_G_p_C_G(1);
-        t_vec[2] = noisy_G_p_C_G(2);
-        translations.push_back(t_vec);
+        auto G_p_C_G = Vec3{true_G_p_C_G + 0.1 * Vec3::Random()};
+        params_G_p_C_G.push_back(G_p_C_G);
 
         // get rotation as quaternion
-        const auto &initial_q = dataset.states[i].robot_q_GB;
+        const auto &initial_q_GB = dataset.states[i].robot_q_GB;
 
         // @todo: add some noise
-        auto noisy_q = initial_q;
+        auto noisy_q_GB = initial_q_GB;
 
 
         // Transform from NWU to EDN
         // This involves the rotation sequence: -90 deg about initial x axis,
         // 0, then -90 deg about initial z axis.
-        Quaternion q_transform =
-          Quaternion{Eigen::AngleAxisd(-M_PI_2, Vec3::UnitZ()) *
-                     Eigen::AngleAxisd(-M_PI_2, Vec3::UnitX())};
+        auto q_BC = Quaternion{Eigen::AngleAxisd(-M_PI_2, Vec3::UnitZ()) *
+                               Eigen::AngleAxisd(-M_PI_2, Vec3::UnitX())};
 
-        Quaternion q = q_transform * noisy_q;
-
-        double *q_vec = (double *) malloc(sizeof(double *) * 4);
-        q_vec[0] = q.w();
-        q_vec[1] = q.x();
-        q_vec[2] = q.y();
-        q_vec[3] = q.z();
-        rotations.push_back(q_vec);
+        auto q_GC = Quaternion{noisy_q_GB * q_BC};
+        params_q_GC.push_back(q_GC);
 
         // add camera
         VecX landmark_ids =
           build_landmark_ids(dataset.states[i].features_observed);
         MatX features =
           build_feature_matrix(dataset.states[i].features_observed);
-        ba.addCamera(
-          dataset.camera_K, features, landmark_ids, t_vec, q_vec, landmarks);
+        ba.addCamera(dataset.camera_K,
+                     features,
+                     landmark_ids,
+                     params_G_p_C_G.back().data(),
+                     params_q_GC.back().coeffs().data(),
+                     landmarks);
     }
 
     // test
@@ -225,12 +206,6 @@ TEST(BundleAdjustment, solve) {
 
     // clean up
     free_2darray(landmarks, dataset.landmarks.size());
-    for (auto t : translations) {
-        free(t);
-    }
-    for (auto r : rotations) {
-        free(r);
-    }
 }
 
 }  // namespace wave
