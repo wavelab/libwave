@@ -166,7 +166,6 @@ TEST_F(PinholeProjectTest, projectPointAboveRight) {
 
     Vec2 meas;
     auto res = pinholeProject(this->K, R_GC, G_p_C_G, G_p_F_G, meas);
-    auto expected = Vec2{this->cx, this->cy};
     EXPECT_TRUE(res);
     EXPECT_GT(meas.x(), this->cx);
     EXPECT_LT(meas.y(), this->cy);
