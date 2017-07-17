@@ -6,6 +6,7 @@
 #include <ceres/ceres.h>
 
 #include "wave/utils/utils.hpp"
+#include "wave/vision/utils.hpp"
 
 namespace wave {
 
@@ -34,14 +35,14 @@ struct BAResidual {
     /**
        * Calculate Bundle Adjustment Residual
        *
-     * @param cam_q Camera rotation parameterized with a quaternion (w, x, y, z)
-     * @param cam_t Camera translation (x, y, z)
+     * @param q_GC Camera rotation parameterized with a quaternion (w, x, y, z)
+     * @param G_p_C_G Camera translation (x, y, z)
      * @param world_pt World point (x, y, z)
      * @param residual Calculated residual
      **/
     template <typename T>
-    bool operator()(const T *const cam_q,
-                    const T *const cam_t,
+    bool operator()(const T *const q_GC,
+                    const T *const G_p_C_G,
                     const T *const world_pt,
                     T *residual) const {
         // build camera intrinsics matrix K
@@ -59,23 +60,18 @@ struct BAResidual {
         K(2, 2) = T(1.0);
 
         // build rotation matrix from quaternion q = (w, x, y, z)
-        Eigen::Quaternion<T> q{cam_q[0], cam_q[1], cam_q[2], cam_q[3]};
-        Eigen::Matrix<T, 3, 3> R = q.toRotationMatrix();
+        Eigen::Quaternion<T> q{q_GC[0], q_GC[1], q_GC[2], q_GC[3]};
+        Eigen::Matrix<T, 3, 3> R_GC = q.toRotationMatrix();
 
         // build translation vector
-        Eigen::Matrix<T, 3, 1> C{cam_t[0], cam_t[1], cam_t[2]};
+        Eigen::Matrix<T, 3, 1> C{G_p_C_G[0], G_p_C_G[1], G_p_C_G[2]};
 
         // build world_point vector
         Eigen::Matrix<T, 3, 1> X{world_pt[0], world_pt[1], world_pt[2]};
 
-        // project 3D point to image plane
-        Eigen::Matrix<T, 3, 1> est = K * R.transpose() * (X - C);
-
-        // convert projected 2d point in homogenous coordinates to image
-        // coordinates
+        // get measurement
         Eigen::Matrix<T, 2, 1> est_pixel;
-        est_pixel(0) = est(0) / est(2);
-        est_pixel(1) = est(1) / est(2);
+        pinholeProject(K, R_GC, C, X, est_pixel);
 
         // calculate residual error
         // diff between measured and estimated projection point

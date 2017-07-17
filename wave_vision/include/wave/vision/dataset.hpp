@@ -58,14 +58,14 @@ class VOTestCamera {
      *
      * @param dt Update time step
      * @param landmarks map of landmarks with 3D position in world frame
-     * @param q_CG orientation of camera in global frame
+     * @param q_GC orientation of camera in global frame
      * @param G_p_C_G translation to camera from origin, in global frame
      * @param observed Observed 3D features in the image frame
      * @returns 0 if observations were made, 1 if not enough time passed
      */
     int observeLandmarks(double dt,
                          const LandmarkMap &landmarks,
-                         const Quaternion &q_CG,
+                         const Quaternion &q_GC,
                          const Vec3 &G_p_C_G,
                          std::vector<LandmarkObservation> &observed);
 };
@@ -79,11 +79,11 @@ struct VOTestInstant {
     /** The corresponding camera frame, or -1 if no camera observations */
     int camera_frame = -1;
 
-    /** True robot position in x, y, z (NWU) */
-    Vec3 robot_p;
+    /** True robot Body position in the Global frame */
+    Vec3 robot_G_p_B_G;
 
-    /** True robot orientation */
-    Quaternion robot_q;
+    /** True robot Body orientation in the Global frame*/
+    Quaternion robot_q_GB;
 
     /** Feature observations where the first of each pair is the measurement in
      * the image frame, and the second is the landmark id */

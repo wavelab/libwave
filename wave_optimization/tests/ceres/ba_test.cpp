@@ -13,8 +13,8 @@ static double **build_landmark_matrix(const VOTestDataset &dataset) {
 
     MatX data = MatX::Zero(nb_landmarks, 3);
     for (auto const &landmark : dataset.landmarks) {
-        const auto& point = landmark.second;
-        const auto& landmark_id = landmark.first;
+        const auto &point = landmark.second;
+        const auto &landmark_id = landmark.first;
         data.block(landmark_id, 0, 1, 3) = point.transpose();
     }
 
@@ -22,10 +22,9 @@ static double **build_landmark_matrix(const VOTestDataset &dataset) {
         landmarks[i] = (double *) malloc(sizeof(double) * 3);
         Vec3 point = data.block(i, 0, 1, 3).transpose();
 
-        // convert landmark from NWU to EDN
-        landmarks[i][0] = -point(1);
-        landmarks[i][1] = -point(2);
-        landmarks[i][2] = point(0);
+        landmarks[i][0] = point(0);
+        landmarks[i][1] = point(1);
+        landmarks[i][2] = point(2);
     }
 
     return landmarks;
@@ -97,38 +96,34 @@ TEST(BAResidual, testResidual) {
     double **landmarks = build_landmark_matrix(dataset);
 
     // translate
-    const auto& t = dataset.states[0].robot_p;
-    Vec3 t_edn;
-    nwu2edn(t, t_edn);
+    const auto &t = dataset.states[0].robot_G_p_B_G;
+    Vec3 t_edn = t;
+    //    nwu2edn(t, t_edn);
     double *t_vec = (double *) malloc(sizeof(double *) * 3);
     t_vec[0] = t_edn(0);
     t_vec[1] = t_edn(1);
     t_vec[2] = t_edn(2);
 
-    // rotation
-    const auto& q_R = dataset.states[0].robot_q;
+    // orientation of robot Body in Global frame
+    const auto &q_GB = dataset.states[0].robot_q_GB;
 
-    // Transform from NWU to EDN
-    // This involves the rotation sequence: -90 deg about initial x axis,
-    // 0, then -90 deg about initial z axis.
-    Quaternion q_CR = Quaternion{Eigen::AngleAxisd(-M_PI_2, Vec3::UnitZ()) *
-            Eigen::AngleAxisd(-M_PI_2, Vec3::UnitX())};
-    Quaternion q_camera = q_CR * q_R;
-    q_camera.normalize();
+    // rotate the body frame by this to get the camera frame
+    // or, use this to transform points from camera frame to body frame
+    Quaternion q_BC{Eigen::AngleAxisd(-M_PI_2, Vec3::UnitZ()) *
+                    Eigen::AngleAxisd(0, Vec3::UnitY()) *
+                    Eigen::AngleAxisd(-M_PI_2, Vec3::UnitX())};
 
-    Vec3 test;
-    quat2euler(q_R, 321, test);
-    quat2euler(q_camera, 321, test);
+    Quaternion q_GC = q_GB * q_BC;
 
     double *q_vec = (double *) malloc(sizeof(double *) * 4);
-    q_vec[0] = q_camera.w();
-    q_vec[1] = q_camera.x();
-    q_vec[2] = q_camera.y();
-    q_vec[3] = q_camera.z();
+    q_vec[0] = q_GC.w();
+    q_vec[1] = q_GC.x();
+    q_vec[2] = q_GC.y();
+    q_vec[3] = q_GC.z();
 
     double e[2] = {0.0, 0.0};
-    const auto& feature = dataset.states[0].features_observed[0].second;
-    const auto& landmark_id = dataset.states[0].features_observed[0].first;
+    const auto &feature = dataset.states[0].features_observed[0].second;
+    const auto &landmark_id = dataset.states[0].features_observed[0].first;
 
     // test and assert
     BAResidual residual{dataset.camera_K, feature};
@@ -183,20 +178,18 @@ TEST(BundleAdjustment, solve) {
 
     for (size_t i = 0; i < dataset.states.size(); i++) {
         // translation
-        const auto& t = dataset.states[i].robot_p;
-        Vec3 t_edn;
-        nwu2edn(t, t_edn);
+        const auto &true_G_p_C_G = dataset.states[i].robot_G_p_B_G;
+        // add noise
+        Vec3 noisy_G_p_C_G = true_G_p_C_G + 0.1 * Vec3::Random();
+
         double *t_vec = (double *) malloc(sizeof(double *) * 3);
-        // t_vec[0] = t_edn(0);
-        // t_vec[1] = t_edn(1);
-        // t_vec[2] = t_edn(2);
-        t_vec[0] = t_edn(0) + randf(-0.1, 0.1);
-        t_vec[1] = t_edn(1) + randf(-0.1, 0.1);
-        t_vec[2] = t_edn(2) + randf(-0.1, 0.1);
+        t_vec[0] = noisy_G_p_C_G(0);
+        t_vec[1] = noisy_G_p_C_G(1);
+        t_vec[2] = noisy_G_p_C_G(2);
         translations.push_back(t_vec);
 
         // get rotation as quaternion
-        const auto& initial_q = dataset.states[i].robot_q;
+        const auto &initial_q = dataset.states[i].robot_q_GB;
 
         // @todo: add some noise
         auto noisy_q = initial_q;
@@ -205,8 +198,9 @@ TEST(BundleAdjustment, solve) {
         // Transform from NWU to EDN
         // This involves the rotation sequence: -90 deg about initial x axis,
         // 0, then -90 deg about initial z axis.
-        Quaternion q_transform = Quaternion{Eigen::AngleAxisd(-M_PI_2, Vec3::UnitZ()) *
-                Eigen::AngleAxisd(-M_PI_2, Vec3::UnitX())};
+        Quaternion q_transform =
+          Quaternion{Eigen::AngleAxisd(-M_PI_2, Vec3::UnitZ()) *
+                     Eigen::AngleAxisd(-M_PI_2, Vec3::UnitX())};
 
         Quaternion q = q_transform * noisy_q;
 
@@ -218,8 +212,10 @@ TEST(BundleAdjustment, solve) {
         rotations.push_back(q_vec);
 
         // add camera
-        VecX landmark_ids = build_landmark_ids(dataset.states[i].features_observed);
-        MatX features = build_feature_matrix(dataset.states[i].features_observed);
+        VecX landmark_ids =
+          build_landmark_ids(dataset.states[i].features_observed);
+        MatX features =
+          build_feature_matrix(dataset.states[i].features_observed);
         ba.addCamera(
           dataset.camera_K, features, landmark_ids, t_vec, q_vec, landmarks);
     }
