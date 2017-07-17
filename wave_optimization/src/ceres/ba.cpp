@@ -4,10 +4,10 @@ namespace wave {
 
 int BundleAdjustment::addCamera(const Mat3 &K,
                                 const MatX &features,
-                                const VecX &landmark_ids,
+                                const std::vector<LandmarkId> &landmark_ids,
                                 double *cam_t,
                                 double *cam_q,
-                                double **landmarks) {
+                                LandmarkMap &landmarks) {
     // create a residual block for each image feature
     for (int i = 0; i < features.rows(); i++) {
         // build residual
@@ -25,11 +25,11 @@ int BundleAdjustment::addCamera(const Mat3 &K,
 
         // add residual block to problem
         this->problem.AddResidualBlock(
-          cost_func,                          // cost function
-          NULL,                               // loss function
-          cam_q,                              // camera quaternion
-          cam_t,                              // camera translation
-          landmarks[(int) landmark_ids(i)]);  // landmark
+          cost_func,                              // cost function
+          NULL,                                   // loss function
+          cam_q,                                  // camera quaternion
+          cam_t,                                  // camera translation
+          landmarks.at(landmark_ids[i]).data());  // landmark
     }
 
     // add quaternion local parameterization
