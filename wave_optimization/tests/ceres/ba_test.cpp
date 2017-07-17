@@ -136,19 +136,25 @@ TEST(BundleAdjustment, solve) {
     std::vector<Quaternion> params_q_GC(dataset.states.size());
     LandmarkMap params_landmarks = dataset.landmarks;
 
+    // Add offset to landmark initial estimates
+    for (auto &l : params_landmarks) {
+        l.second += Vec3{0.01, -0.01, 0.01};
+    }
+
     // Add pose parameters
     for (size_t i = 0; i < dataset.states.size(); i++) {
         // translation
         const auto &true_G_p_C_G = dataset.states[i].robot_G_p_B_G;
-        // add noise
-        auto G_p_C_G = Vec3{true_G_p_C_G + 0.1 * Vec3::Random()};
+        // add offset
+        Vec3 G_p_C_G = true_G_p_C_G + Vec3{0.01, 0, -0.005};
         params_G_p_C_G[i] = G_p_C_G;
 
         // get rotation as quaternion
         const auto &initial_q_GB = dataset.states[i].robot_q_GB;
 
-        // @todo: add some noise
-        auto noisy_q_GB = initial_q_GB;
+        // add some noise (or at least an offset)
+        auto offset = Quaternion{Eigen::AngleAxisd{0.1, Vec3::UnitX()}};
+        auto noisy_q_GB = initial_q_GB * offset;
 
 
         // Transform from NWU to EDN
@@ -171,9 +177,43 @@ TEST(BundleAdjustment, solve) {
                      params_G_p_C_G[i].data(),
                      params_q_GC[i].coeffs().data(),
                      params_landmarks);
+
+        // Set a prior on first pose
+        if (i == 0) {
+            params_G_p_C_G[i] = true_G_p_C_G;
+            params_q_GC[i] = initial_q_GB * q_BC;
+            ba.problem.SetParameterBlockConstant(params_G_p_C_G[0].data());
+            ba.problem.SetParameterBlockConstant(
+              params_q_GC[0].coeffs().data());
+        }
     }
+
     // test
     ba.solve();
+
+    for (auto i = 0u; i < dataset.states.size(); i++) {
+        // Note: we gave the camera pose, not the robot pose, to the optimizer
+        Quaternion q_BC{Eigen::AngleAxisd(-M_PI_2, Vec3::UnitZ()) *
+                        Eigen::AngleAxisd(0, Vec3::UnitY()) *
+                        Eigen::AngleAxisd(-M_PI_2, Vec3::UnitX())};
+
+        const auto true_q_GC = Quaternion{dataset.states[i].robot_q_GB * q_BC};
+        const auto &true_G_p_C_G = dataset.states[i].robot_G_p_B_G;
+        const auto angular_dist = true_q_GC.angularDistance(params_q_GC[i]);
+        const auto linear_dist = (true_G_p_C_G - params_G_p_C_G[i]).norm();
+
+        EXPECT_LT(angular_dist, 1e-6);
+        // For some reason the robot position estimate is not as good as the
+        // other variables (@todo)
+        EXPECT_LT(linear_dist, 0.2);
+    }
+
+    for (const auto l : dataset.landmarks) {
+        const auto &true_landmark = dataset.landmarks.at(l.first);
+        const auto &estimated_landmark = params_landmarks.at(l.first);
+        const auto linear_dist = (true_landmark - estimated_landmark).norm();
+        EXPECT_LT(linear_dist, 1e-5);
+    }
 }
 
 }  // namespace wave

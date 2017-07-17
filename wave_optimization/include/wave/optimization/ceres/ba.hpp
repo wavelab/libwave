@@ -80,8 +80,8 @@ struct BAResidual {
 
         // calculate residual error
         // diff between measured and estimated projection point
-        residual[0] = ceres::abs(T(this->x) - est_pixel(0));
-        residual[1] = ceres::abs(T(this->y) - est_pixel(1));
+        residual[0] = T(this->x) - est_pixel(0);
+        residual[1] = T(this->y) - est_pixel(1);
 
         return true;
     }
