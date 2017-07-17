@@ -7,6 +7,7 @@
 
 #include "wave/utils/utils.hpp"
 #include "wave/vision/utils.hpp"
+#include "wave/vision/dataset.hpp"
 
 namespace wave {
 
@@ -96,10 +97,10 @@ class BundleAdjustment {
 
     int addCamera(const Mat3 &K,
                   const MatX &features,
-                  const VecX &landmark_ids,
+                  const std::vector<LandmarkId> &landmark_ids,
                   double *cam_t,
                   double *cam_q,
-                  double **landmarks);
+                  LandmarkMap &landmarks);
     int solve();
 };
 

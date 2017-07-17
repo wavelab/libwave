@@ -7,35 +7,12 @@ namespace wave {
 
 const std::string TEST_CONFIG = "tests/data/vo_test.yaml";
 
-static double **build_landmark_matrix(const VOTestDataset &dataset) {
-    size_t nb_landmarks = dataset.landmarks.size();
-    double **landmarks = (double **) malloc(sizeof(double *) * nb_landmarks);
-
-    MatX data = MatX::Zero(nb_landmarks, 3);
-    for (auto const &landmark : dataset.landmarks) {
-        const auto &point = landmark.second;
-        const auto &landmark_id = landmark.first;
-        data.block(landmark_id, 0, 1, 3) = point.transpose();
-    }
-
-    for (int i = 0; i < data.rows(); i++) {
-        landmarks[i] = (double *) malloc(sizeof(double) * 3);
-        Vec3 point = data.block(i, 0, 1, 3).transpose();
-
-        landmarks[i][0] = point(0);
-        landmarks[i][1] = point(1);
-        landmarks[i][2] = point(2);
-    }
-
-    return landmarks;
-}
-
-static VecX build_landmark_ids(
+static std::vector<LandmarkId> build_landmark_ids(
   const std::vector<LandmarkObservation> &features_observed) {
-    VecX landmark_ids{features_observed.size()};
+    std::vector<LandmarkId> landmark_ids(features_observed.size());
 
     for (size_t i = 0; i < features_observed.size(); i++) {
-        landmark_ids(i) = features_observed[i].first;
+        landmark_ids[i] = features_observed[i].first;
     }
 
     return landmark_ids;
@@ -50,13 +27,6 @@ static MatX build_feature_matrix(
     }
 
     return features;
-}
-
-static void free_2darray(double **array, size_t nb_elements) {
-    for (size_t i = 0; i < nb_elements; i++) {
-        free(array[i]);
-    }
-    free(array);
 }
 
 TEST(BAResidual, constructor) {
@@ -93,7 +63,7 @@ TEST(BAResidual, testResidual) {
     VOTestDatasetGenerator generator;
     generator.configure(TEST_CONFIG);
     auto dataset = generator.generate();
-    double **landmarks = build_landmark_matrix(dataset);
+    LandmarkMap landmarks = dataset.landmarks;
 
     // translate
     auto true_G_p_B_G = dataset.states[0].robot_G_p_B_G;
@@ -118,12 +88,9 @@ TEST(BAResidual, testResidual) {
 
     // test and assert
     BAResidual residual{dataset.camera_K, feature};
-    residual(q_vec, t_vec, landmarks[landmark_id], e);
+    residual(q_vec, t_vec, landmarks[landmark_id].data(), e);
     EXPECT_NEAR(0.0, e[0], 0.0001);
     EXPECT_NEAR(0.0, e[1], 0.0001);
-
-    // clean up
-    free_2darray(landmarks, dataset.landmarks.size());
 }
 
 // TEST(BundleAdjustment, addCamera) {
@@ -158,13 +125,14 @@ TEST(BundleAdjustment, solve) {
     VOTestDatasetGenerator generator;
     generator.configure(TEST_CONFIG);
     auto dataset = generator.generate();
-    double **landmarks = build_landmark_matrix(dataset);
 
     // build bundle adjustment problem
     BundleAdjustment ba;
     std::vector<Vec3> params_G_p_C_G;
     std::vector<Quaternion> params_q_GC;
+    LandmarkMap params_landmarks = dataset.landmarks;
 
+    // Add pose parameters
     for (size_t i = 0; i < dataset.states.size(); i++) {
         // translation
         const auto &true_G_p_C_G = dataset.states[i].robot_G_p_B_G;
@@ -189,7 +157,7 @@ TEST(BundleAdjustment, solve) {
         params_q_GC.push_back(q_GC);
 
         // add camera
-        VecX landmark_ids =
+        auto landmark_ids =
           build_landmark_ids(dataset.states[i].features_observed);
         MatX features =
           build_feature_matrix(dataset.states[i].features_observed);
@@ -198,14 +166,11 @@ TEST(BundleAdjustment, solve) {
                      landmark_ids,
                      params_G_p_C_G.back().data(),
                      params_q_GC.back().coeffs().data(),
-                     landmarks);
+                     params_landmarks);
     }
 
     // test
     ba.solve();
-
-    // clean up
-    free_2darray(landmarks, dataset.landmarks.size());
 }
 
 }  // namespace wave
