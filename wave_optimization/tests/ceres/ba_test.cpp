@@ -128,8 +128,12 @@ TEST(BundleAdjustment, solve) {
 
     // build bundle adjustment problem
     BundleAdjustment ba;
-    std::vector<Vec3> params_G_p_C_G;
-    std::vector<Quaternion> params_q_GC;
+
+    // We'll keep the parameters in a vector for now.
+    // Note we have to pre-allocate the vector, so that pointers to the elements
+    // don't change as we insert.
+    std::vector<Vec3> params_G_p_C_G(dataset.states.size());
+    std::vector<Quaternion> params_q_GC(dataset.states.size());
     LandmarkMap params_landmarks = dataset.landmarks;
 
     // Add pose parameters
@@ -138,7 +142,7 @@ TEST(BundleAdjustment, solve) {
         const auto &true_G_p_C_G = dataset.states[i].robot_G_p_B_G;
         // add noise
         auto G_p_C_G = Vec3{true_G_p_C_G + 0.1 * Vec3::Random()};
-        params_G_p_C_G.push_back(G_p_C_G);
+        params_G_p_C_G[i] = G_p_C_G;
 
         // get rotation as quaternion
         const auto &initial_q_GB = dataset.states[i].robot_q_GB;
@@ -154,7 +158,7 @@ TEST(BundleAdjustment, solve) {
                                Eigen::AngleAxisd(-M_PI_2, Vec3::UnitX())};
 
         auto q_GC = Quaternion{noisy_q_GB * q_BC};
-        params_q_GC.push_back(q_GC);
+        params_q_GC[i] = q_GC;
 
         // add camera
         auto landmark_ids =
@@ -164,11 +168,10 @@ TEST(BundleAdjustment, solve) {
         ba.addCamera(dataset.camera_K,
                      features,
                      landmark_ids,
-                     params_G_p_C_G.back().data(),
-                     params_q_GC.back().coeffs().data(),
+                     params_G_p_C_G[i].data(),
+                     params_q_GC[i].coeffs().data(),
                      params_landmarks);
     }
-
     // test
     ba.solve();
 }
