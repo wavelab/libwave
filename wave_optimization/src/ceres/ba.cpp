@@ -34,7 +34,7 @@ int BundleAdjustment::addCamera(const Mat3 &K,
 
     // add quaternion local parameterization
     ceres::LocalParameterization *quat_param;
-    quat_param = new ceres::QuaternionParameterization();
+    quat_param = new ceres::EigenQuaternionParameterization();
     this->problem.SetParameterization(cam_q, quat_param);
 
     return 0;

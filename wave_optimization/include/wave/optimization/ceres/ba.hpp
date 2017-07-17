@@ -35,7 +35,7 @@ struct BAResidual {
     /**
        * Calculate Bundle Adjustment Residual
        *
-     * @param q_GC Camera rotation parameterized with a quaternion (w, x, y, z)
+     * @param q_GC Camera rotation parameterized with a quaternion (x, y, z, w)
      * @param G_p_C_G Camera translation (x, y, z)
      * @param world_pt World point (x, y, z)
      * @param residual Calculated residual
@@ -60,14 +60,18 @@ struct BAResidual {
         K(2, 2) = T(1.0);
 
         // build rotation matrix from quaternion q = (w, x, y, z)
-        Eigen::Quaternion<T> q{q_GC[0], q_GC[1], q_GC[2], q_GC[3]};
-        Eigen::Matrix<T, 3, 3> R_GC = q.toRotationMatrix();
+        Eigen::Map<const Eigen::Quaternion<T>> q{q_GC};
+        Eigen::Matrix<T, 3, 3> R_GC = q.matrix();
 
         // build translation vector
-        Eigen::Matrix<T, 3, 1> C{G_p_C_G[0], G_p_C_G[1], G_p_C_G[2]};
+        Eigen::Matrix<T, 3, 1> C{G_p_C_G};
 
         // build world_point vector
-        Eigen::Matrix<T, 3, 1> X{world_pt[0], world_pt[1], world_pt[2]};
+        Eigen::Matrix<T, 3, 1> X{world_pt};
+
+        // Note we construct the vectors above by *copying* from the buffer.
+        // It would be more efficient to use Maps, but pinholeProject would
+        // have to be changed to accept them.
 
         // get measurement
         Eigen::Matrix<T, 2, 1> est_pixel;
