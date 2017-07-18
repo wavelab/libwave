@@ -70,7 +70,7 @@ int VOTestCamera::checkFeatures(double dt,
 }
 
 
-VOTestDataset::VOTestDataset(const std::string &config_file) {
+VOTestDatasetGenerator::VOTestDatasetGenerator(const std::string &config_file) {
     ConfigParser parser;
     double fx, fy, cx, cy;
 
@@ -124,7 +124,7 @@ static void record_observation(std::ofstream &output_file, const Vec3 &x) {
     output_file << std::endl;
 }
 
-void VOTestDataset::generateRandom3DFeatures(MatX &features) {
+void VOTestDatasetGenerator::generateRandom3DFeatures(MatX &features) {
     Vec4 point;
 
     // generate random 3d features
@@ -138,70 +138,9 @@ void VOTestDataset::generateRandom3DFeatures(MatX &features) {
     }
 }
 
-void VOTestDataset::record3DFeatures(const std::string &output_path,
-                                     const MatX &features) {
-    int retval = mat2csv(output_path,
-                         features.block(0, 0, 3, features.cols()).transpose());
-
-    if (retval != 0) {
-        std::string err_msg =
-          std::string("Failed to record 3D features to: ") + output_path;
-        throw std::runtime_error(err_msg);
-    }
-}
-
-void VOTestDataset::recordObservedFeatures(
-  double time,
-  const Vec3 &x,
-  const std::string &output_path,
-  std::vector<std::pair<Vec2, Vec3>> &observed) {
-    std::ofstream outfile(output_path);
-    Vec2 f_2d;
-    Vec3 f_3d;
-
-    // open file
-    if (outfile.good() != true) {
-        std::string err_msg =
-          std::string("Failed to open file to record observed features: ") +
-          output_path;
-        throw std::runtime_error(err_msg);
-    }
-
-    // time and number of observed features
-    outfile << time << std::endl;
-    outfile << observed.size() << std::endl;
-    outfile << x(0) << "," << x(1) << "," << x(2) << std::endl;
-
-    // features
-    for (auto feature : observed) {
-        // feature in image frame
-        f_2d = feature.first.transpose();
-        outfile << f_2d(0) << "," << f_2d(1) << std::endl;
-
-        // feature in world frame
-        f_3d = feature.second.transpose();
-        outfile << f_3d(0) << "," << f_3d(1) << "," << f_3d(2) << std::endl;
-    }
-
-    // clean up
-    outfile.close();
-}
-
-void VOTestDataset::generateTestData(const std::string &save_path) {
-    // create dataset directory
-    int retval = mkdir(save_path.c_str(), ACCESSPERMS);
-    if (retval != 0) {
-        throw std::runtime_error("Failed to create dataset directory!");
-    }
-
-    // setup
-    std::ofstream output_file(save_path + "/state.dat");
-    std::ofstream index_file(save_path + "/index.dat");
-    prep_header(output_file);
-
-    MatX features;
-    this->generateRandom3DFeatures(features);
-    this->record3DFeatures(save_path + "/features.dat", features);
+VOTestDataset VOTestDatasetGenerator::generate() {
+    VOTestDataset dataset;
+    this->generateRandom3DFeatures(dataset.features);
 
     // calculate circle trajectory inputs
     double circle_radius = 0.5;
@@ -221,33 +160,110 @@ void VOTestDataset::generateTestData(const std::string &save_path) {
         Vec3 x = robot.update(u, dt);
         time += dt;
 
+        // Store time, state, and observations (if any) in this struct
+        VOTestInstant meas;
+        meas.time = time;
+        meas.robot_pose = x;
+
         // check features
         Vec3 rpy = Vec3{0.0, 0.0, x(2)};
         Vec3 t = Vec3{x(0), x(1), 0.0};
-        std::vector<std::pair<Vec2, Vec3>> observed;
 
         // convert rpy and t from NWU to EDN coordinate system
         Vec3 rpy_edn, t_edn;
         nwu2edn(rpy, rpy_edn);
         nwu2edn(t, t_edn);
 
-        retval =
-          this->camera.checkFeatures(dt, features, rpy_edn, t_edn, observed);
+        // checkFeatures may put some observations into meas.observed, or it
+        // may leave it empty. We're OK with either.
+        int retval = this->camera.checkFeatures(
+          dt, dataset.features, rpy_edn, t_edn, meas.observed);
         if (retval == 0) {
+            // This timestep corresponds to a camera frame
+            meas.camera_frame = this->camera.frame;
+        }
+
+        // store these measurements for later
+        dataset.measurements.push_back(meas);
+    }
+    return dataset;
+}
+
+
+void recordMeasurements(const VOTestInstant &measurements,
+                        const std::string &output_path) {
+    std::ofstream outfile(output_path);
+    Vec2 f_2d;
+    Vec3 f_3d;
+
+    // open file
+    if (outfile.good() != true) {
+        std::string err_msg =
+          std::string("Failed to open file to record observed features: ") +
+          output_path;
+        throw std::runtime_error(err_msg);
+    }
+
+    // time and number of observed features
+    outfile << measurements.time << std::endl;
+    outfile << measurements.observed.size() << std::endl;
+    const auto &pose = measurements.robot_pose;
+    outfile << pose.x() << "," << pose.y() << "," << pose.z() << std::endl;
+
+    // features
+    for (auto feature : measurements.observed) {
+        // feature in image frame
+        f_2d = feature.first.transpose();
+        outfile << f_2d(0) << "," << f_2d(1) << std::endl;
+
+        // feature in world frame
+        f_3d = feature.second.transpose();
+        outfile << f_3d(0) << "," << f_3d(1) << "," << f_3d(2) << std::endl;
+    }
+}
+
+void record3DFeatures(const MatX &features, const std::string &output_path) {
+    int retval = mat2csv(output_path,
+                         features.block(0, 0, 3, features.cols()).transpose());
+
+    if (retval != 0) {
+        std::string err_msg =
+          std::string("Failed to record 3D features to: ") + output_path;
+        throw std::runtime_error(err_msg);
+    }
+}
+
+void recordTestData(const VOTestDataset &dataset,
+                    const std::string &output_path) {
+    // create dataset directory
+    int retval = mkdir(output_path.c_str(), ACCESSPERMS);
+    if (retval != 0) {
+        throw std::runtime_error("Failed to create dataset directory!");
+    }
+
+    // setup
+    std::ofstream pose_file(output_path + "/state.dat");
+    std::ofstream index_file(output_path + "/index.dat");
+    prep_header(pose_file);
+
+    // Record features file
+    record3DFeatures(dataset.features, output_path + "/features.dat");
+
+    for (const auto &meas : dataset.measurements) {
+        // Record observations file, only at timesteps with camera observations
+        if (meas.camera_frame >= 0) {
+            // Build the filename to save to
             std::ostringstream oss;
-            oss.str("");
-            oss << save_path + "/observed_" << this->camera.frame << ".dat";
-            this->recordObservedFeatures(time, x, oss.str(), observed);
+            oss << output_path + "/observed_" << meas.camera_frame << ".dat";
+            // Write to the file
+            recordMeasurements(meas, oss.str());
+            // Write the filename to the index file
             index_file << oss.str() << std::endl;
         }
 
-        // record state
-        record_observation(output_file, x);
+        // Record robot pose
+        record_observation(pose_file, meas.robot_pose);
     }
-
-    // clean up
-    output_file.close();
-    index_file.close();
 }
 
 }  // wave namespace

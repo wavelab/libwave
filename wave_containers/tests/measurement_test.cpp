@@ -272,6 +272,15 @@ TEST_F(FilledMeasurementContainer, getTimeWindowSome) {
     }
 }
 
+TEST_F(FilledMeasurementContainer, getTimeWindowInstant) {
+    // Check case of window where `start == end`
+    const auto t = this->t_start + seconds(1);
+    auto res = this->m.getTimeWindow(t, t);
+    ASSERT_EQ(2u, std::distance(res.first, res.second));
+    EXPECT_DOUBLE_EQ(3.4, res.first->value);
+    EXPECT_DOUBLE_EQ(25., (++res.first)->value);
+}
+
 TEST_F(FilledMeasurementContainer, getAllFromSensor) {
     // Check case of empty result
     auto res = this->m.getAllFromSensor(SomeSensors::S3);
