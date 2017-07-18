@@ -2,6 +2,31 @@
 
 namespace wave {
 
+BenchmarkPose poseError(const MeasurementContainer<PoseMeasurement> &truth,
+                        const PoseMeasurement &measurement) {
+    // Look up the true pose, interpolating if necessary and possible
+    auto true_pose =
+      truth.get(measurement.time_point, ComparisonKey::GROUND_TRUTH);
+    true_pose.rotation.invert();
+
+    auto error_pose = BenchmarkPose{};
+    error_pose.rotation = true_pose.rotation * measurement.value.rotation;
+    error_pose.translation =
+      measurement.value.translation - true_pose.translation;
+    return error_pose;
+}
+
+MeasurementContainer<PoseMeasurement> trajectoryError(
+  const MeasurementContainer<PoseMeasurement> &truth,
+  const MeasurementContainer<PoseMeasurement> &measurements) {
+    auto errors = MeasurementContainer<PoseMeasurement>{};
+    for (const auto &meas : measurements) {
+        auto error_pose = poseError(truth, meas);
+        errors.emplace(meas.time_point, ComparisonKey::ERROR, error_pose);
+    }
+    return errors;
+}
+
 void TrajectoryCompare::reset() {
     this->ground_truth.clear();
     this->measurements.clear();
@@ -21,25 +46,7 @@ void TrajectoryCompare::pushTruth(const BenchmarkPose &pose,
 }
 
 void TrajectoryCompare::calculateError() {
-    for (auto iter = measurements.begin(); iter != measurements.end(); iter++) {
-        BenchmarkPose truth =
-          ground_truth.get(iter->time_point, ComparisonKey::GROUND_TRUTH);
-        truth.rotation.invert();
-
-        BenchmarkPose error;
-        error.rotation = truth.rotation * iter->value.rotation;
-        error.translation = iter->value.translation - truth.translation;
-        this->error.emplace(iter->time_point, ComparisonKey::ERROR, error);
-    }
-}
-
-void TrajectoryCompare::calculateError(
-  const MeasurementContainer<PoseMeasurement> &truth,
-  const MeasurementContainer<PoseMeasurement> &measured) {
-    this->reset();
-    this->ground_truth = truth;
-    this->measurements = measured;
-    this->calculateError();
+    this->error = trajectoryError(this->ground_truth, this->measurements);
 }
 
 void TrajectoryCompare::outputCSV(const std::string &path) {
