@@ -79,13 +79,7 @@ TEST(FASTTests, DISABLED_DetectImage) {
 
     cv::Mat image = cv::imread(TEST_IMAGE);
 
-    auto start = std::chrono::steady_clock::now();
-
     std::vector<cv::KeyPoint> keypoints = detector.detectFeatures(image);
-
-    auto extract_time = std::chrono::duration_cast<std::chrono::milliseconds>(
-      std::chrono::steady_clock::now() - start);
-    LOG_INFO("Feature extraction took %lu ms\n", extract_time.count());
 
     ASSERT_NE(keypoints.size(), 0u);
 
