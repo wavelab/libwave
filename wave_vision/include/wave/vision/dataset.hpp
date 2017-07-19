@@ -115,6 +115,7 @@ struct VOTestDataset {
      *
      * ```
      * outputLandmarks(output_dir + "/landmarks.dat");
+     * outputCalibration(output_dir + "/calib.dat");
      * outputRobotState(output_dir + "/state.dat");
      * outputObserved(output_dir);
      * ```
@@ -132,6 +133,17 @@ struct VOTestDataset {
      */
     void outputLandmarks(const std::string &output_path);
 
+    /** Writes calibration information to the given file.
+     *
+     * Currently this is only camera calibration - this may change in the
+     * future.
+     *
+     * The output is in csv format with only one row, which contains the nine
+     * elements of the K matrix in row-major order.
+     *
+     * @throws std::runtime_error on failure
+     */
+    void outputCalibration(const std::string &output_path);
 
     /** Writes landmarks measurements to the given directory.
      *
