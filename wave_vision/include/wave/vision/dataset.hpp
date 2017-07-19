@@ -133,7 +133,7 @@ struct VOTestDataset {
 
     /** Writes landmark ground truth to the given file.
      *
-     * The output is in csv format with no header. Each row contains the
+     * The output is space-separated with no header. Each row contains the
      * landmark id and coordinates in x, y, z.
      *
      * @throws std::runtime_error on failure
@@ -145,7 +145,7 @@ struct VOTestDataset {
      * Currently this is only camera calibration - this may change in the
      * future.
      *
-     * The output is in csv format with only one row, which contains the nine
+     * The output is space-separated with only one row, which contains the nine
      * elements of the K matrix in row-major order.
      *
      * @throws std::runtime_error on failure
@@ -158,7 +158,7 @@ struct VOTestDataset {
      * in output_dir, where n is an index starting at zero. Additionally, a file
      * index.dat is created holding a list of the `observed_*.dat` filenames.
      *
-     * `observed_*.dat` is in csv format. There are four header rows:
+     * `observed_*.dat` is space-separated. There are four header rows:
      * 1. time
      * 2. robot position (x, y, z(
      * 3. robot orientation (quaternion x, y, z, w)
@@ -173,9 +173,8 @@ struct VOTestDataset {
 
     /** Writes robot state group truth to the given file.
      *
-     * The output is in csv format with a one-row header. Each row contains 8
-     * values: the time, the 3d position (x, y, z), and the quaternion
-     * orientation (x, y, z, w).
+     * The output is space-separated. Each row contains 8 values: the time, the
+     * 3d position (x, y, z), and the quaternion orientation (x, y, z, w).
      *
      * @throws std::runtime_error on failure
      */
