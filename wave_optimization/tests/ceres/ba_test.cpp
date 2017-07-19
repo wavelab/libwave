@@ -66,8 +66,8 @@ TEST(BAResidual, testResidual) {
     LandmarkMap landmarks = dataset.landmarks;
 
     // translate
-    auto true_G_p_B_G = dataset.states[0].robot_G_p_B_G;
-    auto t_vec = true_G_p_B_G.data();
+    auto true_G_p_GB = dataset.states[0].robot_G_p_GB;
+    auto t_vec = true_G_p_GB.data();
 
     // orientation of robot Body in Global frame
     const auto q_GB = dataset.states[0].robot_q_GB;
@@ -105,7 +105,7 @@ TEST(BundleAdjustment, solve) {
     // We'll keep the parameters in a vector for now.
     // Note we have to pre-allocate the vector, so that pointers to the elements
     // don't change as we insert.
-    std::vector<Vec3> params_G_p_C_G(dataset.states.size());
+    std::vector<Vec3> params_G_p_GC(dataset.states.size());
     std::vector<Quaternion> params_q_GC(dataset.states.size());
     LandmarkMap params_landmarks = dataset.landmarks;
 
@@ -117,10 +117,10 @@ TEST(BundleAdjustment, solve) {
     // Add pose parameters
     for (size_t i = 0; i < dataset.states.size(); i++) {
         // translation
-        const auto &true_G_p_C_G = dataset.states[i].robot_G_p_B_G;
+        const auto &true_G_p_GC = dataset.states[i].robot_G_p_GB;
         // add offset
-        Vec3 G_p_C_G = true_G_p_C_G + Vec3{0.01, 0, -0.005};
-        params_G_p_C_G[i] = G_p_C_G;
+        Vec3 G_p_GC = true_G_p_GC + Vec3{0.01, 0, -0.005};
+        params_G_p_GC[i] = G_p_GC;
 
         // get rotation as quaternion
         const auto &initial_q_GB = dataset.states[i].robot_q_GB;
@@ -147,15 +147,15 @@ TEST(BundleAdjustment, solve) {
         ba.addCamera(dataset.camera_K,
                      features,
                      landmark_ids,
-                     params_G_p_C_G[i].data(),
+                     params_G_p_GC[i].data(),
                      params_q_GC[i].coeffs().data(),
                      params_landmarks);
 
         // Set a prior on first pose
         if (i == 0) {
-            params_G_p_C_G[i] = true_G_p_C_G;
+            params_G_p_GC[i] = true_G_p_GC;
             params_q_GC[i] = initial_q_GB * q_BC;
-            ba.problem.SetParameterBlockConstant(params_G_p_C_G[0].data());
+            ba.problem.SetParameterBlockConstant(params_G_p_GC[0].data());
             ba.problem.SetParameterBlockConstant(
               params_q_GC[0].coeffs().data());
         }
@@ -171,9 +171,9 @@ TEST(BundleAdjustment, solve) {
                         Eigen::AngleAxisd(-M_PI_2, Vec3::UnitX())};
 
         const auto true_q_GC = Quaternion{dataset.states[i].robot_q_GB * q_BC};
-        const auto &true_G_p_C_G = dataset.states[i].robot_G_p_B_G;
+        const auto &true_G_p_GC = dataset.states[i].robot_G_p_GB;
         const auto angular_dist = true_q_GC.angularDistance(params_q_GC[i]);
-        const auto linear_dist = (true_G_p_C_G - params_G_p_C_G[i]).norm();
+        const auto linear_dist = (true_G_p_GC - params_G_p_GC[i]).norm();
 
         EXPECT_LT(angular_dist, 1e-6);
         // For some reason the robot position estimate is not as good as the

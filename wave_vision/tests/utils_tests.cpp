@@ -111,10 +111,10 @@ class PinholeProjectTest : public ::testing::Test {
 
 TEST_F(PinholeProjectTest, projectPointDirectlyAhead) {
     // Landmark position in global frame
-    auto G_p_F_G = Vec3{10.0, 0., 0.};
+    auto G_p_GF = Vec3{10.0, 0., 0.};
 
     // Translation from origin of Global frame to Camera
-    auto G_p_C_G = Vec3{0, 0, 0};
+    auto G_p_GC = Vec3{0, 0, 0};
 
     // Orientation of robot Body frame in Global frame
     auto q_GB = Quaternion::Identity();
@@ -123,7 +123,7 @@ TEST_F(PinholeProjectTest, projectPointDirectlyAhead) {
     auto R_GC = Mat3{q_GB * this->q_BC};
 
     Vec2 meas;
-    auto res = pinholeProject(this->K, R_GC, G_p_C_G, G_p_F_G, meas);
+    auto res = pinholeProject(this->K, R_GC, G_p_GC, G_p_GF, meas);
     auto expected = Vec2{this->cx, this->cy};
     EXPECT_TRUE(res);
     EXPECT_PRED2(VectorsNear, expected, meas);
@@ -131,10 +131,10 @@ TEST_F(PinholeProjectTest, projectPointDirectlyAhead) {
 
 TEST_F(PinholeProjectTest, projectPointDirectlyBehind) {
     // Landmark position in global frame
-    auto G_p_F_G = Vec3{-10.0, 0., 0.};
+    auto G_p_GF = Vec3{-10.0, 0., 0.};
 
     // Translation from origin of Global frame to Camera
-    auto G_p_C_G = Vec3{0, 0, 0};
+    auto G_p_GC = Vec3{0, 0, 0};
 
     // Orientation of robot Body frame in Global frame
     auto q_GB = Quaternion::Identity();
@@ -143,7 +143,7 @@ TEST_F(PinholeProjectTest, projectPointDirectlyBehind) {
     auto R_GC = Mat3{q_GB * this->q_BC};
 
     Vec2 meas;
-    auto res = pinholeProject(this->K, R_GC, G_p_C_G, G_p_F_G, meas);
+    auto res = pinholeProject(this->K, R_GC, G_p_GC, G_p_GF, meas);
     auto expected = Vec2{this->cx, this->cy};
     EXPECT_FALSE(res);
     EXPECT_PRED2(VectorsNear, expected, meas);
@@ -153,10 +153,10 @@ TEST_F(PinholeProjectTest, projectPointAboveRight) {
     // Landmark position in global frame
     // It is above and to the right from the camera's viewpoint, since the
     // camera is looking along X, and Y points to the left.
-    auto G_p_F_G = Vec3{10.0, -2.0, 1.0};
+    auto G_p_GF = Vec3{10.0, -2.0, 1.0};
 
     // Translation from origin of Global frame to Camera
-    auto G_p_C_G = Vec3{5.0, 0.0, 0.0};
+    auto G_p_GC = Vec3{5.0, 0.0, 0.0};
 
     // Orientation of robot Body frame in Global frame
     auto q_GB = Quaternion::Identity();
@@ -165,7 +165,7 @@ TEST_F(PinholeProjectTest, projectPointAboveRight) {
     auto R_GC = Mat3{q_GB * this->q_BC};
 
     Vec2 meas;
-    auto res = pinholeProject(this->K, R_GC, G_p_C_G, G_p_F_G, meas);
+    auto res = pinholeProject(this->K, R_GC, G_p_GC, G_p_GF, meas);
     EXPECT_TRUE(res);
     EXPECT_GT(meas.x(), this->cx);
     EXPECT_LT(meas.y(), this->cy);

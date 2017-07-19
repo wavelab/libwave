@@ -38,8 +38,8 @@ Vec2 focal_length(double hfov,
  *
  * @param K camera intrinsic matrix
  * @param R_GC orientation of camera in world frame
- * @param G_p_C_G translation from world origin to camera, in world frame
- * @param G_p_F_G translation from world origin to feature, in world frame
+ * @param G_p_GC translation from world origin to camera, in world frame
+ * @param G_p_GF translation from world origin to feature, in world frame
  * @param result measurement in image frame (pixels)
  * @return true if feature is in front of the camera.
  *
@@ -49,8 +49,8 @@ Vec2 focal_length(double hfov,
 template <typename T>
 bool pinholeProject(const Eigen::Matrix<T, 3, 3> &K,
                     const Eigen::Matrix<T, 3, 3> &R_GC,
-                    const Eigen::Matrix<T, 3, 1> &G_p_C_G,
-                    const Eigen::Matrix<T, 3, 1> &G_p_F_G,
+                    const Eigen::Matrix<T, 3, 1> &G_p_GC,
+                    const Eigen::Matrix<T, 3, 1> &G_p_GF,
                     Eigen::Matrix<T, 2, 1> &result) {
     // Note R_GC is is the orientation of the camera in the world frame.
     // R_CG is the rotation that transforms *points* in the world frame to the
@@ -60,11 +60,11 @@ bool pinholeProject(const Eigen::Matrix<T, 3, 3> &K,
     // Make extrinsic matrix
     Eigen::Matrix<T, 3, 4> extrinsic{};
     extrinsic.topLeftCorner(3, 3) = R_CG;
-    extrinsic.topRightCorner(3, 1) = -R_CG * G_p_C_G;
+    extrinsic.topRightCorner(3, 1) = -R_CG * G_p_GC;
     extrinsic(2, 3) = T(1.0);
 
     Eigen::Matrix<T, 4, 1> landmark_homogeneous;
-    landmark_homogeneous << G_p_F_G, T(1);
+    landmark_homogeneous << G_p_GF, T(1);
 
     // project
     Eigen::Matrix<T, 3, 1> homogeneous = K * extrinsic * landmark_homogeneous;
