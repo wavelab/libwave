@@ -110,15 +110,15 @@ void VOTestDataset::outputLandmarks(const std::string &output_path) {
     }
 
     // output landmarks to file
-    if (mat2csv(output_path, data) != 0) {
-        throw std::runtime_error("Failed to write to " + output_path);
-    }
+    auto fmt = Eigen::IOFormat{Eigen::StreamPrecision, Eigen::DontAlignCols};
+    auto out_file = std::ofstream{output_path};
+    out_file << data.format(fmt) << std::endl;
 }
 
 void VOTestDataset::outputCalibration(const std::string &output_path) {
     auto calib_file = std::ofstream{output_path};
     auto fmt =
-      Eigen::IOFormat{Eigen::StreamPrecision, Eigen::DontAlignCols, ",", ","};
+      Eigen::IOFormat{Eigen::StreamPrecision, Eigen::DontAlignCols, " ", " "};
     calib_file << this->camera_K.format(fmt);
     calib_file << std::endl;
 }
@@ -147,11 +147,11 @@ void VOTestDataset::outputObserved(const std::string &output_dir) {
         }
 
         // output header
-        auto comma_format = Eigen::IOFormat{
-          Eigen::StreamPrecision, Eigen::DontAlignCols, ",", ","};
+        auto fmt = Eigen::IOFormat{
+          Eigen::StreamPrecision, Eigen::DontAlignCols, " ", " "};
         obs_file << state.time << std::endl;
-        obs_file << state.robot_G_p_B_G.format(comma_format) << std::endl;
-        obs_file << state.robot_q_GB.coeffs().format(comma_format) << std::endl;
+        obs_file << state.robot_G_p_B_G.format(fmt) << std::endl;
+        obs_file << state.robot_q_GB.coeffs().format(fmt) << std::endl;
         obs_file << state.features_observed.size() << std::endl;
 
         // output observed features
@@ -159,8 +159,7 @@ void VOTestDataset::outputObserved(const std::string &output_dir) {
             const auto &f_2d = feature.second;  // feature in image frame
             const auto &landmark_id = feature.first;
 
-            obs_file << landmark_id << "," << f_2d(0) << "," << f_2d(1)
-                     << std::endl;
+            obs_file << landmark_id << " " << f_2d.format(fmt) << std::endl;
         }
         obs_file << std::endl;
 
@@ -180,26 +179,15 @@ void VOTestDataset::outputRobotState(const std::string &output_path) {
     // setup
     std::ofstream state_file(output_path);
 
-    // state header
-    state_file << "time_step"
-               << ",";
-    state_file << "x"
-               << ",";
-    state_file << "y"
-               << ",";
-    state_file << "theta"
-               << ",";
-    state_file << std::endl;
-
     // output robot state
-    auto comma_format =
-      Eigen::IOFormat{Eigen::StreamPrecision, Eigen::DontAlignCols, ",", ","};
+    auto fmt =
+      Eigen::IOFormat{Eigen::StreamPrecision, Eigen::DontAlignCols, " ", " "};
     for (auto state : this->states) {
         const auto t = state.time;
 
-        state_file << t << ",";
-        state_file << state.robot_G_p_B_G.format(comma_format) << ",";
-        state_file << state.robot_q_GB.coeffs().format(comma_format) << ",";
+        state_file << t << " ";
+        state_file << state.robot_G_p_B_G.format(fmt) << " ";
+        state_file << state.robot_q_GB.coeffs().format(fmt) << " ";
         state_file << std::endl;
     }
     state_file << std::endl;
