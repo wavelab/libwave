@@ -216,6 +216,12 @@ void VOTestDataset::outputToDirectory(const std::string &output_dir) {
     this->outputObserved(output_dir);
 }
 
+VOTestDataset VOTestDataset::loadFromDirectory(const std::string &input_dir) {
+    auto dataset = VOTestDataset{};
+
+    return dataset;
+}
+
 VOTestDataset VOTestDatasetGenerator::generate() {
     VOTestDataset dataset;
     // generate random 3D features
