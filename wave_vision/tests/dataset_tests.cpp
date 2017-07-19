@@ -95,14 +95,24 @@ TEST(VOTestDataset, generate) {
     auto dataset = generator.generate();
 }
 
-TEST(VOTestDataset, outputToFile) {
+TEST(VOTestDataset, writeAndReadToFile) {
+    // To test both operations, we write to files, read them, and ensure the
+    // resulting dataset is the one we started with
     VOTestDatasetGenerator generator;
 
     remove_dir(TEST_OUTPUT);
     generator.configure(TEST_CONFIG);
     auto dataset = generator.generate();
 
+    // Write
     dataset.outputToDirectory(TEST_OUTPUT);
+
+    // Read
+    auto input = VOTestDataset::loadFromDirectory(TEST_OUTPUT);
+
+    EXPECT_EQ(dataset.camera_K, input.camera_K);
+    EXPECT_EQ(dataset.landmarks, input.landmarks);
+    EXPECT_EQ(dataset.states, input.states);
 }
 
 }  // namespace wave
