@@ -98,6 +98,8 @@ TEST(VOTestDataset, generate) {
 TEST(VOTestDataset, writeAndReadToFile) {
     // To test both operations, we write to files, read them, and ensure the
     // resulting dataset is the one we started with
+    const auto tol = 1e-5;  // Required precision for Eigen's isApprox
+
     VOTestDatasetGenerator generator;
 
     remove_dir(TEST_OUTPUT);
@@ -111,8 +113,36 @@ TEST(VOTestDataset, writeAndReadToFile) {
     auto input = VOTestDataset::loadFromDirectory(TEST_OUTPUT);
 
     EXPECT_EQ(dataset.camera_K, input.camera_K);
-    EXPECT_EQ(dataset.landmarks, input.landmarks);
-    EXPECT_EQ(dataset.states, input.states);
+    for (const auto &l : dataset.landmarks) {
+        const auto id = l.first;
+        ASSERT_TRUE(input.landmarks.count(id));
+        EXPECT_PRED3(VectorsNearPrec, l.second, input.landmarks[id], tol);
+    }
+
+    // Check each state
+    ASSERT_EQ(dataset.states.size(), input.states.size());
+    for (auto i = 0u; i < dataset.states.size(); ++i) {
+        const auto &lhs = dataset.states[i];
+        const auto &rhs = input.states[i];
+        EXPECT_DOUBLE_EQ(lhs.time, rhs.time);
+        // EXPECT_EQ(lhs.camera_frame, rhs.camera_frame); // Note not checked
+        EXPECT_PRED3(
+          VectorsNearPrec, lhs.robot_G_p_B_G, rhs.robot_G_p_B_G, tol);
+        EXPECT_PRED3(VectorsNearPrec,
+                     lhs.robot_q_GB.coeffs(),
+                     rhs.robot_q_GB.coeffs(),
+                     tol);
+        ASSERT_EQ(lhs.features_observed.size(), rhs.features_observed.size());
+
+        // Check each feature observation
+        for (auto k = 0u; k < lhs.features_observed.size(); ++k) {
+            const auto &lhs_feature = lhs.features_observed[k];
+            const auto &rhs_feature = rhs.features_observed[k];
+            EXPECT_EQ(lhs_feature.first, rhs_feature.first);
+            EXPECT_PRED3(
+              VectorsNearPrec, lhs_feature.second, rhs_feature.second, tol);
+        }
+    }
 }
 
 }  // namespace wave

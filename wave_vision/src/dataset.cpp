@@ -207,6 +207,49 @@ void VOTestDataset::outputToDirectory(const std::string &output_dir) {
 VOTestDataset VOTestDataset::loadFromDirectory(const std::string &input_dir) {
     auto dataset = VOTestDataset{};
 
+    auto calib_file = std::ifstream{input_dir + "/calib.dat"};
+    dataset.camera_K = matrixFromStream<3, 3>(calib_file);
+
+    // Landmarks
+    auto landmarks_file = std::ifstream{input_dir + "/landmarks.dat"};
+    for (LandmarkId id; landmarks_file >> id;) {
+        auto landmark_pos = matrixFromStream<3, 1>(landmarks_file);
+        dataset.landmarks.emplace(id, landmark_pos);
+    }
+
+    // States
+    auto state_file = std::ifstream{input_dir + "/state.dat"};
+    auto in_string = std::string{};
+    for (VOTestInstant state; state_file >> state.time;) {
+        state.robot_G_p_B_G = matrixFromStream<3, 1>(state_file);
+        state.robot_q_GB = matrixFromStream<4, 1>(state_file);
+    };
+
+    // Expect one "observed_" file for each state
+    // Use the index file to get the file name
+    // (though we could just count up...)
+    auto index_file = std::ifstream{input_dir + "/index.dat"};
+    for (std::string obs_file_name; index_file >> obs_file_name;) {
+        auto obs_file = std::ifstream{obs_file_name};
+
+        VOTestInstant state;
+        obs_file >> state.time;
+        state.robot_G_p_B_G = matrixFromStream<3, 1>(obs_file);
+        state.robot_q_GB = matrixFromStream<4, 1>(obs_file);
+
+        int num_observations;
+        obs_file >> num_observations;
+
+        for (auto i = 0; i < num_observations; ++i) {
+            LandmarkObservation obs;
+            obs_file >> obs.first;
+            obs.second = matrixFromStream<2, 1>(obs_file);
+            state.features_observed.push_back(obs);
+        }
+
+        dataset.states.push_back(state);
+    }
+
     return dataset;
 }
 
