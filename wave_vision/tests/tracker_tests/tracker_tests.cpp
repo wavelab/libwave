@@ -32,19 +32,21 @@ TEST(TrackerTests, AddImageGetTracks) {
     Tracker<FASTDetector, BRISKDescriptor, BruteForceMatcher> tracker(
       detector, descriptor, matcher);
 
+    std::chrono::steady_clock clock;
+
     cv::Mat image_1 = cv::imread(TEST_IMAGE_0);
     cv::Mat image_2 = cv::imread(TEST_IMAGE_1);
     cv::Mat image_3 = cv::imread(TEST_IMAGE_2);
 
-    tracker.addImage(image_1);
+    tracker.addImage(image_1, clock.now());
     ASSERT_THROW(tracker.getTracks(-1), std::out_of_range);
     ASSERT_THROW(tracker.getTracks(5), std::out_of_range);
 
     std::vector<FeatureTrack> ft_0 = tracker.getTracks(0);
     ASSERT_EQ((int) ft_0.size(), 0);
 
-    tracker.addImage(image_2);
-    tracker.addImage(image_3);
+    tracker.addImage(image_2, clock.now());
+    tracker.addImage(image_3, clock.now());
 
     std::vector<FeatureTrack> ft_1 = tracker.getTracks(1);
     std::vector<FeatureTrack> ft_2 = tracker.getTracks(2);
@@ -67,7 +69,6 @@ TEST(TrackerTests, OfflineTrackerNoImages) {
 
 TEST(TrackerTests, DISABLED_OfflineTrackerTest) {
     std::vector<cv::Mat> image_sequence;
-    std::vector<cv::Mat>::iterator img_seq_it;
     std::vector<cv::Mat> drawn_images;
 
     std::vector<std::vector<FeatureTrack>> feature_tracks;
@@ -86,7 +87,7 @@ TEST(TrackerTests, DISABLED_OfflineTrackerTest) {
 
     size_t img_count = 0;
 
-    for (img_seq_it = image_sequence.begin();
+    for (auto img_seq_it = image_sequence.begin();
          img_seq_it != image_sequence.end();
          img_seq_it++) {
         drawn_images.push_back(tracker.drawTracks(img_count, *img_seq_it));
@@ -94,7 +95,8 @@ TEST(TrackerTests, DISABLED_OfflineTrackerTest) {
         ++img_count;
     }
 
-    for (img_seq_it = drawn_images.begin(); img_seq_it != drawn_images.end();
+    for (auto img_seq_it = drawn_images.begin();
+         img_seq_it != drawn_images.end();
          img_seq_it++) {
         cv::imshow("Feature Tracks", *img_seq_it);
         cv::waitKey(0);

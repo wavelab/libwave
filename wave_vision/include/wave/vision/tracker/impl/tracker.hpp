@@ -25,20 +25,21 @@ Tracker<TDetector, TDescriptor, TMatcher>::registerKeypoints(
 
     for (const auto &m : matches) {
         // Check to see if ID has already been assigned to keypoint
-        if (this->prev_ids.find(m.queryIdx) != this->prev_ids.end()) {
+        if (this->prev_ids.count(m.queryIdx)) {
             // If so, assign that ID to current map.
             curr_ids[m.trainIdx] = this->prev_ids.at(m.queryIdx);
 
             // Extract value of keypoint.
             Vec2 landmark = convertKeypoint(curr_kp.at(m.trainIdx));
 
+            auto img_count = this->img_times.size() - 1;
+
             // Create LandmarkMeasurement, and add to
             // LandmarkMeasurementContainer
-            LandmarkMeasurement<int> measurement(
-              this->img_times.at(this->img_count),
-              sensor_id,
-              curr_ids.at(m.trainIdx),
-              landmark);
+            LandmarkMeasurement<int> measurement(this->img_times.at(img_count),
+                                                 sensor_id,
+                                                 curr_ids.at(m.trainIdx),
+                                                 landmark);
             this->landmarks.insert(measurement);
         } else {
             // Else, assign new ID
@@ -51,10 +52,11 @@ Tracker<TDetector, TDescriptor, TMatcher>::registerKeypoints(
             Vec2 curr_landmark = convertKeypoint(curr_kp.at(m.trainIdx));
 
             // Find previous and current times from lookup table
-            std::chrono::steady_clock::time_point prev_time =
-              this->img_times.at(this->img_count - 1);
-            std::chrono::steady_clock::time_point curr_time =
-              this->img_times.at(this->img_count);
+            // Subtract one, since all are zero indexed.
+            auto img_count = this->img_times.size() - 1;
+
+            const auto &prev_time = this->img_times.at(img_count - 1);
+            const auto &curr_time = this->img_times.at(img_count);
 
             // Create landmark measurements for previous and current landmarks
             LandmarkMeasurement<int> prev_measurement(
@@ -79,12 +81,14 @@ template <typename TDetector, typename TDescriptor, typename TMatcher>
 std::vector<FeatureTrack> Tracker<TDetector, TDescriptor, TMatcher>::getTracks(
   const size_t &img_num) const {
     std::vector<FeatureTrack> feature_tracks;
-    std::vector<size_t> landmark_ids;
 
     // TODO add in ability to choose different camera.
     int sensor_id = 0;
 
-    if (img_num > this->img_count) {
+    // Determine how many images have been added
+    auto img_count = this->img_times.size() - 1;
+
+    if (img_num > img_count) {
         throw std::out_of_range("Image requested is in the future!");
     } else if (img_num > 0) {
         // Find the time for this image
@@ -92,7 +96,7 @@ std::vector<FeatureTrack> Tracker<TDetector, TDescriptor, TMatcher>::getTracks(
           this->img_times.at(img_num);
 
         // Extract all of the IDs visible at this time
-        landmark_ids =
+        auto landmark_ids =
           this->landmarks.getLandmarkIDsInWindow(img_time, img_time);
 
         // For each ID, get the track.
@@ -111,46 +115,38 @@ std::vector<FeatureTrack> Tracker<TDetector, TDescriptor, TMatcher>::getTracks(
             // Last image feature was seen in must be image requested.
             size_t last_image = img_num;
 
-            // Iterators for time map and landmark measurements
-            std::map<size_t,
-                     std::chrono::steady_clock::time_point>::const_iterator
-              times;
-            std::vector<LandmarkMeasurement<int>>::const_iterator first =
-              tracks.begin();
+            // Iterator for first track
+            auto first_track = tracks.begin();
 
             // Check if the time in the map corresponds to the time of the first
             // landmark measurement
-            for (times = this->img_times.begin();
-                 times != this->img_times.end();
-                 ++times) {
-                if (times->second == first->time_point) {
-                    first_image = times->first;
+            for (auto track_time = this->img_times.begin();
+                 track_time != this->img_times.end();
+                 ++track_time) {
+                if (track_time->second == first_track->time_point) {
+                    first_image = track_time->first;
                 }
             }
 
             // Emplace new feature track back into vector
             feature_tracks.emplace_back(l, tracks, first_image, last_image);
         }
-    } else {
-        // img_num is zero, and there are no tracks.
-        feature_tracks = {};
     }
 
     return feature_tracks;
 }
 
 template <typename TDetector, typename TDescriptor, typename TMatcher>
-void Tracker<TDetector, TDescriptor, TMatcher>::addImage(const cv::Mat &image) {
-    // Get time for keypoint registration
-    std::chrono::steady_clock::time_point current_time = clock.now();
-
+void Tracker<TDetector, TDescriptor, TMatcher>::addImage(
+  const cv::Mat &image,
+  const std::chrono::steady_clock::time_point &current_time) {
+    // Register the time this image
     this->timestampImage(current_time);
 
     // Check if this is the first image being tracked.
-    if (this->img_count == 0) {
+    if (this->img_times.size() == 1) {
         // Detect features within first image. No tracks can be generated yet.
         this->detectAndCompute(image, this->prev_kp, this->prev_desc);
-        this->img_count++;
     } else {
         // Variables for feature detection, description, and matching
         std::vector<cv::KeyPoint> curr_kp;
@@ -169,13 +165,11 @@ void Tracker<TDetector, TDescriptor, TMatcher>::addImage(const cv::Mat &image) {
         curr_ids = this->registerKeypoints(curr_kp, matches);
 
         // Set previous ID map to be the current one, and reset
-        this->prev_ids = curr_ids;
+        this->prev_ids.swap(curr_ids);
 
         // Update previous keypoints and descriptors
         this->prev_kp = curr_kp;
         this->prev_desc = curr_desc;
-
-        this->img_count++;
     }
 }
 
@@ -183,19 +177,20 @@ template <typename TDetector, typename TDescriptor, typename TMatcher>
 std::vector<std::vector<FeatureTrack>>
 Tracker<TDetector, TDescriptor, TMatcher>::offlineTracker(
   const std::vector<cv::Mat> &image_sequence) {
-    std::vector<cv::Mat>::const_iterator img_it;
-
     // Current and all feature tracks
     std::vector<FeatureTrack> curr_track;
     std::vector<std::vector<FeatureTrack>> feature_tracks;
 
+    std::chrono::steady_clock clock;
+
     int num_images = 0;
 
     if (!image_sequence.empty()) {
-        for (img_it = image_sequence.begin(); img_it != image_sequence.end();
+        for (auto img_it = image_sequence.begin();
+             img_it != image_sequence.end();
              ++img_it) {
             // Add image to tracker
-            this->addImage(*img_it);
+            this->addImage(*img_it, clock.now());
 
             // Get tracks from this image (first should return a null track)
             curr_track = this->getTracks(num_images);

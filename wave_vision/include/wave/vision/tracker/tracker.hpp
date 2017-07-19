@@ -1,6 +1,6 @@
 /**
  * @file
- * Brute force matcher implementation, derived from descriptor matcher base.
+ * Feature tracker implementation.
  * @ingroup vision
  */
 #ifndef WAVE_VISION_TRACKER_HPP
@@ -21,12 +21,17 @@ namespace wave {
 /** @addtogroup vision
  *  @{ */
 
+/** Representation of a feature track.
+ *
+ * Contains the first and last images that the feature was seen in, the vector
+ * of measurements from the LandmarkMeasurementContainer and the ID number of
+ * the feature.
+ */
 class FeatureTrack {
  public:
-    // Constructor
+    // Default constructor
     FeatureTrack() {}
 
-    // Initializer list constructor
     FeatureTrack(size_t id,
                  std::vector<LandmarkMeasurement<int>> measurements,
                  size_t first_image,
@@ -60,6 +65,15 @@ class FeatureTrack {
     size_t last_image;
 };
 
+/** Image tracker class.
+ *
+ * The Tracker class is templated on a feature detector, descriptor, and matcher
+ * to track features over a sequence of images.
+ *
+ * @tparam TDetector detector object (FAST, ORB, etc...)
+ * @tparam TDescriptor descriptor object (BRISK, ORB, etc...)
+ * @tparam TMatcher (BruteForceMatcher, FLANN)
+ */
 template <typename TDetector, typename TDescriptor, typename TMatcher>
 class Tracker {
  public:
@@ -78,15 +92,18 @@ class Tracker {
     /** Get the tracks of all features in the requested image from the sequence.
      *
      * @param img_num the number of the image to obtain tracks from
-     * @return tracks corresponding to all detected landmarks in the image.
+     * @return tracks corresponding to all detected landmarks in the image, from
+     * the start of time to the given image.
      */
     std::vector<FeatureTrack> getTracks(const size_t &img_num) const;
 
     /** Track features within an image (presumably the next in a sequence).
      *
      * @param image the image to add.
+     * @param current_time the time at which the image was captured
      */
-    void addImage(const cv::Mat &image);
+    void addImage(const cv::Mat &image,
+                  const std::chrono::steady_clock::time_point &current_time);
 
     /** Draw tracks for the requested image.
      *
@@ -133,7 +150,8 @@ class Tracker {
      */
     void timestampImage(
       const std::chrono::steady_clock::time_point &current_time) {
-        this->img_times[this->img_count] = current_time;
+        auto img_count = this->img_times.size();
+        this->img_times[img_count] = current_time;
     }
 
     /** Registers the latest matched keypoints with IDs. Assigns a new ID if one
@@ -159,9 +177,7 @@ class Tracker {
     std::map<size_t, std::chrono::steady_clock::time_point> img_times;
 
     // Measurement container variables
-    std::chrono::steady_clock clock;
     LandmarkMeasurementContainer<LandmarkMeasurement<int>> landmarks;
-    size_t img_count = 0;
 };
 /** @} group vision */
 }  // namespace wave
