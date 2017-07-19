@@ -111,12 +111,12 @@ void VOTestDataset::outputLandmarks(const std::string &output_path) {
 
     // output landmarks to file
     auto fmt = Eigen::IOFormat{Eigen::StreamPrecision, Eigen::DontAlignCols};
-    auto out_file = std::ofstream{output_path};
+    std::ofstream out_file{output_path};
     out_file << data.format(fmt) << std::endl;
 }
 
 void VOTestDataset::outputCalibration(const std::string &output_path) {
-    auto calib_file = std::ofstream{output_path};
+    std::ofstream calib_file{output_path};
     auto fmt =
       Eigen::IOFormat{Eigen::StreamPrecision, Eigen::DontAlignCols, " ", " "};
     calib_file << this->camera_K.format(fmt);
@@ -205,22 +205,22 @@ void VOTestDataset::outputToDirectory(const std::string &output_dir) {
 }
 
 VOTestDataset VOTestDataset::loadFromDirectory(const std::string &input_dir) {
-    auto dataset = VOTestDataset{};
+    VOTestDataset dataset;
 
-    auto calib_file = std::ifstream{input_dir + "/calib.dat"};
+    std::ifstream calib_file{input_dir + "/calib.dat"};
     dataset.camera_K = matrixFromStream<3, 3>(calib_file);
 
     // Landmarks
-    auto landmarks_file = std::ifstream{input_dir + "/landmarks.dat"};
+    std::ifstream landmarks_file{input_dir + "/landmarks.dat"};
     for (LandmarkId id; landmarks_file >> id;) {
         auto landmark_pos = matrixFromStream<3, 1>(landmarks_file);
         dataset.landmarks.emplace(id, landmark_pos);
     }
 
     // Read the index file to get the file for each state
-    auto index_file = std::ifstream{input_dir + "/index.dat"};
+    std::ifstream index_file{input_dir + "/index.dat"};
     for (std::string obs_file_name; index_file >> obs_file_name;) {
-        auto obs_file = std::ifstream{obs_file_name};
+        std::ifstream obs_file{obs_file_name};
 
         VOTestInstant state;
         obs_file >> state.time;
