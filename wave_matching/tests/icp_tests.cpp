@@ -109,7 +109,9 @@ TEST_F(ICPTest, smallinfo) {
     // setup
     perturb = Affine3::Identity();
     perturb.translation() << 0.2, 0, 0;
-    this->initMatcher(0.05f, perturb);
+    ICPMatcherParams params(TEST_CONFIG);
+    params.res = 0.05f;
+    this->initMatcher(params, perturb);
 
     // test and assert
     match_success = matcher->match();
