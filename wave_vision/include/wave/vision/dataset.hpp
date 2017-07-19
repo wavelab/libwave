@@ -177,6 +177,9 @@ struct VOTestDataset {
      *
      * The format must be the same as that created by outputToDirectory().
      *
+     * @note: state.dat is not used as the information is stored redundantly in
+     * the observed_* files. This may change (@todo).
+     *
      * @todo: add error checking
      */
     static VOTestDataset loadFromDirectory(const std::string &input_dir);
