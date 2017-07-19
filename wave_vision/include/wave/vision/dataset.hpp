@@ -90,13 +90,6 @@ struct VOTestInstant {
     std::vector<LandmarkObservation> features_observed;
 };
 
-inline bool operator==(const VOTestInstant &lhs, const VOTestInstant &rhs) {
-    return (lhs.time == rhs.time) && (lhs.camera_frame == rhs.camera_frame) &&
-           (lhs.robot_G_p_B_G == rhs.robot_G_p_B_G) &&
-           (lhs.robot_q_GB.isApprox(rhs.robot_q_GB)) &&
-           (lhs.features_observed == rhs.features_observed);
-}
-
 /**
  * A set of generated dataset data.
  *
@@ -160,7 +153,7 @@ struct VOTestDataset {
      *
      * `observed_*.dat` is space-separated. There are four header rows:
      * 1. time
-     * 2. robot position (x, y, z(
+     * 2. robot position (x, y, z)
      * 3. robot orientation (quaternion x, y, z, w)
      * 4. M, the number of observations
      *
@@ -183,7 +176,8 @@ struct VOTestDataset {
     /** Reads a dataset from files in the given directory.
      *
      * The format must be the same as that created by outputToDirectory().
-     * @throws std::runtime_error on failure
+     *
+     * @todo: add error checking
      */
     static VOTestDataset loadFromDirectory(const std::string &input_dir);
 };
