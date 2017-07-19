@@ -198,7 +198,7 @@ void VOTestDataset::outputRobotState(const std::string &output_path) {
     }
 }
 
-void VOTestDataset::outputToFile(const std::string &output_dir) {
+void VOTestDataset::outputToDirectory(const std::string &output_dir) {
     // mkdir calibration directory
     boost::filesystem::create_directories(output_dir);
 

@@ -121,7 +121,7 @@ struct VOTestDataset {
      *
      * @throws std::runtime_error on failure
      */
-    void outputToFile(const std::string &output_dir);
+    void outputToDirectory(const std::string &output_dir);
 
     /** Writes landmark ground truth to the given file.
      *
