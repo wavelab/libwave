@@ -187,7 +187,7 @@ class BruteForceMatcher : public DescriptorMatcher {
       const cv::Mat &descriptors_2,
       const std::vector<cv::KeyPoint> &keypoints_1,
       const std::vector<cv::KeyPoint> &keypoints_2,
-      const cv::InputArray &mask = cv::noArray()) const override;
+      cv::InputArray mask = cv::noArray()) const override;
 
  private:
     /** Overloaded method, which takes in a vector of a vector of matches. This
@@ -220,7 +220,7 @@ class BruteForceMatcher : public DescriptorMatcher {
     std::vector<cv::DMatch> removeOutliers(
       const std::vector<cv::DMatch> &matches,
       const std::vector<cv::KeyPoint> &keypoints_1,
-      const std::vector<cv::KeyPoint> &keypoints_2) const;
+      const std::vector<cv::KeyPoint> &keypoints_2) const override;
 
     /** The pointer to the wrapped cv::BFMatcher object */
     cv::Ptr<cv::BFMatcher> brute_force_matcher;

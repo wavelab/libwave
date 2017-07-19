@@ -5,7 +5,6 @@
 namespace wave {
 
 const auto TEST_CONFIG = "tests/config/descriptor/brisk.yaml";
-const auto TEST_IMAGE = "tests/data/image_center.png";
 
 // Checks that correct configuration can be loaded
 TEST(BRISKTests, GoodInitialization) {

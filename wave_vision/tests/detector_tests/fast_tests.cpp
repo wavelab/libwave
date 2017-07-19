@@ -5,7 +5,6 @@
 namespace wave {
 
 const auto TEST_CONFIG = "tests/config/detector/fast.yaml";
-const auto TEST_IMAGE = "tests/data/image_center.png";
 
 // Checks that correct configuration can be loaded
 TEST(FASTTests, GoodInitialization) {

@@ -9,8 +9,6 @@
 
 namespace wave {
 
-// Path to first image for image sequence
-const auto FIRST_IMG_PATH = "tests/data/tracker_test_sequence/frame0057.jpg";
 const auto TEST_IMAGE_0 = "tests/data/tracker_test_sequence/frame0059.jpg";
 const auto TEST_IMAGE_1 = "tests/data/tracker_test_sequence/frame0060.jpg";
 const auto TEST_IMAGE_2 = "tests/data/tracker_test_sequence/frame0061.jpg";
