@@ -6,7 +6,7 @@
 
 namespace wave {
 
-const auto TEST_SCAN = "data/testscan.pcd";
+const auto TEST_SCAN = "tests/data/testscan.pcd";
 
 class MultiTest : public testing::Test {
  protected:
