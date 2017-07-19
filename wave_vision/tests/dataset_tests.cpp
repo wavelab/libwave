@@ -34,7 +34,7 @@ TEST(VOTestCamera, update) {
 
 TEST(VOTestCamera, observeLandmarks) {
     // setup
-    Vec3 G_p_C_G{0, 0, 0};
+    Vec3 G_p_GC{0, 0, 0};
 
     // Orientation of camera in Global frame: Z looks along X axis
     Quaternion q_GC = Eigen::AngleAxisd(-M_PI_2, Vec3::UnitZ()) *
@@ -56,7 +56,7 @@ TEST(VOTestCamera, observeLandmarks) {
       0.0, 0.0, 1.0;
 
     std::vector<LandmarkObservation> observed;
-    auto res = camera.observeLandmarks(0.1, landmarks, q_GC, G_p_C_G, observed);
+    auto res = camera.observeLandmarks(0.1, landmarks, q_GC, G_p_GC, observed);
     EXPECT_EQ(0, res);
     ASSERT_EQ(2u, observed.size());  // expect only visible landmarks
     // Landmark 1, directly in front
@@ -126,8 +126,7 @@ TEST(VOTestDataset, writeAndReadToFile) {
         const auto &rhs = input.states[i];
         EXPECT_DOUBLE_EQ(lhs.time, rhs.time);
         // EXPECT_EQ(lhs.camera_frame, rhs.camera_frame); // Note not checked
-        EXPECT_PRED3(
-          VectorsNearPrec, lhs.robot_G_p_B_G, rhs.robot_G_p_B_G, tol);
+        EXPECT_PRED3(VectorsNearPrec, lhs.robot_G_p_GB, rhs.robot_G_p_GB, tol);
         EXPECT_PRED3(VectorsNearPrec,
                      lhs.robot_q_GB.coeffs(),
                      rhs.robot_q_GB.coeffs(),

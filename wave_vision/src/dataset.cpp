@@ -19,7 +19,7 @@ bool VOTestCamera::update(double dt) {
 int VOTestCamera::observeLandmarks(double dt,
                                    const LandmarkMap &landmarks,
                                    const Quaternion &q_GC,
-                                   const Vec3 &G_p_C_G,
+                                   const Vec3 &G_p_GC,
                                    std::vector<LandmarkObservation> &observed) {
     // pre-check
     if (this->update(dt) == false) {
@@ -36,7 +36,7 @@ int VOTestCamera::observeLandmarks(double dt,
 
         // project 3D world point to 2D image plane, also checking cheirality
         Vec2 meas;
-        auto in_front = pinholeProject(this->K, R_GC, G_p_C_G, point, meas);
+        auto in_front = pinholeProject(this->K, R_GC, G_p_GC, point, meas);
         if (in_front) {
             // check to see if feature observed is within image plane
             if (meas.x() < this->image_width && meas.x() > 0 &&
@@ -150,7 +150,7 @@ void VOTestDataset::outputObserved(const std::string &output_dir) {
         auto fmt = Eigen::IOFormat{
           Eigen::StreamPrecision, Eigen::DontAlignCols, " ", " "};
         obs_file << state.time << std::endl;
-        obs_file << state.robot_G_p_B_G.format(fmt) << std::endl;
+        obs_file << state.robot_G_p_GB.format(fmt) << std::endl;
         obs_file << state.robot_q_GB.coeffs().format(fmt) << std::endl;
         obs_file << state.features_observed.size() << std::endl;
 
@@ -186,7 +186,7 @@ void VOTestDataset::outputRobotState(const std::string &output_path) {
         const auto t = state.time;
 
         state_file << t << " ";
-        state_file << state.robot_G_p_B_G.format(fmt) << " ";
+        state_file << state.robot_G_p_GB.format(fmt) << " ";
         state_file << state.robot_q_GB.coeffs().format(fmt) << " ";
         state_file << std::endl;
     }
@@ -224,7 +224,7 @@ VOTestDataset VOTestDataset::loadFromDirectory(const std::string &input_dir) {
 
         VOTestInstant state;
         obs_file >> state.time;
-        state.robot_G_p_B_G = matrixFromStream<3, 1>(obs_file);
+        state.robot_G_p_GB = matrixFromStream<3, 1>(obs_file);
         state.robot_q_GB = matrixFromStream<4, 1>(obs_file);
 
         int num_observations;
@@ -267,7 +267,7 @@ VOTestDataset VOTestDatasetGenerator::generate() {
         Vec3 pose2d = robot.update(u, dt);
 
         // convert 2d pose to 3d pose (pose of Body in Global frame)
-        auto G_p_B_G = Vec3{pose2d.x(), pose2d.y(), 0};
+        auto G_p_GB = Vec3{pose2d.x(), pose2d.y(), 0};
         auto q_GB = Quaternion{Eigen::AngleAxisd{pose2d.z(), Vec3::UnitZ()}};
 
         auto instant = VOTestInstant{};
@@ -279,10 +279,10 @@ VOTestDataset VOTestDatasetGenerator::generate() {
         Quaternion q_GC = q_GB * q_BC;
 
         int retval = this->camera.observeLandmarks(
-          dt, dataset.landmarks, q_GC, G_p_B_G, instant.features_observed);
+          dt, dataset.landmarks, q_GC, G_p_GB, instant.features_observed);
         if (retval == 0) {
             instant.time = i * dt;
-            instant.robot_G_p_B_G = G_p_B_G;
+            instant.robot_G_p_GB = G_p_GB;
             instant.robot_q_GB = q_GB;
             dataset.states.push_back(instant);
         }

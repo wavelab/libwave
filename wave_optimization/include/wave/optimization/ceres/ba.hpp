@@ -37,13 +37,13 @@ struct BAResidual {
        * Calculate Bundle Adjustment Residual
        *
      * @param q_GC Camera rotation parameterized with a quaternion (x, y, z, w)
-     * @param G_p_C_G Camera translation (x, y, z)
+     * @param G_p_GC Camera translation (x, y, z)
      * @param world_pt World point (x, y, z)
      * @param residual Calculated residual
      **/
     template <typename T>
     bool operator()(const T *const q_GC,
-                    const T *const G_p_C_G,
+                    const T *const G_p_GC,
                     const T *const world_pt,
                     T *residual) const {
         // build camera intrinsics matrix K
@@ -65,7 +65,7 @@ struct BAResidual {
         Eigen::Matrix<T, 3, 3> R_GC = q.matrix();
 
         // build translation vector
-        Eigen::Matrix<T, 3, 1> C{G_p_C_G};
+        Eigen::Matrix<T, 3, 1> C{G_p_GC};
 
         // build world_point vector
         Eigen::Matrix<T, 3, 1> X{world_pt};
