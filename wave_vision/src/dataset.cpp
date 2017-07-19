@@ -115,6 +115,13 @@ void VOTestDataset::outputLandmarks(const std::string &output_path) {
     }
 }
 
+void VOTestDataset::outputCalibration(const std::string &output_path) {
+    auto calib_file = std::ofstream{output_path};
+    auto fmt =
+      Eigen::IOFormat{Eigen::StreamPrecision, Eigen::DontAlignCols, ",", ","};
+    calib_file << this->camera_K.format(fmt);
+}
+
 void VOTestDataset::outputObserved(const std::string &output_dir) {
     // pre-check
     if (this->states.empty()) {
@@ -204,6 +211,7 @@ void VOTestDataset::outputToDirectory(const std::string &output_dir) {
 
     // output this synthetic vo dataset
     this->outputLandmarks(output_dir + "/landmarks.dat");
+    this->outputCalibration(output_dir + "/calib.dat");
     this->outputRobotState(output_dir + "/state.dat");
     this->outputObserved(output_dir);
 }
