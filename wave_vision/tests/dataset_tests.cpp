@@ -102,7 +102,7 @@ TEST(VOTestDataset, outputToFile) {
     generator.configure(TEST_CONFIG);
     auto dataset = generator.generate();
 
-    dataset.outputToFile(TEST_OUTPUT);
+    dataset.outputToDirectory(TEST_OUTPUT);
 }
 
 }  // namespace wave
