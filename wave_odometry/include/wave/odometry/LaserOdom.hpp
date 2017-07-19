@@ -50,6 +50,7 @@ struct LaserOdomParams {
 class LaserOdom {
  public:
     LaserOdom(const LaserOdomParams params);
+    ~LaserOdom();
     void addPoints(const std::vector<PointXYZIR> &pts,
                    const int tick,
                    TimeType stamp);

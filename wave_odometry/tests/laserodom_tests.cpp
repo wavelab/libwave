@@ -12,7 +12,7 @@ namespace wave {
 
 const std::string TEST_SCAN = "data/testscan.pcd";
 const std::string TEST_SEQUENCE_DIR = "data/garage/";
-const int sequence_length = 20;
+const int sequence_length = 50;
 
 // Fixture to load same pointcloud all the time
 class OdomTestFile : public testing::Test {
@@ -24,8 +24,9 @@ class OdomTestFile : public testing::Test {
     virtual void SetUp() {
         pcl::io::loadPCDFile(TEST_SCAN, (this->ref));
         // filter out points on the car
-        for(auto iter = this->ref.begin(); iter < this->ref.end(); iter++) {
-            if ((iter->x > -3) && (iter->x < 2.5) && (iter->y > -1) && (iter->y < 1)) {
+        for (auto iter = this->ref.begin(); iter < this->ref.end(); iter++) {
+            if ((iter->x > -3) && (iter->x < 2.5) && (iter->y > -1) &&
+                (iter->y < 1)) {
                 this->ref.erase(iter);
             }
         }
@@ -47,21 +48,24 @@ TEST(laserodom, VizSequence) {
     std::vector<pcl::PointCloud<pcl::PointXYZI>> clds;
     std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr> cldptr;
     pcl::PointCloud<pcl::PointXYZI> temp;
-    for (int i = 0; i<sequence_length; i++) {
-        pcl::io::loadPCDFile(TEST_SEQUENCE_DIR + std::to_string(i) + ".pcd", temp);
+    for (int i = 0; i < sequence_length; i++) {
+        pcl::io::loadPCDFile(TEST_SEQUENCE_DIR + std::to_string(i) + ".pcd",
+                             temp);
         clds.push_back(temp);
-        pcl::PointCloud<pcl::PointXYZI>::Ptr ptr(new pcl::PointCloud<pcl::PointXYZI>);
+        pcl::PointCloud<pcl::PointXYZI>::Ptr ptr(
+          new pcl::PointCloud<pcl::PointXYZI>);
 
-        for(size_t j = 0; j < clds.at(i).size(); j++) {
+        for (size_t j = 0; j < clds.at(i).size(); j++) {
             float packed = clds.at(i).at(j).intensity;
-            uint16_t encoder = *static_cast<uint16_t*>(static_cast<void*>(&packed));
+            uint16_t encoder =
+              *static_cast<uint16_t *>(static_cast<void *>(&packed));
             clds.at(i).at(j).intensity = static_cast<float>(encoder);
         }
         *ptr = clds.at(i);
         cldptr.push_back(ptr);
     }
 
-    for(int i = 0; i<sequence_length; i++) {
+    for (int i = 0; i < sequence_length; i++) {
         display.addPointcloud(cldptr.at(i), 0);
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
@@ -73,16 +77,19 @@ TEST(Packing_test, intsintofloat) {
     uint16_t angle = 31226;
     uint8_t intensity = 134;
     float packed = 0;
-    uint8_t *dest = static_cast<uint8_t*>(static_cast<void*>(&packed));
+    uint8_t *dest = static_cast<uint8_t *>(static_cast<void *>(&packed));
     memcpy(dest, &angle, 2);
     memcpy(dest + 2, &intensity, 1);
-    uint16_t recovered_angle = *static_cast<uint16_t*>(static_cast<void*>(dest));
-    uint8_t recovered_in = *static_cast<uint8_t*>(static_cast<void*>(dest + 2));
+    uint16_t recovered_angle =
+      *static_cast<uint16_t *>(static_cast<void *>(dest));
+    uint8_t recovered_in =
+      *static_cast<uint8_t *>(static_cast<void *>(dest + 2));
     ASSERT_EQ(angle, recovered_angle);
     ASSERT_EQ(intensity, recovered_in);
 }
 
-// Check that residuals are providing correct distance with no transform parameters
+// Check that residuals are providing correct distance with no transform
+// parameters
 TEST(Residual_test, pointToLine) {
     double trans[6] = {0, 0, 0, 0, 0, 0};
     double ptA[3] = {2, 1, 4};
@@ -115,39 +122,77 @@ TEST(Residual_test, pointToPlane) {
 }
 
 TEST(Residual_test, pointToLineAnalytic) {
+    double baseline[6] = {0.5, 0.3, -0.2, 0.2, 5, 4};
     const double **trans;
-    trans = new const double*;
-    trans[0] = new const double[6]{0.5, 0.3, -0.2, 0.2, 5, 4};
+    trans = new const double *;
+    trans[0] = new const double[6]{baseline[0],
+                                   baseline[1],
+                                   baseline[2],
+                                   baseline[3],
+                                   baseline[4],
+                                   baseline[5]};
+
+    double eps = 1.5e-8;
+    const double **trans_perturbed[6];
+    for (int i = 0; i < 6; i++) {
+        trans_perturbed[i] = new const double *;
+        baseline[i] += eps;
+        trans_perturbed[i][0] = new const double[6]{baseline[0],
+                                                    baseline[1],
+                                                    baseline[2],
+                                                    baseline[3],
+                                                    baseline[4],
+                                                    baseline[5]};
+        baseline[i] -= eps;
+    }
 
     double **jacobian;
-    jacobian = new double*;
+    jacobian = new double *;
     jacobian[0] = new double[6];
+    double **jacobian1;
+    jacobian1 = new double *;
+    jacobian1[0] = new double[6];
 
     double ptA[3] = {1, 1, 0};
     double ptB[3] = {1, 3, 0};
     double pt[3] = {1, 2, -4};
     double scale = 1;
     double residual = 0;
+    double residual1 = 0;
 
     AnalyticalPointToLine thing(pt, ptA, ptB, &scale);
     thing.Evaluate(trans, &residual, jacobian);
 
-    EXPECT_NEAR(residual, 1.2394, 1e-4);
-    EXPECT_NEAR(jacobian[0][0], 3.2963, 1e-4);
-    EXPECT_NEAR(jacobian[0][1], 0.7104, 1e-4);
-    EXPECT_NEAR(jacobian[0][2], 1.1772, 1e-4);
-    EXPECT_NEAR(jacobian[0][3], -0.2212, 1e-4);
+    // Values from matlab
+    EXPECT_NEAR(residual, 1.5361, 1e-4);
+    EXPECT_NEAR(jacobian[0][0], 8.1707, 1e-4);
+    EXPECT_NEAR(jacobian[0][1], 1.7610, 1e-4);
+    EXPECT_NEAR(jacobian[0][2], 2.9180, 1e-4);
+    EXPECT_NEAR(jacobian[0][3], -0.5484, 1e-4);
     EXPECT_NEAR(jacobian[0][4], 0, 1e-4);
-    EXPECT_NEAR(jacobian[0][5], 0.9752, 1e-4);
+    EXPECT_NEAR(jacobian[0][5], 2.4174, 1e-4);
+
+    // Now check numerically here as well.
+    for (int i = 0; i< 6; i++) {
+        thing.Evaluate(trans_perturbed[i], &residual1, jacobian);
+        jacobian1[0][i] = (residual1 - residual)/eps;
+    }
+
+    EXPECT_NEAR(jacobian[0][0], jacobian1[0][0], 1e-4);
+    EXPECT_NEAR(jacobian[0][1], jacobian1[0][1], 1e-4);
+    EXPECT_NEAR(jacobian[0][2], jacobian1[0][2], 1e-4);
+    EXPECT_NEAR(jacobian[0][3], jacobian1[0][3], 1e-4);
+    EXPECT_NEAR(jacobian[0][4], jacobian1[0][4], 1e-4);
+    EXPECT_NEAR(jacobian[0][5], jacobian1[0][5], 1e-4);
 }
 
 TEST(Residual_test, pointToPlaneAnalytic) {
     const double **trans;
-    trans = new const double*;
+    trans = new const double *;
     trans[0] = new const double[6]{0.5, 0.3, -0.2, 0.2, 5, 4};
 
     double **jacobian;
-    jacobian = new double*;
+    jacobian = new double *;
     jacobian[0] = new double[6];
 
     double ptA[3] = {1, 1, 0};
@@ -176,8 +221,9 @@ TEST(OdomTest, StationaryLab) {
     std::vector<pcl::PointCloud<PointXYZIR>::Ptr> cldptr;
     pcl::PCLPointCloud2 temp;
     pcl::PointCloud<PointXYZIR> temp2;
-    for (int i = 0; i<sequence_length; i++) {
-        pcl::io::loadPCDFile(TEST_SEQUENCE_DIR + std::to_string(i) + ".pcd", temp);
+    for (int i = 0; i < sequence_length; i++) {
+        pcl::io::loadPCDFile(TEST_SEQUENCE_DIR + std::to_string(i) + ".pcd",
+                             temp);
         pcl::fromPCLPointCloud2(temp, temp2);
         clds.push_back(temp2);
         pcl::PointCloud<PointXYZIR>::Ptr ptr(new pcl::PointCloud<PointXYZIR>);
@@ -188,8 +234,8 @@ TEST(OdomTest, StationaryLab) {
     // odom setup
     LaserOdomParams params;
     params.n_flat = 0;
-    params.n_edge = 50;
-    params.max_correspondence_dist = 5;
+    params.n_edge = 30;
+    params.max_correspondence_dist = 0.5;
     params.visualize = true;
     LaserOdom odom(params);
     std::vector<PointXYZIR> vec;
@@ -199,13 +245,16 @@ TEST(OdomTest, StationaryLab) {
     bool initialized = false;
     double prev_transform[6];
     double cur_transform[6];
-    for (int i = 0; i<sequence_length; i++) {
+    for (int i = 0; i < sequence_length; i++) {
         for (PointXYZIR pt : clds.at(i)) {
             PointXYZIR recovered;
             // unpackage intensity and encoder
-            uint8_t* src = static_cast<uint8_t*>(static_cast<void*>(&(pt.intensity)));
-            uint16_t encoder = *(static_cast<uint16_t*>(static_cast<void*>(src)));
-            uint8_t intensity = *(static_cast<uint8_t*>(static_cast<void*>(src + 2)));
+            uint8_t *src =
+              static_cast<uint8_t *>(static_cast<void *>(&(pt.intensity)));
+            uint16_t encoder =
+              *(static_cast<uint16_t *>(static_cast<void *>(src)));
+            uint8_t intensity =
+              *(static_cast<uint8_t *>(static_cast<void *>(src + 2)));
 
             // copy remaining fields
             recovered.x = pt.x;
@@ -214,7 +263,7 @@ TEST(OdomTest, StationaryLab) {
             recovered.ring = pt.ring;
             recovered.intensity = intensity;
             if (encoder != prev_enc) {
-                if(vec.size() > 0) {
+                if (vec.size() > 0) {
                     std::chrono::microseconds dur(clds.at(i).header.stamp);
                     TimeType stamp(dur);
                     odom.addPoints(vec, prev_enc, stamp);

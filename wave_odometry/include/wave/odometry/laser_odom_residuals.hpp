@@ -141,58 +141,77 @@ class AnalyticalPointToLine : public ceres::SizedCostFunction<1, 6> {
         ceres::CrossProduct(p_A, p_B, cross);
 
         double diff[3] = {ptA[0] - ptB[0], ptA[1] - ptB[1], ptA[2] - ptB[2]};
+        double bottom = diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2];
+        if (bottom < 1e-10) {
+            // The points defining the line are too close to each other
+            return false;
+        }
 
-        residuals[0] = ceres::sqrt(
-          (cross[0] * cross[0] + cross[1] * cross[1] + cross[2] * cross[2]) /
-          (diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2]));
+        residuals[0] =
+          (cross[0] * cross[0] + cross[1] * cross[1] + cross[2] * cross[2]) / bottom;
 
-        if (jacobians != NULL && jacobians[0][0] != NULL) {
+        if (jacobians != NULL && jacobians[0] != NULL) {
             // compute jacobian
-            // setup alias to make importing matlab string easier
-            const double &XA1 = this->ptA[0], &XA2 = this->ptA[1],
-                         &XA3 = this->ptA[2], &XB1 = this->ptB[0],
-                         &XB2 = this->ptB[1], &XB3 = this->ptB[2],
-                         &Xm1 = point[0], &Xm2 = point[1], &Xm3 = point[2];
+            // First is the l2norm squared
+            Vec3 Jl2_C(2/bottom * Vec3(cross[0], cross[1], cross[2]));
 
-            // clang-format off
-            Vec3 D_P(
-                    ((XA2-XB2)*(XA1*XB2-XA2*XB1-XA1*Xm2+XA2*Xm1+XB1*Xm2-XB2*Xm1)*2.0+(XA3-XB3)*(XA1*XB3-XA3*XB1-XA1*Xm3+XA3*Xm1+XB1*Xm3-XB3*Xm1)*2.0)*1.0/sqrt(pow((XA1-Xm1)*(XB2-Xm2)-(XA2-Xm2)*(XB1-Xm1),2)+pow((XA1-Xm1)*(XB3-Xm3)-(XA3-Xm3)*(XB1-Xm1),2)+pow((XA2-Xm2)*(XB3-Xm3)-(XA3-Xm3)*(XB2-Xm2),2))*1.0/sqrt(pow(XA1-XB1,2)+pow(XA2-XB2,2)+pow(XA3-XB3,2))*(1.0/2.0),
-                    ((XA1-XB1)*(XA1*XB2-XA2*XB1-XA1*Xm2+XA2*Xm1+XB1*Xm2-XB2*Xm1)*2.0-(XA3-XB3)*(XA2*XB3-XA3*XB2-XA2*Xm3+XA3*Xm2+XB2*Xm3-XB3*Xm2)*2.0)*1.0/sqrt(pow((XA1-Xm1)*(XB2-Xm2)-(XA2-Xm2)*(XB1-Xm1),2)+pow((XA1-Xm1)*(XB3-Xm3)-(XA3-Xm3)*(XB1-Xm1),2)+pow((XA2-Xm2)*(XB3-Xm3)-(XA3-Xm3)*(XB2-Xm2),2))*1.0/sqrt(pow(XA1-XB1,2)+pow(XA2-XB2,2)+pow(XA3-XB3,2))*(-1.0/2.0),
-                    ((XA1-XB1)*(XA1*XB3-XA3*XB1-XA1*Xm3+XA3*Xm1+XB1*Xm3-XB3*Xm1)*2.0+(XA2-XB2)*(XA2*XB3-XA3*XB2-XA2*Xm3+XA3*Xm2+XB2*Xm3-XB3*Xm2)*2.0)*1.0/sqrt(pow((XA1-Xm1)*(XB2-Xm2)-(XA2-Xm2)*(XB1-Xm1),2)+pow((XA1-Xm1)*(XB3-Xm3)-(XA3-Xm3)*(XB1-Xm1),2)+pow((XA2-Xm2)*(XB3-Xm3)-(XA3-Xm3)*(XB2-Xm2),2))*1.0/sqrt(pow(XA1-XB1,2)+pow(XA2-XB2,2)+pow(XA3-XB3,2))*(-1.0/2.0));
-            // clang-format on
+            // Next is the cross product wrt to the transformed point
+            Mat3 JC_P;
+            JC_P(0, 0) = 0;
+            JC_P(1, 0) = -diff[2];
+            JC_P(2, 0) = diff[1];
+            JC_P(0, 1) = diff[2];
+            JC_P(1, 1) = 0;
+            JC_P(2, 1) = -diff[0];
+            JC_P(0, 2) = -diff[1];
+            JC_P(1, 2) = diff[0];
+            JC_P(2, 2) = 0;
 
-            // The rotational parts contain the derivative of the coordinate
-            // mapping composed with the derivative of the
-            // exponential map
-
+            // Next there is the rotation wrt the angle-axis parameterization
             Vec3 wvec(r[0], r[1], r[2]);  // scaled rotation
             Vec3 P_noT(this->pt[0], this->pt[1], this->pt[2]);
             Mat3 J_R_w;
             Mat3 rot_mat = Rotation::expMapAndJacobian(wvec, J_R_w);
             Vec3 rotated_pt(rot_mat * P_noT);
-            Mat3 neg_skw;
-            neg_skw(0, 0) = 0;
-            neg_skw(1, 0) = -rotated_pt(2);
-            neg_skw(2, 0) = rotated_pt(1);
-            neg_skw(0, 1) = rotated_pt(2);
-            neg_skw(1, 1) = 0;
-            neg_skw(2, 1) = -rotated_pt(0);
-            neg_skw(0, 2) = -rotated_pt(1);
-            neg_skw(1, 2) = rotated_pt(0);
-            neg_skw(2, 2) = 0;
-            Mat3 temp = neg_skw * J_R_w * scale[0];
+
+            // Next is the transformed point wrt the rotation.
+            Mat3 J_P_R;
+            J_P_R(0, 0) = 0;
+            J_P_R(1, 0) = -rotated_pt(2);
+            J_P_R(2, 0) = rotated_pt(1);
+            J_P_R(0, 1) = rotated_pt(2);
+            J_P_R(1, 1) = 0;
+            J_P_R(2, 1) = -rotated_pt(0);
+            J_P_R(0, 2) = -rotated_pt(1);
+            J_P_R(1, 2) = rotated_pt(0);
+            J_P_R(2, 2) = 0;
+
+            // Concatenate jacobians in correct order to get
+            // the jacobians of the cross product wrt the angle axis parameters
+            Mat3 JC_w = JC_P * J_P_R * J_R_w * scale[0];
 
             jacobians[0][0] =
-              D_P[0] * temp(0, 0) + D_P[1] * temp(1, 0) + D_P[2] * temp(2, 0);
+              Jl2_C[0] * JC_w(0, 0) + Jl2_C[1] * JC_w(1, 0) + Jl2_C[2] * JC_w(2, 0);
             jacobians[0][1] =
-              D_P[0] * temp(0, 1) + D_P[1] * temp(1, 1) + D_P[2] * temp(2, 1);
+              Jl2_C[0] * JC_w(0, 1) + Jl2_C[1] * JC_w(1, 1) + Jl2_C[2] * JC_w(2, 1);
             jacobians[0][2] =
-              D_P[0] * temp(0, 2) + D_P[1] * temp(1, 2) + D_P[2] * temp(2, 2);
+              Jl2_C[0] * JC_w(0, 2) + Jl2_C[1] * JC_w(1, 2) + Jl2_C[2] * JC_w(2, 2);
 
             // The translation part of the transform is linear:
-            jacobians[0][3] = scale[0] * D_P[0];
-            jacobians[0][4] = scale[0] * D_P[1];
-            jacobians[0][5] = scale[0] * D_P[2];
+            jacobians[0][3] = scale[0] * Jl2_C[0];
+            jacobians[0][4] = scale[0] * Jl2_C[1];
+            jacobians[0][5] = scale[0] * Jl2_C[2];
+
+            jacobians[0][3] =
+                    Jl2_C[0] * JC_P(0, 0) + Jl2_C[1] * JC_P(1, 0) + Jl2_C[2] * JC_P(2, 0);
+            jacobians[0][4] =
+                    Jl2_C[0] * JC_P(0, 1) + Jl2_C[1] * JC_P(1, 1) + Jl2_C[2] * JC_P(2, 1);
+            jacobians[0][5] =
+                    Jl2_C[0] * JC_P(0, 2) + Jl2_C[1] * JC_P(1, 2) + Jl2_C[2] * JC_P(2, 2);
+
+            jacobians[0][3] *= scale[0];
+            jacobians[0][4] *= scale[0];
+            jacobians[0][5] *= scale[0];
         }
 
         return true;
@@ -250,7 +269,7 @@ class AnalyticalPointToPlane : public ceres::SizedCostFunction<1, 6> {
 
         residuals[0] = num / den;
 
-        if (jacobians != NULL && jacobians[0][0] != NULL) {
+        if (jacobians != NULL && jacobians[0] != NULL) {
             // compute jacobian
             // setup alias to make importing matlab string easier
             const double &XA1 = this->ptA[0], &XA2 = this->ptA[1],

@@ -85,6 +85,13 @@ LaserOdom::LaserOdom(const LaserOdomParams params) : param(params) {
     }
 }
 
+LaserOdom::~LaserOdom() {
+    if (this->param.visualize) {
+        this->display->stopSpin();
+        delete this->display;
+    }
+}
+
 void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts,
                           const int tick,
                           TimeType stamp) {
@@ -206,7 +213,8 @@ void LaserOdom::updateViz() {
         this->prev_viz->push_back(point);
     }
     this->display->addPointcloud(this->prev_viz, 0);
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    std::this_thread::sleep_for(
+      std::chrono::milliseconds((int) (100e3 * this->param.scan_period)));
 }
 
 PCLPointXYZIT LaserOdom::applyIMU(const PCLPointXYZIT &p) {
@@ -274,6 +282,7 @@ void LaserOdom::buildTrees() {
     }
     this->edge_idx->buildIndex();
     this->flat_idx->buildIndex();
+    //this->cur_transform = {0, 0, 0, 0, 0, 0};
 }
 
 bool LaserOdom::match() {
@@ -324,7 +333,7 @@ bool LaserOdom::match() {
           this->prv_edges.points.at(ret_indices.at(1)).data(),
           &scale);
         problem.AddResidualBlock(
-          cost_function, p_LossFunction, this->cur_transform.data());
+          cost_function, NULL, this->cur_transform.data());
     }
 
     // residuals blocks for flats
@@ -347,49 +356,35 @@ bool LaserOdom::match() {
         if (out_dist_sqr.at(2) > this->param.max_correspondence_dist) {
             continue;
         }
-
-//        ceres::CostFunction *cost_function = PointToPlaneError::Create();
-//        problem.AddResidualBlock(
-//          cost_function,
-//          NULL,  // p_LossFunction,
-//          this->cur_transform.data(),
-//          &(this->flats.at(ind).pt[0]),
-//          this->prv_flats.points.at(ret_indices.at(0)).data(),
-//          this->prv_flats.points.at(ret_indices.at(1)).data(),
-//          this->prv_flats.points.at(ret_indices.at(2)).data(),
-//          &scale);
-//        problem.SetParameterBlockConstant(&(this->flats.at(ind).pt[0]));
-//        problem.SetParameterBlockConstant(
-//          this->prv_flats.points.at(ret_indices.at(0)).data());
-//        problem.SetParameterBlockConstant(
-//          this->prv_flats.points.at(ret_indices.at(1)).data());
-//        problem.SetParameterBlockConstant(
-//          this->prv_flats.points.at(ret_indices.at(2)).data());
-//        problem.SetParameterBlockConstant(&scale);
         ceres::CostFunction *cost_function = new AnalyticalPointToPlane(
-                &(this->flats.at(idx).pt[0]),
-                this->prv_flats.points.at(ret_indices.at(0)).data(),
-                this->prv_flats.points.at(ret_indices.at(1)).data(),
-                this->prv_flats.points.at(ret_indices.at(2)).data(),
-                &scale);
+          &(this->flats.at(ind).pt[0]),
+          this->prv_flats.points.at(ret_indices.at(0)).data(),
+          this->prv_flats.points.at(ret_indices.at(1)).data(),
+          this->prv_flats.points.at(ret_indices.at(2)).data(),
+          &scale);
         problem.AddResidualBlock(
-                cost_function, p_LossFunction, this->cur_transform.data());
+          cost_function, NULL, this->cur_transform.data());
     }
 
     // Add a normal prior to provide some regularization
     // This is in effect a constant velocity model
-    //    ceres::Matrix stiffness(6, 6);
-    //    stiffness.setIdentity();
-    //    double vec[6];
-    //    memcpy(vec, this->cur_transform.data(), 6 * 8);
-    //    ceres::VectorRef initial(vec, 6, 1);
-    //    ceres::NormalPrior *diff_cost_function = new
-    //    ceres::NormalPrior(stiffness, initial);
-    //    problem.AddResidualBlock(diff_cost_function, NULL,
-    //    this->cur_transform.data());
+    ceres::Matrix stiffness(6, 6);
+    stiffness.setIdentity();
+    double vec[6];
+    memcpy(vec, this->cur_transform.data(), 6 * 8);
+    ceres::VectorRef initial(vec, 6, 1);
+    ceres::NormalPrior *diff_cost_function =
+      new ceres::NormalPrior(stiffness, initial);
+    problem.AddResidualBlock(
+      diff_cost_function, NULL, this->cur_transform.data());
 
     ceres::Solver::Options options;
+    std::vector<int> iterations = {0, 1, 2, 3, 4, 5, 6, 7, 8, 8};
     options.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
+    options.num_threads = 4;
+    options.num_linear_solver_threads = 4;
+    //options.trust_region_minimizer_iterations_to_dump = iterations;
+    options.trust_region_problem_dump_format_type = ceres::DumpFormatType::TEXTFILE;
     ceres::Solver::Summary summary;
     auto max_residuals =
       this->param.n_ring * (this->param.n_flat + this->param.n_edge);
@@ -400,7 +395,7 @@ bool LaserOdom::match() {
         return false;
     } else {
         ceres::Solve(options, &problem, &summary);
-        // LOG_INFO("%s", summary.FullReport().c_str());
+        //LOG_INFO("%s", summary.FullReport().c_str());
     }
     return true;
 }
