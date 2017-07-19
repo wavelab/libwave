@@ -120,6 +120,7 @@ void VOTestDataset::outputCalibration(const std::string &output_path) {
     auto fmt =
       Eigen::IOFormat{Eigen::StreamPrecision, Eigen::DontAlignCols, ",", ","};
     calib_file << this->camera_K.format(fmt);
+    calib_file << std::endl;
 }
 
 void VOTestDataset::outputObserved(const std::string &output_dir) {
@@ -161,15 +162,13 @@ void VOTestDataset::outputObserved(const std::string &output_dir) {
             obs_file << landmark_id << "," << f_2d(0) << "," << f_2d(1)
                      << std::endl;
         }
+        obs_file << std::endl;
 
-        // clean up and record features observed file path to index
-        obs_file.close();
+        // record features observed file path to index
         index_file << oss.str() << std::endl;
         index++;
     }
-
-    // clean up
-    index_file.close();
+    index_file << std::endl;
 }
 
 void VOTestDataset::outputRobotState(const std::string &output_path) {
@@ -203,6 +202,7 @@ void VOTestDataset::outputRobotState(const std::string &output_path) {
         state_file << state.robot_q_GB.coeffs().format(comma_format) << ",";
         state_file << std::endl;
     }
+    state_file << std::endl;
 }
 
 void VOTestDataset::outputToDirectory(const std::string &output_dir) {
