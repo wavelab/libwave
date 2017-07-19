@@ -35,6 +35,7 @@ class ICPMatcher : public Matcher<PCLPointCloud> {
      * each voxel. If resolution is non-positive, no downsampling is used.
      */
     explicit ICPMatcher(float resolution, const std::string &config_path);
+    ICPMatcher() = delete;
     ~ICPMatcher();
     void setRef(const PCLPointCloud &ref);
     void setTarget(const PCLPointCloud &target);
@@ -60,7 +61,7 @@ class ICPMatcher : public Matcher<PCLPointCloud> {
     void estimateCensi();
 };
 
-/** @} end of group */
-}  // end of wave namespace
+/** @} group matching */
+}  // namespace wave
 
 #endif  // WAVE_MATCHING_ICP_HPP

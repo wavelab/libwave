@@ -147,4 +147,4 @@ void Gimbal2AxisModel::printState(void) {
     std::cout << std::setprecision(2) << this->states(3) << std::endl;
 }
 
-}  // end of wave namespace
+}  // namespace wave

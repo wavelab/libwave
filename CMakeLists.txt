@@ -61,9 +61,9 @@ SET(LIBWAVE_MODULE_LIBS
     ${CMAKE_BINARY_DIR}/wave_geometry/libwave_geometry.a
     ${CMAKE_BINARY_DIR}/wave_kinematics/libwave_kinematics.a
     ${CMAKE_BINARY_DIR}/wave_matching/libwave_matching.a
-    ${CMAKE_BINARY_DIR}/wave_vision/libwave_vision.a
     ${CMAKE_BINARY_DIR}/wave_optimization/libwave_optimization.a
-    ${CMAKE_BINARY_DIR}/wave_utils/libwave_utils.a)
+    ${CMAKE_BINARY_DIR}/wave_utils/libwave_utils.a
+    ${CMAKE_BINARY_DIR}/wave_vision/libwave_vision.a)
 
 IF(BUILD_SHARED_LIBS)
     # SHARED LIBRARY
@@ -88,7 +88,7 @@ ELSE ()
         DEPENDS
             ${LIBWAVE_MODULES}
     )
-    INSTALL(FILES ${CMAKE_BINARY_DIR}/libwave.a DESTINATION CMAKE_INSTALL_PREFIX}/lib)
+    INSTALL(FILES ${CMAKE_BINARY_DIR}/libwave.a DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
 
 ENDIF()
 

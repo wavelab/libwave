@@ -19,8 +19,8 @@
 #include <opencv2/highgui/highgui.hpp>
 
 #include "wave/utils/math.hpp"
-#include "wave/utils/logging.hpp"
-#include "wave/utils/filesystem.hpp"
+#include "wave/utils/log.hpp"
+#include "wave/utils/file.hpp"
 
 
 namespace wave {
@@ -167,6 +167,7 @@ class ConfigParser {
      * `key` matches anything in the config file, else `node` is set to `NULL`.
      */
     int getYamlNode(std::string key, YAML::Node &node);
+
     /** @return a status code meaning
       * - `0`: On success
       * - `-1`: Config file is not loaded
@@ -174,17 +175,20 @@ class ConfigParser {
       * - `-3`: `key` not found in yaml file, parameter is optional
       * - `-4`: Invalid vector (wrong size)
       * - `-5`: Invalid matrix (missing yaml key 'rows', 'cols' or 'data' for
-     * matrix)
+      * matrix)
       */
     /** @return see `getYamlNode` */
     int checkKey(std::string key, bool optional);
+
     /** @return see `checkKey`
      *
      * @todo refactor return codes into an enum which can be documented
      */
     int checkVector(std::string key, enum ConfigDataType type, bool optional);
+
     /** @return see `checkKey` */
     int checkMatrix(std::string key, bool optional);
+
     /** Load yaml param primitive, array, vector or matrix.
      * @return
      * - `0`: On success
@@ -200,6 +204,7 @@ class ConfigParser {
     int loadArray(ConfigParam param);
     int loadVector(ConfigParam param);
     int loadMatrix(ConfigParam param);
+
     /** Load yaml file at `config_file`.
      * @return
      * - `0`: On success
@@ -214,6 +219,7 @@ class ConfigParser {
     int load(std::string config_file);
 };
 
-/** @} end of group */
-}  // end of wave namespace
-#endif
+/** @} group utils */
+}  // namespace wave
+
+#endif  // WAVE_UTILS_CONFIG_HPP

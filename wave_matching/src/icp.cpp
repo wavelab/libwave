@@ -428,4 +428,4 @@ void ICPMatcher::estimateCensi() {
     }
 }
 
-}  // end of wave namespace
+}  // namespace wave

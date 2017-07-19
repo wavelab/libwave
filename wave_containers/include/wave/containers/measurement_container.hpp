@@ -187,8 +187,7 @@ class MeasurementContainer {
     typename internal::measurement_container<T>::type storage;
 };
 
-/** @} end of group */
-
+/** @} group containers */
 }  // namespace wave
 
 #include "impl/measurement_container.hpp"

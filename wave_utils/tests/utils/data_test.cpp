@@ -46,4 +46,4 @@ TEST(Utils_data, mat2csv) {
     }
 }
 
-}  // end of wave namespace
+}  // namespace wave

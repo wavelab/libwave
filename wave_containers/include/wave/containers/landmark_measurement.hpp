@@ -49,7 +49,7 @@ struct LandmarkMeasurement {
 };
 
 
-/** @} end of group */
+/** @} group containers */
 }  // namespace wave
 
 #endif  // WAVE_CONTAINERS_LANDMARK_MEASUREMENT_HPP

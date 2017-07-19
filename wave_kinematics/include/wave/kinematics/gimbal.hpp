@@ -176,6 +176,7 @@ class Gimbal2AxisModel {
     void printState();
 };
 
-/** @} end of group */
-}  // end of wave namespace
-#endif
+/** @} group kinematics */
+}  // namespace wave
+
+#endif  // WAVE_KINEMATICS_GIMBAL_HPP

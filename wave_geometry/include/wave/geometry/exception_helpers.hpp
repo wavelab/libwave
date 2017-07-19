@@ -84,7 +84,7 @@ inline void checkValidRotation(const Mat3 &R) {
     }
 }
 
-/** @} end of group */
+/** @} group geometry */
 }  // namespace wave
 
 #endif  // WAVE_GEOMETRY_EXCEPTION_HELPERS_HPP

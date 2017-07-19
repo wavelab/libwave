@@ -55,6 +55,7 @@ class NDTMatcher : public Matcher<PCLPointCloud> {
     const float min_res = 0.05f;
 };
 
-/** @} end of group */
-}  // end of namespace wave
+/** @} group matching */
+}  // namespace wave
+
 #endif  // WAVE_MATCHING_ICP_HPP

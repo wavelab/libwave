@@ -483,4 +483,4 @@ int ConfigParser::load(std::string config_file) {
     return 0;
 }
 
-}  // end of wave namespace
+}  // namespace wave

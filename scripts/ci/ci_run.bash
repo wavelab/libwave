@@ -8,7 +8,9 @@ compile_libwave() {
     cd build
     cmake .. -DCMAKE_MODULE_PATH=$DIR/$CMAKE_CONFIG_DIR \
         -DCMAKE_CXX_FLAGS="-Werror -Wno-error=deprecated-declarations"
-    make -j$(nproc)
+    make -j2  # Travis gives two cores
+
+    # (don't rely on nproc: https://github.com/travis-ci/travis-ci/issues/6859)
 }
 
 test_libwave() {
