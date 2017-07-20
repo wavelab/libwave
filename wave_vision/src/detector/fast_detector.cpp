@@ -1,4 +1,3 @@
-// Libwave Headers
 #include "wave/vision/detector/fast_detector.hpp"
 
 namespace wave {

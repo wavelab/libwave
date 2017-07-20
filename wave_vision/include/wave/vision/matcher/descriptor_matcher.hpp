@@ -8,9 +8,8 @@
 
 #include <exception>
 
-#include <opencv2/opencv.hpp>
-
 #include "wave/utils/utils.hpp"
+#include "wave/vision/utils.hpp"
 
 namespace wave {
 /** @addtogroup vision
@@ -25,11 +24,9 @@ namespace wave {
  *  [opencv_descriptor_matchers]:
  *  http://docs.opencv.org/trunk/db/d39/classcv_1_1DescriptorMatcher.html
  */
-
 class DescriptorMatcher {
  protected:
-    /** Destructor */
-    ~DescriptorMatcher() = default;
+    virtual ~DescriptorMatcher() = default;
 
     /** Filter matches using a heuristic based method.
      *
@@ -55,11 +52,12 @@ class DescriptorMatcher {
       std::vector<std::vector<cv::DMatch>> &matches) const = 0;
 
     /** Remove outliers between matches by using epipolar constraints. Outlier
-     *  rejection methods are specified within the MatcherParams struct.
+     *  rejection methods are specified within the respective MatcherParams
+     *  struct.
      *
      *  @param matches the unfiltered matches computed from two images.
      *  @param keypoints_1 the keypoints detected in the first image.
-     *  @param keypoints_2 they keypoints detected in the second image.
+     *  @param keypoints_2 the keypoints detected in the second image.
      *
      *  @return the matches with outliers removed.
      */

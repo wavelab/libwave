@@ -10,18 +10,16 @@
 #include <string>
 #include <vector>
 
-#include "wave/utils/utils.hpp"
 #include "wave/vision/matcher/descriptor_matcher.hpp"
 
 namespace wave {
 /** @addtogroup vision
  *  @{ */
 
+/** Configuration parameters for the BruteForceMatcher */
 struct BFMatcherParams {
-    /** Default constructor*/
     BFMatcherParams() {}
 
-    /** Constructor using user-defined parameters */
     BFMatcherParams(int norm_type,
                     bool use_knn,
                     double ratio_threshold,
@@ -126,7 +124,7 @@ struct BFMatcherParams {
     /** Maximum distance from a point to an epipolar line in pixels. Any points
      *  further are considered outliers. Only used for RANSAC.
      *
-     *  Typical values: 1-3
+     *  Typical values: 1-3. Default: 3.0
      */
     double fm_param_1 = 3.0;
 
@@ -138,22 +136,28 @@ struct BFMatcherParams {
     double fm_param_2 = 0.99;
 };
 
+/** Representation of a descriptor matcher using the BruteForce algorithm.
+ *
+ *  Internally, this class is wrapping OpenCV's BFMatcher module.
+ *  Further reference on the BFMatcher can be found
+ * [here][opencv_bfmatcher].
+ *
+ *  [opencv_bfmatcher]:
+ *  http://docs.opencv.org/trunk/d3/da1/classcv_1_1BFMatcher.html
+
+ */
 class BruteForceMatcher : public DescriptorMatcher {
  public:
     /** Default constructor. The user can also specify their own struct with
      *  desired values. If no struct is provided, default values are used.
      *
-     *  @param config
-     *  \parblock
-     *  contains the desired parameter values. Uses default values if not
-     *  specified.
-     *  \endparblock
+     *  @param config contains the desired parameter values.
      */
     explicit BruteForceMatcher(
       const BFMatcherParams &config = BFMatcherParams{});
 
     /** Returns the current configuration parameters being used by the
-     *  DescriptorMatcher.
+     *  BruteForceMatcher
      *
      *  @return a struct containing the current configuration values.
      */
