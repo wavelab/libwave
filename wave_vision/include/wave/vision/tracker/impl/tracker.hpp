@@ -105,31 +105,11 @@ std::vector<FeatureTrack> Tracker<TDetector, TDescriptor, TMatcher>::getTracks(
             std::chrono::steady_clock::time_point start_time =
               (this->img_times.begin())->second;
 
-            std::vector<LandmarkMeasurement<int>> tracks =
-              this->landmarks.getTrackInWindow(
-                sensor_id, l, start_time, img_time);
-
-            // Find image corresponding to start time
-            size_t first_image;
-
-            // Last image feature was seen in must be image requested.
-            size_t last_image = img_num;
-
-            // Iterator for first track
-            auto first_track = tracks.begin();
-
-            // Check if the time in the map corresponds to the time of the first
-            // landmark measurement
-            for (auto track_time = this->img_times.begin();
-                 track_time != this->img_times.end();
-                 ++track_time) {
-                if (track_time->second == first_track->time_point) {
-                    first_image = track_time->first;
-                }
-            }
+            FeatureTrack tracks = this->landmarks.getTrackInWindow(
+              sensor_id, l, start_time, img_time);
 
             // Emplace new feature track back into vector
-            feature_tracks.emplace_back(l, tracks, first_image, last_image);
+            feature_tracks.emplace_back(tracks);
         }
     }
 
@@ -177,7 +157,7 @@ template <typename TDetector, typename TDescriptor, typename TMatcher>
 std::vector<std::vector<FeatureTrack>>
 Tracker<TDetector, TDescriptor, TMatcher>::offlineTracker(
   const std::vector<cv::Mat> &image_sequence) {
-    // Current and all feature tracks
+    // FeatureTracks from current image, and all FeatureTracks
     std::vector<FeatureTrack> curr_track;
     std::vector<std::vector<FeatureTrack>> feature_tracks;
 
@@ -221,8 +201,8 @@ cv::Mat Tracker<TDetector, TDescriptor, TMatcher>::drawTracks(
     for (const auto &ft : feature_tracks) {
         for (size_t i = 1; i < ft.size(); i++) {
             // Convert landmark values to cv::Point2f
-            cv::Point2f prev = convertKeypoint(ft.measurements[i - 1].value);
-            cv::Point2f curr = convertKeypoint(ft.measurements[i].value);
+            cv::Point2f prev = convertKeypoint(ft[i - 1].value);
+            cv::Point2f curr = convertKeypoint(ft[i].value);
 
             // Draw arrowed line until end of feature track is reached
             cv::arrowedLine(out_img, prev, curr, colour);

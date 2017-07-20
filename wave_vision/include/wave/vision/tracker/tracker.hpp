@@ -21,49 +21,7 @@ namespace wave {
 /** @addtogroup vision
  *  @{ */
 
-/** Representation of a feature track.
- *
- * Contains the first and last images that the feature was seen in, the vector
- * of measurements from the LandmarkMeasurementContainer and the ID number of
- * the feature.
- */
-class FeatureTrack {
- public:
-    // Default constructor
-    FeatureTrack() {}
-
-    FeatureTrack(size_t id,
-                 std::vector<LandmarkMeasurement<int>> measurements,
-                 size_t first_image,
-                 size_t last_image)
-        : id(id),
-          measurements(measurements),
-          first_image(first_image),
-          last_image(last_image) {}
-
-    // Destructor
-    ~FeatureTrack() = default;
-
-    /** Returns size of the measurement vector.
-     *
-     * @return size of the measurement vector
-     */
-    size_t size() const {
-        return this->measurements.size();
-    }
-
-    /** The id of the feature */
-    size_t id;
-
-    /** All measurements of the feature */
-    std::vector<LandmarkMeasurement<int>> measurements;
-
-    /** The first image the feature is seen in */
-    size_t first_image;
-
-    /** The last image the feature is seen in */
-    size_t last_image;
-};
+using FeatureTrack = std::vector<LandmarkMeasurement<int>>;
 
 /** Image tracker class.
  *

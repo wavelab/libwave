@@ -36,13 +36,13 @@ TEST(LandmarkContainer, insert) {
 TEST(LandmarkContainer, emplace) {
     auto m = TestContainer{};
     auto now = std::chrono::steady_clock::now();
-    auto res = m.emplace(now, CameraSensors::Left, 1u, 0, Vec2{1.2, 3.4});
+    auto res = m.emplace(now, CameraSensors::Left, 1u, 0u, Vec2{1.2, 3.4});
 
     EXPECT_EQ(1u, m.size());
     EXPECT_TRUE(res.second);
 
     // Insert the same thing
-    auto res2 = m.emplace(now, CameraSensors::Left, 1u, 0, Vec2{2.3, 4.5});
+    auto res2 = m.emplace(now, CameraSensors::Left, 1u, 0u, Vec2{2.3, 4.5});
     EXPECT_FALSE(res2.second);
     EXPECT_EQ(res.first, res2.first);
 }
@@ -54,7 +54,7 @@ TEST(LandmarkContainer, capacity) {
     EXPECT_EQ(0u, m.size());
     EXPECT_TRUE(m.empty());
 
-    m.emplace(now, CameraSensors::Left, 1u, 0, Vec2{1.2, 3.4});
+    m.emplace(now, CameraSensors::Left, 1u, 0u, Vec2{1.2, 3.4});
     EXPECT_EQ(1u, m.size());
     EXPECT_FALSE(m.empty());
 }
@@ -63,7 +63,7 @@ TEST(LandmarkContainer, erase) {
     auto m = TestContainer{};
     auto now = std::chrono::steady_clock::now();
 
-    m.emplace(now, CameraSensors::Left, 1u, 0, Vec2{1.2, 3.4});
+    m.emplace(now, CameraSensors::Left, 1u, 0u, Vec2{1.2, 3.4});
     ASSERT_EQ(1u, m.size());
 
     auto res = m.erase(now, CameraSensors::Right, 1u);
@@ -79,7 +79,7 @@ TEST(LandmarkContainer, get) {
     auto m = TestContainer{};
     auto now = std::chrono::steady_clock::now();
     auto value_in = Vec2{1.2, 3.4};
-    m.emplace(now, CameraSensors::Left, 1u, 0, value_in);
+    m.emplace(now, CameraSensors::Left, 1u, 0u, value_in);
 
     auto value_out = m.get(now, CameraSensors::Left, 1u);
 
@@ -119,7 +119,7 @@ TEST(LandmarkContainer, clear) {
     auto now = std::chrono::steady_clock::now();
     auto value_in = Vec2{1.2, 3.4};
     for (auto i = 0u; i < 5ul; ++i) {
-        m.emplace(now, CameraSensors::Left, i, 0, value_in);
+        m.emplace(now, CameraSensors::Left, i, 0u, value_in);
     }
     ASSERT_EQ(5ul, m.size());
 
