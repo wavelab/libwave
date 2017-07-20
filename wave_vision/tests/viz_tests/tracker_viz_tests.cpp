@@ -59,7 +59,7 @@ TEST(TrackerTests, KITTIOfflineTrackerTest) {
     BruteForceMatcher matcher;
 
     Tracker<FASTDetector, BRISKDescriptor, BruteForceMatcher> tracker(
-            detector, descriptor, matcher);
+      detector, descriptor, matcher);
 
     image_sequence = readImageSequence(KITTI_IMG_PATH);
 
