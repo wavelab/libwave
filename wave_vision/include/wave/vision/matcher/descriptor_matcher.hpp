@@ -26,7 +26,6 @@ namespace wave {
  */
 class DescriptorMatcher {
  protected:
-    /** Destructor */
     virtual ~DescriptorMatcher() = default;
 
     /** Filter matches using a heuristic based method.
