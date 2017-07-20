@@ -40,13 +40,6 @@ class MultiMatcher {
 
     ~MultiMatcher();
 
-    /** Function to specify path to config file when spawning matchers
-     * If not called the default params are used for the matchers.
-     * @param config_path
-     */
-    void setConfig(const std::string &config_path) {
-        this->config = config_path;
-    }
     void insert(const int &id,
                 const PCLPointCloud &src,
                 const PCLPointCloud &target);
