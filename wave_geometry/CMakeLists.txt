@@ -13,9 +13,9 @@ ADD_LIBRARY(
     STATIC
     src/rotation.cpp
 )
+TARGET_LINK_LIBRARIES(${PROJECT_NAME} wave_utils)
 
 # UNIT TESTS
 WAVE_ADD_TEST(${PROJECT_NAME}_tests tests/rotation_test.cpp)
 TARGET_LINK_LIBRARIES(${PROJECT_NAME}_tests
-    ${PROJECT_NAME}
-    wave_utils)
+    ${PROJECT_NAME})
