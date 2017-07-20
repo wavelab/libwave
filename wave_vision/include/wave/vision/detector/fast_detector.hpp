@@ -16,9 +16,8 @@ namespace wave {
 /** @addtogroup vision
  *  @{ */
 
-/** Contains the configuration parameters for the FASTDetector. */
+/** Configuration parameters for the FASTDetector. */
 struct FASTParams {
-    /** Default Constructor */
     FASTParams() {}
 
     FASTParams(int threshold, bool nonmax_suppression, int type)
@@ -63,9 +62,9 @@ struct FASTParams {
  *
  *  Internally, this class is wrapping OpenCV's FastFeatureDetector module.
  *  Further reference on the FastFeatureDetector can be found
- *  [here][opencv_feature_detectors].
+ *  [here][opencv_fast_detector].
  *
- *  [opencv_feature_detectors]:
+ *  [opencv_fast_detector]:
  *  http://docs.opencv.org/trunk/df/d74/classcv_1_1FastFeatureDetector.html
  */
 class FASTDetector : public FeatureDetector {
@@ -99,6 +98,7 @@ class FASTDetector : public FeatureDetector {
     std::vector<cv::KeyPoint> detectFeatures(const cv::Mat &image);
 
  private:
+    /** The pointer to the wrapped cv::FastFeatureDetector object. */
     cv::Ptr<cv::FastFeatureDetector> fast_detector;
 
     /** Checks whether the desired configuration is valid.

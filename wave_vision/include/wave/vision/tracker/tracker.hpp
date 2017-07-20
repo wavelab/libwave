@@ -10,8 +10,6 @@
 #include <string>
 #include <vector>
 
-#include <opencv2/opencv.hpp>
-
 #include "wave/containers/landmark_measurement.hpp"
 #include "wave/containers/landmark_measurement_container.hpp"
 #include "wave/utils/utils.hpp"
@@ -44,7 +42,6 @@ class Tracker {
     Tracker(TDetector detector, TDescriptor descriptor, TMatcher matcher)
         : detector(detector), descriptor(descriptor), matcher(matcher) {}
 
-    /** Destructor */
     ~Tracker() = default;
 
     /** Get the tracks of all features in the requested image from the sequence.
@@ -123,10 +120,16 @@ class Tracker {
       const std::vector<cv::KeyPoint> &curr_kp,
       const std::vector<cv::DMatch> &matches);
 
+    /** The templated FeatureDetector */
     TDetector detector;
+
+    /** The templated DescriptorExtractor */
     TDescriptor descriptor;
+
+    /** The templated DescriptorMatcher */
     TMatcher matcher;
 
+    // Keypoints and descriptors from the previous timestep
     std::vector<cv::KeyPoint> prev_kp;
     cv::Mat prev_desc;
 
@@ -137,6 +140,7 @@ class Tracker {
     // Measurement container variables
     LandmarkMeasurementContainer<LandmarkMeasurement<int>> landmarks;
 };
+
 /** @} group vision */
 }  // namespace wave
 

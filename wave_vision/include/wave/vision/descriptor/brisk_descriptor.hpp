@@ -1,6 +1,6 @@
 /**
  * @file
- * BRISK Descriptor Extractor implementation, derived from Descriptor Extractor
+ * BRISK Descriptor Extractor implementation, derived from DescriptorExtractor
  * base class.
  * @ingroup vision
  */
@@ -23,7 +23,6 @@ namespace wave {
  *  brightness comparison tests to construct the descriptor.
  */
 struct BRISKDescriptorParams {
-    /** Default Constructor */
     BRISKDescriptorParams() {}
 
     BRISKDescriptorParams(std::vector<float> rlist,
@@ -80,15 +79,21 @@ struct BRISKDescriptorParams {
     std::vector<int> index_change;
 };
 
+/** Representation of a descriptor extractor using the BRISK algorithm.
+ *
+ *  Internally, this class is wrapping OpenCV's BRISK detector/descriptor
+ *  module. Further reference on BRISK can be found
+ *  [here][opencv_brisk_descriptor].
+ *
+ *  [opencv_brisk_descriptor]:
+ *  http://docs.opencv.org/trunk/de/dbf/classcv_1_1BRISK.html
+ */
 class BRISKDescriptor : public DescriptorExtractor {
  public:
     /** Default constructor. The user can also specify their own struct with
      *  desired values. If no struct is provided, default values are used.
      *
-     *  @param config
-     *  \parblock contains the desired parameter values. Uses default values if
-     *  not specified.
-     *  \endparblock
+     *  @param config contains the desired parameter values
      */
     explicit BRISKDescriptor(
       const BRISKDescriptorParams &config = BRISKDescriptorParams{});

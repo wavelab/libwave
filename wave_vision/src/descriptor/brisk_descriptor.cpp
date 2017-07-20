@@ -1,4 +1,3 @@
-// Libwave Headers
 #include "wave/vision/descriptor/brisk_descriptor.hpp"
 
 namespace wave {

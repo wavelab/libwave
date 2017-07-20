@@ -9,16 +9,14 @@
 #include <exception>
 #include <vector>
 
-#include <opencv2/opencv.hpp>
-
 #include "wave/utils/utils.hpp"
+#include "wave/vision/utils.hpp"
 
 namespace wave {
 /** @addtogroup vision
  *  @{ */
 
-/**
- *  Representation of a generic keypoint descriptor extractor.
+/** Representation of a generic keypoint descriptor extractor.
  *
  *  Internally, this class, and all derived classes are wrapping various
  *  descriptor extractors implemented in OpenCV. Further reference on Descriptor
@@ -42,7 +40,7 @@ class DescriptorExtractor {
 
  protected:
     /** Destructor */
-    ~DescriptorExtractor() = default;
+    virtual ~DescriptorExtractor() = default;
 };
 
 /** @} group vision */
