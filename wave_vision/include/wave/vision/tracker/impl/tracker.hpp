@@ -34,13 +34,12 @@ Tracker<TDetector, TDescriptor, TMatcher>::registerKeypoints(
 
             auto img_count = this->img_times.size() - 1;
 
-            // Create LandmarkMeasurement, and add to
-            // LandmarkMeasurementContainer
-            LandmarkMeasurement<int> measurement(this->img_times.at(img_count),
-                                                 sensor_id,
-                                                 curr_ids.at(m.trainIdx),
-                                                 landmark);
-            this->landmarks.insert(measurement);
+            // Emplace LandmarkMeasurement into LandmarkMeasurementContainer
+            this->landmarks.emplace(this->img_times.at(img_count),
+                                    sensor_id,
+                                    curr_ids.at(m.trainIdx),
+                                    img_count,
+                                    landmark);
         } else {
             // Else, assign new ID
             this->prev_ids[m.queryIdx] = this->generateFeatureID();
@@ -52,24 +51,25 @@ Tracker<TDetector, TDescriptor, TMatcher>::registerKeypoints(
             Vec2 curr_landmark = convertKeypoint(curr_kp.at(m.trainIdx));
 
             // Find previous and current times from lookup table
-            // Subtract one, since all are zero indexed.
-            auto img_count = this->img_times.size() - 1;
+            // Subtract one, since images are zero indexed.
+            auto curr_img = this->img_times.size() - 1;
+            auto prev_img = curr_img - 1;
 
-            const auto &prev_time = this->img_times.at(img_count - 1);
-            const auto &curr_time = this->img_times.at(img_count);
+            const auto &prev_time = this->img_times.at(prev_img);
+            const auto &curr_time = this->img_times.at(curr_img);
 
-            // Create landmark measurements for previous and current landmarks
-            LandmarkMeasurement<int> prev_measurement(
-              prev_time,
-              sensor_id,
-              this->prev_ids.at(m.queryIdx),
-              prev_landmark);
-            LandmarkMeasurement<int> curr_measurement(
-              curr_time, sensor_id, curr_ids.at(m.trainIdx), curr_landmark);
+            // Add previous and current landmarks to container
+            this->landmarks.emplace(prev_time,
+                                    sensor_id,
+                                    this->prev_ids.at(m.queryIdx),
+                                    prev_img,
+                                    prev_landmark);
 
-            // Add to container
-            this->landmarks.insert(prev_measurement);
-            this->landmarks.insert(curr_measurement);
+            this->landmarks.emplace(curr_time,
+                                    sensor_id,
+                                    curr_ids.at(m.trainIdx),
+                                    curr_img,
+                                    curr_landmark);
         }
     }
 
