@@ -167,12 +167,12 @@ class FilledLandmarkContainer : public ::testing::Test {
             auto t = this->t_start + seconds(k);
             for (auto id : this->input_ids_l[k]) {
                 Vec2 val = Vec2::Ones() * (k + id / 10.0);
-                this->m.emplace(t, CameraSensors::Left, id, k, val);
+                this->m.emplace(t, CameraSensors::Left, id, (size_t) k, val);
                 this->inputs_l[k][id] = val;
             }
             for (auto id : this->input_ids_r[k]) {
                 Vec2 val = Vec2::Ones() * (10 + k + id / 10.0);
-                this->m.emplace(t, CameraSensors::Right, id, k, val);
+                this->m.emplace(t, CameraSensors::Right, id, (size_t) k, val);
                 this->inputs_r[k][id] = val;
             }
         }
