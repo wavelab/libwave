@@ -41,6 +41,16 @@ WAVE_ADD_TEST(${PROJECT_NAME}_tests
               tests/tracker_tests/tracker_tests.cpp
               tests/dataset_tests.cpp
               tests/utils_tests.cpp)
+
+WAVE_ADD_TEST(
+    ${PROJECT_NAME}_viz_tests
+    tests/viz_tests/detector_viz_tests.cpp
+    tests/viz_tests/descriptor_viz_tests.cpp
+    tests/viz_tests/matcher_viz_tests.cpp
+    tests/viz_tests/tracker_viz_tests.cpp
+    DISABLED # Requires display to run
+)
+
 TARGET_LINK_LIBRARIES(
     ${PROJECT_NAME}_tests
     ${PROJECT_NAME}
@@ -48,5 +58,13 @@ TARGET_LINK_LIBRARIES(
     wave_utils
     ${Boost_LIBRARIES}
 )
+
+TARGET_LINK_LIBRARIES(
+    ${PROJECT_NAME}_viz_tests
+    ${PROJECT_NAME}
+    wave_utils
+    ${Boost_LIBRARIES}
+)
+
 # COPY TEST DATA
 FILE(COPY tests/data tests/config DESTINATION ${PROJECT_BINARY_DIR}/tests)

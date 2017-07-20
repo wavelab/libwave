@@ -66,40 +66,4 @@ TEST(TrackerTests, OfflineTrackerNoImages) {
 
     ASSERT_THROW(tracker.offlineTracker(image_sequence), std::invalid_argument);
 }
-
-TEST(TrackerTests, DISABLED_OfflineTrackerTest) {
-    std::vector<cv::Mat> image_sequence;
-    std::vector<cv::Mat> drawn_images;
-
-    std::vector<std::vector<FeatureTrack>> feature_tracks;
-
-    FASTDetector detector;
-    BRISKDescriptor descriptor;
-    BruteForceMatcher matcher;
-
-    Tracker<FASTDetector, BRISKDescriptor, BruteForceMatcher> tracker(
-      detector, descriptor, matcher);
-
-    image_sequence = readImageSequence(FIRST_IMG_PATH);
-
-    feature_tracks = tracker.offlineTracker(image_sequence);
-    ASSERT_NE((int) feature_tracks.size(), 0);
-
-    size_t img_count = 0;
-
-    for (auto img_seq_it = image_sequence.begin();
-         img_seq_it != image_sequence.end();
-         img_seq_it++) {
-        drawn_images.push_back(tracker.drawTracks(img_count, *img_seq_it));
-
-        ++img_count;
-    }
-
-    for (auto img_seq_it = drawn_images.begin();
-         img_seq_it != drawn_images.end();
-         img_seq_it++) {
-        cv::imshow("Feature Tracks", *img_seq_it);
-        cv::waitKey(0);
-    }
-}
 }  // namespace wave
