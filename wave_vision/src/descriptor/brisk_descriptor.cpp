@@ -1,4 +1,3 @@
-// Libwave Headers
 #include "wave/vision/descriptor/brisk_descriptor.hpp"
 
 namespace wave {
@@ -91,7 +90,7 @@ BRISKDescriptorParams BRISKDescriptor::getConfiguration() const {
 }
 
 cv::Mat BRISKDescriptor::extractDescriptors(
-  cv::Mat &image, std::vector<cv::KeyPoint> &keypoints) {
+  const cv::Mat &image, std::vector<cv::KeyPoint> &keypoints) {
     cv::Mat descriptors;
 
     this->brisk_descriptor->compute(image, keypoints, descriptors);

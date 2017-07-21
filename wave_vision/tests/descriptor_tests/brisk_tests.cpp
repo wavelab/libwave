@@ -1,7 +1,3 @@
-// C++ Headers
-#include <algorithm>
-
-// Libwave Headers
 #include "wave/wave_test.hpp"
 #include "wave/vision/descriptor/brisk_descriptor.hpp"
 #include "wave/vision/detector/fast_detector.hpp"
@@ -152,28 +148,5 @@ TEST(BRISKTests, CheckDistValues) {
     ASSERT_THROW(BRISKDescriptor brisk(neg_dmax), std::invalid_argument);
     ASSERT_THROW(BRISKDescriptor brisk(neg_dmin), std::invalid_argument);
     ASSERT_THROW(BRISKDescriptor brisk(swapped_dists), std::invalid_argument);
-}
-
-TEST(BRISKTests, DISABLED_ComputeDescriptors) {
-    cv::Mat descriptors;
-    cv::Mat image_with_keypoints;
-
-    cv::Mat image = cv::imread(TEST_IMAGE);
-    std::vector<cv::KeyPoint> keypoints;
-
-    FASTDetector fast;
-    BRISKDescriptor brisk;
-
-    keypoints = fast.detectFeatures(image);
-    descriptors = brisk.extractDescriptors(image, keypoints);
-
-    ASSERT_GT(descriptors.total(), 0u);
-
-    // Visual test to verify descriptors are being computed properly
-    cv::imshow("Scene", image);
-    cv::drawKeypoints(descriptors, keypoints, image_with_keypoints);
-    cv::imshow("Descriptors", image_with_keypoints);
-
-    cv::waitKey(0);
 }
 }  // namespace wave

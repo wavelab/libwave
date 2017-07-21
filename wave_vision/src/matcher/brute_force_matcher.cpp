@@ -1,4 +1,3 @@
-// Libwave Headers
 #include "wave/vision/matcher/brute_force_matcher.hpp"
 
 namespace wave {
