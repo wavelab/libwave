@@ -171,4 +171,30 @@ TEST_F(PinholeProjectTest, projectPointAboveRight) {
     EXPECT_LT(meas.y(), this->cy);
 }
 
+TEST_F(PinholeProjectTest, projectKnownPoint) {
+    // Test projection with the correct answer separately calculated here
+
+    // Landmark position in global frame
+    auto G_p_GF = Vec3{12.0, -3.4, 2.1};
+
+    // Translation from origin of Global frame to Camera
+    auto G_p_GC = Vec3{5.0, 0.0, 0.0};
+
+    // Orientation of robot Body frame in Global frame
+    auto q_GB = Quaternion::Identity();
+
+    // Get rotation matrix
+    auto R_GC = Mat3{q_GB * this->q_BC};
+
+    // Calculate expected
+    const Vec3 C_p_CF = R_GC.inverse() * (G_p_GF - G_p_GC);
+    const Vec3 homogeneous = this->K * C_p_CF;
+    const Vec2 expected = homogeneous.head<2>() / homogeneous(2);
+
+    Vec2 meas;
+    auto res = pinholeProject(this->K, R_GC, G_p_GC, G_p_GF, meas);
+    EXPECT_TRUE(res);
+    EXPECT_PRED2(VectorsNear, expected, meas);
+}
+
 }  // namespace wave

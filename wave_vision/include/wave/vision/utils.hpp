@@ -61,10 +61,9 @@ bool pinholeProject(const Eigen::Matrix<T, 3, 3> &K,
     Eigen::Matrix<T, 3, 4> extrinsic{};
     extrinsic.topLeftCorner(3, 3) = R_CG;
     extrinsic.topRightCorner(3, 1) = -R_CG * G_p_GC;
-    extrinsic(2, 3) = T(1.0);
 
     Eigen::Matrix<T, 4, 1> landmark_homogeneous;
-    landmark_homogeneous << G_p_GF, T(1);
+    landmark_homogeneous << G_p_GF, T{1};
 
     // project
     Eigen::Matrix<T, 3, 1> homogeneous = K * extrinsic * landmark_homogeneous;
@@ -73,7 +72,7 @@ bool pinholeProject(const Eigen::Matrix<T, 3, 3> &K,
     result = homogeneous.head(2) / homogeneous(2);
 
     // check cheirality
-    return (homogeneous(2) > T(0));
+    return (homogeneous(2) > T{0});
 }
 
 /** Convert a single cv::KeyPoint to Vec2
