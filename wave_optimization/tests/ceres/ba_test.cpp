@@ -23,7 +23,9 @@ static MatX build_feature_matrix(
     MatX features(features_observed.size(), 2);
 
     for (size_t i = 0; i < features_observed.size(); i++) {
-        features.row(i) = features_observed[i].second;
+        // Add subpixel noise (not Gaussian though)
+        Vec2 noise = 0.05 * Vec2::Random();
+        features.row(i) = features_observed[i].second + noise;
     }
 
     return features;
@@ -111,7 +113,7 @@ TEST(BundleAdjustment, solve) {
 
     // Add offset to landmark initial estimates
     for (auto &l : params_landmarks) {
-        l.second += Vec3{0.01, -0.01, 0.01};
+        l.second += Vec3{0.3, -0.3, 0.3};
     }
 
     // Add pose parameters
@@ -119,7 +121,7 @@ TEST(BundleAdjustment, solve) {
         // translation
         const auto &true_G_p_GC = dataset.states[i].robot_G_p_GB;
         // add offset
-        Vec3 G_p_GC = true_G_p_GC + Vec3{0.01, 0, -0.005};
+        Vec3 G_p_GC = true_G_p_GC + Vec3{0.5, 0.1, -0.5};
         params_G_p_GC[i] = G_p_GC;
 
         // get rotation as quaternion
@@ -175,17 +177,18 @@ TEST(BundleAdjustment, solve) {
         const auto angular_dist = true_q_GC.angularDistance(params_q_GC[i]);
         const auto linear_dist = (true_G_p_GC - params_G_p_GC[i]).norm();
 
-        // Check convergence. Since the measurements currently don't have added
-        // noise, we expect near-zero error.
-        EXPECT_LT(angular_dist, 1e-6);
-        EXPECT_LT(linear_dist, 1e-6);
+        // Check convergence. Since the measurements have added noise, we expect
+        // some error. Because these are hard cutoffs for test failure, the
+        // values here are arbitrary and greater than the actual average error.
+        EXPECT_LT(angular_dist, 0.01);
+        EXPECT_LT(linear_dist, 0.1);
     }
 
     for (const auto l : dataset.landmarks) {
         const auto &true_landmark = dataset.landmarks.at(l.first);
         const auto &estimated_landmark = params_landmarks.at(l.first);
         const auto linear_dist = (true_landmark - estimated_landmark).norm();
-        EXPECT_LT(linear_dist, 1e-6);
+        EXPECT_LT(linear_dist, 1.0);
     }
 }
 
