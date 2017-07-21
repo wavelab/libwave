@@ -20,7 +20,7 @@ TEST(FASTTests, BadInitialization) {
 
 // Checks that invalid threshold value throws the proper exception
 TEST(FASTTests, BadThresholdConfiguration) {
-    FASTParams bad_threshold_config;
+    FASTDetectorParams bad_threshold_config;
     bad_threshold_config.threshold = -1;
 
     ASSERT_THROW(FASTDetector detector(bad_threshold_config),
@@ -31,8 +31,8 @@ TEST(FASTTests, BadThresholdConfiguration) {
 TEST(FASTTests, BadTypeConfiguration) {
     FASTDetector detector;
 
-    FASTParams bad_type_config_neg{10, true, -1};
-    FASTParams bad_type_config_pos{10, true, 4};
+    FASTDetectorParams bad_type_config_neg{10, true, -1};
+    FASTDetectorParams bad_type_config_pos{10, true, 4};
 
     ASSERT_THROW(detector.configure(bad_type_config_neg),
                  std::invalid_argument);
@@ -42,7 +42,7 @@ TEST(FASTTests, BadTypeConfiguration) {
 }
 
 TEST(FASTTests, GoodCustomConfig) {
-    FASTParams config;
+    FASTDetectorParams config;
 
     FASTDetector detector(config);
 }
@@ -50,11 +50,11 @@ TEST(FASTTests, GoodCustomConfig) {
 // Checks that correct configuration values can be set in detector, and also
 // read from getConfiguration function.
 TEST(FASTTests, GoodPathConfiguration) {
-    FASTParams config(TEST_CONFIG);
+    FASTDetectorParams config(TEST_CONFIG);
     FASTDetector detector(config);
 
-    FASTParams input_config{10, true, 2};
-    FASTParams output_config;
+    FASTDetectorParams input_config{10, true, 2};
+    FASTDetectorParams output_config;
 
     // Configure detector with valid values
     detector.configure(input_config);
