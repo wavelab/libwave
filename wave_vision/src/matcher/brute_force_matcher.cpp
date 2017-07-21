@@ -161,7 +161,7 @@ std::vector<cv::DMatch> BruteForceMatcher::matchDescriptors(
   const cv::Mat &descriptors_2,
   const std::vector<cv::KeyPoint> &keypoints_1,
   const std::vector<cv::KeyPoint> &keypoints_2,
-  const cv::InputArray &mask) const {
+  cv::InputArray mask) const {
     std::vector<cv::DMatch> good_matches;
     std::vector<cv::DMatch> filtered_matches;
 
