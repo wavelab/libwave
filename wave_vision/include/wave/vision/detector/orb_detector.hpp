@@ -123,7 +123,7 @@ class ORBDetector : public FeatureDetector {
      *
      * @param new_config containing the desired configuration values.
      */
-    void configure(const ORBDetectorParmas &new_config);
+    void configure(const ORBDetectorParams &new_config);
 
     /** Returns the current configuration parameters being used by the
      *  ORBDetector.
