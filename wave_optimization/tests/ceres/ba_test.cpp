@@ -23,7 +23,7 @@ static MatX build_feature_matrix(
     MatX features(features_observed.size(), 2);
 
     for (size_t i = 0; i < features_observed.size(); i++) {
-        features.block(i, 0, 1, 2) = features_observed[i].second.transpose();
+        features.row(i) = features_observed[i].second;
     }
 
     return features;
@@ -152,12 +152,12 @@ TEST(BundleAdjustment, solve) {
                      params_landmarks);
 
         // Set a prior on first pose
-        if (i == 0) {
+        if (i == 0 || i == 1) {
             params_G_p_GC[i] = true_G_p_GC;
             params_q_GC[i] = initial_q_GB * q_BC;
-            ba.problem.SetParameterBlockConstant(params_G_p_GC[0].data());
+            ba.problem.SetParameterBlockConstant(params_G_p_GC[i].data());
             ba.problem.SetParameterBlockConstant(
-              params_q_GC[0].coeffs().data());
+              params_q_GC[i].coeffs().data());
         }
     }
 
@@ -175,17 +175,17 @@ TEST(BundleAdjustment, solve) {
         const auto angular_dist = true_q_GC.angularDistance(params_q_GC[i]);
         const auto linear_dist = (true_G_p_GC - params_G_p_GC[i]).norm();
 
+        // Check convergence. Since the measurements currently don't have added
+        // noise, we expect near-zero error.
         EXPECT_LT(angular_dist, 1e-6);
-        // For some reason the robot position estimate is not as good as the
-        // other variables (@todo)
-        EXPECT_LT(linear_dist, 0.2);
+        EXPECT_LT(linear_dist, 1e-6);
     }
 
     for (const auto l : dataset.landmarks) {
         const auto &true_landmark = dataset.landmarks.at(l.first);
         const auto &estimated_landmark = params_landmarks.at(l.first);
         const auto linear_dist = (true_landmark - estimated_landmark).norm();
-        EXPECT_LT(linear_dist, 1e-5);
+        EXPECT_LT(linear_dist, 1e-6);
     }
 }
 
