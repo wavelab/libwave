@@ -84,4 +84,17 @@ void ORBDetector::checkConfiguration(const ORBDetectorParams &check_config) {
     }
 }
 
+void ORBDetector::configure(const ORBDetectorParams &new_config) {
+    // Confirm configuration parameters are valid
+    this->checkConfiguration(new_config);
+
+    // Set configuration values in detector.
+    this->orb_detector->setMaxFeatures(new_config.num_features);
+    this->orb_detector->setScaleFactor((double) new_config.scale_factor);
+    this->orb_detector->setNLevels(new_config.num_levels);
+    this->orb_detector->setEdgeThreshold(new_config.edge_threshold);
+    this->orb_detector->setScoreType(new_config.score_type);
+    this->orb_detector->setFastThreshold(new_config.fast_threshold);
+}
+
 }  // namespace wave
