@@ -72,19 +72,19 @@ class FASTDetector : public FeatureDetector {
     /** Default constructor. The user can also specify their own struct with
      *  desired values. If no struct is provided, default values are used.
      *
-     *  @param config contains the desired parameter values
+     *  @param config contains the desired parameter values.
      */
     FASTDetector(const FASTDetectorParams &config = FASTDetectorParams{});
 
-    /** Reconfigures the FastFeatureDetector object with new values requested by
-     *  the user
+    /** Reconfigures the cv::FastFeatureDetector object with new values
+     *  requested by the user.
      *
      * @param new_config containing the desired configuration values.
      */
     void configure(const FASTDetectorParams &new_config);
 
     /** Returns the current configuration parameters being used by the
-     *  FastFeatureDetector.
+     *  FASTDetector.
      *
      * @return a struct containing the current configuration values.
      */
@@ -106,7 +106,7 @@ class FASTDetector : public FeatureDetector {
      *  The threshold value must be greater than zero, while the type must be
      *  0, 1, or 2.
      *
-     *  @param check_config containing the desired configuration values.
+     *  @param check_config contains the desired configuration values.
      */
     void checkConfiguration(const FASTDetectorParams &check_config);
 };

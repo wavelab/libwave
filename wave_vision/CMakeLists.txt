@@ -28,6 +28,7 @@ ADD_LIBRARY(
     src/utils.cpp
     src/dataset.cpp
     src/detector/fast_detector.cpp
+    src/detector/orb_detector.cpp
     src/descriptor/brisk_descriptor.cpp
     src/matcher/brute_force_matcher.cpp
 )

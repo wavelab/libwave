@@ -101,4 +101,54 @@ struct ORBDetectorParams {
      */
     int fast_threshold = 20;
 };
+
+/** Representation of a feature detector using the FAST algorithm.
+ *
+ *  Internally, this class is wrapping OpenCV's ORB module. Further reference
+ *  on ORB can be found [here][opencv_orb].
+ *
+ *  [opencv_orb]:
+ *  http://docs.opencv.org/trunk/db/d95/classcv_1_1ORB.html
+ */
+class ORBDetector : public FeatureDetector {
+ public:
+    /** Default constructor. The user can also specify their own struct with
+     *  desired values. If no struct is provided, default values are used.
+     *
+     * @param config contains the desired parameter values.
+     */
+    ORBDetector(const ORBDetectorParams &config = ORBDetectorParams{});
+
+    /** Reconfigures the cv::ORB object with new values requested by the user.
+     *
+     * @param new_config containing the desired configuration values.
+     */
+    void configure(const ORBDetectorParmas &new_config);
+
+    /** Returns the current configuration parameters being used by the
+     *  ORBDetector.
+     *
+     * @return a struct containing the current configuration values.
+     */
+    ORBDetectorParams getConfiguration() const;
+
+    /** Detects features in an image,
+     *
+     * @param image the image to detect features in.
+     * @return a vector containing all of the keypoints found within the image.
+     */
+    std::vector<cv::KeyPoint> detectFeatures(const cv::Mat &image);
+
+ private:
+    /** The pointer to the wrapped cv::ORB object. */
+    cv::Ptr<cv::ORB> orb_detector;
+
+    /** Checks whether the desired configuration is valid.
+     *
+     * @param check_config containing the desired configuration values.
+     */
+    void checkConfiguration(const ORBDetectorParams &check_config);
+};
+
+/** @} group vision */
 }  // namespace wave
