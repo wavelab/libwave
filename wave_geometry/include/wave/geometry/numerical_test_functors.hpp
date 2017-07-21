@@ -2,8 +2,8 @@
  * @ingroup geometry
  */
 
-#ifndef WAVE_NUMERICAL_TEST_FUNCTORS_HPP
-#define WAVE_NUMERICAL_TEST_FUNCTORS_HPP
+#ifndef WAVE_GEOMETRY_NUMERICAL_TEST_FUNCTORS_HPP
+#define WAVE_GEOMETRY_NUMERICAL_TEST_FUNCTORS_HPP
 
 #include "wave/geometry/rotation.hpp"
 
@@ -18,11 +18,11 @@ class RotateAndJacobianJpointFunctor {
  public:
     Rotation R;
     Vec3 P;
-    RotateAndJacobianJpointFunctor(Rotation input_rotation) {
+    RotateAndJacobianJpointFunctor(const Rotation &input_rotation) {
         this->R = input_rotation;
     }
 
-    Vec3 operator()(Vec3 input_point) {
+    Vec3 operator()(const Vec3 &input_point) {
         Vec3 output_point = R.rotate(input_point);
         return output_point;
     }
@@ -33,12 +33,13 @@ class RotateAndJacobianJparamFunctor {
  public:
     Rotation R;
     Vec3 P;
-    RotateAndJacobianJparamFunctor(Rotation input_rotation, Vec3 input_point) {
+    RotateAndJacobianJparamFunctor(const Rotation &input_rotation,
+                                   const Vec3 &input_point) {
         this->R = input_rotation;
         this->P = input_point;
     }
 
-    Vec3 operator()(Vec3 input_point) {
+    Vec3 operator()(const Vec3 &input_point) {
         Rotation Rp = this->R;
         Rp = Rp.manifoldPlus(input_point);
         Vec3 output_point = Rp.rotate(P);
@@ -46,13 +47,108 @@ class RotateAndJacobianJparamFunctor {
     }
 };
 
+class ComposeAndJacobianJLeftFunctor {
+ public:
+    Rotation R_left;
+    Rotation R_right;
+    ComposeAndJacobianJLeftFunctor(const Rotation &R_left,
+                                   const Rotation &R_right) {
+        this->R_left = R_left;
+        this->R_right = R_right;
+    }
 
-// Implement the numerical differentiation, following procedure
-// for a 5 point stencil https://en.wikipedia.org/wiki/Five-point_stencil
-// Exact step size representation is outlined in
-// "Numerical Recipes by Brian P. Flannery,
-// Saul Teukolsky, and William H. Press, chapter 5.7.
+    Rotation operator()(const Vec3 &perturbation) {
+        Mat3 J;
+        Rotation R_perturbed = this->R_left;
+        R_perturbed = R_perturbed.manifoldPlus(perturbation);
+        return R_perturbed.composeAndJacobian(R_right, J, J);
+    }
+};
 
+class ComposeAndJacobianJRightFunctor {
+ public:
+    Rotation R_left;
+    Rotation R_right;
+    ComposeAndJacobianJRightFunctor(const Rotation &R_left,
+                                    const Rotation &R_right) {
+        this->R_left = R_left;
+        this->R_right = R_right;
+    }
+
+    Rotation operator()(const Vec3 &perturbation) {
+        Mat3 J;
+        Rotation R_perturbed = this->R_right;
+        R_perturbed = R_perturbed.manifoldPlus(perturbation);
+        return R_left.composeAndJacobian(R_perturbed, J, J);
+    }
+};
+
+class InverseAndJacobianFunctor {
+ public:
+    Rotation R;
+    InverseAndJacobianFunctor(const Rotation &R) {
+        this->R = R;
+    }
+
+    Rotation operator()(const Vec3 &perturbation) {
+        Mat3 J;
+        Rotation R_perturbed = this->R;
+        R_perturbed = R_perturbed.manifoldPlus(perturbation);
+        return R_perturbed.inverseAndJacobian(J);
+    }
+};
+
+class LogMapAndJacobianFunctor {
+ public:
+    Rotation R;
+    LogMapAndJacobianFunctor(const Rotation &R) {
+        this->R = R;
+    }
+
+    Vec3 operator()(const Vec3 &perturbation) {
+        Mat3 J;
+        Rotation R_perturbed = this->R;
+        R_perturbed = R_perturbed.manifoldPlus(perturbation);
+        return Rotation::logMapAndJacobian(R_perturbed, J);
+    }
+};
+
+
+class ManifoldMinusAndJacobianJLeftFunctor {
+ public:
+    Rotation R_left;
+    Rotation R_right;
+    ManifoldMinusAndJacobianJLeftFunctor(const Rotation &R_left,
+                                         const Rotation &R_right) {
+        this->R_left = R_left;
+        this->R_right = R_right;
+    }
+
+    Vec3 operator()(const Vec3 &perturbation) {
+        Mat3 J;
+        Rotation R_perturbed = this->R_left;
+        R_perturbed = R_perturbed.manifoldPlus(perturbation);
+        return R_perturbed.manifoldMinus(this->R_right);
+    }
+};
+
+class ManifoldMinusAndJacobianJRightFunctor {
+ public:
+    Rotation R_left;
+    Rotation R_right;
+    ManifoldMinusAndJacobianJRightFunctor(const Rotation &R_left,
+                                          const Rotation &R_right) {
+        this->R_left = R_left;
+        this->R_right = R_right;
+    }
+
+    Vec3 operator()(const Vec3 &perturbation) {
+        Mat3 J;
+        Rotation R_perturbed = this->R_right;
+        R_perturbed = R_perturbed.manifoldPlus(perturbation);
+        return this->R_left.manifoldMinus(R_perturbed);
+    }
+};
 
 // Compute the perturbation points as recommended in Numerical Recipes.
 // Modify the step size so that the perturbations are exactly
@@ -64,47 +160,41 @@ double get_perturbation_point(double evaluation_point, double step_size) {
     return evaluation_point + exact_step_size;
 }
 
+
+// Numerical difference using simple forward difference method.
+// Requires overloaded -operator to perform manifoldMinus for
+// Manifold quantities.
+
 template <typename MatrixType, typename FunctorType>
 void numerical_jacobian(FunctorType F,
-                        Vec3 evaluation_point,
+                        const Vec3 &evaluation_point,
                         Eigen::MatrixBase<MatrixType> &jac) {
     for (int i = 0; i < evaluation_point.size(); i++) {
         // Select the step size as recommended in Numerical Recipes.
-        double step_size = cbrt(std::numeric_limits<double>::epsilon()) *
+        double step_size = sqrt(std::numeric_limits<double>::epsilon()) *
                            std::fabs(evaluation_point[i]);
         // If the step size is exactly equal to zero, just select it as
-        // cbrt(eps).
-        if (step_size == 0.0)
-            step_size = cbrt(std::numeric_limits<double>::epsilon());
+        // sqrt(eps).
+        if (step_size == 0.0) {
+            step_size = sqrt(std::numeric_limits<double>::epsilon());
+        }
 
         Vec3 perturbation_point = evaluation_point;
         // Compute the function value using positive perturbations.
         perturbation_point[i] =
           get_perturbation_point(evaluation_point[i], step_size);
         auto F_xp1 = F(perturbation_point);
-        perturbation_point = evaluation_point;
-        perturbation_point[i] =
-          get_perturbation_point(evaluation_point[i], 2 * step_size);
-        auto F_xp2 = F(perturbation_point);
 
-        // Perform same operations for negative perturbation.
-        perturbation_point = evaluation_point;
-        perturbation_point[i] =
-          get_perturbation_point(evaluation_point[i], -step_size);
-        auto F_xm1 = F(perturbation_point);
-        perturbation_point = evaluation_point;
-        perturbation_point[i] =
-          get_perturbation_point(evaluation_point[i], -2 * step_size);
-        auto F_xm2 = F(perturbation_point);
+        // Perform same operations for zero perturbation.
+        auto F_x = F(evaluation_point);
 
         // Finally compute the finite difference.
-        Vec3 finite_difference =
-          (-F_xp2 + 8 * F_xp1 - 8 * F_xm1 + F_xm2) / (12 * step_size);
+        Vec3 finite_difference = (F_xp1 - F_x) / (step_size);
         jac.col(i) = finite_difference;
     }
 }
 
-/** @} end of group */
-}  // end namespace wave
+/** @} group geometry */
+}  // namespace wave
 
-#endif
+#endif  // WAVE_GEOMETRY_NUMERICAL_TEST_FUNCTORS_HPP

@@ -63,4 +63,4 @@ bool GICPMatcher::match() {
     return false;
 }
 
-}  // end of wave namespace
+}  // namespace wave

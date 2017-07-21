@@ -5,7 +5,7 @@ SET(CMAKE_CXX_FLAGS "-std=gnu++11 ${CMAKE_CXX_FLAGS}")
 SET(CMAKE_BUILD_TYPE release)
 
 # PACKAGES
-FIND_PACKAGE(PCL REQUIRED common registration point_types io)
+FIND_PACKAGE(PCL REQUIRED)
 FIND_PACKAGE(OpenCV REQUIRED)
 
 # DEFINITIONS
@@ -13,7 +13,8 @@ ADD_DEFINITIONS(${EIGEN_DEFINITIONS})
 ADD_DEFINITIONS(${PCL_DEFINITIONS})
 
 # INCLUDES
-INCLUDE_DIRECTORIES(${PCL_INCLUDE_DIRS}
+INCLUDE_DIRECTORIES(SYSTEM
+    ${PCL_INCLUDE_DIRS}
     ${EIGEN_INCLUDE_DIRS}
     ${OpenCV_INCLUDE_DIRS})
 
@@ -28,10 +29,7 @@ SET(
     yaml-cpp
     wave_utils
     ${OpenCV_LIBS}
-    ${PCL_COMMON_LIBRARIES}
-    ${PCL_REGISTRATION_LIBRARIES}
-    ${PCL_POINT_TYPES_LIBRARIES}
-    ${PCL_IO_LIBRARIES}
+    ${PCL_LIBRARIES}
 )
 ADD_LIBRARY(
     wave_matching
@@ -40,6 +38,7 @@ ADD_LIBRARY(
     src/icp.cpp
     src/ndt.cpp
     src/groundSegmentation.cpp
+
 )
 TARGET_LINK_LIBRARIES(wave_matching ${WAVE_MATCHING_DEPS})
 
@@ -51,8 +50,20 @@ WAVE_ADD_TEST(
     tests/gicp_tests.cpp
     DISABLED  # Don't run this test for now
 )
+
+WAVE_ADD_TEST(
+    ${PROJECT_NAME}_viz_tests
+    tests/pointcloud_display_tests.cpp
+    DISABLED  # probably requires display to work properly
+)
 TARGET_LINK_LIBRARIES(
     ${PROJECT_NAME}_tests
+    ${PROJECT_NAME}
+    wave_utils
+)
+
+TARGET_LINK_LIBRARIES(
+    ${PROJECT_NAME}_viz_tests
     ${PROJECT_NAME}
     wave_utils
 )

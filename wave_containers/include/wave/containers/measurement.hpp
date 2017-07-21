@@ -46,7 +46,7 @@ decltype(T::value) interpolate(const T &m1, const T &m2, const TimeType &t) {
     return (1 - w2) * m1.value + w2 * m2.value;
 }
 
-/** @} end of group */
+/** @} group containers */
 }  // namespace wave
 
 #endif  // WAVE_CONTAINERS_MEASUREMENT_HPP

@@ -36,4 +36,4 @@ void Pose::print() {
     this->printOrientation();
 }
 
-}  // end of wave namespace
+}  // namespace wave

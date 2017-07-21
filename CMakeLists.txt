@@ -19,7 +19,8 @@ SET(LIBWAVE_MODULES
     wave_matching
     wave_optimization
     wave_vision
-    wave_utils)
+    wave_utils
+    wave_benchmark)
 
 FOREACH(dir ${LIBWAVE_MODULES})
     INCLUDE_DIRECTORIES(${dir}/include)
@@ -51,15 +52,18 @@ ADD_DEPENDENCIES(wave_optimization wave_utils)
 # libwave_vision.a
 ADD_DEPENDENCIES(wave_vision wave_utils)
 
+# libwave_benchmark.a
+ADD_DEPENDENCIES(wave_benchmark wave_utils)
+
 # libwave library
 SET(LIBWAVE_MODULE_LIBS
     ${CMAKE_BINARY_DIR}/wave_controls/libwave_controls.a
     ${CMAKE_BINARY_DIR}/wave_geometry/libwave_geometry.a
     ${CMAKE_BINARY_DIR}/wave_kinematics/libwave_kinematics.a
     ${CMAKE_BINARY_DIR}/wave_matching/libwave_matching.a
-    ${CMAKE_BINARY_DIR}/wave_vision/libwave_vision.a
     ${CMAKE_BINARY_DIR}/wave_optimization/libwave_optimization.a
-    ${CMAKE_BINARY_DIR}/wave_utils/libwave_utils.a)
+    ${CMAKE_BINARY_DIR}/wave_utils/libwave_utils.a
+    ${CMAKE_BINARY_DIR}/wave_vision/libwave_vision.a)
 
 IF(BUILD_SHARED_LIBS)
     # SHARED LIBRARY
@@ -84,7 +88,7 @@ ELSE ()
         DEPENDS
             ${LIBWAVE_MODULES}
     )
-    INSTALL(FILES ${CMAKE_BINARY_DIR}/libwave.a DESTINATION CMAKE_INSTALL_PREFIX}/lib)
+    INSTALL(FILES ${CMAKE_BINARY_DIR}/libwave.a DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
 
 ENDIF()
 

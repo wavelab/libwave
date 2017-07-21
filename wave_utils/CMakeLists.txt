@@ -15,7 +15,7 @@ ADD_LIBRARY(
     STATIC
     src/config.cpp
     src/data.cpp
-    src/filesystem.cpp
+    src/file.cpp
     src/math.cpp
     src/time.cpp
 )
@@ -25,7 +25,7 @@ WAVE_ADD_TEST(
     ${PROJECT_NAME}_tests
     tests/utils/config_test.cpp
     tests/utils/data_test.cpp
-    tests/utils/filesystem_test.cpp
+    tests/utils/file_test.cpp
     tests/utils/math_test.cpp
     tests/utils/time_test.cpp
 )

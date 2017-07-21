@@ -50,7 +50,7 @@ class Matcher {
     const Eigen::Affine3d &getResult() {
         return this->result;
     };
-    const Eigen::MatrixXd &getInfo() {
+    const Mat6 &getInfo() {
         return this->information;
     };
     float getRes() {
@@ -81,7 +81,7 @@ class Matcher {
     }
 
     virtual void estimateInfo() {
-        this->information = MatX::Identity(6, 6);
+        this->information = Mat6::Identity(6, 6);
     }
 
  protected:
@@ -105,6 +105,7 @@ class Matcher {
     Mat6 information;
 };
 
-/** @} end of group */
-}  // end of wave namespace
-#endif
+/** @} group matching */
+}  // namespace wave
+
+#endif  // WAVE_MATCHING_MATCHER_HPP
