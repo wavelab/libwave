@@ -114,4 +114,4 @@ class FASTDetector : public FeatureDetector {
 /** @} group vision */
 }  // namespace wave
 
-#endif  // WAVE_FAST_DETECTOR_HPP
+#endif  // WAVE_VISION_FAST_DETECTOR_HPP

@@ -152,3 +152,5 @@ class ORBDetector : public FeatureDetector {
 
 /** @} group vision */
 }  // namespace wave
+
+#endif  // WAVE_VISION_ORB_DETECTOR_HPP
