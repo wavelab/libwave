@@ -97,4 +97,26 @@ void ORBDetector::configure(const ORBDetectorParams &new_config) {
     this->orb_detector->setFastThreshold(new_config.fast_threshold);
 }
 
+ORBDetectorParams ORBDetector::getConfiguration() const {
+    ORBDetectorParams current_config;
+
+    // Obtain current configuration values using cv::ORB::get**
+    current_config.num_features = this->orb_detector->getMaxFeatures();_
+    current_config.scale_factor = (float) this->orb_detector->getScaleFactor();
+    current_config.num_levels = this->orb_detector->getNLevels();
+    current_config.edge_threshold = this->orb_detector->getEdgeThreshold();
+    current_config.score_type = this->orb_detector->getScoreType();
+    current_config.fast_threshold = this->orb_detector->getFastThreshold();
+
+    return current_config;
+}
+
+std::vector<cv::KeyPoint> ORBDetector::detectFeatures(const cv::Mat &image) {
+    std::vector<cv::KeyPoint> keypoints;
+
+    // Detect features in image and return keypoints.
+    this->orb_detector->detect(image, keypoints);
+
+    return keypoints;
+}
 }  // namespace wave
