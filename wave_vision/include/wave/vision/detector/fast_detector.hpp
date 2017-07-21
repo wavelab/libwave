@@ -27,7 +27,7 @@ struct FASTDetectorParams {
 
     /** Constructor using parameters extracted from a configuration file.
      *
-     *  @param config_path the path to the location of the configuration file
+     *  @param config_path the path to the location of the configuration file.
      */
     FASTDetectorParams(const std::string &config_path);
 

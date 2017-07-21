@@ -1,0 +1,104 @@
+/**
+ * @file
+ * ORB Feature Detector implementation, derived from Feature Detector base
+ * class.
+ * @ingroup vision
+ */
+#ifndef WAVE_VISION_ORB_DETECTOR_HPP
+#define WAVE_VISION_ORB_DETECTOR_HPP
+
+#include <string>
+#include <vector>
+
+#include "wave/vision/detector/feature_detector.hpp"
+
+namespace wave {
+/** @addtogroup vision
+ *  @{ */
+
+/** Configuration parameters for the ORBDetector.
+ *
+ *  The full description of each parameter can be found
+ *  [here][ORBDetectorParams]. Note: the ORBDetectorParams struct only consists
+ *  of the parameters required for feature detection, not description.
+ *  ORB Feature Description parameters can be found under ORBDescriptorParams.
+ *
+ *  [ORBDetectorParams]:
+ *  http://docs.opencv.org/trunk/db/d95/classcv_1_1ORB.html#adc371099dc902a9674bd98936e79739c
+ */
+struct ORBDetectorParams {
+    ORBDetectorParams() {}
+
+    ORBDetectorParams(int num_features,
+                      float scale_factor,
+                      int num_levels,
+                      int edge_threshold,
+                      int score_type,
+                      int fast_threshold)
+        : num_features(num_features),
+          scale_factor(scale_factor),
+          num_levels(num_levels),
+          edge_threshold(edge_threshold),
+          score_type(score_type),
+          fast_threshold(fast_threshold) {}
+
+    /** Constructor using parameters extracted from a configuration file.
+     *
+     * @param config_path the path to the location of the configuration file.
+     */
+    ORBDetectorParams(const std::string &config_path);
+
+    /** The number of features to keep from detection.
+     *
+     *  Default: 500
+     */
+    int num_features = 500;
+
+    /** Pyramid scaling ratio. A value of 2 corresponds to the standard pyramid,
+     *  where the number of pixels decrease by fourfold. A large value (ex. 2)
+     *  can result in poor feature matching scores. A value closer to 1 will
+     *  require more pyramid levels to extract truly scale-invariant features.
+     *
+     *  Default: 1.2f. Must be greater than 1.0f.
+     */
+    float scale_factor = 1.2f;
+
+    /** The number of pyramid levels.
+     *
+     * Default: 8. Must be greater than zero.
+     */
+    int num_levels = 8;
+
+    /** The border size where no features are detected. If using the
+     * ORBDescriptor, this value should be approximately equal to the
+     * patch_size.
+     *
+     * Default: 31. Must be greater than or equal to zero.
+     */
+    int edge_threshold = 31;
+
+    /** Scoring method used to rank the keypoints. cv::ORB::HARRIS_SCORE uses
+     *  the Harris algorithm to rank points, while cv::ORB::FAST_SCORE is an
+     *  alternative option. cv::ORB::FAST_SCORE is slightly faster than
+     *  cv::ORB::HARRIS_SCORE, but the results are not as stable.
+     *
+     *  Options: cv::ORB::HARRIS_SCORE, cv::ORB::FAST_SCORE
+     *
+     *  Default: cv::ORB::HARRIS_SCORE
+     */
+    int score_type = cv::ORB::HARRIS_SCORE;
+
+    /** Threshold on difference between intensity of the central pixel, and
+     *  pixels in a circle (Bresenham radius 3) around this pixel. Must be
+     *  greater than zero.
+     *
+     *  ORB uses the FAST_9_16 implementation, which means that 9 consecutive
+     *  pixels (out of a 16 pixel circumference circle) must be brighter or
+     *  darker than the center pixel for the algorithm to deem the point as a
+     *  corner.
+     *
+     *  Default: 20
+     */
+    int fast_threshold = 20;
+};
+}  // namespace wave
