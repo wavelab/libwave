@@ -17,10 +17,10 @@ namespace wave {
  *  @{ */
 
 /** Configuration parameters for the FASTDetector. */
-struct FASTParams {
-    FASTParams() {}
+struct FASTDetectorParams {
+    FASTDetectorParams() {}
 
-    FASTParams(int threshold, bool nonmax_suppression, int type)
+    FASTDetectorParams(int threshold, bool nonmax_suppression, int type)
         : threshold(threshold),
           nonmax_suppression(nonmax_suppression),
           type(type) {}
@@ -29,7 +29,7 @@ struct FASTParams {
      *
      *  @param config_path the path to the location of the configuration file
      */
-    FASTParams(const std::string &config_path);
+    FASTDetectorParams(const std::string &config_path);
 
     /** Threshold on difference between intensity of the central pixel, and
      *  pixels in a circle (Bresenham radius 3) around this pixel. Must be
@@ -74,21 +74,21 @@ class FASTDetector : public FeatureDetector {
      *
      *  @param config contains the desired parameter values
      */
-    FASTDetector(const FASTParams &config = FASTParams{});
+    FASTDetector(const FASTDetectorParams &config = FASTDetectorParams{});
 
     /** Reconfigures the FastFeatureDetector object with new values requested by
      *  the user
      *
      * @param new_config containing the desired configuration values.
      */
-    void configure(const FASTParams &new_config);
+    void configure(const FASTDetectorParams &new_config);
 
     /** Returns the current configuration parameters being used by the
      *  FastFeatureDetector.
      *
      * @return a struct containing the current configuration values.
      */
-    FASTParams getConfiguration() const;
+    FASTDetectorParams getConfiguration() const;
 
     /** Detects features in an image.
      *
@@ -108,7 +108,7 @@ class FASTDetector : public FeatureDetector {
      *
      *  @param check_config containing the desired configuration values.
      */
-    void checkConfiguration(const FASTParams &check_config);
+    void checkConfiguration(const FASTDetectorParams &check_config);
 };
 
 /** @} group vision */
