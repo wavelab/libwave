@@ -37,7 +37,8 @@ struct ICPMatcherParams {
     double fit_eps = 1e-2;
     double lidar_ang_covar = 7.78e-9;
     double lidar_lin_covar = 2.5e-4;
-    float res = 0.1;
+    int multiscale_steps = 3;  // How many times to match at a coarser scale. Each step is a factor of two apart
+    float res = 0.1;  // Resolution of finest scale
     enum covar_method : int { LUM, CENSI } covar_estimator = covar_method::LUM;
 };
 
@@ -80,7 +81,7 @@ class ICPMatcher : public Matcher<PCLPointCloud> {
      * is not exposed. PCL's ICP class creates an aligned verison of the target
      * pointcloud after matching, so the "final" member is used as a sink for
      * it. */
-    PCLPointCloud ref, target, final;
+    PCLPointCloud ref, target, final, downsampled_ref, downsampled_target;
 
     /**
      * Calculates a covariance estimate based on Lu and Milios Scan Matching

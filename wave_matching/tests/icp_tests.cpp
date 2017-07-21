@@ -7,6 +7,8 @@ namespace wave {
 
 const auto TEST_SCAN = "tests/data/testscan.pcd";
 const auto TEST_CONFIG = "tests/config/icp.yaml";
+//const auto TEST_SCAN = "data/testscan.pcd";
+//const auto TEST_CONFIG = "config/icp.yaml";
 
 // Fixture to load same pointcloud all the time
 class ICPTest : public testing::Test {
@@ -120,6 +122,29 @@ TEST_F(ICPTest, smallinfo) {
     double diff = (matcher->getResult().matrix() - perturb.matrix()).norm();
     EXPECT_TRUE(match_success);
     EXPECT_GT(info(0, 0), 0);
+    EXPECT_LT(diff, this->threshold);
+}
+
+// Small displacement using voxel downsampling
+// and multiscale matching
+TEST_F(ICPTest, multiscale) {
+    Affine3 perturb;
+    Affine3 result;
+    bool match_success = false;
+
+    // setup
+    perturb = Affine3::Identity();
+    perturb.translation() << 0.2, 0, 0;
+    ICPMatcherParams params(TEST_CONFIG);
+    params.res = 0.1f;
+    params.multiscale_steps = 3;
+    this->initMatcher(params, perturb);
+
+    // test and assert
+    match_success = matcher->match();
+    matcher->estimateInfo();
+    double diff = (matcher->getResult().matrix() - perturb.matrix()).norm();
+    EXPECT_TRUE(match_success);
     EXPECT_LT(diff, this->threshold);
 }
 
