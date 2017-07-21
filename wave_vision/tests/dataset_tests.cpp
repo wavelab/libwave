@@ -44,7 +44,7 @@ TEST(VOTestCamera, observeLandmarks) {
     LandmarkMap landmarks;
     landmarks.emplace(1, Vec3{3.0, 0, 0});        // directly in front
     landmarks.emplace(2, Vec3{-3.0, 1, 3});       // behind
-    landmarks.emplace(3, Vec3{5.0, 2.2, 3.3});    // above and to the left
+    landmarks.emplace(3, Vec3{5.0, 0.2, 1.3});    // above and to the left
     landmarks.emplace(4, Vec3{1.0, 223.0, -19});  // in front, but far off
 
     VOTestCamera camera;
