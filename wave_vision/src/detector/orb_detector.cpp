@@ -101,7 +101,7 @@ ORBDetectorParams ORBDetector::getConfiguration() const {
     ORBDetectorParams current_config;
 
     // Obtain current configuration values using cv::ORB::get**
-    current_config.num_features = this->orb_detector->getMaxFeatures();_
+    current_config.num_features = this->orb_detector->getMaxFeatures();
     current_config.scale_factor = (float) this->orb_detector->getScaleFactor();
     current_config.num_levels = this->orb_detector->getNLevels();
     current_config.edge_threshold = this->orb_detector->getEdgeThreshold();
