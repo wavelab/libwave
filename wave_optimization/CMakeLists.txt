@@ -4,6 +4,7 @@ PROJECT(wave_optimization)
 # PACKAGES
 FIND_PACKAGE(Ceres REQUIRED)
 FIND_PACKAGE(Eigen3 REQUIRED)
+FIND_PACKAGE(GTSAM)
 
 # INCLUDES
 INCLUDE_DIRECTORIES(include)
@@ -35,6 +36,19 @@ TARGET_LINK_LIBRARIES(
     wave_utils
     ${CERES_LIBRARIES}
 )
+
+IF(GTSAM_FOUND)
+    # Set for consistency, since GTSAM's config file does not
+    SET(GTSAM_LIBRARIES gtsam)
+    INCLUDE_DIRECTORIES(${GTSAM_INCLUDE_DIR})
+
+    WAVE_ADD_TEST(${PROJECT_NAME}_gtsam_offline_example
+        tests/gtsam_offline_example.cpp)
+    TARGET_LINK_LIBRARIES(${PROJECT_NAME}_gtsam_offline_example
+        ${PROJECT_NAME}
+        wave_vision
+        ${GTSAM_LIBRARIES})
+ENDIF()
 
 # COPY TEST DATA
 FILE(COPY tests/data DESTINATION ${PROJECT_BINARY_DIR}/tests)
