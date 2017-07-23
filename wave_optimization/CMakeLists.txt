@@ -42,9 +42,17 @@ IF(GTSAM_FOUND)
     SET(GTSAM_LIBRARIES gtsam)
     INCLUDE_DIRECTORIES(${GTSAM_INCLUDE_DIR})
 
-    WAVE_ADD_TEST(${PROJECT_NAME}_gtsam_offline_example
+    WAVE_ADD_TEST(vo_gtsam_offline_example
         tests/gtsam_offline_example.cpp)
-    TARGET_LINK_LIBRARIES(${PROJECT_NAME}_gtsam_offline_example
+    TARGET_LINK_LIBRARIES(vo_gtsam_offline_example
+        ${PROJECT_NAME}
+        wave_vision
+        ${GTSAM_LIBRARIES})
+
+    WAVE_ADD_TEST(vo_gtsam_offline_kitti_example
+        tests/gtsam_offline_kitti_example.cpp
+        DISABLED)
+    TARGET_LINK_LIBRARIES(vo_gtsam_offline_kitti_example
         ${PROJECT_NAME}
         wave_vision
         ${GTSAM_LIBRARIES})

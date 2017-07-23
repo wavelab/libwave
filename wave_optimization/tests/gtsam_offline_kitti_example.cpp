@@ -6,9 +6,10 @@
 #include <gtsam/nonlinear/LevenbergMarquardtOptimizer.h>
 #include <gtsam/inference/Symbol.h>
 
-
 #include "wave/wave_test.hpp"
 #include "wave/vision/dataset.hpp"
+
+const auto DATASET_DIR = "tests/data/vo_data_drive_0036";
 
 namespace wave {
 
@@ -19,24 +20,12 @@ inline gtsam::Pose3 gtsamPoseFromEigen(const Quaternion &q, const Vec3 &p) {
 
 class GtsamExample : public ::testing::Test {
  protected:
-    VOTestDatasetGenerator generator;
-    VOTestDataset dataset;
-    gtsam::Cal3_S2 kParams{100, 100, 0, 320, 240};
-
-    GtsamExample() {
-        generator.camera.image_width = 640;
-        generator.camera.image_height = 480;
-        generator.camera.K = kParams.matrix();
-        generator.camera.hz = 10.0;
-        generator.nb_landmarks = 100;
-        generator.landmark_x_bounds << -10, 10;
-        generator.landmark_y_bounds << -10, 10;
-        generator.landmark_z_bounds << -1, 1;
-        dataset = generator.generate();
-
-        // Remove landmarks seen fewer than 3 times
-        dataset.removeUnobservedLandmarks(3);
-    }
+    VOTestDataset dataset = VOTestDataset::loadFromDirectory(DATASET_DIR);
+    gtsam::Cal3_S2 kParams{dataset.camera_K(0, 0),
+                           dataset.camera_K(1, 1),
+                           0.,
+                           dataset.camera_K(0, 2),
+                           dataset.camera_K(1, 2)};
 };
 
 TEST_F(GtsamExample, run) {
@@ -46,7 +35,7 @@ TEST_F(GtsamExample, run) {
     std::vector<gtsam::Pose3> true_poses;
 
     // Noise: one pixel in u and v
-    auto measurement_noise = gtsam::noiseModel::Isotropic::Sigma(2, 1.0);
+    auto measurement_noise = gtsam::noiseModel::Isotropic::Sigma(2, 10.0);
 
     // Loop over the different poses, adding the observations to iSAM
     // incrementally
@@ -80,13 +69,6 @@ TEST_F(GtsamExample, run) {
             const auto measurement = gtsam::Point2{observations[j].second};
             const auto landmark_id = observations[j].first;
 
-            // Double check that our measurement matches gtsam's projection fn
-            const auto &G_p_GF = this->dataset.landmarks[landmark_id];
-            gtsam::SimpleCamera camera(pose, this->kParams);
-            gtsam::Point2 gt_measurement =
-              camera.project(gtsam::Point3{G_p_GF});
-            ASSERT_PRED2(VectorsNear, gt_measurement, measurement);
-
             graph.push_back(gtsam::GenericProjectionFactor<gtsam::Pose3,
                                                            gtsam::Point3,
                                                            gtsam::Cal3_S2>{
@@ -96,11 +78,12 @@ TEST_F(GtsamExample, run) {
               gtsam::Symbol{'l', landmark_id},
               boost::make_shared<gtsam::Cal3_S2>(this->kParams)});
 
-            // Add a purposely offset initial estimate the first time we see it
+            // Initialize the landmark just in front of the camera
             const auto key = gtsam::Symbol{'l', landmark_id};
             if (!initial_estimate.exists(key)) {
-                auto offset = gtsam::Point3{-0.25, 0.20, 0.15};
-                initial_estimate.insert<gtsam::Point3>(key, G_p_GF + offset);
+                auto camera = gtsam::SimpleCamera{pose, this->kParams};
+                auto est = camera.backproject_from_camera(measurement, 3.0);
+                initial_estimate.insert<gtsam::Point3>(key, est);
             }
         }
 
@@ -131,31 +114,17 @@ TEST_F(GtsamExample, run) {
         EXPECT_PRED3(VectorsNearPrec,
                      true_pose.translation(),
                      estimated_pose.translation(),
-                     1e-3);
+                     2.0)
+          << "x" << i;
+        // @todo: improve accuracy
 
         const auto true_q = true_poses[i].rotation().toQuaternion();
         const auto estimated_q = estimated_pose.rotation().toQuaternion();
         const auto rotation_error = true_q.angularDistance(estimated_q);
-        EXPECT_LT(rotation_error, 1e-4);
+        EXPECT_LT(rotation_error, 1.0) << "x" << i;
     }
 
-    // Check landmarks
-    // @todo a few landmarks have a bad estimate. For now, just check that most
-    // are correct.
-    auto num_outliers = 0u;
-    for (const auto &l : this->dataset.landmarks) {
-        const auto &landmark_id = l.first;
-        const auto &true_pos = l.second;
-
-        const auto key = gtsam::Symbol{'l', landmark_id};
-        const auto estimated_pos = result.at(key).cast<gtsam::Point3>();
-
-        const auto dist = (true_pos - estimated_pos).norm();
-        if (dist > 1e-3) {
-            ++num_outliers;
-        }
-    }
-    EXPECT_LT(num_outliers, this->dataset.landmarks.size() / 10);
+    // No landmark ground truth to check in this case
 }
 
 }  // namespace wave
