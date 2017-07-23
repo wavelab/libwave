@@ -33,6 +33,9 @@ class GtsamExample : public ::testing::Test {
         generator.landmark_y_bounds << -10, 10;
         generator.landmark_z_bounds << -1, 1;
         dataset = generator.generate();
+
+        // Remove landmarks seen fewer than 3 times
+        dataset.removeUnobservedLandmarks(3);
     }
 };
 
@@ -114,7 +117,9 @@ TEST_F(GtsamExample, run) {
     gtsam::LevenbergMarquardtOptimizer optimizer{graph, initial_estimate};
     auto result = optimizer.optimize();
 
-    result.print("Final result:\n");
+
+    // Uncomment to print estimated values
+    // result.print("Final result:\n");
 
     // Check camera poses
     for (auto i = 0u; i < this->dataset.states.size(); ++i) {
@@ -135,8 +140,8 @@ TEST_F(GtsamExample, run) {
     }
 
     // Check landmarks
-    // Note not all landmarks are necessarily seen enough to estimate position,
-    // so we assert that most of them are good enough
+    // @todo a few landmarks have a bad estimate. For now, just check that most
+    // are correct.
     auto num_outliers = 0u;
     for (const auto &l : this->dataset.landmarks) {
         const auto &landmark_id = l.first;
