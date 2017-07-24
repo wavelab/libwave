@@ -31,7 +31,7 @@ struct ICPMatcherParams {
     ICPMatcherParams(const std::string &config_path);
     ICPMatcherParams() {}
 
-    int max_corr = 3;
+    double max_corr = 3;
     int max_iter = 100;
     double t_eps = 1e-8;
     double fit_eps = 1e-2;
@@ -39,7 +39,7 @@ struct ICPMatcherParams {
     double lidar_lin_covar = 2.5e-4;
     int multiscale_steps = 3;  // How many times to match at a coarser scale. Each step is a factor of two apart
     float res = 0.1;  // Resolution of finest scale
-    enum covar_method : int { LUM, CENSI } covar_estimator = covar_method::LUM;
+    enum covar_method : int { LUM, CENSI, LUMold } covar_estimator = covar_method::LUM;
 };
 
 class ICPMatcher : public Matcher<PCLPointCloud> {
@@ -71,6 +71,8 @@ class ICPMatcher : public Matcher<PCLPointCloud> {
      */
     void estimateInfo();
 
+    ICPMatcherParams params;
+
  private:
     /** An instance of the ICP class from PCL */
     pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
@@ -87,13 +89,12 @@ class ICPMatcher : public Matcher<PCLPointCloud> {
      * Calculates a covariance estimate based on Lu and Milios Scan Matching
      */
     void estimateLUM();
+    void estimateLUMold();
 
     /**
      * Calculates a covariance estimate based on Censi
      */
     void estimateCensi();
-
-    ICPMatcherParams params;
 };
 
 /** @} group matching */

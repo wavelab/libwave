@@ -38,7 +38,7 @@ ADD_LIBRARY(
     src/icp.cpp
     src/ndt.cpp
     src/groundSegmentation.cpp
-
+    src/pointcloud_display.cpp
 )
 TARGET_LINK_LIBRARIES(wave_matching ${WAVE_MATCHING_DEPS})
 
@@ -49,6 +49,11 @@ WAVE_ADD_TEST(
     tests/ndt_tests.cpp
     tests/gicp_tests.cpp
     tests/multi_matcher_tests.cpp
+)
+
+WAVE_ADD_TEST(
+        ${PROJECT_NAME}_ground_seg_tests
+        tests/ground_seg_tests.cpp
 )
 
 WAVE_ADD_TEST(
@@ -66,6 +71,12 @@ TARGET_LINK_LIBRARIES(
     ${PROJECT_NAME}_viz_tests
     ${PROJECT_NAME}
     wave_utils
+)
+
+TARGET_LINK_LIBRARIES(
+        ${PROJECT_NAME}_ground_seg_tests
+        ${PROJECT_NAME}
+        wave_utils
 )
 # Copy the test data
 file(COPY tests/data tests/config DESTINATION ${PROJECT_BINARY_DIR}/tests)

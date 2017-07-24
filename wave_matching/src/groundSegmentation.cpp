@@ -31,6 +31,7 @@ void groundSegmentation::initializePolarBinGrid(void) {
         this->pBG->aCell[i].sigPoints.clear();
         this->pBG->aCell[i].lCell.resize(this->params.num_bins_l);
         this->pBG->aCell[i].sigPoints.resize(this->params.num_bins_l);
+        this->pBG->aCell[i].rangeHeightSignal.resize(this->params.num_bins_l);
         std::vector<signalPoint>().swap(pBG->aCell[i].sigPoints);
         for (int j = 0; j < this->params.num_bins_l; j++) {
             pBG->aCell[i].lCell[j].binPoints.clear();
@@ -96,6 +97,10 @@ void groundSegmentation::genPolarBinGrid(
 
             unsigned int bind_rad =
               static_cast<unsigned int>(ph / bsize_rad);  // got the radial bin
+
+            if (bind_rad == this->params.num_bins_a) {
+                bind_rad = 0;
+            }
 
             // get the linear bin
             float xyDist = sqrt(px * px + py * py);

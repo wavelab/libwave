@@ -80,6 +80,7 @@ bool ICPMatcher::match() {
                 this->filter.filter(*(this->downsampled_target));
                 this->icp.setInputTarget(this->downsampled_target);
 
+                this->icp.setMaxCorrespondenceDistance(pow(2, i) * this->params.max_corr);
                 this->icp.align(*(this->final));
                 if (!icp.hasConverged()) {
                     return false;
@@ -121,17 +122,134 @@ void ICPMatcher::estimateInfo() {
     switch (this->params.covar_estimator) {
         case ICPMatcherParams::covar_method::LUM: this->estimateLUM();
         case ICPMatcherParams::covar_method::CENSI: this->estimateCensi();
+        case ICPMatcherParams::covar_method::LUMold: this->estimateLUMold();
         default: return;
     }
 }
 
+void ICPMatcher::estimateLUMold()
+{
+    auto &source_trans = this->final;
+    PCLPointCloud *targetc;
+    if (this->params.res > 0 ) {
+        targetc = &(this->downsampled_target);
+    } else {
+        targetc = &(this->target);
+    }
+    int numSourcePts = source_trans->size();
+    std::vector <Eigen::Vector3f> corrs_aver (numSourcePts);
+    std::vector <Eigen::Vector3f> corrs_diff (numSourcePts);
+    int numCorr = 0;
+
+    wave::Mat6 edgeCov = wave::Mat6::Identity ();
+
+    //build kd tree for source points
+    pcl::KdTreeFLANN<pcl::PointXYZ> kdtree;
+    if (this->params.res > 0) {
+
+    }
+    kdtree.setInputCloud(*targetc);
+
+    //iterate through the source cloud and compute match covariance
+
+    for(int i=0; i<numSourcePts; i++)
+    {
+        pcl::PointXYZ qpt = source_trans->points[i];
+        std::vector<int> nn_idx;
+        std::vector<float> nn_sqr_dist;
+        kdtree.nearestKSearch(qpt,1,nn_idx,nn_sqr_dist); //returns the index of the nn point in the targetc
+
+        if(nn_sqr_dist[0]<this->params.max_corr*this->params.max_corr) //if the distance to point is less than max correspondence distance, use it to calculate
+        {
+            Eigen::Vector3f source_pt = qpt.getVector3fMap();
+            Eigen::Vector3f target_pt = (*targetc)->points[nn_idx[0]].getVector3fMap();
+
+            // Compute the point pair average and difference and store for later use
+            corrs_aver[numCorr] = 0.5 * (source_pt + target_pt);
+            corrs_diff[numCorr] = source_pt - target_pt;
+            numCorr++;
+        }
+        else
+        {
+            continue;
+        }
+    }
+    corrs_aver.resize (numCorr);
+    corrs_diff.resize (numCorr);
+
+    //now compute the M matrix
+    wave::Mat6 MM = wave::Mat6::Zero ();
+    wave::Vec6 MZ = wave::Vec6::Zero ();
+    for (int ci = 0; ci != numCorr; ++ci)  // ci = correspondence iterator
+    {
+        // Fast computation of summation elements of M'M
+        MM (0, 4) -= corrs_aver[ci] (1);
+        MM (0, 5) += corrs_aver[ci] (2);
+        MM (1, 3) -= corrs_aver[ci] (2);
+        MM (1, 4) += corrs_aver[ci] (0);
+        MM (2, 3) += corrs_aver[ci] (1);
+        MM (2, 5) -= corrs_aver[ci] (0);
+        MM (3, 4) -= corrs_aver[ci] (0) * corrs_aver[ci] (2);
+        MM (3, 5) -= corrs_aver[ci] (0) * corrs_aver[ci] (1);
+        MM (4, 5) -= corrs_aver[ci] (1) * corrs_aver[ci] (2);
+        MM (3, 3) += corrs_aver[ci] (1) * corrs_aver[ci] (1) + corrs_aver[ci] (2) * corrs_aver[ci] (2);
+        MM (4, 4) += corrs_aver[ci] (0) * corrs_aver[ci] (0) + corrs_aver[ci] (1) * corrs_aver[ci] (1);
+        MM (5, 5) += corrs_aver[ci] (0) * corrs_aver[ci] (0) + corrs_aver[ci] (2) * corrs_aver[ci] (2);
+
+        // Fast computation of M'Z
+        MZ (0) += corrs_diff[ci] (0);
+        MZ (1) += corrs_diff[ci] (1);
+        MZ (2) += corrs_diff[ci] (2);
+        MZ (3) += corrs_aver[ci] (1) * corrs_diff[ci] (2) - corrs_aver[ci] (2) * corrs_diff[ci] (1);
+        MZ (4) += corrs_aver[ci] (0) * corrs_diff[ci] (1) - corrs_aver[ci] (1) * corrs_diff[ci] (0);
+        MZ (5) += corrs_aver[ci] (2) * corrs_diff[ci] (0) - corrs_aver[ci] (0) * corrs_diff[ci] (2);
+
+    }
+    // Remaining elements of M'M
+    MM (0, 0) = MM (1, 1) = MM (2, 2) = static_cast<float> (numCorr);
+    MM (4, 0) = MM (0, 4);
+    MM (5, 0) = MM (0, 5);
+    MM (3, 1) = MM (1, 3);
+    MM (4, 1) = MM (1, 4);
+    MM (3, 2) = MM (2, 3);
+    MM (5, 2) = MM (2, 5);
+    MM (4, 3) = MM (3, 4);
+    MM (5, 3) = MM (3, 5);
+    MM (5, 4) = MM (4, 5);
+
+    // Compute pose difference estimation
+    wave::Vec6 D = static_cast<wave::Vec6> (MM.inverse () * MZ);
+
+    // Compute s^2
+    float ss = 0.0f;
+    for (int ci = 0; ci != numCorr; ++ci)  // ci = correspondence iterator
+    {
+        ss += static_cast<float> (pow (corrs_diff[ci] (0) - (D (0) + corrs_aver[ci] (2) * D (5) - corrs_aver[ci] (1) * D (4)), 2.0f)
+                                  + pow (corrs_diff[ci] (1) - (D (1) + corrs_aver[ci] (0) * D (4) - corrs_aver[ci] (2) * D (3)), 2.0f)
+                                  + pow (corrs_diff[ci] (2) - (D (2) + corrs_aver[ci] (1) * D (3) - corrs_aver[ci] (0) * D (5)), 2.0f));
+    }
+
+    // When reaching the limitations of computation due to linearization
+    if (ss < 0.0000000000001 || !pcl_isfinite (ss))
+    {
+        LOG_ERROR("information matrix is a bust");
+        this->information = wave::Mat6::Identity();
+    }
+
+    // Store the results in the slam graph
+    edgeCov = MM * (1.0f / ss);
+
+    this->information = edgeCov;
+}
+
 // Taken from the Lu and Milios matcher in PCL
 void ICPMatcher::estimateLUM() {
-    auto &ref = this->ref;
-    auto &target = this->target;
-    if (this->params.res > 0) {
-        ref = this->downsampled_ref;
-        target = this->downsampled_target;
+    auto &ref = this->final;
+    PCLPointCloud *targetc;
+    if (this->params.res > 0 ) {
+        targetc = &(this->downsampled_target);
+    } else {
+        targetc = &(this->target);
     }
     if (this->icp.hasConverged()) {
         auto list = this->icp.correspondences_.get();
@@ -146,18 +264,18 @@ void ICPMatcher::estimateLUM() {
             if (it->index_match > -1) {
                 corrs_aver.push_back(Eigen::Vector3f(
                   0.5f * (ref->points[it->index_query].x +
-                          target->points[it->index_match].x),
+                          (*targetc)->points[it->index_match].x),
                   0.5f * (ref->points[it->index_query].y +
-                          target->points[it->index_match].y),
+                          (*targetc)->points[it->index_match].y),
                   0.5f * (ref->points[it->index_query].z +
-                          target->points[it->index_match].z)));
+                          (*targetc)->points[it->index_match].z)));
                 corrs_diff.push_back(
                   Eigen::Vector3f(ref->points[it->index_query].x -
-                                    target->points[it->index_match].x,
+                                    (*targetc)->points[it->index_match].x,
                                   ref->points[it->index_query].y -
-                                    target->points[it->index_match].y,
+                                    (*targetc)->points[it->index_match].y,
                                   ref->points[it->index_query].z -
-                                    target->points[it->index_match].z));
+                                    (*targetc)->points[it->index_match].z));
                 numCorr++;
             }
         }
