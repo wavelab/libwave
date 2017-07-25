@@ -12,8 +12,8 @@ This library contains reusable code for:
 ## Requirements
 
 - Boost 1.54
-- Ceres 1.12
-- Eigen 3.2.0
+- Ceres 1.13
+- Eigen 3.3
 - Kindr 1.0.4
 - OpenCV 3.2.0
 - PCL 1.8
