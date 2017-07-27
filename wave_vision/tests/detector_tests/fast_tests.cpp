@@ -88,5 +88,4 @@ TEST(FASTTests, BadNewConfiguration) {
 
     ASSERT_THROW(detector.configure(new_config), std::invalid_argument);
 }
-
 }  // namespace wave
