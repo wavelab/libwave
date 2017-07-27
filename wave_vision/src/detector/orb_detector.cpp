@@ -93,15 +93,20 @@ void ORBDetector::configure(const ORBDetectorParams &new_config) {
 }
 
 ORBDetectorParams ORBDetector::getConfiguration() const {
-    ORBDetectorParams current_config;
-
     // Obtain current configuration values using cv::ORB::get**
-    current_config.num_features = this->orb_detector->getMaxFeatures();
-    current_config.scale_factor = (float) this->orb_detector->getScaleFactor();
-    current_config.num_levels = this->orb_detector->getNLevels();
-    current_config.edge_threshold = this->orb_detector->getEdgeThreshold();
-    current_config.score_type = this->orb_detector->getScoreType();
-    current_config.fast_threshold = this->orb_detector->getFastThreshold();
+    auto num_features = this->orb_detector->getMaxFeatures();
+    auto scale_factor = (float) this->orb_detector->getScaleFactor();
+    auto num_levels = this->orb_detector->getNLevels();
+    auto edge_threshold = this->orb_detector->getEdgeThreshold();
+    auto score_type = this->orb_detector->getScoreType();
+    auto fast_threshold = this->orb_detector->getFastThreshold();
+
+    ORBDetectorParams current_config{num_features,
+                                     scale_factor,
+                                     num_levels,
+                                     edge_threshold,
+                                     score_type,
+                                     fast_threshold};
 
     return current_config;
 }

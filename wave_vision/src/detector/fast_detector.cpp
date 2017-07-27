@@ -57,13 +57,12 @@ void FASTDetector::configure(const FASTDetectorParams &new_config) {
 }
 
 FASTDetectorParams FASTDetector::getConfiguration() const {
-    FASTDetectorParams current_config;
-
     // Obtain current configuration values using cv::FastFeatureDetector::get**
-    current_config.threshold = this->fast_detector->getThreshold();
-    current_config.nonmax_suppression =
-      this->fast_detector->getNonmaxSuppression();
-    current_config.type = this->fast_detector->getType();
+    auto threshold = this->fast_detector->getThreshold();
+    auto nonmax_suppression = this->fast_detector->getNonmaxSuppression();
+    auto type = this->fast_detector->getType();
+
+    FASTDetectorParams current_config{threshold, nonmax_suppression, type};
 
     return current_config;
 }

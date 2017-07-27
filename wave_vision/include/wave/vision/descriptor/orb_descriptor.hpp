@@ -30,7 +30,7 @@ struct ORBDescriptorParams {
     ORBDescriptorParams() {}
 
     ORBDescriptorParams(int WTA_K, int patch_size)
-        : WTA_K(WTA_K), patch_size(patch_size), edge_threshold(patch_size) {}
+        : wta_k(wta_k), patch_size(patch_size), edge_threshold(patch_size) {}
 
     /** Constructor using parameters extracted from a configuration file.
      *
@@ -51,7 +51,7 @@ struct ORBDescriptorParams {
      *
      *  Default: 2.
      */
-    int WTA_K = 2;
+    int wta_k = 2;
 
     /** The size of the square patch used in the random point sampling to
      *  construct the descriptor. This patch is smoothed using an integral
@@ -92,6 +92,12 @@ class ORBDescriptor : public DescriptorExtractor {
  public:
     explicit ORBDescriptor(
       const ORBDescriptorParams &config = ORBDescriptorParams{});
+
+    /** Reconfigures the cv::ORB object with new values requested by the user.
+     *
+     * @param new_config containing the desired configuration values.
+     */
+    void configure(const ORBDescriptorParams &new_config);
 
     /** Returns the current configuration parameters being used by the ORB
      *  Descriptor Extractor
