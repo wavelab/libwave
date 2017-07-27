@@ -36,7 +36,7 @@ TEST(ORBDescriptorTests, ConstructorTest) {
     EXPECT_NO_THROW(ORBDescriptor descriptor1(config));
 }
 
-// Check that incorrect parameter values throw excpetions.
+// Check that incorrect parameter values throw exceptions.
 TEST(ORBDescriptorTests, BadWTAK) {
     ORBDescriptorParams config;
     config.wta_k = 1;
