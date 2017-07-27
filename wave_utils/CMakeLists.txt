@@ -28,6 +28,7 @@ WAVE_ADD_TEST(
     tests/utils/file_test.cpp
     tests/utils/math_test.cpp
     tests/utils/time_test.cpp
+    tests/utils/template_helpers_test.cpp
 )
 TARGET_LINK_LIBRARIES(
     ${PROJECT_NAME}_tests
