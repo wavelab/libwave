@@ -25,9 +25,11 @@ TEST(FASTTests, DetectImage) {
                       image_with_keypoints,
                       cv::Scalar::all(-1),
                       cv::DrawMatchesFlags::DEFAULT);
-    cv::imshow("Detection Test", image_with_keypoints);
+    cv::imshow("FAST Detection Test", image_with_keypoints);
 
     cv::waitKey(0);
+
+    cv::destroyAllWindows();
 }
 
 TEST(ORBDetectorTests, DetectImage) {
@@ -51,8 +53,10 @@ TEST(ORBDetectorTests, DetectImage) {
                       image_with_keypoints,
                       cv::Scalar::all(-1),
                       cv::DrawMatchesFlags::DEFAULT);
-    cv::imshow("Detection Test", image_with_keypoints);
+    cv::imshow("ORB Detection Test", image_with_keypoints);
 
     cv::waitKey(0);
+
+    cv::destroyAllWindows();
 }
 }  // namespace wave

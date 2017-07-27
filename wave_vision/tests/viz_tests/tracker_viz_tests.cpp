@@ -3,7 +3,9 @@
 #include "wave/wave_test.hpp"
 #include "wave/vision/utils.hpp"
 #include "wave/vision/detector/fast_detector.hpp"
+#include "wave/vision/detector/orb_detector.hpp"
 #include "wave/vision/descriptor/brisk_descriptor.hpp"
+#include "wave/vision/descriptor/orb_descriptor.hpp"
 #include "wave/vision/matcher/brute_force_matcher.hpp"
 #include "wave/vision/tracker/tracker.hpp"
 
@@ -45,10 +47,48 @@ TEST(TrackerTests, OfflineTrackerTest) {
          img_seq_it++) {
         cv::imshow("Feature Tracks", *img_seq_it);
         cv::waitKey(0);
+        cv::destroyAllWindows();
     }
 }
 
-TEST(TrackerTests, KITTIOfflineTrackerTest) {
+TEST(TrackerTests, ORBOfflineTrackerTest) {
+    std::vector<cv::Mat> image_sequence;
+    std::vector<cv::Mat> drawn_images;
+
+    std::vector<std::vector<FeatureTrack>> feature_tracks;
+
+    ORBDetector detector;
+    ORBDescriptor descriptor;
+    BruteForceMatcher matcher;
+
+    Tracker<ORBDetector, ORBDescriptor, BruteForceMatcher> tracker(
+      detector, descriptor, matcher);
+
+    image_sequence = readImageSequence(FIRST_IMG_PATH);
+
+    feature_tracks = tracker.offlineTracker(image_sequence);
+    ASSERT_NE((int) feature_tracks.size(), 0);
+
+    size_t img_count = 0;
+
+    for (auto img_seq_it = image_sequence.begin();
+         img_seq_it != image_sequence.end();
+         img_seq_it++) {
+        drawn_images.push_back(tracker.drawTracks(img_count, *img_seq_it));
+
+        ++img_count;
+    }
+
+    for (auto img_seq_it = drawn_images.begin();
+         img_seq_it != drawn_images.end();
+         img_seq_it++) {
+        cv::imshow("Feature Tracks", *img_seq_it);
+        cv::waitKey(0);
+        cv::destroyAllWindows();
+    }
+}
+
+TEST(TrackerTests, DISABLED_KITTIOfflineTrackerTest) {
     std::vector<cv::Mat> image_sequence;
     std::vector<cv::Mat> drawn_images;
 
@@ -81,6 +121,7 @@ TEST(TrackerTests, KITTIOfflineTrackerTest) {
          img_seq_it++) {
         cv::imshow("Feature Tracks", *img_seq_it);
         cv::waitKey(0);
+        cv::destroyAllWindows();
     }
 }
 }  // namespace wave

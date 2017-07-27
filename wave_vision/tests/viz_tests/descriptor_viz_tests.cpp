@@ -25,9 +25,11 @@ TEST(BRISKTests, ComputeFASTBRISKDescriptors) {
 
     // Visual test to verify descriptors are being computed properly
     cv::drawKeypoints(descriptors, keypoints, image_with_keypoints);
-    cv::imshow("Descriptors", image_with_keypoints);
+    cv::imshow("BRISK Descriptors", image_with_keypoints);
 
     cv::waitKey(0);
+
+    cv::destroyAllWindows();
 }
 
 TEST(BRISKTESTS, ComputeORBBRISKDescriptors) {
@@ -47,9 +49,11 @@ TEST(BRISKTESTS, ComputeORBBRISKDescriptors) {
 
     // Visual test to verify descriptors are being computed properly
     cv::drawKeypoints(descriptors, keypoints, image_with_keypoints);
-    cv::imshow("Descriptors", image_with_keypoints);
+    cv::imshow("BRISK Descriptors", image_with_keypoints);
 
     cv::waitKey(0);
+
+    cv::destroyAllWindows();
 }
 
 TEST(ORBDescriptorTests, ComputeORBORBDescriptors) {
@@ -69,9 +73,11 @@ TEST(ORBDescriptorTests, ComputeORBORBDescriptors) {
 
     // Visual test to verify descriptors are being computed properly
     cv::drawKeypoints(descriptors, keypoints, image_with_keypoints);
-    cv::imshow("Descriptors", image_with_keypoints);
+    cv::imshow("ORB Descriptors", image_with_keypoints);
 
     cv::waitKey(0);
+
+    cv::destroyAllWindows();
 }
 
 TEST(FASTORBDescriptorTests, ComputeFASTORBDescriptors) {
@@ -91,8 +97,10 @@ TEST(FASTORBDescriptorTests, ComputeFASTORBDescriptors) {
 
     // Visual test to verify descriptors are being computed properly
     cv::drawKeypoints(descriptors, keypoints, image_with_keypoints);
-    cv::imshow("Descriptors", image_with_keypoints);
+    cv::imshow("ORB Descriptors", image_with_keypoints);
 
     cv::waitKey(0);
+
+    cv::destroyAllWindows();
 }
 }  // namespace wave
