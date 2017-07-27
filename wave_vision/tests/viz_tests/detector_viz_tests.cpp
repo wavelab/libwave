@@ -30,7 +30,7 @@ TEST(FASTTests, DetectImage) {
     cv::waitKey(0);
 }
 
-TEST(ORBTests, DetectImage) {
+TEST(ORBDetectorTests, DetectImage) {
     ORBDetectorParams config;
     // Increase the number of features
     config.num_features = 5000;

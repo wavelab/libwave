@@ -6,7 +6,7 @@ namespace wave {
 const auto TEST_CONFIG = "tests/config/detector/orb.yaml";
 
 // Checks that the default configuration has no issues
-TEST(ORBTests, GoodConfig) {
+TEST(ORBDetectorTests, GoodConfig) {
     // Default
     EXPECT_NO_THROW(ORBDetectorParams config1);
 
@@ -30,13 +30,13 @@ TEST(ORBTests, GoodConfig) {
 }
 
 // Checks that an incorrect configuration path throws an exception
-TEST(ORBTests, BadConfigPath) {
+TEST(ORBDetectorTests, BadConfigPath) {
     const std::string bad_path = "bad_path";
 
     ASSERT_THROW(ORBDetectorParams bad_config(bad_path), std::invalid_argument);
 }
 
-TEST(ORBTests, ConstructorTest) {
+TEST(ORBDetectorTests, ConstructorTest) {
     ORBDetectorParams config;
 
     EXPECT_NO_THROW(ORBDetector detector);
@@ -44,14 +44,14 @@ TEST(ORBTests, ConstructorTest) {
 }
 
 // Check that incorrect parameter values throw exceptions.
-TEST(ORBTests, BadNumFeatures) {
+TEST(ORBDetectorTests, BadNumFeatures) {
     ORBDetectorParams config;
     config.num_features = -1;
 
-    ASSERT_THROW(ORBDetector bad_nfeatures1(config), std::invalid_argument);
+    ASSERT_THROW(ORBDetector bad_nfeatures(config), std::invalid_argument);
 }
 
-TEST(ORBTests, BadScaleFactor) {
+TEST(ORBDetectorTests, BadScaleFactor) {
     ORBDetectorParams config;
     config.scale_factor = 0.99;
 
@@ -61,7 +61,7 @@ TEST(ORBTests, BadScaleFactor) {
     ASSERT_THROW(ORBDetector bad_scalefactor2(config), std::invalid_argument);
 }
 
-TEST(ORBTests, BadNumLevels) {
+TEST(ORBDetectorTests, BadNumLevels) {
     ORBDetectorParams config;
     config.num_levels = 0;
 
@@ -71,7 +71,7 @@ TEST(ORBTests, BadNumLevels) {
     ASSERT_THROW(ORBDetector bad_nlevels2(config), std::invalid_argument);
 }
 
-TEST(ORBTests, BadEdgeThreshold) {
+TEST(ORBDetectorTests, BadEdgeThreshold) {
     ORBDetectorParams config;
 
     config.edge_threshold = -1;
@@ -79,7 +79,7 @@ TEST(ORBTests, BadEdgeThreshold) {
     ASSERT_THROW(ORBDetector bad_edgethreshold(config), std::invalid_argument);
 }
 
-TEST(ORBTests, BadScoreType) {
+TEST(ORBDetectorTests, BadScoreType) {
     ORBDetectorParams config;
 
     config.score_type = -1;
@@ -90,7 +90,7 @@ TEST(ORBTests, BadScoreType) {
     ASSERT_THROW(ORBDetector bad_scoretype2(config), std::invalid_argument);
 }
 
-TEST(ORBTests, BadFastThreshold) {
+TEST(ORBDetectorTests, BadFastThreshold) {
     ORBDetectorParams config;
     config.fast_threshold = 0;
 
@@ -100,7 +100,7 @@ TEST(ORBTests, BadFastThreshold) {
     ASSERT_THROW(ORBDetector bad_fastthreshold1(config), std::invalid_argument);
 }
 
-TEST(ORBTests, ConfigurationTests) {
+TEST(ORBDetectorTests, ConfigurationTests) {
     ORBDetector detector;
 
     ORBDetectorParams ref_config;
@@ -128,10 +128,10 @@ TEST(ORBTests, ConfigurationTests) {
     ASSERT_EQ(curr_config_2.fast_threshold, new_config.fast_threshold);
 }
 
-TEST(ORBTests, BadNewConfiguration) {
+TEST(ORBDetectorTests, BadNewConfiguration) {
     ORBDetector detector;
-    ORBDetectorParams new_config{-1, 1.5f, 8, 31, cv::ORB::FAST_SCORE, 20};
+    ORBDetectorParams bad_config{-1, 1.5f, 8, 31, cv::ORB::FAST_SCORE, 20};
 
-    ASSERT_THROW(detector.configure(new_config), std::invalid_argument);
+    ASSERT_THROW(detector.configure(bad_config), std::invalid_argument);
 }
 }  // namespace wave

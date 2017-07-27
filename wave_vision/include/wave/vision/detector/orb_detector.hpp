@@ -50,9 +50,9 @@ struct ORBDetectorParams {
 
     /** The number of features to keep from detection.
      *
-     *  Default: 500
+     *  Default: 2000. Must be greater than zero.
      */
-    int num_features = 500;
+    int num_features = 2000;
 
     /** Pyramid scaling ratio. A value of 2 corresponds to the standard pyramid,
      *  where the number of pixels decrease by fourfold. A large value (ex. 2)
