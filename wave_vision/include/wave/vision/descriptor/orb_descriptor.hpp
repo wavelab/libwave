@@ -29,7 +29,7 @@ namespace wave {
 struct ORBDescriptorParams {
     ORBDescriptorParams() {}
 
-    ORBDescriptorParams(int WTA_K, int patch_size)
+    ORBDescriptorParams(int wta_k, int patch_size)
         : wta_k(wta_k), patch_size(patch_size), edge_threshold(patch_size) {}
 
     /** Constructor using parameters extracted from a configuration file.
