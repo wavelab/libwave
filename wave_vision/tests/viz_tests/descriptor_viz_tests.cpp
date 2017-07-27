@@ -21,7 +21,7 @@ TEST(BRISKTests, ComputeFASTBRISKDescriptors) {
     keypoints = fast.detectFeatures(image);
     descriptors = brisk.extractDescriptors(image, keypoints);
 
-    ASSERT_GT(descriptors.total(), 0u);
+    ASSERT_FALSE(descriptors.empty());
 
     // Visual test to verify descriptors are being computed properly
     cv::drawKeypoints(descriptors, keypoints, image_with_keypoints);
@@ -45,7 +45,7 @@ TEST(BRISKTESTS, ComputeORBBRISKDescriptors) {
     keypoints = orb.detectFeatures(image);
     descriptors = brisk.extractDescriptors(image, keypoints);
 
-    ASSERT_GT(descriptors.total(), 0u);
+    ASSERT_FALSE(descriptors.empty());
 
     // Visual test to verify descriptors are being computed properly
     cv::drawKeypoints(descriptors, keypoints, image_with_keypoints);
@@ -69,7 +69,7 @@ TEST(ORBDescriptorTests, ComputeORBORBDescriptors) {
     keypoints = detector.detectFeatures(image);
     descriptors = descriptor.extractDescriptors(image, keypoints);
 
-    ASSERT_GT(descriptors.total(), 0u);
+    ASSERT_FALSE(descriptors.empty());
 
     // Visual test to verify descriptors are being computed properly
     cv::drawKeypoints(descriptors, keypoints, image_with_keypoints);
@@ -93,7 +93,7 @@ TEST(FASTORBDescriptorTests, ComputeFASTORBDescriptors) {
     keypoints = detector.detectFeatures(image);
     descriptors = descriptor.extractDescriptors(image, keypoints);
 
-    ASSERT_GT(descriptors.total(), 0u);
+    ASSERT_FALSE(descriptors.empty());
 
     // Visual test to verify descriptors are being computed properly
     cv::drawKeypoints(descriptors, keypoints, image_with_keypoints);

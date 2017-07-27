@@ -30,7 +30,7 @@ TEST(TrackerTests, OfflineTrackerTest) {
     image_sequence = readImageSequence(FIRST_IMG_PATH);
 
     feature_tracks = tracker.offlineTracker(image_sequence);
-    ASSERT_NE((int) feature_tracks.size(), 0);
+    ASSERT_FALSE(feature_tracks.empty());
 
     size_t img_count = 0;
 
@@ -67,7 +67,7 @@ TEST(TrackerTests, ORBOfflineTrackerTest) {
     image_sequence = readImageSequence(FIRST_IMG_PATH);
 
     feature_tracks = tracker.offlineTracker(image_sequence);
-    ASSERT_NE((int) feature_tracks.size(), 0);
+    ASSERT_FALSE(feature_tracks.empty());
 
     size_t img_count = 0;
 
@@ -104,7 +104,7 @@ TEST(TrackerTests, DISABLED_KITTIOfflineTrackerTest) {
     image_sequence = readImageSequence(KITTI_IMG_PATH);
 
     feature_tracks = tracker.offlineTracker(image_sequence);
-    ASSERT_NE((int) feature_tracks.size(), 0);
+    ASSERT_FALSE(feature_tracks.empty());
 
     size_t img_count = 0;
 

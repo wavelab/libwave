@@ -15,7 +15,7 @@ TEST(FASTTests, DetectImage) {
 
     std::vector<cv::KeyPoint> keypoints = detector.detectFeatures(image);
 
-    ASSERT_NE(keypoints.size(), 0u);
+    ASSERT_FALSE(keypoints.empty());
 
     // Visual test, to confirm that images are displayed properly
     // Draw Keypoints on image and display
@@ -43,7 +43,7 @@ TEST(ORBDetectorTests, DetectImage) {
 
     std::vector<cv::KeyPoint> keypoints = detector.detectFeatures(image);
 
-    ASSERT_NE(keypoints.size(), 0u);
+    ASSERT_FALSE(keypoints.empty());
 
     // Visual test, to confirm that images are displayed properly
     // Draw Keypoints on image and display
