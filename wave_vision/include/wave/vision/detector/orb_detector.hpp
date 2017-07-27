@@ -40,8 +40,7 @@ struct ORBDetectorParams {
           num_levels(num_levels),
           edge_threshold(edge_threshold),
           score_type(score_type),
-          fast_threshold(fast_threshold),
-          patch_size(edge_threshold) {}
+          fast_threshold(fast_threshold) {}
 
     /** Constructor using parameters extracted from a configuration file.
      *
@@ -90,15 +89,14 @@ struct ORBDetectorParams {
     int score_type = cv::ORB::HARRIS_SCORE;
 
     /** Threshold on difference between intensity of the central pixel, and
-     *  pixels in a circle (Bresenham radius 3) around this pixel. Must be
-     *  greater than zero.
+     *  pixels in a circle (Bresenham radius 3) around this pixel.
      *
      *  ORB uses the FAST_9_16 implementation, which means that 9 consecutive
      *  pixels (out of a 16 pixel circumference circle) must be brighter or
      *  darker than the center pixel for the algorithm to deem the point as a
      *  corner.
      *
-     *  Default: 20
+     *  Default: 20. Must be greater than zero.
      */
     int fast_threshold = 20;
 
@@ -108,10 +106,7 @@ struct ORBDetectorParams {
     // As per OpenCV docs, first_level should be set to zero.
     int first_level = 0;
     int wta_k = 2;
-    /** The value of patch_size should be equal to that of edge_threshold. The
-     *  ORBDetectorParams constructor and class methods apply this constraint.
-     */
-    int patch_size;
+    int patch_size = 31;
 };
 
 /** Representation of a feature detector using the FAST algorithm.

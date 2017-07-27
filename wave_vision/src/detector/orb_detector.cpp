@@ -16,7 +16,6 @@ ORBDetectorParams::ORBDetectorParams(const std::string &config_path) {
 
     // Add parameters to parser, to be loaded. If path cannot be found,
     // throw an exception.
-
     parser.addParam("num_features", &num_features);
     parser.addParam("scale_factor", &scale_factor);
     parser.addParam("num_levels", &num_levels);
@@ -35,9 +34,6 @@ ORBDetectorParams::ORBDetectorParams(const std::string &config_path) {
     this->edge_threshold = edge_threshold;
     this->score_type = score_type;
     this->fast_threshold = fast_threshold;
-
-    // patch_size should be the same as edge_threshold. Only used in descriptor.
-    this->patch_size = edge_threshold;
 }
 
 // Default Constructor

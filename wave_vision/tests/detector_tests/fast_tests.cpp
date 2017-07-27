@@ -6,7 +6,7 @@ namespace wave {
 
 const auto TEST_CONFIG = "tests/config/detector/fast.yaml";
 
-// Checks that correct configuration can be loaded
+// Checks that the default configuration has no issues
 TEST(FASTTests, GoodInitialization) {
     EXPECT_NO_THROW(FASTDetector detector);
 }
@@ -15,7 +15,8 @@ TEST(FASTTests, GoodInitialization) {
 TEST(FASTTests, BadInitialization) {
     const std::string bad_path = "bad_path";
 
-    ASSERT_THROW(FASTDetector detector(bad_path), std::invalid_argument);
+    ASSERT_THROW(FASTDetectorParams bad_config(bad_path),
+                 std::invalid_argument);
 }
 
 // Checks that invalid threshold value throws the proper exception

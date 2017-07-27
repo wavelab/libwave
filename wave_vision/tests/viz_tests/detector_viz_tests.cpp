@@ -1,6 +1,6 @@
 #include "wave/wave_test.hpp"
 #include "wave/vision/detector/fast_detector.hpp"
-#include "wave/utils/log.hpp"
+#include "wave/vision/detector/orb_detector.hpp"
 
 namespace wave {
 
@@ -17,7 +17,31 @@ TEST(FASTTests, DetectImage) {
 
     ASSERT_NE(keypoints.size(), 0u);
 
-    cv::imshow("Scene", image);
+    // Visual test, to confirm that images are displayed properly
+    // Draw Keypoints on image and display
+    cv::Mat image_with_keypoints;
+    cv::drawKeypoints(image,
+                      keypoints,
+                      image_with_keypoints,
+                      cv::Scalar::all(-1),
+                      cv::DrawMatchesFlags::DEFAULT);
+    cv::imshow("Detection Test", image_with_keypoints);
+
+    cv::waitKey(0);
+}
+
+TEST(ORBTests, DetectImage) {
+    ORBDetectorParams config;
+    // Increase the number of features
+    config.num_features = 5000;
+
+    ORBDetector detector(config);
+
+    cv::Mat image = cv::imread(TEST_IMAGE);
+
+    std::vector<cv::KeyPoint> keypoints = detector.detectFeatures(image);
+
+    ASSERT_NE(keypoints.size(), 0u);
 
     // Visual test, to confirm that images are displayed properly
     // Draw Keypoints on image and display
@@ -26,7 +50,7 @@ TEST(FASTTests, DetectImage) {
                       keypoints,
                       image_with_keypoints,
                       cv::Scalar::all(-1),
-                      cv::DrawMatchesFlags::DRAW_RICH_KEYPOINTS);
+                      cv::DrawMatchesFlags::DEFAULT);
     cv::imshow("Detection Test", image_with_keypoints);
 
     cv::waitKey(0);
