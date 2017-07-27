@@ -1,1 +1,24 @@
 # Configuration parameters for ORB Descriptor Extractor
+
+# The number of points that compose the ORB descriptor. A value of 2
+# constructs the descriptor by comparing the brightnesses of a random pair
+# of points. Other values are 3 or 4; 3 will use 3 random points, and 4
+# similarly will use 4 random points. For these last two options, the
+# output result will be 2 bits, as the result is the index of the
+# brightest point. Therefore, the distance method used for the
+# BruteForceMatcher or FLANNMatcher will have to be cv::NORM_HAMMING_2, a
+# variation to the Hamming distance, when WTA_K = 3 or 4.
+#
+# Options: 2, 3, or 4.
+#
+# Default: 2.
+
+wta_k: 2
+
+# The size of the square patch used in the random point sampling to
+# construct the descriptor. This patch is smoothed using an integral
+# image.
+#
+# Default: 31 (31 x 31 pixels). Must be greater than 0.
+#
+patch_size: 31
