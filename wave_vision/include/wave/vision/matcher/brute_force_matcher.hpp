@@ -53,7 +53,7 @@ struct BFMatcherParams {
      *  BRIEF descriptors. NORM_HAMMING2 should only be used with ORB, when
      *  WTA_K is 3 or 4.
      *
-     *  Default: NORM_HAMMING, as it is used for ORB and BRISK Descriptors
+     *  Default: NORM_HAMMING, as it is used for ORB and BRISK Descriptors.
      *
      *  Please refer to further description of the norm types
      *  [here][opencv_norm_types].
