@@ -32,10 +32,9 @@ struct FASTDetectorParams {
     FASTDetectorParams(const std::string &config_path);
 
     /** Threshold on difference between intensity of the central pixel, and
-     *  pixels in a circle (Bresenham radius 3) around this pixel. Must be
-     *  greater than zero.
+     *  pixels in a circle (Bresenham radius 3) around this pixel.
      *
-     *  Recommended: 10
+     *  Recommended: 10. Must be greater than zero.
      */
     int threshold = 10;
 

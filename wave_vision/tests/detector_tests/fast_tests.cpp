@@ -1,14 +1,24 @@
 #include "wave/wave_test.hpp"
 #include "wave/vision/detector/fast_detector.hpp"
-#include "wave/utils/log.hpp"
 
 namespace wave {
 
 const auto TEST_CONFIG = "tests/config/detector/fast.yaml";
 
 // Checks that the default configuration has no issues
-TEST(FASTTests, GoodInitialization) {
-    EXPECT_NO_THROW(FASTDetector detector);
+TEST(FASTTests, GoodConfig) {
+    // Default
+    EXPECT_NO_THROW(FASTDetectorParams config1);
+
+    // Custom params struct (with good values)
+    int threshold = 10;
+    bool nms = true;
+    int type = cv::FastFeatureDetector::TYPE_9_16;
+
+    EXPECT_NO_THROW(FASTDetectorParams config2(threshold, nms, type));
+
+    // From fast.yaml file, with good values.
+    EXPECT_NO_THROW(FASTDetectorParams config3(TEST_CONFIG));
 }
 
 // Checks that incorrect configuration path throws an exception
@@ -19,7 +29,14 @@ TEST(FASTTests, BadInitialization) {
                  std::invalid_argument);
 }
 
-// Checks that invalid threshold value throws the proper exception
+TEST(FASTTests, ConstructorTest) {
+    FASTDetectorParams config;
+
+    EXPECT_NO_THROW(FASTDetector detector);
+    EXPECT_NO_THROW(FASTDetector detector1(config));
+}
+
+// Check that incorrect parameter values throw exceptions.
 TEST(FASTTests, BadThresholdConfiguration) {
     FASTDetectorParams bad_threshold_config;
     bad_threshold_config.threshold = -1;
@@ -42,30 +59,34 @@ TEST(FASTTests, BadTypeConfiguration) {
                  std::invalid_argument);
 }
 
-TEST(FASTTests, GoodCustomConfig) {
-    FASTDetectorParams config;
+TEST(FASTTests, ConfigurationTests) {
+    FASTDetector detector;
 
-    FASTDetector detector(config);
-}
+    FASTDetectorParams ref_config;
+    FASTDetectorParams curr_config_1 = detector.getConfiguration();
 
-// Checks that correct configuration values can be set in detector, and also
-// read from getConfiguration function.
-TEST(FASTTests, GoodPathConfiguration) {
-    FASTDetectorParams config(TEST_CONFIG);
-    FASTDetector detector(config);
+    ASSERT_EQ(curr_config_1.threshold, ref_config.threshold);
+    ASSERT_EQ(curr_config_1.nonmax_suppression, ref_config.nonmax_suppression);
+    ASSERT_EQ(curr_config_1.type, ref_config.type);
 
-    FASTDetectorParams input_config{10, true, 2};
-    FASTDetectorParams output_config;
+    FASTDetectorParams new_config{20, false, cv::FastFeatureDetector::TYPE_5_8};
 
     // Configure detector with valid values
-    detector.configure(input_config);
+    detector.configure(new_config);
 
     // Extract configuration from detector, assert values have been properly set
-    output_config = detector.getConfiguration();
+    FASTDetectorParams curr_config_2 = detector.getConfiguration();
 
-    ASSERT_EQ(output_config.threshold, input_config.threshold);
-    ASSERT_EQ(output_config.nonmax_suppression,
-              input_config.nonmax_suppression);
-    ASSERT_EQ(output_config.type, input_config.type);
+    ASSERT_EQ(curr_config_2.threshold, new_config.threshold);
+    ASSERT_EQ(curr_config_2.nonmax_suppression, new_config.nonmax_suppression);
+    ASSERT_EQ(curr_config_2.type, new_config.type);
 }
+
+TEST(FASTTests, BadNewConfiguration) {
+    FASTDetector detector;
+    FASTDetectorParams new_config{0, true, cv::FastFeatureDetector::TYPE_7_12};
+
+    ASSERT_THROW(detector.configure(new_config), std::invalid_argument);
+}
+
 }  // namespace wave

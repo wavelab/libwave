@@ -39,13 +39,11 @@ TEST(ORBTests, BadConfigPath) {
 TEST(ORBTests, ConstructorTest) {
     ORBDetectorParams config;
 
-    ASSERT_EQ(config.edge_threshold, config.patch_size);
-
     EXPECT_NO_THROW(ORBDetector detector);
     EXPECT_NO_THROW(ORBDetector detector1(config));
 }
 
-// Check
+// Check that incorrect parameter values throw exceptions.
 TEST(ORBTests, BadNumFeatures) {
     ORBDetectorParams config;
     config.num_features = -1;

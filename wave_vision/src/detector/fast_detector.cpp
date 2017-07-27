@@ -39,7 +39,7 @@ FASTDetector::FASTDetector(const FASTDetectorParams &config) {
 
 void FASTDetector::checkConfiguration(const FASTDetectorParams &check_config) {
     // Check parameters. If invalid, throw an exception.
-    if (check_config.threshold < 0) {
+    if (check_config.threshold <= 0) {
         throw std::invalid_argument("Invalid threshold for FASTDetector!");
     } else if (check_config.type < 0 || check_config.type > 3) {
         throw std::invalid_argument("Invalid type for FASTDetector!");
