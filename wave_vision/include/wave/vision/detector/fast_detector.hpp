@@ -74,7 +74,8 @@ class FASTDetector : public FeatureDetector {
      *
      *  @param config contains the desired parameter values.
      */
-    FASTDetector(const FASTDetectorParams &config = FASTDetectorParams{});
+    explicit FASTDetector(
+      const FASTDetectorParams &config = FASTDetectorParams{});
 
     /** Reconfigures the cv::FastFeatureDetector object with new values
      *  requested by the user.

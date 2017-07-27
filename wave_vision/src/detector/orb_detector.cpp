@@ -35,6 +35,9 @@ ORBDetectorParams::ORBDetectorParams(const std::string &config_path) {
     this->edge_threshold = edge_threshold;
     this->score_type = score_type;
     this->fast_threshold = fast_threshold;
+
+    // patch_size should be the same as edge_threshold. Only used in descriptor.
+    this->patch_size = edge_threshold;
 }
 
 // Default Constructor
@@ -42,24 +45,15 @@ ORBDetector::ORBDetector(const ORBDetectorParams &config) {
     // Ensure parameters are valid
     this->checkConfiguration(config);
 
-    // Per OpenCV docs, the value of first_level must be zero.
-    int default_first_level = 0;
-
-    // WTA_K and patch_size are only used for the ORB descriptor. For the
-    // detector these values are kept as default. These parameters don't really
-    // matter, as the compute method is not called in the ORBDetector.
-    int default_WTA_K = 2;
-    int default_patch_size = 31;
-
     // Create ORB with these parameters
     this->orb_detector = cv::ORB::create(config.num_features,
                                          config.scale_factor,
                                          config.num_levels,
                                          config.edge_threshold,
-                                         default_first_level,
-                                         default_WTA_K,
+                                         config.first_level,
+                                         config.wta_k,
                                          config.score_type,
-                                         default_patch_size,
+                                         config.patch_size,
                                          config.fast_threshold);
 }
 
@@ -76,8 +70,8 @@ void ORBDetector::checkConfiguration(const ORBDetectorParams &check_config) {
     } else if (check_config.edge_threshold < 0) {
         throw std::invalid_argument(
           "edge_threshold must be greater than/equal to 0");
-    } else if (check_config.score_type != cv::ORB::HARRIS_SCORE ||
-               check_config.score_type != cv::ORB::FAST_SCORE) {
+    } else if (check_config.score_type < cv::ORB::HARRIS_SCORE ||
+               check_config.score_type > cv::ORB::FAST_SCORE) {
         throw std::invalid_argument("Invalid score_type for ORBDetector!");
     } else if (check_config.fast_threshold <= 0) {
         throw std::invalid_argument("fast_threshold must be greater than 0");
@@ -95,6 +89,7 @@ void ORBDetector::configure(const ORBDetectorParams &new_config) {
     this->orb_detector->setEdgeThreshold(new_config.edge_threshold);
     this->orb_detector->setScoreType(new_config.score_type);
     this->orb_detector->setFastThreshold(new_config.fast_threshold);
+    this->orb_detector->setPatchSize(new_config.edge_threshold);
 }
 
 ORBDetectorParams ORBDetector::getConfiguration() const {

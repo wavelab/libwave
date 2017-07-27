@@ -40,7 +40,8 @@ struct ORBDetectorParams {
           num_levels(num_levels),
           edge_threshold(edge_threshold),
           score_type(score_type),
-          fast_threshold(fast_threshold) {}
+          fast_threshold(fast_threshold),
+          patch_size(edge_threshold) {}
 
     /** Constructor using parameters extracted from a configuration file.
      *
@@ -100,14 +101,25 @@ struct ORBDetectorParams {
      *  Default: 20
      */
     int fast_threshold = 20;
+
+    // Default parameters that should not be modified
+    // These values are the defaults recommended by OpenCV.
+    //-------------------------------------------------------------------------
+    // As per OpenCV docs, first_level should be set to zero.
+    int first_level = 0;
+    int wta_k = 2;
+    /** The value of patch_size should be equal to that of edge_threshold. The
+     *  ORBDetectorParams constructor and class methods apply this constraint.
+     */
+    int patch_size;
 };
 
 /** Representation of a feature detector using the FAST algorithm.
  *
  *  Internally, this class is wrapping OpenCV's ORB module. Further reference
- *  on ORB can be found [here][opencv_orb].
+ *  on ORB can be found [here][opencv_orb_detector].
  *
- *  [opencv_orb]:
+ *  [opencv_orb_detector]:
  *  http://docs.opencv.org/trunk/db/d95/classcv_1_1ORB.html
  */
 class ORBDetector : public FeatureDetector {
@@ -117,7 +129,7 @@ class ORBDetector : public FeatureDetector {
      *
      * @param config contains the desired parameter values.
      */
-    ORBDetector(const ORBDetectorParams &config = ORBDetectorParams{});
+    explicit ORBDetector(const ORBDetectorParams &config = ORBDetectorParams{});
 
     /** Reconfigures the cv::ORB object with new values requested by the user.
      *
