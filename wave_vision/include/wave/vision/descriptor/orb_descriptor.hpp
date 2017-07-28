@@ -60,24 +60,6 @@ struct ORBDescriptorParams {
      *  Default: 31 (31 x 31 pixels). Must be greater than 0.
      */
     int patch_size = 31;
-
-    // Default parameters that should not be modified
-    // These values are the defaults recommended by OpenCV. For a further
-    // analysis of these
-    //-------------------------------------------------------------------------
-    int num_features = 500;
-    float scale_factor = 1.2f;
-    int num_levels = 8;
-    int score_type = cv::ORB::HARRIS_SCORE;
-    int fast_threshold = 20;
-
-    /** The value of edge_threshold should be equal to that of patch_size. The
-     *  ORBDescriptorParams constructor and class methods apply this constraint.
-     */
-    int edge_threshold;
-
-    /** As per OpenCV docs, first_level must be zero. */
-    int first_level = 0;
 };
 
 /** Representation of a descriptor extractor using the ORB algorithm.

@@ -22,7 +22,6 @@ ORBDescriptorParams::ORBDescriptorParams(const std::string &config_path) {
 
     this->wta_k = wta_k;
     this->patch_size = patch_size;
-    this->edge_threshold = patch_size;
 }
 
 // Default constructor. Struct may be default or user defined.
@@ -30,16 +29,27 @@ ORBDescriptor::ORBDescriptor(const ORBDescriptorParams &config) {
     // Ensure parameters are valid
     this->checkConfiguration(config);
 
+    // Default parameters that should not be modified, and are not associated
+    // with the descriptor. These values are the defaults recommended by OpenCV.
+    //-------------------------------------------------------------------------
+    int num_features = 500;
+    float scale_factor = 1.2f;
+    int num_levels = 8;
+    int edge_threshold = 31;
+    int first_level = 0;  // As per OpenCV docs, first_level must be zero.
+    int score_type = cv::ORB::HARRIS_SCORE;
+    int fast_threshold = 20;
+
     // Create cv::ORB object with the desired parameters
-    this->orb_descriptor = cv::ORB::create(config.num_features,
-                                           config.scale_factor,
-                                           config.num_levels,
-                                           config.edge_threshold,
-                                           config.first_level,
+    this->orb_descriptor = cv::ORB::create(num_features,
+                                           scale_factor,
+                                           num_levels,
+                                           edge_threshold,
+                                           first_level,
                                            config.wta_k,
-                                           config.score_type,
+                                           score_type,
                                            config.patch_size,
-                                           config.fast_threshold);
+                                           fast_threshold);
 }
 
 void ORBDescriptor::checkConfiguration(
@@ -59,7 +69,6 @@ void ORBDescriptor::configure(const ORBDescriptorParams &new_config) {
     // Configure orb_descriptor using cv::ORB::set**
     this->orb_descriptor->setWTA_K(new_config.wta_k);
     this->orb_descriptor->setPatchSize(new_config.patch_size);
-    this->orb_descriptor->setEdgeThreshold(new_config.patch_size);
 }
 
 ORBDescriptorParams ORBDescriptor::getConfiguration() const {

@@ -99,14 +99,6 @@ struct ORBDetectorParams {
      *  Default: 20. Must be greater than zero.
      */
     int fast_threshold = 20;
-
-    // Default parameters that should not be modified
-    // These values are the defaults recommended by OpenCV.
-    //-------------------------------------------------------------------------
-    // As per OpenCV docs, first_level should be set to zero.
-    int first_level = 0;
-    int wta_k = 2;
-    int patch_size = 31;
 };
 
 /** Representation of a feature detector using the FAST algorithm.

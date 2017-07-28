@@ -41,15 +41,22 @@ ORBDetector::ORBDetector(const ORBDetectorParams &config) {
     // Ensure parameters are valid
     this->checkConfiguration(config);
 
+    // Default parameters that should not be modified, and are not associated
+    // with the detector. These values are the defaults recommended by OpenCV.
+    //-------------------------------------------------------------------------
+    int first_level = 0;  // As per OpenCV docs, first_level must be zero.
+    int wta_k = 2;
+    int patch_size = 31;
+
     // Create ORB with these parameters
     this->orb_detector = cv::ORB::create(config.num_features,
                                          config.scale_factor,
                                          config.num_levels,
                                          config.edge_threshold,
-                                         config.first_level,
-                                         config.wta_k,
+                                         first_level,
+                                         wta_k,
                                          config.score_type,
-                                         config.patch_size,
+                                         patch_size,
                                          config.fast_threshold);
 }
 
@@ -85,7 +92,6 @@ void ORBDetector::configure(const ORBDetectorParams &new_config) {
     this->orb_detector->setEdgeThreshold(new_config.edge_threshold);
     this->orb_detector->setScoreType(new_config.score_type);
     this->orb_detector->setFastThreshold(new_config.fast_threshold);
-    this->orb_detector->setPatchSize(new_config.edge_threshold);
 }
 
 ORBDetectorParams ORBDetector::getConfiguration() const {
