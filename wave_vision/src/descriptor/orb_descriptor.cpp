@@ -7,12 +7,12 @@ ORBDescriptorParams::ORBDescriptorParams(const std::string &config_path) {
     // Extract parameters from .yaml file.
     ConfigParser parser;
 
-    int wta_k;
+    int tuple_size;
     int patch_size;
 
     // Add parameters to parser, to be loaded. If path cannot be found, throw
     // an exception
-    parser.addParam("wta_k", &wta_k);
+    parser.addParam("tuple_size", &tuple_size);
     parser.addParam("patch_size", &patch_size);
 
     if (parser.load(config_path) != 0) {
@@ -20,7 +20,7 @@ ORBDescriptorParams::ORBDescriptorParams(const std::string &config_path) {
           "Failed to Load ORBDescriptorParams Configuration");
     }
 
-    this->wta_k = wta_k;
+    this->tuple_size = tuple_size;
     this->patch_size = patch_size;
 }
 
@@ -46,7 +46,7 @@ ORBDescriptor::ORBDescriptor(const ORBDescriptorParams &config) {
                                            num_levels,
                                            edge_threshold,
                                            first_level,
-                                           config.wta_k,
+                                           config.tuple_size,
                                            score_type,
                                            config.patch_size,
                                            fast_threshold);
@@ -54,10 +54,10 @@ ORBDescriptor::ORBDescriptor(const ORBDescriptorParams &config) {
 
 void ORBDescriptor::checkConfiguration(
   const ORBDescriptorParams &check_config) {
-    // Check that the value of wta_k is between 2 and 4, and that patch_size
-    // is greater than zero.
-    if (check_config.wta_k < 2 || check_config.wta_k > 4) {
-        throw std::invalid_argument("wta_k is not an acceptable value!");
+    // Check that the value of tuple_size is between 2 and 4, and that
+    // patch_size is greater than zero.
+    if (check_config.tuple_size < 2 || check_config.tuple_size > 4) {
+        throw std::invalid_argument("tuple_size is not an acceptable value!");
     } else if (check_config.patch_size <= 0) {
         throw std::invalid_argument("patch_size is less than/ equal to zero!");
     }
@@ -67,16 +67,16 @@ void ORBDescriptor::configure(const ORBDescriptorParams &new_config) {
     this->checkConfiguration(new_config);
 
     // Configure orb_descriptor using cv::ORB::set**
-    this->orb_descriptor->setWTA_K(new_config.wta_k);
+    this->orb_descriptor->setWTA_K(new_config.tuple_size);
     this->orb_descriptor->setPatchSize(new_config.patch_size);
 }
 
 ORBDescriptorParams ORBDescriptor::getConfiguration() const {
     // Obtain current configuration values using cv::ORB::get**
-    auto curr_wta_k = this->orb_descriptor->getWTA_K();
+    auto curr_tuple_size = this->orb_descriptor->getWTA_K();
     auto curr_patch_size = this->orb_descriptor->getPatchSize();
 
-    ORBDescriptorParams current_config{curr_wta_k, curr_patch_size};
+    ORBDescriptorParams current_config{curr_tuple_size, curr_patch_size};
 
     return current_config;
 }

@@ -7,13 +7,17 @@
 # output result will be 2 bits, as the result is the index of the
 # brightest point. Therefore, the distance method used for the
 # BruteForceMatcher or FLANNMatcher will have to be cv::NORM_HAMMING_2, a
-# variation to the Hamming distance, when WTA_K = 3 or 4.
+# variation to the Hamming distance, when tuple_size = 3 or 4.
+#
+# OpenCV refers to this as "WTA_K." tuple_size is the description from Kaehler
+# and Bradski's book: "Learning OpenCV3: Computer Vision in C++ with the OpenCV
+# Library."
 #
 # Options: 2, 3, or 4.
 #
 # Default: 2.
-
-wta_k: 2
+#
+tuple_size: 2
 
 # The size of the square patch used in the random point sampling to
 # construct the descriptor. This patch is smoothed using an integral

@@ -12,10 +12,10 @@ TEST(ORBDescriptorTests, GoodConfig) {
     EXPECT_NO_THROW(ORBDescriptorParams config1);
 
     // Custom params struct (with good values)
-    int wta_k = 2;
+    int tuple_size = 2;
     int patch_size = 31;
 
-    EXPECT_NO_THROW(ORBDescriptorParams config2(wta_k, patch_size));
+    EXPECT_NO_THROW(ORBDescriptorParams config2(tuple_size, patch_size));
 
     // From orb.yaml file, with good values.
     EXPECT_NO_THROW(ORBDescriptorParams config3(TEST_CONFIG));
@@ -37,14 +37,14 @@ TEST(ORBDescriptorTests, ConstructorTest) {
 }
 
 // Check that incorrect parameter values throw exceptions.
-TEST(ORBDescriptorTests, BadWTAK) {
+TEST(ORBDescriptorTests, BadTupleSize) {
     ORBDescriptorParams config;
-    config.wta_k = 1;
+    config.tuple_size = 1;
 
-    ASSERT_THROW(ORBDescriptor bad_wtak1(config), std::invalid_argument);
+    ASSERT_THROW(ORBDescriptor bad_tuplesize1(config), std::invalid_argument);
 
-    config.wta_k = 5;
-    ASSERT_THROW(ORBDescriptor bad_wtak2(config), std::invalid_argument);
+    config.tuple_size = 5;
+    ASSERT_THROW(ORBDescriptor bad_tuplesize2(config), std::invalid_argument);
 }
 
 TEST(ORBDescriptorTests, BadPatchSize) {
@@ -60,7 +60,7 @@ TEST(ORBDescriptorTests, ConfigurationTests) {
     ORBDescriptorParams ref_config;
     ORBDescriptorParams curr_config_1 = descriptor.getConfiguration();
 
-    ASSERT_EQ(curr_config_1.wta_k, ref_config.wta_k);
+    ASSERT_EQ(curr_config_1.tuple_size, ref_config.tuple_size);
     ASSERT_EQ(curr_config_1.patch_size, ref_config.patch_size);
 
     ORBDescriptorParams new_config{3, 40};
@@ -70,7 +70,7 @@ TEST(ORBDescriptorTests, ConfigurationTests) {
     descriptor.configure(new_config);
     ORBDescriptorParams curr_config_2 = descriptor.getConfiguration();
 
-    ASSERT_EQ(curr_config_2.wta_k, new_config.wta_k);
+    ASSERT_EQ(curr_config_2.tuple_size, new_config.tuple_size);
     ASSERT_EQ(curr_config_2.patch_size, new_config.patch_size);
 }
 

@@ -45,7 +45,7 @@ ORBDetector::ORBDetector(const ORBDetectorParams &config) {
     // with the detector. These values are the defaults recommended by OpenCV.
     //-------------------------------------------------------------------------
     int first_level = 0;  // As per OpenCV docs, first_level must be zero.
-    int wta_k = 2;
+    int tuple_size = 2;
     int patch_size = 31;
 
     // Create ORB with these parameters
@@ -54,7 +54,7 @@ ORBDetector::ORBDetector(const ORBDetectorParams &config) {
                                          config.num_levels,
                                          config.edge_threshold,
                                          first_level,
-                                         wta_k,
+                                         tuple_size,
                                          config.score_type,
                                          patch_size,
                                          config.fast_threshold);
