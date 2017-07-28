@@ -45,14 +45,15 @@ struct BFMatcherParams {
      *  cv::NORM_L2: l2 norm
      *  cv::NORM_L2SQR: l2 norm, squared
      *  cv::NORM_HAMMING: Hamming distance
-     *  cv::NORM_HAMMING2:
+     *  cv::NORM_HAMMING2: Hamming distance modifier for ORB Descriptor, with
+     *  tuple_size (WTA_K) = 3 or 4
      *
      *  As per OpenCV docs, NORM_L1 and NORM_L2 is valid for the SIFT or
      *  SURF descriptors, while NORM_HAMMING is valid for the ORB, BRISK, and
-     *  BRIEF descriptors. NORM_HAMMING2 should only be used with ORB, when
-     *  WTA_K is 3 or 4.
+     *  BRIEF descriptors. NORM_HAMMING2 should only be used with ORB when
+     *  tuple_size (WTA_K) is 3 or 4.
      *
-     *  Default: NORM_HAMMING, since currently only BRISK Descriptor is used.
+     *  Default: NORM_HAMMING, as it is used for ORB and BRISK Descriptors.
      *
      *  Please refer to further description of the norm types
      *  [here][opencv_norm_types].

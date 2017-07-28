@@ -13,9 +13,8 @@ BFMatcherParams::BFMatcherParams(const std::string &config_path) {
     int distance_threshold;
     int fm_method;
 
-    // Add parameters to parser, to be loaded. If path cannot be found,
-    // throw an
-    // exception.
+    // Add parameters to parser, to be loaded. If path cannot be found, throw
+    // an exception.
     parser.addParam("norm_type", &norm_type);
     parser.addParam("use_knn", &use_knn);
     parser.addParam("ratio_threshold", &ratio_threshold);
