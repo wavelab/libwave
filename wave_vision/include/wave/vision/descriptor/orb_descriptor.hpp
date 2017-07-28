@@ -30,7 +30,7 @@ struct ORBDescriptorParams {
     ORBDescriptorParams() {}
 
     ORBDescriptorParams(int tuple_size, int patch_size)
-        : tuple_size(tuple_size), patch_size(patch_size), edge_threshold(patch_size) {}
+        : tuple_size(tuple_size), patch_size(patch_size) {}
 
     /** Constructor using parameters extracted from a configuration file.
      *
@@ -43,7 +43,7 @@ struct ORBDescriptorParams {
      *  of points. Other values are 3 or 4; 3 will use 3 random points, and 4
      *  similarly will use 4 random points. For these last two options, the
      *  output result will be 2 bits, as the result is the index of the
-     *  brightest point. Therefore, the distance method used for the
+     *  brightest point (0, 1, 2, 3). Thus, the distance method used for the
      *  BruteForceMatcher or FLANNMatcher will have to be cv::NORM_HAMMING_2, a
      *  variation to the Hamming distance, when tuple_size = 3 or 4.
      *
