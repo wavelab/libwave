@@ -159,6 +159,17 @@ class BruteForceMatcher : public DescriptorMatcher {
         return this->current_config;
     }
 
+    /** Remove outliers between matches, using epipolar constraints.
+     *
+     *  @param matches the unfiltered matches computed from two images.
+     *
+     *  @return the matches with outliers removed.
+     */
+    std::vector<cv::DMatch> removeOutliers(
+      const std::vector<cv::DMatch> &matches,
+      const std::vector<cv::KeyPoint> &keypoints_1,
+      const std::vector<cv::KeyPoint> &keypoints_2) const override;
+
     /** Matches keypoints descriptors between two images using the
      *  BruteForceMatcher.
      *
@@ -204,17 +215,6 @@ class BruteForceMatcher : public DescriptorMatcher {
      */
     std::vector<cv::DMatch> filterMatches(
       std::vector<cv::DMatch> &matches) const override;
-
-    /** Remove outliers between matches, using epipolar constraints.
-     *
-     *  @param matches the unfiltered matches computed from two images.
-     *
-     *  @return the matches with outliers removed.
-     */
-    std::vector<cv::DMatch> removeOutliers(
-      const std::vector<cv::DMatch> &matches,
-      const std::vector<cv::KeyPoint> &keypoints_1,
-      const std::vector<cv::KeyPoint> &keypoints_2) const override;
 
     /** The pointer to the wrapped cv::BFMatcher object */
     cv::Ptr<cv::BFMatcher> brute_force_matcher;
