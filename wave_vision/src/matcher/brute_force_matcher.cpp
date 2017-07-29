@@ -11,6 +11,7 @@ BFMatcherParams::BFMatcherParams(const std::string &config_path) {
     bool use_knn;
     double ratio_threshold;
     int distance_threshold;
+    bool auto_remove_outliers;
     int fm_method;
 
     // Add parameters to parser, to be loaded. If path cannot be found, throw
@@ -19,6 +20,7 @@ BFMatcherParams::BFMatcherParams(const std::string &config_path) {
     parser.addParam("use_knn", &use_knn);
     parser.addParam("ratio_threshold", &ratio_threshold);
     parser.addParam("distance_threshold", &distance_threshold);
+    parser.addParam("auto_remove_outliers", &auto_remove_outliers);
     parser.addParam("fm_method", &fm_method);
 
     if (parser.load(config_path) != 0) {
@@ -30,6 +32,7 @@ BFMatcherParams::BFMatcherParams(const std::string &config_path) {
     this->use_knn = use_knn;
     this->ratio_threshold = ratio_threshold;
     this->distance_threshold = distance_threshold;
+    this->auto_remove_outliers = auto_remove_outliers;
     this->fm_method = fm_method;
 }
 
@@ -84,41 +87,38 @@ void BruteForceMatcher::checkConfiguration(
 
 std::vector<cv::DMatch> BruteForceMatcher::filterMatches(
   std::vector<cv::DMatch> &matches) const {
-    std::vector<cv::DMatch> filt_matches;
-    float min_distance;
-    std::vector<cv::DMatch>::iterator closest_match;
+    std::vector<cv::DMatch> filtered_matches;
 
     // Determine closest match
-    closest_match = std::min_element(matches.begin(), matches.end());
-    min_distance = closest_match->distance;
+    auto closest_match = std::min_element(matches.begin(), matches.end());
+    float min_distance = closest_match->distance;
 
     // Keep any match that is less than the rejection heuristic times minimum
     // distance
     for (auto &match : matches) {
         if (match.distance <=
             this->current_config.distance_threshold * min_distance) {
-            filt_matches.push_back(match);
+            filtered_matches.push_back(match);
         }
     }
 
-    return filt_matches;
+    return filtered_matches;
 }
 
 std::vector<cv::DMatch> BruteForceMatcher::filterMatches(
   std::vector<std::vector<cv::DMatch>> &matches) const {
-    std::vector<cv::DMatch> filt_matches;
-    float ratio;
+    std::vector<cv::DMatch> filtered_matches;
 
     for (auto &match : matches) {
         // Calculate ratio between two best matches. Accept if less than
         // ratio heuristic
-        ratio = match[0].distance / match[1].distance;
+        float ratio = match[0].distance / match[1].distance;
         if (ratio <= this->current_config.ratio_threshold) {
-            filt_matches.push_back(match[0]);
+            filtered_matches.push_back(match[0]);
         }
     }
 
-    return filt_matches;
+    return filtered_matches;
 }
 
 std::vector<cv::DMatch> BruteForceMatcher::removeOutliers(
@@ -130,8 +130,8 @@ std::vector<cv::DMatch> BruteForceMatcher::removeOutliers(
 
     // Take all good keypoints from matches, convert to cv::Point2f
     for (auto &match : matches) {
-        fp1.push_back(keypoints_1.at(match.queryIdx).pt);
-        fp2.push_back(keypoints_2.at(match.trainIdx).pt);
+        fp1.push_back(keypoints_1.at((size_t) match.queryIdx).pt);
+        fp2.push_back(keypoints_2.at((size_t) match.trainIdx).pt);
     }
 
     // Find fundamental matrix
@@ -165,20 +165,19 @@ std::vector<cv::DMatch> BruteForceMatcher::matchDescriptors(
   const std::vector<cv::KeyPoint> &keypoints_1,
   const std::vector<cv::KeyPoint> &keypoints_2,
   cv::InputArray mask) const {
-    std::vector<cv::DMatch> good_matches;
     std::vector<cv::DMatch> filtered_matches;
 
     if (this->current_config.use_knn) {
-        std::vector<std::vector<cv::DMatch>> matches;
+        std::vector<std::vector<cv::DMatch>> raw_matches;
 
         // Number of neighbours for the k-nearest neighbour search. Only used
         // for the ratio test, therefore only want 2.
         int k = 2;
 
         this->brute_force_matcher->knnMatch(
-          descriptors_1, descriptors_2, matches, k, mask, false);
+          descriptors_1, descriptors_2, raw_matches, k, mask, false);
 
-        filtered_matches = this->filterMatches(matches);
+        filtered_matches = this->filterMatches(raw_matches);
 
     } else {
         std::vector<cv::DMatch> matches;
@@ -190,10 +189,13 @@ std::vector<cv::DMatch> BruteForceMatcher::matchDescriptors(
         filtered_matches = this->filterMatches(matches);
     }
 
-    good_matches =
-      this->removeOutliers(filtered_matches, keypoints_1, keypoints_2);
+    if (this->current_config.auto_remove_outliers) {
+        auto good_matches =
+          this->removeOutliers(filtered_matches, keypoints_1, keypoints_2);
 
-    return good_matches;
+        return good_matches;
+    }
+
+    return filtered_matches;
 }
-
 }  // namespace wave

@@ -24,11 +24,13 @@ struct BFMatcherParams {
                     bool use_knn,
                     double ratio_threshold,
                     int distance_threshold,
+                    bool auto_remove_outliers,
                     int fm_method)
         : norm_type(norm_type),
           use_knn(use_knn),
           ratio_threshold(ratio_threshold),
           distance_threshold(distance_threshold),
+          auto_remove_outliers(auto_remove_outliers),
           fm_method(fm_method) {}
 
     /** Constructor using parameters extracted from a configuration file.
@@ -101,6 +103,21 @@ struct BFMatcherParams {
      */
     int distance_threshold = 5;
 
+    /** Determines whether to automatically remove outliers using the method
+     *  described in fm_method.
+     *
+     *  If true, the wave::BruteForceMatcher::matchDescriptors method will
+     *  automatically call the wave::BruteForceMatcher::removeOutliers method,
+     *  which uses the method in wave::BFMatcherParams::fm_method to remove
+     *  matched outliers.
+     *
+     *  If false, the matches returned will only have been passed through the
+     *  distance threshold or ratio tests described above.
+     *
+     *  Recommended: True
+     */
+    bool auto_remove_outliers = true;
+
     /** Method to find the fundamental matrix and remove outliers.
      *
      *  Options:
@@ -122,7 +139,6 @@ struct BFMatcherParams {
  *
  *  [opencv_bfmatcher]:
  *  http://docs.opencv.org/trunk/d3/da1/classcv_1_1BFMatcher.html
-
  */
 class BruteForceMatcher : public DescriptorMatcher {
  public:

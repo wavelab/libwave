@@ -64,6 +64,21 @@ ratio_threshold: 0.8
 #
 distance_threshold: 5
 
+# Determines whether to automatically remove outliers using the method
+# described in fm_method.
+#
+# If true, the wave::BruteForceMatcher::matchDescriptors method will
+# automatically call the wave::BruteForceMatcher::removeOutliers method,
+# which uses the method in wave::BFMatcherParams::fm_method to remove
+# matched outliers.
+#
+# If false, the matches returned will only have been passed through the
+# distance threshold or ratio tests described above.
+#
+# Recommended: True
+#
+auto_remove_outliers: true
+
 #  Method to find the fundamental matrix and remove outliers.
 #
 #  Options:
