@@ -112,29 +112,6 @@ struct BFMatcherParams {
      *  Recommended: cv::FM_RANSAC.
      */
     int fm_method = cv::FM_RANSAC;
-
-    // -------------------------------------------------------------------------
-
-    /** Default parameters that do not need to be modified */
-
-    /** Number of neighbours for the k-nearest neighbour search. As this is only
-     *  used for the ratio test, only want 2.
-     */
-    int k = 2;
-
-    /** Maximum distance from a point to an epipolar line in pixels. Any points
-     *  further are considered outliers. Only used for RANSAC.
-     *
-     *  Typical values: 1-3. Default: 3.0
-     */
-    double fm_param_1 = 3.0;
-
-    /** Desired confidence interval of the estimated fundamental matrix. Only
-     *  used for RANSAC or LMedS methods.
-     *
-     *  Default: 0.99
-     */
-    double fm_param_2 = 0.99;
 };
 
 /** Representation of a descriptor matcher using the BruteForce algorithm.

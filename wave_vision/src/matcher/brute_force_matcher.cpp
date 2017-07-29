@@ -138,12 +138,16 @@ std::vector<cv::DMatch> BruteForceMatcher::removeOutliers(
     std::vector<uchar> mask;
     cv::Mat fundamental_matrix;
 
-    fundamental_matrix = cv::findFundamentalMat(fp1,
-                                                fp2,
-                                                cv::FM_RANSAC,
-                                                this->current_config.fm_param_1,
-                                                this->current_config.fm_param_2,
-                                                mask);
+    // Maximum distance from a point to an epipolar line in pixels. Any points
+    // further are considered outliers. Only used for RANSAC.
+    double fm_param_1 = 3.0;
+
+    // Desired confidence interval of the estimated fundamental matrix. Only
+    // used for RANSAC or LMedS methods.
+    double fm_param_2 = 0.99;
+
+    fundamental_matrix = cv::findFundamentalMat(
+      fp1, fp2, this->current_config.fm_method, fm_param_1, fm_param_2, mask);
 
     // Only retain the inliers matches
     for (size_t i = 0; i < mask.size(); i++) {
@@ -167,12 +171,12 @@ std::vector<cv::DMatch> BruteForceMatcher::matchDescriptors(
     if (this->current_config.use_knn) {
         std::vector<std::vector<cv::DMatch>> matches;
 
-        this->brute_force_matcher->knnMatch(descriptors_1,
-                                            descriptors_2,
-                                            matches,
-                                            this->current_config.k,
-                                            mask,
-                                            false);
+        // Number of neighbours for the k-nearest neighbour search. Only used
+        // for the ratio test, therefore only want 2.
+        int k = 2;
+
+        this->brute_force_matcher->knnMatch(
+          descriptors_1, descriptors_2, matches, k, mask, false);
 
         filtered_matches = this->filterMatches(matches);
 
