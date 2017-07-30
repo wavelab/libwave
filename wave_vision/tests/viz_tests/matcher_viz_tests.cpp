@@ -20,7 +20,8 @@ TEST(BFTests, DistanceMatchDescriptors) {
     FASTDetector fast;
     BRISKDescriptor brisk;
 
-    BFMatcherParams config(cv::NORM_HAMMING, false, 0.8, 5, cv::FM_RANSAC);
+    BFMatcherParams config(
+      cv::NORM_HAMMING, false, 0.8, 5, true, cv::FM_RANSAC);
 
     BruteForceMatcher bfmatcher(config);
 

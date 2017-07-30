@@ -180,17 +180,17 @@ std::vector<cv::DMatch> BruteForceMatcher::matchDescriptors(
         filtered_matches = this->filterMatches(raw_matches);
 
     } else {
-        std::vector<cv::DMatch> matches;
+        std::vector<cv::DMatch> raw_matches;
 
         // Determine matches between sets of descriptors
         this->brute_force_matcher->match(
-          descriptors_1, descriptors_2, matches, mask);
+          descriptors_1, descriptors_2, raw_matches, mask);
 
-        filtered_matches = this->filterMatches(matches);
+        filtered_matches = this->filterMatches(raw_matches);
     }
 
     if (this->current_config.auto_remove_outliers) {
-        auto good_matches =
+        std::vector<cv::DMatch> good_matches =
           this->removeOutliers(filtered_matches, keypoints_1, keypoints_2);
 
         return good_matches;

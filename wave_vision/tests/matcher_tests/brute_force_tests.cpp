@@ -38,11 +38,16 @@ TEST(BFTests, CustomParamsConstructorTest) {
     bool use_knn = false;
     double ratio_threshold = 0.8;
     int distance_threshold = 5;
+    bool auto_remove_outliers = false;
     int fm_method = cv::FM_LMEDS;
 
     // Place defined values into config struct and create BruteForceMatcher
-    BFMatcherParams custom_config(
-      norm_type, use_knn, ratio_threshold, distance_threshold, fm_method);
+    BFMatcherParams custom_config(norm_type,
+                                  use_knn,
+                                  ratio_threshold,
+                                  distance_threshold,
+                                  auto_remove_outliers,
+                                  fm_method);
 
     BruteForceMatcher bfmatcher(custom_config);
 
@@ -60,6 +65,7 @@ TEST(BFTests, CustomYamlConstructorTest) {
     bool use_knn = true;
     double ratio_threshold = 0.8;
     int distance_threshold = 5;
+    bool auto_remove_outliers = true;
     int fm_method = cv::FM_RANSAC;
 
     BFMatcherParams input_config(TEST_CONFIG);
@@ -81,22 +87,26 @@ TEST(BFTests, BadNormType) {
     bool use_knn = true;
     double ratio_threshold = 0.8;
     int distance_threshold = 5;
+    bool auto_remove_outliers = true;
     int fm_method = cv::FM_RANSAC;
 
     auto config_neg = BFMatcherParams(bad_norm_type_neg,
                                       use_knn,
                                       ratio_threshold,
                                       distance_threshold,
+                                      auto_remove_outliers,
                                       fm_method);
     auto config_high = BFMatcherParams(bad_norm_type_high,
                                        use_knn,
                                        ratio_threshold,
                                        distance_threshold,
+                                       auto_remove_outliers,
                                        fm_method);
     auto config_nd = BFMatcherParams(bad_norm_type_nd,
                                      use_knn,
                                      ratio_threshold,
                                      distance_threshold,
+                                     auto_remove_outliers,
                                      fm_method);
 
     ASSERT_THROW(BruteForceMatcher bfmatcher(config_neg),
