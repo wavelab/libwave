@@ -1,5 +1,3 @@
-#include <gtsam/geometry/Pose2.h>
-#include <gtsam/geometry/Pose3.h>
 #include <gtsam/slam/PriorFactor.h>
 #include <gtsam/slam/ProjectionFactor.h>
 #include <gtsam/slam/BetweenFactor.h>
@@ -11,46 +9,9 @@
 
 #include "wave/wave_test.hpp"
 #include "wave/vision/dataset.hpp"
+#include "gtsam_helpers.hpp"
 
 namespace wave {
-
-/** Convert pose to gtsam type */
-inline gtsam::Pose3 gtsamPoseFromEigen(const Quaternion &q, const Vec3 &p) {
-    return gtsam::Pose3{gtsam::Rot3{q}, gtsam::Point3{p}};
-}
-
-inline gtsam::Pose3 gtsamPoseFromState(const VOTestInstant &state) {
-    // Transform from robot to camera frame
-    // This involves the rotation sequence: -90 deg about initial x axis,
-    // 0, then -90 deg about initial z axis.
-    const auto q_BC = Quaternion{Eigen::AngleAxisd(-M_PI_2, Vec3::UnitZ()) *
-                                 Eigen::AngleAxisd(-M_PI_2, Vec3::UnitX())};
-
-    const Quaternion q_GC = state.robot_q_GB * q_BC;
-    const auto &G_p_GC = state.robot_G_p_GB;
-
-    return gtsamPoseFromEigen(q_GC, G_p_GC);
-}
-
-/** Get the tranformation between two gtsam poses */
-inline gtsam::Pose3 poseBetween(const gtsam::Pose3 &from,
-                                const gtsam::Pose3 &to) {
-    auto between = from.inverse() * to;
-
-    // demonstrate the math
-    auto res = from * between;
-    assert(to.translation().isApprox(res.translation()));
-
-    return between;
-}
-
-inline gtsam::Pose3 poseBetweenStates(const VOTestInstant &from,
-                                      const VOTestInstant &to) {
-    auto pose = gtsamPoseFromState(to);
-    auto prev_pose = gtsamPoseFromState(from);
-
-    return poseBetween(prev_pose, pose);
-}
 
 class GtsamExample : public ::testing::Test {
  protected:
