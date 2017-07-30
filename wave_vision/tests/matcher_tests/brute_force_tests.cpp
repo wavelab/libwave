@@ -15,21 +15,19 @@ TEST(BFTests, GoodConfig) {
 
     // Custom params struct (with good values)
     int norm_type = cv::NORM_HAMMING;
-    bool use_knn = true;
     double ratio_threshold = 0.8;
     int distance_threshold = 5;
     bool auto_remove_outliers = true;
     int fm_method = cv::FM_RANSAC;
 
-    EXPECT_NO_THROW(BFMatcherParams config2(norm_type,
-                                            use_knn,
-                                            ratio_threshold,
-                                            distance_threshold,
-                                            auto_remove_outliers,
-                                            fm_method));
+    EXPECT_NO_THROW(BFMatcherParams config2(
+      norm_type, ratio_threshold, auto_remove_outliers, fm_method));
+
+    EXPECT_NO_THROW(BFMatcherParams config3(
+      norm_type, distance_threshold, auto_remove_outliers, fm_method));
 
     // From brute_force.yaml, with good values.
-    EXPECT_NO_THROW(BFMatcherParams config3(TEST_CONFIG));
+    EXPECT_NO_THROW(BFMatcherParams config4(TEST_CONFIG));
 }
 
 // Checks that incorrect configuration path throws an exception

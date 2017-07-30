@@ -20,15 +20,28 @@ namespace wave {
 struct BFMatcherParams {
     BFMatcherParams() {}
 
+    /** Constructor with user selected values. Only to be used if the user
+     *  desires the ratio test as the first pass to filter outliers.
+     */
     BFMatcherParams(int norm_type,
-                    bool use_knn,
                     double ratio_threshold,
+                    bool auto_remove_outliers,
+                    int fm_method)
+        : norm_type(norm_type),
+          use_knn(true),
+          ratio_threshold(ratio_threshold),
+          auto_remove_outliers(auto_remove_outliers),
+          fm_method(fm_method) {}
+
+    /** Overloaded method. Only to be used if the user desires the distance
+     *  threshold test as the first pass to filter outliers.
+     */
+    BFMatcherParams(int norm_type,
                     int distance_threshold,
                     bool auto_remove_outliers,
                     int fm_method)
         : norm_type(norm_type),
-          use_knn(use_knn),
-          ratio_threshold(ratio_threshold),
+          use_knn(false),
           distance_threshold(distance_threshold),
           auto_remove_outliers(auto_remove_outliers),
           fm_method(fm_method) {}

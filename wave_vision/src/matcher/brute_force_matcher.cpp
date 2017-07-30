@@ -38,13 +38,11 @@ BFMatcherParams::BFMatcherParams(const std::string &config_path) {
 
 // Default constructor. Struct may be default or user defined.
 BruteForceMatcher::BruteForceMatcher(const BFMatcherParams &config) {
-    bool cross_check;
-
     // Ensure parameters are valid
     this->checkConfiguration(config);
 
     // Cross_check must be the opposite of use_knn
-    cross_check = !config.use_knn;
+    bool cross_check = !config.use_knn;
 
     // Create cv::BFMatcher object with the desired parameters
     this->brute_force_matcher =
