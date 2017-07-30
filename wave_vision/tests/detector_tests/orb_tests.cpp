@@ -26,7 +26,7 @@ TEST(ORBDetectorTests, GoodConfig) {
                                               fast_threshold));
 
     // From orb.yaml file, with good values.
-    EXPECT_NO_THROW(ORBDetectorParams config3(TEST_CONFIG););
+    EXPECT_NO_THROW(ORBDetectorParams config3(TEST_CONFIG));
 }
 
 // Checks that an incorrect configuration path throws an exception

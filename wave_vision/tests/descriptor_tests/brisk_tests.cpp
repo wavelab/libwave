@@ -105,12 +105,12 @@ TEST(BRISKTests, CheckDistValues) {
     ASSERT_THROW(BRISKDescriptor brisk(swapped_dists), std::invalid_argument);
 }
 
-TEST(BRISKTests, ConfigurationTest) {
+TEST(BRISKTests, ConfigurationTests) {
     BRISKDescriptorParams ref_config;
+    BRISKDescriptorParams yaml_config(TEST_CONFIG);
+
     BRISKDescriptor descriptor1(ref_config);
     BRISKDescriptor descriptor2;
-
-    BRISKDescriptorParams yaml_config(TEST_CONFIG);
     BRISKDescriptor descriptor3(yaml_config);
 
     BRISKDescriptorParams curr_config_1 = descriptor1.getConfiguration();
