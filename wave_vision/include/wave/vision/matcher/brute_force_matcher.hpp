@@ -172,11 +172,13 @@ class BruteForceMatcher : public DescriptorMatcher {
         return this->current_config;
     }
 
-    /** Remove outliers between matches, using epipolar constraints.
+    /** Remove outliers between matches using epipolar constraints
      *
-     *  @param matches the unfiltered matches computed from two images.
+     * @param matches the unfiltered matches computed from two images
+     * @param keypoints_1 the keypoints from the first image
+     * @param keypoints_2 the keypoints from the second image
      *
-     *  @return the matches with outliers removed.
+     * @return the filtered matches
      */
     std::vector<cv::DMatch> removeOutliers(
       const std::vector<cv::DMatch> &matches,
