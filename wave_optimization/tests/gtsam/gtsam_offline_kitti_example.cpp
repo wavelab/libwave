@@ -5,6 +5,7 @@
 #include <gtsam/nonlinear/NonlinearFactorGraph.h>
 #include <gtsam/nonlinear/LevenbergMarquardtOptimizer.h>
 #include <gtsam/inference/Symbol.h>
+#include <gtsam/linear/Sampler.h>
 
 #include "wave/wave_test.hpp"
 #include "wave/vision/dataset.hpp"
@@ -13,6 +14,11 @@
 const auto DATASET_DIR = "tests/data/vo_data_drive_0036";
 
 namespace wave {
+
+// Set true to add odometry factors between consecutive poses, false for pure VO
+const auto use_odometry_factors = true;
+// Set false to see what error is like without VO
+const auto use_projection_factors = true;
 
 class GtsamExample : public ::testing::Test {
  protected:
@@ -31,8 +37,18 @@ TEST_F(GtsamExample, run) {
 
     std::vector<gtsam::Pose3> true_poses;
 
-    // Noise: one pixel in u and v
-    const auto measurement_noise = gtsam::noiseModel::Isotropic::Sigma(2, 10.0);
+    // This dataset has some pixel noise, but we don't know what it is exactly.
+    // Estimate at one pixel in u and v
+    const auto measurement_noise_model =
+      gtsam::noiseModel::Isotropic::Sigma(2, 1.0);
+
+    // Generate artificial noise for the odometry measurements
+    Vec6 noise_vec;
+    // (rotation, then position)
+    noise_vec << Vec3::Constant(0.05), Vec3::Constant(0.1);
+    const auto odometry_noise_model =
+      gtsam::noiseModel::Diagonal::Sigmas(noise_vec);
+    auto odometry_noise_sampler = gtsam::Sampler{odometry_noise_model};
 
     // Loop over the different poses, adding the observations to iSAM
     // incrementally
@@ -47,28 +63,36 @@ TEST_F(GtsamExample, run) {
         true_poses.push_back(pose);
 
         // Add a purposely offset initial estimate
-        const auto offset = gtsam::Pose3{gtsam::Rot3::Rodrigues(-0.1, 0.1, 0.1),
-                                         gtsam::Point3{0.05, -0.10, 0.20}};
+        const auto offset =
+          gtsam::Pose3{gtsam::Rot3::Rodrigues(-0.02, 0.02, 0.22),
+                       gtsam::Point3{0.05, -0.10, 0.20}};
 
         auto pose_estimate = pose;
         pose_estimate = pose_estimate.compose(offset);
         initial_estimate.insert(gtsam::Symbol{'x', i}, pose_estimate);
 
-        if (i > 0) {
+        if (use_odometry_factors && i > 0) {
             // Add odometry factor
             auto between = poseBetweenStates(dataset.states[i - 1], state);
 
-            Vec6 noise_vec;
-            noise_vec << Vec3::Constant(0.001), Vec3::Constant(0.0001);
+            // Add artificial noise
+            const auto offset = odometry_noise_sampler.sample();
+            between = between.expmap(offset);
 
-            auto noise = gtsam::noiseModel::Diagonal::Sigmas(noise_vec);
-            auto odometry_factor = gtsam::BetweenFactor<gtsam::Pose3>{
-              gtsam::Symbol{'x', i - 1}, gtsam::Symbol{'x', i}, between, noise};
+            auto odometry_factor =
+              gtsam::BetweenFactor<gtsam::Pose3>{gtsam::Symbol{'x', i - 1},
+                                                 gtsam::Symbol{'x', i},
+                                                 between,
+                                                 odometry_noise_model};
             graph.push_back(odometry_factor);
         }
 
         // Add factors for each landmark observation
         for (size_t j = 0; j < observations.size(); ++j) {
+            if (!use_projection_factors) {
+                break;
+            }
+
             // Convert observation
             const auto measurement = gtsam::Point2{observations[j].second};
             const auto landmark_id = observations[j].first;
@@ -78,7 +102,7 @@ TEST_F(GtsamExample, run) {
                                              gtsam::Point3,
                                              gtsam::Cal3_S2>{
                 measurement,
-                measurement_noise,
+                measurement_noise_model,
                 gtsam::Symbol{'x', i},
                 gtsam::Symbol{'l', landmark_id},
                 this->kParams};
@@ -88,7 +112,7 @@ TEST_F(GtsamExample, run) {
             const auto key = gtsam::Symbol{'l', landmark_id};
             if (!initial_estimate.exists(key)) {
                 auto camera = gtsam::SimpleCamera{pose, *this->kParams};
-                auto est = camera.backproject_from_camera(measurement, 3.0);
+                auto est = camera.backproject_from_camera(measurement, 5.0);
                 initial_estimate.insert<gtsam::Point3>(key, est);
             }
         }
@@ -121,12 +145,12 @@ TEST_F(GtsamExample, run) {
 
         double pos_error =
           (true_pose.translation() - estimated_pose.translation()).norm();
-        EXPECT_LT(pos_error, 1e-2) << "x" << i;
+        EXPECT_LT(pos_error, 1.0) << "x" << i;
 
         const auto true_q = true_poses[i].rotation().toQuaternion();
         const auto estimated_q = estimated_pose.rotation().toQuaternion();
         const auto rotation_error = true_q.angularDistance(estimated_q);
-        EXPECT_LT(rotation_error, 1e-3) << "x" << i;
+        EXPECT_LT(rotation_error, 0.5) << "x" << i;
 
         avg_rot_error += rotation_error / true_poses.size();
         avg_pos_error += pos_error / true_poses.size();

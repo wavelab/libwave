@@ -5,13 +5,16 @@
 #include <gtsam/nonlinear/NonlinearFactorGraph.h>
 #include <gtsam/nonlinear/LevenbergMarquardtOptimizer.h>
 #include <gtsam/inference/Symbol.h>
-
+#include <gtsam/linear/Sampler.h>
 
 #include "wave/wave_test.hpp"
 #include "wave/vision/dataset.hpp"
 #include "gtsam_helpers.hpp"
 
 namespace wave {
+
+// Set true to add odometry factors between consecutive poses, false for pure VO
+const auto use_odometry_factors = false;
 
 class GtsamExample : public ::testing::Test {
  protected:
@@ -42,8 +45,10 @@ TEST_F(GtsamExample, run) {
 
     std::vector<gtsam::Pose3> true_poses;
 
-    // Noise: one pixel in u and v
-    auto measurement_noise = gtsam::noiseModel::Isotropic::Sigma(2, 1.0);
+    // Since the synthetic dataset has zero noise, we will generate some
+    // Set up a gaussian noise source of 1.1 pixel in u and v
+    auto measurement_noise_model = gtsam::noiseModel::Isotropic::Sigma(2, 1.1);
+    auto measurement_noise_sampler = gtsam::Sampler{measurement_noise_model};
 
     // Loop over the different poses, adding the observations to iSAM
     // incrementally
@@ -57,7 +62,7 @@ TEST_F(GtsamExample, run) {
         const auto pose = gtsamPoseFromState(state);
         true_poses.push_back(pose);
 
-        if (i > 0) {
+        if (use_odometry_factors && i > 0) {
             // Add odometry factor
             auto between = poseBetweenStates(dataset.states[i - 1], state);
 
@@ -89,16 +94,20 @@ TEST_F(GtsamExample, run) {
             // Double check that our measurement matches gtsam's projection fn
             const auto &G_p_GF = this->dataset.landmarks[landmark_id];
             gtsam::SimpleCamera camera(pose, *this->kParams);
-            gtsam::Point2 gt_measurement =
+            const gtsam::Point2 gt_measurement =
               camera.project(gtsam::Point3{G_p_GF});
             ASSERT_PRED2(VectorsNear, gt_measurement, measurement);
+
+            // Add some artificial noise to the synthetic measurement
+            auto noisy_measurement =
+              measurement + measurement_noise_sampler.sample();
 
             auto projection_factor =
               gtsam::GenericProjectionFactor<gtsam::Pose3,
                                              gtsam::Point3,
                                              gtsam::Cal3_S2>{
-                gt_measurement,
-                measurement_noise,
+                noisy_measurement,
+                measurement_noise_model,
                 gtsam::Symbol{'x', i},
                 gtsam::Symbol{'l', landmark_id},
                 this->kParams};
@@ -109,7 +118,6 @@ TEST_F(GtsamExample, run) {
             const auto key = gtsam::Symbol{'l', landmark_id};
             if (!initial_estimate.exists(key)) {
                 auto offset = gtsam::Point3{-0.25, 0.20, 0.15};
-                offset = gtsam::Point3{0, 0, 0};
                 initial_estimate.insert<gtsam::Point3>(key, G_p_GF + offset);
             }
         }
@@ -142,35 +150,30 @@ TEST_F(GtsamExample, run) {
 
         double pos_error =
           (true_pose.translation() - estimated_pose.translation()).norm();
-        EXPECT_LT(pos_error, 1e-3) << "x" << i;
+        EXPECT_LT(pos_error, 0.1) << "x" << i;
 
         const auto true_q = true_poses[i].rotation().toQuaternion();
         const auto estimated_q = estimated_pose.rotation().toQuaternion();
         const auto rotation_error = true_q.angularDistance(estimated_q);
-        EXPECT_LT(rotation_error, 1e-4) << "x" << i;
+        EXPECT_LT(rotation_error, 0.05) << "x" << i;
 
         avg_rot_error += rotation_error / true_poses.size();
         avg_pos_error += pos_error / true_poses.size();
     }
 
     // Check landmarks
-    // @todo a few landmarks have a bad estimate. For now, just check that most
-    // are correct.
-    auto num_outliers = 0u;
     for (const auto &l : this->dataset.landmarks) {
         const auto &landmark_id = l.first;
         const auto &true_pos = l.second;
 
         const auto key = gtsam::Symbol{'l', landmark_id};
         const auto estimated_pos = result.at(key).cast<gtsam::Point3>();
-
         const auto landmark_error = (true_pos - estimated_pos).norm();
-        if (landmark_error > 1e-3) {
-            ++num_outliers;
-        }
+
+        EXPECT_LT(landmark_error, 2.0);
+
         avg_landmark_error += landmark_error / this->dataset.landmarks.size();
     }
-    EXPECT_LT(num_outliers, this->dataset.landmarks.size() / 10);
 
     std::cout << "gtsam_offline_example results:" << std::endl;
     std::cout << "Initial cost = " << graph.error(initial_estimate)
@@ -179,6 +182,8 @@ TEST_F(GtsamExample, run) {
     std::cout << "Mean position error = " << avg_pos_error << std::endl;
     std::cout << "Mean rotation error = " << avg_rot_error << std::endl;
     std::cout << "Mean landmark error = " << avg_landmark_error << std::endl;
+    std::cout << "with synthetic measurement noise of "
+              << measurement_noise_model->sigma() << " px" << std::endl;
 }
 
 }  // namespace wave
