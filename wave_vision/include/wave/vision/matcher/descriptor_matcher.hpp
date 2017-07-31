@@ -51,6 +51,7 @@ class DescriptorMatcher {
     virtual std::vector<cv::DMatch> filterMatches(
       std::vector<std::vector<cv::DMatch>> &matches) const = 0;
 
+ public:
     /** Remove outliers between matches by using epipolar constraints. Outlier
      *  rejection methods are specified within the respective MatcherParams
      *  struct.
@@ -66,7 +67,6 @@ class DescriptorMatcher {
       const std::vector<cv::KeyPoint> &keypoints_1,
       const std::vector<cv::KeyPoint> &keypoints_2) const = 0;
 
- public:
     /** Matches keypoints descriptors between two images using the
      *  BruteForceMatcher.
      *
@@ -89,7 +89,7 @@ class DescriptorMatcher {
       const cv::Mat &descriptors_2,
       const std::vector<cv::KeyPoint> &keypoints_1,
       const std::vector<cv::KeyPoint> &keypoints_2,
-      cv::InputArray mask = cv::noArray()) const = 0;
+      cv::InputArray mask) const = 0;
 };
 }  // namespace wave
 
