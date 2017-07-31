@@ -89,7 +89,7 @@ std::vector<cv::DMatch> BruteForceMatcher::filterMatches(
 
     // Determine closest match
     auto closest_match = std::min_element(matches.begin(), matches.end());
-    float min_distance = closest_match->distance;
+    auto min_distance = closest_match->distance;
 
     // Keep any match that is less than the rejection heuristic times minimum
     // distance
