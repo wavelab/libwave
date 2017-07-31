@@ -16,7 +16,7 @@ const auto DATASET_DIR = "tests/data/vo_data_drive_0036";
 namespace wave {
 
 // Set true to add odometry factors between consecutive poses, false for pure VO
-const auto use_odometry_factors = true;
+const auto use_odometry_factors = false;
 // Set false to see what error is like without VO
 const auto use_projection_factors = true;
 

@@ -50,8 +50,7 @@ IF(GTSAM_FOUND)
         ${GTSAM_LIBRARIES})
 
     WAVE_ADD_TEST(vo_gtsam_offline_kitti_example
-        tests/gtsam/gtsam_offline_kitti_example.cpp
-        DISABLED)
+        tests/gtsam/gtsam_offline_kitti_example.cpp)
     TARGET_LINK_LIBRARIES(vo_gtsam_offline_kitti_example
         ${PROJECT_NAME}
         wave_vision
