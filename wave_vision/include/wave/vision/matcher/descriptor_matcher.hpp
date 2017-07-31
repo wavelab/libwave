@@ -89,7 +89,7 @@ class DescriptorMatcher {
       const cv::Mat &descriptors_2,
       const std::vector<cv::KeyPoint> &keypoints_1,
       const std::vector<cv::KeyPoint> &keypoints_2,
-      cv::InputArray mask) const = 0;
+      cv::InputArray mask = cv::noArray()) const = 0;
 };
 }  // namespace wave
 
