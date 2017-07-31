@@ -110,29 +110,36 @@ TEST_F(GtsamExample, run) {
     // Uncomment to print estimated values
     // result.print("Final result:\n");
 
+    auto avg_rot_error = 0.0, avg_pos_error = 0.0;
+
     // Check camera poses
-    for (auto i = 0u; i < this->dataset.states.size(); ++i) {
+    for (auto i = 0u; i < true_poses.size(); ++i) {
         const auto key = gtsam::Symbol{'x', i};
         // We have to cast the generic Value back to the known type
         const auto estimated_pose = result.at(key).cast<gtsam::Pose3>();
         const auto &true_pose = true_poses[i];
 
-        double linear_dist =
+        double pos_error =
           (true_pose.translation() - estimated_pose.translation()).norm();
-        EXPECT_LT(linear_dist, 1e-2) << "x" << i;
+        EXPECT_LT(pos_error, 1e-2) << "x" << i;
 
         const auto true_q = true_poses[i].rotation().toQuaternion();
         const auto estimated_q = estimated_pose.rotation().toQuaternion();
         const auto rotation_error = true_q.angularDistance(estimated_q);
         EXPECT_LT(rotation_error, 1e-3) << "x" << i;
+
+        avg_rot_error += rotation_error / true_poses.size();
+        avg_pos_error += pos_error / true_poses.size();
     }
 
     // No landmark ground truth to check in this case
 
     std::cout << "gtsam_offline_kitti_example results:" << std::endl;
-    std::cout << "initial error = " << graph.error(initial_estimate)
+    std::cout << "Initial cost = " << graph.error(initial_estimate)
               << std::endl;
-    std::cout << "final error = " << graph.error(result) << std::endl;
+    std::cout << "Final cost = " << graph.error(result) << std::endl;
+    std::cout << "Mean position error = " << avg_pos_error << std::endl;
+    std::cout << "Mean rotation error = " << avg_rot_error << std::endl;
 }
 
 }  // namespace wave
