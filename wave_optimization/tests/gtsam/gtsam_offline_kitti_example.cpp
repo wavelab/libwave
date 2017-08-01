@@ -45,7 +45,7 @@ TEST_F(GtsamExample, run) {
     // Generate artificial noise for the odometry measurements
     Vec6 noise_vec;
     // (rotation, then position)
-    noise_vec << Vec3::Constant(0.05), Vec3::Constant(0.1);
+    noise_vec << Vec3::Constant(0.05), Vec3::Constant(0.05);
     const auto odometry_noise_model =
       gtsam::noiseModel::Diagonal::Sigmas(noise_vec);
     auto odometry_noise_sampler = gtsam::Sampler{odometry_noise_model};
@@ -63,9 +63,8 @@ TEST_F(GtsamExample, run) {
         true_poses.push_back(pose);
 
         // Add a purposely offset initial estimate
-        const auto offset =
-          gtsam::Pose3{gtsam::Rot3::Rodrigues(-0.02, 0.02, 0.22),
-                       gtsam::Point3{0.05, -0.10, 0.20}};
+        const auto offset = gtsam::Pose3{gtsam::Rot3::Rodrigues(-0.1, 0.1, 0.1),
+                                         gtsam::Point3{0.05, -0.10, 0.20}};
 
         auto pose_estimate = pose;
         pose_estimate = pose_estimate.compose(offset);
@@ -112,7 +111,7 @@ TEST_F(GtsamExample, run) {
             const auto key = gtsam::Symbol{'l', landmark_id};
             if (!initial_estimate.exists(key)) {
                 auto camera = gtsam::SimpleCamera{pose, *this->kParams};
-                auto est = camera.backproject_from_camera(measurement, 5.0);
+                auto est = camera.backproject(measurement, 3.0);
                 initial_estimate.insert<gtsam::Point3>(key, est);
             }
         }
@@ -145,7 +144,7 @@ TEST_F(GtsamExample, run) {
 
         double pos_error =
           (true_pose.translation() - estimated_pose.translation()).norm();
-        EXPECT_LT(pos_error, 1.0) << "x" << i;
+        EXPECT_LT(pos_error, 3.0) << "x" << i;
 
         const auto true_q = true_poses[i].rotation().toQuaternion();
         const auto estimated_q = estimated_pose.rotation().toQuaternion();
