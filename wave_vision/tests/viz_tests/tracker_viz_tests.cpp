@@ -32,17 +32,14 @@ TEST(TrackerTests, OfflineTrackerTest) {
     feature_tracks = tracker.offlineTracker(image_sequence);
     ASSERT_FALSE(feature_tracks.empty());
 
-    size_t img_count = 0;
+    auto img_seq_it = image_sequence.begin();
 
-    for (auto img_seq_it = image_sequence.begin();
-         img_seq_it != image_sequence.end();
-         img_seq_it++) {
-        drawn_images.push_back(tracker.drawTracks(img_count, *img_seq_it));
-
-        ++img_count;
+    for (const auto &ft : feature_tracks) {
+        drawn_images.push_back(tracker.drawTracks(ft, *img_seq_it));
+        ++img_seq_it;
     }
 
-    for (auto img_seq_it = drawn_images.begin();
+    for (img_seq_it = drawn_images.begin();
          img_seq_it != drawn_images.end();
          img_seq_it++) {
         cv::imshow("Feature Tracks", *img_seq_it);
@@ -69,17 +66,14 @@ TEST(TrackerTests, ORBOfflineTrackerTest) {
     feature_tracks = tracker.offlineTracker(image_sequence);
     ASSERT_FALSE(feature_tracks.empty());
 
-    size_t img_count = 0;
+    auto img_seq_it = image_sequence.begin();
 
-    for (auto img_seq_it = image_sequence.begin();
-         img_seq_it != image_sequence.end();
-         img_seq_it++) {
-        drawn_images.push_back(tracker.drawTracks(img_count, *img_seq_it));
-
-        ++img_count;
+    for (const auto &ft : feature_tracks) {
+        drawn_images.push_back(tracker.drawTracks(ft, *img_seq_it));
+        ++img_seq_it;
     }
 
-    for (auto img_seq_it = drawn_images.begin();
+    for (img_seq_it = drawn_images.begin();
          img_seq_it != drawn_images.end();
          img_seq_it++) {
         cv::imshow("Feature Tracks", *img_seq_it);
@@ -106,17 +100,14 @@ TEST(TrackerTests, DISABLED_KITTIOfflineTrackerTest) {
     feature_tracks = tracker.offlineTracker(image_sequence);
     ASSERT_FALSE(feature_tracks.empty());
 
-    size_t img_count = 0;
+    auto img_seq_it = image_sequence.begin();
 
-    for (auto img_seq_it = image_sequence.begin();
-         img_seq_it != image_sequence.end();
-         img_seq_it++) {
-        drawn_images.push_back(tracker.drawTracks(img_count, *img_seq_it));
-
-        ++img_count;
+    for (const auto &ft : feature_tracks) {
+        drawn_images.push_back(tracker.drawTracks(ft, *img_seq_it));
+        ++img_seq_it;
     }
 
-    for (auto img_seq_it = drawn_images.begin();
+    for (img_seq_it = drawn_images.begin();
          img_seq_it != drawn_images.end();
          img_seq_it++) {
         cv::imshow("Feature Tracks", *img_seq_it);

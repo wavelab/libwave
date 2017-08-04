@@ -66,7 +66,8 @@ class Tracker {
      * @param image the image to draw the tracks on
      * @return the image with the tracks illustrated as arrows.
      */
-    cv::Mat drawTracks(const size_t &img_num, const cv::Mat &image) const;
+    cv::Mat drawTracks(const std::vector<FeatureTrack> &feature_tracks,
+                       const cv::Mat &image) const;
 
     /** Offline feature tracking, using list of images already loaded.
      *

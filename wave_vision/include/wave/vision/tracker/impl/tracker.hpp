@@ -23,6 +23,20 @@ Tracker<TDetector, TDescriptor, TMatcher>::registerKeypoints(
     // TODO will need way to specify camera sensor ID.
     int sensor_id = 0;
 
+    // Every 10 frames, clear the measurement container
+    std::cout << "Landmark MC size: " << this->landmarks.size() << std::endl;
+    std::cout << "img_times size: " << this->img_times.size() << std::endl;
+    auto img_count = this->img_times.size();
+    if (img_count % 10 == 0) {
+        auto lndmrk_begin = this->landmarks.begin();
+        auto lndmrk_last = this->landmarks.end();
+        --lndmrk_last;
+
+        this->landmarks.erase(lndmrk_begin, lndmrk_last);
+        std::cout << "Landmarks cleared, size is: " << this->landmarks.size()
+                  << std::endl;
+    }
+
     for (const auto &m : matches) {
         // Check to see if ID has already been assigned to keypoint
         if (this->prev_ids.count(m.queryIdx)) {
@@ -188,11 +202,8 @@ Tracker<TDetector, TDescriptor, TMatcher>::offlineTracker(
 
 template <typename TDetector, typename TDescriptor, typename TMatcher>
 cv::Mat Tracker<TDetector, TDescriptor, TMatcher>::drawTracks(
-  const size_t &img_num, const cv::Mat &image) const {
+  const std::vector<FeatureTrack> &feature_tracks, const cv::Mat &image) const {
     cv::Mat out_img = image;
-
-    // Get the tracks for this image
-    std::vector<FeatureTrack> feature_tracks = this->getTracks(img_num);
 
     // Define colour for arrows
     cv::Scalar colour(0, 255, 255);  // yellow
