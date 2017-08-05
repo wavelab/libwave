@@ -1,12 +1,12 @@
 /**
  * @file
- * Brute force matcher implementation, derived from descriptor matcher base.
+ * Brute force matcher implementation, derived from descriptor matcher base
+ * class.
  * @ingroup vision
  */
 #ifndef WAVE_VISION_BRUTE_FORCE_MATCHER_HPP
 #define WAVE_VISION_BRUTE_FORCE_MATCHER_HPP
 
-#include <algorithm>
 #include <string>
 #include <vector>
 
@@ -210,6 +210,16 @@ class BruteForceMatcher : public DescriptorMatcher {
       cv::InputArray mask = cv::noArray()) const override;
 
  private:
+    /** Remove outliers between matches. Uses a heuristic based approach as a
+     *  first pass to determine good matches.
+     *
+     *  @param matches the unfiltered matches computed from two images.
+     *
+     *  @return the filtered matches.
+     */
+    std::vector<cv::DMatch> filterMatches(
+      std::vector<cv::DMatch> &matches) const override;
+
     /** Overloaded method, which takes in a vector of a vector of matches. This
      *  is designed to be used with the knnMatchDescriptors method, and uses the
      *  ratio test to filter the matches.
@@ -220,16 +230,6 @@ class BruteForceMatcher : public DescriptorMatcher {
      */
     std::vector<cv::DMatch> filterMatches(
       std::vector<std::vector<cv::DMatch>> &matches) const override;
-
-    /** Remove outliers between matches. Uses a heuristic based approach as a
-     *  first pass to determine good matches.
-     *
-     *  @param matches the unfiltered matches computed from two images.
-     *
-     *  @return the filtered matches.
-     */
-    std::vector<cv::DMatch> filterMatches(
-      std::vector<cv::DMatch> &matches) const override;
 
     /** The pointer to the wrapped cv::BFMatcher object */
     cv::Ptr<cv::BFMatcher> brute_force_matcher;

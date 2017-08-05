@@ -34,6 +34,7 @@ ADD_LIBRARY(
     src/descriptor/brisk_descriptor.cpp
     src/descriptor/orb_descriptor.cpp
     src/matcher/brute_force_matcher.cpp
+    src/matcher/flann_matcher.cpp
 )
 TARGET_LINK_LIBRARIES(wave_vision ${WAVE_VISION_DEPS})
 
