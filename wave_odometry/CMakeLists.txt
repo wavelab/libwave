@@ -18,6 +18,7 @@ INCLUDE_DIRECTORIES(
 ADD_LIBRARY(
     wave_odometry
     STATIC
+    src/loss_functions.cpp
     src/LaserOdom.cpp
 )
 

@@ -10,102 +10,64 @@
 
 #include <ceres/ceres.h>
 #include <ceres/rotation.h>
+#include <ceres/local_parameterization.h>
 #include <Eigen/Core>
 #include "wave/geometry/rotation.hpp"
 
 namespace wave {
 
-struct PointToLineError {
-    PointToLineError() {}
-    template <typename T>
-    bool operator()(const T *const trans,
-                    const T *const pt,
-                    const T *const ptA,
-                    const T *const ptB,
-                    const T *const scale,
-                    T *residuals) const {
-        // trans[0,1,2] are the angle-axis rotation.
-        // trans[3,4,5] are the translation.
-        // pt[0,1,2] is the point
-        // ptA[0,1,2] & ptB[0,1,2] define the line
-        // scale scales the transform
-        T p[3];
-        T w[3] = {
-          scale[0] * trans[0], scale[0] * trans[1], scale[0] * trans[2]};
-        ceres::AngleAxisRotatePoint(w, pt, p);
-        // trans[3,4,5] are the translation.
-        p[0] += scale[0] * trans[3];
-        p[1] += scale[0] * trans[4];
-        p[2] += scale[0] * trans[5];
+//const double unit_x[3] = {1, 0, 0};
+//const double unit_y[3] = {0, 1, 0};
+//// Point to Line cost has a null direction of size 1.
+//class PointToLineParameterization : public ceres::LocalParameterization {
+// public:
+//    explicit PointToLineParameterization(const double *const pA, const double *const pB) {
+//        double line[3] = {pA[0] - pB[0], pA[1] - pB[1], pA[2] - pB[2]};
+//        double length = ceres::sqrt(line[0]*line[0] + line[1]*line[1] + line[2]*line[2]);
+//        line[0] /= length;
+//        line[1] /= length;
+//        line[2] /= length;
+//        // now have unit vector in direction of line, this is the null direction of the cost.
+//        // Now going to find rotation between unit z vector (0,0,1) and the direction of the line.
+//        double unit_z[3] = {0, 0, 1};
+//        double magnitude = std::acos(line[2]);
+//        double axis[3];
+//        ceres::CrossProduct(line, unit_z, axis);
+//        //scale axis to have length magnitude
+//        double axis_magnitude = ceres::sqrt(axis[0]*axis[0] + axis[1]*axis[1] +axis[2]*axis[2]);
+//        double scale = magnitude/axis_magnitude;
+//        axis[0] *= scale;
+//        axis[1] *= scale;
+//        axis[2] *= scale;
+//        ceres::AngleAxisRotatePoint(axis, unit_x, this->v1);
+//        ceres::AngleAxisRotatePoint(axis, unit_y, this->v2);
+//    }
+//    virtual ~PointToLineParameterization() {}
+//    virtual bool Plus(const double* x,
+//                    const double* delta,
+//                    double* x_plus_delta) const {
+//        x_plus_delta[0] = x[0] + delta[0]*this->v1[0] + delta[1]*this->v2[0];
+//        x_plus_delta[1] = x[1] + delta[0]*this->v1[1] + delta[1]*this->v2[1];
+//        x_plus_delta[2] = x[2] + delta[0]*this->v1[2] + delta[1]*this->v2[2];
+//        return true;
+//    }
+//    virtual bool ComputeJacobian(const double* x, double* jacobian) const {
+//        jacobian[0] = this->v1[0];
+//        jacobian[0] = this->v1[1];
+//        jacobian[0] = this->v1[2];
+//        jacobian[0] = this->v2[0];
+//        jacobian[0] = this->v2[1];
+//        jacobian[0] = this->v2[2];
+//        return true;
+//    }
+//    virtual int GlobalSize() const {return 3;}
+//    virtual int LocalSize() const {return 2;}
+// private:
+//    double v1[3];
+//    double v2[3];
+//};
 
-        T int1 =
-          (ptA[0] - p[0]) * (ptB[1] - p[1]) - (ptA[1] - p[1]) * (ptB[0] - p[0]);
-        T int2 =
-          (ptA[0] - p[0]) * (ptB[2] - p[2]) - (ptA[2] - p[2]) * (ptB[0] - p[0]);
-        T int3 =
-          (ptA[1] - p[1]) * (ptB[2] - p[2]) - (ptA[2] - p[2]) * (ptB[1] - p[1]);
-        T diff[3] = {ptA[0] - ptB[0], ptA[1] - ptB[1], ptA[2] - ptB[2]};
-
-        residuals[0] = ceres::sqrt(
-          (int1 * int1 + int2 * int2 + int3 * int3) /
-          (diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2]));
-
-        return true;
-    }
-    // Factory to hide the construction of the CostFunction object from
-    // the client code.
-    static ceres::CostFunction *Create() {
-        return (
-          new ceres::AutoDiffCostFunction<PointToLineError, 1, 6, 3, 3, 3, 1>(
-            new PointToLineError()));
-    }
-};
-
-struct PointToPlaneError {
-    PointToPlaneError() {}
-    template <typename T>
-    bool operator()(const T *const trans,
-                    const T *const pt,
-                    const T *const ptA,
-                    const T *const ptB,
-                    const T *const ptC,
-                    const T *const scale,
-                    T *residuals) const {
-        // trans[0,1,2] are the angle-axis rotation.
-        T p[3];
-        T w[3] = {
-          scale[0] * trans[0], scale[0] * trans[1], scale[0] * trans[2]};
-        ceres::AngleAxisRotatePoint(w, pt, p);
-        // trans[3,4,5] are the translation.
-        p[0] += scale[0] * trans[3];
-        p[1] += scale[0] * trans[4];
-        p[2] += scale[0] * trans[5];
-
-        T d_B[3] = {p[0] - ptB[0], p[1] - ptB[1], p[2] - ptB[2]};
-        T dBA[3] = {ptB[0] - ptA[0], ptB[1] - ptA[1], ptB[2] - ptA[2]};
-        T dBC[3] = {ptB[0] - ptC[0], ptB[1] - ptC[1], ptB[2] - ptC[2]};
-
-        T cBA_BC[3];
-        ceres::CrossProduct(dBA, dBC, cBA_BC);
-
-        T den = ceres::sqrt(cBA_BC[0] * cBA_BC[0] + cBA_BC[1] * cBA_BC[1] +
-                            cBA_BC[2] * cBA_BC[2]);
-        T num = cBA_BC[0] * d_B[0] + cBA_BC[1] * d_B[1] + cBA_BC[2] * d_B[2];
-
-        residuals[0] = num / den;
-
-        return true;
-    }
-    // Factory to hide the construction of the CostFunction object from
-    // the client code.
-    static ceres::CostFunction *Create() {
-        return (new ceres::
-                  AutoDiffCostFunction<PointToPlaneError, 1, 6, 3, 3, 3, 3, 1>(
-                    new PointToPlaneError()));
-    }
-};
-
-class AnalyticalPointToLine : public ceres::SizedCostFunction<1, 6> {
+class AnalyticalPointToLine : public ceres::SizedCostFunction<3, 3, 3> {
  public:
     virtual ~AnalyticalPointToLine() {}
     AnalyticalPointToLine(const double *const p,
@@ -129,43 +91,44 @@ class AnalyticalPointToLine : public ceres::SizedCostFunction<1, 6> {
         double point[3];
         ceres::AngleAxisRotatePoint(r, this->pt, point);
         // trans[3,4,5] are the translation.
-        point[0] += this->scale[0] * parameters[0][3];
-        point[1] += this->scale[0] * parameters[0][4];
-        point[2] += this->scale[0] * parameters[0][5];
+        point[0] += this->scale[0] * parameters[1][0];
+        point[1] += this->scale[0] * parameters[1][2];
+        point[2] += this->scale[0] * parameters[1][3];
 
         double p_A[3] = {
           point[0] - ptA[0], point[1] - ptA[1], point[2] - ptA[2]};
-        double p_B[3] = {
-          point[0] - ptB[0], point[1] - ptB[1], point[2] - ptB[2]};
-        double cross[3];
-        ceres::CrossProduct(p_A, p_B, cross);
 
-        double diff[3] = {ptA[0] - ptB[0], ptA[1] - ptB[1], ptA[2] - ptB[2]};
-        double bottom = diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2];
+        double diff[3] = {ptB[0] - ptA[0], ptB[1] - ptA[1], ptB[2] - ptA[2]};
+        double bottom =
+          diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2];
         if (bottom < 1e-10) {
             // The points defining the line are too close to each other
             return false;
         }
 
-        residuals[0] =
-          (cross[0] * cross[0] + cross[1] * cross[1] + cross[2] * cross[2]) / bottom;
+        double scaling = ceres::DotProduct(p_A, diff);
+        // point on line closest to point
+        double p_Tl[3] = {ptA[0] + (scaling / bottom) * diff[0],
+                          ptA[1] + (scaling / bottom) * diff[1],
+                          ptA[2] + (scaling / bottom) * diff[2]};
 
-        if (jacobians != NULL && jacobians[0] != NULL) {
+        residuals[0] = point[0] - p_Tl[0];
+        residuals[1] = point[1] - p_Tl[1];
+        residuals[2] = point[2] - p_Tl[2];
+
+        if (jacobians != NULL) {
             // compute jacobian
-            // First is the l2norm squared
-            Vec3 Jl2_C(2/bottom * Vec3(cross[0], cross[1], cross[2]));
-
-            // Next is the cross product wrt to the transformed point
-            Mat3 JC_P;
-            JC_P(0, 0) = 0;
-            JC_P(1, 0) = -diff[2];
-            JC_P(2, 0) = diff[1];
-            JC_P(0, 1) = diff[2];
-            JC_P(1, 1) = 0;
-            JC_P(2, 1) = -diff[0];
-            JC_P(0, 2) = -diff[1];
-            JC_P(1, 2) = diff[0];
-            JC_P(2, 2) = 0;
+            // First jacobian wrt the transformed point
+            Mat3 Jres_P;
+            Jres_P(0, 0) = 1 - (diff[0] * diff[0] / bottom);
+            Jres_P(1, 0) = -(diff[1] * diff[0] / bottom);
+            Jres_P(2, 0) = -(diff[2] * diff[0] / bottom);
+            Jres_P(0, 1) = -(diff[0] * diff[1] / bottom);
+            Jres_P(1, 1) = 1 - (diff[1] * diff[1] / bottom);
+            Jres_P(2, 1) = -(diff[2] * diff[1] / bottom);
+            Jres_P(0, 2) = -(diff[0] * diff[2] / bottom);
+            Jres_P(1, 2) = -(diff[1] * diff[2] / bottom);
+            Jres_P(2, 2) = 1 - (diff[2] * diff[2] / bottom);
 
             // Next there is the rotation wrt the angle-axis parameterization
             Vec3 wvec(r[0], r[1], r[2]);  // scaled rotation
@@ -188,30 +151,32 @@ class AnalyticalPointToLine : public ceres::SizedCostFunction<1, 6> {
 
             // Concatenate jacobians in correct order to get
             // the jacobians of the cross product wrt the angle axis parameters
-            Mat3 JC_w = JC_P * J_P_R * J_R_w * scale[0];
+            Mat3 Jres_w = Jres_P * J_P_R * J_R_w * scale[0];
+            Jres_w.transpose();
 
-            jacobians[0][0] =
-              Jl2_C[0] * JC_w(0, 0) + Jl2_C[1] * JC_w(1, 0) + Jl2_C[2] * JC_w(2, 0);
-            jacobians[0][1] =
-              Jl2_C[0] * JC_w(0, 1) + Jl2_C[1] * JC_w(1, 1) + Jl2_C[2] * JC_w(2, 1);
-            jacobians[0][2] =
-              Jl2_C[0] * JC_w(0, 2) + Jl2_C[1] * JC_w(1, 2) + Jl2_C[2] * JC_w(2, 2);
+            if (jacobians[0] != NULL) {
+                jacobians[0][0] = Jres_w(0, 0);
+                jacobians[0][1] = Jres_w(0, 1);
+                jacobians[0][2] = Jres_w(0, 2);
+                jacobians[0][3] = Jres_w(1, 0);
+                jacobians[0][4] = Jres_w(1, 1);
+                jacobians[0][5] = Jres_w(1, 2);
+                jacobians[0][6] = Jres_w(2, 0);
+                jacobians[0][7] = Jres_w(2, 1);
+                jacobians[0][8] = Jres_w(2, 2);
+            }
 
-            // The translation part of the transform is linear:
-            jacobians[0][3] = scale[0] * Jl2_C[0];
-            jacobians[0][4] = scale[0] * Jl2_C[1];
-            jacobians[0][5] = scale[0] * Jl2_C[2];
-
-            jacobians[0][3] =
-                    Jl2_C[0] * JC_P(0, 0) + Jl2_C[1] * JC_P(1, 0) + Jl2_C[2] * JC_P(2, 0);
-            jacobians[0][4] =
-                    Jl2_C[0] * JC_P(0, 1) + Jl2_C[1] * JC_P(1, 1) + Jl2_C[2] * JC_P(2, 1);
-            jacobians[0][5] =
-                    Jl2_C[0] * JC_P(0, 2) + Jl2_C[1] * JC_P(1, 2) + Jl2_C[2] * JC_P(2, 2);
-
-            jacobians[0][3] *= scale[0];
-            jacobians[0][4] *= scale[0];
-            jacobians[0][5] *= scale[0];
+            if (jacobians[1] != NULL) {
+                jacobians[1][0] = Jres_P(0, 0) * scale[0];
+                jacobians[1][1] = Jres_P(0, 1) * scale[0];
+                jacobians[1][2] = Jres_P(0, 2) * scale[0];
+                jacobians[1][3] = Jres_P(1, 0) * scale[0];
+                jacobians[1][4] = Jres_P(1, 1) * scale[0];
+                jacobians[1][5] = Jres_P(1, 2) * scale[0];
+                jacobians[1][6] = Jres_P(2, 0) * scale[0];
+                jacobians[1][7] = Jres_P(2, 1) * scale[0];
+                jacobians[1][8] = Jres_P(2, 2) * scale[0];
+            }
         }
 
         return true;
@@ -224,7 +189,7 @@ class AnalyticalPointToLine : public ceres::SizedCostFunction<1, 6> {
     const double *scale;
 };
 
-class AnalyticalPointToPlane : public ceres::SizedCostFunction<1, 6> {
+class AnalyticalPointToPlane : public ceres::SizedCostFunction<1, 3, 3> {
  public:
     virtual ~AnalyticalPointToPlane() {}
     AnalyticalPointToPlane(const double *const p,
@@ -250,9 +215,9 @@ class AnalyticalPointToPlane : public ceres::SizedCostFunction<1, 6> {
         double point[3];
         ceres::AngleAxisRotatePoint(r, this->pt, point);
         // trans[3,4,5] are the translation.
-        point[0] += this->scale[0] * parameters[0][3];
-        point[1] += this->scale[0] * parameters[0][4];
-        point[2] += this->scale[0] * parameters[0][5];
+        point[0] += this->scale[0] * parameters[1][0];
+        point[1] += this->scale[0] * parameters[1][2];
+        point[2] += this->scale[0] * parameters[1][3];
 
         double d_B[3] = {
           point[0] - ptB[0], point[1] - ptB[1], point[2] - ptB[2]};
@@ -269,7 +234,7 @@ class AnalyticalPointToPlane : public ceres::SizedCostFunction<1, 6> {
 
         residuals[0] = num / den;
 
-        if (jacobians != NULL && jacobians[0] != NULL) {
+        if (jacobians != NULL) {
             // compute jacobian
             // setup alias to make importing matlab string easier
             const double &XA1 = this->ptA[0], &XA2 = this->ptA[1],
@@ -307,17 +272,21 @@ class AnalyticalPointToPlane : public ceres::SizedCostFunction<1, 6> {
             neg_skw(2, 2) = 0;
             Mat3 temp = neg_skw * J_R_w * scale[0];
 
-            jacobians[0][0] =
-              D_P[0] * temp(0, 0) + D_P[1] * temp(1, 0) + D_P[2] * temp(2, 0);
-            jacobians[0][1] =
-              D_P[0] * temp(0, 1) + D_P[1] * temp(1, 1) + D_P[2] * temp(2, 1);
-            jacobians[0][2] =
-              D_P[0] * temp(0, 2) + D_P[1] * temp(1, 2) + D_P[2] * temp(2, 2);
+            if (jacobians[0] != NULL) {
+                jacobians[0][0] =
+                        D_P[0] * temp(0, 0) + D_P[1] * temp(1, 0) + D_P[2] * temp(2, 0);
+                jacobians[0][1] =
+                        D_P[0] * temp(0, 1) + D_P[1] * temp(1, 1) + D_P[2] * temp(2, 1);
+                jacobians[0][2] =
+                        D_P[0] * temp(0, 2) + D_P[1] * temp(1, 2) + D_P[2] * temp(2, 2);
+            }
 
-            // The translation part of the transform is linear:
-            jacobians[0][3] = scale[0] * D_P[0];
-            jacobians[0][4] = scale[0] * D_P[1];
-            jacobians[0][5] = scale[0] * D_P[2];
+            if (jacobians[1] != NULL) {
+                // The translation part of the transform is linear:
+                jacobians[1][0] = scale[0] * D_P[0];
+                jacobians[1][1] = scale[0] * D_P[1];
+                jacobians[1][2] = scale[0] * D_P[2];
+            }
         }
 
         return true;
