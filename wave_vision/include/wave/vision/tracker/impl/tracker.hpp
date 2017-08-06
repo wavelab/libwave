@@ -13,35 +13,39 @@ void Tracker<TDetector, TDescriptor, TMatcher>::detectAndCompute(
 }
 
 template <typename TDetector, typename TDescriptor, typename TMatcher>
+void Tracker<TDetector, TDescriptor, TMatcher>::purgeContainer(
+  const std::vector<size_t> &id_list) {
+    // Go through all entries in prev_ids, and see if they are in id_list.
+    for (const auto &pid : this->prev_ids) {
+        auto id = pid.second;
+        // If the ID is not found,  remove it from the LMC.
+        if (std::find(id_list.begin(), id_list.end(), id) == id_list.end()) {
+            // Extract the time of the previous image
+            auto prev_img = this->img_times.size() - 2;
+            const auto &prev_time = this->img_times.at(prev_img);
+
+            // Erase from the landmark measurement container
+            this->landmarks.erase(prev_time, this->sensor_id, id);
+        }
+    }
+}
+
+template <typename TDetector, typename TDescriptor, typename TMatcher>
 std::map<int, size_t>
 Tracker<TDetector, TDescriptor, TMatcher>::registerKeypoints(
   const std::vector<cv::KeyPoint> &curr_kp,
   const std::vector<cv::DMatch> &matches) {
     // Maps current keypoint indices to IDs
     std::map<int, size_t> curr_ids;
-
-    // TODO will need way to specify camera sensor ID.
-    int sensor_id = 0;
-
-    // Every 10 frames, clear the measurement container
-    std::cout << "Landmark MC size: " << this->landmarks.size() << std::endl;
-    std::cout << "img_times size: " << this->img_times.size() << std::endl;
-    auto img_count = this->img_times.size();
-    if (img_count % 10 == 0) {
-        auto lndmrk_begin = this->landmarks.begin();
-        auto lndmrk_last = this->landmarks.end();
-        --lndmrk_last;
-
-        this->landmarks.erase(lndmrk_begin, lndmrk_last);
-        std::cout << "Landmarks cleared, size is: " << this->landmarks.size()
-                  << std::endl;
-    }
+    std::vector<size_t> id_list;
 
     for (const auto &m : matches) {
         // Check to see if ID has already been assigned to keypoint
         if (this->prev_ids.count(m.queryIdx)) {
             // If so, assign that ID to current map.
-            curr_ids[m.trainIdx] = this->prev_ids.at(m.queryIdx);
+            auto id = this->prev_ids.at(m.queryIdx);
+            curr_ids[m.trainIdx] = id;
+            id_list.emplace_back(id);
 
             // Extract value of keypoint.
             Vec2 landmark = convertKeypoint(curr_kp.at(m.trainIdx));
@@ -50,14 +54,16 @@ Tracker<TDetector, TDescriptor, TMatcher>::registerKeypoints(
 
             // Emplace LandmarkMeasurement into LandmarkMeasurementContainer
             this->landmarks.emplace(this->img_times.at(img_count),
-                                    sensor_id,
+                                    this->sensor_id,
                                     curr_ids.at(m.trainIdx),
                                     img_count,
                                     landmark);
         } else {
             // Else, assign new ID
-            this->prev_ids[m.queryIdx] = this->generateFeatureID();
+            auto id = this->generateFeatureID();
+            this->prev_ids[m.queryIdx] = id;
             curr_ids[m.trainIdx] = this->prev_ids.at(m.queryIdx);
+            id_list.emplace_back(id);
 
             // Since keypoint was not a match before, need to add previous and
             // current points to measurement container
@@ -74,17 +80,23 @@ Tracker<TDetector, TDescriptor, TMatcher>::registerKeypoints(
 
             // Add previous and current landmarks to container
             this->landmarks.emplace(prev_time,
-                                    sensor_id,
+                                    this->sensor_id,
                                     this->prev_ids.at(m.queryIdx),
                                     prev_img,
                                     prev_landmark);
 
             this->landmarks.emplace(curr_time,
-                                    sensor_id,
+                                    this->sensor_id,
                                     curr_ids.at(m.trainIdx),
                                     curr_img,
                                     curr_landmark);
         }
+    }
+
+    // If in online mode, clear IDs in LMC that are in prev_ids but not in
+    // the current image.
+    if (this->online) {
+        this->purgeContainer(id_list);
     }
 
     return curr_ids;
@@ -95,9 +107,6 @@ template <typename TDetector, typename TDescriptor, typename TMatcher>
 std::vector<FeatureTrack> Tracker<TDetector, TDescriptor, TMatcher>::getTracks(
   const size_t &img_num) const {
     std::vector<FeatureTrack> feature_tracks;
-
-    // TODO add in ability to choose different camera.
-    int sensor_id = 0;
 
     // Determine how many images have been added
     auto img_count = this->img_times.size() - 1;
@@ -120,7 +129,7 @@ std::vector<FeatureTrack> Tracker<TDetector, TDescriptor, TMatcher>::getTracks(
               (this->img_times.begin())->second;
 
             FeatureTrack tracks = this->landmarks.getTrackInWindow(
-              sensor_id, l, start_time, img_time);
+              this->sensor_id, l, start_time, img_time);
 
             // Emplace new feature track back into vector
             feature_tracks.emplace_back(tracks);

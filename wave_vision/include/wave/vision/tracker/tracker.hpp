@@ -39,8 +39,14 @@ class Tracker {
      * @param descriptor descriptor object (BRISK, ORB, etc...)
      * @param matcher matcher object (BruteForceMatcher, FLANN)
      */
-    Tracker(TDetector detector, TDescriptor descriptor, TMatcher matcher)
-        : detector(detector), descriptor(descriptor), matcher(matcher) {}
+    Tracker(TDetector detector,
+            TDescriptor descriptor,
+            TMatcher matcher,
+            bool online = false)
+        : detector(detector),
+          descriptor(descriptor),
+          matcher(matcher),
+          online(online) {}
 
     ~Tracker() = default;
 
@@ -87,6 +93,26 @@ class Tracker {
     TMatcher matcher;
 
  private:
+    // Keypoints and descriptors from the previous timestep
+    std::vector<cv::KeyPoint> prev_kp;
+    cv::Mat prev_desc;
+
+    // Correspondence maps
+    std::map<int, size_t> prev_ids;
+    std::map<size_t, std::chrono::steady_clock::time_point> img_times;
+
+    // Measurement container variables
+    LandmarkMeasurementContainer<LandmarkMeasurement<int>> landmarks;
+
+    // The sensor ID. TODO: Expand this for use with multiple cams.
+    int sensor_id = 0;
+
+    /** Online mode. If true, the Landmark Measurement Container will clear all
+     *  landmarks from the container that are not found in the current image.
+     *  This is done to maintain resources and prevent extended memory usage.
+     */
+    bool online;
+
     /** Generate a new ID for each newly detected feature.
      *
      * @return the assigned ID.
@@ -119,6 +145,14 @@ class Tracker {
         this->img_times[img_count] = current_time;
     }
 
+    /** Removes IDs in LandmarkMeasurementContainer that are in prev_ids but not
+     *  in the current image. This is done when this->online is true, in order
+     *  to manage memory and limit the size of the LMC.
+     *
+     *  @param id_list the list of IDs in the current image.
+     */
+    void purgeContainer(const std::vector<size_t> &id_list);
+
     /** Registers the latest matched keypoints with IDs. Assigns a new ID if one
      * has not already been provided.
      *
@@ -129,17 +163,6 @@ class Tracker {
     std::map<int, size_t> registerKeypoints(
       const std::vector<cv::KeyPoint> &curr_kp,
       const std::vector<cv::DMatch> &matches);
-
-    // Keypoints and descriptors from the previous timestep
-    std::vector<cv::KeyPoint> prev_kp;
-    cv::Mat prev_desc;
-
-    // Correspondence maps
-    std::map<int, size_t> prev_ids;
-    std::map<size_t, std::chrono::steady_clock::time_point> img_times;
-
-    // Measurement container variables
-    LandmarkMeasurementContainer<LandmarkMeasurement<int>> landmarks;
 };
 
 /** @} group vision */
