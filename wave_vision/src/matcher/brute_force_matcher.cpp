@@ -191,8 +191,12 @@ std::vector<cv::DMatch> BruteForceMatcher::matchDescriptors(
         std::vector<cv::DMatch> good_matches =
           this->removeOutliers(filtered_matches, keypoints_1, keypoints_2);
 
+        this->good_matches = good_matches;
+
         return good_matches;
     }
+
+    this->filtered_matches = filtered_matches;
 
     return filtered_matches;
 }

@@ -77,6 +77,15 @@ class Tracker {
     std::vector<std::vector<FeatureTrack>> offlineTracker(
       const std::vector<cv::Mat> &image_sequence);
 
+    /** The templated FeatureDetector */
+    TDetector detector;
+
+    /** The templated DescriptorExtractor */
+    TDescriptor descriptor;
+
+    /** The templated DescriptorMatcher */
+    TMatcher matcher;
+
  private:
     /** Generate a new ID for each newly detected feature.
      *
@@ -120,15 +129,6 @@ class Tracker {
     std::map<int, size_t> registerKeypoints(
       const std::vector<cv::KeyPoint> &curr_kp,
       const std::vector<cv::DMatch> &matches);
-
-    /** The templated FeatureDetector */
-    TDetector detector;
-
-    /** The templated DescriptorExtractor */
-    TDescriptor descriptor;
-
-    /** The templated DescriptorMatcher */
-    TMatcher matcher;
 
     // Keypoints and descriptors from the previous timestep
     std::vector<cv::KeyPoint> prev_kp;

@@ -209,6 +209,18 @@ class BruteForceMatcher : public DescriptorMatcher {
       const std::vector<cv::KeyPoint> &keypoints_2,
       cv::InputArray mask = cv::noArray()) const override;
 
+    // Public Variables
+    // -----------------------------------------------------------------
+    /** The matches after being filtered by the distance/ratio test. This is the
+     *  input to the outlierRejection method.
+     */
+    std::vector<cv::DMatch> filtered_matches;
+
+    /** The matches remaining after outlier removal via RANSAC or a similar
+     *  method.
+     */
+    std::vector<cv::DMatch> good_matches;
+
  private:
     /** Overloaded method, which takes in a vector of a vector of matches. This
      *  is designed to be used with the knnMatchDescriptors method, and uses the
