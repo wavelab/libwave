@@ -19,6 +19,7 @@ void Tracker<TDetector, TDescriptor, TMatcher>::purgeContainer(
     for (const auto &pid : this->prev_ids) {
         auto id = pid.second;
         // If the ID is not found,  remove it from the LMC.
+        // TODO: Add ability to remove only after a defined amount of images.
         if (std::find(id_list.begin(), id_list.end(), id) == id_list.end()) {
             // Extract the time of the previous image
             auto prev_img = this->img_times.size() - 2;
