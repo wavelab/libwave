@@ -212,17 +212,17 @@ class BruteForceMatcher : public DescriptorMatcher {
     // Public Variables
     // -----------------------------------------------------------------
     /** The number of matches prior to any filtering or outlier removal. */
-    size_t num_raw_matches;
+    size_t num_raw_matches = 0u;
 
     /** The number of matches after being filtered by the distance/ratio test.
      *  This is the input to the outlierRejection method.
      */
-    size_t num_filtered_matches;
+    size_t num_filtered_matches = 0u;
 
     /** The size of matches remaining after outlier removal via RANSAC or a
      *  similar method.
      */
-    size_t num_good_matches;
+    size_t num_good_matches = 0u;
 
  private:
     /** Overloaded method, which takes in a vector of a vector of matches. This

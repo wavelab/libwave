@@ -79,37 +79,4 @@ TEST(TrackerTests, ORBOfflineTrackerTest) {
         cv::destroyAllWindows();
     }
 }
-
-TEST(TrackerTests, DISABLED_KITTIOfflineTrackerTest) {
-    std::vector<cv::Mat> image_sequence;
-    std::vector<cv::Mat> drawn_images;
-
-    std::vector<std::vector<FeatureTrack>> feature_tracks;
-
-    FASTDetector detector;
-    BRISKDescriptor descriptor;
-    BruteForceMatcher matcher;
-
-    Tracker<FASTDetector, BRISKDescriptor, BruteForceMatcher> tracker(
-      detector, descriptor, matcher);
-
-    image_sequence = readImageSequence(KITTI_IMG_PATH);
-
-    feature_tracks = tracker.offlineTracker(image_sequence);
-    ASSERT_FALSE(feature_tracks.empty());
-
-    auto img_seq_it = image_sequence.begin();
-
-    for (const auto &ft : feature_tracks) {
-        drawn_images.push_back(tracker.drawTracks(ft, *img_seq_it));
-        ++img_seq_it;
-    }
-
-    for (img_seq_it = drawn_images.begin(); img_seq_it != drawn_images.end();
-         img_seq_it++) {
-        cv::imshow("Feature Tracks", *img_seq_it);
-        cv::waitKey(0);
-        cv::destroyAllWindows();
-    }
-}
 }  // namespace wave

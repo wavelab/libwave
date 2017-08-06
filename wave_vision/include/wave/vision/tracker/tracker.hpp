@@ -92,6 +92,9 @@ class Tracker {
     /** The templated DescriptorMatcher */
     TMatcher matcher;
 
+    /** The size of the LandmarkMeasurementContainer */
+    size_t lmc_size = 0;
+
  private:
     // Keypoints and descriptors from the previous timestep
     std::vector<cv::KeyPoint> prev_kp;

@@ -100,6 +100,8 @@ Tracker<TDetector, TDescriptor, TMatcher>::registerKeypoints(
         this->purgeContainer(id_list);
     }
 
+    this->lmc_size = this->landmarks.size();
+
     return curr_ids;
 }
 
