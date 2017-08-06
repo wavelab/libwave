@@ -1,13 +1,13 @@
 #include "wave/wave_test.hpp"
-#include "wave/vision/dataset.hpp"
+#include "wave/vision/dataset/VoDataset.hpp"
 
 namespace wave {
 
 const std::string TEST_CONFIG = "tests/data/vo_test.yaml";
 const std::string TEST_OUTPUT = "/tmp/dataset_test";
 
-TEST(VOTestCamera, constructor) {
-    VOTestCamera camera;
+TEST(VoTestCamera, constructor) {
+    VoTestCamera camera;
 
     EXPECT_EQ(0, camera.image_width);
     EXPECT_EQ(0, camera.image_height);
@@ -18,8 +18,8 @@ TEST(VOTestCamera, constructor) {
     EXPECT_EQ(0, camera.frame);
 }
 
-TEST(VOTestCamera, update) {
-    VOTestCamera camera;
+TEST(VoTestCamera, update) {
+    VoTestCamera camera;
     bool retval;
 
     // setup
@@ -32,7 +32,7 @@ TEST(VOTestCamera, update) {
     EXPECT_FLOAT_EQ(0.0, camera.dt);
 }
 
-TEST(VOTestCamera, observeLandmarks) {
+TEST(VoTestCamera, observeLandmarks) {
     // setup
     Vec3 G_p_GC{0, 0, 0};
 
@@ -47,7 +47,7 @@ TEST(VOTestCamera, observeLandmarks) {
     landmarks.emplace(3, Vec3{5.0, 0.2, 1.3});    // above and to the left
     landmarks.emplace(4, Vec3{1.0, 223.0, -19});  // in front, but far off
 
-    VOTestCamera camera;
+    VoTestCamera camera;
     camera.hz = 60;
     camera.image_width = 640;
     camera.image_height = 640;
@@ -68,15 +68,14 @@ TEST(VOTestCamera, observeLandmarks) {
     EXPECT_LT(observed[1].second.y(), 320);
 }
 
-TEST(VOTestDataset, constructor) {
-    VOTestDatasetGenerator dataset;
-
+TEST(VoDataset, constructor) {
+    VoDatasetGenerator dataset;
     EXPECT_EQ(0, dataset.camera.image_width);
     EXPECT_EQ(0, dataset.camera.image_height);
 }
 
-TEST(VOTestDataset, configure) {
-    VOTestDatasetGenerator dataset;
+TEST(VoDataset, configure) {
+    VoDatasetGenerator dataset;
 
     EXPECT_NO_THROW(dataset.configure(TEST_CONFIG));
 
@@ -88,19 +87,18 @@ TEST(VOTestDataset, configure) {
     EXPECT_FLOAT_EQ(0.0, dataset.camera.K(2, 1));
 }
 
-TEST(VOTestDataset, generate) {
-    VOTestDatasetGenerator generator;
-
+TEST(VoDataset, generate) {
+    VoDatasetGenerator generator;
     generator.configure(TEST_CONFIG);
     auto dataset = generator.generate();
 }
 
-TEST(VOTestDataset, writeAndReadToFile) {
+TEST(VoDataset, writeAndReadToFile) {
     // To test both operations, we write to files, read them, and ensure the
     // resulting dataset is the one we started with
     const auto tol = 1e-5;  // Required precision for Eigen's isApprox
 
-    VOTestDatasetGenerator generator;
+    VoDatasetGenerator generator;
 
     remove_dir(TEST_OUTPUT);
     generator.configure(TEST_CONFIG);
@@ -110,7 +108,7 @@ TEST(VOTestDataset, writeAndReadToFile) {
     dataset.outputToDirectory(TEST_OUTPUT);
 
     // Read
-    auto input = VOTestDataset::loadFromDirectory(TEST_OUTPUT);
+    auto input = VoDataset::loadFromDirectory(TEST_OUTPUT);
 
     EXPECT_EQ(dataset.camera_K, input.camera_K);
     for (const auto &l : dataset.landmarks) {

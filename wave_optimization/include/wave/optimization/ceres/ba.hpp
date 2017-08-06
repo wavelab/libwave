@@ -7,7 +7,7 @@
 
 #include "wave/utils/utils.hpp"
 #include "wave/vision/utils.hpp"
-#include "wave/vision/dataset.hpp"
+#include "wave/vision/dataset/VoDataset.hpp"
 
 namespace wave {
 

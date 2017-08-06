@@ -1,54 +1,10 @@
 #include <boost/filesystem.hpp>
 
-#include "wave/vision/dataset.hpp"
+#include "wave/vision/dataset/VoDataset.hpp"
 
 namespace wave {
 
-bool VOTestCamera::update(double dt) {
-    this->dt += dt;
-
-    if (this->dt > (1.0 / this->hz)) {
-        this->dt = 0.0;
-        this->frame++;
-        return true;
-    }
-
-    return false;
-}
-
-int VOTestCamera::observeLandmarks(double dt,
-                                   const LandmarkMap &landmarks,
-                                   const Quaternion &q_GC,
-                                   const Vec3 &G_p_GC,
-                                   std::vector<LandmarkObservation> &observed) {
-    // pre-check
-    if (this->update(dt) == false) {
-        return 1;
-    }
-
-    // get rotation matrix from world frame to camera frame
-    Mat3 R_GC = q_GC.matrix();
-
-    // check which landmarks in 3d are observable from camera
-    observed.clear();
-    for (auto landmark : landmarks) {
-        const auto &point = landmark.second;
-
-        // project 3D world point to 2D image plane, also checking cheirality
-        Vec2 meas;
-        auto in_front = pinholeProject(this->K, R_GC, G_p_GC, point, meas);
-        if (in_front) {
-            // check to see if feature observed is within image plane
-            if (meas.x() < this->image_width && meas.x() > 0 &&
-                meas.y() < this->image_height && meas.y() > 0) {
-                observed.emplace_back(landmark.first, meas);
-            }
-        }
-    }
-    return 0;
-}
-
-void VOTestDatasetGenerator::configure(const std::string &config_file) {
+void VoDatasetGenerator::configure(const std::string &config_file) {
     ConfigParser parser;
     double fx, fy, cx, cy;
 
@@ -79,7 +35,7 @@ void VOTestDatasetGenerator::configure(const std::string &config_file) {
     // clang-format on
 }
 
-LandmarkMap VOTestDatasetGenerator::generateLandmarks() {
+LandmarkMap VoDatasetGenerator::generateLandmarks() {
     LandmarkMap landmarks;
 
     // generate random 3d landmarks
@@ -96,7 +52,7 @@ LandmarkMap VOTestDatasetGenerator::generateLandmarks() {
     return landmarks;
 }
 
-void VOTestDataset::outputLandmarks(const std::string &output_path) {
+void VoDataset::outputLandmarks(const std::string &output_path) {
     // build landmark matrix
     auto data = MatX{this->landmarks.size(), 4};
 
@@ -115,7 +71,7 @@ void VOTestDataset::outputLandmarks(const std::string &output_path) {
     out_file << data.format(fmt) << std::endl;
 }
 
-void VOTestDataset::outputCalibration(const std::string &output_path) {
+void VoDataset::outputCalibration(const std::string &output_path) {
     std::ofstream calib_file{output_path};
     auto fmt =
       Eigen::IOFormat{Eigen::StreamPrecision, Eigen::DontAlignCols, " ", " "};
@@ -123,7 +79,7 @@ void VOTestDataset::outputCalibration(const std::string &output_path) {
     calib_file << std::endl;
 }
 
-void VOTestDataset::outputObserved(const std::string &output_dir) {
+void VoDataset::outputObserved(const std::string &output_dir) {
     // pre-check
     if (this->states.empty()) {
         throw std::runtime_error("outputObserved: no states");
@@ -170,7 +126,7 @@ void VOTestDataset::outputObserved(const std::string &output_dir) {
     index_file << std::endl;
 }
 
-void VOTestDataset::outputRobotState(const std::string &output_path) {
+void VoDataset::outputRobotState(const std::string &output_path) {
     // pre-check
     if (this->states.empty()) {
         throw std::runtime_error("outputRobotState: no states");
@@ -193,7 +149,7 @@ void VOTestDataset::outputRobotState(const std::string &output_path) {
     state_file << std::endl;
 }
 
-void VOTestDataset::outputToDirectory(const std::string &output_dir) {
+void VoDataset::outputToDirectory(const std::string &output_dir) {
     // mkdir calibration directory
     boost::filesystem::create_directories(output_dir);
 
@@ -204,8 +160,8 @@ void VOTestDataset::outputToDirectory(const std::string &output_dir) {
     this->outputObserved(output_dir);
 }
 
-VOTestDataset VOTestDataset::loadFromDirectory(const std::string &input_dir) {
-    VOTestDataset dataset;
+VoDataset VoDataset::loadFromDirectory(const std::string &input_dir) {
+    VoDataset dataset;
 
     std::ifstream calib_file{input_dir + "/calib.dat"};
     dataset.camera_K = matrixFromStream<3, 3>(calib_file);
@@ -222,7 +178,7 @@ VOTestDataset VOTestDataset::loadFromDirectory(const std::string &input_dir) {
     for (std::string obs_file_name; index_file >> obs_file_name;) {
         std::ifstream obs_file{obs_file_name};
 
-        VOTestInstant state;
+        VoInstant state;
         obs_file >> state.time;
         state.robot_G_p_GB = matrixFromStream<3, 1>(obs_file);
         state.robot_q_GB = matrixFromStream<4, 1>(obs_file);
@@ -243,8 +199,8 @@ VOTestDataset VOTestDataset::loadFromDirectory(const std::string &input_dir) {
     return dataset;
 }
 
-VOTestDataset VOTestDatasetGenerator::generate() {
-    VOTestDataset dataset;
+VoDataset VoDatasetGenerator::generate() {
+    VoDataset dataset;
     // generate random 3D features
     dataset.landmarks = this->generateLandmarks();
 
@@ -270,7 +226,7 @@ VOTestDataset VOTestDatasetGenerator::generate() {
         auto G_p_GB = Vec3{pose2d.x(), pose2d.y(), 0};
         auto q_GB = Quaternion{Eigen::AngleAxisd{pose2d.z(), Vec3::UnitZ()}};
 
-        auto instant = VOTestInstant{};
+        auto instant = VoInstant{};
 
         // Orientation of robot Body frame in Camera frame
         Quaternion q_BC = Eigen::AngleAxisd(-M_PI_2, Vec3::UnitZ()) *
