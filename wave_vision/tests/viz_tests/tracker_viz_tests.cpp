@@ -39,8 +39,7 @@ TEST(TrackerTests, OfflineTrackerTest) {
         ++img_seq_it;
     }
 
-    for (img_seq_it = drawn_images.begin();
-         img_seq_it != drawn_images.end();
+    for (img_seq_it = drawn_images.begin(); img_seq_it != drawn_images.end();
          img_seq_it++) {
         cv::imshow("Feature Tracks", *img_seq_it);
         cv::waitKey(0);
@@ -73,8 +72,7 @@ TEST(TrackerTests, ORBOfflineTrackerTest) {
         ++img_seq_it;
     }
 
-    for (img_seq_it = drawn_images.begin();
-         img_seq_it != drawn_images.end();
+    for (img_seq_it = drawn_images.begin(); img_seq_it != drawn_images.end();
          img_seq_it++) {
         cv::imshow("Feature Tracks", *img_seq_it);
         cv::waitKey(0);
@@ -107,8 +105,7 @@ TEST(TrackerTests, DISABLED_KITTIOfflineTrackerTest) {
         ++img_seq_it;
     }
 
-    for (img_seq_it = drawn_images.begin();
-         img_seq_it != drawn_images.end();
+    for (img_seq_it = drawn_images.begin(); img_seq_it != drawn_images.end();
          img_seq_it++) {
         cv::imshow("Feature Tracks", *img_seq_it);
         cv::waitKey(0);
