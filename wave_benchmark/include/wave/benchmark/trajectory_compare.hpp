@@ -50,10 +50,10 @@ class TrajectoryCompare {
     void reset();
 
     /** Adds a ground truth observation */
-    void pushTruth(const BenchmarkPose &pose, const TimeType time);
+    void pushTruth(const BenchmarkPose &pose, const TimePoint time);
 
     /** Adds a pose measurement */
-    void pushMeasurement(const BenchmarkPose &pose, const TimeType time);
+    void pushMeasurement(const BenchmarkPose &pose, const TimePoint time);
 
     /** Finds the difference between the measurements and ground truth
      * using `trajectoryError` and places the result into `this->error`.
