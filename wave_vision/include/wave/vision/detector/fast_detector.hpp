@@ -68,6 +68,9 @@ struct FASTDetectorParams {
  */
 class FASTDetector : public FeatureDetector {
  public:
+    /** The number of keypoints detected. */
+    size_t num_keypoints;
+
     /** Default constructor. The user can also specify their own struct with
      *  desired values. If no struct is provided, default values are used.
      *

@@ -162,7 +162,7 @@ std::vector<cv::DMatch> BruteForceMatcher::matchDescriptors(
   const cv::Mat &descriptors_2,
   const std::vector<cv::KeyPoint> &keypoints_1,
   const std::vector<cv::KeyPoint> &keypoints_2,
-  cv::InputArray mask) const {
+  cv::InputArray mask) {
     std::vector<cv::DMatch> filtered_matches;
 
     if (this->current_config.use_knn) {
@@ -175,6 +175,7 @@ std::vector<cv::DMatch> BruteForceMatcher::matchDescriptors(
         this->brute_force_matcher->knnMatch(
           descriptors_1, descriptors_2, raw_matches, k, mask, false);
 
+        this->num_raw_matches = raw_matches.size();
         filtered_matches = this->filterMatches(raw_matches);
 
     } else {
@@ -184,6 +185,7 @@ std::vector<cv::DMatch> BruteForceMatcher::matchDescriptors(
         this->brute_force_matcher->match(
           descriptors_1, descriptors_2, raw_matches, mask);
 
+        this->num_raw_matches = raw_matches.size();
         filtered_matches = this->filterMatches(raw_matches);
     }
 
@@ -191,12 +193,12 @@ std::vector<cv::DMatch> BruteForceMatcher::matchDescriptors(
         std::vector<cv::DMatch> good_matches =
           this->removeOutliers(filtered_matches, keypoints_1, keypoints_2);
 
-        this->good_matches = good_matches;
+        this->num_good_matches = good_matches.size();
 
         return good_matches;
     }
 
-    this->filtered_matches = filtered_matches;
+    this->num_filtered_matches = filtered_matches.size();
 
     return filtered_matches;
 }
