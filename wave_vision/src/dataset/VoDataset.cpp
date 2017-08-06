@@ -2,6 +2,8 @@
 
 #include "wave/vision/dataset/VoDataset.hpp"
 
+#include <sys/stat.h>
+
 namespace wave {
 
 void VoDatasetGenerator::configure(const std::string &config_file) {

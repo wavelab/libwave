@@ -5,9 +5,6 @@
 #ifndef WAVE_VISION_VOTESTCAMERA_HPP
 #define WAVE_VISION_VOTESTCAMERA_HPP
 
-#include <sys/stat.h>
-#include <sys/types.h>
-
 #include "wave/utils/utils.hpp"
 #include "wave/vision/utils.hpp"
 #include "wave/kinematics/two_wheel.hpp"
