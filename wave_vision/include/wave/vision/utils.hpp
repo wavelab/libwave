@@ -34,14 +34,46 @@ Vec2 focal_length(double hfov,
                   double image_width,
                   double image_height);
 
-/** Calculate camera projection matrix
+/** Measure a 3D point using a simple pinhole camera model.
  *
  * @param K camera intrinsic matrix
- * @param R camera rotation matrix
- * @param t camera position
- * @param[out] P camera projection matrix
+ * @param R_GC orientation of camera in world frame
+ * @param G_p_GC translation from world origin to camera, in world frame
+ * @param G_p_GF translation from world origin to feature, in world frame
+ * @param result measurement in image frame (pixels)
+ * @return true if feature is in front of the camera.
+ *
+ * @note this function is meant for testing; more sophisticated third-party
+ * camera models should normally be used.
  */
-void projection_matrix(const Mat3 &K, const Mat3 &R, const Vec3 &t, MatX &P);
+template <typename T>
+bool pinholeProject(const Eigen::Matrix<T, 3, 3> &K,
+                    const Eigen::Matrix<T, 3, 3> &R_GC,
+                    const Eigen::Matrix<T, 3, 1> &G_p_GC,
+                    const Eigen::Matrix<T, 3, 1> &G_p_GF,
+                    Eigen::Matrix<T, 2, 1> &result) {
+    // Note R_GC is is the orientation of the camera in the world frame.
+    // R_CG is the rotation that transforms *points* in the world frame to the
+    // camera frame.
+    Eigen::Matrix<T, 3, 3> R_CG = R_GC.transpose();
+
+    // Make extrinsic matrix
+    Eigen::Matrix<T, 3, 4> extrinsic{};
+    extrinsic.topLeftCorner(3, 3) = R_CG;
+    extrinsic.topRightCorner(3, 1) = -R_CG * G_p_GC;
+
+    Eigen::Matrix<T, 4, 1> landmark_homogeneous;
+    landmark_homogeneous << G_p_GF, T{1};
+
+    // project
+    Eigen::Matrix<T, 3, 1> homogeneous = K * extrinsic * landmark_homogeneous;
+
+    // get image coordinates from homogenous coordinates
+    result = homogeneous.head(2) / homogeneous(2);
+
+    // check cheirality
+    return (homogeneous(2) > T{0});
+}
 
 /** Convert a single cv::KeyPoint to Vec2
  *

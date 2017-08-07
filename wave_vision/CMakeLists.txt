@@ -19,6 +19,7 @@ SET(
     WAVE_VISION_DEPS
     yaml-cpp
     ${OpenCV_LIBS}
+    ${Boost_LIBRARIES}
     wave_kinematics
     wave_utils
 )
@@ -26,7 +27,8 @@ ADD_LIBRARY(
     wave_vision
     STATIC
     src/utils.cpp
-    src/dataset.cpp
+    src/dataset/VoDataset.cpp
+    src/dataset/VoTestCamera.cpp
     src/detector/fast_detector.cpp
     src/detector/orb_detector.cpp
     src/descriptor/brisk_descriptor.cpp
@@ -43,8 +45,9 @@ WAVE_ADD_TEST(${PROJECT_NAME}_tests
               tests/descriptor_tests/orb_tests.cpp
               tests/matcher_tests/brute_force_tests.cpp
               tests/tracker_tests/tracker_tests.cpp
-              tests/dataset_tests.cpp
+              tests/dataset_tests/vo_dataset_tests.cpp
               tests/utils_tests.cpp)
+TARGET_LINK_LIBRARIES(${PROJECT_NAME}_tests ${PROJECT_NAME})
 
 WAVE_ADD_TEST(
     ${PROJECT_NAME}_viz_tests
@@ -54,15 +57,6 @@ WAVE_ADD_TEST(
     tests/viz_tests/tracker_viz_tests.cpp
     DISABLED # Requires display to run
 )
-
-TARGET_LINK_LIBRARIES(
-    ${PROJECT_NAME}_tests
-    ${PROJECT_NAME}
-    wave_kinematics
-    wave_utils
-    ${Boost_LIBRARIES}
-)
-
 TARGET_LINK_LIBRARIES(
     ${PROJECT_NAME}_viz_tests
     ${PROJECT_NAME}

@@ -8,17 +8,24 @@
 #define WAVE_UTILS_FILE_HPP
 
 #include <stdio.h>
+#include <cstring>
 #include <dirent.h>
 
 #include <string>
 #include <vector>
 #include <numeric>
 #include <iostream>
+#include <fstream>
+
+#include "wave/utils/log.hpp"
 
 
 namespace wave {
 /** @addtogroup utils
  *  @{ */
+
+/** Remove directory at `path` */
+int remove_dir(const std::string &path);
 
 /** Checks if a file exists at the given path */
 bool file_exists(const std::string &file_name);
