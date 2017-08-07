@@ -1,6 +1,6 @@
 #include "wave/wave_test.hpp"
 #include "wave/utils/utils.hpp"
-#include "wave/vision/dataset.hpp"
+#include "wave/vision/dataset/VoDataset.hpp"
 #include "wave/optimization/ceres/ba.hpp"
 
 namespace wave {
@@ -62,7 +62,7 @@ TEST(BAResidual, constructor) {
 
 TEST(BAResidual, testResidual) {
     // create vo dataset
-    VOTestDatasetGenerator generator;
+    VoDatasetGenerator generator;
     generator.configure(TEST_CONFIG);
     auto dataset = generator.generate();
     LandmarkMap landmarks = dataset.landmarks;
@@ -97,7 +97,7 @@ TEST(BAResidual, testResidual) {
 
 TEST(BundleAdjustment, solve) {
     // create vo dataset
-    VOTestDatasetGenerator generator;
+    VoDatasetGenerator generator;
     generator.configure(TEST_CONFIG);
     auto dataset = generator.generate();
 
