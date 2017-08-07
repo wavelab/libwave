@@ -231,19 +231,19 @@ class BruteForceMatcher : public DescriptorMatcher {
     std::vector<cv::DMatch> filterMatches(
       std::vector<std::vector<cv::DMatch>> &matches) const override;
 
-    /** The pointer to the wrapped cv::BFMatcher object */
-    cv::Ptr<cv::BFMatcher> brute_force_matcher;
-
-    /** Current configuration parameters */
-    BFMatcherParams current_config;
 
     /** Checks whether the desired configuration is valid
      *
      *  @param check_config containing the desired configuration values.
      */
-    void checkConfiguration(const BFMatcherParams &check_config);
-};
+    void checkConfiguration(const BFMatcherParams &check_config) const;
 
+    /** The pointer to the wrapped cv::BFMatcher object */
+    cv::Ptr<cv::BFMatcher> brute_force_matcher;
+
+    /** Current configuration parameters */
+    BFMatcherParams current_config;
+};
 /** @} end of group */
 }  // namespace wave
 

@@ -53,7 +53,7 @@ BruteForceMatcher::BruteForceMatcher(const BFMatcherParams &config) {
 }
 
 void BruteForceMatcher::checkConfiguration(
-  const BFMatcherParams &check_config) {
+  const BFMatcherParams &check_config) const {
     // Check that the value of norm_type is one of the valid values
     if (check_config.norm_type < cv::NORM_INF ||
         check_config.norm_type > cv::NORM_HAMMING2 ||

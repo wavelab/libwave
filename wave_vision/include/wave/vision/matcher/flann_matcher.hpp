@@ -16,8 +16,15 @@ namespace wave {
 /** @addtogroup vision
  *  @{ */
 
+/** The FLANN namespace contains the configuration parameters for the FLANN
+ *  matcher. In addition to selecting the manner in which FLANN matching is to
+ *  be performed, these methods can also be configured.
+ */
 namespace FLANN {
-/** The methods available in OpenCV to perform matching using FLANN. Options:
+/** There are several methods available in OpenCV to perform matching using
+ *  FLANN. Currently, only the KDTree, KMeans, and Composite algorithms have
+ *  been implemented. TODO: Add the remaining algorithms (LSH, Autotuned,
+ *  Heirarchichal Clustering, etc.).
  *
  *  KDTree: The default method. This uses parallel kd-trees to separate
  *  keypoint descriptors, and  can then search the tree in order to determine
@@ -27,28 +34,24 @@ namespace FLANN {
  *  clusters are recursively optimized for a set number of iterations.
  *
  *  Composite: This method combines the above two methods, and aims to determine
- *  the optimum match between the two methods.
+ *  the optimum match between the two.
  *
- *  LSH: LSH stands for Locality-Sensitive Hash. This method uses hash functions
- *  to separate the descriptors, which allows for fast classification. The
- *  technique was proposed by [Lv et. al (2007)][LSH].
+ *  LSH: Locality-Senstive hashing (LSH) uses hash functions to distribute the
+ *  descriptors into similar buckets. The speed of hash tables allows for
+ *  candidate matches to be generated very quickly. This was proposed by [Lv et.
+ *  al (2007)][LSH].
  *
- *  Autotuned: The last method looks to choose the optimal index method
- *  (KDTree, KMeans, LSH, etc.) based on defined optimality criteria.
+ *  Autotuned: This method automatically tunes the matcher by choosing the
+ *  optimal indexing method (KD-Tree, KMeans, Linear (brute force)) based on
+ *  specified optimality criterion.d
  *
- *  For further reference on the different methods, please refer to pages
- *  575-580 of Kaehler and Bradski's book "Learning OpenCV 3: Computer Vision in
- *  C++ with the OpenCV Library".
+ *  These brief descriptions were adapted from Kaehler and Bradski's book
+ *  "Learning OpenCV 3: Computer Vision in C++ with the OpenCV Library". For
+ *  further reference on the different methods, please refer to pages 575-580.
  *
  *  [LSH]: http://www.cs.princeton.edu/cass/papers/mplsh_vldb07.pdf
  */
-enum FLANNMethod {
-    KDTree = 1,
-    KMeans = 2,
-    Composite = 3,
-    LSH = 4,
-    Autotuned = 5,
-};
+enum { KDTree = 1, KMeans = 2, Composite = 3, LSH = 4, Autotuned = 5 };
 }
 
 /** Representation of a descriptor matcher using the FLANN algorithm.
@@ -73,15 +76,7 @@ class FLANNMatcher : public DescriptorMatcher {
      *
      * @param flann_method the search method to be used.
      */
-    explicit FLANNMatcher(FLANN::FLANNMethod flann_method = FLANN::KDTree);
-
-    /** Returns the current method being used by the FLANNMatcher.
-     *
-     * @return the method being used by the FLANNMatcher.
-     */
-    wave::FLANN::FLANNMethod getMethod() const {
-        return this->curr_method;
-    }
+    explicit FLANNMatcher(int flann_method = FLANN::KDTree);
 
     /** Remove outliers between matches using epipolar constraints
      *
@@ -121,6 +116,12 @@ class FLANNMatcher : public DescriptorMatcher {
       cv::InputArray mask = cv::noArray()) const override;
 
  private:
+    /** The pointer to the wrapped cv::FlannBasedMatcher object */
+    cv::Ptr<cv::FlannBasedMatcher> flann_matcher;
+
+    /** The configuration method currently being used */
+    wave::FLANN::FLANNMethod curr_method;
+
     /** First pass to filter bad matches. Takes in a vector of matches and uses
      *  the ratio test to filter the matches.
      *
@@ -129,13 +130,13 @@ class FLANNMatcher : public DescriptorMatcher {
      *  @return the filtered matches.
      */
     std::vector<cv::DMatch> filterMatches(
-            std::vector<std::vector<cv::DMatch>> &matches) const override;
+      std::vector<std::vector<cv::DMatch>> &matches) const override;
 
-    /** The pointer to the wrapped cv::FlannBasedMatcher object */
-    cv::Ptr<cv::FlannBasedMatcher> flann_matcher;
-
-    /** The configuration method currently being used */
-    wave::FLANN::FLANNMethod curr_method;
+    /** Checks whether the desired configuration is valid
+     *
+     *  @param check_config containing the desired configuration values.
+     */
+    void checkConfiguration(const int &flann_method);
 };
 }
 
