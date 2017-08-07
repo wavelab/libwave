@@ -80,6 +80,33 @@ struct VioDataset {
     /** Ground truth 3D landmark positions in the world frame. */
     LandmarkMap landmarks;
 
+    // I/O methods
+
+    /**
+     * Writes dataset to the given directory. A format similar to kitti is used.
+     */
+    void outputToDirectory(const std::string &output_dir) const;
+
+    /**
+     * Write calibration files to the given directory.
+     *
+     * To be compatible with kitti this produces 3 files,
+     * - calib_cam_to_cam.txt
+     * - calib_imu_to_velo.txt
+     * - calib_velo_to_cam.txt
+     *
+     * though the transformation imu_to_velo is identity for now.
+     */
+    void outputCalibration(const std::string &output_dir) const;
+
+    /** Reads a dataset from files in the given directory.
+     *
+     * The format must be the same as that created by outputToDirectory(), or
+     * a kitti dataset.
+     */
+    static VoDataset loadFromDirectory(const std::string &input_dir);
+
+
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
 
