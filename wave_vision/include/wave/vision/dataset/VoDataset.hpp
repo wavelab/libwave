@@ -44,8 +44,7 @@ struct VoInstant {
  * - 3D Features observed in image frame on the two wheel robot
  */
 struct VoDataset {
-    /** Ground truth 3D world features, where each column represents a feature
-     * and each row represents the landmark position in x, y, z (NWU)  */
+    /** Ground truth 3D landmark positions in the world frame. */
     LandmarkMap landmarks;
 
     /** For each time step, a set of measurements */

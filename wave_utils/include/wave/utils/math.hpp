@@ -43,12 +43,6 @@ typedef Eigen::Affine3d Affine3;
 typedef Eigen::Quaterniond Quaternion;
 #endif
 
-/** A vector for fixed-size Eigen types, giving the required alignment.
- * See https://eigen.tuxfamily.org/dox/group__TopicStlContainers.html
- */
-template <typename T>
-using EigenVector = std::vector<T, Eigen::aligned_allocator<T>>;
-
 /**
  * Eigen vector comparator
  */

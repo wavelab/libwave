@@ -56,28 +56,30 @@ struct VioDataset {
     };
 
     enum class ImuSensor { Imu };
-    enum class PoseSensor { Gps };
+    enum class PoseSensor { Pose };
     enum class Camera { Left };
-    using PoseMeasurement = Measurement<Vec3, PoseSensor>;
-    using ImuMeasurement = Measurement<Vec3, ImuSensor>;
+
+    using LandmarkMeasurementContainer =
+      LandmarkMeasurementContainer<LandmarkMeasurement<Camera>>;
+    using PoseContainer =
+      MeasurementContainer<Measurement<PoseValue, PoseSensor>>;
+    using ImuContainer = MeasurementContainer<Measurement<ImuValue, ImuSensor>>;
 
     // Measurements
-    MeasurementContainer<PoseMeasurement> poses;
-    MeasurementContainer<ImuMeasurement> imu_measurements;
-    LandmarkMeasurementContainer<LandmarkMeasurement<Camera>>
-      feature_measurements;
+    PoseContainer poses;
+    ImuContainer imu_measurements;
+    LandmarkMeasurementContainer feature_measurements;
 
     // Calibration
 
     /** Camera intrinsic matrix */
-    Mat3 calib_K;
+    Mat3 camera_K;
     /** Camera transformation from IMU frame (expressed in IMU frame) */
     Vec3 I_p_IC;
     Rotation R_IC;
 
-    /** Ground truth 3D world landmarks, where each column represents a feature
-     * and each row represents the feature position in x, y, z (NWU)  */
-    EigenVector<Vec3> landmarks;
+    /** Ground truth 3D landmark positions in the world frame. */
+    LandmarkMap landmarks;
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
@@ -93,13 +95,16 @@ class VioDatasetGenerator : private VoDatasetGenerator {
     // Inherit base class constructors
     using VoDatasetGenerator::VoDatasetGenerator;
 
+    // Re-use base class `configure`
+    using VoDatasetGenerator::configure;
+
     /** Simulates a two wheel robot moving in circle in a world of randomly
      * generated 3D point landmarks, and generates a VioDataset object.
      *
      * A measurement including robot pose is stored at every timestep (with an
      * arbitrary dt), but feature observations are only made at some timesteps.
      */
-    VioDataset generate() const;
+    VioDataset generate();
 };
 
 
