@@ -34,8 +34,8 @@ struct BAResidual {
           y(x(1)) {}
 
     /**
-       * Calculate Bundle Adjustment Residual
-       *
+     * Calculate Bundle Adjustment Residual
+     *
      * @param q_GC Camera rotation parameterized with a quaternion (x, y, z, w)
      * @param G_p_GC Camera translation (x, y, z)
      * @param world_pt World point (x, y, z)

@@ -44,11 +44,9 @@ TEST(BAResidual, constructor) {
 
     // TEST CONSTRUCTOR WITH PARAMETERS
     Mat3 K;
-    // clang-format off
-  K << 1.0, 0.0, 3.0,
-       0.0, 2.0, 4.0,
-       0.0, 0.0, 1.0;
-    // clang-format on
+    K << 1.0, 0.0, 3.0,  //
+      0.0, 2.0, 4.0,     //
+      0.0, 0.0, 1.0;     //
     Vec2 x = Vec2{130, 62};
 
     BAResidual residual2(K, x);
