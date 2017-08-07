@@ -8,7 +8,7 @@
 #include <gtsam/linear/Sampler.h>
 
 #include "wave/wave_test.hpp"
-#include "wave/vision/dataset.hpp"
+#include "wave/vision/dataset/VoDataset.hpp"
 #include "gtsam_helpers.hpp"
 
 namespace wave {
@@ -18,8 +18,8 @@ const auto use_odometry_factors = false;
 
 class GtsamExample : public ::testing::Test {
  protected:
-    VOTestDatasetGenerator generator;
-    VOTestDataset dataset;
+    VoDatasetGenerator generator;
+    VoDataset dataset;
     gtsam::Cal3_S2::shared_ptr kParams =
       boost::make_shared<gtsam::Cal3_S2>(200, 200, 0, 320, 240);
 
@@ -33,9 +33,6 @@ class GtsamExample : public ::testing::Test {
         generator.landmark_y_bounds << -10, 10;
         generator.landmark_z_bounds << -1, 1;
         dataset = generator.generate();
-
-        // Remove landmarks seen fewer than 3 times
-        dataset.removeUnobservedLandmarks(3);
     }
 };
 

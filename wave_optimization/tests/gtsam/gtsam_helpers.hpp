@@ -4,7 +4,7 @@
 #include <gtsam/geometry/Pose3.h>
 
 #include "wave/utils/math.hpp"
-#include "wave/vision/dataset.hpp"
+#include "wave/vision/dataset/VoDataset.hpp"
 
 namespace wave {
 
@@ -18,7 +18,7 @@ inline gtsam::Pose3 gtsamPoseFromEigen(const Quaternion &q, const Vec3 &p) {
  * Includes transformation from robot body to camera frame (the camera's z axis
  * looks along the robot's x axis).
  */
-inline gtsam::Pose3 gtsamPoseFromState(const VOTestInstant &state) {
+inline gtsam::Pose3 gtsamPoseFromState(const VoInstant &state) {
     // Transform from robot to camera frame
     // This involves the rotation sequence: -90 deg about initial x axis,
     // 0, then -90 deg about initial z axis.
@@ -44,8 +44,8 @@ inline gtsam::Pose3 poseBetween(const gtsam::Pose3 &from,
 }
 
 /** Get camera pose transformation given two robot states */
-inline gtsam::Pose3 poseBetweenStates(const VOTestInstant &from,
-                                      const VOTestInstant &to) {
+inline gtsam::Pose3 poseBetweenStates(const VoInstant &from,
+                                      const VoInstant &to) {
     auto pose = gtsamPoseFromState(to);
     auto prev_pose = gtsamPoseFromState(from);
 

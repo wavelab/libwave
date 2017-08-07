@@ -8,7 +8,7 @@
 #include <gtsam/linear/Sampler.h>
 
 #include "wave/wave_test.hpp"
-#include "wave/vision/dataset.hpp"
+#include "wave/vision/dataset/VoDataset.hpp"
 #include "gtsam_helpers.hpp"
 
 const auto DATASET_DIR = "tests/data/vo_data_drive_0036";
@@ -22,7 +22,7 @@ const auto use_projection_factors = true;
 
 class GtsamExample : public ::testing::Test {
  protected:
-    VOTestDataset dataset = VOTestDataset::loadFromDirectory(DATASET_DIR);
+    VoDataset dataset = VoDataset::loadFromDirectory(DATASET_DIR);
     gtsam::Cal3_S2::shared_ptr kParams =
       boost::make_shared<gtsam::Cal3_S2>(dataset.camera_K(0, 0),
                                          dataset.camera_K(1, 1),
