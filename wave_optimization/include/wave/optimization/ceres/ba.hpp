@@ -37,14 +37,19 @@ struct BAResidual {
      * Calculate Bundle Adjustment Residual
      *
      * @param q_GC Camera rotation parameterized with a quaternion (x, y, z, w)
-     * @param G_p_GC Camera translation (x, y, z)
-     * @param world_pt World point (x, y, z)
+     * @param G_p_GC Camera position in the world frame
+     * @param G_p_GF Feature (landmark) position in the world frame
      * @param residual Calculated residual
+     *
+     * Note the camera frame is a right handed frame with origin at the centre
+     * of the image plane, and z axis along the camera's optical axis -- that
+     * is, the standard convention. See Scaramuzza and Fraundorfer's visual
+     * odometry tutorial, 2011.
      **/
     template <typename T>
     bool operator()(const T *const q_GC,
                     const T *const G_p_GC,
-                    const T *const world_pt,
+                    const T *const G_p_GF,
                     T *residual) const {
         // build camera intrinsics matrix K
         Eigen::Matrix<T, 3, 3> K;
@@ -68,7 +73,7 @@ struct BAResidual {
         Eigen::Matrix<T, 3, 1> C{G_p_GC};
 
         // build world_point vector
-        Eigen::Matrix<T, 3, 1> X{world_pt};
+        Eigen::Matrix<T, 3, 1> X{G_p_GF};
 
         // Note we construct the vectors above by *copying* from the buffer.
         // It would be more efficient to use Maps, but pinholeProject would
