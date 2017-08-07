@@ -2,6 +2,9 @@
 
 namespace wave {
 
+// @todo another commit (not in master yet) makes this definition elsewhere
+using TimePoint = std::chrono::steady_clock::time_point;
+
 // Helper functions used only in this file
 namespace {
 // Add measurements from VoDataset's landmark measurement map to a container
