@@ -39,10 +39,10 @@ struct VioDataset {
 
     /** IMU measured value - note this version includes velocity.
      * The affixes indicate it is the motion of the IMU with respect to the
-     * the world frame, expressed in the world frame */
+     * the world frame, expressed in the IMU frame */
     struct ImuValue {
-        Vec3 G_vel_GI;
-        Vec3 G_ang_vel_GI;
+        Vec3 I_vel_GI;
+        Vec3 I_ang_vel_GI;
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     };
 
