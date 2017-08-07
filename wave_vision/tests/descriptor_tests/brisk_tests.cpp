@@ -5,84 +5,39 @@
 namespace wave {
 
 const auto TEST_CONFIG = "tests/config/descriptor/brisk.yaml";
-const auto TEST_IMAGE = "tests/data/image_center.png";
 
-// Checks that correct configuration can be loaded
-TEST(BRISKTests, GoodInitialization) {
-    EXPECT_NO_THROW(BRISKDescriptor brisk);
+// Checks that default configuration has no issues
+TEST(BRISKTests, GoodConfig) {
+    // Default
+    EXPECT_NO_THROW(BRISKDescriptorParams config1);
+
+    // Custom params struct (with good values)
+    std::vector<float> rlist = {0.0, 2.465, 4.165, 6.29, 9.18};
+    std::vector<int> nlist = {1, 10, 14, 15, 20};
+    float d_max = 5.85f;
+    float d_min = 8.2f;
+
+    EXPECT_NO_THROW(BRISKDescriptorParams config2(rlist, nlist, d_max, d_min));
+
+    // From brisk.yaml file, with good vaklues.
+    EXPECT_NO_THROW(BRISKDescriptorParams config3(TEST_CONFIG));
 }
 
 // Checks that incorrect configuration path throws an exception
-TEST(BRISKTests, BadInitialization) {
+TEST(BRISKTests, BadConfigPath) {
     const std::string bad_path = "bad_path";
 
     ASSERT_THROW(BRISKDescriptorParams config(bad_path), std::invalid_argument);
 }
 
-TEST(BRISKTests, DefaultConstructorTest) {
-    BRISKDescriptorParams check_config;
-    BRISKDescriptor brisk(check_config);
+TEST(BRISKTests, ConstructorTest) {
+    BRISKDescriptorParams config;
 
-
-    auto config = brisk.getConfiguration();
-
-    for (uint i = 0; i < config.radius_list.size(); i++) {
-        ASSERT_NEAR(check_config.radius_list[i], config.radius_list[i], 0.01);
-    }
-    EXPECT_TRUE(std::equal(check_config.number_list.begin(),
-                           check_config.number_list.end(),
-                           config.number_list.begin()));
-    ASSERT_EQ(check_config.d_max, config.d_max);
-    ASSERT_EQ(check_config.d_min, config.d_min);
+    EXPECT_NO_THROW(BRISKDescriptor descriptor);
+    EXPECT_NO_THROW(BRISKDescriptor descriptor1(config));
 }
 
-TEST(BRISKTests, CustomParamsConstructorTest) {
-    std::vector<float> rlist = {0.0, 2.465, 4.165, 6.29, 9.18};
-    std::vector<int> nlist = {1, 10, 14, 15, 20};
-    float d_max = 5.85f;
-    float d_min = 8.2f;
-
-    // Place defined values into config struct, and create BRISKDescriptor
-    // object
-    auto input_config = BRISKDescriptorParams(rlist, nlist, d_max, d_min);
-
-    BRISKDescriptor brisk(input_config);
-
-    BRISKDescriptorParams config = brisk.getConfiguration();
-
-    for (uint i = 0; i < config.radius_list.size(); i++) {
-        ASSERT_NEAR(input_config.radius_list[i], config.radius_list[i], 0.01);
-    }
-    EXPECT_TRUE(std::equal(input_config.number_list.begin(),
-                           input_config.number_list.end(),
-                           config.number_list.begin()));
-    ASSERT_EQ(config.d_max, d_max);
-    ASSERT_EQ(config.d_min, d_min);
-}
-
-TEST(BRISKTests, CustomYamlConstructorTest) {
-    std::vector<float> rlist = {0.0, 2.465, 4.165, 6.29, 9.18};
-    std::vector<int> nlist = {1, 10, 14, 15, 20};
-    float d_max = 5.85f;
-    float d_min = 8.2f;
-
-    BRISKDescriptorParams input_config(TEST_CONFIG);
-    BRISKDescriptor brisk(input_config);
-
-    BRISKDescriptorParams config = brisk.getConfiguration();
-
-    ASSERT_EQ(rlist.size(), config.radius_list.size());
-    ASSERT_EQ(nlist.size(), config.number_list.size());
-
-    for (uint i = 0; i < config.radius_list.size(); i++) {
-        ASSERT_NEAR(rlist[i], config.radius_list[i], 0.01);
-    }
-    ASSERT_TRUE(
-      std::equal(nlist.begin(), nlist.end(), config.number_list.begin()));
-    ASSERT_EQ(d_max, config.d_max);
-    ASSERT_EQ(d_min, config.d_min);
-}
-
+// Check that incorrect parameter values throw exceptions
 TEST(BRISKTests, BadRadiusList) {
     std::vector<float> r_list_neg = {-1.0f, 2.0f, 3.0f, 4.0f, 5.0f};
     std::vector<float> r_list_empty;
@@ -148,5 +103,57 @@ TEST(BRISKTests, CheckDistValues) {
     ASSERT_THROW(BRISKDescriptor brisk(neg_dmax), std::invalid_argument);
     ASSERT_THROW(BRISKDescriptor brisk(neg_dmin), std::invalid_argument);
     ASSERT_THROW(BRISKDescriptor brisk(swapped_dists), std::invalid_argument);
+}
+
+TEST(BRISKTests, ConfigurationTests) {
+    BRISKDescriptorParams ref_config;
+    BRISKDescriptorParams yaml_config(TEST_CONFIG);
+
+    BRISKDescriptor descriptor1(ref_config);
+    BRISKDescriptor descriptor2;
+    BRISKDescriptor descriptor3(yaml_config);
+
+    BRISKDescriptorParams curr_config_1 = descriptor1.getConfiguration();
+    BRISKDescriptorParams curr_config_2 = descriptor2.getConfiguration();
+    BRISKDescriptorParams curr_config_3 = descriptor3.getConfiguration();
+
+    // Confirm values for construction with custom struct
+    ASSERT_EQ(ref_config.radius_list.size(), curr_config_1.radius_list.size());
+    ASSERT_EQ(ref_config.number_list.size(), curr_config_1.number_list.size());
+    for (uint i = 0; i < ref_config.radius_list.size(); i++) {
+        ASSERT_NEAR(
+          ref_config.radius_list[i], curr_config_1.radius_list[i], 0.01);
+    }
+    ASSERT_TRUE(std::equal(ref_config.number_list.begin(),
+                           ref_config.number_list.end(),
+                           curr_config_1.number_list.begin()));
+    ASSERT_EQ(ref_config.d_max, curr_config_1.d_max);
+    ASSERT_EQ(ref_config.d_min, curr_config_1.d_min);
+
+    // Confirm default construction values
+    ASSERT_EQ(ref_config.radius_list.size(), curr_config_2.radius_list.size());
+    ASSERT_EQ(ref_config.number_list.size(), curr_config_2.number_list.size());
+    for (uint i = 0; i < ref_config.radius_list.size(); i++) {
+        ASSERT_NEAR(
+          ref_config.radius_list[i], curr_config_2.radius_list[i], 0.01);
+    }
+    ASSERT_TRUE(std::equal(ref_config.number_list.begin(),
+                           ref_config.number_list.end(),
+                           curr_config_2.number_list.begin()));
+    ASSERT_EQ(ref_config.d_max, curr_config_2.d_max);
+    ASSERT_EQ(ref_config.d_min, curr_config_2.d_min);
+
+    // Confirm construction with .yaml file
+    ASSERT_EQ(ref_config.radius_list.size(), curr_config_3.radius_list.size());
+    ASSERT_EQ(ref_config.number_list.size(), curr_config_3.number_list.size());
+    for (uint i = 0; i < ref_config.radius_list.size(); i++) {
+        ASSERT_NEAR(
+          ref_config.radius_list[i], curr_config_3.radius_list[i], 0.01);
+    }
+    ASSERT_TRUE(std::equal(ref_config.number_list.begin(),
+                           ref_config.number_list.end(),
+                           curr_config_3.number_list.begin()));
+    ASSERT_EQ(ref_config.d_max, curr_config_3.d_max);
+    ASSERT_EQ(ref_config.d_min, curr_config_3.d_min);
 }
 }  // namespace wave

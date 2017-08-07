@@ -20,7 +20,7 @@ TEST(BFTests, DistanceMatchDescriptors) {
     FASTDetector fast;
     BRISKDescriptor brisk;
 
-    BFMatcherParams config(cv::NORM_HAMMING, false, 0.8, 5, cv::FM_RANSAC);
+    BFMatcherParams config(cv::NORM_HAMMING, 5, true, cv::FM_RANSAC);
 
     BruteForceMatcher bfmatcher(config);
 
@@ -45,6 +45,8 @@ TEST(BFTests, DistanceMatchDescriptors) {
     cv::imshow("matches", img_with_matches);
 
     cv::waitKey(0);
+
+    cv::destroyAllWindows();
 }
 
 TEST(BFTests, KnnMatchDescriptors) {
@@ -79,6 +81,8 @@ TEST(BFTests, KnnMatchDescriptors) {
     cv::imshow("good_matches", img_with_matches);
 
     cv::waitKey(0);
+
+    cv::destroyAllWindows();
 }
 
 TEST(BFTests, 8Point) {
@@ -115,6 +119,8 @@ TEST(BFTests, 8Point) {
     cv::imshow("matches", img_with_matches);
 
     cv::waitKey(0);
+
+    cv::destroyAllWindows();
 }
 
 TEST(BFTests, 7Point) {
@@ -151,6 +157,8 @@ TEST(BFTests, 7Point) {
     cv::imshow("good_matches", img_with_matches);
 
     cv::waitKey(0);
+
+    cv::destroyAllWindows();
 }
 
 TEST(BFTests, LMEDS) {
@@ -187,6 +195,8 @@ TEST(BFTests, LMEDS) {
     cv::imshow("good_matches", img_with_matches);
 
     cv::waitKey(0);
+
+    cv::destroyAllWindows();
 }
 
 TEST(BFTests, SequenceMatches) {
@@ -228,6 +238,8 @@ TEST(BFTests, SequenceMatches) {
         prev_kp = curr_kp;
         prev_desc = curr_desc;
         ++prev_it;
+
+        cv::destroyAllWindows();
     }
 }
 }  // namespace wave
