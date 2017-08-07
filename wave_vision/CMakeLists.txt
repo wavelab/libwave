@@ -21,6 +21,7 @@ SET(
     ${OpenCV_LIBS}
     ${Boost_LIBRARIES}
     wave_kinematics
+    wave_geometry
     wave_utils
 )
 ADD_LIBRARY(
@@ -28,6 +29,7 @@ ADD_LIBRARY(
     STATIC
     src/utils.cpp
     src/dataset/VoDataset.cpp
+    src/dataset/VioDataset.cpp
     src/dataset/VoTestCamera.cpp
     src/detector/fast_detector.cpp
     src/detector/orb_detector.cpp
@@ -46,6 +48,7 @@ WAVE_ADD_TEST(${PROJECT_NAME}_tests
               tests/matcher_tests/brute_force_tests.cpp
               tests/tracker_tests/tracker_tests.cpp
               tests/dataset_tests/vo_dataset_tests.cpp
+              tests/dataset_tests/vio_dataset_tests.cpp
               tests/utils_tests.cpp)
 TARGET_LINK_LIBRARIES(${PROJECT_NAME}_tests ${PROJECT_NAME})
 
