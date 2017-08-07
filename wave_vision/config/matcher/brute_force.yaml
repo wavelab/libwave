@@ -8,12 +8,13 @@
 #  4: cv::NORM_L2: l2 norm
 #  5: cv::NORM_L2SQR: l2 norm, squared
 #  6: cv::NORM_HAMMING: Hamming distance
-#  7: cv::NORM_HAMMING2:
+#  7: cv::NORM_HAMMING2: Hamming distance modifier for ORB Descriptor, with
+#     tuple_size (WTA_K) = 3 or 4
 #
 #  As per OpenCV docs, NORM_L1 and NORM_L2 is valid for the SIFT or
 #  SURF descriptors, while NORM_HAMMING is valid for the ORB, BRISK, and
 #  BRIEF descriptors. NORM_HAMMING2 should only be used with ORB, when
-#  WTA_K is 3 or 4.
+#  tuple_size (WTA_K) is 3 or 4.
 #
 #  Default: NORM_HAMMING, since currently only BRISK Descriptor is used.
 #
@@ -62,6 +63,21 @@ ratio_threshold: 0.8
 # Recommended: 5. Must be greater than or equal to zero.
 #
 distance_threshold: 5
+
+# Determines whether to automatically remove outliers using the method
+# described in fm_method.
+#
+# If true, the wave::BruteForceMatcher::matchDescriptors method will
+# automatically call the wave::BruteForceMatcher::removeOutliers method,
+# which uses the method in wave::BFMatcherParams::fm_method to remove
+# matched outliers.
+#
+# If false, the matches returned will only have been passed through the
+# distance threshold or ratio tests described above.
+#
+# Recommended: True
+#
+auto_remove_outliers: true
 
 #  Method to find the fundamental matrix and remove outliers.
 #

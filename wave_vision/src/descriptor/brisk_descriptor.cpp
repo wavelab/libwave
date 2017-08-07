@@ -12,8 +12,8 @@ BRISKDescriptorParams::BRISKDescriptorParams(const std::string &config_path) {
     float d_max;
     float d_min;
 
-    // Add parameters to parser, to be loaded. If path cannot be found,
-    // throw an exception
+    // Add parameters to parser, to be loaded. If path cannot be found, throw
+    // an exception
     parser.addParam("radius_list", &radius_list);
     parser.addParam("number_list", &number_list);
     parser.addParam("d_max", &d_max);

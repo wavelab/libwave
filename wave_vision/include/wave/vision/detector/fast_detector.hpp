@@ -17,25 +17,24 @@ namespace wave {
  *  @{ */
 
 /** Configuration parameters for the FASTDetector. */
-struct FASTParams {
-    FASTParams() {}
+struct FASTDetectorParams {
+    FASTDetectorParams() {}
 
-    FASTParams(int threshold, bool nonmax_suppression, int type)
+    FASTDetectorParams(int threshold, bool nonmax_suppression, int type)
         : threshold(threshold),
           nonmax_suppression(nonmax_suppression),
           type(type) {}
 
     /** Constructor using parameters extracted from a configuration file.
      *
-     *  @param config_path the path to the location of the configuration file
+     *  @param config_path the path to the location of the configuration file.
      */
-    FASTParams(const std::string &config_path);
+    FASTDetectorParams(const std::string &config_path);
 
     /** Threshold on difference between intensity of the central pixel, and
-     *  pixels in a circle (Bresenham radius 3) around this pixel. Must be
-     *  greater than zero.
+     *  pixels in a circle (Bresenham radius 3) around this pixel.
      *
-     *  Recommended: 10
+     *  Recommended: 10. Must be greater than zero.
      */
     int threshold = 10;
 
@@ -72,23 +71,24 @@ class FASTDetector : public FeatureDetector {
     /** Default constructor. The user can also specify their own struct with
      *  desired values. If no struct is provided, default values are used.
      *
-     *  @param config contains the desired parameter values
+     *  @param config contains the desired parameter values.
      */
-    FASTDetector(const FASTParams &config = FASTParams{});
+    explicit FASTDetector(
+      const FASTDetectorParams &config = FASTDetectorParams{});
 
-    /** Reconfigures the FastFeatureDetector object with new values requested by
-     *  the user
+    /** Reconfigures the cv::FastFeatureDetector object with new values
+     *  requested by the user.
      *
      * @param new_config containing the desired configuration values.
      */
-    void configure(const FASTParams &new_config);
+    void configure(const FASTDetectorParams &new_config);
 
     /** Returns the current configuration parameters being used by the
-     *  FastFeatureDetector.
+     *  FASTDetector.
      *
      * @return a struct containing the current configuration values.
      */
-    FASTParams getConfiguration() const;
+    FASTDetectorParams getConfiguration() const;
 
     /** Detects features in an image.
      *
@@ -106,12 +106,12 @@ class FASTDetector : public FeatureDetector {
      *  The threshold value must be greater than zero, while the type must be
      *  0, 1, or 2.
      *
-     *  @param check_config containing the desired configuration values.
+     *  @param check_config contains the desired configuration values.
      */
-    void checkConfiguration(const FASTParams &check_config);
+    void checkConfiguration(const FASTDetectorParams &check_config);
 };
 
 /** @} group vision */
 }  // namespace wave
 
-#endif  // WAVE_FAST_DETECTOR_HPP
+#endif  // WAVE_VISION_FAST_DETECTOR_HPP
