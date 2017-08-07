@@ -15,15 +15,6 @@ INCLUDE_DIRECTORIES(${OpenCV_INCLUDE_DIRS}
     ${Boost_INCLUDE_DIR})
 
 # LIBRARY
-SET(
-    WAVE_VISION_DEPS
-    yaml-cpp
-    ${OpenCV_LIBS}
-    ${Boost_LIBRARIES}
-    wave_kinematics
-    wave_geometry
-    wave_utils
-)
 ADD_LIBRARY(
     wave_vision
     STATIC
@@ -37,7 +28,14 @@ ADD_LIBRARY(
     src/descriptor/orb_descriptor.cpp
     src/matcher/brute_force_matcher.cpp
 )
-TARGET_LINK_LIBRARIES(wave_vision ${WAVE_VISION_DEPS})
+TARGET_LINK_LIBRARIES(wave_vision
+    wave_kinematics
+    wave_geometry
+    wave_utils
+    yaml-cpp
+    ${OpenCV_LIBS}
+    ${Boost_LIBRARIES}
+    )
 
 # UNIT TESTS
 WAVE_ADD_TEST(${PROJECT_NAME}_tests
@@ -53,6 +51,7 @@ TARGET_LINK_LIBRARIES(${PROJECT_NAME}_tests ${PROJECT_NAME})
 WAVE_ADD_TEST(${PROJECT_NAME}_dataset_tests
     tests/dataset_tests/vo_dataset_tests.cpp
     tests/dataset_tests/vio_dataset_tests.cpp)
+TARGET_LINK_LIBRARIES(${PROJECT_NAME}_dataset_tests ${PROJECT_NAME})
 
 WAVE_ADD_TEST(
     ${PROJECT_NAME}_viz_tests
@@ -62,20 +61,7 @@ WAVE_ADD_TEST(
     tests/viz_tests/tracker_viz_tests.cpp
     DISABLED # Requires display to run
 )
-TARGET_LINK_LIBRARIES(
-    ${PROJECT_NAME}_dataset_tests
-    ${PROJECT_NAME}
-    wave_geometry
-    wave_utils
-    ${Boost_LIBRARIES}
-)
-
-TARGET_LINK_LIBRARIES(
-    ${PROJECT_NAME}_viz_tests
-    ${PROJECT_NAME}
-    wave_utils
-    ${Boost_LIBRARIES}
-)
+TARGET_LINK_LIBRARIES(${PROJECT_NAME}_viz_tests ${PROJECT_NAME})
 
 # COPY TEST DATA
 FILE(COPY tests/data tests/config DESTINATION ${PROJECT_BINARY_DIR}/tests)
