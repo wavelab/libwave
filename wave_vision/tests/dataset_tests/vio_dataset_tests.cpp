@@ -6,7 +6,7 @@
 namespace wave {
 
 const auto test_config_file = "tests/data/vo_test.yaml";
-const auto test_output_dir = "/tmp/dataset_test";
+const auto test_output_dir = "/tmp/viodataset_test";
 
 
 TEST(VioDataset, constructor) {

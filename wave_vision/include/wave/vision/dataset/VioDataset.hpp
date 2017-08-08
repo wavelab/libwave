@@ -99,6 +99,20 @@ struct VioDataset {
      */
     void outputCalibration(const std::string &output_dir) const;
 
+    /** Writes pose and inertial measurements to the given directory
+     *
+     * The output is in kitti format. It includes:
+     * - A file `timestamps.txt` with one row for each time step
+     * - A directory `data` containing a text file for each time step. The files
+     * are numbered with the format 0000000000.txt.
+     *
+     * Each data file has one row of information matching kitti's
+     * `dataformat.txt` (not included here). When writing, we fill only the
+     * fields `lat` `lon` `alt` `roll` `pitch` `yaw` (with ground truth), and
+     * `vf` `vl` `vu` `wf` `wl` `wu` (with simulated imu measurements).
+     */
+    void outputPoses(const std::string &output_dir) const;
+
     /** Reads a dataset from files in the given directory.
      *
      * The format must be the same as that created by outputToDirectory(), or
