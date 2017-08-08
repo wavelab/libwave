@@ -70,11 +70,6 @@ FLANNMatcher::FLANNMatcher(const FLANNMatcherParams &config) {
             num_tables, key_size, multi_probe_level),
           new cv::flann::SearchParams());
         this->flann_matcher = cv::makePtr<cv::FlannBasedMatcher>(matcher);
-    } else if (config.flann_method == FLANN::Autotuned) {
-        // Create FLANN matcher with default Autotuned Params
-        cv::FlannBasedMatcher matcher(new cv::flann::AutotunedIndexParams(),
-                                      new cv::flann::SearchParams());
-        this->flann_matcher = cv::makePtr<cv::FlannBasedMatcher>(matcher);
     }
 
     this->current_config = config;
@@ -83,7 +78,7 @@ FLANNMatcher::FLANNMatcher(const FLANNMatcherParams &config) {
 void FLANNMatcher::checkConfiguration(const FLANNMatcherParams &check_config) {
     // Check that the value of flann_method is one of the valid values.
     if (check_config.flann_method < FLANN::KDTree ||
-        check_config.flann_method > FLANN::Autotuned) {
+        check_config.flann_method > FLANN::LSH) {
         throw std::invalid_argument("Flann method selected does not exist!");
     }
 
@@ -183,12 +178,27 @@ std::vector<cv::DMatch> FLANNMatcher::removeOutliers(
 }
 
 std::vector<cv::DMatch> FLANNMatcher::matchDescriptors(
-  const cv::Mat &descriptors_1,
-  const cv::Mat &descriptors_2,
+  cv::Mat &descriptors_1,
+  cv::Mat &descriptors_2,
   const std::vector<cv::KeyPoint> &keypoints_1,
   const std::vector<cv::KeyPoint> &keypoints_2,
   cv::InputArray mask) const {
     std::vector<cv::DMatch> filtered_matches;
+
+    // The FLANN matcher (except for the LSH method) requires the descriptors
+    // to be of type CV_32F (float, from 0-1.0). Some descriptors
+    // (ex. ORB, BRISK) provide descriptors in the form of CV_8U (unsigned int).
+    // To use the other methods, the descriptor must be converted before
+    // matching.
+    if (this->current_config.flann_method != FLANN::LSH &&
+        descriptors_1.type() != CV_32F) {
+        descriptors_1.convertTo(descriptors_1, CV_32F);
+    }
+
+    if (this->current_config.flann_method != FLANN::LSH &&
+        descriptors_2.type() != CV_32F) {
+        descriptors_2.convertTo(descriptors_2, CV_32F);
+    }
 
     if (this->current_config.use_knn) {
         std::vector<std::vector<cv::DMatch>> raw_matches;

@@ -9,7 +9,6 @@
 # 2: FLANN::KMeans: k-means clustering.
 # 3: FLANN::Composite: Combines the above methods.
 # 4: FLANN::LSH: Locality-sensitive hash table separation.
-# 5: FLANN::Autotuned: Tunes to find the best of all methods.
 #
 # Recommended: 1 (FLANN::KDTree).
 #

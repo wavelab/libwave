@@ -52,9 +52,6 @@ TEST(FLANNTests, ConstructorTest) {
 
     config.flann_method = FLANN::LSH;
     EXPECT_NO_THROW(FLANNMatcher matcher4(config));
-
-    config.flann_method = FLANN::Autotuned;
-    EXPECT_NO_THROW(FLANNMatcher matcher5(config));
 }
 
 // Check that incorrect parameter values throw exceptions.
@@ -63,7 +60,7 @@ TEST(FLANNTests, BadFLANNMethod) {
     config.flann_method = 0;
     ASSERT_THROW(FLANNMatcher bad_norm1(config), std::invalid_argument);
 
-    config.flann_method = 6;
+    config.flann_method = 5;
     ASSERT_THROW(FLANNMatcher bad_norm2(config), std::invalid_argument);
 }
 

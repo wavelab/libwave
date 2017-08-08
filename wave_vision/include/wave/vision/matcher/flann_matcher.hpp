@@ -23,8 +23,8 @@ namespace wave {
 namespace FLANN {
 /** There are several methods available in OpenCV to perform matching using
  *  FLANN. Currently, only the KDTree, KMeans, and Composite algorithms have
- *  been implemented. TODO: Add the remaining algorithms (LSH, Autotuned,
- *  Heirarchichal Clustering, etc.).
+ *  been implemented. TODO: Add the remaining algorithms (Autotuned,
+ *  Heirarchical Clustering, etc.).
  *
  *  KDTree: The default method. This uses parallel kd-trees to separate
  *  keypoint descriptors, and  can then search the tree in order to determine
@@ -41,17 +41,13 @@ namespace FLANN {
  *  candidate matches to be generated very quickly. This was proposed by [Lv et.
  *  al (2007)][LSH].
  *
- *  Autotuned: This method automatically tunes the matcher by choosing the
- *  optimal indexing method (KD-Tree, KMeans, Linear (brute force)) based on
- *  specified optimality criterion.d
- *
  *  These brief descriptions were adapted from Kaehler and Bradski's book
  *  "Learning OpenCV 3: Computer Vision in C++ with the OpenCV Library". For
  *  further reference on the different methods, please refer to pages 575-580.
  *
  *  [LSH]: http://www.cs.princeton.edu/cass/papers/mplsh_vldb07.pdf
  */
-enum { KDTree = 1, KMeans = 2, Composite = 3, LSH = 4, Autotuned = 5 };
+enum { KDTree = 1, KMeans = 2, Composite = 3, LSH = 4 };
 }
 
 struct FLANNMatcherParams {
@@ -98,7 +94,6 @@ struct FLANNMatcherParams {
      *  FLANN::KMeans: k-means clustering.
      *  FLANN::Composite: Combines the above methods.
      *  FLANN::LSH: Locality-sensitive hash table separation.
-     *  FLANN::Autotuned: Tunes to find the best of all methods.
      *
      *  Recommended: FLANN::KDTree
      */
@@ -232,8 +227,8 @@ class FLANNMatcher : public DescriptorMatcher {
      *  @return vector containing the best matches.
      */
     std::vector<cv::DMatch> matchDescriptors(
-      const cv::Mat &descriptors_1,
-      const cv::Mat &descriptors_2,
+      cv::Mat &descriptors_1,
+      cv::Mat &descriptors_2,
       const std::vector<cv::KeyPoint> &keypoints_1,
       const std::vector<cv::KeyPoint> &keypoints_2,
       cv::InputArray mask = cv::noArray()) const override;
