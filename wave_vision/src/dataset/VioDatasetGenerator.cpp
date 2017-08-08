@@ -109,13 +109,20 @@ VioDataset VioDatasetGenerator::generate() {
 
     // Handle measurements
     for (auto i = 0u; i < vo.states.size(); ++i) {
-        addVoStateToDataset(i, time_start, vo.states[i], dataset);
+        const auto time_point =
+          timePointAfterStartTime(time_start, vo.states[i].time);
+
+        addVoStateToDataset(i, time_point, vo.states[i], dataset);
 
         // Calculate imu measurements
-        // (the last one is missing)
-        if (i > 0) {
+        // (use forward difference)
+        if (i + 1 < vo.states.size()) {
             addImuStatesToDataset(
-              time_start, vo.states[i - 1], vo.states[i], dataset);
+              time_point, vo.states[i], vo.states[i + 1], dataset);
+        } else {
+            // for simplicity just copy the second-last imu reading as the last
+            addImuStatesToDataset(
+              time_point, vo.states[i - 1], vo.states[i], dataset);
         }
     }
 
