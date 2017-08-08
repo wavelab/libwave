@@ -271,6 +271,6 @@ class FLANNMatcher : public DescriptorMatcher {
      */
     void checkConfiguration(const FLANNMatcherParams &check_config);
 };
-}
+}  // namespace wave
 
 #endif  // WAVE_VISION_FLANN_MATCHER_HPP

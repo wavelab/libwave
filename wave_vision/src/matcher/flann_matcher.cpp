@@ -224,7 +224,7 @@ std::vector<cv::DMatch> FLANNMatcher::matchDescriptors(
         int k = 2;
 
         this->flann_matcher->knnMatch(
-                descriptors_1, descriptors_2, raw_matches, k, mask, false);
+          descriptors_1, descriptors_2, raw_matches, k, mask, false);
 
         filtered_matches = this->filterMatches(raw_matches);
 
@@ -233,19 +233,18 @@ std::vector<cv::DMatch> FLANNMatcher::matchDescriptors(
 
         // Determine matches between sets of descriptors
         this->flann_matcher->match(
-                descriptors_1, descriptors_2, raw_matches, mask);
+          descriptors_1, descriptors_2, raw_matches, mask);
 
         filtered_matches = this->filterMatches(raw_matches);
     }
 
     if (this->current_config.auto_remove_outliers) {
         std::vector<cv::DMatch> good_matches =
-                this->removeOutliers(filtered_matches, keypoints_1, keypoints_2);
+          this->removeOutliers(filtered_matches, keypoints_1, keypoints_2);
 
         return good_matches;
     }
 
     return filtered_matches;
 }
-}
-}
+}  // namespace wave
