@@ -108,7 +108,7 @@ struct VoDataset {
      */
     void outputObserved(const std::string &output_dir);
 
-    /** Writes robot state group truth to the given file.
+    /** Writes robot state ground truth to the given file.
      *
      * The output is space-separated. Each row contains 8 values: the time, the
      * 3d position (x, y, z), and the quaternion orientation (x, y, z, w).

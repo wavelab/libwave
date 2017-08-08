@@ -227,12 +227,10 @@ VoDataset VoDatasetGenerator::generate() {
 
     // simulate synthetic VO dataset
     double dt = 0.01;
-    TwoWheelRobot2DModel robot{Vec3{0.0, 0.0, 0.0}};
+    Vec3 pose2d{0.0, 0.0, 0.0};
+    TwoWheelRobot2DModel robot{pose2d};
 
     for (int i = 0; i < 300; i++) {
-        // update state
-        Vec3 pose2d = robot.update(u, dt);
-
         // convert 2d pose to 3d pose (pose of Body in Global frame)
         auto G_p_GB = Vec3{pose2d.x(), pose2d.y(), 0};
         auto q_GB = Quaternion{Eigen::AngleAxisd{pose2d.z(), Vec3::UnitZ()}};
@@ -245,14 +243,23 @@ VoDataset VoDatasetGenerator::generate() {
                           Eigen::AngleAxisd(-M_PI_2, Vec3::UnitX());
         Quaternion q_GC = q_GB * q_BC;
 
-        int retval = this->camera.observeLandmarks(
-          dt, dataset.landmarks, q_GC, G_p_GB, instant.features_observed);
+        // We want to force observations on the zeroth frame.
+        double force = (i == 0 ? 1.0 : 0);
+
+        int retval = this->camera.observeLandmarks(dt + force,
+                                                   dataset.landmarks,
+                                                   q_GC,
+                                                   G_p_GB,
+                                                   instant.features_observed);
         if (retval == 0) {
             instant.time = i * dt;
             instant.robot_G_p_GB = G_p_GB;
             instant.robot_q_GB = q_GB;
             dataset.states.push_back(instant);
         }
+
+        // update state
+        pose2d = robot.update(u, dt);
     }
 
     return dataset;

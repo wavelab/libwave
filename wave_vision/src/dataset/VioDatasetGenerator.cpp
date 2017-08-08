@@ -29,7 +29,7 @@ VioDataset::PoseValue poseFromVoState(const VoInstant &state) {
     return pose;
 }
 
-// Get a  TimePoint given a start time and duration in seconds
+// Get a TimePoint given a start time and duration in seconds
 TimePoint timePointAfterStartTime(TimePoint time_start, double dt_seconds) {
     const auto d = std::chrono::duration<double>(dt_seconds);
     return time_start + std::chrono::duration_cast<TimePoint::duration>(d);
@@ -95,6 +95,7 @@ void addImuStatesToDataset(TimePoint time_start,
 
 }  // namespace
 
+
 VioDataset VioDatasetGenerator::generate() {
     VioDataset dataset;
 
@@ -108,18 +109,27 @@ VioDataset VioDatasetGenerator::generate() {
 
     // Handle measurements
     for (auto i = 0u; i < vo.states.size(); ++i) {
-        addVoStateToDataset(i, time_start, vo.states[i], dataset);
+        const auto time_point =
+          timePointAfterStartTime(time_start, vo.states[i].time);
+
+        addVoStateToDataset(i, time_point, vo.states[i], dataset);
 
         // Calculate imu measurements
-        // (the last one is missing)
-        if (i > 0) {
+        // (use forward difference)
+        if (i + 1 < vo.states.size()) {
             addImuStatesToDataset(
-              time_start, vo.states[i - 1], vo.states[i], dataset);
+              time_point, vo.states[i], vo.states[i + 1], dataset);
+        } else {
+            // for simplicity just copy the second-last imu reading as the last
+            addImuStatesToDataset(
+              time_point, vo.states[i - 1], vo.states[i], dataset);
         }
     }
 
     // Handle calibration
-    dataset.camera_K = vo.camera_K;
+    dataset.camera.K = vo.camera_K;
+    dataset.camera.image_width = 2 * dataset.camera.cx();
+    dataset.camera.image_height = 2 * dataset.camera.cy();
 
     // In VoDatasetGenerator, the transformation from body to camera is just a
     // rotation from NWU to EDN
