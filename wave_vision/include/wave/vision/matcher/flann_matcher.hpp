@@ -269,7 +269,7 @@ class FLANNMatcher : public DescriptorMatcher {
      *
      *  @param check_config containing the desired configuration values.
      */
-    void checkConfiguration(const FLANNMatcherParams &config);
+    void checkConfiguration(const FLANNMatcherParams &check_config);
 };
 }
 

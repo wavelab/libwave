@@ -62,16 +62,21 @@ void BruteForceMatcher::checkConfiguration(
           "Norm type is not one of the acceptable values!");
     }
 
-    // Check the value of the ratio_test heuristic
-    if (check_config.ratio_threshold < 0.0 ||
-        check_config.ratio_threshold > 1.0) {
-        throw std::invalid_argument(
-          "ratio_threshold is not an appropriate value!");
-    }
-
-    // Check the value of the threshold distance heuristic
-    if (check_config.distance_threshold < 0) {
-        throw std::invalid_argument("distance_threshold is a negative value!");
+    // If use_knn is true, check ratio_threshold value. Otherwise check
+    // distance_threshold
+    if (check_config.use_knn) {
+        // Check the value of the ratio_test heuristic
+        if (check_config.ratio_threshold < 0.0 ||
+            check_config.ratio_threshold > 1.0) {
+            throw std::invalid_argument(
+              "ratio_threshold is not an appropriate value!");
+        }
+    } else {
+        // Check the value of the threshold distance heuristic
+        if (check_config.distance_threshold < 0) {
+            throw std::invalid_argument(
+              "distance_threshold is a negative value!");
+        }
     }
 
     // Only acceptable values are 1, 2, 4, and 8

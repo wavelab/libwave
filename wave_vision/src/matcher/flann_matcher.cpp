@@ -101,10 +101,36 @@ FLANNMatcher::FLANNMatcher(const FLANNMatcherParams &config) {
     this->current_config = config;
 }
 
-void FLANNMatcher::checkConfiguration(const FLANNMatcherParams &config) {
-    if (config.flann_method < FLANN::KDTree ||
-        config.flann_method > FLANN::Autotuned) {
+void FLANNMatcher::checkConfiguration(const FLANNMatcherParams &check_config) {
+    // Check that the value of flann_method is one of the valid values.
+    if (check_config.flann_method < FLANN::KDTree ||
+        check_config.flann_method > FLANN::Autotuned) {
         throw std::invalid_argument("Flann method selected does not exist!");
+    }
+
+    // If use_knn is true, check ratio_threshold value. Otherwise check
+    // distance_threshold
+    if (check_config.use_knn) {
+        // Check the value of the ratio_test heuristic
+        if (check_config.ratio_threshold < 0.0 ||
+            check_config.ratio_threshold > 1.0) {
+            throw std::invalid_argument(
+              "ratio_threshold is not an appropriate value!");
+        }
+    } else {
+        // Check the value of the threshold distance heuristic
+        if (check_config.distance_threshold < 0) {
+            throw std::invalid_argument(
+              "distance_threshold is a negative value!");
+        }
+    }
+
+    // Only acceptable values are 1, 2, 4, and 8
+    if (check_config.fm_method != cv::FM_7POINT &&
+        check_config.fm_method != cv::FM_8POINT &&
+        check_config.fm_method != cv::FM_LMEDS &&
+        check_config.fm_method != cv::FM_RANSAC) {
+        throw std::invalid_argument("fm_method is not an acceptable value!");
     }
 }
 
