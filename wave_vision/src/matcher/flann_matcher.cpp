@@ -66,4 +66,20 @@ void FLANNMatcher::checkConfiguration(const int &flann_method) {
         throw std::invalid_argument("Flann method selected does not exist!");
     }
 }
+
+std::vector<cv::DMatch> FLANNMatcher::filterMatches(
+  std::vector<std::vector<cv::DMatch>> &matches) const {
+    std::vector<cv::DMatch> filtered_matches;
+
+    for (auto &match : matches) {
+        // Calculate ratio between two best matches. Accept if less than
+        // ratio heuristic
+        float ratio = match[0].distance / match[1].distance;
+        if (ratio <= this->current_config.ratio_threshold) {
+            filtered_matches.push_back(match[0]);
+        }
+    }
+
+    return filtered_matches;
+}
 }
