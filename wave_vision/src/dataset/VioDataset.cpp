@@ -109,13 +109,12 @@ Vec3 llaFromEnu(Vec3 lla_datum, Vec3 enu) {
 }
 
 // For each time in the container, write a timestamp
-void writeTimestampsToFile(const VioDataset::PoseContainer &container,
-                           const std::string &output_path) {
+void writeTimestampsToFile(
+  const VioDataset::PoseContainer &container,
+  const std::chrono::system_clock::time_point &start_time,
+  const std::string &output_path) {
     std::ofstream timestamps_file{output_path};
 
-    // Choose an arbitrary start time
-    // @todo maybe we will care about absolute time in future
-    const auto start_time = std::chrono::system_clock::now();
     // Let the first measurement in the container occur at that start_time
     // (with the current setup, we have to convert from steady_clock to
     // system_clock values - todo?)
@@ -230,11 +229,6 @@ void loadPoses(const std::string &input_dir, VioDataset &dataset) {
         pose.R_GI.setFromEulerXYZ(Vec3{data.roll, data.pitch, data.yaw});
         dataset.poses.emplace(time_point, VioDataset::PoseSensor::Pose, pose);
 
-        if (i == 0) {
-            std::cerr << "\n the first pose is " << pose.G_p_GI.transpose()
-                      << std::endl;
-        }
-
         VioDataset::ImuValue imu;
         imu.I_vel_GI << data.vf, data.vl, data.vu;
         imu.I_ang_vel_GI << data.wf, data.wl, data.wu;
@@ -243,6 +237,51 @@ void loadPoses(const std::string &input_dir, VioDataset &dataset) {
     }
 }
 
+// Load feature measurements into dataset
+void loadObserved(const std::string &input_dir, VioDataset &dataset) {
+    const auto timestamps_filename = input_dir + "/image_00/timestamps.txt";
+    auto timestamps_file = std::ifstream{timestamps_filename};
+
+    if (!timestamps_file) {
+        throw std::runtime_error("Could not read " + timestamps_filename);
+    }
+
+    const auto data_dir = input_dir + "/image_00/features";
+    std::chrono::system_clock::time_point system_start_time, system_time_point;
+    const auto start_time = std::chrono::steady_clock::now();  // arbitrary
+
+    for (ImageNum i = 0;
+         readTimepointFromStream(timestamps_file, system_time_point);
+         ++i) {
+        if (i == 0) {
+            // Use the first time as the reference
+            system_start_time = system_time_point;
+        }
+        const auto time_point =
+          start_time + (system_time_point - system_start_time);
+
+        // Load the file with format "0000000000.txt"
+        const auto filename = data_dir + "/" + paddedTxtFilename(i);
+        auto data_file = std::ifstream{filename};
+        if (!data_file) {
+            throw std::runtime_error("Could not read " + filename);
+        }
+
+        LandmarkId landmark_id;
+        Vec2 meas;
+        // Read each row
+        while (true) {
+            data_file >> landmark_id;
+            meas = matrixFromStream<2, 1>(data_file);
+            if (!data_file) {
+                break;  // couldn't read another row
+            }
+
+            dataset.feature_measurements.emplace(
+              time_point, VioDataset::Camera::Left, landmark_id, i, meas);
+        }
+    }
+}
 
 }  // namespace
 
@@ -256,6 +295,7 @@ void VioDataset::outputToDirectory(const std::string &output_dir) const {
 
     this->outputCalibration(output_dir);
     this->outputPoses(output_dir + "/oxts");
+    this->outputObserved(output_dir);
 }
 
 // Output calib_cam_to_cam.txt
@@ -300,7 +340,8 @@ void VioDataset::outputCalibration(const std::string &output_dir) const {
 void VioDataset::outputPoses(const std::string &output_dir) const {
     boost::filesystem::create_directories(output_dir + "/data");
 
-    writeTimestampsToFile(this->poses, output_dir + "/timestamps.txt");
+    writeTimestampsToFile(
+      this->poses, this->start_time, output_dir + "/timestamps.txt");
 
     int i = 0;
     auto imu_iter = this->imu_measurements.cbegin();
@@ -341,12 +382,46 @@ void VioDataset::outputPoses(const std::string &output_dir) const {
     }
 }
 
+void VioDataset::outputObserved(const std::string &output_dir) const {
+    boost::filesystem::create_directories(output_dir + "/image_00/features");
+    auto timestamps_file =
+      std::ofstream{output_dir + "/image_00/timestamps.txt"};
+
+    // Let the first measurement in the container occur at that start_time
+    // (with the current setup, we have to convert from steady_clock to
+    // system_clock values)
+    const auto steady_start_time =
+      this->feature_measurements.cbegin()->time_point;
+
+    // Loop through all measurements, starting a new file for each new timestamp
+    int i = 0;
+    auto time_point = this->start_time;
+    std::ofstream data_file;
+    for (const auto &meas : this->feature_measurements) {
+        const auto new_time_point =
+          start_time + (meas.time_point - steady_start_time);
+        if (i == 0 || new_time_point != time_point) {
+            // Write a timestamp
+            time_point = new_time_point;
+            timestamps_file << formatTimestamp(time_point) << std::endl;
+            //  Open the next features file
+            data_file = std::ofstream{output_dir + "/image_00/features/" +
+                                      paddedTxtFilename(i++)};
+        }
+
+        data_file << meas.landmark_id << " ";
+        data_file << meas.value.x() << " " << meas.value.y() << std::endl;
+    }
+}
+
+
 VioDataset VioDataset::loadFromDirectory(const std::string &input_dir) {
     VioDataset dataset;
 
     loadCalibration(input_dir, dataset);
     loadLandmarks(input_dir, dataset);
     loadPoses(input_dir, dataset);
+    loadObserved(input_dir, dataset);
 
     return dataset;
 }

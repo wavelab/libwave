@@ -80,6 +80,12 @@ struct VioDataset {
     /** Geographic datum (arbitrary for now, just used for output) */
     Vec3 lla_datum{43.472981, -80.540092, 0};
 
+    /* An arbitrary start time, used for output timestamps.txt
+     * @todo maybe we will care about absolute time in future
+     */
+    std::chrono::system_clock::time_point start_time =
+      std::chrono::system_clock::now();
+
     /** Ground truth 3D landmark positions in the world frame. */
     LandmarkMap landmarks;
 
@@ -115,6 +121,19 @@ struct VioDataset {
      * `vf` `vl` `vu` `wf` `wl` `wu` (with simulated imu measurements).
      */
     void outputPoses(const std::string &output_dir) const;
+
+    /** Write feature observations to the given directory.
+     *
+     * The output is placed in a directory called `image_00` and includes
+     *
+     * - A file `timestamps.txt` with one row for each time step - A directory
+     * `features` containing a text file for each time step. The files are
+     * numbered with the format 0000000000.txt.
+     *
+     * Each observations file has one row for each feature measurement. Each row
+     * has three space-separated fields: landmark id, pixels x, and pixels y.
+     */
+    void outputObserved(const std::string &output_dir) const;
 
     /** Reads a dataset from files in the given directory.
      *
