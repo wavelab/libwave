@@ -85,8 +85,8 @@ class DescriptorMatcher {
      *  @return vector containing the best matches.
      */
     virtual std::vector<cv::DMatch> matchDescriptors(
-      const cv::Mat &descriptors_1,
-      const cv::Mat &descriptors_2,
+      cv::Mat &descriptors_1,
+      cv::Mat &descriptors_2,
       const std::vector<cv::KeyPoint> &keypoints_1,
       const std::vector<cv::KeyPoint> &keypoints_2,
       cv::InputArray mask) = 0;

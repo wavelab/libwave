@@ -1,33 +1,66 @@
 /**
  * @file
- * Brute force matcher implementation, derived from descriptor matcher base
- * class.
+ * FLANN (Fast Library for Approximate Nearest Neighbours) based matcher
+ * implementation, derived from descriptor matcher base class.
  * @ingroup vision
  */
-#ifndef WAVE_VISION_BRUTE_FORCE_MATCHER_HPP
-#define WAVE_VISION_BRUTE_FORCE_MATCHER_HPP
+#ifndef WAVE_VISION_FLANN_MATCHER_HPP
+#define WAVE_VISION_FLANN_MATCHER_HPP
 
 #include <string>
 #include <vector>
 
-#include "wave/vision/matcher/descriptor_matcher.hpp"
+#include <wave/vision/matcher/descriptor_matcher.hpp>
 
 namespace wave {
 /** @addtogroup vision
  *  @{ */
 
-/** Configuration parameters for the BruteForceMatcher */
-struct BFMatcherParams {
-    BFMatcherParams() {}
+/** The FLANN namespace contains the configuration parameters for the FLANN
+ *  matcher. In addition to selecting the manner in which FLANN matching is to
+ *  be performed, these methods can also be configured.
+ */
+namespace FLANN {
+/** There are several methods available in OpenCV to perform matching using
+ *  FLANN. Currently, only the KDTree, KMeans, and Composite algorithms have
+ *  been implemented. TODO: Add the remaining algorithms (Autotuned,
+ *  Heirarchical Clustering, etc.).
+ *
+ *  KDTree: The default method. This uses parallel kd-trees to separate
+ *  keypoint descriptors, and  can then search the tree in order to determine
+ *  the closest match.
+ *
+ *  KMeans: This method uses k-means clustering to sort the descriptors. The
+ *  clusters are recursively optimized for a set number of iterations.
+ *
+ *  Composite: This method combines the above two methods, and aims to determine
+ *  the optimum match between the two.
+ *
+ *  LSH: Locality-Senstive hashing (LSH) uses hash functions to distribute the
+ *  descriptors into similar buckets. The speed of hash tables allows for
+ *  candidate matches to be generated very quickly. This was proposed by [Lv et.
+ *  al (2007)][LSH].
+ *
+ *  These brief descriptions were adapted from Kaehler and Bradski's book
+ *  "Learning OpenCV 3: Computer Vision in C++ with the OpenCV Library". For
+ *  further reference on the different methods, please refer to pages 575-580.
+ *
+ *  [LSH]: http://www.cs.princeton.edu/cass/papers/mplsh_vldb07.pdf
+ */
+enum { KDTree = 1, KMeans = 2, Composite = 3, LSH = 4 };
+}
+
+struct FLANNMatcherParams {
+    FLANNMatcherParams() {}
 
     /** Constructor with user selected values. Only to be used if the user
      *  desires the ratio test as the first pass to filter outliers.
      */
-    BFMatcherParams(int norm_type,
-                    double ratio_threshold,
-                    bool auto_remove_outliers,
-                    int fm_method)
-        : norm_type(norm_type),
+    FLANNMatcherParams(int flann_method,
+                       double ratio_threshold,
+                       bool auto_remove_outliers,
+                       int fm_method)
+        : flann_method(flann_method),
           use_knn(true),
           ratio_threshold(ratio_threshold),
           auto_remove_outliers(auto_remove_outliers),
@@ -36,11 +69,11 @@ struct BFMatcherParams {
     /** Overloaded method. Only to be used if the user desires the distance
      *  threshold test as the first pass to filter outliers.
      */
-    BFMatcherParams(int norm_type,
-                    int distance_threshold,
-                    bool auto_remove_outliers,
-                    int fm_method)
-        : norm_type(norm_type),
+    FLANNMatcherParams(int flann_method,
+                       int distance_threshold,
+                       bool auto_remove_outliers,
+                       int fm_method)
+        : flann_method(flann_method),
           use_knn(false),
           distance_threshold(distance_threshold),
           auto_remove_outliers(auto_remove_outliers),
@@ -48,35 +81,23 @@ struct BFMatcherParams {
 
     /** Constructor using parameters extracted from a configuration file.
      *
-     *  @param config_path the path to the location of the configuration file
+     *  @param config_path the path to the location of the configuration file.
      */
-    BFMatcherParams(const std::string &config_path);
+    FLANNMatcherParams(const std::string &config_path);
 
-    /** Norm type to use for distance calculation between feature descriptors.
+    /** The FLANN method to use (described in the FLANN namespace). As a note,
+     *  currently selecting a method will set up the FLANN matcher with
+     *  default parameters.
      *
      *  Options:
-     *  cv::NORM_INF: l-infinity norm
-     *  cv::NORM_L1: l1 norm
-     *  cv::NORM_L2: l2 norm
-     *  cv::NORM_L2SQR: l2 norm, squared
-     *  cv::NORM_HAMMING: Hamming distance
-     *  cv::NORM_HAMMING2: Hamming distance modifier for ORB Descriptor, with
-     *  tuple_size (WTA_K) = 3 or 4
+     *  FLANN::KDTree: kd-tree separation
+     *  FLANN::KMeans: k-means clustering.
+     *  FLANN::Composite: Combines the above methods.
+     *  FLANN::LSH: Locality-sensitive hash table separation.
      *
-     *  As per OpenCV docs, NORM_L1 and NORM_L2 is valid for the SIFT or
-     *  SURF descriptors, while NORM_HAMMING is valid for the ORB, BRISK, and
-     *  BRIEF descriptors. NORM_HAMMING2 should only be used with ORB when
-     *  tuple_size (WTA_K) is 3 or 4.
-     *
-     *  Default: NORM_HAMMING, as it is used for ORB and BRISK Descriptors.
-     *
-     *  Please refer to further description of the norm types
-     *  [here][opencv_norm_types].
-     *
-     *  [opencv_norm_types]:
-     *  http://docs.opencv.org/trunk/d2/de8/group__core__array.html#gad12cefbcb5291cf958a85b4b67b6149f
+     *  Recommended: FLANN::KDTree
      */
-    int norm_type = cv::NORM_HAMMING;
+    int flann_method = FLANN::KDTree;
 
     /** Determines whether to use a k-nearest-neighbours match.
      *
@@ -144,31 +165,34 @@ struct BFMatcherParams {
     int fm_method = cv::FM_RANSAC;
 };
 
-/** Representation of a descriptor matcher using the BruteForce algorithm.
+/** Representation of a descriptor matcher using the FLANN algorithm.
  *
- *  Internally, this class is wrapping OpenCV's BFMatcher module.
+ *  Internally, this class is wrapping OpenCV's FLANNBasedMatcher module.
  *  Further reference on the BFMatcher can be found
- * [here][opencv_bfmatcher].
+ * [here][opencv_flannmatcher].
  *
- *  [opencv_bfmatcher]:
- *  http://docs.opencv.org/trunk/d3/da1/classcv_1_1BFMatcher.html
+ *  Currently, this class only allows for the default parameters to be used for
+ *  the selected method. TODO: Extend this to have customizable params.
+ *
+ *  [opencv_flannmatcher]:
+ *  http://docs.opencv.org/trunk/dc/de2/classcv_1_1FlannBasedMatcher.html
  */
-class BruteForceMatcher : public DescriptorMatcher {
+class FLANNMatcher : public DescriptorMatcher {
  public:
     /** Default constructor. The user can also specify their own struct with
      *  desired values. If no struct is provided, default values are used.
      *
      *  @param config contains the desired parameter values.
      */
-    explicit BruteForceMatcher(
-      const BFMatcherParams &config = BFMatcherParams{});
+    explicit FLANNMatcher(
+      const FLANNMatcherParams &config = FLANNMatcherParams{});
 
     /** Returns the current configuration parameters being used by the
-     *  BruteForceMatcher
+     *  FLANNMatcher
      *
      *  @return the current configuration values.
      */
-    BFMatcherParams getConfiguration() const {
+    FLANNMatcherParams getConfiguration() const {
         return this->current_config;
     }
 
@@ -186,7 +210,7 @@ class BruteForceMatcher : public DescriptorMatcher {
       const std::vector<cv::KeyPoint> &keypoints_2) const override;
 
     /** Matches keypoints descriptors between two images using the
-     *  BruteForceMatcher.
+     *  FLANNMatcher.
      *
      *  @param descriptors_1 the descriptors extracted from the first image.
      *  @param descriptors_2 the descriptors extracted from the second image.
@@ -207,29 +231,14 @@ class BruteForceMatcher : public DescriptorMatcher {
       cv::Mat &descriptors_2,
       const std::vector<cv::KeyPoint> &keypoints_1,
       const std::vector<cv::KeyPoint> &keypoints_2,
-      cv::InputArray mask = cv::noArray()) override;
-
-    // Public Variables
-    // -----------------------------------------------------------------
-    /** The number of matches prior to any filtering or outlier removal. */
-    size_t num_raw_matches = 0u;
-
-    /** The number of matches after being filtered by the distance/ratio test.
-     *  This is the input to the outlierRejection method.
-     */
-    size_t num_filtered_matches = 0u;
-
-    /** The size of matches remaining after outlier removal via RANSAC or a
-     *  similar method.
-     */
-    size_t num_good_matches = 0u;
+      cv::InputArray mask = cv::noArray()) const override;
 
  private:
-    /** The pointer to the wrapped cv::BFMatcher object */
-    cv::Ptr<cv::BFMatcher> brute_force_matcher;
+    /** The pointer to the wrapped cv::FlannBasedMatcher object */
+    cv::Ptr<cv::FlannBasedMatcher> flann_matcher;
 
-    /** Current configuration parameters */
-    BFMatcherParams current_config;
+    /** Current configuration parameters*/
+    FLANNMatcherParams current_config;
 
     /** Remove outliers between matches. Uses a heuristic based approach as a
      *  first pass to determine good matches.
@@ -241,9 +250,8 @@ class BruteForceMatcher : public DescriptorMatcher {
     std::vector<cv::DMatch> filterMatches(
       std::vector<cv::DMatch> &matches) const override;
 
-    /** Overloaded method, which takes in a vector of a vector of matches. This
-     *  is designed to be used with the knnMatchDescriptors method, and uses the
-     *  ratio test to filter the matches.
+    /** First pass to filter bad matches. Takes in a vector of matches and uses
+     *  the ratio test to filter the matches.
      *
      *  @param matches the unfiltered matches computed from two images.
      *
@@ -252,14 +260,12 @@ class BruteForceMatcher : public DescriptorMatcher {
     std::vector<cv::DMatch> filterMatches(
       std::vector<std::vector<cv::DMatch>> &matches) const override;
 
-
     /** Checks whether the desired configuration is valid
      *
      *  @param check_config containing the desired configuration values.
      */
-    void checkConfiguration(const BFMatcherParams &check_config) const;
+    void checkConfiguration(const FLANNMatcherParams &check_config);
 };
-/** @} end of group */
 }  // namespace wave
 
-#endif  // WAVE_VISION_BRUTE_FORCE_MATCHER_HPP
+#endif  // WAVE_VISION_FLANN_MATCHER_HPP
