@@ -38,7 +38,7 @@ class DescriptorMatcher {
      *  @return the matches with outliers removed.
      */
     virtual std::vector<cv::DMatch> filterMatches(
-      std::vector<cv::DMatch> &matches) const = 0;
+      const std::vector<cv::DMatch> &matches) const = 0;
 
     /** Overloaded method, which takes in a vector of a vector of matches. This
      *  is designed to be used with the knnMatchDescriptors method, and uses the
@@ -49,7 +49,7 @@ class DescriptorMatcher {
      *  @return the filtered matches.
      */
     virtual std::vector<cv::DMatch> filterMatches(
-      std::vector<std::vector<cv::DMatch>> &matches) const = 0;
+      const std::vector<std::vector<cv::DMatch>> &matches) const = 0;
 
  public:
     /** Remove outliers between matches by using epipolar constraints. Outlier
@@ -85,8 +85,8 @@ class DescriptorMatcher {
      *  @return vector containing the best matches.
      */
     virtual std::vector<cv::DMatch> matchDescriptors(
-      const cv::Mat &descriptors_1,
-      const cv::Mat &descriptors_2,
+      cv::Mat &descriptors_1,
+      cv::Mat &descriptors_2,
       const std::vector<cv::KeyPoint> &keypoints_1,
       const std::vector<cv::KeyPoint> &keypoints_2,
       cv::InputArray mask) const = 0;

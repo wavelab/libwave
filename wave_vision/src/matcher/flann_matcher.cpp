@@ -1,13 +1,13 @@
-#include "wave/vision/matcher/brute_force_matcher.hpp"
+#include "wave/vision/matcher/flann_matcher.hpp"
 
 namespace wave {
 
-// Filesystem based constructor for BFMatcherParams
-BFMatcherParams::BFMatcherParams(const std::string &config_path) {
+// Filesystem based constructor for FLANNMatcherParams
+FLANNMatcherParams::FLANNMatcherParams(const std::string &config_path) {
     // Extract parameters from .yaml file.
     ConfigParser parser;
 
-    int norm_type;
+    int flann_method;
     bool use_knn;
     double ratio_threshold;
     int distance_threshold;
@@ -16,7 +16,7 @@ BFMatcherParams::BFMatcherParams(const std::string &config_path) {
 
     // Add parameters to parser, to be loaded. If path cannot be found, throw
     // an exception.
-    parser.addParam("norm_type", &norm_type);
+    parser.addParam("flann_method", &flann_method);
     parser.addParam("use_knn", &use_knn);
     parser.addParam("ratio_threshold", &ratio_threshold);
     parser.addParam("distance_threshold", &distance_threshold);
@@ -25,10 +25,10 @@ BFMatcherParams::BFMatcherParams(const std::string &config_path) {
 
     if (parser.load(config_path) != 0) {
         throw std::invalid_argument(
-          "Failed to Load BFMatcherParams Configuration");
+          "Failed to Load FLANNMatcherParams Configuration");
     }
 
-    this->norm_type = norm_type;
+    this->flann_method = flann_method;
     this->use_knn = use_knn;
     this->ratio_threshold = ratio_threshold;
     this->distance_threshold = distance_threshold;
@@ -36,30 +36,53 @@ BFMatcherParams::BFMatcherParams(const std::string &config_path) {
     this->fm_method = fm_method;
 }
 
-// Default constructor. Struct may be default or user defined.
-BruteForceMatcher::BruteForceMatcher(const BFMatcherParams &config) {
-    // Ensure parameters are valid
+FLANNMatcher::FLANNMatcher(const FLANNMatcherParams &config) {
+    // Check flann_method and create the appropriate parameters struct.
     this->checkConfiguration(config);
 
-    // Cross_check must be the opposite of use_knn
-    bool cross_check = !config.use_knn;
+    // Depending on the FLANN method, different parameters are required.
+    if (config.flann_method == FLANN::KDTree) {
+        // Create FLANN matcher with default KDTree and Search params.
+        cv::FlannBasedMatcher matcher(
+          cv::makePtr<cv::flann::KDTreeIndexParams>(),
+          cv::makePtr<cv::flann::SearchParams>());
+        this->flann_matcher = cv::makePtr<cv::FlannBasedMatcher>(matcher);
+    } else if (config.flann_method == FLANN::KMeans) {
+        // Create FLANN matcher with default KMeans and Search params
+        cv::FlannBasedMatcher matcher(
+          cv::makePtr<cv::flann::KMeansIndexParams>(),
+          cv::makePtr<cv::flann::SearchParams>());
+        this->flann_matcher = cv::makePtr<cv::FlannBasedMatcher>(matcher);
+    } else if (config.flann_method == FLANN::Composite) {
+        // Create FLANN matcher with default Composite and Search params
+        cv::FlannBasedMatcher matcher(
+          cv::makePtr<cv::flann::CompositeIndexParams>(),
+          cv::makePtr<cv::flann::SearchParams>());
+        this->flann_matcher = cv::makePtr<cv::FlannBasedMatcher>(matcher);
+    } else if (config.flann_method == FLANN::LSH) {
+        // Create LSH params with default values. These are values recommended
+        // by Kaehler and Bradski - the LSH struct in OpenCV does not have
+        // default values unlike the others.
+        unsigned int num_tables = 20;  // Typically between 10-30
+        unsigned int key_size = 15;    // Typically between 10-20
+        unsigned int multi_probe_level = 2;
 
-    // Create cv::BFMatcher object with the desired parameters
-    this->brute_force_matcher =
-      cv::BFMatcher::create(config.norm_type, cross_check);
+        // Create FLANN matcher with default LSH and Search params
+        cv::FlannBasedMatcher matcher(
+          cv::makePtr<cv::flann::LshIndexParams>(
+            num_tables, key_size, multi_probe_level),
+          cv::makePtr<cv::flann::SearchParams>());
+        this->flann_matcher = cv::makePtr<cv::FlannBasedMatcher>(matcher);
+    }
 
-    // Store configuration parameters within member struct
     this->current_config = config;
 }
 
-void BruteForceMatcher::checkConfiguration(
-  const BFMatcherParams &check_config) const {
-    // Check that the value of norm_type is one of the valid values
-    if (check_config.norm_type < cv::NORM_INF ||
-        check_config.norm_type > cv::NORM_HAMMING2 ||
-        check_config.norm_type == 3) {
-        throw std::invalid_argument(
-          "Norm type is not one of the acceptable values!");
+void FLANNMatcher::checkConfiguration(const FLANNMatcherParams &check_config) {
+    // Check that the value of flann_method is one of the valid values.
+    if (check_config.flann_method < FLANN::KDTree ||
+        check_config.flann_method > FLANN::LSH) {
+        throw std::invalid_argument("Flann method selected does not exist!");
     }
 
     // Check the value of the ratio_test heuristic
@@ -83,7 +106,7 @@ void BruteForceMatcher::checkConfiguration(
     }
 }
 
-std::vector<cv::DMatch> BruteForceMatcher::filterMatches(
+std::vector<cv::DMatch> FLANNMatcher::filterMatches(
   const std::vector<cv::DMatch> &matches) const {
     std::vector<cv::DMatch> filtered_matches;
 
@@ -103,7 +126,7 @@ std::vector<cv::DMatch> BruteForceMatcher::filterMatches(
     return filtered_matches;
 }
 
-std::vector<cv::DMatch> BruteForceMatcher::filterMatches(
+std::vector<cv::DMatch> FLANNMatcher::filterMatches(
   const std::vector<std::vector<cv::DMatch>> &matches) const {
     std::vector<cv::DMatch> filtered_matches;
 
@@ -119,7 +142,7 @@ std::vector<cv::DMatch> BruteForceMatcher::filterMatches(
     return filtered_matches;
 }
 
-std::vector<cv::DMatch> BruteForceMatcher::removeOutliers(
+std::vector<cv::DMatch> FLANNMatcher::removeOutliers(
   const std::vector<cv::DMatch> &matches,
   const std::vector<cv::KeyPoint> &keypoints_1,
   const std::vector<cv::KeyPoint> &keypoints_2) const {
@@ -157,13 +180,28 @@ std::vector<cv::DMatch> BruteForceMatcher::removeOutliers(
     return good_matches;
 }
 
-std::vector<cv::DMatch> BruteForceMatcher::matchDescriptors(
+std::vector<cv::DMatch> FLANNMatcher::matchDescriptors(
   cv::Mat &descriptors_1,
   cv::Mat &descriptors_2,
   const std::vector<cv::KeyPoint> &keypoints_1,
   const std::vector<cv::KeyPoint> &keypoints_2,
   cv::InputArray mask) const {
     std::vector<cv::DMatch> filtered_matches;
+
+    // The FLANN matcher (except for the LSH method) requires the descriptors
+    // to be of type CV_32F (float, from 0-1.0). Some descriptors
+    // (ex. ORB, BRISK) provide descriptors in the form of CV_8U (unsigned int).
+    // To use the other methods, the descriptor must be converted before
+    // matching.
+    if (this->current_config.flann_method != FLANN::LSH &&
+        descriptors_1.type() != CV_32F) {
+        descriptors_1.convertTo(descriptors_1, CV_32F);
+    }
+
+    if (this->current_config.flann_method != FLANN::LSH &&
+        descriptors_2.type() != CV_32F) {
+        descriptors_2.convertTo(descriptors_2, CV_32F);
+    }
 
     if (this->current_config.use_knn) {
         std::vector<std::vector<cv::DMatch>> raw_matches;
@@ -172,7 +210,7 @@ std::vector<cv::DMatch> BruteForceMatcher::matchDescriptors(
         // for the ratio test, therefore only want 2.
         int k = 2;
 
-        this->brute_force_matcher->knnMatch(
+        this->flann_matcher->knnMatch(
           descriptors_1, descriptors_2, raw_matches, k, mask, false);
 
         filtered_matches = this->filterMatches(raw_matches);
@@ -181,7 +219,7 @@ std::vector<cv::DMatch> BruteForceMatcher::matchDescriptors(
         std::vector<cv::DMatch> raw_matches;
 
         // Determine matches between sets of descriptors
-        this->brute_force_matcher->match(
+        this->flann_matcher->match(
           descriptors_1, descriptors_2, raw_matches, mask);
 
         filtered_matches = this->filterMatches(raw_matches);
