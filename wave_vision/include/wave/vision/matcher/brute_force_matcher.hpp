@@ -166,7 +166,7 @@ class BruteForceMatcher : public DescriptorMatcher {
     /** Returns the current configuration parameters being used by the
      *  BruteForceMatcher
      *
-     *  @return a struct containing the current configuration values.
+     *  @return the current configuration values.
      */
     BFMatcherParams getConfiguration() const {
         return this->current_config;
@@ -210,6 +210,12 @@ class BruteForceMatcher : public DescriptorMatcher {
       cv::InputArray mask = cv::noArray()) const override;
 
  private:
+    /** The pointer to the wrapped cv::BFMatcher object */
+    cv::Ptr<cv::BFMatcher> brute_force_matcher;
+
+    /** Current configuration parameters */
+    BFMatcherParams current_config;
+
     /** Remove outliers between matches. Uses a heuristic based approach as a
      *  first pass to determine good matches.
      *
@@ -237,12 +243,6 @@ class BruteForceMatcher : public DescriptorMatcher {
      *  @param check_config containing the desired configuration values.
      */
     void checkConfiguration(const BFMatcherParams &check_config) const;
-
-    /** The pointer to the wrapped cv::BFMatcher object */
-    cv::Ptr<cv::BFMatcher> brute_force_matcher;
-
-    /** Current configuration parameters */
-    BFMatcherParams current_config;
 };
 /** @} end of group */
 }  // namespace wave

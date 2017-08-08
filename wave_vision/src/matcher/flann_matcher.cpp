@@ -2,16 +2,16 @@
 
 namespace wave {
 
-FLANNMatcher::FLANNMatcher(int flann_method) {
+FLANNMatcher::FLANNMatcher(const FLANNMatcherParams &config) {
     // Check flann_method and create the appropriate parameters struct.
-    this->checkConfiguration(flann_method);
+    this->checkConfiguration(config);
 
     // Create search params with default values. This is used for all
     // matcher implementations.
     cv::flann::SearchParams search_params;
 
     // Depending on the FLANN method, different parameters are required.
-    if (flann_method == FLANN::KDTree) {
+    if (config.flann_method == FLANN::KDTree) {
         // Create KDTree index params and search params with default values.
         cv::flann::KDTreeIndexParams kdtree_params;
 
@@ -19,7 +19,7 @@ FLANNMatcher::FLANNMatcher(int flann_method) {
         cv::FlannBasedMatcher matcher(cv::makePtr(kdtree_params),
                                       cv::makePtr(search_params));
         this->flann_matcher = cv::makePtr(matcher);
-    } else if (flann_method == FLANN::KMeans) {
+    } else if (config.flann_method == FLANN::KMeans) {
         // Create KMeans index params with default values.
         cv::flann::KMeansIndexParams kmeans_params;
 
@@ -28,7 +28,7 @@ FLANNMatcher::FLANNMatcher(int flann_method) {
                                       cv::makePtr(search_params));
         this->flann_matcher = cv::makePtr(matcher);
 
-    } else if (flann_method == FLANN::Composite) {
+    } else if (config.flann_method == FLANN::Composite) {
         // Create composite index params with default values.
         cv::flann::CompositeIndexParams composite_params;
 
@@ -36,7 +36,7 @@ FLANNMatcher::FLANNMatcher(int flann_method) {
         cv::FlannBasedMatcher matcher(cv::makePtr(composite_params),
                                       cv::makePtr(search_params));
         this->flann_matcher = cv::makePtr(matcher);
-    } else if (flann_method == FLANN::LSH) {
+    } else if (config.flann_method == FLANN::LSH) {
         // Create LSH params with default values. These are values recommended
         // by Kaehler and Bradski - the LSH struct in OpenCV does not have
         // default values unlike the others.
@@ -50,7 +50,7 @@ FLANNMatcher::FLANNMatcher(int flann_method) {
         cv::FlannBasedMatcher matcher(cv::makePtr(lsh_params),
                                       cv::makePtr(search_params));
         this->flann_matcher = cv::makePtr(matcher);
-    } else if (flann_method == FLANN::Autotuned) {
+    } else if (config.flann_method == FLANN::Autotuned) {
         // Create autotuned index params with default values
         cv::flann::AutotunedIndexParams autotuned_params;
 
@@ -59,6 +59,8 @@ FLANNMatcher::FLANNMatcher(int flann_method) {
                                       cv::makePtr(search_params));
         this->flann_matcher = cv::makePtr(matcher);
     }
+
+    this->current_config = config;
 }
 
 void FLANNMatcher::checkConfiguration(const int &flann_method) {

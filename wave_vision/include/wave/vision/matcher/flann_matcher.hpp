@@ -183,15 +183,22 @@ struct FLANNMatcherParams {
  */
 class FLANNMatcher : public DescriptorMatcher {
  public:
-    /** Default constructor.
+    /** Default constructor. The user can also specify their own struct with
+     *  desired values. If no struct is provided, default values are used.
      *
-     *  The default constructor will create the cv::FlannBasedMatcher object
-     *  using the default parameters of the selected method. If no method is
-     *  selected, the default is the KDTree.
-     *
-     * @param flann_method the search method to be used.
+     *  @param config contains the desired parameter values.
      */
-    explicit FLANNMatcher(int flann_method = FLANN::KDTree);
+    explicit FLANNMatcher(
+      const FLANNMatcherParams &config = FLANNMatcherParams{});
+
+    /** Returns the current configuration parameters being used by the
+     *  FLANNMatcher
+     *
+     *  @return the current configuration values.
+     */
+    FLANNMatcherParams getConfiguration() const {
+        return this->current_config;
+    }
 
     /** Remove outliers between matches using epipolar constraints
      *
@@ -234,8 +241,18 @@ class FLANNMatcher : public DescriptorMatcher {
     /** The pointer to the wrapped cv::FlannBasedMatcher object */
     cv::Ptr<cv::FlannBasedMatcher> flann_matcher;
 
-    /** The configuration method currently being used */
+    /** Current configuration parameters*/
     FLANNMatcherParams current_config;
+
+    /** Remove outliers between matches. Uses a heuristic based approach as a
+     *  first pass to determine good matches.
+     *
+     *  @param matches the unfiltered matches computed from two images.
+     *
+     *  @return the filtered matches.
+     */
+    std::vector<cv::DMatch> filterMatches(
+      std::vector<cv::DMatch> &matches) const override;
 
     /** First pass to filter bad matches. Takes in a vector of matches and uses
      *  the ratio test to filter the matches.
