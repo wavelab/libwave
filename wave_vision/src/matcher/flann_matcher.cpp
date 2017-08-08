@@ -207,4 +207,45 @@ std::vector<cv::DMatch> FLANNMatcher::removeOutliers(
 
     return good_matches;
 }
+
+std::vector<cv::DMatch> FLANNMatcher::matchDescriptors(
+  const cv::Mat &descriptors_1,
+  const cv::Mat &descriptors_2,
+  const std::vector<cv::KeyPoint> &keypoints_1,
+  const std::vector<cv::KeyPoint> &keypoints_2,
+  cv::InputArray mask) const {
+    std::vector<cv::DMatch> filtered_matches;
+
+    if (this->current_config.use_knn) {
+        std::vector<std::vector<cv::DMatch>> raw_matches;
+
+        // Number of neighbours for the k-nearest neighbour search. Only used
+        // for the ratio test, therefore only want 2.
+        int k = 2;
+
+        this->flann_matcher->knnMatch(
+                descriptors_1, descriptors_2, raw_matches, k, mask, false);
+
+        filtered_matches = this->filterMatches(raw_matches);
+
+    } else {
+        std::vector<cv::DMatch> raw_matches;
+
+        // Determine matches between sets of descriptors
+        this->flann_matcher->match(
+                descriptors_1, descriptors_2, raw_matches, mask);
+
+        filtered_matches = this->filterMatches(raw_matches);
+    }
+
+    if (this->current_config.auto_remove_outliers) {
+        std::vector<cv::DMatch> good_matches =
+                this->removeOutliers(filtered_matches, keypoints_1, keypoints_2);
+
+        return good_matches;
+    }
+
+    return filtered_matches;
+}
+}
 }
