@@ -135,6 +135,26 @@ void FLANNMatcher::checkConfiguration(const FLANNMatcherParams &check_config) {
 }
 
 std::vector<cv::DMatch> FLANNMatcher::filterMatches(
+  std::vector<cv::DMatch> &matches) const {
+    std::vector<cv::DMatch> filtered_matches;
+
+    // Determine closest match
+    auto closest_match = std::min_element(matches.begin(), matches.end());
+    auto min_distance = closest_match->distance;
+
+    // Keep any match that is less than the rejection heuristic times minimum
+    // distance
+    for (auto &match : matches) {
+        if (match.distance <=
+            this->current_config.distance_threshold * min_distance) {
+            filtered_matches.push_back(match);
+        }
+    }
+
+    return filtered_matches;
+}
+
+std::vector<cv::DMatch> FLANNMatcher::filterMatches(
   std::vector<std::vector<cv::DMatch>> &matches) const {
     std::vector<cv::DMatch> filtered_matches;
 
@@ -148,5 +168,43 @@ std::vector<cv::DMatch> FLANNMatcher::filterMatches(
     }
 
     return filtered_matches;
+}
+
+std::vector<cv::DMatch> FLANNMatcher::removeOutliers(
+  const std::vector<cv::DMatch> &matches,
+  const std::vector<cv::KeyPoint> &keypoints_1,
+  const std::vector<cv::KeyPoint> &keypoints_2) const {
+    std::vector<cv::DMatch> good_matches;
+    std::vector<cv::Point2f> fp1, fp2;
+
+    // Take all good keypoints from matches, convert to cv::Point2f
+    for (auto &match : matches) {
+        fp1.push_back(keypoints_1.at((size_t) match.queryIdx).pt);
+        fp2.push_back(keypoints_2.at((size_t) match.trainIdx).pt);
+    }
+
+    // Find fundamental matrix
+    std::vector<uchar> mask;
+    cv::Mat fundamental_matrix;
+
+    // Maximum distance from a point to an epipolar line in pixels. Any points
+    // further are considered outliers. Only used for RANSAC.
+    double fm_param_1 = 3.0;
+
+    // Desired confidence interval of the estimated fundamental matrix. Only
+    // used for RANSAC or LMedS methods.
+    double fm_param_2 = 0.99;
+
+    fundamental_matrix = cv::findFundamentalMat(
+      fp1, fp2, this->current_config.fm_method, fm_param_1, fm_param_2, mask);
+
+    // Only retain the inliers matches
+    for (size_t i = 0; i < mask.size(); i++) {
+        if (mask.at(i) != 0) {
+            good_matches.push_back(matches.at(i));
+        }
+    }
+
+    return good_matches;
 }
 }
