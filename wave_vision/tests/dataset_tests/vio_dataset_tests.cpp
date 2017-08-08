@@ -1,7 +1,7 @@
 #include <boost/filesystem.hpp>
 
 #include "wave/wave_test.hpp"
-#include "wave/vision/dataset/VioDataset.hpp"
+#include "wave/vision/dataset/VioDatasetGenerator.hpp"
 
 namespace wave {
 

@@ -21,6 +21,7 @@ ADD_LIBRARY(
     src/utils.cpp
     src/dataset/VoDataset.cpp
     src/dataset/VioDataset.cpp
+    src/dataset/VioDatasetGenerator.cpp
     src/dataset/VoTestCamera.cpp
     src/detector/fast_detector.cpp
     src/detector/orb_detector.cpp
