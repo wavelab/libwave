@@ -13,7 +13,7 @@ void addVoMeasurementsToContainer(
   TimePoint time_point,
   VioDataset::Camera sensor_id,
   const std::vector<LandmarkObservation> observations,
-  VioDataset::LandmarkMeasurementContainer &container) {
+  VioDataset::ObsContainer &container) {
     for (const auto &obs : observations) {
         const auto &landmark_id = obs.first;
         const auto &measurement = obs.second;
@@ -29,7 +29,7 @@ VioDataset::PoseValue poseFromVoState(const VoInstant &state) {
     return pose;
 }
 
-// Get a TimePoint given a start time and duration in seconds
+// Get a  TimePoint given a start time and duration in seconds
 TimePoint timePointAfterStartTime(TimePoint time_start, double dt_seconds) {
     const auto d = std::chrono::duration<double>(dt_seconds);
     return time_start + std::chrono::duration_cast<TimePoint::duration>(d);

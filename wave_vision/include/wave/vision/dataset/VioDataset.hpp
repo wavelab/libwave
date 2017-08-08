@@ -59,7 +59,7 @@ struct VioDataset {
     enum class PoseSensor { Pose };
     enum class Camera { Left };
 
-    using LandmarkMeasurementContainer =
+    using ObsContainer =
       LandmarkMeasurementContainer<LandmarkMeasurement<Camera>>;
     using PoseContainer =
       MeasurementContainer<Measurement<PoseValue, PoseSensor>>;
@@ -68,7 +68,7 @@ struct VioDataset {
     // Measurements
     PoseContainer poses;
     ImuContainer imu_measurements;
-    LandmarkMeasurementContainer feature_measurements;
+    ObsContainer feature_measurements;
 
     // Calibration
 
