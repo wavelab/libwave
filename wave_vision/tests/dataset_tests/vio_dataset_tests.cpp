@@ -26,7 +26,7 @@ TEST(VioDataset, generate) {
 TEST(VioDataset, writeAndReadToFile) {
     // To test both operations, we write to files, read them, and ensure the
     // resulting dataset is the one we started with
-    const auto tol = 1e-5;  // Required precision for Eigen's isApprox
+    const auto tol = 1e-4;  // Required precision for Eigen's isApprox
 
     VioDatasetGenerator generator;
 
@@ -53,6 +53,40 @@ TEST(VioDataset, writeAndReadToFile) {
     EXPECT_PRED2(MatricesNear,
                  dataset.R_IC.toRotationMatrix(),
                  input.R_IC.toRotationMatrix());
+
+    // Compare poses
+    ASSERT_EQ(dataset.poses.size(), input.poses.size());
+    for (auto it = dataset.poses.cbegin(), in_it = input.poses.cbegin();
+         it != dataset.poses.cend();
+         ++it, ++in_it) {
+        const auto &a = it->value;
+        const auto &b = in_it->value;
+        EXPECT_PRED3(VectorsNearPrec, a.G_p_GI, b.G_p_GI, tol);
+        EXPECT_PRED2(
+          MatricesNear, a.R_GI.toRotationMatrix(), b.R_GI.toRotationMatrix());
+    }
+
+    ASSERT_EQ(dataset.imu_measurements.size(), input.imu_measurements.size());
+    for (auto it = dataset.imu_measurements.cbegin(),
+              in_it = input.imu_measurements.cbegin();
+         it != dataset.imu_measurements.cend();
+         ++it, ++in_it) {
+        const auto &a = it->value;
+        const auto &b = in_it->value;
+        EXPECT_PRED3(VectorsNearPrec, a.I_vel_GI, b.I_vel_GI, tol);
+        EXPECT_PRED3(VectorsNearPrec, a.I_ang_vel_GI, b.I_ang_vel_GI, tol);
+    }
+
+    // Compare feature measurements
+    ASSERT_EQ(dataset.feature_measurements.size(),
+              input.feature_measurements.size());
+    for (auto it = dataset.feature_measurements.cbegin(),
+              in_it = input.feature_measurements.cbegin();
+         it != dataset.feature_measurements.cend();
+         ++it, ++in_it) {
+        EXPECT_EQ(it->landmark_id, in_it->landmark_id);
+        EXPECT_PRED3(VectorsNearPrec, it->value, in_it->value, tol);
+    }
 }
 
 }  // wave namespace

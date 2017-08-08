@@ -77,6 +77,9 @@ struct VioDataset {
     Vec3 I_p_IC;
     Rotation R_IC;
 
+    /** Geographic datum (arbitrary for now, just used for output) */
+    Vec3 lla_datum{43.472981, -80.540092, 0};
+
     /** Ground truth 3D landmark positions in the world frame. */
     LandmarkMap landmarks;
 

@@ -22,10 +22,10 @@ std::string formatTimestamp(
     auto ns = ns_since_epoch.count() % static_cast<int>(1e9);
 
     std::stringstream ss;
-    ss << std::put_time(std::gmtime(&t), "%Y-%m-%d %H:%M:%S.") << ns;
+    ss << std::put_time(std::gmtime(&t), "%Y-%m-%d %H:%M:%S.");
+    ss << std::setw(9) << std::setfill('0') << ns;
     return ss.str();
 }
-
 
 // Read a string matching "2011-09-26 14:02:22.484109563" from an input stream,
 // and produce a time point. Return true on success
@@ -49,8 +49,67 @@ bool readTimepointFromStream(
     return in.good();
 }
 
+
+// Data contained in the kitti format data files
+struct OxtsData {
+    double lat, lon, alt, roll, pitch, yaw;
+    double vn, ve, vf, vl, vu, ax, ay, az;
+    double af, al, au, wx, wy, wz, wf, wl, wu;
+    double pos_accuracy, vel_accuracy;
+    int navstat, numsats, posmode, velmode, orimode;
+};
+
+std::istream &operator>>(std::istream &in, OxtsData &o) {
+    in >> o.lat >> o.lon >> o.alt;
+    in >> o.roll >> o.pitch >> o.yaw;
+    in >> o.vn >> o.ve >> o.vf;
+    in >> o.vl >> o.vu;
+    in >> o.ax >> o.ay >> o.az;
+    in >> o.af >> o.al >> o.au;
+    in >> o.wx >> o.wy >> o.wz;
+    in >> o.wf >> o.wl >> o.wu;
+    in >> o.pos_accuracy >> o.vel_accuracy;
+    in >> o.navstat >> o.numsats >> o.posmode >> o.velmode >> o.orimode;
+    return in;
+}
+
+std::ostream &operator<<(std::ostream &os, const OxtsData &o) {
+    os << o.lat << " " << o.lon << " " << o.alt << " ";
+    os << o.roll << " " << o.pitch << " " << o.yaw << " ";
+    os << o.vn << " " << o.ve << " " << o.vf << " ";
+    os << o.vl << " " << o.vu << " ";
+    os << o.ax << " " << o.ay << " " << o.az << " ";
+    os << o.af << " " << o.al << " " << o.au << " ";
+    os << o.wx << " " << o.wy << " " << o.wz << " ";
+    os << o.wf << " " << o.wl << " " << o.wu << " ";
+    os << o.pos_accuracy << " " << o.vel_accuracy << " ";
+    os << o.navstat << " " << o.numsats << " " << o.posmode << " " << o.velmode
+       << " " << o.orimode;
+    return os;
+}
+
+// Convert lat/lon coordinates to local cartsian using simple spherical model
+// (good enough for points close to the origin)
+// lla vectors are lat (degrees), lon (degrees), alt (m)
+Vec3 enuFromLla(Vec3 lla_datum, Vec3 lla) {
+    const auto radius = 6378137;
+    const auto l = radius * M_PI / 180;
+    const auto x = (lla[1] - lla_datum[1]) * l * cos(lla[0] * M_PI / 180);
+    const auto y = (lla[0] - lla_datum[0]) * l;
+    return Vec3{x, y, lla[2]};
+}
+
+// Convert local cartesian to lat/lon using simple model
+Vec3 llaFromEnu(Vec3 lla_datum, Vec3 enu) {
+    const auto radius = 6378137;
+    const auto l = radius * M_PI / 180;
+    const auto lat = lla_datum[0] + enu[1] / l;
+    const auto lon = lla_datum[1] + enu[0] / cos(lat * M_PI / 180) / l;
+    return Vec3{lat, lon, enu[2]};
+}
+
 // For each time in the container, write a timestamp
-void writeTimestampsToFile(const VioDataset::ImuContainer &container,
+void writeTimestampsToFile(const VioDataset::PoseContainer &container,
                            const std::string &output_path) {
     std::ofstream timestamps_file{output_path};
 
@@ -123,20 +182,67 @@ void loadLandmarks(const std::string &input_dir, VioDataset &dataset) {
     }
 }
 
+// Produce a filename the file with the format "0000000000.txt"
+std::string paddedTxtFilename(int i) {
+    std::stringstream ss;
+    ss.fill('0');
+    ss.width(10);
+    ss << i << ".txt";
+    return ss.str();
+}
+
 // Load gps and imu measurements into dataset
 void loadPoses(const std::string &input_dir, VioDataset &dataset) {
     const auto timestamps_filename = input_dir + "/oxts/timestamps.txt";
-    std::ifstream timestamps_file{timestamps_filename};
+    auto timestamps_file = std::ifstream{timestamps_filename};
 
     if (!timestamps_file) {
         throw std::runtime_error("Could not read " + timestamps_filename);
     }
 
-    std::chrono::system_clock::time_point time_point;
-    while (readTimepointFromStream(timestamps_file, time_point)) {
-        // @todo load the data file here
+    const auto data_dir = input_dir + "/oxts/data";
+    std::chrono::system_clock::time_point system_start_time, system_time_point;
+    const auto start_time = std::chrono::steady_clock::now();  // arbitrary
+
+    for (int i = 0; readTimepointFromStream(timestamps_file, system_time_point);
+         ++i) {
+        // load the file with format "0000000000.txt"
+        const auto filename = data_dir + "/" + paddedTxtFilename(i);
+        auto data_file = std::ifstream{filename};
+        OxtsData data;
+        data_file >> data;
+        if (!data_file) {
+            throw std::runtime_error("Could not read " + filename);
+        }
+
+        // Use the first position as the datum, and first time as the reference
+        if (i == 0) {
+            dataset.lla_datum << data.lat, data.lon, data.alt;
+            system_start_time = system_time_point;
+        }
+        const auto time_point =
+          start_time + (system_time_point - system_start_time);
+
+
+        VioDataset::PoseValue pose;
+        pose.G_p_GI =
+          enuFromLla(dataset.lla_datum, Vec3{data.lat, data.lon, data.alt});
+        pose.R_GI.setFromEulerXYZ(Vec3{data.roll, data.pitch, data.yaw});
+        dataset.poses.emplace(time_point, VioDataset::PoseSensor::Pose, pose);
+
+        if (i == 0) {
+            std::cerr << "\n the first pose is " << pose.G_p_GI.transpose()
+                      << std::endl;
+        }
+
+        VioDataset::ImuValue imu;
+        imu.I_vel_GI << data.vf, data.vl, data.vu;
+        imu.I_ang_vel_GI << data.wf, data.wl, data.wu;
+        dataset.imu_measurements.emplace(
+          time_point, VioDataset::ImuSensor::Imu, imu);
     }
 }
+
 
 }  // namespace
 
@@ -194,8 +300,45 @@ void VioDataset::outputCalibration(const std::string &output_dir) const {
 void VioDataset::outputPoses(const std::string &output_dir) const {
     boost::filesystem::create_directories(output_dir + "/data");
 
-    writeTimestampsToFile(this->imu_measurements,
-                          output_dir + "/timestamps.txt");
+    writeTimestampsToFile(this->poses, output_dir + "/timestamps.txt");
+
+    int i = 0;
+    auto imu_iter = this->imu_measurements.cbegin();
+    auto pose_iter = this->poses.cbegin();
+
+    // Note we assume they are the same length.
+    while (imu_iter != this->imu_measurements.cend() &&
+           pose_iter != this->poses.cend()) {
+        std::ofstream data_file{output_dir + "/data/" + paddedTxtFilename(i)};
+
+        // We only write to some of the values right now. The others are zero.
+        auto data = OxtsData{};
+
+        const PoseValue &v = pose_iter->value;
+        auto lla = llaFromEnu(this->lla_datum, v.G_p_GI);
+        data.lat = lla[0];
+        data.lon = lla[1];
+        data.alt = lla[2];
+
+        Vec3 euler = v.R_GI.toRotationMatrix().eulerAngles(0, 1, 2);
+        data.roll = euler[0];
+        data.pitch = euler[1];
+        data.yaw = euler[2];
+
+        ImuValue m = imu_iter->value;
+        data.vf = m.I_vel_GI[0];
+        data.vl = m.I_vel_GI[1];
+        data.vu = m.I_vel_GI[2];
+        data.wf = m.I_ang_vel_GI[0];
+        data.wl = m.I_ang_vel_GI[1];
+        data.wu = m.I_ang_vel_GI[2];
+
+        data_file << std::setprecision(12) << data << std::endl;
+
+        ++pose_iter;
+        ++imu_iter;
+        ++i;
+    }
 }
 
 VioDataset VioDataset::loadFromDirectory(const std::string &input_dir) {
