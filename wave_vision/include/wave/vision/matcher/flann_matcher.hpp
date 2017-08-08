@@ -248,7 +248,7 @@ class FLANNMatcher : public DescriptorMatcher {
      *  @return the filtered matches.
      */
     std::vector<cv::DMatch> filterMatches(
-      std::vector<cv::DMatch> &matches) const override;
+      const std::vector<cv::DMatch> &matches) const override;
 
     /** First pass to filter bad matches. Takes in a vector of matches and uses
      *  the ratio test to filter the matches.
@@ -258,7 +258,7 @@ class FLANNMatcher : public DescriptorMatcher {
      *  @return the filtered matches.
      */
     std::vector<cv::DMatch> filterMatches(
-      std::vector<std::vector<cv::DMatch>> &matches) const override;
+      const std::vector<std::vector<cv::DMatch>> &matches) const override;
 
     /** Checks whether the desired configuration is valid
      *
