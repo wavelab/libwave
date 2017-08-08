@@ -155,6 +155,19 @@ struct BFMatcherParams {
  */
 class BruteForceMatcher : public DescriptorMatcher {
  public:
+    /** The number of matches prior to any filtering or outlier removal. */
+    size_t num_raw_matches = 0u;
+
+    /** The number of matches after being filtered by the distance/ratio test.
+     *  This is the input to the outlierRejection method.
+     */
+    size_t num_filtered_matches = 0u;
+
+    /** The size of matches remaining after outlier removal via RANSAC or a
+     *  similar method.
+     */
+    size_t num_good_matches = 0u;
+
     /** Default constructor. The user can also specify their own struct with
      *  desired values. If no struct is provided, default values are used.
      *
@@ -209,27 +222,18 @@ class BruteForceMatcher : public DescriptorMatcher {
       const std::vector<cv::KeyPoint> &keypoints_2,
       cv::InputArray mask = cv::noArray()) override;
 
-    // Public Variables
-    // -----------------------------------------------------------------
-    /** The number of matches prior to any filtering or outlier removal. */
-    size_t num_raw_matches = 0u;
-
-    /** The number of matches after being filtered by the distance/ratio test.
-     *  This is the input to the outlierRejection method.
-     */
-    size_t num_filtered_matches = 0u;
-
-    /** The size of matches remaining after outlier removal via RANSAC or a
-     *  similar method.
-     */
-    size_t num_good_matches = 0u;
-
  private:
     /** The pointer to the wrapped cv::BFMatcher object */
     cv::Ptr<cv::BFMatcher> brute_force_matcher;
 
     /** Current configuration parameters */
     BFMatcherParams current_config;
+
+    /** Checks whether the desired configuration is valid
+     *
+     *  @param check_config containing the desired configuration values.
+     */
+    void checkConfiguration(const BFMatcherParams &check_config) const;
 
     /** Remove outliers between matches. Uses a heuristic based approach as a
      *  first pass to determine good matches.
@@ -251,13 +255,6 @@ class BruteForceMatcher : public DescriptorMatcher {
      */
     std::vector<cv::DMatch> filterMatches(
       std::vector<std::vector<cv::DMatch>> &matches) const override;
-
-
-    /** Checks whether the desired configuration is valid
-     *
-     *  @param check_config containing the desired configuration values.
-     */
-    void checkConfiguration(const BFMatcherParams &check_config) const;
 };
 /** @} end of group */
 }  // namespace wave

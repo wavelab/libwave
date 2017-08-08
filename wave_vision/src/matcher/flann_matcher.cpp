@@ -182,7 +182,7 @@ std::vector<cv::DMatch> FLANNMatcher::matchDescriptors(
   cv::Mat &descriptors_2,
   const std::vector<cv::KeyPoint> &keypoints_1,
   const std::vector<cv::KeyPoint> &keypoints_2,
-  cv::InputArray mask) const {
+  cv::InputArray mask) {
     std::vector<cv::DMatch> filtered_matches;
 
     // The FLANN matcher (except for the LSH method) requires the descriptors
@@ -209,22 +209,26 @@ std::vector<cv::DMatch> FLANNMatcher::matchDescriptors(
 
         this->flann_matcher->knnMatch(
           descriptors_1, descriptors_2, raw_matches, k, mask, false);
+        this->num_raw_matches = raw_matches.size();
 
         filtered_matches = this->filterMatches(raw_matches);
-
+        this->num_filtered_matches = filtered_matches.size();
     } else {
         std::vector<cv::DMatch> raw_matches;
 
         // Determine matches between sets of descriptors
         this->flann_matcher->match(
           descriptors_1, descriptors_2, raw_matches, mask);
+        this->num_raw_matches = raw_matches.size();
 
         filtered_matches = this->filterMatches(raw_matches);
+        this->num_filtered_matches = filtered_matches.size();
     }
 
     if (this->current_config.auto_remove_outliers) {
         std::vector<cv::DMatch> good_matches =
           this->removeOutliers(filtered_matches, keypoints_1, keypoints_2);
+        this->num_good_matches = good_matches.size();
 
         return good_matches;
     }

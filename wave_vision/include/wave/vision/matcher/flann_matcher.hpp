@@ -179,6 +179,20 @@ struct FLANNMatcherParams {
  */
 class FLANNMatcher : public DescriptorMatcher {
  public:
+    // Diagnostics information
+    /** The number of matches prior to any filtering or outlier removal. */
+    size_t num_raw_matches = 0u;
+
+    /** The number of matches after being filtered by the distance/ratio test.
+     *  This is the input to the outlierRejection method.
+     */
+    size_t num_filtered_matches = 0u;
+
+    /** The size of matches remaining after outlier removal via RANSAC or a
+     *  similar method.
+     */
+    size_t num_good_matches = 0u;
+
     /** Default constructor. The user can also specify their own struct with
      *  desired values. If no struct is provided, default values are used.
      *
@@ -231,7 +245,7 @@ class FLANNMatcher : public DescriptorMatcher {
       cv::Mat &descriptors_2,
       const std::vector<cv::KeyPoint> &keypoints_1,
       const std::vector<cv::KeyPoint> &keypoints_2,
-      cv::InputArray mask = cv::noArray()) const override;
+      cv::InputArray mask = cv::noArray()) override;
 
  private:
     /** The pointer to the wrapped cv::FlannBasedMatcher object */
@@ -239,6 +253,12 @@ class FLANNMatcher : public DescriptorMatcher {
 
     /** Current configuration parameters*/
     FLANNMatcherParams current_config;
+
+    /** Checks whether the desired configuration is valid
+     *
+     *  @param check_config containing the desired configuration values.
+     */
+    void checkConfiguration(const FLANNMatcherParams &check_config);
 
     /** Remove outliers between matches. Uses a heuristic based approach as a
      *  first pass to determine good matches.
@@ -259,12 +279,6 @@ class FLANNMatcher : public DescriptorMatcher {
      */
     std::vector<cv::DMatch> filterMatches(
       std::vector<std::vector<cv::DMatch>> &matches) const override;
-
-    /** Checks whether the desired configuration is valid
-     *
-     *  @param check_config containing the desired configuration values.
-     */
-    void checkConfiguration(const FLANNMatcherParams &check_config);
 };
 }  // namespace wave
 
