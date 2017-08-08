@@ -9,6 +9,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <vector>
 
 #include "wave/utils/math.hpp"
@@ -57,16 +58,26 @@ int mat2csv(std::string file_path, MatX data);
  * The entries must be separated by whitespace, and be in row-major order.
  */
 template <int Rows, int Cols>
-Eigen::Matrix<double, Rows, Cols> matrixFromStream(std::istream &in_stream) {
+inline Eigen::Matrix<double, Rows, Cols> matrixFromStream(std::istream &in) {
     Eigen::Matrix<double, Rows, Cols> mat;
     for (auto i = 0; i < Rows; ++i) {
         for (auto j = 0; j < Cols; ++j) {
-            in_stream >> mat(i, j);
+            in >> mat(i, j);
         }
     }
 
     return mat;
 }
+
+/** Reads a matrix from a string
+ *
+ * The entries must be separated by whitespace, and be in row-major order.
+ */
+template <int Rows, int Cols>
+inline Eigen::Matrix<double, Rows, Cols> matrixFromString(std::string &in) {
+    auto iss = std::istringstream{in};
+    return matrixFromStream<Rows, Cols>(iss);
+};
 
 /** @} group utils */
 }  // namespace wave

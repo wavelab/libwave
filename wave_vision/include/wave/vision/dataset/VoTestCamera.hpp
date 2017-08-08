@@ -46,6 +46,20 @@ class VoTestCamera {
     VoTestCamera(int image_width, int image_height, Mat3 K, double hz)
         : image_width{image_width}, image_height{image_height}, K{K}, hz{hz} {}
 
+    // Helper getters
+    double fx() const {
+        return K(0, 0);
+    }
+    double fy() const {
+        return K(1, 1);
+    }
+    double cx() const {
+        return K(0, 2);
+    }
+    double cy() const {
+        return K(1, 2);
+    }
+
     /** Check whether camera is triggered at this time-step
      * @returns boolean to denote true or false
      */

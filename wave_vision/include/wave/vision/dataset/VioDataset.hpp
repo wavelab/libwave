@@ -71,8 +71,8 @@ struct VioDataset {
 
     // Calibration
 
-    /** Camera intrinsic matrix */
-    Mat3 camera_K;
+    /** Camera object containing intrinsic matrix */
+    VoTestCamera camera;
     /** Camera transformation from IMU frame (expressed in IMU frame) */
     Vec3 I_p_IC;
     Rotation R_IC;
@@ -104,7 +104,7 @@ struct VioDataset {
      * The format must be the same as that created by outputToDirectory(), or
      * a kitti dataset.
      */
-    static VoDataset loadFromDirectory(const std::string &input_dir);
+    static VioDataset loadFromDirectory(const std::string &input_dir);
 
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW

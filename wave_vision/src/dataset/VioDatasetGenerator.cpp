@@ -29,7 +29,7 @@ VioDataset::PoseValue poseFromVoState(const VoInstant &state) {
     return pose;
 }
 
-// Get a  TimePoint given a start time and duration in seconds
+// Get a TimePoint given a start time and duration in seconds
 TimePoint timePointAfterStartTime(TimePoint time_start, double dt_seconds) {
     const auto d = std::chrono::duration<double>(dt_seconds);
     return time_start + std::chrono::duration_cast<TimePoint::duration>(d);
@@ -95,6 +95,7 @@ void addImuStatesToDataset(TimePoint time_start,
 
 }  // namespace
 
+
 VioDataset VioDatasetGenerator::generate() {
     VioDataset dataset;
 
@@ -119,7 +120,9 @@ VioDataset VioDatasetGenerator::generate() {
     }
 
     // Handle calibration
-    dataset.camera_K = vo.camera_K;
+    dataset.camera.K = vo.camera_K;
+    dataset.camera.image_width = 2 * dataset.camera.cx();
+    dataset.camera.image_height = 2 * dataset.camera.cy();
 
     // In VoDatasetGenerator, the transformation from body to camera is just a
     // rotation from NWU to EDN

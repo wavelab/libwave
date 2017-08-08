@@ -6,6 +6,8 @@
 namespace wave {
 
 const auto test_config_file = "tests/data/vo_test.yaml";
+const auto test_output_dir = "/tmp/dataset_test";
+
 
 TEST(VioDataset, constructor) {
     VioDataset dataset{};
@@ -26,7 +28,7 @@ TEST(VioDataset, writeAndReadToFile) {
     // resulting dataset is the one we started with
     const auto tol = 1e-5;  // Required precision for Eigen's isApprox
 
-    VoDatasetGenerator generator;
+    VioDatasetGenerator generator;
 
     remove_dir(test_output_dir);
     generator.configure(test_config_file);
@@ -36,14 +38,21 @@ TEST(VioDataset, writeAndReadToFile) {
     dataset.outputToDirectory(test_output_dir);
 
     // Read
-    auto input = VoDataset::loadFromDirectory(test_output_dir);
+    auto input = VioDataset::loadFromDirectory(test_output_dir);
 
-    EXPECT_EQ(dataset.camera_K, input.camera_K);
+    // Compare landmarks
     for (const auto &l : dataset.landmarks) {
         const auto id = l.first;
         ASSERT_TRUE(input.landmarks.count(id));
         EXPECT_PRED3(VectorsNearPrec, l.second, input.landmarks[id], tol);
     }
+
+    // Compare calibration
+    EXPECT_PRED2(MatricesNear, dataset.camera.K, input.camera.K);
+    EXPECT_PRED2(VectorsNear, dataset.I_p_IC, input.I_p_IC);
+    EXPECT_PRED2(MatricesNear,
+                 dataset.R_IC.toRotationMatrix(),
+                 input.R_IC.toRotationMatrix());
 }
 
 }  // wave namespace
