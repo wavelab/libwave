@@ -90,7 +90,8 @@ struct FLANNMatcherParams {
     FLANNMatcherParams(const std::string &config_path);
 
     /** The FLANN method to use (described in the FLANN namespace). As a note,
-     *  currently selecting a method here means
+     *  currently selecting a method will set up the FLANN matcher with
+     *  default parameters.
      *
      *  Options:
      *  FLANN::KDTree: kd-tree separation

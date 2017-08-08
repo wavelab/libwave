@@ -2,6 +2,40 @@
 
 namespace wave {
 
+// Filesystem based constructor for FLANNMatcherParams
+FLANNMatcherParams::FLANNMatcherParams(const std::string &config_path) {
+    // Extract parameters from .yaml file.
+    ConfigParser parser;
+
+    int flann_method;
+    bool use_knn;
+    double ratio_threshold;
+    int distance_threshold;
+    bool auto_remove_outliers;
+    int fm_method;
+
+    // Add parameters to parser, to be loaded. If path cannot be found, throw
+    // an exception.
+    parser.addParam("flann_method", &flann_method);
+    parser.addParam("use_knn", &use_knn);
+    parser.addParam("ratio_threshold", &ratio_threshold);
+    parser.addParam("distance_threshold", &distance_threshold);
+    parser.addParam("auto_remove_outliers", &auto_remove_outliers);
+    parser.addParam("fm_method", &fm_method);
+
+    if (parser.load(config_path) != 0) {
+        throw std::invalid_argument(
+          "Failed to Load FLANNMatcherParams Configuration");
+    }
+
+    this->flann_method = flann_method;
+    this->use_knn = use_knn;
+    this->ratio_threshold = ratio_threshold;
+    this->distance_threshold = distance_threshold;
+    this->auto_remove_outliers = auto_remove_outliers;
+    this->fm_method = fm_method;
+}
+
 FLANNMatcher::FLANNMatcher(const FLANNMatcherParams &config) {
     // Check flann_method and create the appropriate parameters struct.
     this->checkConfiguration(config);

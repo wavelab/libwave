@@ -1,30 +1,19 @@
-# Configuration parameters for Brute Force matcher
+# Configuration parameters for FLANN based matcher
 
-#  Norm type to use for distance calculation between feature descriptors.
+# The FLANN method to use (described in the FLANN namespace). As a note,
+# currently selecting a method will set up the FLANN matcher with
+# default parameters.
 #
-#  Options:
-#  1: cv::NORM_INF, l-infinity norm
-#  2: cv::NORM_L1: l1 norm
-#  4: cv::NORM_L2: l2 norm
-#  5: cv::NORM_L2SQR: l2 norm, squared
-#  6: cv::NORM_HAMMING: Hamming distance
-#  7: cv::NORM_HAMMING2: Hamming distance modifier for ORB Descriptor, with
-#     tuple_size (WTA_K) = 3 or 4
+# Options:
+# 1: FLANN::KDTree: kd-tree separation
+# 2: FLANN::KMeans: k-means clustering.
+# 3: FLANN::Composite: Combines the above methods.
+# 4: FLANN::LSH: Locality-sensitive hash table separation.
+# 5: FLANN::Autotuned: Tunes to find the best of all methods.
 #
-#  As per OpenCV docs, NORM_L1 and NORM_L2 is valid for the SIFT or
-#  SURF descriptors, while NORM_HAMMING is valid for the ORB, BRISK, and
-#  BRIEF descriptors. NORM_HAMMING2 should only be used with ORB, when
-#  tuple_size (WTA_K) is 3 or 4.
+# Recommended: 1 (FLANN::KDTree).
 #
-#  Default: NORM_HAMMING.
-#
-#  Please refer to further description of the norm types
-#  [here][opencv_norm_types].
-#
-#  [opencv_norm_types]:
-#  http://docs.opencv.org/trunk/d2/de8/group__core__array.html#gad12cefbcb5291cf958a85b4b67b6149f
-#
-norm_type: 6
+flann_method: 1
 
 # Determines whether to use a k-nearest-neighbours match.
 #
