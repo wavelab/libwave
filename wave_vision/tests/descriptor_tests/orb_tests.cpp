@@ -1,5 +1,4 @@
 #include "wave/wave_test.hpp"
-#include "wave/vision/detector/orb_detector.hpp"
 #include "wave/vision/descriptor/orb_descriptor.hpp"
 
 namespace wave {

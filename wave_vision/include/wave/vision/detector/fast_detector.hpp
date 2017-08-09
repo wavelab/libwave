@@ -20,10 +20,14 @@ namespace wave {
 struct FASTDetectorParams {
     FASTDetectorParams() {}
 
-    FASTDetectorParams(int threshold, bool nonmax_suppression, int type)
+    FASTDetectorParams(int threshold,
+                       bool nonmax_suppression,
+                       int type,
+                       int num_features)
         : threshold(threshold),
           nonmax_suppression(nonmax_suppression),
-          type(type) {}
+          type(type),
+          num_features(num_features) {}
 
     /** Constructor using parameters extracted from a configuration file.
      *
@@ -55,6 +59,15 @@ struct FASTDetectorParams {
      *  cv::FastFeatureDetector::TYPE_9_16 (recommended)
      */
     int type = cv::FastFeatureDetector::TYPE_9_16;
+
+    /** The number of features to keep from detection.
+     *
+     *  If set to 0, the detector will keep all features detected. Else, it will
+     *  retain the best keypoints up to the number specified.
+     *
+     *  Default: 0.
+     */
+    int num_features = 0;
 };
 
 /** Representation of a feature detector using the FAST algorithm.
@@ -100,6 +113,12 @@ class FASTDetector : public FeatureDetector {
  private:
     /** The pointer to the wrapped cv::FastFeatureDetector object. */
     cv::Ptr<cv::FastFeatureDetector> fast_detector;
+
+    /** The number of features to retain. This is a custom parameter for the
+     *  FASTDetector, and it cannot be returned from the
+     *  cv::FastFeatureDetector::get** functions.
+     */
+    int num_features;
 
     /** Checks whether the desired configuration is valid.
      *
