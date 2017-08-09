@@ -228,7 +228,7 @@ cv::Mat Tracker<TDetector, TDescriptor, TMatcher>::drawTracks(
             cv::Point2f curr = convertKeypoint(ft[i].value);
 
             // Draw arrowed line until end of feature track is reached
-            cv::arrowedLine(out_img, prev, curr, colour);
+            cv::arrowedLine(out_img, prev, curr, colour, 2);
         }
     }
 
