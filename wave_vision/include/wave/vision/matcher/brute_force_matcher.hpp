@@ -246,7 +246,7 @@ class BruteForceMatcher : public DescriptorMatcher {
      *  @return the filtered matches.
      */
     std::vector<cv::DMatch> filterMatches(
-      const std::vector<std::vector<cv::DMatch>> &matches) const override;
+      const std::vector<cv::DMatch> &matches) const override;
 
     /** Overloaded method, which takes in a vector of a vector of matches. This
      *  is designed to be used with the knnMatchDescriptors method, and uses the
