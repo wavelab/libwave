@@ -229,21 +229,13 @@ class BruteForceMatcher : public DescriptorMatcher {
     /** Current configuration parameters */
     BFMatcherParams current_config;
 
-    /** Checks whether the desired configuration is valid
-     *
-     *  @param check_config containing the desired configuration values.
-     */
-    void checkConfiguration(const BFMatcherParams &check_config) const;
-
     /** Remove outliers between matches. Uses a heuristic based approach as a
      *  first pass to determine good matches.
      *
      *  @param matches the unfiltered matches computed from two images.
-     *
-     *  @return the filtered matches.
      */
     std::vector<cv::DMatch> filterMatches(
-      std::vector<cv::DMatch> &matches) const override;
+      const std::vector<cv::DMatch> &matches) const override;
 
     /** Overloaded method, which takes in a vector of a vector of matches. This
      *  is designed to be used with the knnMatchDescriptors method, and uses the
@@ -254,7 +246,24 @@ class BruteForceMatcher : public DescriptorMatcher {
      *  @return the filtered matches.
      */
     std::vector<cv::DMatch> filterMatches(
-      std::vector<std::vector<cv::DMatch>> &matches) const override;
+      const std::vector<std::vector<cv::DMatch>> &matches) const override;
+
+    /** Overloaded method, which takes in a vector of a vector of matches. This
+     *  is designed to be used with the knnMatchDescriptors method, and uses the
+     *  ratio test to filter the matches.
+     *
+     *  @param matches the unfiltered matches computed from two images.
+     *
+     *  @return the filtered matches.
+     */
+    std::vector<cv::DMatch> filterMatches(
+      const std::vector<std::vector<cv::DMatch>> &matches) const override;
+
+    /** Checks whether the desired configuration is valid.
+     *
+     * @param check_config the desired configuration values.
+     */
+    void checkConfiguration(const BFMatcherParams &check_config) const;
 };
 /** @} end of group */
 }  // namespace wave

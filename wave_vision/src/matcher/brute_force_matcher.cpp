@@ -84,7 +84,7 @@ void BruteForceMatcher::checkConfiguration(
 }
 
 std::vector<cv::DMatch> BruteForceMatcher::filterMatches(
-  std::vector<cv::DMatch> &matches) const {
+  const std::vector<cv::DMatch> &matches) const {
     std::vector<cv::DMatch> filtered_matches;
 
     // Determine closest match
@@ -104,7 +104,7 @@ std::vector<cv::DMatch> BruteForceMatcher::filterMatches(
 }
 
 std::vector<cv::DMatch> BruteForceMatcher::filterMatches(
-  std::vector<std::vector<cv::DMatch>> &matches) const {
+  const std::vector<std::vector<cv::DMatch>> &matches) const {
     std::vector<cv::DMatch> filtered_matches;
 
     for (auto &match : matches) {

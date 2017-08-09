@@ -43,18 +43,21 @@ FLANNMatcher::FLANNMatcher(const FLANNMatcherParams &config) {
     // Depending on the FLANN method, different parameters are required.
     if (config.flann_method == FLANN::KDTree) {
         // Create FLANN matcher with default KDTree and Search params.
-        cv::FlannBasedMatcher matcher(new cv::flann::KDTreeIndexParams(),
-                                      new cv::flann::SearchParams());
+        cv::FlannBasedMatcher matcher(
+          cv::makePtr<cv::flann::KDTreeIndexParams>(),
+          cv::makePtr<cv::flann::SearchParams>());
         this->flann_matcher = cv::makePtr<cv::FlannBasedMatcher>(matcher);
     } else if (config.flann_method == FLANN::KMeans) {
         // Create FLANN matcher with default KMeans and Search params
-        cv::FlannBasedMatcher matcher(new cv::flann::KMeansIndexParams(),
-                                      new cv::flann::SearchParams());
+        cv::FlannBasedMatcher matcher(
+          cv::makePtr<cv::flann::KMeansIndexParams>(),
+          cv::makePtr<cv::flann::SearchParams>());
         this->flann_matcher = cv::makePtr<cv::FlannBasedMatcher>(matcher);
     } else if (config.flann_method == FLANN::Composite) {
         // Create FLANN matcher with default Composite and Search params
-        cv::FlannBasedMatcher matcher(new cv::flann::CompositeIndexParams(),
-                                      new cv::flann::SearchParams());
+        cv::FlannBasedMatcher matcher(
+          cv::makePtr<cv::flann::CompositeIndexParams>(),
+          cv::makePtr<cv::flann::SearchParams>());
         this->flann_matcher = cv::makePtr<cv::FlannBasedMatcher>(matcher);
     } else if (config.flann_method == FLANN::LSH) {
         // Create LSH params with default values. These are values recommended
@@ -66,9 +69,9 @@ FLANNMatcher::FLANNMatcher(const FLANNMatcherParams &config) {
 
         // Create FLANN matcher with default LSH and Search params
         cv::FlannBasedMatcher matcher(
-          new cv::flann::LshIndexParams(
+          cv::makePtr<cv::flann::LshIndexParams>(
             num_tables, key_size, multi_probe_level),
-          new cv::flann::SearchParams());
+          cv::makePtr<cv::flann::SearchParams>());
         this->flann_matcher = cv::makePtr<cv::FlannBasedMatcher>(matcher);
     }
 
@@ -104,7 +107,7 @@ void FLANNMatcher::checkConfiguration(const FLANNMatcherParams &check_config) {
 }
 
 std::vector<cv::DMatch> FLANNMatcher::filterMatches(
-  std::vector<cv::DMatch> &matches) const {
+  const std::vector<cv::DMatch> &matches) const {
     std::vector<cv::DMatch> filtered_matches;
 
     // Determine closest match
@@ -124,7 +127,7 @@ std::vector<cv::DMatch> FLANNMatcher::filterMatches(
 }
 
 std::vector<cv::DMatch> FLANNMatcher::filterMatches(
-  std::vector<std::vector<cv::DMatch>> &matches) const {
+  const std::vector<std::vector<cv::DMatch>> &matches) const {
     std::vector<cv::DMatch> filtered_matches;
 
     for (auto &match : matches) {
@@ -213,6 +216,7 @@ std::vector<cv::DMatch> FLANNMatcher::matchDescriptors(
 
         filtered_matches = this->filterMatches(raw_matches);
         this->num_filtered_matches = filtered_matches.size();
+
     } else {
         std::vector<cv::DMatch> raw_matches;
 
