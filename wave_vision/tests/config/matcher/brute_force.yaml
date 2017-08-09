@@ -16,7 +16,7 @@
 #  BRIEF descriptors. NORM_HAMMING2 should only be used with ORB, when
 #  tuple_size (WTA_K) is 3 or 4.
 #
-#  Default: NORM_HAMMING, since currently only BRISK Descriptor is used.
+#  Default: NORM_HAMMING.
 #
 #  Please refer to further description of the norm types
 #  [here][opencv_norm_types].
@@ -44,7 +44,7 @@ use_knn: true
 # in his paper _Distinctive Image Features from Scale-Invariant Keypoints_
 # (2004). The test takes the ratio of the closest keypoint distance
 # to that of the second closest neighbour. If the ratio is less than
-# the heuristic, it is discarded.
+# the heuristic, it is discarded. Only used if use_knn is true.
 #
 # A value of 0.8 was shown by Dr. Lowe to reject 90% of the false matches, and
 # discard only 5% of the correct matches.
@@ -58,7 +58,7 @@ ratio_threshold: 0.8
 # Matches will only be kept if the descriptor distance is less than or
 # equal to the product of the distance threshold and the _minimum_ of all
 # descriptor distances. The greater the value, the more matches will
-# be kept.
+# be kept. Only used if use_knn is false.
 #
 # Recommended: 5. Must be greater than or equal to zero.
 #

@@ -12,6 +12,7 @@
 #define WAVE_UTILS_MATH_HPP
 
 #include <iostream>
+#include <vector>
 
 #include <Eigen/Dense>
 #include <Eigen/Geometry>

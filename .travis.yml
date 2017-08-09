@@ -1,16 +1,21 @@
 dist: trusty
 sudo: false
 
-language: cpp
+language: generic  # don't use the default compilers for "cpp"
 
 cache:
   ccache: true
 
+env:
+  CXX='ccache g++-5' CC='ccache gcc-5'
+
 addons:
   apt:
     sources:
+      - ubuntu-toolchain-r-test
       - sourceline: 'ppa:lkoppel/robotics'
     packages:
+      - g++-5
       - libboost-dev
       - libyaml-cpp-dev
       - libeigen3-dev
