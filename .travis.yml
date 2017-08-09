@@ -1,13 +1,13 @@
 dist: trusty
 sudo: false
 
-language: generic  # don't use the default compilers for "cpp"
+language: cpp
 
 cache:
   ccache: true
 
 env:
-  CXX='ccache g++-5' CC='ccache gcc-5'
+  CXX_COMPILER='g++-5'
 
 addons:
   apt:
@@ -26,6 +26,7 @@ addons:
       - clang-format-3.8
 
 before_script:
+  - export CXX=$CXX_COMPILER  # override travis default
   - bash scripts/ci/ci_check.bash
 
 script:
