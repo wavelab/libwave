@@ -1,4 +1,3 @@
-// Libwave Headers
 #include "wave/vision/descriptor/brisk_descriptor.hpp"
 
 namespace wave {
@@ -13,8 +12,8 @@ BRISKDescriptorParams::BRISKDescriptorParams(const std::string &config_path) {
     float d_max;
     float d_min;
 
-    // Add parameters to parser, to be loaded. If path cannot be found,
-    // throw an exception
+    // Add parameters to parser, to be loaded. If path cannot be found, throw
+    // an exception
     parser.addParam("radius_list", &radius_list);
     parser.addParam("number_list", &number_list);
     parser.addParam("d_max", &d_max);
@@ -91,7 +90,7 @@ BRISKDescriptorParams BRISKDescriptor::getConfiguration() const {
 }
 
 cv::Mat BRISKDescriptor::extractDescriptors(
-  cv::Mat &image, std::vector<cv::KeyPoint> &keypoints) {
+  const cv::Mat &image, std::vector<cv::KeyPoint> &keypoints) {
     cv::Mat descriptors;
 
     this->brisk_descriptor->compute(image, keypoints, descriptors);
