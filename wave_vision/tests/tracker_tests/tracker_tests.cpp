@@ -75,20 +75,10 @@ TEST(TrackerTests, AddImageGetTracks) {
     tracker.addImage(image_2, time2);
     tracker2.addImage(image_2, time2);
 
-    // For the second image, the size of the LandmarkMeasurementContainer should
-    // be the same size. After this, tracker 2 should remove features that
-    // do not exist.
-    EXPECT_EQ(tracker.lmc_size, tracker2.lmc_size);
-
     // Add image 3 to both trackers.
     auto time3 = clock.now();
     tracker.addImage(image_3, time3);
     tracker2.addImage(image_3, time3);
-
-    // Now, the online tracker should have purged the features that are no
-    // visible. The size of the LMC in tracker should be larger than that of
-    // tracker2.
-    EXPECT_TRUE(tracker.lmc_size > tracker2.lmc_size);
 
     // Get tracks from both images, make sure in both cases they are not false.
     std::vector<FeatureTrack> ft1_t1 = tracker.getTracks(1);
@@ -118,7 +108,6 @@ TEST(TrackerTests, OnlineTrackerTest) {
     ORBDetector detector;
     ORBDescriptor descriptor;
     BruteForceMatcher matcher;
-
 
     SUCCEED();
 }
