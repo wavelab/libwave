@@ -39,14 +39,8 @@ class Tracker {
      * @param descriptor descriptor object (BRISK, ORB, etc...)
      * @param matcher matcher object (BruteForceMatcher, FLANN)
      */
-    Tracker(TDetector detector,
-            TDescriptor descriptor,
-            TMatcher matcher,
-            bool online = false)
-        : detector(detector),
-          descriptor(descriptor),
-          matcher(matcher),
-          online(online) {}
+    Tracker(TDetector detector, TDescriptor descriptor, TMatcher matcher)
+        : detector(detector), descriptor(descriptor), matcher(matcher) {}
 
     ~Tracker() = default;
 
@@ -110,12 +104,6 @@ class Tracker {
     // The sensor ID. TODO: Expand this for use with multiple cams.
     int sensor_id = 0;
 
-    /** Online mode. If true, the Landmark Measurement Container will clear all
-     *  landmarks from the container that are not found in the current image.
-     *  This is done to maintain resources and prevent extended memory usage.
-     */
-    bool online;
-
     /** Generate a new ID for each newly detected feature.
      *
      * @return the assigned ID.
@@ -147,14 +135,6 @@ class Tracker {
         auto img_count = this->img_times.size();
         this->img_times[img_count] = current_time;
     }
-
-    /** Removes IDs in LandmarkMeasurementContainer that are in prev_ids but not
-     *  in the current image. This is done when this->online is true, in order
-     *  to manage memory and limit the size of the LMC.
-     *
-     *  @param id_list the list of IDs in the current image.
-     */
-    void purgeContainer(const std::vector<size_t> &id_list);
 
     /** Registers the latest matched keypoints with IDs. Assigns a new ID if one
      * has not already been provided.

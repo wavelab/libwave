@@ -13,25 +13,6 @@ void Tracker<TDetector, TDescriptor, TMatcher>::detectAndCompute(
 }
 
 template <typename TDetector, typename TDescriptor, typename TMatcher>
-void Tracker<TDetector, TDescriptor, TMatcher>::purgeContainer(
-  const std::vector<size_t> &id_list) {
-    // Go through all entries in prev_ids, and see if they are in id_list.
-    for (const auto &pid : this->prev_ids) {
-        auto id = pid.second;
-        // If the ID is not found,  remove it from the LMC.
-        // TODO: Add ability to remove only after a defined amount of images.
-        if (std::find(id_list.begin(), id_list.end(), id) == id_list.end()) {
-            // Extract the time of the previous image
-            auto prev_img = this->img_times.size() - 2;
-            const auto &prev_time = this->img_times.at(prev_img);
-
-            // Erase from the landmark measurement container
-            this->landmarks.erase(prev_time, this->sensor_id, id);
-        }
-    }
-}
-
-template <typename TDetector, typename TDescriptor, typename TMatcher>
 std::map<int, size_t>
 Tracker<TDetector, TDescriptor, TMatcher>::registerKeypoints(
   const std::vector<cv::KeyPoint> &curr_kp,
@@ -92,12 +73,6 @@ Tracker<TDetector, TDescriptor, TMatcher>::registerKeypoints(
                                     curr_img,
                                     curr_landmark);
         }
-    }
-
-    // If in online mode, clear IDs in LMC that are in prev_ids but not in
-    // the current image.
-    if (this->online) {
-        this->purgeContainer(id_list);
     }
 
     this->lmc_size = this->landmarks.size();

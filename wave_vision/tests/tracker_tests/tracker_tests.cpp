@@ -27,7 +27,7 @@ TEST(TrackerTests, ConstructorTest) {
       detector1, descriptor1, matcher);
 
     Tracker<ORBDetector, ORBDescriptor, BruteForceMatcher> tracker2(
-      detector2, descriptor2, matcher, true);
+      detector2, descriptor2, matcher);
 
     SUCCEED();
 }
@@ -46,7 +46,7 @@ TEST(TrackerTests, AddImageGetTracks) {
 
     // Define tracker 2 in online mode.
     Tracker<FASTDetector, BRISKDescriptor, BruteForceMatcher> tracker2(
-      detector, descriptor, matcher, true);
+      detector, descriptor, matcher);
 
     cv::Mat image_1 = cv::imread(TEST_IMAGE_0);
     cv::Mat image_2 = cv::imread(TEST_IMAGE_1);
