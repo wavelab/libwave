@@ -33,6 +33,10 @@ ENDFOREACH()
 ADD_SUBDIRECTORY(deps/googletest)
 INCLUDE_DIRECTORIES(${gtest_SOURCE_DIR}/include/ ${gtest_SOURCE_DIR})
 
+# 3rd party modules
+# libaslam_cameras_april.a
+ADD_SUBDIRECTORY(deps/aslam_cameras_april)
+
 # Define dependencies between modules
 # libwave_controls.a
 ADD_DEPENDENCIES(wave_controls wave_utils)
@@ -91,6 +95,11 @@ ELSE ()
     INSTALL(FILES ${CMAKE_BINARY_DIR}/libwave.a DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
 
 ENDIF()
+
+# aslam_cameras_april
+INSTALL(FILES ${CMAKE_BINARY_DIR}/deps/aslam_cameras_april/libaslam_cameras_april.a
+        DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+INSTALL(DIRECTORY deps/aslam_cameras_april/include/ DESTINATION include)
 
 # libwave headers
 FOREACH(MODULE ${LIBWAVE_MODULES})
