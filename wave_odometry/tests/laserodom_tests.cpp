@@ -209,8 +209,8 @@ TEST(Residual_test, pointToPlaneAnalytic) {
     EXPECT_NEAR(jacobian[0][5], 1, 1e-4);
 }
 
-// This test is for odometry in approximately stationary scans
-TEST(OdomTest, StationaryLab) {
+// This test is for odometry for the car moving in a straight line through the garage
+TEST(OdomTest, StraightLineGarage) {
     // Load entire sequence into memory
     std::vector<pcl::PointCloud<PointXYZIR>> clds;
     std::vector<pcl::PointCloud<PointXYZIR>::Ptr> cldptr;
@@ -228,12 +228,14 @@ TEST(OdomTest, StationaryLab) {
 
     // odom setup
     LaserOdomParams params;
-    params.n_flat = 20;
-    params.n_edge = 20;
-    params.max_correspondence_dist = 3;
-    params.huber_delta = 3;
-    params.opt_iters = 300;
-    params.visualize = true;
+    params.n_flat = 0;
+    params.n_edge = 40;
+    params.max_correspondence_dist = 0.4;
+    params.huber_delta = 0.3;
+    params.opt_iters = 1;
+//    params.visualize = true;
+    params.output_trajectory = true;
+    params.output_correspondences = true;
     LaserOdom odom(params);
     std::vector<PointXYZIR> vec;
     uint16_t prev_enc = 0;
@@ -504,6 +506,7 @@ TEST(laser_odom, edge_match_distance) {
     params.max_correspondence_dist = 10;
     params.opt_iters = 50;
     params.huber_delta = 0.5;
+    params.visualize = true;
     LaserOdom laser_odom(params);
     laser_odom.edges = sim_edges;
     auto stamp = std::chrono::steady_clock::now();
@@ -538,6 +541,7 @@ TEST(laser_odom, edge_match_distance) {
 
         laser_odom.edges = sim_edges_moved.at(d);
         laser_odom.match();
+        std::this_thread::sleep_for(std::chrono::seconds(10));
         auto result = laser_odom.cur_rotation;
         auto result1 = laser_odom.cur_translation;
         laser_odom.rollover(stamp);
@@ -606,6 +610,47 @@ TEST(laser_odom, no_movement) {
         results.push_back(result);
         results.push_back(result1);
     }
+}
+
+TEST(Transforms, forward_backwards) {
+    double base_rot[3] = {0.2, 0.1, -0.2};
+    double base_trans[3] = {0.2, 5, 4};
+    double pt[3] = {1, 2, -4};
+    double scale = 0.33;
+
+    // pt will be the point to change frames of
+    // pt_start = R_scaled * pt + T
+    double angle_axis[3] = {scale*base_rot[0], scale*base_rot[1], scale*base_rot[2]};
+    double pt_start[3];
+    ceres::AngleAxisRotatePoint(angle_axis, pt, pt_start);
+    pt_start[0] += scale*base_trans[0];
+    pt_start[1] += scale*base_trans[1];
+    pt_start[2] += scale*base_trans[2];
+
+    // pt_end = R_inv*pt_start - R_inv*T
+    double angle_axis_inverse[3] = {-base_rot[0], -base_rot[1], -base_rot[2]};
+    double pt_end[3], offset[3];
+    ceres::AngleAxisRotatePoint(angle_axis_inverse, pt_start, pt_end);
+    ceres::AngleAxisRotatePoint(angle_axis_inverse, base_trans, offset);
+    pt_end[0] -= offset[0];
+    pt_end[1] -= offset[1];
+    pt_end[2] -= offset[2];
+
+    // This should be a shortcut
+    // pt_end = R_inv*R_scaled*pt + R_inv*T_scaled - R_inv * T
+    // = R_(1-scaled)_inv*pt - (1 - scale)R_inv*T
+
+    double rv_scale = 1-scale;
+    double angle_axis_scaled_inverse[3] = {-(rv_scale*base_rot[0]), -(rv_scale*base_rot[1]), -(rv_scale*base_rot[2])};
+    double pt_end_simple[3];
+    ceres::AngleAxisRotatePoint(angle_axis_scaled_inverse, pt, pt_end_simple);
+    pt_end_simple[0] -= rv_scale*offset[0];
+    pt_end_simple[1] -= rv_scale*offset[1];
+    pt_end_simple[2] -= rv_scale*offset[2];
+
+    ASSERT_NEAR(pt_end[0], pt_end_simple[0], 1e-6);
+    ASSERT_NEAR(pt_end[1], pt_end_simple[1], 1e-6);
+    ASSERT_NEAR(pt_end[2], pt_end_simple[2], 1e-6);
 }
 
 }  // namespace wave

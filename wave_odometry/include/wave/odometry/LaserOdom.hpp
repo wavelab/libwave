@@ -7,6 +7,8 @@
 #include <utility>
 #include <chrono>
 #include <limits>
+#include <iostream>
+#include <fstream>
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 #include "wave/matching/pointcloud_display.hpp"
@@ -45,6 +47,8 @@ struct LaserOdomParams {
     int n_flat = 100;      // How many plane features to pick out per ring
     unlong knn = 5;        // 1/2 nearest neighbours for computing curvature
     bool visualize = false;   //Whether to run a visualization for debugging
+    bool output_trajectory = false; //Whether to output solutions for debugging/plotting
+    bool output_correspondences = false; //Whether to output correpondences for debugging/plotting
 };
 
 class LaserOdom {
@@ -69,6 +73,7 @@ class LaserOdom {
     PointCloudDisplay* display;
     pcl::PointCloud<pcl::PointXYZI>::Ptr prev_viz, cur_viz;
     void updateViz();
+    std::ofstream file;
 
     LaserOdomParams param;
     bool initialized = false;
@@ -82,7 +87,12 @@ class LaserOdom {
     void prefilter();
     void generateFeatures();
     void buildTrees();
-    bool findPlanePoints(const Vec3 &query, std::vector<int> *rings, std::vector<int> *index);
+    bool findCorrespondingPoints(const Vec3 &query,
+                                 const uint16_t knn,
+                                 const uint16_t k_per_ring,
+                                 const bool searchPlanarPoints,
+                                 std::vector<uint16_t> *rings,
+                                 std::vector<size_t> *index);
 
     PCLPointXYZIT applyIMU(const PCLPointXYZIT &pt);
 

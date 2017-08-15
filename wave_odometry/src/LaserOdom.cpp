@@ -23,16 +23,14 @@ double getDiff(double A[], double B[], int length) {
 
 void LaserOdom::flagNearbyPoints(const unlong ring, const unlong index) {
     for (unlong j = 0; j < this->param.knn; j++) {
-        if (this->l2sqrd(this->cur_scan.at(ring).at(index + j),
-                         this->cur_scan.at(ring).at(index + j + 1)) >
+        if (this->l2sqrd(this->cur_scan.at(ring).at(index + j), this->cur_scan.at(ring).at(index + j + 1)) >
             this->param.keypt_radius) {
             break;
         }
         this->cur_curve.at(ring).at(index + j + 1).first = false;
     }
     for (unlong j = 0; j < this->param.knn; j++) {
-        if (this->l2sqrd(this->cur_scan.at(ring).at(index - j),
-                         this->cur_scan.at(ring).at(index - j - 1)) >
+        if (this->l2sqrd(this->cur_scan.at(ring).at(index - j), this->cur_scan.at(ring).at(index - j - 1)) >
             this->param.keypt_radius) {
             break;
         }
@@ -73,14 +71,8 @@ LaserOdom::LaserOdom(const LaserOdomParams params) : param(params) {
     this->edge_idx.resize(n_ring);
     this->flat_idx.resize(n_ring);
     for (size_t i = 0; i < n_ring; i++) {
-        this->edge_idx.at(i) =
-          new kd_tree_t(3,
-                        this->prv_edges.at(i),
-                        nanoflann::KDTreeSingleIndexAdaptorParams(10));
-        this->flat_idx.at(i) =
-          new kd_tree_t(3,
-                        this->prv_flats.at(i),
-                        nanoflann::KDTreeSingleIndexAdaptorParams(10));
+        this->edge_idx.at(i) = new kd_tree_t(3, this->prv_edges.at(i), nanoflann::KDTreeSingleIndexAdaptorParams(10));
+        this->flat_idx.at(i) = new kd_tree_t(3, this->prv_flats.at(i), nanoflann::KDTreeSingleIndexAdaptorParams(10));
     }
     this->cur_translation = {0, 0, 0};
     this->cur_rotation = {0, 0, 0};
@@ -88,15 +80,16 @@ LaserOdom::LaserOdom(const LaserOdomParams params) : param(params) {
         this->display = new PointCloudDisplay("laser odom", 0.05);
         this->display->startSpin();
         // Allocate space for visualization clouds
-        this->prev_viz = boost::shared_ptr<pcl::PointCloud<pcl::PointXYZI>>(
-          new pcl::PointCloud<pcl::PointXYZI>);
-        this->cur_viz = boost::shared_ptr<pcl::PointCloud<pcl::PointXYZI>>(
-          new pcl::PointCloud<pcl::PointXYZI>);
+        this->prev_viz = boost::shared_ptr<pcl::PointCloud<pcl::PointXYZI>>(new pcl::PointCloud<pcl::PointXYZI>);
+        this->cur_viz = boost::shared_ptr<pcl::PointCloud<pcl::PointXYZI>>(new pcl::PointCloud<pcl::PointXYZI>);
     }
-    this->scale_lookup.resize(this->param.max_ticks + 1,
-                              0);  // plus one is for 0 tick
+    this->scale_lookup.resize(this->param.max_ticks + 1, 0);  // plus one is for 0 tick
     for (int i = 0; i <= this->param.max_ticks; i++) {
         this->scale_lookup.at(i) = (double) i / (double) this->param.max_ticks;
+    }
+    if (params.output_trajectory) {
+        long timestamp = std::chrono::system_clock::now().time_since_epoch().count();
+        this->file.open(std::to_string(timestamp) + "laser_odom_traj.txt");
     }
 }
 
@@ -104,6 +97,9 @@ LaserOdom::~LaserOdom() {
     if (this->param.visualize) {
         this->display->stopSpin();
         delete this->display;
+    }
+    if (this->param.output_trajectory) {
+        this->file.close();
     }
     for (size_t i = 0; i < this->param.n_ring; i++) {
         delete this->edge_idx.at(i);
@@ -118,14 +114,12 @@ LaserOdom::~LaserOdom() {
     this->flats.clear();
 }
 
-void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts,
-                          const int tick,
-                          TimeType stamp) {
-    if ((tick - this->prv_tick) < -2000) {  // tolerate minor nonlinearity error
-        this->generateFeatures();  // generate features on the current scan
-                                   // (empty is possible)
-        if (this->initialized) {   // there is a set of previous features from
-                                   // last scan
+void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, TimeType stamp) {
+    if ((tick - this->prv_tick) < -200) {  // tolerate minor nonlinearity error
+        this->generateFeatures();          // generate features on the current scan
+                                           // (empty is possible)
+        if (this->initialized) {           // there is a set of previous features from
+                                           // last scan
             double prev_translation[3], prev_rotation[3];
             for (int i = 0; i < this->param.opt_iters; i++) {
                 if (i > 0) {
@@ -143,14 +137,17 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts,
                          this->cur_translation.at(1),
                          this->cur_translation.at(2));
                 if (i > 0) {
-                    double diff =
-                      getDiff(
-                        prev_translation, this->cur_translation.data(), 3) +
-                      getDiff(prev_rotation, this->cur_rotation.data(), 3);
+                    double diff = getDiff(prev_translation, this->cur_translation.data(), 3) +
+                                  getDiff(prev_rotation, this->cur_rotation.data(), 3);
                     if (diff < this->param.diff_tol) {
                         break;
                     }
                 }
+            }
+            if (this->param.output_trajectory) {
+                this->file << this->cur_rotation[0] << ", " << this->cur_rotation[1] << ", " << this->cur_rotation[2]
+                           << ", " << this->cur_translation[0] << ", " << this->cur_translation[1] << ", "
+                           << this->cur_translation[2] << std::endl;
             }
             if (this->param.visualize) {
                 this->updateViz();
@@ -181,9 +178,7 @@ void LaserOdom::updateViz() {
     this->cur_viz->clear();
 
     for (uint16_t i = 0; i < this->param.n_ring; i++) {
-        for (auto iter = this->prv_flats.at(i).points.begin();
-             iter != this->prv_flats.at(i).points.end();
-             iter++) {
+        for (auto iter = this->prv_flats.at(i).points.begin(); iter != this->prv_flats.at(i).points.end(); iter++) {
             pcl::PointXYZI pt;
             pt.x = (*iter).at(0);
             pt.y = (*iter).at(1);
@@ -191,9 +186,7 @@ void LaserOdom::updateViz() {
             pt.intensity = 1;
             this->prev_viz->push_back(pt);
         }
-        for (auto iter = this->prv_edges.at(i).points.begin();
-             iter != this->prv_edges.at(i).points.end();
-             iter++) {
+        for (auto iter = this->prv_edges.at(i).points.begin(); iter != this->prv_edges.at(i).points.end(); iter++) {
             pcl::PointXYZI pt;
             pt.x = (*iter).at(0);
             pt.y = (*iter).at(1);
@@ -208,14 +201,11 @@ void LaserOdom::updateViz() {
     std::vector<double> out_dist_sqr(3);
 
     for (uint16_t i = 0; i < this->param.n_ring; i++) {
-        for (auto iter = this->edges.at(i).begin();
-             iter != this->edges.at(i).end();
-             iter++) {
+        for (auto iter = this->edges.at(i).begin(); iter != this->edges.at(i).end(); iter++) {
             double pt[3];
             double &scale = this->scale_lookup.at(iter->tick);
-            double wvec[3] = {scale * this->cur_rotation[0],
-                              scale * this->cur_rotation[1],
-                              scale * this->cur_rotation[2]};
+            double wvec[3] = {
+              scale * this->cur_rotation[0], scale * this->cur_rotation[1], scale * this->cur_rotation[2]};
             ceres::AngleAxisRotatePoint(wvec, iter->pt, pt);
             pt[0] += scale * this->cur_translation[0];
             pt[1] += scale * this->cur_translation[1];
@@ -228,14 +218,11 @@ void LaserOdom::updateViz() {
             point.intensity = 2;
             this->prev_viz->push_back(point);
         }
-        for (auto iter = this->flats.at(i).begin();
-             iter != this->flats.at(i).end();
-             iter++) {
+        for (auto iter = this->flats.at(i).begin(); iter != this->flats.at(i).end(); iter++) {
             double pt[3];
             double &scale = this->scale_lookup.at(iter->tick);
-            double wvec[3] = {scale * this->cur_rotation[0],
-                              scale * this->cur_rotation[1],
-                              scale * this->cur_rotation[2]};
+            double wvec[3] = {
+              scale * this->cur_rotation[0], scale * this->cur_rotation[1], scale * this->cur_rotation[2]};
             ceres::AngleAxisRotatePoint(wvec, iter->pt, pt);
             pt[0] += scale * this->cur_translation[0];
             pt[1] += scale * this->cur_translation[1];
@@ -250,8 +237,7 @@ void LaserOdom::updateViz() {
         }
     }
     this->display->addPointcloud(this->prev_viz, 0);
-    std::this_thread::sleep_for(
-      std::chrono::milliseconds((int) (10e3 * this->param.scan_period)));
+    std::this_thread::sleep_for(std::chrono::milliseconds((int) (10 * this->param.scan_period)));
 }
 
 PCLPointXYZIT LaserOdom::applyIMU(const PCLPointXYZIT &p) {
@@ -276,8 +262,7 @@ void LaserOdom::rollover(TimeType stamp) {
             cnt_edges += this->prv_edges.at(i).points.size();
             cnt_flats += this->prv_flats.at(i).points.size();
         }
-        if ((cnt_edges >= this->param.n_edge) &&
-            (cnt_flats >= this->param.n_flat)) {
+        if ((cnt_edges >= this->param.n_edge) && (cnt_flats >= this->param.n_flat)) {
             this->initialized = true;
         }
     }
@@ -288,66 +273,42 @@ void LaserOdom::buildTrees() {
         this->prv_edges.at(i).points.clear();
         this->prv_flats.at(i).points.clear();
     }
-    Rotation rotation;
-    Vec3 wvec(
-      this->cur_rotation[0], this->cur_rotation[1], this->cur_rotation[2]);
-    Vec3 trans(this->cur_translation[0],
-               this->cur_translation[1],
-               this->cur_translation[2]);
+    double wvec[3] = {this->cur_rotation[0], this->cur_rotation[1], this->cur_rotation[2]};
+    double trans[3] = {this->cur_translation[0], this->cur_translation[1], this->cur_translation[2]};
 
     for (uint16_t i = 0; i < this->param.n_ring; i++) {
         for (PointXYZIT pt : this->edges.at(i)) {
-            double &scale_fwd = this->scale_lookup.at(pt.tick);
+            double scale_rvs = 1 - this->scale_lookup.at(pt.tick);
 
-            double axis_angle[3] = {
-              scale_fwd * wvec(0), scale_fwd * wvec(1), scale_fwd * wvec(2)};
+            double axis_angle_inv_scaled[3] = {-scale_rvs * wvec[0], -scale_rvs * wvec[1], -scale_rvs * wvec[2]};
+            double axis_angle_inv[3] = {-wvec[0], -wvec[1], -wvec[2]};
             double rotated_pt[3] = {0};
-            ceres::AngleAxisRotatePoint(axis_angle, pt.pt, rotated_pt);
-            double trans_pt[3] = {rotated_pt[0] + scale_fwd * trans(0),
-                                  rotated_pt[1] + scale_fwd * trans(1),
-                                  rotated_pt[2] + scale_fwd * trans(2)};
-            // now have point at the end of the scan, need to transform to
-            // beginning
-            axis_angle[0] = -wvec(0);
-            axis_angle[1] = -wvec(1);
-            axis_angle[2] = -wvec(2);
-            ceres::AngleAxisRotatePoint(axis_angle, trans_pt, rotated_pt);
-            double trans_total[3] = {trans(0), trans(1), trans(2)};
-            double offset[3];
-            ceres::AngleAxisRotatePoint(axis_angle, trans_total, offset);
-            double final[3] = {rotated_pt[0] - offset[0],
-                               rotated_pt[1] - offset[1],
-                               rotated_pt[2] - offset[2]};
+            ceres::AngleAxisRotatePoint(axis_angle_inv_scaled, pt.pt, rotated_pt);
 
-            this->prv_edges.at(i).points.push_back(
-              std::array<double, 3>{final[0], final[1], final[2]});
+            double RinvT[3];
+            ceres::AngleAxisRotatePoint(axis_angle_inv, trans, RinvT);
+            rotated_pt[0] -= scale_rvs * RinvT[0];
+            rotated_pt[1] -= scale_rvs * RinvT[1];
+            rotated_pt[2] -= scale_rvs * RinvT[2];
+
+            this->prv_edges.at(i).points.push_back(std::array<double, 3>{rotated_pt[0], rotated_pt[1], rotated_pt[2]});
         }
 
         for (PointXYZIT pt : this->flats.at(i)) {
-            double &scale_fwd = this->scale_lookup.at(pt.tick);
+            double scale_rvs = 1 - this->scale_lookup.at(pt.tick);
 
-            double axis_angle[3] = {
-              scale_fwd * wvec(0), scale_fwd * wvec(1), scale_fwd * wvec(2)};
+            double axis_angle_inv_scaled[3] = {-scale_rvs * wvec[0], -scale_rvs * wvec[1], -scale_rvs * wvec[2]};
+            double axis_angle_inv[3] = {-wvec[0], -wvec[1], -wvec[2]};
             double rotated_pt[3] = {0};
-            ceres::AngleAxisRotatePoint(axis_angle, pt.pt, rotated_pt);
-            double trans_pt[3] = {rotated_pt[0] + scale_fwd * trans(0),
-                                  rotated_pt[1] + scale_fwd * trans(1),
-                                  rotated_pt[2] + scale_fwd * trans(2)};
-            // now have point at the beginning of the scan, need to transform to
-            // end
-            axis_angle[0] = -wvec(0);
-            axis_angle[1] = -wvec(1);
-            axis_angle[2] = -wvec(2);
-            ceres::AngleAxisRotatePoint(axis_angle, trans_pt, rotated_pt);
-            double trans_total[3] = {trans(0), trans(1), trans(2)};
-            double offset[3];
-            ceres::AngleAxisRotatePoint(axis_angle, trans_total, offset);
-            double final[3] = {rotated_pt[0] - offset[0],
-                               rotated_pt[1] - offset[1],
-                               rotated_pt[2] - offset[2]};
+            ceres::AngleAxisRotatePoint(axis_angle_inv_scaled, pt.pt, rotated_pt);
 
-            this->prv_flats.at(i).points.push_back(
-              std::array<double, 3>{final[0], final[1], final[2]});
+            double RinvT[3];
+            ceres::AngleAxisRotatePoint(axis_angle_inv, trans, RinvT);
+            rotated_pt[0] -= scale_rvs * RinvT[0];
+            rotated_pt[1] -= scale_rvs * RinvT[1];
+            rotated_pt[2] -= scale_rvs * RinvT[2];
+
+            this->prv_flats.at(i).points.push_back(std::array<double, 3>{rotated_pt[0], rotated_pt[1], rotated_pt[2]});
         }
     }
     for (uint16_t i = 0; i < this->param.n_ring; i++) {
@@ -359,54 +320,71 @@ void LaserOdom::buildTrees() {
     this->cur_rotation = {0, 0, 0};
 }
 
-bool LaserOdom::findPlanePoints(const Vec3 &query,
-                                std::vector<int> *rings,
-                                std::vector<int> *index) {
+bool LaserOdom::findCorrespondingPoints(const Vec3 &query,
+                                        const uint16_t knn,
+                                        const uint16_t k_per_ring,
+                                        const bool searchPlanarPoints,
+                                        std::vector<uint16_t> *rings,
+                                        std::vector<size_t> *index) {
     // Need to query all rings and place report ring # and index # if points
-    // make a good plane
+    if (k_per_ring > knn) {
+        return false;
+    }
     using ContType = std::pair<double, std::pair<size_t, uint16_t>>;
     std::vector<ContType> container;
     for (uint16_t ring_idx = 0; ring_idx < this->param.n_ring; ring_idx++) {
-        std::vector<size_t> cur_ret_indices(2);
-        std::vector<double> cur_out_dist_sqr(2);
-        this->flat_idx.at(ring_idx)->knnSearch(
-          query.data(), 2, &cur_ret_indices[0], &cur_out_dist_sqr[0]);
+        std::vector<size_t> cur_ret_indices(k_per_ring);
+        std::vector<double> cur_out_dist_sqr(k_per_ring);
+        if (searchPlanarPoints) {
+            this->flat_idx.at(ring_idx)->knnSearch(query.data(), k_per_ring, &cur_ret_indices[0], &cur_out_dist_sqr[0]);
+        } else {
+            this->edge_idx.at(ring_idx)->knnSearch(query.data(), k_per_ring, &cur_ret_indices[0], &cur_out_dist_sqr[0]);
+        }
         for (size_t counter = 0; counter < cur_out_dist_sqr.size(); counter++) {
-            if ((cur_out_dist_sqr.at(counter) <
-                 this->param.max_correspondence_dist) &&
+            if ((cur_out_dist_sqr.at(counter) < this->param.max_correspondence_dist) &&
                 (cur_out_dist_sqr.at(counter) > 0)) {
-                container.emplace_back(cur_out_dist_sqr.at(counter), cur_ret_indices.at(counter), ring_idx);
+                container.emplace_back(cur_out_dist_sqr.at(counter),
+                                       std::pair<size_t, uint16_t>(cur_ret_indices.at(counter), ring_idx));
             }
         }
     }
-    // now sort container
-    std::sort(container.begin(), container.end(),
-    [](const ContType &left, const ContType &right) {
+
+    if (container.size() < knn) {
+        // LOG_ERROR("No correspondences within search distance");
+        return false;
+    }
+    std::sort(container.begin(), container.end(), [](const ContType &left, const ContType &right) {
         return left.first < right.first;
     });
     // Now have sorted list of possible correpondences.
     // May want to revisit this later, but for now the policy will be
     // to pick the closest points if
     // - They are from neighbouring rings
-
+    rings->resize(0);
+    index->resize(0);
+    std::set<uint16_t> set;
+    for (uint16_t i = 0; i < knn; i++) {
+        rings->push_back(container.at(i).second.second);
+        index->push_back(container.at(i).second.first);
+        set.insert(container.at(i).second.second);
+    }
+    if (set.size() == 2) {
+        return true;
+    }
+    return false;
 }
 
 bool LaserOdom::match() {
-    const double min_init = 999999;
-    ceres::Problem problem;
-    ceres::LossFunction *p_LossFunction =
-      new BisquareLoss(this->param.huber_delta);
-    Rotation rotation;
-
-    Vec3 wvec(
-      this->cur_rotation[0], this->cur_rotation[1], this->cur_rotation[2]);
-    Vec3 trans(this->cur_translation[0],
-               this->cur_translation[1],
-               this->cur_translation[2]);
-    auto magnitude = wvec.norm();
-    if (magnitude > ZERO_TOL) {
-        wvec.normalize();
+    std::ofstream edge_cor, flat_cor;
+    if (this->param.output_correspondences) {
+        long timestamp = std::chrono::system_clock::now().time_since_epoch().count();
+        edge_cor.open(std::to_string(timestamp) + "edges_cor.txt");
+        flat_cor.open(std::to_string(timestamp) + "flat_cor.txt");
     }
+    ceres::Problem problem;
+    ceres::LossFunction *p_LossFunction = new BisquareLoss(this->param.huber_delta);
+
+    Vec3 trans(this->cur_translation[0], this->cur_translation[1], this->cur_translation[2]);
 
     std::vector<size_t> ret_indices;
     std::vector<uint16_t> ret_rings;
@@ -416,225 +394,80 @@ bool LaserOdom::match() {
     for (uint16_t i = 0; i < this->param.n_ring; i++) {
         size_t idx;
         for (idx = 0; idx < this->edges.at(i).size(); idx++) {
-            double &scale =
-              this->scale_lookup.at(this->edges.at(i).at(idx).tick);
+            double &scale = this->scale_lookup.at(this->edges.at(i).at(idx).tick);
 
-            Vec3 pt(this->edges.at(i).at(idx).pt[0],
-                    this->edges.at(i).at(idx).pt[1],
-                    this->edges.at(i).at(idx).pt[2]);
-            if (magnitude < ZERO_TOL) {
-                rotation.setIdentity();
-            } else {
-                rotation.setFromAngleAxis(scale * magnitude, wvec);
-            }
-            Vec3 query = rotation.rotate(pt) + scale * trans;
-
-            ret_indices.resize(5);
-            ret_rings.resize(5);
-            out_dist_sqr.resize(5);
-            int cur_idx = 0;
-            this->edge_idx.at(i)->knnSearch(
-              query.data(), 1, &ret_indices[cur_idx], &out_dist_sqr[cur_idx]);
-            ret_rings[cur_idx] = i;
-            cur_idx++;
-            for (uint16_t j = 1; j < 3; j++) {
-                if (((int) i - (int) j) >= 0) {
-                    this->edge_idx.at(i - j)->knnSearch(query.data(),
-                                                        1,
-                                                        &ret_indices[cur_idx],
-                                                        &out_dist_sqr[cur_idx]);
-                    ret_rings[cur_idx] = i - j;
-                    cur_idx++;
+            Vec3 pt(this->edges.at(i).at(idx).pt[0], this->edges.at(i).at(idx).pt[1], this->edges.at(i).at(idx).pt[2]);
+            double axis_angle[3] = {
+              scale * this->cur_rotation[0], scale * this->cur_rotation[1], scale * this->cur_rotation[2]};
+            double rotated[3];
+            ceres::AngleAxisRotatePoint(axis_angle, pt.data(), rotated);
+            Vec3 query(rotated[0], rotated[1], rotated[2]);
+            query = query + scale * trans;
+            if (this->findCorrespondingPoints(query, 2, 1, false, &ret_rings, &ret_indices)) {
+                auto &pt_ref = this->edges.at(i).at(idx).pt;
+                auto &pA_ref = this->prv_edges.at(ret_rings.at(0)).points.at(ret_indices.at(0));
+                auto &pB_ref = this->prv_edges.at(ret_rings.at(1)).points.at(ret_indices.at(1));
+                if (this->param.output_correspondences) {
+                    edge_cor << pt_ref[0] << ", " << pt_ref[1] << ", " << pt_ref[2] << ", " << pA_ref.at(0) << ", "
+                             << pA_ref.at(1) << ", " << pA_ref.at(2) << ", " << pB_ref.at(0) << ", " << pB_ref.at(1)
+                             << ", " << pB_ref.at(2) << ", " << scale << std::endl;
                 }
-                if (i + j < this->param.n_ring) {
-                    this->edge_idx.at(i + j)->knnSearch(query.data(),
-                                                        1,
-                                                        &ret_indices[cur_idx],
-                                                        &out_dist_sqr[cur_idx]);
-                    ret_rings[cur_idx] = i + j;
-                    cur_idx++;
-                }
+                ceres::CostFunction *cost_function =
+                  new AnalyticalPointToLine(&(this->edges.at(i).at(idx).pt[0]),
+                                            this->prv_edges.at(ret_rings.at(0)).points.at(ret_indices.at(0)).data(),
+                                            this->prv_edges.at(ret_rings.at(1)).points.at(ret_indices.at(1)).data(),
+                                            &(this->scale_lookup.at(this->edges.at(i).at(idx).tick)));
+                problem.AddResidualBlock(
+                  cost_function, p_LossFunction, this->cur_rotation.data(), this->cur_translation.data());
             }
-            ret_indices.resize(cur_idx);
-            out_dist_sqr.resize(cur_idx);
-            ret_rings.resize(cur_idx);
-            // now search through out_dist_sqr and pick the two closest points
-            // The only restriction is that they must be from neighbouring rings
-            double min1 = min_init, min2 = min_init;
-            unsigned long index1, index2, ring1, ring2;
-            for (uint16_t k = 0; k < out_dist_sqr.size(); k++) {
-                if ((out_dist_sqr.at(k) >
-                     this->param.max_correspondence_dist) ||
-                    out_dist_sqr.at(k) == 0) {
-                    continue;
-                }
-                if (out_dist_sqr.at(k) < min1) {
-                    min2 = min1;
-                    index2 = index1;
-                    ring2 = ring1;
-                    min1 = out_dist_sqr.at(k);
-                    index1 = ret_indices.at(k);
-                    ring1 = ret_rings.at(k);
-                } else if (out_dist_sqr.at(k) < min2) {
-                    min2 = out_dist_sqr.at(k);
-                    index2 = ret_indices.at(k);
-                    ring2 = ret_rings.at(k);
-                }
-            }
-
-            if (min1 == min_init || min2 == min_init) {
-                continue;
-            }
-            if (ring1 > ring2 ? (ring1 - ring2 != 1) : (ring2 - ring1 != 1)) {
-                continue;
-            }
-            ceres::CostFunction *cost_function = new AnalyticalPointToLine(
-              &(this->edges.at(i).at(idx).pt[0]),
-              this->prv_edges.at(ring1).points.at(index1).data(),
-              this->prv_edges.at(ring2).points.at(index2).data(),
-              &(this->scale_lookup.at(this->edges.at(i).at(idx).tick)));
-            problem.AddResidualBlock(cost_function,
-                                     p_LossFunction,
-                                     this->cur_rotation.data(),
-                                     this->cur_translation.data());
         }
 
         // residuals blocks for flats
         for (size_t ind = 0; ind < this->flats.at(i).size(); ind++) {
-            double &scale =
-              this->scale_lookup.at(this->flats.at(i).at(ind).tick);
+            double &scale = this->scale_lookup.at(this->flats.at(i).at(ind).tick);
 
-            Vec3 pt(this->flats.at(i).at(ind).pt[0],
-                    this->flats.at(i).at(ind).pt[1],
-                    this->flats.at(i).at(ind).pt[2]);
-            if (magnitude < ZERO_TOL) {
-                rotation.setIdentity();
-            } else {
-                rotation.setFromAngleAxis(scale * magnitude, wvec);
-            }
-            Vec3 query = rotation.rotate(pt) + scale * trans;
+            Vec3 pt(this->flats.at(i).at(ind).pt[0], this->flats.at(i).at(ind).pt[1], this->flats.at(i).at(ind).pt[2]);
+            double axis_angle[3] = {
+              scale * this->cur_rotation[0], scale * this->cur_rotation[1], scale * this->cur_rotation[2]};
+            double rotated[3];
+            ceres::AngleAxisRotatePoint(axis_angle, pt.data(), rotated);
+            Vec3 query(rotated[0], rotated[1], rotated[2]);
+            query = query + scale * trans;
 
-            ret_indices.resize(10);
-            ret_rings.resize(10);
-            out_dist_sqr.resize(10);
-            int cur_idx = 0;
-            this->flat_idx.at(i)->knnSearch(
-              query.data(), 2, &ret_indices[cur_idx], &out_dist_sqr[cur_idx]);
-            ret_rings[cur_idx] = i;
-            cur_idx += 2;
-            for (uint16_t j = 1; j < 3; j++) {
-                if (((int) i - (int) j) >=
-                    0) {  // they are unsigned so wrap instead of <0
-                    this->flat_idx.at(i - j)->knnSearch(query.data(),
-                                                        2,
-                                                        &ret_indices[cur_idx],
-                                                        &out_dist_sqr[cur_idx]);
-                    ret_rings[cur_idx] = i - j;
-                    ret_rings[cur_idx + 1] = i - j;
-                    cur_idx += 2;
-                }
-                if (i + j < this->param.n_ring) {
-                    this->flat_idx.at(i + j)->knnSearch(query.data(),
-                                                        2,
-                                                        &ret_indices[cur_idx],
-                                                        &out_dist_sqr[cur_idx]);
-                    ret_rings[cur_idx] = i + j;
-                    ret_rings[cur_idx + 1] = i + j;
-                    cur_idx += 2;
-                }
+            if (this->findCorrespondingPoints(query, 3, 2, true, &ret_rings, &ret_indices)) {
+                ceres::CostFunction *cost_function =
+                  new AnalyticalPointToPlane(&(this->flats.at(i).at(ind).pt[0]),
+                                             this->prv_flats.at(ret_rings.at(0)).points.at(ret_indices.at(0)).data(),
+                                             this->prv_flats.at(ret_rings.at(1)).points.at(ret_indices.at(1)).data(),
+                                             this->prv_flats.at(ret_rings.at(2)).points.at(ret_indices.at(2)).data(),
+                                             &(this->scale_lookup.at(this->flats.at(i).at(ind).tick)));
+                problem.AddResidualBlock(
+                  cost_function, p_LossFunction, this->cur_rotation.data(), this->cur_translation.data());
             }
-            ret_indices.resize(cur_idx);
-            out_dist_sqr.resize(cur_idx);
-            ret_rings.resize(cur_idx);
-            // now search through out_dist_sqr and pick the three closest points
-            // The only restriction is that they must be from neighbouring rings
-            std::vector<double> min(3, min_init);
-            std::vector<unsigned long> index(3), ring(3);
-            for (uint16_t k = 0; k < out_dist_sqr.size(); k++) {
-                if ((out_dist_sqr.at(k) >
-                     this->param.max_correspondence_dist) ||
-                    out_dist_sqr.at(k) == 0) {
-                    continue;
-                }
-                for (int l = 0; l < 3; l++) {
-                    if (out_dist_sqr.at(k) < min[l]) {
-                        for (int n = 2; n > l; n--) {
-                            min[n] = min[n - 1];
-                            ring[n] = ring[n - 1];
-                            index[n] = index[n - 1];
-                        }
-                        min[l] = out_dist_sqr.at(k);
-                        index[l] = ret_indices.at(k);
-                        ring[l] = ret_rings.at(k);
-                        break;
-                    }
-                }
-            }
-
-            std::set<double> dists(min.cbegin(), min.cend());
-            if (dists.count(min_init) > 0) {
-                continue;
-            }
-
-            // Want each set of points to be from neighbouring scan lines
-            std::set<unsigned long> ring_set(ring.cbegin(), ring.cend());
-            if (ring_set.size() != 2) {
-                continue;
-            }
-            ceres::CostFunction *cost_function = new AnalyticalPointToPlane(
-              &(this->flats.at(i).at(ind).pt[0]),
-              this->prv_flats.at(ring.at(0)).points.at(index.at(0)).data(),
-              this->prv_flats.at(ring.at(1)).points.at(index.at(1)).data(),
-              this->prv_flats.at(ring.at(2)).points.at(index.at(2)).data(),
-              &(this->scale_lookup.at(this->flats.at(i).at(ind).tick)));
-            problem.AddResidualBlock(cost_function,
-                                     p_LossFunction,
-                                     this->cur_rotation.data(),
-                                     this->cur_translation.data());
         }
     }
+    if(this->param.output_correspondences) {
+        edge_cor.close();
+        flat_cor.close();
+    }
 
-    // Add a normal prior to provide some regularization
-    // This is in effect a constant velocity model
-    //    ceres::Matrix stiffness(6, 6);
-    //    stiffness.setIdentity();
-    //    stiffness(0, 0) = 0.0000001;
-    //    stiffness(1, 1) = 0.0000001;
-    //    stiffness(2, 2) = 0.0000001;
-    //    stiffness(3, 3) = 0.0000001;
-    //    stiffness(4, 4) = 0.0000001;
-    //    stiffness(5, 5) = 0.0000001;
-    //
-    //    double vec[6];
-    //    memcpy(vec, this->cur_transform.data(), 6 * 8);
-    //    ceres::VectorRef initial(vec, 6, 1);
-    //    ceres::NormalPrior *diff_cost_function =
-    //      new ceres::NormalPrior(stiffness, initial);
-    //    problem.AddResidualBlock(
-    //      diff_cost_function, NULL, this->cur_transform.data());
-
-
-    // problem.SetParameterBlockConstant(this->cur_rotation.data());
+    // problem.SetParameterBlockConstant(this->cur_translation.data());
 
     ceres::Solver::Options options;
     std::vector<int> iterations = {0, 1, 2, 3, 4, 5, 6, 7, 8};
-    options.linear_solver_type = ceres::DENSE_QR;
+    options.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
     options.max_num_iterations = 300;
     options.function_tolerance = 1e-10;
     options.parameter_tolerance = 1e-10;
-    options.num_threads = 1;
-    options.num_linear_solver_threads = 1;
+    options.num_threads = 4;
+    options.num_linear_solver_threads = 4;
     // options.trust_region_minimizer_iterations_to_dump = iterations;
-    options.trust_region_problem_dump_format_type =
-      ceres::DumpFormatType::TEXTFILE;
+    options.trust_region_problem_dump_format_type = ceres::DumpFormatType::TEXTFILE;
     ceres::Solver::Summary summary;
-    auto max_residuals =
-      this->param.n_ring * (this->param.n_flat + this->param.n_edge);
+    auto max_residuals = this->param.n_ring * (this->param.n_flat + this->param.n_edge);
     if (problem.NumResidualBlocks() < max_residuals * 0.2) {
         LOG_ERROR("Less than expected residuals, resetting");
-        LOG_ERROR("%d residuals, threshold is %f",
-                  problem.NumResidualBlocks(),
-                  max_residuals * 0.2);
+        LOG_ERROR("%d residuals, threshold is %f", problem.NumResidualBlocks(), max_residuals * 0.2);
         this->cur_translation = {0, 0, 0};
         this->cur_rotation = {0, 0, 0};
         this->initialized = false;
@@ -660,26 +493,21 @@ void LaserOdom::generateFeatures() {
         this->flats.at(i).clear();
         std::sort(this->filter.at(i).begin(),
                   this->filter.at(i).end(),
-                  [](const std::pair<unlong, float> lhs,
-                     const std::pair<unlong, float> rhs) {
+                  [](const std::pair<unlong, float> lhs, const std::pair<unlong, float> rhs) {
                       return lhs.second < rhs.second;
                   });
         int edge_cnt = 0, flat_cnt = 0;
 
         // Pick out edge points
-        for (auto iter = this->filter.at(i).rbegin();
-             iter < this->filter.at(i).rend();
-             iter++) {
-            if ((iter->second < this->param.edge_tol) ||
-                (edge_cnt >= this->param.n_edge)) {
+        for (auto iter = this->filter.at(i).rbegin(); iter < this->filter.at(i).rend(); iter++) {
+            if ((iter->second < this->param.edge_tol) || (edge_cnt >= this->param.n_edge)) {
                 break;
             } else if (this->cur_curve.at(i).at(iter->first).first) {
-                this->edges.at(i).emplace_back(
-                  this->cur_scan.at(i).at(iter->first).x,
-                  this->cur_scan.at(i).at(iter->first).y,
-                  this->cur_scan.at(i).at(iter->first).z,
-                  this->cur_scan.at(i).at(iter->first).intensity,
-                  this->cur_scan.at(i).at(iter->first).tick);
+                this->edges.at(i).emplace_back(this->cur_scan.at(i).at(iter->first).x,
+                                               this->cur_scan.at(i).at(iter->first).y,
+                                               this->cur_scan.at(i).at(iter->first).z,
+                                               this->cur_scan.at(i).at(iter->first).intensity,
+                                               this->cur_scan.at(i).at(iter->first).tick);
                 this->cur_curve.at(i).at(iter->first).first = false;
                 this->flagNearbyPoints(i, iter->first);
                 edge_cnt++;
@@ -687,26 +515,21 @@ void LaserOdom::generateFeatures() {
         }
 
         // Pick out flat points
-        for (auto iter = this->filter.at(i).begin();
-             iter < this->filter.at(i).end();
-             iter++) {
-            if ((iter->second > this->param.flat_tol) ||
-                (flat_cnt >= this->param.n_flat)) {
+        for (auto iter = this->filter.at(i).begin(); iter < this->filter.at(i).end(); iter++) {
+            if ((iter->second > this->param.flat_tol) || (flat_cnt >= this->param.n_flat)) {
                 break;
             } else if (this->cur_curve.at(i).at(iter->first).first) {
-                this->flats.at(i).emplace_back(
-                  this->cur_scan.at(i).at(iter->first).x,
-                  this->cur_scan.at(i).at(iter->first).y,
-                  this->cur_scan.at(i).at(iter->first).z,
-                  this->cur_scan.at(i).at(iter->first).intensity,
-                  this->cur_scan.at(i).at(iter->first).tick);
+                this->flats.at(i).emplace_back(this->cur_scan.at(i).at(iter->first).x,
+                                               this->cur_scan.at(i).at(iter->first).y,
+                                               this->cur_scan.at(i).at(iter->first).z,
+                                               this->cur_scan.at(i).at(iter->first).intensity,
+                                               this->cur_scan.at(i).at(iter->first).tick);
                 this->cur_curve.at(i).at(iter->first).first = false;
                 this->flagNearbyPoints(i, iter->first);
                 flat_cnt++;
             }
         }
     }
-    this->new_features = true;
 }
 
 void LaserOdom::computeCurvature() {
@@ -719,18 +542,14 @@ void LaserOdom::computeCurvature() {
         for (unlong j = this->param.knn; j < n_pts - this->param.knn; j++) {
             float diffX = 0, diffY = 0, diffZ = 0;
             for (unlong k = 1; k <= this->param.knn; k++) {
-                diffX += this->cur_scan.at(i).at(j + k).x +
-                         this->cur_scan.at(i).at(j - k).x;
-                diffY += this->cur_scan.at(i).at(j + k).y +
-                         this->cur_scan.at(i).at(j - k).y;
-                diffZ += this->cur_scan.at(i).at(j + k).z +
-                         this->cur_scan.at(i).at(j - k).z;
+                diffX += this->cur_scan.at(i).at(j + k).x + this->cur_scan.at(i).at(j - k).x;
+                diffY += this->cur_scan.at(i).at(j + k).y + this->cur_scan.at(i).at(j - k).y;
+                diffZ += this->cur_scan.at(i).at(j + k).z + this->cur_scan.at(i).at(j - k).z;
             }
             diffX -= (this->param.knn * 2) * this->cur_scan.at(i).at(j).x;
             diffY -= (this->param.knn * 2) * this->cur_scan.at(i).at(j).y;
             diffZ -= (this->param.knn * 2) * this->cur_scan.at(i).at(j).z;
-            this->cur_curve.at(i).at(j) = std::make_pair(
-              true, diffX * diffX + diffY * diffY + diffZ * diffZ);
+            this->cur_curve.at(i).at(j) = std::make_pair(true, diffX * diffX + diffY * diffY + diffZ * diffZ);
         }
     }
 }
@@ -745,19 +564,15 @@ void LaserOdom::prefilter() {
             continue;
         }
         for (unlong j = this->param.knn; j < max_pts; j++) {
-            auto delforward = this->l2sqrd(this->cur_scan.at(i).at(j),
-                                           this->cur_scan.at(i).at(j + 1));
-            auto delback = this->l2sqrd(this->cur_scan.at(i).at(j),
-                                        this->cur_scan.at(i).at(j - 1));
+            auto delforward = this->l2sqrd(this->cur_scan.at(i).at(j), this->cur_scan.at(i).at(j + 1));
+            auto delback = this->l2sqrd(this->cur_scan.at(i).at(j), this->cur_scan.at(i).at(j - 1));
             // First section excludes any points who's score is likely caused
             // by occlusion
             if (delforward > this->param.occlusion_tol) {
                 float d1 = std::sqrt(this->l2sqrd(this->cur_scan.at(i).at(j)));
-                float d2 =
-                  std::sqrt(this->l2sqrd(this->cur_scan.at(i).at(j + 1)));
+                float d2 = std::sqrt(this->l2sqrd(this->cur_scan.at(i).at(j + 1)));
                 auto unit1 = this->scale(this->cur_scan.at(i).at(j), 1 / d1);
-                auto unit2 =
-                  this->scale(this->cur_scan.at(i).at(j + 1), 1 / d2);
+                auto unit2 = this->scale(this->cur_scan.at(i).at(j + 1), 1 / d2);
                 auto diff = std::sqrt(this->l2sqrd(unit1, unit2));
                 if (diff < this->param.occlusion_tol) {
                     if (d1 > d2) {
@@ -775,8 +590,7 @@ void LaserOdom::prefilter() {
             // This section excludes any points whose nearby surface is
             // near to parallel to the laser
             auto dis = this->l2sqrd(this->cur_scan.at(i).at(j));
-            if ((delforward > (this->param.parallel_tol) * dis) &&
-                (delback > (this->param.parallel_tol * dis))) {
+            if ((delforward > (this->param.parallel_tol) * dis) && (delback > (this->param.parallel_tol * dis))) {
                 this->cur_curve.at(i).at(j).first = false;
             }
         }
@@ -786,8 +600,7 @@ void LaserOdom::prefilter() {
         for (unlong j = 0; j < n_pts; j++) {
             if (this->cur_curve.at(i).at(j).first) {
                 this->filter.at(i).at(cnt).first = j;
-                this->filter.at(i).at(cnt).second =
-                  this->cur_curve.at(i).at(j).second;
+                this->filter.at(i).at(cnt).second = this->cur_curve.at(i).at(j).second;
                 cnt++;
             }
         }

@@ -18,7 +18,8 @@ namespace wave {
 
 //const double unit_x[3] = {1, 0, 0};
 //const double unit_y[3] = {0, 1, 0};
-//// Point to Line cost has a null direction of size 1.
+// Point to Line cost has a null direction of size 1. This parameterization could be used to solve small problem
+// examples
 //class PointToLineParameterization : public ceres::LocalParameterization {
 // public:
 //    explicit PointToLineParameterization(const double *const pA, const double *const pB) {
