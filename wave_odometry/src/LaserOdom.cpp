@@ -10,9 +10,6 @@
 
 namespace wave {
 
-const double ZERO_TOL = 1e-4;
-// This amount of rotation or less is approximated as zero
-
 double getDiff(double A[], double B[], int length) {
     double retval = 0;
     for (int i = 0; i < length; i++) {
@@ -76,6 +73,8 @@ LaserOdom::LaserOdom(const LaserOdomParams params) : param(params) {
     }
     this->cur_translation = {0, 0, 0};
     this->cur_rotation = {0, 0, 0};
+    this->prev_translation = {0, 0, 0};
+    this->prev_rotation = {0, 0, 0};
     if (params.visualize) {
         this->display = new PointCloudDisplay("laser odom", 0.05);
         this->display->startSpin();
@@ -120,11 +119,11 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
                                            // (empty is possible)
         if (this->initialized) {           // there is a set of previous features from
                                            // last scan
-            double prev_translation[3], prev_rotation[3];
+            double last_translation[3], last_rotation[3];
             for (int i = 0; i < this->param.opt_iters; i++) {
                 if (i > 0) {
-                    memcpy(prev_translation, this->cur_translation.data(), 24);
-                    memcpy(prev_rotation, this->cur_rotation.data(), 24);
+                    memcpy(last_translation, this->cur_translation.data(), 24);
+                    memcpy(last_rotation, this->cur_rotation.data(), 24);
                 }
                 if (!this->match()) {
                     break;
@@ -137,13 +136,15 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
                          this->cur_translation.at(1),
                          this->cur_translation.at(2));
                 if (i > 0) {
-                    double diff = getDiff(prev_translation, this->cur_translation.data(), 3) +
-                                  getDiff(prev_rotation, this->cur_rotation.data(), 3);
+                    double diff = getDiff(last_translation, this->cur_translation.data(), 3) +
+                                  getDiff(last_rotation, this->cur_rotation.data(), 3);
                     if (diff < this->param.diff_tol) {
                         break;
                     }
                 }
             }
+            memcpy(this->prev_translation.data(), this->cur_translation.data(), 24);
+            memcpy(this->prev_rotation.data(), this->cur_rotation.data(), 24);
             if (this->param.output_trajectory) {
                 this->file << this->cur_rotation[0] << ", " << this->cur_rotation[1] << ", " << this->cur_rotation[2]
                            << ", " << this->cur_translation[0] << ", " << this->cur_translation[1] << ", "
@@ -446,12 +447,29 @@ bool LaserOdom::match() {
             }
         }
     }
-    if(this->param.output_correspondences) {
+    if (this->param.output_correspondences) {
         edge_cor.close();
         flat_cor.close();
     }
 
     // problem.SetParameterBlockConstant(this->cur_translation.data());
+    double num_residuals = (double) problem.NumResidualBlocks();
+    if (this->param.imposePrior) {
+        ceres::Matrix rotation_stiffness(3, 3);
+        ceres::Matrix translation_stiffness(3, 3);
+        rotation_stiffness(0, 0) = this->param.rotation_stiffness * this->param.RP_multiplier * num_residuals;
+        rotation_stiffness(1, 1) = this->param.rotation_stiffness * this->param.RP_multiplier * num_residuals;
+        rotation_stiffness(2, 2) = this->param.rotation_stiffness * num_residuals;
+        translation_stiffness(0, 0) = this->param.translation_stiffness * num_residuals;
+        translation_stiffness(1, 1) = this->param.translation_stiffness * this->param.T_y_multiplier * num_residuals;
+        translation_stiffness(2, 2) = this->param.translation_stiffness * this->param.T_z_multiplier * num_residuals;
+        ceres::VectorRef trans_ref(this->prev_translation.data(), 3, 1);
+        ceres::VectorRef rot_ref(this->prev_rotation.data(), 3, 1);
+        ceres::NormalPrior *t_diff_cost_function = new ceres::NormalPrior(translation_stiffness, trans_ref);
+        ceres::NormalPrior *r_diff_cost_function = new ceres::NormalPrior(rotation_stiffness, rot_ref);
+        problem.AddResidualBlock(t_diff_cost_function, NULL, this->cur_translation.data());
+        problem.AddResidualBlock(r_diff_cost_function, NULL, this->cur_rotation.data());
+    }
 
     ceres::Solver::Options options;
     std::vector<int> iterations = {0, 1, 2, 3, 4, 5, 6, 7, 8};
@@ -576,7 +594,6 @@ void LaserOdom::prefilter() {
                 auto diff = std::sqrt(this->l2sqrd(unit1, unit2));
                 if (diff < this->param.occlusion_tol) {
                     if (d1 > d2) {
-                        // todo(ben) See if this <= is actually correct
                         for (unlong k = 0; k <= this->param.knn; k++) {
                             this->cur_curve.at(i).at(j - k).first = false;
                         }
@@ -588,7 +605,7 @@ void LaserOdom::prefilter() {
                 }
             }
             // This section excludes any points whose nearby surface is
-            // near to parallel to the laser
+            // near to parallel to the laser beam
             auto dis = this->l2sqrd(this->cur_scan.at(i).at(j));
             if ((delforward > (this->param.parallel_tol) * dis) && (delback > (this->param.parallel_tol * dis))) {
                 this->cur_curve.at(i).at(j).first = false;

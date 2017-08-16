@@ -31,6 +31,11 @@ struct LaserOdomParams {
     float diff_tol = 1e-6;       // norm of transform vector must change by more than this to continue
     float huber_delta = 0.4;
     float max_correspondence_dist = 1;  // correspondences greater than this are discarded
+    double rotation_stiffness = 1e-4;
+    double translation_stiffness = 1e-3;
+    double T_z_multiplier = 1;
+    double T_y_multiplier = 1;
+    double RP_multiplier = 1;
 
     // Sensor parameters
     float scan_period = 0.1;     // Seconds
@@ -46,6 +51,9 @@ struct LaserOdomParams {
     int n_edge = 40;       // How many edge features to pick out per ring
     int n_flat = 100;      // How many plane features to pick out per ring
     unlong knn = 5;        // 1/2 nearest neighbours for computing curvature
+
+    // Setting flags
+    bool imposePrior = false;  // Whether to add a prior constraint on transform from the previous scan match
     bool visualize = false;   //Whether to run a visualization for debugging
     bool output_trajectory = false; //Whether to output solutions for debugging/plotting
     bool output_correspondences = false; //Whether to output correpondences for debugging/plotting
@@ -62,8 +70,8 @@ class LaserOdom {
     std::vector<std::vector<PointXYZIT>> edges, flats;
     std::vector<FeatureKDTree<double>> prv_edges, prv_flats;
     // The transform is T_start_end
-    std::array<double, 3> cur_translation;
-    std::array<double, 3> cur_rotation;
+    std::array<double, 3> cur_translation, prev_translation;
+    std::array<double, 3> cur_rotation, prev_rotation;
     bool new_features = false;
 
     void rollover(TimeType stamp);

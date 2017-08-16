@@ -228,14 +228,20 @@ TEST(OdomTest, StraightLineGarage) {
 
     // odom setup
     LaserOdomParams params;
-    params.n_flat = 0;
+    params.n_flat = 50;
     params.n_edge = 40;
     params.max_correspondence_dist = 0.4;
-    params.huber_delta = 0.3;
-    params.opt_iters = 1;
+    params.huber_delta = 0.2;
+    params.opt_iters = 20;
 //    params.visualize = true;
     params.output_trajectory = true;
-    params.output_correspondences = true;
+//    params.output_correspondences = true;
+    params.rotation_stiffness = 1e-5;
+    params.translation_stiffness = 5e-3;
+    params.T_z_multiplier = 4;
+    params.T_y_multiplier = 2;
+    params.RP_multiplier = 20;
+    params.imposePrior = true;
     LaserOdom odom(params);
     std::vector<PointXYZIR> vec;
     uint16_t prev_enc = 0;
