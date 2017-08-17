@@ -39,8 +39,18 @@ class Tracker {
      * @param descriptor descriptor object (BRISK, ORB, etc...)
      * @param matcher matcher object (BruteForceMatcher, FLANN)
      */
-    Tracker(TDetector detector, TDescriptor descriptor, TMatcher matcher)
-        : detector(detector), descriptor(descriptor), matcher(matcher) {}
+    Tracker(TDetector detector,
+            TDescriptor descriptor,
+            TMatcher matcher,
+            int window_size = 0)
+        : detector(detector),
+          descriptor(descriptor),
+          matcher(matcher),
+          window_size(window_size) {
+        if (this->window_size < 0) {
+            throw std::invalid_argument("window_size cannot be negative!");
+        }
+    }
 
     ~Tracker() = default;
 
@@ -50,7 +60,7 @@ class Tracker {
      * @return tracks corresponding to all detected landmarks in the image, from
      * the start of time to the given image.
      */
-    std::vector<FeatureTrack> getTracks(const size_t &img_num) const;
+    std::vector<FeatureTrack> getTracks(const int img_num) const;
 
     /** Track features within an image (presumably the next in a sequence).
      *
@@ -90,6 +100,19 @@ class Tracker {
     size_t lmc_size = 0;
 
  private:
+    /** For online, real-time tracker operation. Maintains memory by clearing
+     *  out values from the measurement container that are outside of this time
+     *  window.
+     *
+     *  If set to zero (default), all measurements are kept for offline use.
+     */
+    int window_size;
+
+    /** If in online mode, this represents the highest image number that can be
+     *  requested to extract tracks from.
+     */
+    int cleared_img_threshold = 0;
+
     // Keypoints and descriptors from the previous timestep
     std::vector<cv::KeyPoint> prev_kp;
     cv::Mat prev_desc;
@@ -135,6 +158,13 @@ class Tracker {
         auto img_count = this->img_times.size();
         this->img_times[img_count] = current_time;
     }
+
+    /** Cleans out the LandmarkMeasurementContainer for images outside the
+     *  requested window_size.
+     *
+     *  @param img the image to remove landmark information for.
+     */
+    void purgeContainer(const int img);
 
     /** Registers the latest matched keypoints with IDs. Assigns a new ID if one
      * has not already been provided.

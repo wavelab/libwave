@@ -13,13 +13,26 @@ void Tracker<TDetector, TDescriptor, TMatcher>::detectAndCompute(
 }
 
 template <typename TDetector, typename TDescriptor, typename TMatcher>
+void Tracker<TDetector, TDescriptor, TMatcher>::purgeContainer(const int img) {
+    // Get the time for this image.
+    auto time = this->img_times.at(img);
+
+    // Get all IDs at this time
+    auto landmarks = this->landmarks.getLandmarkIDsInWindow(time, time);
+
+    // Delete all landmarks in the container at this time.
+    for (const auto &l : landmarks) {
+        this->landmarks.erase(time, this->sensor_id, l);
+    }
+}
+
+template <typename TDetector, typename TDescriptor, typename TMatcher>
 std::map<int, size_t>
 Tracker<TDetector, TDescriptor, TMatcher>::registerKeypoints(
   const std::vector<cv::KeyPoint> &curr_kp,
   const std::vector<cv::DMatch> &matches) {
     // Maps current keypoint indices to IDs
     std::map<int, size_t> curr_ids;
-    std::vector<size_t> id_list;
 
     for (const auto &m : matches) {
         // Check to see if ID has already been assigned to keypoint
@@ -27,7 +40,6 @@ Tracker<TDetector, TDescriptor, TMatcher>::registerKeypoints(
             // If so, assign that ID to current map.
             auto id = this->prev_ids.at(m.queryIdx);
             curr_ids[m.trainIdx] = id;
-            id_list.emplace_back(id);
 
             // Extract value of keypoint.
             Vec2 landmark = convertKeypoint(curr_kp.at(m.trainIdx));
@@ -45,7 +57,6 @@ Tracker<TDetector, TDescriptor, TMatcher>::registerKeypoints(
             auto id = this->generateFeatureID();
             this->prev_ids[m.queryIdx] = id;
             curr_ids[m.trainIdx] = this->prev_ids.at(m.queryIdx);
-            id_list.emplace_back(id);
 
             // Since keypoint was not a match before, need to add previous and
             // current points to measurement container
@@ -75,6 +86,19 @@ Tracker<TDetector, TDescriptor, TMatcher>::registerKeypoints(
         }
     }
 
+    // If in online mode
+    if (this->window_size > 0) {
+        auto img_to_clear = (int) this->img_times.size() - this->window_size;
+
+        if (img_to_clear > 0) {
+            this->cleared_img_threshold = img_to_clear;
+
+            // Need to remove all info at this particular image. Due to zero
+            // indexing, subtract one for the requested image.
+            this->purgeContainer(img_to_clear - 1);
+        }
+    }
+
     this->lmc_size = this->landmarks.size();
 
     return curr_ids;
@@ -83,14 +107,21 @@ Tracker<TDetector, TDescriptor, TMatcher>::registerKeypoints(
 // Public Functions
 template <typename TDetector, typename TDescriptor, typename TMatcher>
 std::vector<FeatureTrack> Tracker<TDetector, TDescriptor, TMatcher>::getTracks(
-  const size_t &img_num) const {
+  const int img_num) const {
     std::vector<FeatureTrack> feature_tracks;
 
     // Determine how many images have been added
-    auto img_count = this->img_times.size() - 1;
+    int img_count = (int) this->img_times.size() - 1;
 
-    if (img_num > img_count) {
+    if (img_num < 0) {
+        throw std::out_of_range("Image requested must be a positive number!");
+    } else if (img_num > (int) img_count) {
         throw std::out_of_range("Image requested is in the future!");
+    } else if (this->window_size > 0 && img_num < this->cleared_img_threshold) {
+        // for non-zero window_size, the measurement container is periodically
+        // cleaned out. Therefore can only access images still with info.
+        throw std::out_of_range(
+          "Image requested is outside of maintained window!");
     } else if (img_num > 0) {
         // Find the time for this image
         std::chrono::steady_clock::time_point img_time =
