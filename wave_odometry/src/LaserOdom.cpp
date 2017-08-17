@@ -1,5 +1,6 @@
 #include <type_traits>
 #include <algorithm>
+#include <memory>
 #include <set>
 #include <ceres/ceres.h>
 #include <ceres/normal_prior.h>
@@ -104,6 +105,11 @@ LaserOdom::~LaserOdom() {
         delete this->edge_idx.at(i);
         delete this->flat_idx.at(i);
     }
+    if (this->output_thread) {
+        this->continue_output = false;
+        this->output_condition.notify_one();
+        this->output_thread->join();
+    }
     this->cur_scan.clear();
     this->cur_curve.clear();
     this->filter.clear();
@@ -113,10 +119,59 @@ LaserOdom::~LaserOdom() {
     this->flats.clear();
 }
 
+void LaserOdom::registerOutputFunction(std::function<void(const TimeType &,
+                                                          const std::array<double, 3> &,
+                                                          const std::array<double, 3> &,
+                                                          const pcl::PointCloud<pcl::PointXYZI> &)> output_function) {
+    this->f_output = std::bind(output_function,
+                               this->undistorted_stamp,
+                               this->undistort_rotation,
+                               this->undistort_translation,
+                               this->undistorted_cld);
+    this->output_thread = std::unique_ptr<std::thread>(new std::thread(&LaserOdom::spinOutput, this));
+}
+
+void LaserOdom::spinOutput() {
+    std::unique_lock<std::mutex> lk(this->output_mutex);
+    while (this->continue_output) {
+        while(!this->fresh_output) {  //wait can have spurious wakeups
+            this->output_condition.wait(lk);
+            if (!this->continue_output) {
+                break;
+            }
+        }
+        this->fresh_output = false;
+        this->f_output();
+    }
+}
+
+void LaserOdom::undistort() {
+    this->undistorted_cld.clear();
+    for (uint16_t r_idx = 0; r_idx < this->param.n_ring; r_idx++) {
+        for (PCLPointXYZIT pt : this->cur_scan.at(r_idx)) {
+            double point[3] = {pt.x, pt.y, pt.z};
+            double u_pt[3];
+            double &scale = this->scale_lookup.at(pt.tick);
+            double angle_axis[3] = {scale * this->undistort_rotation[0],
+                                    scale * this->undistort_rotation[1],
+                                    scale * this->undistort_rotation[2]};
+            ceres::AngleAxisRotatePoint(angle_axis, point, u_pt);
+            u_pt[0] += scale * this->undistort_translation[0];
+            u_pt[1] += scale * this->undistort_translation[1];
+            u_pt[2] += scale * this->undistort_translation[2];
+            pcl::PointXYZI op_pt;
+            op_pt.x = (float) u_pt[0];
+            op_pt.y = (float) u_pt[1];
+            op_pt.z = (float) u_pt[2];
+            op_pt.intensity = pt.intensity;
+            this->undistorted_cld.push_back(op_pt);
+        }
+    }
+}
+
 void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, TimeType stamp) {
     if ((tick - this->prv_tick) < -200) {  // tolerate minor nonlinearity error
         this->generateFeatures();          // generate features on the current scan
-                                           // (empty is possible)
         if (this->initialized) {           // there is a set of previous features from
                                            // last scan
             double last_translation[3], last_rotation[3];
@@ -128,13 +183,6 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
                 if (!this->match()) {
                     break;
                 }
-                LOG_INFO("\n%f \n%f \n%f \n%f \n%f \n%f",
-                         this->cur_rotation.at(0),
-                         this->cur_rotation.at(1),
-                         this->cur_rotation.at(2),
-                         this->cur_translation.at(0),
-                         this->cur_translation.at(1),
-                         this->cur_translation.at(2));
                 if (i > 0) {
                     double diff = getDiff(last_translation, this->cur_translation.data(), 3) +
                                   getDiff(last_rotation, this->cur_rotation.data(), 3);
@@ -153,10 +201,19 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
             if (this->param.visualize) {
                 this->updateViz();
             }
+            if (this->output_thread) {
+                {
+                    std::unique_lock<std::mutex> lk(this->output_mutex);
+                    this->undistorted_stamp = this->prv_time;
+                    memcpy(this->undistort_translation.data(), this->cur_translation.data(), 24);
+                    memcpy(this->undistort_rotation.data(), this->cur_rotation.data(), 24);
+                    this->undistort();
+                    this->fresh_output = true;
+                }
+                this->output_condition.notify_one();
+            }
         }
-
-        this->rollover(stamp);  // set previous features to current features and
-                                // zero-out current scan
+        this->rollover(stamp);
     }
 
     for (PointXYZIR pt : pts) {
@@ -488,11 +545,12 @@ bool LaserOdom::match() {
         LOG_ERROR("%d residuals, threshold is %f", problem.NumResidualBlocks(), max_residuals * 0.2);
         this->cur_translation = {0, 0, 0};
         this->cur_rotation = {0, 0, 0};
+        this->prev_translation = {0, 0, 0};
+        this->prev_rotation = {0, 0, 0};
         this->initialized = false;
         return false;
     } else {
         ceres::Solve(options, &problem, &summary);
-        LOG_INFO("%s", summary.FullReport().c_str());
     }
     return true;
 }

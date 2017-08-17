@@ -14,7 +14,7 @@ namespace wave {
 
 const std::string TEST_SCAN = "data/testscan.pcd";
 const std::string TEST_SEQUENCE_DIR = "data/garage/";
-const int sequence_length = 50;
+const int sequence_length = 80;
 
 // Fixture to load same pointcloud all the time
 class OdomTestFile : public testing::Test {
@@ -27,8 +27,7 @@ class OdomTestFile : public testing::Test {
         pcl::io::loadPCDFile(TEST_SCAN, (this->ref));
         // filter out points on the car
         for (auto iter = this->ref.begin(); iter < this->ref.end(); iter++) {
-            if ((iter->x > -3) && (iter->x < 2.5) && (iter->y > -1) &&
-                (iter->y < 1)) {
+            if ((iter->x > -3) && (iter->x < 2.5) && (iter->y > -1) && (iter->y < 1)) {
                 this->ref.erase(iter);
             }
         }
@@ -51,16 +50,13 @@ TEST(laserodom, VizSequence) {
     std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr> cldptr;
     pcl::PointCloud<pcl::PointXYZI> temp;
     for (int i = 0; i < sequence_length; i++) {
-        pcl::io::loadPCDFile(TEST_SEQUENCE_DIR + std::to_string(i) + ".pcd",
-                             temp);
+        pcl::io::loadPCDFile(TEST_SEQUENCE_DIR + std::to_string(i) + ".pcd", temp);
         clds.push_back(temp);
-        pcl::PointCloud<pcl::PointXYZI>::Ptr ptr(
-          new pcl::PointCloud<pcl::PointXYZI>);
+        pcl::PointCloud<pcl::PointXYZI>::Ptr ptr(new pcl::PointCloud<pcl::PointXYZI>);
 
         for (size_t j = 0; j < clds.at(i).size(); j++) {
             float packed = clds.at(i).at(j).intensity;
-            uint16_t encoder =
-              *static_cast<uint16_t *>(static_cast<void *>(&packed));
+            uint16_t encoder = *static_cast<uint16_t *>(static_cast<void *>(&packed));
             clds.at(i).at(j).intensity = static_cast<float>(encoder);
         }
         *ptr = clds.at(i);
@@ -82,10 +78,8 @@ TEST(Packing_test, intsintofloat) {
     uint8_t *dest = static_cast<uint8_t *>(static_cast<void *>(&packed));
     memcpy(dest, &angle, 2);
     memcpy(dest + 2, &intensity, 1);
-    uint16_t recovered_angle =
-      *static_cast<uint16_t *>(static_cast<void *>(dest));
-    uint8_t recovered_in =
-      *static_cast<uint8_t *>(static_cast<void *>(dest + 2));
+    uint16_t recovered_angle = *static_cast<uint16_t *>(static_cast<void *>(dest));
+    uint8_t recovered_in = *static_cast<uint8_t *>(static_cast<void *>(dest + 2));
     ASSERT_EQ(angle, recovered_angle);
     ASSERT_EQ(intensity, recovered_in);
 }
@@ -96,12 +90,8 @@ TEST(Residual_test, pointToLineAnalytic) {
     const double **trans, **rot;
     trans = new const double *;
     rot = new const double *;
-    rot[0] = new const double[3]{base_rot[0],
-                                   base_rot[1],
-                                   base_rot[2]};
-    trans[0] = new const double[3]{base_trans[0],
-                                   base_trans[1],
-                                   base_trans[2]};
+    rot[0] = new const double[3]{base_rot[0], base_rot[1], base_rot[2]};
+    trans[0] = new const double[3]{base_trans[0], base_trans[1], base_trans[2]};
 
     const double **composed;
     composed = new const double *[2];
@@ -114,17 +104,13 @@ TEST(Residual_test, pointToLineAnalytic) {
     for (int i = 0; i < 3; i++) {
         trans_perturbed[i] = new const double *;
         base_trans[i] += eps;
-        trans_perturbed[i][0] = new const double[3]{base_trans[0],
-                                                    base_trans[1],
-                                                    base_trans[2]};
+        trans_perturbed[i][0] = new const double[3]{base_trans[0], base_trans[1], base_trans[2]};
         base_trans[i] -= eps;
     }
     for (int i = 0; i < 3; i++) {
         rot_perturbed[i] = new const double *;
         base_rot[i] += eps;
-        rot_perturbed[i][0] = new const double[3]{base_rot[0],
-                                                  base_rot[1],
-                                                  base_rot[2]};
+        rot_perturbed[i][0] = new const double[3]{base_rot[0], base_rot[1], base_rot[2]};
         base_rot[i] -= eps;
     }
 
@@ -159,9 +145,9 @@ TEST(Residual_test, pointToLineAnalytic) {
         thing.Evaluate(compd, residual1, jacobian);
         delete compd;
 
-        for (int r = 0; r< 3; r++) {
+        for (int r = 0; r < 3; r++) {
             jacobian1[r][i] = (residual1[r] - residual[r]) / eps;
-            EXPECT_NEAR(jacobian[0][r*3 + i], jacobian1[r][i], 1e-4);
+            EXPECT_NEAR(jacobian[0][r * 3 + i], jacobian1[r][i], 1e-4);
         }
     }
 
@@ -174,9 +160,9 @@ TEST(Residual_test, pointToLineAnalytic) {
         thing.Evaluate(compd, residual1, jacobian);
         delete compd;
 
-        for (int r = 0; r< 3; r++) {
+        for (int r = 0; r < 3; r++) {
             jacobian1[r][i] = (residual1[r] - residual[r]) / eps;
-            EXPECT_NEAR(jacobian[1][r*3 + i], jacobian1[r][i], 1e-4);
+            EXPECT_NEAR(jacobian[1][r * 3 + i], jacobian1[r][i], 1e-4);
         }
     }
 }
@@ -217,8 +203,7 @@ TEST(OdomTest, StraightLineGarage) {
     pcl::PCLPointCloud2 temp;
     pcl::PointCloud<PointXYZIR> temp2;
     for (int i = 0; i < sequence_length; i++) {
-        pcl::io::loadPCDFile(TEST_SEQUENCE_DIR + std::to_string(i) + ".pcd",
-                             temp);
+        pcl::io::loadPCDFile(TEST_SEQUENCE_DIR + std::to_string(i) + ".pcd", temp);
         pcl::fromPCLPointCloud2(temp, temp2);
         clds.push_back(temp2);
         pcl::PointCloud<PointXYZIR>::Ptr ptr(new pcl::PointCloud<PointXYZIR>);
@@ -232,10 +217,10 @@ TEST(OdomTest, StraightLineGarage) {
     params.n_edge = 40;
     params.max_correspondence_dist = 0.4;
     params.huber_delta = 0.2;
-    params.opt_iters = 20;
-//    params.visualize = true;
+    params.opt_iters = 5;
+    //    params.visualize = true;
     params.output_trajectory = true;
-//    params.output_correspondences = true;
+    params.output_correspondences = true;
     params.rotation_stiffness = 1e-5;
     params.translation_stiffness = 5e-3;
     params.T_z_multiplier = 4;
@@ -247,19 +232,84 @@ TEST(OdomTest, StraightLineGarage) {
     uint16_t prev_enc = 0;
 
     // Loop through pointclouds and send points grouped by encoder angle odom
-    bool initialized = false;
-    double prev_transform[6];
-    double cur_transform[6];
     for (int i = 0; i < sequence_length; i++) {
         for (PointXYZIR pt : clds.at(i)) {
             PointXYZIR recovered;
             // unpackage intensity and encoder
-            uint8_t *src =
-              static_cast<uint8_t *>(static_cast<void *>(&(pt.intensity)));
-            uint16_t encoder =
-              *(static_cast<uint16_t *>(static_cast<void *>(src)));
-            uint8_t intensity =
-              *(static_cast<uint8_t *>(static_cast<void *>(src + 2)));
+            uint8_t *src = static_cast<uint8_t *>(static_cast<void *>(&(pt.intensity)));
+            uint16_t encoder = *(static_cast<uint16_t *>(static_cast<void *>(src)));
+            uint8_t intensity = *(static_cast<uint8_t *>(static_cast<void *>(src + 2)));
+
+            // copy remaining fields
+            recovered.x = pt.x;
+            recovered.y = pt.y;
+            recovered.z = pt.z;
+            recovered.ring = pt.ring;
+            recovered.intensity = intensity;
+            if (encoder != prev_enc) {
+                if (vec.size() > 0) {
+                    std::chrono::microseconds dur(clds.at(i).header.stamp);
+                    TimeType stamp(dur);
+                    odom.addPoints(vec, prev_enc, stamp);
+                    vec.clear();
+                }
+                prev_enc = encoder;
+            }
+            vec.emplace_back(recovered);
+        }
+    }
+}
+
+void dummyoutput(const TimeType &stmap,
+                 const std::array<double, 3> &d,
+                 const std::array<double, 3> &s,
+                 const pcl::PointCloud<pcl::PointXYZI> &cld) {
+    LOG_INFO("Got output!");
+}
+
+// Output function test
+TEST(OdomTest, OutputTest) {
+    // Load entire sequence into memory
+    std::vector<pcl::PointCloud<PointXYZIR>> clds;
+    std::vector<pcl::PointCloud<PointXYZIR>::Ptr> cldptr;
+    pcl::PCLPointCloud2 temp;
+    pcl::PointCloud<PointXYZIR> temp2;
+    for (int i = 0; i < sequence_length; i++) {
+        pcl::io::loadPCDFile(TEST_SEQUENCE_DIR + std::to_string(i) + ".pcd", temp);
+        pcl::fromPCLPointCloud2(temp, temp2);
+        clds.push_back(temp2);
+        pcl::PointCloud<PointXYZIR>::Ptr ptr(new pcl::PointCloud<PointXYZIR>);
+        *ptr = clds.at(i);
+        cldptr.push_back(ptr);
+    }
+
+    // odom setup
+    LaserOdomParams params;
+    params.n_flat = 50;
+    params.n_edge = 40;
+    params.max_correspondence_dist = 0.4;
+    params.huber_delta = 0.2;
+    params.opt_iters = 5;
+    params.rotation_stiffness = 1e-5;
+    params.translation_stiffness = 5e-3;
+    params.T_z_multiplier = 4;
+    params.T_y_multiplier = 2;
+    params.RP_multiplier = 20;
+    params.imposePrior = true;
+    LaserOdom odom(params);
+    std::vector<PointXYZIR> vec;
+    uint16_t prev_enc = 0;
+
+    odom.registerOutputFunction(dummyoutput);
+
+    // Loop through pointclouds and send points grouped by encoder angle odom
+    for (int i = 0; i < sequence_length; i++) {
+        for (PointXYZIR pt : clds.at(i)) {
+            PointXYZIR recovered;
+            // unpackage intensity and encoder
+            uint8_t *src = static_cast<uint8_t *>(static_cast<void *>(&(pt.intensity)));
+            uint16_t encoder = *(static_cast<uint16_t *>(static_cast<void *>(src)));
+            uint8_t intensity = *(static_cast<uint8_t *>(static_cast<void *>(src + 2)));
 
             // copy remaining fields
             recovered.x = pt.x;
@@ -289,14 +339,12 @@ TEST_F(OdomTestFile, VisualizeFeatures) {
     PointCloudDisplay display("odom");
     display.startSpin();
     LaserOdomParams params;
-    params.n_flat = 20;
-    params.n_edge = 20;
+    params.n_flat = 30;
+    params.n_edge = 40;
     LaserOdom odom(params);
     std::vector<PointXYZIR> vec;
-    pcl::PointCloud<pcl::PointXYZI>::Ptr vizref(
-      new pcl::PointCloud<pcl::PointXYZI>),
-      vizedge(new pcl::PointCloud<pcl::PointXYZI>),
-      vizflats(new pcl::PointCloud<pcl::PointXYZI>);
+    pcl::PointCloud<pcl::PointXYZI>::Ptr vizref(new pcl::PointCloud<pcl::PointXYZI>),
+      vizedge(new pcl::PointCloud<pcl::PointXYZI>), vizflats(new pcl::PointCloud<pcl::PointXYZI>);
     int counter = 1;
     auto timepoint = std::chrono::steady_clock::now();
     for (auto iter = this->ref.begin(); iter < this->ref.end(); iter++) {
@@ -308,7 +356,7 @@ TEST_F(OdomTestFile, VisualizeFeatures) {
         vizref->push_back(pt);
         vec.push_back(*iter);
         if (counter % 12 == 0) {
-            odom.addPoints(vec, 1, timepoint);
+            odom.addPoints(vec, 2000, timepoint);
             vec.clear();
         }
         counter++;
@@ -316,14 +364,11 @@ TEST_F(OdomTestFile, VisualizeFeatures) {
     // Now add points with a tick of 0 to trigger feature extraction
     auto start = std::chrono::steady_clock::now();
     odom.addPoints(vec, 0, timepoint);
-    auto extract_time = std::chrono::duration_cast<std::chrono::milliseconds>(
-      std::chrono::steady_clock::now() - start);
+    auto extract_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start);
     LOG_INFO("Feature extraction took %lu ms", extract_time.count());
 
     for (uint16_t i = 0; i < 32; i++) {
-        for (auto iter = odom.edges.at(i).begin();
-             iter < odom.edges.at(i).end();
-             iter++) {
+        for (auto iter = odom.edges.at(i).begin(); iter < odom.edges.at(i).end(); iter++) {
             pcl::PointXYZI pt;
             pt.x = iter->pt[0];
             pt.y = iter->pt[1];
@@ -331,9 +376,7 @@ TEST_F(OdomTestFile, VisualizeFeatures) {
             pt.intensity = 1;
             vizedge->push_back(pt);
         }
-        for (auto iter = odom.flats.at(i).begin();
-             iter < odom.flats.at(i).end();
-             iter++) {
+        for (auto iter = odom.flats.at(i).begin(); iter < odom.flats.at(i).end(); iter++) {
             pcl::PointXYZI pt;
             pt.x = iter->pt[0];
             pt.y = iter->pt[1];
@@ -383,8 +426,7 @@ TEST(laser_odom, edge_match_test_linear) {
     std::vector<std::vector<PointXYZIT>> sim_edges_moved(32);
     for (int i = 0; i < 4; i++) {
         for (int j = 0; j < 20; j++) {
-            PointXYZIT pt(radius * std::cos(45 * (M_PI / 180) * (2 * i + 1)) -
-                            ((float) (2 * i + 1)) / 8.0,
+            PointXYZIT pt(radius * std::cos(45 * (M_PI / 180) * (2 * i + 1)) - ((float) (2 * i + 1)) / 8.0,
                           radius * std::sin(45 * (M_PI / 180) * (2 * i + 1)),
                           j,
                           i,
@@ -530,15 +572,14 @@ TEST(laser_odom, edge_match_distance) {
             sim_edges_moved.at(d).at(j).clear();
             for (int i = 0; i < 4; i++) {
                 float x_pos = ((float) (2 * i + 1)) / 8.0 + (float) d;
-                float pt_x =
-                  radius * std::cos(45 * (M_PI / 180) * (2 * i + 1)) - x_pos;
+                float pt_x = radius * std::cos(45 * (M_PI / 180) * (2 * i + 1)) - x_pos;
                 float pt_y = radius * std::sin(45 * (M_PI / 180) * (2 * i + 1));
 
                 double radians = std::atan2(pt_y, pt_x);
                 if (radians < 0) {
-                    radians = 2.0*M_PI + radians;
+                    radians = 2.0 * M_PI + radians;
                 }
-                uint16_t tick = radians * (18000.0/M_PI);
+                uint16_t tick = radians * (18000.0 / M_PI);
 
                 PointXYZIT pt(pt_x, pt_y, j, i, tick);
                 sim_edges_moved.at(d).at(j).push_back(pt);
@@ -589,15 +630,14 @@ TEST(laser_odom, no_movement) {
         for (int j = 0; j < 20; j++) {
             sim_edges_not_moved.at(j).clear();
             for (int i = 0; i < 4; i++) {
-                float pt_x =
-                        radius * std::cos(45 * (M_PI / 180) * (2 * i + 1));
+                float pt_x = radius * std::cos(45 * (M_PI / 180) * (2 * i + 1));
                 float pt_y = radius * std::sin(45 * (M_PI / 180) * (2 * i + 1));
 
                 double radians = std::atan2(pt_y, pt_x);
                 if (radians < 0) {
-                    radians = 2.0*M_PI + radians;
+                    radians = 2.0 * M_PI + radians;
                 }
-                uint16_t tick = radians * (18000.0/M_PI);
+                uint16_t tick = radians * (18000.0 / M_PI);
 
                 PointXYZIT pt(pt_x, pt_y, j, i, tick);
                 sim_edges_not_moved.at(j).push_back(pt);
@@ -626,12 +666,12 @@ TEST(Transforms, forward_backwards) {
 
     // pt will be the point to change frames of
     // pt_start = R_scaled * pt + T
-    double angle_axis[3] = {scale*base_rot[0], scale*base_rot[1], scale*base_rot[2]};
+    double angle_axis[3] = {scale * base_rot[0], scale * base_rot[1], scale * base_rot[2]};
     double pt_start[3];
     ceres::AngleAxisRotatePoint(angle_axis, pt, pt_start);
-    pt_start[0] += scale*base_trans[0];
-    pt_start[1] += scale*base_trans[1];
-    pt_start[2] += scale*base_trans[2];
+    pt_start[0] += scale * base_trans[0];
+    pt_start[1] += scale * base_trans[1];
+    pt_start[2] += scale * base_trans[2];
 
     // pt_end = R_inv*pt_start - R_inv*T
     double angle_axis_inverse[3] = {-base_rot[0], -base_rot[1], -base_rot[2]};
@@ -646,13 +686,14 @@ TEST(Transforms, forward_backwards) {
     // pt_end = R_inv*R_scaled*pt + R_inv*T_scaled - R_inv * T
     // = R_(1-scaled)_inv*pt - (1 - scale)R_inv*T
 
-    double rv_scale = 1-scale;
-    double angle_axis_scaled_inverse[3] = {-(rv_scale*base_rot[0]), -(rv_scale*base_rot[1]), -(rv_scale*base_rot[2])};
+    double rv_scale = 1 - scale;
+    double angle_axis_scaled_inverse[3] = {
+      -(rv_scale * base_rot[0]), -(rv_scale * base_rot[1]), -(rv_scale * base_rot[2])};
     double pt_end_simple[3];
     ceres::AngleAxisRotatePoint(angle_axis_scaled_inverse, pt, pt_end_simple);
-    pt_end_simple[0] -= rv_scale*offset[0];
-    pt_end_simple[1] -= rv_scale*offset[1];
-    pt_end_simple[2] -= rv_scale*offset[2];
+    pt_end_simple[0] -= rv_scale * offset[0];
+    pt_end_simple[1] -= rv_scale * offset[1];
+    pt_end_simple[2] -= rv_scale * offset[2];
 
     ASSERT_NEAR(pt_end[0], pt_end_simple[0], 1e-6);
     ASSERT_NEAR(pt_end[1], pt_end_simple[1], 1e-6);

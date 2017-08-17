@@ -16,58 +16,6 @@
 
 namespace wave {
 
-//const double unit_x[3] = {1, 0, 0};
-//const double unit_y[3] = {0, 1, 0};
-// Point to Line cost has a null direction of size 1. This parameterization could be used to solve small problem
-// examples
-//class PointToLineParameterization : public ceres::LocalParameterization {
-// public:
-//    explicit PointToLineParameterization(const double *const pA, const double *const pB) {
-//        double line[3] = {pA[0] - pB[0], pA[1] - pB[1], pA[2] - pB[2]};
-//        double length = ceres::sqrt(line[0]*line[0] + line[1]*line[1] + line[2]*line[2]);
-//        line[0] /= length;
-//        line[1] /= length;
-//        line[2] /= length;
-//        // now have unit vector in direction of line, this is the null direction of the cost.
-//        // Now going to find rotation between unit z vector (0,0,1) and the direction of the line.
-//        double unit_z[3] = {0, 0, 1};
-//        double magnitude = std::acos(line[2]);
-//        double axis[3];
-//        ceres::CrossProduct(line, unit_z, axis);
-//        //scale axis to have length magnitude
-//        double axis_magnitude = ceres::sqrt(axis[0]*axis[0] + axis[1]*axis[1] +axis[2]*axis[2]);
-//        double scale = magnitude/axis_magnitude;
-//        axis[0] *= scale;
-//        axis[1] *= scale;
-//        axis[2] *= scale;
-//        ceres::AngleAxisRotatePoint(axis, unit_x, this->v1);
-//        ceres::AngleAxisRotatePoint(axis, unit_y, this->v2);
-//    }
-//    virtual ~PointToLineParameterization() {}
-//    virtual bool Plus(const double* x,
-//                    const double* delta,
-//                    double* x_plus_delta) const {
-//        x_plus_delta[0] = x[0] + delta[0]*this->v1[0] + delta[1]*this->v2[0];
-//        x_plus_delta[1] = x[1] + delta[0]*this->v1[1] + delta[1]*this->v2[1];
-//        x_plus_delta[2] = x[2] + delta[0]*this->v1[2] + delta[1]*this->v2[2];
-//        return true;
-//    }
-//    virtual bool ComputeJacobian(const double* x, double* jacobian) const {
-//        jacobian[0] = this->v1[0];
-//        jacobian[0] = this->v1[1];
-//        jacobian[0] = this->v1[2];
-//        jacobian[0] = this->v2[0];
-//        jacobian[0] = this->v2[1];
-//        jacobian[0] = this->v2[2];
-//        return true;
-//    }
-//    virtual int GlobalSize() const {return 3;}
-//    virtual int LocalSize() const {return 2;}
-// private:
-//    double v1[3];
-//    double v2[3];
-//};
-
 class AnalyticalPointToLine : public ceres::SizedCostFunction<3, 3, 3> {
  public:
     virtual ~AnalyticalPointToLine() {}
