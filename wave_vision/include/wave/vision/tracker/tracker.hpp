@@ -100,16 +100,16 @@ class Tracker {
     size_t lmc_size = 0;
 
  private:
-    /** For online, real-time tracker operation. Maintains memory by clearing
-     *  out values from the measurement container that are outside of this time
-     *  window.
+    /** For online, sliding window tracker operation. Maintains memory by
+     *  clearing out values from the measurement container that are outside of
+     *  this time window.
      *
      *  If set to zero (default), all measurements are kept for offline use.
      */
     int window_size;
 
-    /** If in online mode, this represents the highest image number that can be
-     *  requested to extract tracks from.
+    /** If in sliding window mode, this represents the highest image number that
+     *  can be requested to extract tracks from.
      */
     int cleared_img_threshold = 0;
 

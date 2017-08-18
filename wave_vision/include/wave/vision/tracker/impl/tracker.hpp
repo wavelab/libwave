@@ -86,7 +86,7 @@ Tracker<TDetector, TDescriptor, TMatcher>::registerKeypoints(
         }
     }
 
-    // If in online mode
+    // If in online mode - sliding window
     if (this->window_size > 0) {
         auto img_to_clear = (int) this->img_times.size() - this->window_size;
 
