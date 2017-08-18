@@ -11,6 +11,8 @@
  * intensity for gradient features on a plane (hopefully)
  * ring for easier id
  */
+namespace wave {
+
 struct PointXYZIR {
     PCL_ADD_POINT4D;
     float intensity;
@@ -19,10 +21,11 @@ struct PointXYZIR {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 } EIGEN_ALIGN16;
 
+};  //namespace wave
 
 // clang-format off
 
-POINT_CLOUD_REGISTER_POINT_STRUCT(PointXYZIR,
+POINT_CLOUD_REGISTER_POINT_STRUCT(wave::PointXYZIR,
                                      (float, x, x)
                                      (float, y, y)
                                      (float, z, z)

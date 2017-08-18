@@ -1,12 +1,3 @@
-#include <type_traits>
-#include <algorithm>
-#include <memory>
-#include <set>
-#include <ceres/ceres.h>
-#include <ceres/normal_prior.h>
-#include <ceres/rotation.h>
-#include <wave/matching/pointcloud_display.hpp>
-#include "wave/odometry/loss_functions.hpp"
 #include "wave/odometry/LaserOdom.hpp"
 
 namespace wave {
@@ -119,15 +110,15 @@ LaserOdom::~LaserOdom() {
     this->flats.clear();
 }
 
-void LaserOdom::registerOutputFunction(std::function<void(const TimeType &,
-                                                          const std::array<double, 3> &,
-                                                          const std::array<double, 3> &,
-                                                          const pcl::PointCloud<pcl::PointXYZI> &)> output_function) {
+void LaserOdom::registerOutputFunction(std::function<void(const TimeType * const,
+                                                          const std::array<double, 3> * const,
+                                                          const std::array<double, 3> * const,
+                                                          const pcl::PointCloud<pcl::PointXYZI> * const)> output_function) {
     this->f_output = std::bind(output_function,
-                               this->undistorted_stamp,
-                               this->undistort_rotation,
-                               this->undistort_translation,
-                               this->undistorted_cld);
+                               &(this->undistorted_stamp),
+                               &(this->undistort_rotation),
+                               &(this->undistort_translation),
+                               &(this->undistorted_cld));
     this->output_thread = std::unique_ptr<std::thread>(new std::thread(&LaserOdom::spinOutput, this));
 }
 
@@ -204,6 +195,10 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
             if (this->output_thread) {
                 {
                     std::unique_lock<std::mutex> lk(this->output_mutex);
+                    if (fresh_output) {
+                        // data from last time hasn't been consumed yet
+                        LOG_ERROR("Overwriting previous output");
+                    }
                     this->undistorted_stamp = this->prv_time;
                     memcpy(this->undistort_translation.data(), this->cur_translation.data(), 24);
                     memcpy(this->undistort_rotation.data(), this->cur_rotation.data(), 24);

@@ -260,11 +260,18 @@ TEST(OdomTest, StraightLineGarage) {
     }
 }
 
-void dummyoutput(const TimeType &stmap,
-                 const std::array<double, 3> &d,
-                 const std::array<double, 3> &s,
-                 const pcl::PointCloud<pcl::PointXYZI> &cld) {
+void dummyoutput(const TimeType * const stmap,
+                 const std::array<double, 3> * const rot,
+                 const std::array<double, 3> * const trans,
+                 const pcl::PointCloud<pcl::PointXYZI> * const cld) {
     LOG_INFO("Got output!");
+    LOG_INFO("%f", rot->at(0));
+    LOG_INFO("%f", rot->at(1));
+    LOG_INFO("%f", rot->at(2));
+    LOG_INFO("%f", trans->at(0));
+    LOG_INFO("%f", trans->at(1));
+    LOG_INFO("%f", trans->at(2));
+    LOG_INFO("Cloud size: %lu", cld->size());
 }
 
 // Output function test

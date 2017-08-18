@@ -14,6 +14,9 @@
 #include <condition_variable>
 #include <thread>
 #include <atomic>
+#include <type_traits>
+#include <memory>
+#include <set>
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 #include "wave/matching/pointcloud_display.hpp"
@@ -21,9 +24,14 @@
 #include "wave/odometry/PointXYZIR.hpp"
 #include "wave/odometry/PointXYZIT.hpp"
 #include "wave/odometry/laser_odom_residuals.hpp"
+#include "wave/odometry/loss_functions.hpp"
 #include "wave/containers/measurement_container.hpp"
 #include "wave/containers/measurement.hpp"
 #include "wave/utils/math.hpp"
+
+#include <ceres/ceres.h>
+#include <ceres/normal_prior.h>
+#include <ceres/rotation.h>
 
 namespace wave {
 
@@ -34,10 +42,10 @@ struct LaserOdomParams {
     // Optimizer parameters
     int opt_iters = 25;     // How many times to refind correspondences
     float diff_tol = 1e-6;  // norm of transform vector must change by more than this to continue
-    float huber_delta = 0.4;
-    float max_correspondence_dist = 1;  // correspondences greater than this are discarded
-    double rotation_stiffness = 1e-4;
-    double translation_stiffness = 1e-3;
+    float huber_delta = 0.2;
+    float max_correspondence_dist = 0.4;  // correspondences greater than this are discarded
+    double rotation_stiffness = 1e-5;
+    double translation_stiffness = 5e-3;
     double T_z_multiplier = 1;
     double T_y_multiplier = 1;
     double RP_multiplier = 1;
@@ -79,10 +87,10 @@ class LaserOdom {
 
     void rollover(TimeType stamp);
     bool match();
-    void registerOutputFunction(std::function<void(const TimeType &,
-                                                   const std::array<double, 3> &,
-                                                   const std::array<double, 3> &,
-                                                   const pcl::PointCloud<pcl::PointXYZI> &)> output_function);
+    void registerOutputFunction(std::function<void(const TimeType * const,
+                                                   const std::array<double, 3> * const,
+                                                   const std::array<double, 3> * const,
+                                                   const pcl::PointCloud<pcl::PointXYZI> * const)> output_function);
 
  private:
     // Visualizer elements, not allocated unless used
