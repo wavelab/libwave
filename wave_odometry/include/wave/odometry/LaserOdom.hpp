@@ -91,6 +91,15 @@ class LaserOdom {
                                                    const std::array<double, 3> * const,
                                                    const std::array<double, 3> * const,
                                                    const pcl::PointCloud<pcl::PointXYZI> * const)> output_function);
+    void registerOutputFunction(std::function<void()> output_function);
+
+    // Shared memory
+    pcl::PointCloud<pcl::PointXYZI> undistorted_cld;
+    TimeType undistorted_stamp;
+    std::array<double, 3> undistort_translation, undistort_rotation;
+
+    void updateParams(const LaserOdomParams);
+    LaserOdomParams getParams();
 
  private:
     // Visualizer elements, not allocated unless used
@@ -109,10 +118,7 @@ class LaserOdom {
     void spinOutput();
     std::function<void()> f_output;
     void undistort();
-    // Shared memory
-    pcl::PointCloud<pcl::PointXYZI> undistorted_cld;
-    TimeType undistorted_stamp;
-    std::array<double, 3> undistort_translation, undistort_rotation;
+
 
     LaserOdomParams param;
     bool initialized = false;

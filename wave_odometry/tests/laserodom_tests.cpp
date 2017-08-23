@@ -202,6 +202,7 @@ TEST(OdomTest, StraightLineGarage) {
     std::vector<pcl::PointCloud<PointXYZIR>::Ptr> cldptr;
     pcl::PCLPointCloud2 temp;
     pcl::PointCloud<PointXYZIR> temp2;
+    LOG_INFO("Starting to load clouds");
     for (int i = 0; i < sequence_length; i++) {
         pcl::io::loadPCDFile(TEST_SEQUENCE_DIR + std::to_string(i) + ".pcd", temp);
         pcl::fromPCLPointCloud2(temp, temp2);
@@ -211,6 +212,7 @@ TEST(OdomTest, StraightLineGarage) {
         cldptr.push_back(ptr);
     }
 
+    LOG_INFO("Finished loading clouds");
     // odom setup
     LaserOdomParams params;
     params.n_flat = 50;
@@ -220,7 +222,7 @@ TEST(OdomTest, StraightLineGarage) {
     params.opt_iters = 5;
     //    params.visualize = true;
     params.output_trajectory = true;
-    params.output_correspondences = true;
+    //params.output_correspondences = true;
     params.rotation_stiffness = 1e-5;
     params.translation_stiffness = 5e-3;
     params.T_z_multiplier = 4;
@@ -281,7 +283,7 @@ TEST(OdomTest, OutputTest) {
     std::vector<pcl::PointCloud<PointXYZIR>::Ptr> cldptr;
     pcl::PCLPointCloud2 temp;
     pcl::PointCloud<PointXYZIR> temp2;
-    for (int i = 0; i < sequence_length; i++) {
+    for (int i = 0; i < 10; i++) {
         pcl::io::loadPCDFile(TEST_SEQUENCE_DIR + std::to_string(i) + ".pcd", temp);
         pcl::fromPCLPointCloud2(temp, temp2);
         clds.push_back(temp2);
@@ -310,7 +312,7 @@ TEST(OdomTest, OutputTest) {
     odom.registerOutputFunction(dummyoutput);
 
     // Loop through pointclouds and send points grouped by encoder angle odom
-    for (int i = 0; i < sequence_length; i++) {
+    for (int i = 0; i < 10; i++) {
         for (PointXYZIR pt : clds.at(i)) {
             PointXYZIR recovered;
             // unpackage intensity and encoder

@@ -84,6 +84,14 @@ LaserOdom::LaserOdom(const LaserOdomParams params) : param(params) {
     }
 }
 
+void LaserOdom::updateParams(const LaserOdomParams new_params) {
+    this->param = new_params;
+}
+
+LaserOdomParams LaserOdom::getParams() {
+    return this->param;
+}
+
 LaserOdom::~LaserOdom() {
     if (this->param.visualize) {
         this->display->stopSpin();
@@ -122,6 +130,11 @@ void LaserOdom::registerOutputFunction(std::function<void(const TimeType * const
     this->output_thread = std::unique_ptr<std::thread>(new std::thread(&LaserOdom::spinOutput, this));
 }
 
+void LaserOdom::registerOutputFunction(std::function<void()> output_function) {
+    this->f_output = output_function;
+    this->output_thread = std::unique_ptr<std::thread>(new std::thread(&LaserOdom::spinOutput, this));
+}
+
 void LaserOdom::spinOutput() {
     std::unique_lock<std::mutex> lk(this->output_mutex);
     while (this->continue_output) {
@@ -131,8 +144,8 @@ void LaserOdom::spinOutput() {
                 break;
             }
         }
-        this->fresh_output = false;
         this->f_output();
+        this->fresh_output = false;
     }
 }
 
@@ -319,6 +332,9 @@ void LaserOdom::rollover(TimeType stamp) {
             this->initialized = true;
         }
     }
+
+    this->cur_translation = {0, 0, 0};
+    this->cur_rotation = {0, 0, 0};
 }
 
 void LaserOdom::buildTrees() {
@@ -368,9 +384,6 @@ void LaserOdom::buildTrees() {
         this->edge_idx.at(i)->buildIndex();
         this->flat_idx.at(i)->buildIndex();
     }
-
-    this->cur_translation = {0, 0, 0};
-    this->cur_rotation = {0, 0, 0};
 }
 
 bool LaserOdom::findCorrespondingPoints(const Vec3 &query,
@@ -525,7 +538,7 @@ bool LaserOdom::match() {
 
     ceres::Solver::Options options;
     std::vector<int> iterations = {0, 1, 2, 3, 4, 5, 6, 7, 8};
-    options.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
+    options.linear_solver_type = ceres::DENSE_QR;
     options.max_num_iterations = 300;
     options.function_tolerance = 1e-10;
     options.parameter_tolerance = 1e-10;
@@ -546,6 +559,7 @@ bool LaserOdom::match() {
         return false;
     } else {
         ceres::Solve(options, &problem, &summary);
+        LOG_INFO("%s", summary.FullReport().c_str());
     }
     return true;
 }
@@ -667,7 +681,7 @@ void LaserOdom::prefilter() {
         // now store each selected point for sorting
         this->filter.at(i).resize(max_pts);
         unlong cnt = 0;
-        for (unlong j = 0; j < n_pts; j++) {
+        for (unlong j = this->param.knn; j < max_pts; j++) {
             if (this->cur_curve.at(i).at(j).first) {
                 this->filter.at(i).at(cnt).first = j;
                 this->filter.at(i).at(cnt).second = this->cur_curve.at(i).at(j).second;
