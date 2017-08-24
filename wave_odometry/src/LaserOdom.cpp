@@ -118,10 +118,11 @@ LaserOdom::~LaserOdom() {
     this->flats.clear();
 }
 
-void LaserOdom::registerOutputFunction(std::function<void(const TimeType * const,
-                                                          const std::array<double, 3> * const,
-                                                          const std::array<double, 3> * const,
-                                                          const pcl::PointCloud<pcl::PointXYZI> * const)> output_function) {
+void LaserOdom::registerOutputFunction(
+  std::function<void(const TimeType *const,
+                     const std::array<double, 3> *const,
+                     const std::array<double, 3> *const,
+                     const pcl::PointCloud<pcl::PointXYZI> *const)> output_function) {
     this->f_output = std::bind(output_function,
                                &(this->undistorted_stamp),
                                &(this->undistort_rotation),
@@ -138,7 +139,7 @@ void LaserOdom::registerOutputFunction(std::function<void()> output_function) {
 void LaserOdom::spinOutput() {
     std::unique_lock<std::mutex> lk(this->output_mutex);
     while (this->continue_output) {
-        while(!this->fresh_output) {  //wait can have spurious wakeups
+        while (!this->fresh_output) {  // wait can have spurious wakeups
             this->output_condition.wait(lk);
             if (!this->continue_output) {
                 break;
@@ -208,7 +209,7 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
             if (this->output_thread) {
                 {
                     std::unique_lock<std::mutex> lk(this->output_mutex);
-                    if (fresh_output) {
+                    if (this->fresh_output) {
                         // data from last time hasn't been consumed yet
                         LOG_ERROR("Overwriting previous output");
                     }
@@ -448,7 +449,6 @@ bool LaserOdom::match() {
         flat_cor.open(std::to_string(timestamp) + "flat_cor.txt");
     }
     ceres::Problem problem;
-    ceres::LossFunction *p_LossFunction = new BisquareLoss(this->param.huber_delta);
 
     Vec3 trans(this->cur_translation[0], this->cur_translation[1], this->cur_translation[2]);
 
@@ -483,6 +483,7 @@ bool LaserOdom::match() {
                                             this->prv_edges.at(ret_rings.at(0)).points.at(ret_indices.at(0)).data(),
                                             this->prv_edges.at(ret_rings.at(1)).points.at(ret_indices.at(1)).data(),
                                             &(this->scale_lookup.at(this->edges.at(i).at(idx).tick)));
+                ceres::LossFunction *p_LossFunction = new BisquareLoss(this->param.huber_delta);
                 problem.AddResidualBlock(
                   cost_function, p_LossFunction, this->cur_rotation.data(), this->cur_translation.data());
             }
@@ -507,6 +508,7 @@ bool LaserOdom::match() {
                                              this->prv_flats.at(ret_rings.at(1)).points.at(ret_indices.at(1)).data(),
                                              this->prv_flats.at(ret_rings.at(2)).points.at(ret_indices.at(2)).data(),
                                              &(this->scale_lookup.at(this->flats.at(i).at(ind).tick)));
+                ceres::LossFunction *p_LossFunction = new BisquareLoss(this->param.huber_delta);
                 problem.AddResidualBlock(
                   cost_function, p_LossFunction, this->cur_rotation.data(), this->cur_translation.data());
             }
@@ -522,12 +524,16 @@ bool LaserOdom::match() {
     if (this->param.imposePrior) {
         ceres::Matrix rotation_stiffness(3, 3);
         ceres::Matrix translation_stiffness(3, 3);
-        rotation_stiffness(0, 0) = this->param.rotation_stiffness * this->param.RP_multiplier * num_residuals;
-        rotation_stiffness(1, 1) = this->param.rotation_stiffness * this->param.RP_multiplier * num_residuals;
-        rotation_stiffness(2, 2) = this->param.rotation_stiffness * num_residuals;
-        translation_stiffness(0, 0) = this->param.translation_stiffness * num_residuals;
-        translation_stiffness(1, 1) = this->param.translation_stiffness * this->param.T_y_multiplier * num_residuals;
-        translation_stiffness(2, 2) = this->param.translation_stiffness * this->param.T_z_multiplier * num_residuals;
+        rotation_stiffness(0, 0) =
+          this->param.rotation_stiffness * this->param.RP_multiplier * this->param.decay_parameter * num_residuals;
+        rotation_stiffness(1, 1) =
+          this->param.rotation_stiffness * this->param.RP_multiplier * this->param.decay_parameter * num_residuals;
+        rotation_stiffness(2, 2) = this->param.rotation_stiffness * this->param.decay_parameter * num_residuals;
+        translation_stiffness(0, 0) = this->param.translation_stiffness * this->param.decay_parameter * num_residuals;
+        translation_stiffness(1, 1) =
+          this->param.translation_stiffness * this->param.T_y_multiplier * this->param.decay_parameter * num_residuals;
+        translation_stiffness(2, 2) =
+          this->param.translation_stiffness * this->param.T_z_multiplier * this->param.decay_parameter * num_residuals;
         ceres::VectorRef trans_ref(this->prev_translation.data(), 3, 1);
         ceres::VectorRef rot_ref(this->prev_rotation.data(), 3, 1);
         ceres::NormalPrior *t_diff_cost_function = new ceres::NormalPrior(translation_stiffness, trans_ref);
@@ -542,15 +548,16 @@ bool LaserOdom::match() {
     options.max_num_iterations = 300;
     options.function_tolerance = 1e-10;
     options.parameter_tolerance = 1e-10;
-    options.num_threads = 4;
-    options.num_linear_solver_threads = 4;
+    options.num_threads = 2;
+    options.num_linear_solver_threads = 2;
     // options.trust_region_minimizer_iterations_to_dump = iterations;
     options.trust_region_problem_dump_format_type = ceres::DumpFormatType::TEXTFILE;
     ceres::Solver::Summary summary;
     auto max_residuals = this->param.n_ring * (this->param.n_flat + this->param.n_edge);
-    if (problem.NumResidualBlocks() < max_residuals * 0.2) {
+    if (problem.NumResidualBlocks() < max_residuals * 0.1) {
         LOG_ERROR("Less than expected residuals, resetting");
         LOG_ERROR("%d residuals, threshold is %f", problem.NumResidualBlocks(), max_residuals * 0.2);
+        // throw "Too few residuals";
         this->cur_translation = {0, 0, 0};
         this->cur_rotation = {0, 0, 0};
         this->prev_translation = {0, 0, 0};
@@ -643,9 +650,13 @@ void LaserOdom::computeCurvature() {
 // paper for details
 void LaserOdom::prefilter() {
     for (unlong i = 0; i < this->param.n_ring; i++) {
+        if (this->cur_curve.at(i).size() != this->cur_scan.at(i).size()) {
+            throw "Curvature and scan containers are different sizes!";
+        }
         auto n_pts = this->cur_curve.at(i).size();
         int max_pts = (int) n_pts - (int) this->param.knn;
         if (n_pts < this->param.knn + 1) {
+            this->filter.at(i).clear();
             continue;
         }
         for (unlong j = this->param.knn; j < max_pts; j++) {
@@ -679,16 +690,12 @@ void LaserOdom::prefilter() {
             }
         }
         // now store each selected point for sorting
-        this->filter.at(i).resize(max_pts);
-        unlong cnt = 0;
+        this->filter.at(i).clear();
         for (unlong j = this->param.knn; j < max_pts; j++) {
             if (this->cur_curve.at(i).at(j).first) {
-                this->filter.at(i).at(cnt).first = j;
-                this->filter.at(i).at(cnt).second = this->cur_curve.at(i).at(j).second;
-                cnt++;
+                this->filter.at(i).emplace_back(j, this->cur_curve.at(i).at(j).second);
             }
         }
-        this->filter.at(i).resize(cnt);
     }
 }
 

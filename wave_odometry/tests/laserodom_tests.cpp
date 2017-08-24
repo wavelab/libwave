@@ -9,6 +9,7 @@
 #include "wave/odometry/laser_odom_residuals.hpp"
 #include "wave/containers/measurement_container.hpp"
 #include "wave/matching/pointcloud_display.hpp"
+#include <boost/filesystem.hpp>
 
 namespace wave {
 
@@ -203,13 +204,19 @@ TEST(OdomTest, StraightLineGarage) {
     pcl::PCLPointCloud2 temp;
     pcl::PointCloud<PointXYZIR> temp2;
     LOG_INFO("Starting to load clouds");
-    for (int i = 0; i < sequence_length; i++) {
-        pcl::io::loadPCDFile(TEST_SEQUENCE_DIR + std::to_string(i) + ".pcd", temp);
+    boost::filesystem::path p(TEST_SEQUENCE_DIR);
+    std::vector<boost::filesystem::path> v;
+    std::copy(boost::filesystem::directory_iterator(p), boost::filesystem::directory_iterator(), std::back_inserter(v));
+    std::sort(v.begin(), v.end());
+    int length = 0;
+    for (auto iter = v.begin(); iter != v.end(); ++iter) {
+        pcl::io::loadPCDFile(iter->string(), temp);
         pcl::fromPCLPointCloud2(temp, temp2);
         clds.push_back(temp2);
         pcl::PointCloud<PointXYZIR>::Ptr ptr(new pcl::PointCloud<PointXYZIR>);
-        *ptr = clds.at(i);
+        *ptr = clds.at(length);
         cldptr.push_back(ptr);
+        length++;
     }
 
     LOG_INFO("Finished loading clouds");
@@ -219,8 +226,8 @@ TEST(OdomTest, StraightLineGarage) {
     params.n_edge = 40;
     params.max_correspondence_dist = 0.4;
     params.huber_delta = 0.2;
-    params.opt_iters = 5;
-    //    params.visualize = true;
+    params.opt_iters = 100;
+    params.visualize = true;
     params.output_trajectory = true;
     //params.output_correspondences = true;
     params.rotation_stiffness = 1e-5;
@@ -234,7 +241,7 @@ TEST(OdomTest, StraightLineGarage) {
     uint16_t prev_enc = 0;
 
     // Loop through pointclouds and send points grouped by encoder angle odom
-    for (int i = 0; i < sequence_length; i++) {
+    for (int i = 0; i < length; i++) {
         for (PointXYZIR pt : clds.at(i)) {
             PointXYZIR recovered;
             // unpackage intensity and encoder

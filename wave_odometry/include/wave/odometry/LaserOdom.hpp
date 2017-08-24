@@ -17,6 +17,7 @@
 #include <type_traits>
 #include <memory>
 #include <set>
+#include <exception>
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 #include "wave/matching/pointcloud_display.hpp"
@@ -49,6 +50,7 @@ struct LaserOdomParams {
     double T_z_multiplier = 1;
     double T_y_multiplier = 1;
     double RP_multiplier = 1;
+    double decay_parameter = 1;
 
     // Sensor parameters
     float scan_period = 0.1;  // Seconds

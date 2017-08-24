@@ -29,9 +29,7 @@ class AnalyticalPointToLine : public ceres::SizedCostFunction<3, 3, 3> {
         this->scale = scal;
     }
 
-    virtual bool Evaluate(double const *const *parameters,
-                          double *residuals,
-                          double **jacobians) const {
+    virtual bool Evaluate(double const *const *parameters, double *residuals, double **jacobians) const {
         double r[3];
         r[0] = *(this->scale) * parameters[0][0];
         r[1] = *(this->scale) * parameters[0][1];
@@ -44,12 +42,10 @@ class AnalyticalPointToLine : public ceres::SizedCostFunction<3, 3, 3> {
         point[1] += this->scale[0] * parameters[1][2];
         point[2] += this->scale[0] * parameters[1][3];
 
-        double p_A[3] = {
-          point[0] - ptA[0], point[1] - ptA[1], point[2] - ptA[2]};
+        double p_A[3] = {point[0] - ptA[0], point[1] - ptA[1], point[2] - ptA[2]};
 
         double diff[3] = {ptB[0] - ptA[0], ptB[1] - ptA[1], ptB[2] - ptA[2]};
-        double bottom =
-          diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2];
+        double bottom = diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2];
         if (bottom < 1e-10) {
             // The points defining the line are too close to each other
             return false;
@@ -64,6 +60,19 @@ class AnalyticalPointToLine : public ceres::SizedCostFunction<3, 3, 3> {
         residuals[0] = point[0] - p_Tl[0];
         residuals[1] = point[1] - p_Tl[1];
         residuals[2] = point[2] - p_Tl[2];
+
+        if ((residuals[0] != residuals[0]) || (residuals[1] != residuals[1]) || (residuals[2] != residuals[2])) {
+            LOG_ERROR("Point: \n %f \n %f \n %f \n PointA \n %f \n %f \n %f \n PointB \n %f \n %f \n %f",
+                      pt[0],
+                      pt[1],
+                      pt[2],
+                      ptA[0],
+                      ptA[1],
+                      ptA[2],
+                      ptB[0],
+                      ptB[1],
+                      ptB[2]);
+        }
 
         if (jacobians != NULL) {
             // compute jacobian
@@ -153,9 +162,7 @@ class AnalyticalPointToPlane : public ceres::SizedCostFunction<1, 3, 3> {
         this->scale = scal;
     }
 
-    virtual bool Evaluate(double const *const *parameters,
-                          double *residuals,
-                          double **jacobians) const {
+    virtual bool Evaluate(double const *const *parameters, double *residuals, double **jacobians) const {
         double r[3];
         r[0] = *(this->scale) * parameters[0][0];
         r[1] = *(this->scale) * parameters[0][1];
@@ -168,28 +175,23 @@ class AnalyticalPointToPlane : public ceres::SizedCostFunction<1, 3, 3> {
         point[1] += this->scale[0] * parameters[1][2];
         point[2] += this->scale[0] * parameters[1][3];
 
-        double d_B[3] = {
-          point[0] - ptB[0], point[1] - ptB[1], point[2] - ptB[2]};
+        double d_B[3] = {point[0] - ptB[0], point[1] - ptB[1], point[2] - ptB[2]};
         double dBA[3] = {ptB[0] - ptA[0], ptB[1] - ptA[1], ptB[2] - ptA[2]};
         double dBC[3] = {ptB[0] - ptC[0], ptB[1] - ptC[1], ptB[2] - ptC[2]};
 
         double cBA_BC[3];
         ceres::CrossProduct(dBA, dBC, cBA_BC);
 
-        double den = ceres::sqrt(cBA_BC[0] * cBA_BC[0] + cBA_BC[1] * cBA_BC[1] +
-                                 cBA_BC[2] * cBA_BC[2]);
-        double num =
-          cBA_BC[0] * d_B[0] + cBA_BC[1] * d_B[1] + cBA_BC[2] * d_B[2];
+        double den = ceres::sqrt(cBA_BC[0] * cBA_BC[0] + cBA_BC[1] * cBA_BC[1] + cBA_BC[2] * cBA_BC[2]);
+        double num = cBA_BC[0] * d_B[0] + cBA_BC[1] * d_B[1] + cBA_BC[2] * d_B[2];
 
         residuals[0] = num / den;
 
         if (jacobians != NULL) {
             // compute jacobian
             // setup alias to make importing matlab string easier
-            const double &XA1 = this->ptA[0], &XA2 = this->ptA[1],
-                         &XA3 = this->ptA[2], &XB1 = this->ptB[0],
-                         &XB2 = this->ptB[1], &XB3 = this->ptB[2],
-                         &XC1 = this->ptC[0], &XC2 = this->ptC[1],
+            const double &XA1 = this->ptA[0], &XA2 = this->ptA[1], &XA3 = this->ptA[2], &XB1 = this->ptB[0],
+                         &XB2 = this->ptB[1], &XB3 = this->ptB[2], &XC1 = this->ptC[0], &XC2 = this->ptC[1],
                          &XC3 = this->ptC[2];
 
             // clang-format off
@@ -222,12 +224,9 @@ class AnalyticalPointToPlane : public ceres::SizedCostFunction<1, 3, 3> {
             Mat3 temp = neg_skw * J_R_w * scale[0];
 
             if (jacobians[0] != NULL) {
-                jacobians[0][0] =
-                        D_P[0] * temp(0, 0) + D_P[1] * temp(1, 0) + D_P[2] * temp(2, 0);
-                jacobians[0][1] =
-                        D_P[0] * temp(0, 1) + D_P[1] * temp(1, 1) + D_P[2] * temp(2, 1);
-                jacobians[0][2] =
-                        D_P[0] * temp(0, 2) + D_P[1] * temp(1, 2) + D_P[2] * temp(2, 2);
+                jacobians[0][0] = D_P[0] * temp(0, 0) + D_P[1] * temp(1, 0) + D_P[2] * temp(2, 0);
+                jacobians[0][1] = D_P[0] * temp(0, 1) + D_P[1] * temp(1, 1) + D_P[2] * temp(2, 1);
+                jacobians[0][2] = D_P[0] * temp(0, 2) + D_P[1] * temp(1, 2) + D_P[2] * temp(2, 2);
             }
 
             if (jacobians[1] != NULL) {
