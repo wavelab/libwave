@@ -11,7 +11,7 @@
 #include <Eigen/Eigenvalues>
 #include <wave/matching/groundSegmentation.hpp>
 #include <wave/matching/PointcloudXYZGD.hpp>
-#include <wave/utils/logging.hpp>
+#include <wave/utils/log.hpp>
 
 namespace wave {
 
