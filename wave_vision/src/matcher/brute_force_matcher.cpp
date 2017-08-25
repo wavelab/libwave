@@ -53,7 +53,7 @@ BruteForceMatcher::BruteForceMatcher(const BFMatcherParams &config) {
 }
 
 void BruteForceMatcher::checkConfiguration(
-  const BFMatcherParams &check_config) {
+  const BFMatcherParams &check_config) const {
     // Check that the value of norm_type is one of the valid values
     if (check_config.norm_type < cv::NORM_INF ||
         check_config.norm_type > cv::NORM_HAMMING2 ||
@@ -84,7 +84,7 @@ void BruteForceMatcher::checkConfiguration(
 }
 
 std::vector<cv::DMatch> BruteForceMatcher::filterMatches(
-  std::vector<cv::DMatch> &matches) const {
+  const std::vector<cv::DMatch> &matches) const {
     std::vector<cv::DMatch> filtered_matches;
 
     // Determine closest match
@@ -104,7 +104,7 @@ std::vector<cv::DMatch> BruteForceMatcher::filterMatches(
 }
 
 std::vector<cv::DMatch> BruteForceMatcher::filterMatches(
-  std::vector<std::vector<cv::DMatch>> &matches) const {
+  const std::vector<std::vector<cv::DMatch>> &matches) const {
     std::vector<cv::DMatch> filtered_matches;
 
     for (auto &match : matches) {
@@ -158,8 +158,8 @@ std::vector<cv::DMatch> BruteForceMatcher::removeOutliers(
 }
 
 std::vector<cv::DMatch> BruteForceMatcher::matchDescriptors(
-  const cv::Mat &descriptors_1,
-  const cv::Mat &descriptors_2,
+  cv::Mat &descriptors_1,
+  cv::Mat &descriptors_2,
   const std::vector<cv::KeyPoint> &keypoints_1,
   const std::vector<cv::KeyPoint> &keypoints_2,
   cv::InputArray mask) const {

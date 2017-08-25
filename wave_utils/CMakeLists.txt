@@ -20,6 +20,10 @@ ADD_LIBRARY(
     src/time.cpp
 )
 
+TARGET_LINK_LIBRARIES(wave_utils
+    yaml-cpp
+    ${OpenCV_LIBS})
+
 # UNIT TESTS
 WAVE_ADD_TEST(
     ${PROJECT_NAME}_tests
@@ -32,8 +36,6 @@ WAVE_ADD_TEST(
 TARGET_LINK_LIBRARIES(
     ${PROJECT_NAME}_tests
     ${PROJECT_NAME}
-    yaml-cpp
-    ${OpenCV_LIBS}
 )
 # COPY TEST DATA
 FILE(COPY tests/data DESTINATION ${PROJECT_BINARY_DIR}/tests)

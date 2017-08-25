@@ -1,12 +1,12 @@
 /**
  * @file
- * Brute force matcher implementation, derived from descriptor matcher base.
+ * Brute force matcher implementation, derived from descriptor matcher base
+ * class.
  * @ingroup vision
  */
 #ifndef WAVE_VISION_BRUTE_FORCE_MATCHER_HPP
 #define WAVE_VISION_BRUTE_FORCE_MATCHER_HPP
 
-#include <algorithm>
 #include <string>
 #include <vector>
 
@@ -166,7 +166,7 @@ class BruteForceMatcher : public DescriptorMatcher {
     /** Returns the current configuration parameters being used by the
      *  BruteForceMatcher
      *
-     *  @return a struct containing the current configuration values.
+     *  @return the current configuration values.
      */
     BFMatcherParams getConfiguration() const {
         return this->current_config;
@@ -203,23 +203,18 @@ class BruteForceMatcher : public DescriptorMatcher {
      *  @return vector containing the best matches.
      */
     std::vector<cv::DMatch> matchDescriptors(
-      const cv::Mat &descriptors_1,
-      const cv::Mat &descriptors_2,
+      cv::Mat &descriptors_1,
+      cv::Mat &descriptors_2,
       const std::vector<cv::KeyPoint> &keypoints_1,
       const std::vector<cv::KeyPoint> &keypoints_2,
       cv::InputArray mask = cv::noArray()) const override;
 
  private:
-    /** Overloaded method, which takes in a vector of a vector of matches. This
-     *  is designed to be used with the knnMatchDescriptors method, and uses the
-     *  ratio test to filter the matches.
-     *
-     *  @param matches the unfiltered matches computed from two images.
-     *
-     *  @return the filtered matches.
-     */
-    std::vector<cv::DMatch> filterMatches(
-      std::vector<std::vector<cv::DMatch>> &matches) const override;
+    /** The pointer to the wrapped cv::BFMatcher object */
+    cv::Ptr<cv::BFMatcher> brute_force_matcher;
+
+    /** Current configuration parameters */
+    BFMatcherParams current_config;
 
     /** Remove outliers between matches. Uses a heuristic based approach as a
      *  first pass to determine good matches.
@@ -229,21 +224,26 @@ class BruteForceMatcher : public DescriptorMatcher {
      *  @return the filtered matches.
      */
     std::vector<cv::DMatch> filterMatches(
-      std::vector<cv::DMatch> &matches) const override;
+      const std::vector<cv::DMatch> &matches) const override;
 
-    /** The pointer to the wrapped cv::BFMatcher object */
-    cv::Ptr<cv::BFMatcher> brute_force_matcher;
+    /** Overloaded method, which takes in a vector of a vector of matches. This
+     *  is designed to be used with the knnMatchDescriptors method, and uses the
+     *  ratio test to filter the matches.
+     *
+     *  @param matches the unfiltered matches computed from two images.
+     *
+     *  @return the filtered matches.
+     */
+    std::vector<cv::DMatch> filterMatches(
+      const std::vector<std::vector<cv::DMatch>> &matches) const override;
 
-    /** Current configuration parameters */
-    BFMatcherParams current_config;
 
     /** Checks whether the desired configuration is valid
      *
      *  @param check_config containing the desired configuration values.
      */
-    void checkConfiguration(const BFMatcherParams &check_config);
+    void checkConfiguration(const BFMatcherParams &check_config) const;
 };
-
 /** @} end of group */
 }  // namespace wave
 
