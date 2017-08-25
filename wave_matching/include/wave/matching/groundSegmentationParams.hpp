@@ -2,7 +2,7 @@
 #define WAVE_GROUNDSEGMENTATIONPARAMS_H
 
 #include "wave/utils/config.hpp"
-#include "wave/utils/logging.hpp"
+#include "wave/utils/log.hpp"
 
 namespace wave {
 
