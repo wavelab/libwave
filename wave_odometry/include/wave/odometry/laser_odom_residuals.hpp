@@ -35,16 +35,25 @@ class AnalyticalPointToLine : public ceres::SizedCostFunction<3, 3, 3> {
         r[1] = *(this->scale) * parameters[0][1];
         r[2] = *(this->scale) * parameters[0][2];
 
+        if ((r[0] != r[0]) || (r[1] != r[1]) || (r[2] != r[2])) {
+            LOG_ERROR("Scaled rotation parameters are nans: \n r array: \n %.17g \n %.17g \n %.17g",
+                r[0], r[1], r[2]);
+        }
+
         double point[3];
         ceres::AngleAxisRotatePoint(r, this->pt, point);
+        if ((point[0] != point[0]) || (point[1] != point[1]) || (point[2] != point[2])) {
+            LOG_ERROR("AngleAxis shit the bed");
+        }
+
         // trans[3,4,5] are the translation.
         point[0] += this->scale[0] * parameters[1][0];
         point[1] += this->scale[0] * parameters[1][2];
         point[2] += this->scale[0] * parameters[1][3];
 
-        double p_A[3] = {point[0] - ptA[0], point[1] - ptA[1], point[2] - ptA[2]};
+        double p_A[3] = {point[0] - this->ptA[0], point[1] - this->ptA[1], point[2] - this->ptA[2]};
 
-        double diff[3] = {ptB[0] - ptA[0], ptB[1] - ptA[1], ptB[2] - ptA[2]};
+        double diff[3] = {this->ptB[0] - this->ptA[0], this->ptB[1] - this->ptA[1], this->ptB[2] - this->ptA[2]};
         double bottom = diff[0] * diff[0] + diff[1] * diff[1] + diff[2] * diff[2];
         if (bottom < 1e-10) {
             // The points defining the line are too close to each other
@@ -53,25 +62,40 @@ class AnalyticalPointToLine : public ceres::SizedCostFunction<3, 3, 3> {
 
         double scaling = ceres::DotProduct(p_A, diff);
         // point on line closest to point
-        double p_Tl[3] = {ptA[0] + (scaling / bottom) * diff[0],
-                          ptA[1] + (scaling / bottom) * diff[1],
-                          ptA[2] + (scaling / bottom) * diff[2]};
+        double p_Tl[3] = {this->ptA[0] + (scaling / bottom) * diff[0],
+                          this->ptA[1] + (scaling / bottom) * diff[1],
+                          this->ptA[2] + (scaling / bottom) * diff[2]};
 
         residuals[0] = point[0] - p_Tl[0];
         residuals[1] = point[1] - p_Tl[1];
         residuals[2] = point[2] - p_Tl[2];
 
         if ((residuals[0] != residuals[0]) || (residuals[1] != residuals[1]) || (residuals[2] != residuals[2])) {
-            LOG_ERROR("Point: \n %f \n %f \n %f \n PointA \n %f \n %f \n %f \n PointB \n %f \n %f \n %f",
-                      pt[0],
-                      pt[1],
-                      pt[2],
-                      ptA[0],
-                      ptA[1],
-                      ptA[2],
-                      ptB[0],
-                      ptB[1],
-                      ptB[2]);
+            LOG_ERROR("Point: \n %.17g \n %.17g \n %.17g \n PointA \n %.17g \n %.17g \n %.17g \n PointB \n %.17g \n %.17g \n %.17g",
+                      this->pt[0],
+                      this->pt[1],
+                      this->pt[2],
+                      this->ptA[0],
+                      this->ptA[1],
+                      this->ptA[2],
+                      this->ptB[0],
+                      this->ptB[1],
+                      this->ptB[2]);
+            LOG_ERROR("Scale: \n %.17g \n point: \n %.17g \n %.17g \n %.17g \n p_TL: \n %.17g \n %.17g \n %.17g \n",
+                      this->scale[0],
+                      point[0],
+                      point[1],
+                      point[2],
+                      p_Tl[0],
+                      p_Tl[1],
+                      p_Tl[2]);
+            LOG_ERROR("Rotation: \n %.17g \n %.17g \n %.17g \n Translation: \n %.17g \n %.17g \n %.17g \n",
+                      parameters[0][0],
+                      parameters[0][1],
+                      parameters[0][2],
+                      parameters[1][0],
+                      parameters[1][1],
+                      parameters[1][2]);
         }
 
         if (jacobians != NULL) {

@@ -59,8 +59,9 @@ struct LaserOdomParams {
 
     // Feature extraction parameters
     float occlusion_tol = 0.1;   // Don't know units
+    float occlusion_tol_2 = 0.1;
     float parallel_tol = 0.002;  // ditto
-    float keypt_radius = 0.05;   // m2
+    float keypt_radius = 0.05;   // m2. Non maximum suppression distance
     float edge_tol = 0.1;        // Edge features must have score higher than this
     float flat_tol = 0.1;        // Plane features must have score lower than this
     int n_edge = 40;             // How many edge features to pick out per ring
@@ -72,6 +73,7 @@ struct LaserOdomParams {
     bool visualize = false;               // Whether to run a visualization for debugging
     bool output_trajectory = false;       // Whether to output solutions for debugging/plotting
     bool output_correspondences = false;  // Whether to output correpondences for debugging/plotting
+    bool only_extract_features = false;   // If set, no transforms are calculated
 };
 
 class LaserOdom {
@@ -97,8 +99,11 @@ class LaserOdom {
 
     // Shared memory
     pcl::PointCloud<pcl::PointXYZI> undistorted_cld;
+    pcl::PointCloud<pcl::PointXYZ> undis_edges, undis_flats;
     TimeType undistorted_stamp;
     std::array<double, 3> undistort_translation, undistort_rotation;
+    std::vector<std::array<uint16_t, 4>> edge_corrs;
+    std::vector<std::array<uint16_t, 6>> flat_corrs;
 
     void updateParams(const LaserOdomParams);
     LaserOdomParams getParams();

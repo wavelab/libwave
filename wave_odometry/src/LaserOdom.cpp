@@ -152,6 +152,8 @@ void LaserOdom::spinOutput() {
 
 void LaserOdom::undistort() {
     this->undistorted_cld.clear();
+    this->undis_edges.clear();
+    this->undis_flats.clear();
     for (uint16_t r_idx = 0; r_idx < this->param.n_ring; r_idx++) {
         for (PCLPointXYZIT pt : this->cur_scan.at(r_idx)) {
             double point[3] = {pt.x, pt.y, pt.z};
@@ -170,6 +172,40 @@ void LaserOdom::undistort() {
             op_pt.z = (float) u_pt[2];
             op_pt.intensity = pt.intensity;
             this->undistorted_cld.push_back(op_pt);
+        }
+        for(uint32_t i = 0; i < this->edges.at(r_idx).size(); i++) {
+            double point[3] = {this->edges.at(r_idx).at(i).pt[0], this->edges.at(r_idx).at(i).pt[1], this->edges.at(r_idx).at(i).pt[2]};
+            double u_pt[3];
+            double &scale = this->scale_lookup.at(this->edges.at(r_idx).at(i).tick);
+            double angle_axis[3] = {scale * this->undistort_rotation[0],
+                                    scale * this->undistort_rotation[1],
+                                    scale * this->undistort_rotation[2]};
+            ceres::AngleAxisRotatePoint(angle_axis, point, u_pt);
+            u_pt[0] += scale * this->undistort_translation[0];
+            u_pt[1] += scale * this->undistort_translation[1];
+            u_pt[2] += scale * this->undistort_translation[2];
+            pcl::PointXYZ op_pt;
+            op_pt.x = (float) u_pt[0];
+            op_pt.y = (float) u_pt[1];
+            op_pt.z = (float) u_pt[2];
+            this->undis_edges.push_back(op_pt);
+        }
+        for(uint32_t i = 0; i < this->flats.at(r_idx).size(); i++) {
+            double point[3] = {this->flats.at(r_idx).at(i).pt[0], this->flats.at(r_idx).at(i).pt[1], this->flats.at(r_idx).at(i).pt[2]};
+            double u_pt[3];
+            double &scale = this->scale_lookup.at(this->flats.at(r_idx).at(i).tick);
+            double angle_axis[3] = {scale * this->undistort_rotation[0],
+                                    scale * this->undistort_rotation[1],
+                                    scale * this->undistort_rotation[2]};
+            ceres::AngleAxisRotatePoint(angle_axis, point, u_pt);
+            u_pt[0] += scale * this->undistort_translation[0];
+            u_pt[1] += scale * this->undistort_translation[1];
+            u_pt[2] += scale * this->undistort_translation[2];
+            pcl::PointXYZ op_pt;
+            op_pt.x = (float) u_pt[0];
+            op_pt.y = (float) u_pt[1];
+            op_pt.z = (float) u_pt[2];
+            this->undis_flats.push_back(op_pt);
         }
     }
 }
@@ -334,8 +370,8 @@ void LaserOdom::rollover(TimeType stamp) {
         }
     }
 
-    this->cur_translation = {0, 0, 0};
-    this->cur_rotation = {0, 0, 0};
+//    this->cur_translation = {0, 0, 0};
+//    this->cur_rotation = {0, 0, 0};
 }
 
 void LaserOdom::buildTrees() {
@@ -427,8 +463,8 @@ bool LaserOdom::findCorrespondingPoints(const Vec3 &query,
     // May want to revisit this later, but for now the policy will be
     // to pick the closest points if
     // - They are from neighbouring rings
-    rings->resize(0);
-    index->resize(0);
+    rings->clear();
+    index->clear();
     std::set<uint16_t> set;
     for (uint16_t i = 0; i < knn; i++) {
         rings->push_back(container.at(i).second.second);
@@ -455,6 +491,8 @@ bool LaserOdom::match() {
     std::vector<size_t> ret_indices;
     std::vector<uint16_t> ret_rings;
     std::vector<double> out_dist_sqr;
+    this->edge_corrs.clear();
+    this->flat_corrs.clear();
 
     // residual blocks for edges
     for (uint16_t i = 0; i < this->param.n_ring; i++) {
@@ -564,9 +602,9 @@ bool LaserOdom::match() {
         this->prev_rotation = {0, 0, 0};
         this->initialized = false;
         return false;
-    } else {
+    } else if (!this->param.only_extract_features) {
         ceres::Solve(options, &problem, &summary);
-        LOG_INFO("%s", summary.FullReport().c_str());
+        //LOG_INFO("%s", summary.FullReport().c_str());
     }
     return true;
 }
@@ -664,11 +702,11 @@ void LaserOdom::prefilter() {
             auto delback = this->l2sqrd(this->cur_scan.at(i).at(j), this->cur_scan.at(i).at(j - 1));
             // First section excludes any points who's score is likely caused
             // by occlusion
-            if (delforward > this->param.occlusion_tol) {
+            if (delforward > this->param.occlusion_tol_2) {
                 float d1 = std::sqrt(this->l2sqrd(this->cur_scan.at(i).at(j)));
                 float d2 = std::sqrt(this->l2sqrd(this->cur_scan.at(i).at(j + 1)));
-                auto unit1 = this->scale(this->cur_scan.at(i).at(j), 1 / d1);
-                auto unit2 = this->scale(this->cur_scan.at(i).at(j + 1), 1 / d2);
+                auto unit1 = this->scale(this->cur_scan.at(i).at(j), 1.0 / d1);
+                auto unit2 = this->scale(this->cur_scan.at(i).at(j + 1), 1.0 / d2);
                 auto diff = std::sqrt(this->l2sqrd(unit1, unit2));
                 if (diff < this->param.occlusion_tol) {
                     if (d1 > d2) {
