@@ -58,8 +58,9 @@ struct LaserOdomParams {
     unlong n_ring = 32;       // number of laser-detector pairs
 
     // Feature extraction parameters
-    float occlusion_tol = 0.1;   // Don't know units
-    float occlusion_tol_2 = 0.1;
+    float occlusion_tol = 0.1;   // Radians
+    float occlusion_tol_2 = 0.1; // m^2. Distance between points to initiate occlusion check
+    float max_line_dist = 0.5;   // Radians. Points defining the lines must be at least this close
     float parallel_tol = 0.002;  // ditto
     float keypt_radius = 0.05;   // m2. Non maximum suppression distance
     float edge_tol = 0.1;        // Edge features must have score higher than this
@@ -102,8 +103,8 @@ class LaserOdom {
     pcl::PointCloud<pcl::PointXYZ> undis_edges, undis_flats;
     TimeType undistorted_stamp;
     std::array<double, 3> undistort_translation, undistort_rotation;
-    std::vector<std::array<uint16_t, 4>> edge_corrs;
-    std::vector<std::array<uint16_t, 6>> flat_corrs;
+    std::vector<std::array<double, 12>> edge_cor;
+    std::vector<std::array<double, 15>> flat_cor;
 
     void updateParams(const LaserOdomParams);
     LaserOdomParams getParams();
@@ -142,8 +143,11 @@ class LaserOdom {
                                  const bool searchPlanarPoints,
                                  std::vector<uint16_t> *rings,
                                  std::vector<size_t> *index);
+    std::vector<std::array<uint16_t, 6>> edge_corrs;
+    std::vector<std::array<uint16_t, 8>> flat_corrs;
 
     PCLPointXYZIT applyIMU(const PCLPointXYZIT &pt);
+    void transformToStart(const double * const pt, const uint16_t tick, double * output);
 
     // store for the IMU integral
     MeasurementContainer<IMUMeasurement> imu_trans;

@@ -31,7 +31,7 @@ POINT_CLOUD_REGISTER_POINT_STRUCT(PCLPointXYZIT,
 // clang-format on
 
 struct PointXYZIT {
-    PointXYZIT(float x, float y, float z, float inten, uint16_t ticks)
+    PointXYZIT(double x, double y, double z, float inten, uint16_t ticks)
         : pt{x, y, z}, intensity(inten), tick(ticks) {}
     double pt[3];
     float intensity;

@@ -48,8 +48,8 @@ class AnalyticalPointToLine : public ceres::SizedCostFunction<3, 3, 3> {
 
         // trans[3,4,5] are the translation.
         point[0] += this->scale[0] * parameters[1][0];
-        point[1] += this->scale[0] * parameters[1][2];
-        point[2] += this->scale[0] * parameters[1][3];
+        point[1] += this->scale[0] * parameters[1][1];
+        point[2] += this->scale[0] * parameters[1][2];
 
         double p_A[3] = {point[0] - this->ptA[0], point[1] - this->ptA[1], point[2] - this->ptA[2]};
 
@@ -196,8 +196,8 @@ class AnalyticalPointToPlane : public ceres::SizedCostFunction<1, 3, 3> {
         ceres::AngleAxisRotatePoint(r, this->pt, point);
         // trans[3,4,5] are the translation.
         point[0] += this->scale[0] * parameters[1][0];
-        point[1] += this->scale[0] * parameters[1][2];
-        point[2] += this->scale[0] * parameters[1][3];
+        point[1] += this->scale[0] * parameters[1][1];
+        point[2] += this->scale[0] * parameters[1][2];
 
         double d_B[3] = {point[0] - ptB[0], point[1] - ptB[1], point[2] - ptB[2]};
         double dBA[3] = {ptB[0] - ptA[0], ptB[1] - ptA[1], ptB[2] - ptA[2]};
