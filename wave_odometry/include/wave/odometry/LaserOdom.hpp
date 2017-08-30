@@ -45,8 +45,8 @@ struct LaserOdomParams {
     float diff_tol = 1e-6;  // norm of transform vector must change by more than this to continue
     float huber_delta = 0.2;
     float max_correspondence_dist = 0.4;  // correspondences greater than this are discarded
-    double rotation_stiffness = 1e-5;
-    double translation_stiffness = 5e-3;
+    double rotation_stiffness = 1;
+    double translation_stiffness = 1;
     double T_z_multiplier = 1;
     double T_y_multiplier = 1;
     double RP_multiplier = 1;

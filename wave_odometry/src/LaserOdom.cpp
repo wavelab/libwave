@@ -653,15 +653,15 @@ bool LaserOdom::match() {
         ceres::Matrix rotation_stiffness(3, 3);
         ceres::Matrix translation_stiffness(3, 3);
         rotation_stiffness(0, 0) =
-          this->param.rotation_stiffness * this->param.RP_multiplier * this->param.decay_parameter * num_residuals;
+          this->param.rotation_stiffness * this->param.RP_multiplier * this->param.decay_parameter;
         rotation_stiffness(1, 1) =
-          this->param.rotation_stiffness * this->param.RP_multiplier * this->param.decay_parameter * num_residuals;
-        rotation_stiffness(2, 2) = this->param.rotation_stiffness * this->param.decay_parameter * num_residuals;
-        translation_stiffness(0, 0) = this->param.translation_stiffness * this->param.decay_parameter * num_residuals;
+          this->param.rotation_stiffness * this->param.RP_multiplier * this->param.decay_parameter;
+        rotation_stiffness(2, 2) = this->param.rotation_stiffness * this->param.decay_parameter;
+        translation_stiffness(0, 0) = this->param.translation_stiffness * this->param.decay_parameter;
         translation_stiffness(1, 1) =
-          this->param.translation_stiffness * this->param.T_y_multiplier * this->param.decay_parameter * num_residuals;
+          this->param.translation_stiffness * this->param.T_y_multiplier * this->param.decay_parameter;
         translation_stiffness(2, 2) =
-          this->param.translation_stiffness * this->param.T_z_multiplier * this->param.decay_parameter * num_residuals;
+          this->param.translation_stiffness * this->param.T_z_multiplier * this->param.decay_parameter;
         ceres::VectorRef trans_ref(this->prev_translation.data(), 3, 1);
         ceres::VectorRef rot_ref(this->prev_rotation.data(), 3, 1);
         ceres::NormalPrior *t_diff_cost_function = new ceres::NormalPrior(translation_stiffness, trans_ref);
