@@ -91,7 +91,7 @@ class LaserOdom {
     bool new_features = false;
 
     void rollover(TimeType stamp);
-    bool match();
+    bool match(ceres::Problem *problem);
     void registerOutputFunction(std::function<void(const TimeType * const,
                                                    const std::array<double, 3> * const,
                                                    const std::array<double, 3> * const,
@@ -103,6 +103,7 @@ class LaserOdom {
     pcl::PointCloud<pcl::PointXYZ> undis_edges, undis_flats;
     TimeType undistorted_stamp;
     std::array<double, 3> undistort_translation, undistort_rotation;
+    double covar_ww[9], covar_wt[9], covar_tt[9];
     std::vector<std::array<double, 12>> edge_cor;
     std::vector<std::array<double, 15>> flat_cor;
 
@@ -127,6 +128,11 @@ class LaserOdom {
     std::function<void()> f_output;
     void undistort();
 
+    // ceres optimizer stuff
+    ceres::Solver::Options ceres_options;
+    ceres::Covariance::Options covar_options;
+    ceres::Solver::Summary ceres_summary;
+    std::vector<std::pair<const double *, const double *> > covariance_blocks;
 
     LaserOdomParams param;
     bool initialized = false;

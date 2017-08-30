@@ -22,11 +22,7 @@ class AnalyticalPointToLine : public ceres::SizedCostFunction<3, 3, 3> {
     AnalyticalPointToLine(const double *const p,
                           const double *const pA,
                           const double *const pB,
-                          const double *const scal) {
-        this->pt = p;
-        this->ptA = pA;
-        this->ptB = pB;
-        this->scale = scal;
+                          const double *const scal) : pt(p), ptA(pA), ptB(pB), scale(scal) {
     }
 
     virtual bool Evaluate(double const *const *parameters, double *residuals, double **jacobians) const {
@@ -165,10 +161,10 @@ class AnalyticalPointToLine : public ceres::SizedCostFunction<3, 3, 3> {
     }
 
  private:
-    const double *pt;
-    const double *ptA;
-    const double *ptB;
-    const double *scale;
+    const double *const pt;
+    const double *const ptA;
+    const double *const ptB;
+    const double *const scale;
 };
 
 class AnalyticalPointToPlane : public ceres::SizedCostFunction<1, 3, 3> {
@@ -178,12 +174,7 @@ class AnalyticalPointToPlane : public ceres::SizedCostFunction<1, 3, 3> {
                            const double *const pA,
                            const double *const pB,
                            const double *const pC,
-                           const double *const scal) {
-        this->pt = p;
-        this->ptA = pA;
-        this->ptB = pB;
-        this->ptC = pC;
-        this->scale = scal;
+                           const double *const scal) : pt(p), ptA(pA), ptB(pB), ptC(pC), scale(scal) {
     }
 
     virtual bool Evaluate(double const *const *parameters, double *residuals, double **jacobians) const {
@@ -265,11 +256,11 @@ class AnalyticalPointToPlane : public ceres::SizedCostFunction<1, 3, 3> {
     }
 
  private:
-    const double *pt;
-    const double *ptA;
-    const double *ptB;
-    const double *ptC;
-    const double *scale;
+    const double *const pt;
+    const double *const ptA;
+    const double *const ptB;
+    const double *const ptC;
+    const double *const scale;
 };
 
 }  // namespace wave

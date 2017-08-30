@@ -2,10 +2,10 @@
 
 namespace wave {
 
-double l2length(const double * const vec, uint16_t length) {
+double l2length(const double *const vec, uint16_t length) {
     double retval = 0;
     for (uint16_t i = 0; i < length; i++) {
-        retval += vec[i]*vec[i];
+        retval += vec[i] * vec[i];
     }
     return retval;
 }
@@ -37,9 +37,8 @@ void LaserOdom::flagNearbyPoints(const unlong ring, const unlong index) {
 
 void LaserOdom::transformToStart(const double *const pt, const uint16_t tick, double *output) {
     double &scale = this->scale_lookup.at(tick);
-    double angle_axis[3] = {scale * this->undistort_rotation[0],
-                            scale * this->undistort_rotation[1],
-                            scale * this->undistort_rotation[2]};
+    double angle_axis[3] = {
+      scale * this->undistort_rotation[0], scale * this->undistort_rotation[1], scale * this->undistort_rotation[2]};
     ceres::AngleAxisRotatePoint(angle_axis, pt, output);
     output[0] += scale * this->undistort_translation[0];
     output[1] += scale * this->undistort_translation[1];
@@ -101,6 +100,24 @@ LaserOdom::LaserOdom(const LaserOdomParams params) : param(params) {
         long timestamp = std::chrono::system_clock::now().time_since_epoch().count();
         this->file.open(std::to_string(timestamp) + "laser_odom_traj.txt");
     }
+
+    // ceres optimizer options
+    std::vector<int> iterations = {0, 1, 2, 3, 4, 5, 6, 7, 8};
+    this->ceres_options.linear_solver_type = ceres::DENSE_QR;
+    this->ceres_options.max_num_iterations = 300;
+    this->ceres_options.function_tolerance = 1e-10;
+    this->ceres_options.parameter_tolerance = 1e-6;
+    this->ceres_options.num_threads = 4;
+    this->ceres_options.num_linear_solver_threads = 4;
+    // this->ceres_options.trust_region_minimizer_iterations_to_dump = iterations;
+    this->ceres_options.trust_region_problem_dump_format_type = ceres::DumpFormatType::TEXTFILE;
+
+    // ceres covariance setup
+    this->covar_options.num_threads = 4;
+    this->covar_options.algorithm_type = ceres::CovarianceAlgorithmType::SUITE_SPARSE_QR;
+    this->covariance_blocks.push_back(std::make_pair(this->cur_rotation.data(), this->cur_rotation.data()));
+    this->covariance_blocks.push_back(std::make_pair(this->cur_rotation.data(), this->cur_rotation.data()));
+    this->covariance_blocks.push_back(std::make_pair(this->cur_rotation.data(), this->cur_rotation.data()));
 }
 
 void LaserOdom::updateParams(const LaserOdomParams new_params) {
@@ -213,7 +230,9 @@ void LaserOdom::undistort() {
     for (auto iter = this->edge_corrs.begin(); iter != this->edge_corrs.end(); iter++) {
         std::array<double, 12> new_corr;
         double undis[3];
-        this->transformToStart(&(this->edges.at(iter->at(0)).at(iter->at(1)).pt[0]), this->edges.at(iter->at(0)).at(iter->at(1)).tick, undis);
+        this->transformToStart(&(this->edges.at(iter->at(0)).at(iter->at(1)).pt[0]),
+                               this->edges.at(iter->at(0)).at(iter->at(1)).tick,
+                               undis);
         new_corr[0] = this->edges.at(iter->at(0)).at(iter->at(1)).pt[0];
         new_corr[1] = this->edges.at(iter->at(0)).at(iter->at(1)).pt[1];
         new_corr[2] = this->edges.at(iter->at(0)).at(iter->at(1)).pt[2];
@@ -231,7 +250,9 @@ void LaserOdom::undistort() {
     for (auto iter = this->flat_corrs.begin(); iter != this->flat_corrs.end(); iter++) {
         std::array<double, 15> new_corr;
         double undis[3];
-        this->transformToStart(&(this->flats.at(iter->at(0)).at(iter->at(1)).pt[0]), this->flats.at(iter->at(0)).at(iter->at(1)).tick, undis);
+        this->transformToStart(&(this->flats.at(iter->at(0)).at(iter->at(1)).pt[0]),
+                               this->flats.at(iter->at(0)).at(iter->at(1)).tick,
+                               undis);
 
         new_corr[0] = this->flats.at(iter->at(0)).at(iter->at(1)).pt[0];
         new_corr[1] = this->flats.at(iter->at(0)).at(iter->at(1)).pt[1];
@@ -258,13 +279,14 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
         if (this->initialized) {           // there is a set of previous features from
                                            // last scan
             double last_translation[3], last_rotation[3];
+            ceres::Problem problem;
             for (int i = 0; i < this->param.opt_iters; i++) {
                 if (i > 0) {
                     memcpy(last_translation, this->cur_translation.data(), 24);
                     memcpy(last_rotation, this->cur_rotation.data(), 24);
                 }
-                if (!this->match()) {
-                    break;
+                if (!this->match(&problem)) {
+                    return;
                 }
                 if (i > 0) {
                     double diff = getDiff(last_translation, this->cur_translation.data(), 3) +
@@ -274,6 +296,10 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
                     }
                 }
             }
+
+            ceres::Covariance covariance(this->covar_options);
+            covariance.Compute(this->covariance_blocks, &problem);
+
             memcpy(this->prev_translation.data(), this->cur_translation.data(), 24);
             memcpy(this->prev_rotation.data(), this->cur_rotation.data(), 24);
             if (this->param.output_trajectory) {
@@ -294,6 +320,14 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
                     this->undistorted_stamp = this->prv_time;
                     memcpy(this->undistort_translation.data(), this->cur_translation.data(), 24);
                     memcpy(this->undistort_rotation.data(), this->cur_rotation.data(), 24);
+
+                    covariance.GetCovarianceBlock(
+                      this->undistort_rotation.data(), this->undistort_rotation.data(), this->covar_ww);
+                    covariance.GetCovarianceBlock(
+                      this->undistort_rotation.data(), this->cur_translation.data(), this->covar_wt);
+                    covariance.GetCovarianceBlock(
+                      this->cur_translation.data(), this->cur_translation.data(), this->covar_tt);
+
                     this->undistort();
                     this->fresh_output = true;
                 }
@@ -411,9 +445,6 @@ void LaserOdom::rollover(TimeType stamp) {
             this->initialized = true;
         }
     }
-
-    //    this->cur_translation = {0, 0, 0};
-    //    this->cur_rotation = {0, 0, 0};
 }
 
 void LaserOdom::buildTrees() {
@@ -518,14 +549,13 @@ bool LaserOdom::findCorrespondingPoints(const Vec3 &query,
     return false;
 }
 
-bool LaserOdom::match() {
+bool LaserOdom::match(ceres::Problem *problem) {
     std::ofstream edge_cor, flat_cor;
     if (this->param.output_correspondences) {
         long timestamp = std::chrono::system_clock::now().time_since_epoch().count();
         edge_cor.open(std::to_string(timestamp) + "edges_cor.txt");
         flat_cor.open(std::to_string(timestamp) + "flat_cor.txt");
     }
-    ceres::Problem problem;
 
     Vec3 trans(this->cur_translation[0], this->cur_translation[1], this->cur_translation[2]);
 
@@ -555,24 +585,27 @@ bool LaserOdom::match() {
             Vec3 query(rotated[0], rotated[1], rotated[2]);
             query = query + scale * trans;
             if (this->findCorrespondingPoints(query, 2, 1, false, &ret_rings, &ret_indices)) {
-                const double * refA = this->prv_edges.at(ret_rings.at(0)).points.at(ret_indices.at(0)).data();
-                const double * refB = this->prv_edges.at(ret_rings.at(1)).points.at(ret_indices.at(1)).data();
+                const double *refA = this->prv_edges.at(ret_rings.at(0)).points.at(ret_indices.at(0)).data();
+                const double *refB = this->prv_edges.at(ret_rings.at(1)).points.at(ret_indices.at(1)).data();
                 Vec3 point_A(refA[0], refA[1], refA[2]);
                 Vec3 point_B(refB[0], refB[1], refB[2]);
                 point_A.normalize();
                 point_B.normalize();
-                double approx_angle = (point_A  - point_B).norm();
+                double approx_angle = (point_A - point_B).norm();
                 if (approx_angle > this->param.max_line_dist) {
                     continue;
                 }
                 ceres::CostFunction *cost_function =
-                        new AnalyticalPointToLine(&(this->edges.at(i).at(idx).pt[0]),
-                                                  this->prv_edges.at(ret_rings.at(0)).points.at(ret_indices.at(0)).data(),
-                                                  this->prv_edges.at(ret_rings.at(1)).points.at(ret_indices.at(1)).data(),
-                                                  &(this->scale_lookup.at(this->edges.at(i).at(idx).tick)));
+                  new AnalyticalPointToLine(&(this->edges.at(i).at(idx).pt[0]),
+                                            this->prv_edges.at(ret_rings.at(0)).points.at(ret_indices.at(0)).data(),
+                                            this->prv_edges.at(ret_rings.at(1)).points.at(ret_indices.at(1)).data(),
+                                            &(this->scale_lookup.at(this->edges.at(i).at(idx).tick)));
                 double residuals[3];
                 double **jacobians = nullptr;
-                cost_function->Evaluate(parameters, residuals, jacobians);
+                if (!cost_function->Evaluate(parameters, residuals, jacobians)) {
+                    LOG_ERROR("Point to line cost function did not evaluate");
+                    continue;
+                }
                 if (l2length(residuals, 3) < this->param.max_correspondence_dist) {
                     std::array<uint16_t, 6> cur_corr;
                     cur_corr[0] = i;
@@ -591,8 +624,8 @@ bool LaserOdom::match() {
                                  << ", " << pB_ref.at(2) << ", " << scale << std::endl;
                     }
                     ceres::LossFunction *p_LossFunction = new BisquareLoss(this->param.huber_delta);
-                    problem.AddResidualBlock(
-                            cost_function, p_LossFunction, this->cur_rotation.data(), this->cur_translation.data());
+                    problem->AddResidualBlock(
+                      cost_function, p_LossFunction, this->cur_rotation.data(), this->cur_translation.data());
                 } else {
                     delete cost_function;
                 }
@@ -613,14 +646,17 @@ bool LaserOdom::match() {
 
             if (this->findCorrespondingPoints(query, 3, 2, true, &ret_rings, &ret_indices)) {
                 ceres::CostFunction *cost_function =
-                        new AnalyticalPointToPlane(&(this->flats.at(i).at(ind).pt[0]),
-                                                   this->prv_flats.at(ret_rings.at(0)).points.at(ret_indices.at(0)).data(),
-                                                   this->prv_flats.at(ret_rings.at(1)).points.at(ret_indices.at(1)).data(),
-                                                   this->prv_flats.at(ret_rings.at(2)).points.at(ret_indices.at(2)).data(),
-                                                   &(this->scale_lookup.at(this->flats.at(i).at(ind).tick)));
+                  new AnalyticalPointToPlane(&(this->flats.at(i).at(ind).pt[0]),
+                                             this->prv_flats.at(ret_rings.at(0)).points.at(ret_indices.at(0)).data(),
+                                             this->prv_flats.at(ret_rings.at(1)).points.at(ret_indices.at(1)).data(),
+                                             this->prv_flats.at(ret_rings.at(2)).points.at(ret_indices.at(2)).data(),
+                                             &(this->scale_lookup.at(this->flats.at(i).at(ind).tick)));
                 double residuals[1];
                 double **jacobians = nullptr;
-                cost_function->Evaluate(parameters, residuals, jacobians);
+                if (!cost_function->Evaluate(parameters, residuals, jacobians)) {
+                    LOG_ERROR("cost function did not evaluate");
+                    continue;
+                }
                 if (l2length(residuals, 1) < this->param.max_correspondence_dist) {
                     std::array<uint16_t, 8> cur_corr;
                     cur_corr[0] = i;
@@ -634,8 +670,8 @@ bool LaserOdom::match() {
                     this->flat_corrs.push_back(cur_corr);
 
                     ceres::LossFunction *p_LossFunction = new BisquareLoss(this->param.huber_delta);
-                    problem.AddResidualBlock(
-                            cost_function, p_LossFunction, this->cur_rotation.data(), this->cur_translation.data());
+                    problem->AddResidualBlock(
+                      cost_function, p_LossFunction, this->cur_rotation.data(), this->cur_translation.data());
                 } else {
                     delete cost_function;
                 }
@@ -648,10 +684,12 @@ bool LaserOdom::match() {
     }
 
     // problem.SetParameterBlockConstant(this->cur_translation.data());
-    double num_residuals = (double) problem.NumResidualBlocks();
+    double num_residuals = (double) problem->NumResidualBlocks();
     if (this->param.imposePrior) {
         ceres::Matrix rotation_stiffness(3, 3);
         ceres::Matrix translation_stiffness(3, 3);
+        rotation_stiffness.setZero();
+        translation_stiffness.setZero();
         rotation_stiffness(0, 0) =
           this->param.rotation_stiffness * this->param.RP_multiplier * this->param.decay_parameter;
         rotation_stiffness(1, 1) =
@@ -666,28 +704,17 @@ bool LaserOdom::match() {
         ceres::VectorRef rot_ref(this->prev_rotation.data(), 3, 1);
         ceres::NormalPrior *t_diff_cost_function = new ceres::NormalPrior(translation_stiffness, trans_ref);
         ceres::NormalPrior *r_diff_cost_function = new ceres::NormalPrior(rotation_stiffness, rot_ref);
-        problem.AddResidualBlock(t_diff_cost_function, NULL, this->cur_translation.data());
-        problem.AddResidualBlock(r_diff_cost_function, NULL, this->cur_rotation.data());
+        problem->AddResidualBlock(t_diff_cost_function, NULL, this->cur_translation.data());
+        problem->AddResidualBlock(r_diff_cost_function, NULL, this->cur_rotation.data());
     }
 
-    ceres::Solver::Options options;
-    std::vector<int> iterations = {0, 1, 2, 3, 4, 5, 6, 7, 8};
-    options.linear_solver_type = ceres::DENSE_QR;
-    options.max_num_iterations = 300;
-    options.function_tolerance = 1e-10;
-    options.parameter_tolerance = 1e-10;
-    options.num_threads = 4;
-    options.num_linear_solver_threads = 4;
-    // options.trust_region_minimizer_iterations_to_dump = iterations;
-    options.trust_region_problem_dump_format_type = ceres::DumpFormatType::TEXTFILE;
-    ceres::Solver::Summary summary;
     auto max_residuals = this->param.n_ring * (this->param.n_flat + this->param.n_edge);
 
-    delete [] parameters;
+    delete[] parameters;
 
-    if (problem.NumResidualBlocks() < max_residuals * 0.1) {
+    if (problem->NumResidualBlocks() < max_residuals * 0.1) {
         LOG_ERROR("Less than expected residuals, resetting");
-        LOG_ERROR("%d residuals, threshold is %f", problem.NumResidualBlocks(), max_residuals * 0.2);
+        LOG_ERROR("%d residuals, threshold is %f", problem->NumResidualBlocks(), max_residuals * 0.2);
         // throw "Too few residuals";
         this->cur_translation = {0, 0, 0};
         this->cur_rotation = {0, 0, 0};
@@ -696,7 +723,7 @@ bool LaserOdom::match() {
         this->initialized = false;
         return false;
     } else if (!this->param.only_extract_features) {
-        ceres::Solve(options, &problem, &summary);
+        ceres::Solve(this->ceres_options, problem, &(this->ceres_summary));
         // LOG_INFO("%s", summary.FullReport().c_str());
     }
     return true;
