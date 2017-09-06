@@ -51,7 +51,7 @@ struct FeatureKDTree {
     }
 };
 
-using kd_tree_t = nanoflann::KDTreeSingleIndexAdaptor<
+using kd_tree_t = nanoflann::KDTreeSingleIndexDynamicAdaptor<
         nanoflann::L2_Simple_Adaptor<double, FeatureKDTree<double>>,
         FeatureKDTree<double>,
         3>;

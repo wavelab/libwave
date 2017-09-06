@@ -51,6 +51,8 @@ struct LaserOdomParams {
     double T_y_multiplier = 1;
     double RP_multiplier = 1;
     double decay_parameter = 1;
+    int min_residuals = 30;
+    double local_map_range = 10000;  // Maximum range of features to keep. square metres
 
     // Sensor parameters
     float scan_period = 0.1;  // Seconds
@@ -68,6 +70,9 @@ struct LaserOdomParams {
     int n_edge = 40;             // How many edge features to pick out per ring
     int n_flat = 100;            // How many plane features to pick out per ring
     unlong knn = 5;              // 1/2 nearest neighbours for computing curvature
+    unlong key_radius = 5;      // minimum number of points between keypoints on the same laser ring
+    float map_density = 0.01;    // Minimum l2squared spacing of features kept for odometry
+    double azimuth_tol = 0.04; // Minimum azimuth difference between correspondences
 
     // Setting flags
     bool imposePrior = false;             // Whether to add a prior constraint on transform from the previous scan match
@@ -84,7 +89,7 @@ class LaserOdom {
     void addPoints(const std::vector<PointXYZIR> &pts, const int tick, TimeType stamp);
     void addIMU(std::vector<double> linacc, Quaternion orientation);
     std::vector<std::vector<PointXYZIT>> edges, flats;
-    std::vector<FeatureKDTree<double>> prv_edges, prv_flats;
+    FeatureKDTree<double> prv_edges, prv_flats;
     // The transform is T_start_end
     std::array<double, 3> cur_translation, prev_translation;
     std::array<double, 3> cur_rotation, prev_rotation;
@@ -101,6 +106,7 @@ class LaserOdom {
     // Shared memory
     pcl::PointCloud<pcl::PointXYZI> undistorted_cld;
     pcl::PointCloud<pcl::PointXYZ> undis_edges, undis_flats;
+    pcl::PointCloud<pcl::PointXYZ> map_edges, map_flats;
     TimeType undistorted_stamp;
     std::array<double, 3> undistort_translation, undistort_rotation;
     double covar_ww[9], covar_wt[9], covar_tt[9];
@@ -145,12 +151,10 @@ class LaserOdom {
     void buildTrees();
     bool findCorrespondingPoints(const Vec3 &query,
                                  const uint16_t knn,
-                                 const uint16_t k_per_ring,
                                  const bool searchPlanarPoints,
-                                 std::vector<uint16_t> *rings,
                                  std::vector<size_t> *index);
-    std::vector<std::array<uint16_t, 6>> edge_corrs;
-    std::vector<std::array<uint16_t, 8>> flat_corrs;
+    std::vector<std::array<uint16_t, 4>> edge_corrs;
+    std::vector<std::array<uint16_t, 5>> flat_corrs;
 
     PCLPointXYZIT applyIMU(const PCLPointXYZIT &pt);
     void transformToStart(const double * const pt, const uint16_t tick, double * output);
@@ -167,8 +171,8 @@ class LaserOdom {
     std::vector<std::vector<std::pair<bool, float>>> cur_curve;
     std::vector<std::vector<std::pair<unlong, float>>> filter;
     std::vector<pcl::PointCloud<PCLPointXYZIT>> cur_scan;
-    std::vector<kd_tree_t *> edge_idx;
-    std::vector<kd_tree_t *> flat_idx;
+    kd_tree_t * edge_idx;
+    kd_tree_t * flat_idx;
 };
 
 }  // namespace wave
