@@ -228,8 +228,8 @@ TEST(OdomTest, StraightLineGarage) {
     params.max_correspondence_dist = 0.4;
     params.huber_delta = 0.2;
     params.opt_iters = 20;
-    params.visualize = true;
-    params.output_trajectory = true;
+//    params.visualize = true;
+//    params.output_trajectory = true;
     //params.output_correspondences = true;
     params.rotation_stiffness = 1e-5;
     params.translation_stiffness = 5e-3;

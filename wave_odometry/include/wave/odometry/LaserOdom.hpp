@@ -60,19 +60,20 @@ struct LaserOdomParams {
     unlong n_ring = 32;       // number of laser-detector pairs
 
     // Feature extraction parameters
-    float occlusion_tol = 0.1;   // Radians
-    float occlusion_tol_2 = 0.1; // m^2. Distance between points to initiate occlusion check
-    float max_line_dist = 0.5;   // Radians. Points defining the lines must be at least this close
-    float parallel_tol = 0.002;  // ditto
-    float keypt_radius = 0.05;   // m2. Non maximum suppression distance
-    float edge_tol = 0.1;        // Edge features must have score higher than this
-    float flat_tol = 0.1;        // Plane features must have score lower than this
-    int n_edge = 40;             // How many edge features to pick out per ring
-    int n_flat = 100;            // How many plane features to pick out per ring
-    unlong knn = 5;              // 1/2 nearest neighbours for computing curvature
-    unlong key_radius = 5;      // minimum number of points between keypoints on the same laser ring
-    float map_density = 0.01;    // Minimum l2squared spacing of features kept for odometry
-    double azimuth_tol = 0.04; // Minimum azimuth difference between correspondences
+    float occlusion_tol = 0.1;    // Radians
+    float occlusion_tol_2 = 0.1;  // m^2. Distance between points to initiate occlusion check
+    float max_line_dist = 0.5;    // Radians. Points defining the lines must be at least this close
+    float parallel_tol = 0.002;   // ditto
+    float keypt_radius = 0.05;    // m2. Non maximum suppression distance
+    float edge_tol = 0.1;         // Edge features must have score higher than this
+    float flat_tol = 0.1;         // Plane features must have score lower than this
+    int n_edge = 40;              // How many edge features to pick out per ring
+    int n_flat = 100;             // How many plane features to pick out per ring
+    unlong knn = 5;               // 1/2 nearest neighbours for computing curvature
+    unlong key_radius = 5;        // minimum number of points between keypoints on the same laser ring
+    float map_density = 0.01;     // Minimum l2squared spacing of features kept for odometry
+    double azimuth_tol = 0.04;    // Minimum azimuth difference between correspondences
+    uint16_t TTL = 10;            // Maximum life of feature in local map with no correspondences
 
     // Setting flags
     bool imposePrior = false;             // Whether to add a prior constraint on transform from the previous scan match
@@ -97,10 +98,10 @@ class LaserOdom {
 
     void rollover(TimeType stamp);
     bool match(ceres::Problem *problem);
-    void registerOutputFunction(std::function<void(const TimeType * const,
-                                                   const std::array<double, 3> * const,
-                                                   const std::array<double, 3> * const,
-                                                   const pcl::PointCloud<pcl::PointXYZI> * const)> output_function);
+    void registerOutputFunction(std::function<void(const TimeType *const,
+                                                   const std::array<double, 3> *const,
+                                                   const std::array<double, 3> *const,
+                                                   const pcl::PointCloud<pcl::PointXYZI> *const)> output_function);
     void registerOutputFunction(std::function<void()> output_function);
 
     // Shared memory
@@ -138,7 +139,7 @@ class LaserOdom {
     ceres::Solver::Options ceres_options;
     ceres::Covariance::Options covar_options;
     ceres::Solver::Summary ceres_summary;
-    std::vector<std::pair<const double *, const double *> > covariance_blocks;
+    std::vector<std::pair<const double *, const double *>> covariance_blocks;
 
     LaserOdomParams param;
     bool initialized = false;
@@ -157,7 +158,7 @@ class LaserOdom {
     std::vector<std::array<uint16_t, 5>> flat_corrs;
 
     PCLPointXYZIT applyIMU(const PCLPointXYZIT &pt);
-    void transformToStart(const double * const pt, const uint16_t tick, double * output);
+    void transformToStart(const double *const pt, const uint16_t tick, double *output);
 
     // store for the IMU integral
     MeasurementContainer<IMUMeasurement> imu_trans;
@@ -168,11 +169,18 @@ class LaserOdom {
     static float l2sqrd(const PCLPointXYZIT &pt);
     static PCLPointXYZIT scale(const PCLPointXYZIT &pt, const float scale);
     void flagNearbyPoints(const unlong ring, const unlong index);
+
+    // first input layer
     std::vector<std::vector<std::pair<bool, float>>> cur_curve;
     std::vector<std::vector<std::pair<unlong, float>>> filter;
     std::vector<pcl::PointCloud<PCLPointXYZIT>> cur_scan;
-    kd_tree_t * edge_idx;
-    kd_tree_t * flat_idx;
+    kd_tree_t *edge_idx;
+    kd_tree_t *flat_idx;
+
+    enum AssociationStatus { CORRESPONDED, UNCORRESPONDED };
+
+    std::vector<std::pair<uint16_t, AssociationStatus>> edge_association;
+    std::vector<std::pair<uint16_t, AssociationStatus>> flat_association;
 };
 
 }  // namespace wave
