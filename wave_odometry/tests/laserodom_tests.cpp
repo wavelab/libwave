@@ -1,6 +1,5 @@
 #include <pcl/io/pcd_io.h>
 #include <chrono>
-#include <pcap.h>
 #include <string>
 #include "wave/wave_test.hpp"
 #include "wave/utils/log.hpp"
@@ -170,12 +169,14 @@ TEST(Residual_test, pointToLineAnalytic) {
 
 TEST(Residual_test, pointToPlaneAnalytic) {
     const double **trans;
-    trans = new const double *;
-    trans[0] = new const double[6]{0.5, 0.3, -0.2, 0.2, 5, 4};
+    trans = new const double *[2];
+    trans[0] = new const double[3]{0.5, 0.3, -0.2};
+    trans[1] = new const double[3]{0.2, 5, 4};
 
     double **jacobian;
-    jacobian = new double *;
-    jacobian[0] = new double[6];
+    jacobian = new double *[2];
+    jacobian[0] = new double[3];
+    jacobian[1] = new double[3];
 
     double ptA[3] = {1, 1, 0};
     double ptB[3] = {1, 3, 0};
@@ -191,9 +192,9 @@ TEST(Residual_test, pointToPlaneAnalytic) {
     EXPECT_NEAR(jacobian[0][0], 3.5577, 1e-4);
     EXPECT_NEAR(jacobian[0][1], -0.0643, 1e-4);
     EXPECT_NEAR(jacobian[0][2], 0.5962, 1e-4);
-    EXPECT_NEAR(jacobian[0][3], 0, 1e-4);
-    EXPECT_NEAR(jacobian[0][4], 0, 1e-4);
-    EXPECT_NEAR(jacobian[0][5], 1, 1e-4);
+    EXPECT_NEAR(jacobian[1][0], 0, 1e-4);
+    EXPECT_NEAR(jacobian[1][1], 0, 1e-4);
+    EXPECT_NEAR(jacobian[1][2], 1, 1e-4);
 }
 
 // This test is for odometry for the car moving in a straight line through the garage
