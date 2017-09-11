@@ -40,11 +40,37 @@ class MultiMatcher {
 
     ~MultiMatcher();
 
+    /** inserts a pair of scans into the queue to be matched. The resulting
+     * transform is the transform used to map
+     * the source pointcloud to the target pointcloud
+     *
+     * @param id for result
+     * @param source pointcloud
+     * @param target pointcloud
+     */
     void insert(const int &id,
                 const PCLPointCloud &src,
                 const PCLPointCloud &target);
+
+    /**
+     * Checks to see if there are any remaining matches in the queue.
+     * @return
+     */
     bool done();
-    bool getResult();
+
+    /**
+     * Gets a result at the start of the queue. Will block until a result is
+     * ready if the output buffer
+     * is empty but there are matches pending.
+     *
+     * @param id id of result
+     * @param transform result
+     * @param info information matrix of match
+     * @return true if result has been output, false if the output queue is
+     * empty and there are no
+     * matches pending
+     */
+    bool getResult(int *id, Eigen::Affine3d *transform, Mat6 *info);
 
  private:
     const int n_thread;
