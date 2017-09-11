@@ -15,40 +15,6 @@ TEST(VisionCommon, focal_length) {
     EXPECT_FLOAT_EQ(554.25629, f2(1));
 }
 
-TEST(VisionCommon, projection_matrix) {
-    // setup
-    double fx = 554.38;
-    double fy = 554.38;
-    double cx = 320.0;
-    double cy = 320.0;
-
-    MatX expected(3, 4);
-    expected << fx, 0.0, cx, 0.0,  //
-      0.0, fy, cy, 0.0,            //
-      0.0, 0.0, 1.0, 0.0;          //
-
-    Mat3 K;
-    K << fx, 0.0, cx,  //
-      0.0, fy, cy,     //
-      0.0, 0.0, 1.0;   //
-
-    Vec3 rpy;
-    rpy << deg2rad(0.0), deg2rad(0.0), deg2rad(0.0);
-
-    Mat3 R;
-    euler2rot(rpy, 123, R);
-
-    Vec3 t = Vec3::Zero();
-
-    // test and assert
-    MatX P;
-    projection_matrix(K, R, t, P);
-
-    EXPECT_EQ(3, P.rows());
-    EXPECT_EQ(4, P.cols());
-    EXPECT_PRED2(MatricesNear, expected, P);
-}
-
 TEST(VisionCommon, convert_single_keypoint) {
     cv::KeyPoint keypoint1(5.f, 5.f, 1.f);
     cv::Point2f keypoint2(1.f, 3.f);
@@ -120,4 +86,115 @@ TEST(VisionCommon, read_image_sequence) {
 
     ASSERT_EQ((int) image_sequence.size(), 10);
 }
+
+class PinholeProjectTest : public ::testing::Test {
+ protected:
+    // setup camera
+    double fx = 554.38;
+    double fy = 554.38;
+    double cx = 320.0;
+    double cy = 320.0;
+
+    Mat3 K;
+    PinholeProjectTest() {
+        this->K << fx, 0.0, cx,  //
+          0.0, fy, cy,           //
+          0.0, 0.0, 1.0;
+    }
+
+    // rotate the body frame by this to get the camera frame
+    // or, use this to transform points from camera frame to body frame
+    Quaternion q_BC{Eigen::AngleAxisd(-M_PI_2, Vec3::UnitZ()) *
+                    Eigen::AngleAxisd(0, Vec3::UnitY()) *
+                    Eigen::AngleAxisd(-M_PI_2, Vec3::UnitX())};
+};
+
+TEST_F(PinholeProjectTest, projectPointDirectlyAhead) {
+    // Landmark position in global frame
+    auto G_p_GF = Vec3{10.0, 0., 0.};
+
+    // Translation from origin of Global frame to Camera
+    auto G_p_GC = Vec3{0, 0, 0};
+
+    // Orientation of robot Body frame in Global frame
+    auto q_GB = Quaternion::Identity();
+
+    // Get rotation matrix
+    auto R_GC = Mat3{q_GB * this->q_BC};
+
+    Vec2 meas;
+    auto res = pinholeProject(this->K, R_GC, G_p_GC, G_p_GF, meas);
+    auto expected = Vec2{this->cx, this->cy};
+    EXPECT_TRUE(res);
+    EXPECT_PRED2(VectorsNear, expected, meas);
+}
+
+TEST_F(PinholeProjectTest, projectPointDirectlyBehind) {
+    // Landmark position in global frame
+    auto G_p_GF = Vec3{-10.0, 0., 0.};
+
+    // Translation from origin of Global frame to Camera
+    auto G_p_GC = Vec3{0, 0, 0};
+
+    // Orientation of robot Body frame in Global frame
+    auto q_GB = Quaternion::Identity();
+
+    // Get rotation matrix
+    auto R_GC = Mat3{q_GB * this->q_BC};
+
+    Vec2 meas;
+    auto res = pinholeProject(this->K, R_GC, G_p_GC, G_p_GF, meas);
+    auto expected = Vec2{this->cx, this->cy};
+    EXPECT_FALSE(res);
+    EXPECT_PRED2(VectorsNear, expected, meas);
+}
+
+TEST_F(PinholeProjectTest, projectPointAboveRight) {
+    // Landmark position in global frame
+    // It is above and to the right from the camera's viewpoint, since the
+    // camera is looking along X, and Y points to the left.
+    auto G_p_GF = Vec3{10.0, -2.0, 1.0};
+
+    // Translation from origin of Global frame to Camera
+    auto G_p_GC = Vec3{5.0, 0.0, 0.0};
+
+    // Orientation of robot Body frame in Global frame
+    auto q_GB = Quaternion::Identity();
+
+    // Get rotation matrix
+    auto R_GC = Mat3{q_GB * this->q_BC};
+
+    Vec2 meas;
+    auto res = pinholeProject(this->K, R_GC, G_p_GC, G_p_GF, meas);
+    EXPECT_TRUE(res);
+    EXPECT_GT(meas.x(), this->cx);
+    EXPECT_LT(meas.y(), this->cy);
+}
+
+TEST_F(PinholeProjectTest, projectKnownPoint) {
+    // Test projection with the correct answer separately calculated here
+
+    // Landmark position in global frame
+    auto G_p_GF = Vec3{12.0, -3.4, 2.1};
+
+    // Translation from origin of Global frame to Camera
+    auto G_p_GC = Vec3{5.0, 0.0, 0.0};
+
+    // Orientation of robot Body frame in Global frame
+    auto q_GB = Quaternion::Identity();
+
+    // Get rotation matrix
+    auto R_GC = Mat3{q_GB * this->q_BC};
+
+    // Calculate expected
+    const Vec3 C_p_CF = R_GC.inverse() * (G_p_GF - G_p_GC);
+    const Vec3 homogeneous = this->K * C_p_CF;
+    const Vec2 expected = homogeneous.head<2>() / homogeneous(2);
+
+    Vec2 meas;
+    auto res = pinholeProject(this->K, R_GC, G_p_GC, G_p_GF, meas);
+    EXPECT_TRUE(res);
+    EXPECT_PRED2(VectorsNear, expected, meas);
+}
+
 }  // namespace wave

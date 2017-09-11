@@ -35,7 +35,7 @@ struct BRISKDescriptorParams {
      *
      *  @param config_path the path to the location of the configuration file
      */
-    BRISKDescriptorParams(const std::string &config_path);
+    explicit BRISKDescriptorParams(const std::string &config_path);
 
     /** radius_list defines the radius of each subsequent circle (in pixels).
      *  All numbers must be positive. Cannot be empty.
@@ -81,9 +81,8 @@ struct BRISKDescriptorParams {
 
 /** Representation of a descriptor extractor using the BRISK algorithm.
  *
- *  Internally, this class is wrapping OpenCV's BRISK detector/descriptor
- *  module. Further reference on BRISK can be found
- *  [here][opencv_brisk_descriptor].
+ *  Internally, this class is wrapping OpenCV's BRISK descriptor module.
+ *  Further reference on BRISK can be found [here][opencv_brisk_descriptor].
  *
  *  [opencv_brisk_descriptor]:
  *  http://docs.opencv.org/trunk/de/dbf/classcv_1_1BRISK.html
@@ -101,17 +100,17 @@ class BRISKDescriptor : public DescriptorExtractor {
     /** Returns the current configuration parameters being used by the
      *  BRISK Descriptor Extractor.
      *
-     *  @return a struct containing the current configuration values.
+     *  @return the current configuration values.
      */
     BRISKDescriptorParams getConfiguration() const;
 
     /** Extracts descriptors from the keypoints in an image, using the BRISK
-     *  extractor.
+     *  descriptor extractor.
      *
      *  @param image the image to detect features in.
      *  @param keypoints the keypoints from the detected image
      *
-     *  @return an array containing the computed descriptors.
+     *  @return the computed descriptors.
      */
     cv::Mat extractDescriptors(const cv::Mat &image,
                                std::vector<cv::KeyPoint> &keypoints);
@@ -125,7 +124,7 @@ class BRISKDescriptor : public DescriptorExtractor {
 
     /** Checks whether the desired configuration is valid.
      *
-     *  @param check_config containing the desired configuration values.
+     *  @param check_config the desired configuration values.
      */
     void checkConfiguration(const BRISKDescriptorParams &check_config);
 };

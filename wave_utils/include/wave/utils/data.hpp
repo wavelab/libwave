@@ -51,6 +51,23 @@ int csv2mat(std::string file_path, bool header, MatX &data);
  */
 int mat2csv(std::string file_path, MatX data);
 
+
+/** Reads a matrix from an input stream.
+ *
+ * The entries must be separated by whitespace, and be in row-major order.
+ */
+template <int Rows, int Cols>
+Eigen::Matrix<double, Rows, Cols> matrixFromStream(std::istream &in_stream) {
+    Eigen::Matrix<double, Rows, Cols> mat;
+    for (auto i = 0; i < Rows; ++i) {
+        for (auto j = 0; j < Cols; ++j) {
+            in_stream >> mat(i, j);
+        }
+    }
+
+    return mat;
+}
+
 /** @} group utils */
 }  // namespace wave
 

@@ -12,6 +12,7 @@
 #define WAVE_UTILS_MATH_HPP
 
 #include <iostream>
+#include <vector>
 
 #include <Eigen/Dense>
 #include <Eigen/Geometry>
@@ -41,6 +42,26 @@ typedef Eigen::Affine3d Affine3;
 
 typedef Eigen::Quaterniond Quaternion;
 #endif
+
+/**
+ * Eigen vector comparator
+ */
+struct VecComparator {
+    bool operator()(const VecX &a, const VecX &b) const {
+        return std::lexicographical_compare(
+          a.data(), a.data() + a.size(), b.data(), b.data() + b.size());
+    }
+};
+
+/**
+ * Eigen matrix comparator
+ */
+struct MatComparator {
+    bool operator()(const MatX &a, const MatX &b) const {
+        return std::lexicographical_compare(
+          a.data(), a.data() + a.size(), b.data(), b.data() + b.size());
+    }
+};
 
 /** Generates random integer with a upper bound `ub` and lower bound `lb` using
  * a uniform random distribution. */

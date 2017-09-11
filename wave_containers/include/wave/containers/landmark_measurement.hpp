@@ -5,6 +5,8 @@
 #ifndef WAVE_CONTAINERS_LANDMARK_MEASUREMENT_HPP
 #define WAVE_CONTAINERS_LANDMARK_MEASUREMENT_HPP
 
+#include <chrono>
+
 #include "wave/utils/math.hpp"
 
 namespace wave {
