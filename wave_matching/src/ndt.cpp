@@ -3,39 +3,35 @@
 
 namespace wave {
 
-NDTMatcher::NDTMatcher(float res, const std::string &config_path) {
-    this->ref = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
-    this->target = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
-    this->final = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
-
+NDTMatcherParams::NDTMatcherParams(const std::string &config_path) {
     ConfigParser parser;
-    float step_size, t_eps, default_res;
-    int max_iter;
-    parser.addParam("ndt.step_size", &step_size);
-    parser.addParam("ndt.max_iter", &max_iter);
-    parser.addParam("ndt.t_eps", &t_eps);
-    parser.addParam("ndt.default_res", &default_res);
+    parser.addParam("step_size", &this->step_size);
+    parser.addParam("max_iter", &this->max_iter);
+    parser.addParam("t_eps", &this->t_eps);
+    parser.addParam("res", &this->res);
 
     if (parser.load(config_path) != 0) {
         ConfigException config_exception;
         throw config_exception;
     }
+}
 
-    if (res < this->min_res) {
-        if (default_res < this->min_res) {
-            LOG_ERROR("Invalid resolution given, using minimum");
-            default_res = this->min_res;
-        } else {
-            this->resolution = default_res;
-        }
-    } else {
-        this->resolution = res;
+NDTMatcher::NDTMatcher(NDTMatcherParams params1) : params(params1) {
+    this->ref = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+    this->target = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+    this->final = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+
+    if (this->params.res < this->params.min_res) {
+        LOG_ERROR("Invalid resolution given, using minimum");
+        this->params.res = this->params.min_res;
     }
 
-    this->ndt.setTransformationEpsilon(t_eps);
-    this->ndt.setStepSize(step_size);
-    this->ndt.setResolution(this->resolution);
-    this->ndt.setMaximumIterations(max_iter);
+    this->resolution = this->params.res;
+
+    this->ndt.setTransformationEpsilon(this->params.t_eps);
+    this->ndt.setStepSize(this->params.step_size);
+    this->ndt.setResolution(this->params.res);
+    this->ndt.setMaximumIterations(this->params.max_iter);
 }
 
 NDTMatcher::~NDTMatcher() {

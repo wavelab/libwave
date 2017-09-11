@@ -27,6 +27,20 @@ namespace wave {
 /** @addtogroup matching
  *  @{ */
 
+struct ICPMatcherParams {
+    ICPMatcherParams(const std::string &config_path);
+    ICPMatcherParams() {}
+
+    int max_corr = 3;
+    int max_iter = 100;
+    double t_eps = 1e-8;
+    double fit_eps = 1e-2;
+    double lidar_ang_covar = 7.78e-9;
+    double lidar_lin_covar = 2.5e-4;
+    float res = 0.1;
+    enum covar_method : int { LUM, CENSI } covar_estimator = covar_method::LUM;
+};
+
 class ICPMatcher : public Matcher<PCLPointCloud> {
  public:
     /** This constructor takes an argument in order to adjust how much
@@ -34,18 +48,30 @@ class ICPMatcher : public Matcher<PCLPointCloud> {
      * downsampled using a voxel filter, the argument is the edge length of
      * each voxel. If resolution is non-positive, no downsampling is used.
      */
-    explicit ICPMatcher(float resolution, const std::string &config_path);
-    ICPMatcher() = delete;
+    explicit ICPMatcher(ICPMatcherParams params1);
     ~ICPMatcher();
+
+    /** sets the reference pointcloud for the matcher
+     * @param ref - Pointcloud
+     */
     void setRef(const PCLPointCloud &ref);
+
+    /** sets the target (or scene) pointcloud for the matcher
+     * @param targer - Pointcloud
+     */
     void setTarget(const PCLPointCloud &target);
+
+    /** runs the matcher, blocks until finished.
+     * Returns true if successful
+     */
     bool match();
+
+    /** runs covariance estimator, blocks until finished.
+     */
     void estimateInfo();
 
-    enum covar_method : int { LUM, CENSI };
-
  private:
-    /** An instance of the G-ICP class from PCL */
+    /** An instance of the ICP class from PCL */
     pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
     /** An instance of a PCL voxel filter. It is used to downsample input. */
     pcl::VoxelGrid<pcl::PointXYZ> filter;
@@ -55,10 +81,18 @@ class ICPMatcher : public Matcher<PCLPointCloud> {
      * pointcloud after matching, so the "final" member is used as a sink for
      * it. */
     PCLPointCloud ref, target, final;
-    covar_method estimate_method;
-    double lidar_ang_covar, lidar_lin_covar;
+
+    /**
+     * Calculates a covariance estimate based on Lu and Milios Scan Matching
+     */
     void estimateLUM();
+
+    /**
+     * Calculates a covariance estimate based on Censi
+     */
     void estimateCensi();
+
+    ICPMatcherParams params;
 };
 
 /** @} group matching */
