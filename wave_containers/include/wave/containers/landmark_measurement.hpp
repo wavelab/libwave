@@ -5,6 +5,8 @@
 #ifndef WAVE_CONTAINERS_LANDMARK_MEASUREMENT_HPP
 #define WAVE_CONTAINERS_LANDMARK_MEASUREMENT_HPP
 
+#include <chrono>
+
 #include "wave/utils/math.hpp"
 
 namespace wave {
@@ -15,6 +17,7 @@ namespace wave {
  *
  * @todo: This is a weak typedef; consider a strong typedef using phantom types.
  */
+using ImageNum = std::size_t;
 using LandmarkId = std::size_t;
 using TimeType = std::chrono::steady_clock::time_point;
 
@@ -39,13 +42,15 @@ struct LandmarkMeasurement {
     TimeType time_point;
     SensorIdType sensor_id;
     LandmarkId landmark_id;
+    ImageNum image;
     Vec2 value;
 
     LandmarkMeasurement(const TimeType &t,
                         const SensorIdType &s,
                         const LandmarkId &id,
+                        const ImageNum &img,
                         const Vec2 &v)
-        : time_point{t}, sensor_id{s}, landmark_id{id}, value{v} {}
+        : time_point{t}, sensor_id{s}, landmark_id{id}, image{img}, value{v} {}
 };
 
 

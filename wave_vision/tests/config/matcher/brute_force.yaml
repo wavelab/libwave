@@ -1,0 +1,92 @@
+# Configuration parameters for Brute Force matcher
+
+#  Norm type to use for distance calculation between feature descriptors.
+#
+#  Options:
+#  1: cv::NORM_INF, l-infinity norm
+#  2: cv::NORM_L1: l1 norm
+#  4: cv::NORM_L2: l2 norm
+#  5: cv::NORM_L2SQR: l2 norm, squared
+#  6: cv::NORM_HAMMING: Hamming distance
+#  7: cv::NORM_HAMMING2: Hamming distance modifier for ORB Descriptor, with
+#     tuple_size (WTA_K) = 3 or 4
+#
+#  As per OpenCV docs, NORM_L1 and NORM_L2 is valid for the SIFT or
+#  SURF descriptors, while NORM_HAMMING is valid for the ORB, BRISK, and
+#  BRIEF descriptors. NORM_HAMMING2 should only be used with ORB, when
+#  tuple_size (WTA_K) is 3 or 4.
+#
+#  Default: NORM_HAMMING.
+#
+#  Please refer to further description of the norm types
+#  [here][opencv_norm_types].
+#
+#  [opencv_norm_types]:
+#  http://docs.opencv.org/trunk/d2/de8/group__core__array.html#gad12cefbcb5291cf958a85b4b67b6149f
+#
+norm_type: 6
+
+# Determines whether to use a k-nearest-neighbours match.
+#
+# Matcher can conduct a knn match with the best 2 matches for each
+# descriptor. This uses the ratio test (@param ratio_threshold)
+# to discard outliers.
+#
+# If false, the matcher uses a distance heuristic
+# (@param distance_threshold) to discard poor matches. This also
+# incorporates cross checking between matches.
+#
+# Recommended: true.
+#
+use_knn: true
+
+# Specifies heuristic for the ratio test, illustrated by Dr. David G. Lowe
+# in his paper _Distinctive Image Features from Scale-Invariant Keypoints_
+# (2004). The test takes the ratio of the closest keypoint distance
+# to that of the second closest neighbour. If the ratio is less than
+# the heuristic, it is discarded. Only used if use_knn is true.
+#
+# A value of 0.8 was shown by Dr. Lowe to reject 90% of the false matches, and
+# discard only 5% of the correct matches.
+#
+# Recommended: 0.8. Must be between 0 and 1.
+#
+ratio_threshold: 0.8
+
+# Specifies the distance threshold for good matches.
+#
+# Matches will only be kept if the descriptor distance is less than or
+# equal to the product of the distance threshold and the _minimum_ of all
+# descriptor distances. The greater the value, the more matches will
+# be kept. Only used if use_knn is false.
+#
+# Recommended: 5. Must be greater than or equal to zero.
+#
+distance_threshold: 5
+
+# Determines whether to automatically remove outliers using the method
+# described in fm_method.
+#
+# If true, the wave::BruteForceMatcher::matchDescriptors method will
+# automatically call the wave::BruteForceMatcher::removeOutliers method,
+# which uses the method in wave::BFMatcherParams::fm_method to remove
+# matched outliers.
+#
+# If false, the matches returned will only have been passed through the
+# distance threshold or ratio tests described above.
+#
+# Recommended: True
+#
+auto_remove_outliers: true
+
+#  Method to find the fundamental matrix and remove outliers.
+#
+#  Options:
+#  1: cv::FM_7POINT, 7-point algorithm
+#  2: cv::FM_8POINT, 8-point algorithm
+#  4: cv::FM_LMEDS, least-median algorithm
+#  8: cv::FM_RANSAC, RANSAC algorithm
+#
+#  Recommended: 8 (cv::FM_RANSAC).
+#
+fm_method: 8

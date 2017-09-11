@@ -9,6 +9,22 @@ This library contains reusable code for:
 - Vision
 - and more ..
 
+## Requirements
+
+- Boost 1.54
+- Ceres 1.13
+- Eigen 3.3.2
+- Kindr 1.0.4
+- OpenCV 3.2.0
+- PCL 1.8
+- yaml-cpp 0.5.1
+- CMake 2.8.3
+- GCC 5.4
+
+The above versions are the minimum we test against.
+Some earlier versions may work, but are not tested.
+For convenience, we provide a script which installs these dependencies (except 
+GCC) on Ubuntu 14.04 or Ubuntu 16.04, in `scripts/install/install_deps.bash`.
 
 ## Install
 

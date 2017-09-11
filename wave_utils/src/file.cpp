@@ -13,6 +13,32 @@ bool file_exists(const std::string &fp) {
     }
 }
 
+int remove_dir(const std::string &path) {
+    DIR *dir = opendir(path.c_str());
+    struct dirent *next_file;
+    char filepath[256];
+
+    // pre-check
+    if (dir == NULL) {
+        LOG_ERROR(
+          "Failed to rmdir [%s]: %s", path.c_str(), std::strerror(errno));
+        return -1;
+    }
+
+    // remove files in path
+    while ((next_file = readdir(dir)) != NULL) {
+        // build the path for each file in the folder
+        sprintf(filepath, "%s/%s", path.c_str(), next_file->d_name);
+        remove(filepath);
+    }
+
+    // remove dir
+    remove(path.c_str());
+    closedir(dir);
+
+    return 0;
+}
+
 std::vector<std::string> path_split(const std::string path) {
     std::string s;
     std::vector<std::string> splits;
