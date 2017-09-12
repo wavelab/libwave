@@ -1,6 +1,6 @@
 /**
  * @file
- * BRISK Descriptor Extractor implementation, derived from Descriptor Extractor
+ * BRISK Descriptor Extractor implementation, derived from DescriptorExtractor
  * base class.
  * @ingroup vision
  */
@@ -23,7 +23,6 @@ namespace wave {
  *  brightness comparison tests to construct the descriptor.
  */
 struct BRISKDescriptorParams {
-    /** Default Constructor */
     BRISKDescriptorParams() {}
 
     BRISKDescriptorParams(std::vector<float> rlist,
@@ -36,7 +35,7 @@ struct BRISKDescriptorParams {
      *
      *  @param config_path the path to the location of the configuration file
      */
-    BRISKDescriptorParams(const std::string &config_path);
+    explicit BRISKDescriptorParams(const std::string &config_path);
 
     /** radius_list defines the radius of each subsequent circle (in pixels).
      *  All numbers must be positive. Cannot be empty.
@@ -80,15 +79,20 @@ struct BRISKDescriptorParams {
     std::vector<int> index_change;
 };
 
+/** Representation of a descriptor extractor using the BRISK algorithm.
+ *
+ *  Internally, this class is wrapping OpenCV's BRISK descriptor module.
+ *  Further reference on BRISK can be found [here][opencv_brisk_descriptor].
+ *
+ *  [opencv_brisk_descriptor]:
+ *  http://docs.opencv.org/trunk/de/dbf/classcv_1_1BRISK.html
+ */
 class BRISKDescriptor : public DescriptorExtractor {
  public:
     /** Default constructor. The user can also specify their own struct with
      *  desired values. If no struct is provided, default values are used.
      *
-     *  @param config
-     *  \parblock contains the desired parameter values. Uses default values if
-     *  not specified.
-     *  \endparblock
+     *  @param config contains the desired parameter values
      */
     explicit BRISKDescriptor(
       const BRISKDescriptorParams &config = BRISKDescriptorParams{});
@@ -96,19 +100,19 @@ class BRISKDescriptor : public DescriptorExtractor {
     /** Returns the current configuration parameters being used by the
      *  BRISK Descriptor Extractor.
      *
-     *  @return a struct containing the current configuration values.
+     *  @return the current configuration values.
      */
     BRISKDescriptorParams getConfiguration() const;
 
     /** Extracts descriptors from the keypoints in an image, using the BRISK
-     *  extractor.
+     *  descriptor extractor.
      *
      *  @param image the image to detect features in.
      *  @param keypoints the keypoints from the detected image
      *
-     *  @return an array containing the computed descriptors.
+     *  @return the computed descriptors.
      */
-    cv::Mat extractDescriptors(cv::Mat &image,
+    cv::Mat extractDescriptors(const cv::Mat &image,
                                std::vector<cv::KeyPoint> &keypoints);
 
  private:
@@ -120,7 +124,7 @@ class BRISKDescriptor : public DescriptorExtractor {
 
     /** Checks whether the desired configuration is valid.
      *
-     *  @param check_config containing the desired configuration values.
+     *  @param check_config the desired configuration values.
      */
     void checkConfiguration(const BRISKDescriptorParams &check_config);
 };

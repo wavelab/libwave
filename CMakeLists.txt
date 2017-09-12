@@ -21,7 +21,8 @@ SET(LIBWAVE_MODULES
     wave_optimization
     wave_vision
     wave_utils
-    wave_odometry)
+    wave_odometry
+    wave_benchmark)
 
 FOREACH(dir ${LIBWAVE_MODULES})
     INCLUDE_DIRECTORIES(${dir}/include)
@@ -55,6 +56,9 @@ ADD_DEPENDENCIES(wave_vision wave_utils)
 
 # libwave_odometry.a
 ADD_DEPENDENCIES(wave_odometry wave_utils wave_matching)
+
+# libwave_benchmark.a
+ADD_DEPENDENCIES(wave_benchmark wave_utils)
 
 # libwave library
 SET(LIBWAVE_MODULE_LIBS

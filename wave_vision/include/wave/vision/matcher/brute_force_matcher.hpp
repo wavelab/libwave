@@ -1,36 +1,49 @@
 /**
  * @file
- * Brute force matcher implementation, derived from descriptor matcher base.
+ * Brute force matcher implementation, derived from descriptor matcher base
+ * class.
  * @ingroup vision
  */
 #ifndef WAVE_VISION_BRUTE_FORCE_MATCHER_HPP
 #define WAVE_VISION_BRUTE_FORCE_MATCHER_HPP
 
-#include <algorithm>
 #include <string>
 #include <vector>
 
-#include "wave/utils/utils.hpp"
 #include "wave/vision/matcher/descriptor_matcher.hpp"
 
 namespace wave {
 /** @addtogroup vision
  *  @{ */
 
+/** Configuration parameters for the BruteForceMatcher */
 struct BFMatcherParams {
-    /** Default constructor*/
     BFMatcherParams() {}
 
-    /** Constructor using user-defined parameters */
+    /** Constructor with user selected values. Only to be used if the user
+     *  desires the ratio test as the first pass to filter outliers.
+     */
     BFMatcherParams(int norm_type,
-                    bool use_knn,
                     double ratio_threshold,
-                    int distance_threshold,
+                    bool auto_remove_outliers,
                     int fm_method)
         : norm_type(norm_type),
-          use_knn(use_knn),
+          use_knn(true),
           ratio_threshold(ratio_threshold),
+          auto_remove_outliers(auto_remove_outliers),
+          fm_method(fm_method) {}
+
+    /** Overloaded method. Only to be used if the user desires the distance
+     *  threshold test as the first pass to filter outliers.
+     */
+    BFMatcherParams(int norm_type,
+                    int distance_threshold,
+                    bool auto_remove_outliers,
+                    int fm_method)
+        : norm_type(norm_type),
+          use_knn(false),
           distance_threshold(distance_threshold),
+          auto_remove_outliers(auto_remove_outliers),
           fm_method(fm_method) {}
 
     /** Constructor using parameters extracted from a configuration file.
@@ -47,14 +60,15 @@ struct BFMatcherParams {
      *  cv::NORM_L2: l2 norm
      *  cv::NORM_L2SQR: l2 norm, squared
      *  cv::NORM_HAMMING: Hamming distance
-     *  cv::NORM_HAMMING2:
+     *  cv::NORM_HAMMING2: Hamming distance modifier for ORB Descriptor, with
+     *  tuple_size (WTA_K) = 3 or 4
      *
      *  As per OpenCV docs, NORM_L1 and NORM_L2 is valid for the SIFT or
      *  SURF descriptors, while NORM_HAMMING is valid for the ORB, BRISK, and
-     *  BRIEF descriptors. NORM_HAMMING2 should only be used with ORB, when
-     *  WTA_K is 3 or 4.
+     *  BRIEF descriptors. NORM_HAMMING2 should only be used with ORB when
+     *  tuple_size (WTA_K) is 3 or 4.
      *
-     *  Default: NORM_HAMMING, since currently only BRISK Descriptor is used.
+     *  Default: NORM_HAMMING, as it is used for ORB and BRISK Descriptors.
      *
      *  Please refer to further description of the norm types
      *  [here][opencv_norm_types].
@@ -102,6 +116,21 @@ struct BFMatcherParams {
      */
     int distance_threshold = 5;
 
+    /** Determines whether to automatically remove outliers using the method
+     *  described in fm_method.
+     *
+     *  If true, the wave::BruteForceMatcher::matchDescriptors method will
+     *  automatically call the wave::BruteForceMatcher::removeOutliers method,
+     *  which uses the method in wave::BFMatcherParams::fm_method to remove
+     *  matched outliers.
+     *
+     *  If false, the matches returned will only have been passed through the
+     *  distance threshold or ratio tests described above.
+     *
+     *  Recommended: True
+     */
+    bool auto_remove_outliers = true;
+
     /** Method to find the fundamental matrix and remove outliers.
      *
      *  Options:
@@ -113,53 +142,48 @@ struct BFMatcherParams {
      *  Recommended: cv::FM_RANSAC.
      */
     int fm_method = cv::FM_RANSAC;
-
-    // -------------------------------------------------------------------------
-
-    /** Default parameters that do not need to be modified */
-
-    /** Number of neighbours for the k-nearest neighbour search. As this is only
-     *  used for the ratio test, only want 2.
-     */
-    int k = 2;
-
-    /** Maximum distance from a point to an epipolar line in pixels. Any points
-     *  further are considered outliers. Only used for RANSAC.
-     *
-     *  Typical values: 1-3
-     */
-    double fm_param_1 = 3.0;
-
-    /** Desired confidence interval of the estimated fundamental matrix. Only
-     *  used for RANSAC or LMedS methods.
-     *
-     *  Default: 0.99
-     */
-    double fm_param_2 = 0.99;
 };
 
+/** Representation of a descriptor matcher using the BruteForce algorithm.
+ *
+ *  Internally, this class is wrapping OpenCV's BFMatcher module.
+ *  Further reference on the BFMatcher can be found
+ * [here][opencv_bfmatcher].
+ *
+ *  [opencv_bfmatcher]:
+ *  http://docs.opencv.org/trunk/d3/da1/classcv_1_1BFMatcher.html
+ */
 class BruteForceMatcher : public DescriptorMatcher {
  public:
     /** Default constructor. The user can also specify their own struct with
      *  desired values. If no struct is provided, default values are used.
      *
-     *  @param config
-     *  \parblock
-     *  contains the desired parameter values. Uses default values if not
-     *  specified.
-     *  \endparblock
+     *  @param config contains the desired parameter values.
      */
     explicit BruteForceMatcher(
       const BFMatcherParams &config = BFMatcherParams{});
 
     /** Returns the current configuration parameters being used by the
-     *  DescriptorMatcher.
+     *  BruteForceMatcher
      *
-     *  @return a struct containing the current configuration values.
+     *  @return the current configuration values.
      */
     BFMatcherParams getConfiguration() const {
         return this->current_config;
     }
+
+    /** Remove outliers between matches using epipolar constraints
+     *
+     * @param matches the unfiltered matches computed from two images
+     * @param keypoints_1 the keypoints from the first image
+     * @param keypoints_2 the keypoints from the second image
+     *
+     * @return the filtered matches
+     */
+    std::vector<cv::DMatch> removeOutliers(
+      const std::vector<cv::DMatch> &matches,
+      const std::vector<cv::KeyPoint> &keypoints_1,
+      const std::vector<cv::KeyPoint> &keypoints_2) const override;
 
     /** Matches keypoints descriptors between two images using the
      *  BruteForceMatcher.
@@ -179,23 +203,18 @@ class BruteForceMatcher : public DescriptorMatcher {
      *  @return vector containing the best matches.
      */
     std::vector<cv::DMatch> matchDescriptors(
-      const cv::Mat &descriptors_1,
-      const cv::Mat &descriptors_2,
+      cv::Mat &descriptors_1,
+      cv::Mat &descriptors_2,
       const std::vector<cv::KeyPoint> &keypoints_1,
       const std::vector<cv::KeyPoint> &keypoints_2,
-      const cv::InputArray &mask = cv::noArray()) const override;
+      cv::InputArray mask = cv::noArray()) const override;
 
  private:
-    /** Overloaded method, which takes in a vector of a vector of matches. This
-     *  is designed to be used with the knnMatchDescriptors method, and uses the
-     *  ratio test to filter the matches.
-     *
-     *  @param matches the unfiltered matches computed from two images.
-     *
-     *  @return the filtered matches.
-     */
-    std::vector<cv::DMatch> filterMatches(
-      std::vector<std::vector<cv::DMatch>> &matches) const override;
+    /** The pointer to the wrapped cv::BFMatcher object */
+    cv::Ptr<cv::BFMatcher> brute_force_matcher;
+
+    /** Current configuration parameters */
+    BFMatcherParams current_config;
 
     /** Remove outliers between matches. Uses a heuristic based approach as a
      *  first pass to determine good matches.
@@ -205,32 +224,26 @@ class BruteForceMatcher : public DescriptorMatcher {
      *  @return the filtered matches.
      */
     std::vector<cv::DMatch> filterMatches(
-      std::vector<cv::DMatch> &matches) const override;
+      const std::vector<cv::DMatch> &matches) const override;
 
-    /** Remove outliers between matches, using epipolar constraints.
+    /** Overloaded method, which takes in a vector of a vector of matches. This
+     *  is designed to be used with the knnMatchDescriptors method, and uses the
+     *  ratio test to filter the matches.
      *
      *  @param matches the unfiltered matches computed from two images.
      *
-     *  @return the matches with outliers removed.
+     *  @return the filtered matches.
      */
-    std::vector<cv::DMatch> removeOutliers(
-      const std::vector<cv::DMatch> &matches,
-      const std::vector<cv::KeyPoint> &keypoints_1,
-      const std::vector<cv::KeyPoint> &keypoints_2) const;
+    std::vector<cv::DMatch> filterMatches(
+      const std::vector<std::vector<cv::DMatch>> &matches) const override;
 
-    /** The pointer to the wrapped cv::BFMatcher object */
-    cv::Ptr<cv::BFMatcher> brute_force_matcher;
-
-    /** Current configuration parameters */
-    BFMatcherParams current_config;
 
     /** Checks whether the desired configuration is valid
      *
      *  @param check_config containing the desired configuration values.
      */
-    void checkConfiguration(const BFMatcherParams &check_config);
+    void checkConfiguration(const BFMatcherParams &check_config) const;
 };
-
 /** @} end of group */
 }  // namespace wave
 

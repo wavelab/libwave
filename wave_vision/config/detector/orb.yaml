@@ -1,0 +1,55 @@
+# ORB Detector Configuration Parameters
+
+# The number of features to keep from detection.
+#
+# Default: 2000
+#
+num_features: 2000
+
+# Pyramid scaling ratio. A value of 2 corresponds to the standard pyramid,
+# where the number of pixels decrease by fourfold. A large value (ex. 2)
+# can result in poor feature matching scores. A value closer to 1 will
+# require more pyramid levels to extract truly scale-invariant features.
+#
+# Default: 1.2. Must be greater than 1.0.
+#
+scale_factor: 1.2
+
+# The number of pyramid levels.
+#
+# Default: 8. Must be greater than zero.
+#
+num_levels: 8
+
+# The border size where no features are detected. If using the
+# ORBDescriptor, this value should be approximately equal to the
+# patch_size.
+#
+# Default: 31. Must be greater than or equal to zero.
+#
+edge_threshold: 31
+
+# Scoring method used to rank the keypoints. cv::ORB::HARRIS_SCORE uses
+# the Harris algorithm to rank points, while cv::ORB::FAST_SCORE is an
+# alternative option. cv::ORB::FAST_SCORE is slightly faster than
+# cv::ORB::HARRIS_SCORE, but the results are not as stable.
+#
+# Options:
+# 0: cv::ORB::HARRIS_SCORE (recommended)
+# 1: cv::ORB::FAST_SCORE
+#
+#
+score_type: 0
+
+# Threshold on difference between intensity of the central pixel, and
+# pixels in a circle (Bresenham radius 3) around this pixel. Must be
+# greater than zero.
+#
+# ORB uses the FAST_9_16 implementation, which means that 9 consecutive
+# pixels (out of a 16 pixel circumference circle) must be brighter or
+# darker than the center pixel for the algorithm to deem the point as a
+# corner.
+#
+# Default: 20
+#
+fast_threshold: 20

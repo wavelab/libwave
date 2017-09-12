@@ -17,8 +17,9 @@ TEST(LandmarkContainer, insert) {
     auto now = std::chrono::steady_clock::now();
     auto val = Vec2{1.2, 3.4};
     auto landmark_id = std::size_t{1};
+    auto img = std::size_t{0};
     auto meas =
-      TestLandmarkMeasurement{now, CameraSensors::Left, landmark_id, val};
+      TestLandmarkMeasurement{now, CameraSensors::Left, landmark_id, img, val};
     auto m = TestContainer{};
 
     auto res = m.insert(meas);
@@ -35,13 +36,13 @@ TEST(LandmarkContainer, insert) {
 TEST(LandmarkContainer, emplace) {
     auto m = TestContainer{};
     auto now = std::chrono::steady_clock::now();
-    auto res = m.emplace(now, CameraSensors::Left, 1u, Vec2{1.2, 3.4});
+    auto res = m.emplace(now, CameraSensors::Left, 1u, 0u, Vec2{1.2, 3.4});
 
     EXPECT_EQ(1u, m.size());
     EXPECT_TRUE(res.second);
 
     // Insert the same thing
-    auto res2 = m.emplace(now, CameraSensors::Left, 1u, Vec2{2.3, 4.5});
+    auto res2 = m.emplace(now, CameraSensors::Left, 1u, 0u, Vec2{2.3, 4.5});
     EXPECT_FALSE(res2.second);
     EXPECT_EQ(res.first, res2.first);
 }
@@ -53,7 +54,7 @@ TEST(LandmarkContainer, capacity) {
     EXPECT_EQ(0u, m.size());
     EXPECT_TRUE(m.empty());
 
-    m.emplace(now, CameraSensors::Left, 1u, Vec2{1.2, 3.4});
+    m.emplace(now, CameraSensors::Left, 1u, 0u, Vec2{1.2, 3.4});
     EXPECT_EQ(1u, m.size());
     EXPECT_FALSE(m.empty());
 }
@@ -62,7 +63,7 @@ TEST(LandmarkContainer, erase) {
     auto m = TestContainer{};
     auto now = std::chrono::steady_clock::now();
 
-    m.emplace(now, CameraSensors::Left, 1u, Vec2{1.2, 3.4});
+    m.emplace(now, CameraSensors::Left, 1u, 0u, Vec2{1.2, 3.4});
     ASSERT_EQ(1u, m.size());
 
     auto res = m.erase(now, CameraSensors::Right, 1u);
@@ -78,7 +79,7 @@ TEST(LandmarkContainer, get) {
     auto m = TestContainer{};
     auto now = std::chrono::steady_clock::now();
     auto value_in = Vec2{1.2, 3.4};
-    m.emplace(now, CameraSensors::Left, 1u, value_in);
+    m.emplace(now, CameraSensors::Left, 1u, 0u, value_in);
 
     auto value_out = m.get(now, CameraSensors::Left, 1u);
 
@@ -95,7 +96,8 @@ TEST(LandmarkContainer, iterators) {
     for (auto i = 0; i < 5; ++i) {
         auto now = std::chrono::steady_clock::now();
         auto value_in = Vec2{i * 1.1, 0};
-        m.emplace(now, CameraSensors::Left, 1u, value_in);
+        auto img = std::size_t{0};
+        m.emplace(now, CameraSensors::Left, 1u, img, value_in);
     }
     ASSERT_EQ(5ul, m.size());
     EXPECT_EQ(5, std::distance(m.begin(), m.end()));
@@ -117,7 +119,7 @@ TEST(LandmarkContainer, clear) {
     auto now = std::chrono::steady_clock::now();
     auto value_in = Vec2{1.2, 3.4};
     for (auto i = 0u; i < 5ul; ++i) {
-        m.emplace(now, CameraSensors::Left, i, value_in);
+        m.emplace(now, CameraSensors::Left, i, 0u, value_in);
     }
     ASSERT_EQ(5ul, m.size());
 
@@ -165,12 +167,12 @@ class FilledLandmarkContainer : public ::testing::Test {
             auto t = this->t_start + seconds(k);
             for (auto id : this->input_ids_l[k]) {
                 Vec2 val = Vec2::Ones() * (k + id / 10.0);
-                this->m.emplace(t, CameraSensors::Left, id, val);
+                this->m.emplace(t, CameraSensors::Left, id, (size_t) k, val);
                 this->inputs_l[k][id] = val;
             }
             for (auto id : this->input_ids_r[k]) {
                 Vec2 val = Vec2::Ones() * (10 + k + id / 10.0);
-                this->m.emplace(t, CameraSensors::Right, id, val);
+                this->m.emplace(t, CameraSensors::Right, id, (size_t) k, val);
                 this->inputs_r[k][id] = val;
             }
         }
@@ -189,7 +191,7 @@ class FilledLandmarkContainer : public ::testing::Test {
 };
 
 TEST_F(FilledLandmarkContainer, emplace) {
-    // Check emplacement that occured in the test fixture constructor
+    // Check emplacement that occurred in the test fixture constructor
     auto i = 0u;
     for (auto a = this->m.begin(); a != this->m.end(); ++a) {
         ASSERT_PRED2(VectorsNear, this->expected_values[i++], a->value);
@@ -330,6 +332,15 @@ TEST_F(FilledLandmarkContainer, getTimeWindowSome) {
     }
 }
 
+TEST_F(FilledLandmarkContainer, getTimeWindowInstant) {
+    // Check case of window where `start == end`
+    const auto t = this->t_start + seconds(1);
+    auto res = this->m.getTimeWindow(t, t);
+
+    // Just ensure the result is not empty, don't worry about values here
+    EXPECT_EQ(1u, std::distance(res.first, res.second));
+}
+
 TEST_F(FilledLandmarkContainer, getLandmarkIDs) {
     auto ids = this->m.getLandmarkIDs();
 
@@ -366,9 +377,10 @@ TEST_F(FilledLandmarkContainer, getLandmarkIdsInWindowEmpty) {
 TEST_F(FilledLandmarkContainer, getLandmarkIdsInWindowBackwards) {
     const auto t = this->t_start;
     // Check case of backwards window
-    auto ids = this->m.getLandmarkIDsInWindow(t + seconds(10), t);
+    auto ids = this->m.getLandmarkIDsInWindow(t + seconds(2), t);
     EXPECT_TRUE(ids.empty());
 }
+
 TEST_F(FilledLandmarkContainer, getLandmarkIdsInWindowAll) {
     // Check case of window containing all measurements
     const auto t = this->t_start;
@@ -392,6 +404,18 @@ TEST_F(FilledLandmarkContainer, getLandmarkIdsInWindowSome) {
     }
 }
 
+TEST_F(FilledLandmarkContainer, getLandmarkIdsInWindowInstant) {
+    const auto t = this->t_start + seconds(3);
+    // Check case of window where start == end.
+    // We expect it to return the landmarks at that instant
+    auto ids = this->m.getLandmarkIDsInWindow(t, t);
+    const auto expected = std::vector<LandmarkId>{2, 3, 4, 5};
+    ASSERT_EQ(expected.size(), ids.size());
+    for (auto i = 0u; i < ids.size(); ++i) {
+        EXPECT_EQ(expected[i], ids[i]);
+    }
+}
+
 TEST_F(FilledLandmarkContainer, getTrackInWindowEmpty) {
     // Check case of window with no measurements
     const auto t = this->t_start;
@@ -406,6 +430,18 @@ TEST_F(FilledLandmarkContainer, getTrackInWindowBackwards) {
     auto track =
       this->m.getTrackInWindow(CameraSensors::Right, 4, t + seconds(10), t);
     EXPECT_TRUE(track.empty());
+}
+
+TEST_F(FilledLandmarkContainer, getTrackInWindowInstant) {
+    const auto t = this->t_start + seconds(3);
+    // Check case where start == end
+    // We expect it to return a track of size 1, if there happens to be a
+    // measurement at that time point.
+    auto track = this->m.getTrackInWindow(CameraSensors::Right, 4, t, t);
+    ASSERT_EQ(1u, track.size());
+    EXPECT_EQ(t, track.front().time_point);
+    EXPECT_EQ(CameraSensors::Right, track.front().sensor_id);
+    EXPECT_EQ(4u, track.front().landmark_id);
 }
 
 TEST_F(FilledLandmarkContainer, getTrackInWindowAll) {

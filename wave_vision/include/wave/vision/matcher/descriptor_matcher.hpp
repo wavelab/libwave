@@ -8,9 +8,8 @@
 
 #include <exception>
 
-#include <opencv2/opencv.hpp>
-
 #include "wave/utils/utils.hpp"
+#include "wave/vision/utils.hpp"
 
 namespace wave {
 /** @addtogroup vision
@@ -25,11 +24,9 @@ namespace wave {
  *  [opencv_descriptor_matchers]:
  *  http://docs.opencv.org/trunk/db/d39/classcv_1_1DescriptorMatcher.html
  */
-
 class DescriptorMatcher {
  protected:
-    /** Destructor */
-    ~DescriptorMatcher() = default;
+    virtual ~DescriptorMatcher() = default;
 
     /** Filter matches using a heuristic based method.
      *
@@ -41,7 +38,7 @@ class DescriptorMatcher {
      *  @return the matches with outliers removed.
      */
     virtual std::vector<cv::DMatch> filterMatches(
-      std::vector<cv::DMatch> &matches) const = 0;
+      const std::vector<cv::DMatch> &matches) const = 0;
 
     /** Overloaded method, which takes in a vector of a vector of matches. This
      *  is designed to be used with the knnMatchDescriptors method, and uses the
@@ -52,14 +49,16 @@ class DescriptorMatcher {
      *  @return the filtered matches.
      */
     virtual std::vector<cv::DMatch> filterMatches(
-      std::vector<std::vector<cv::DMatch>> &matches) const = 0;
+      const std::vector<std::vector<cv::DMatch>> &matches) const = 0;
 
+ public:
     /** Remove outliers between matches by using epipolar constraints. Outlier
-     *  rejection methods are specified within the MatcherParams struct.
+     *  rejection methods are specified within the respective MatcherParams
+     *  struct.
      *
      *  @param matches the unfiltered matches computed from two images.
      *  @param keypoints_1 the keypoints detected in the first image.
-     *  @param keypoints_2 they keypoints detected in the second image.
+     *  @param keypoints_2 the keypoints detected in the second image.
      *
      *  @return the matches with outliers removed.
      */
@@ -68,7 +67,6 @@ class DescriptorMatcher {
       const std::vector<cv::KeyPoint> &keypoints_1,
       const std::vector<cv::KeyPoint> &keypoints_2) const = 0;
 
- public:
     /** Matches keypoints descriptors between two images using the
      *  BruteForceMatcher.
      *
@@ -87,11 +85,11 @@ class DescriptorMatcher {
      *  @return vector containing the best matches.
      */
     virtual std::vector<cv::DMatch> matchDescriptors(
-      const cv::Mat &descriptors_1,
-      const cv::Mat &descriptors_2,
+      cv::Mat &descriptors_1,
+      cv::Mat &descriptors_2,
       const std::vector<cv::KeyPoint> &keypoints_1,
       const std::vector<cv::KeyPoint> &keypoints_2,
-      const cv::InputArray &mask = cv::noArray()) const = 0;
+      cv::InputArray mask) const = 0;
 };
 }  // namespace wave
 

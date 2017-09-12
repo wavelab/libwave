@@ -9,9 +9,8 @@
 #include <exception>
 #include <vector>
 
-#include <opencv2/opencv.hpp>
-
 #include "wave/utils/utils.hpp"
+#include "wave/vision/utils.hpp"
 
 namespace wave {
 /** @addtogroup vision
