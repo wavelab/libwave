@@ -3,40 +3,40 @@
 
 namespace wave {
 
-ICPMatcher::ICPMatcher(float res, const std::string &config_path) {
-    this->ref = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
-    this->target = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
-    this->final = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
-
-    if (res > 0) {
-        this->resolution = res;
-        this->filter.setLeafSize(res, res, res);
-    } else {
-        this->resolution = -1;
-    }
-
+ICPMatcherParams::ICPMatcherParams(const std::string &config_path) {
     ConfigParser parser;
-    double max_corr, t_eps, fit_eps;
-    int max_iter, estimate_method_int;
-    parser.addParam("icp.max_corr", &max_corr);
-    parser.addParam("icp.max_iter", &max_iter);
-    parser.addParam("icp.t_eps", &t_eps);
-    parser.addParam("icp.fit_eps", &fit_eps);
-    parser.addParam("icp.lidar_ang_covar", &(this->lidar_ang_covar));
-    parser.addParam("icp.lidar_lin_covar", &(this->lidar_lin_covar));
-    parser.addParam("icp.covar_estimator", &estimate_method_int);
+    int covar_est_temp;
+    parser.addParam("max_corr", &(this->max_corr));
+    parser.addParam("max_iter", &(this->max_iter));
+    parser.addParam("t_eps", &(this->t_eps));
+    parser.addParam("lidar_ang_covar", &(this->lidar_ang_covar));
+    parser.addParam("lidar_lin_covar", &(this->lidar_lin_covar));
+    parser.addParam("covar_estimator", &covar_est_temp);
+    parser.addParam("res", &(this->res));
+    this->covar_estimator =
+      static_cast<ICPMatcherParams::covar_method>(covar_est_temp);
 
     if (parser.load(config_path) != 0) {
         ConfigException config_exception;
         throw config_exception;
     }
+}
 
-    this->estimate_method =
-      static_cast<ICPMatcher::covar_method>(estimate_method_int);
-    this->icp.setMaxCorrespondenceDistance(max_corr);
-    this->icp.setMaximumIterations(max_iter);
-    this->icp.setTransformationEpsilon(t_eps);
-    this->icp.setEuclideanFitnessEpsilon(fit_eps);
+ICPMatcher::ICPMatcher(ICPMatcherParams params1) : params(params1) {
+    this->ref = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+    this->target = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+    this->final = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+
+    if (this->params.res > 0) {
+        this->filter.setLeafSize(
+          this->params.res, this->params.res, this->params.res);
+    }
+    this->resolution = this->params.res;
+
+    this->icp.setMaxCorrespondenceDistance(this->params.max_corr);
+    this->icp.setMaximumIterations(this->params.max_iter);
+    this->icp.setTransformationEpsilon(this->params.t_eps);
+    this->icp.setEuclideanFitnessEpsilon(this->params.fit_eps);
 }
 
 ICPMatcher::~ICPMatcher() {
@@ -81,9 +81,9 @@ bool ICPMatcher::match() {
 }
 
 void ICPMatcher::estimateInfo() {
-    switch (this->estimate_method) {
-        case ICPMatcher::covar_method::LUM: this->estimateLUM();
-        case ICPMatcher::covar_method::CENSI: this->estimateCensi();
+    switch (this->params.covar_estimator) {
+        case ICPMatcherParams::covar_method::LUM: this->estimateLUM();
+        case ICPMatcherParams::covar_method::CENSI: this->estimateCensi();
         default: return;
     }
 }
@@ -221,9 +221,10 @@ void ICPMatcher::estimateCensi() {
         sy = sin(eulers[2]);
 
         Eigen::DiagonalMatrix<double, 6> sphere_cov;
-        sphere_cov.diagonal() << this->lidar_lin_covar, this->lidar_ang_covar,
-          this->lidar_ang_covar, this->lidar_lin_covar, this->lidar_ang_covar,
-          this->lidar_ang_covar;
+        sphere_cov.diagonal() << this->params.lidar_lin_covar,
+          this->params.lidar_ang_covar, this->params.lidar_ang_covar,
+          this->params.lidar_lin_covar, this->params.lidar_ang_covar,
+          this->params.lidar_ang_covar;
         Eigen::MatrixXd cov_Z(Eigen::MatrixXd::Zero(6, 6));
         Eigen::MatrixXd j(Eigen::MatrixXd::Zero(6, 6));
         double az, br, rg;  // azimuth, bearing and range
