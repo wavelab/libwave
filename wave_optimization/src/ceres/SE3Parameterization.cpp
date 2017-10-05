@@ -5,10 +5,10 @@ namespace wave {
 /**
  * Computes new SE3 element given existing element and small delta applied on the left
  *
- * @param x The SE3 element added to. 12-dimensional R, t, stored in row-major form
- *         aka R11, R12, R13, Tx, R21, R22, R23, Ty, R31, R32, R33, Tz
+ * @param x The SE3 element added to. 12-dimensional R, t, stored in following order
+ *         R11, R21, R31, R12, R22, R32, R13, R23, R33, Tx, Ty, Tz
  * @param delta se3 element to add to the SE3 element. Stored in
- *        p1, p2, p3, v1, v2, v3. p is the translational portion
+ *        v1, v2, v3, p1, p2, p3. p is the translational portion
  * @param x_plus_delta exp(delta)*x
  * @return true if successful, false if not
  */
@@ -33,7 +33,104 @@ bool SE3Parameterization::Plus(const double *x, const double *delta, double *x_p
     X(3,1) = 0;
     X(3,2) = 0;
     X(3,3) = 1;
+}
 
+/**
+ * Computes new jacobian of box+ wrt the perturbation
+ *
+ * @param x The SE3 element added to. 12-dimensional R, t, stored in column-major form
+ *         aka R11, R21, R31, R12, R22, R32, R13, R23, R33, Tx, Ty, Tz
+ * @param jacobian: of box-plus Stored in row major form
+ *        Row order is R11, R21, R31, R12, R22, R32, R13, R23, R33, Tx, Ty, Tz
+ *        output is d_R11/d_v1, d_R11/d_v2, etc
+ * @return true if successful, false if not
+ */
+
+bool SE3Parameterization::ComputeJacobian(const double *x, double *jacobian) const {
+    // dR11
+    jacobian[0] = 0;
+    jacobian[1] = x[2];
+    jacobian[2] = -x[1];
+    jacobian[3] = 0;
+    jacobian[4] = 0;
+    jacobian[5] = 0;
+    // dR21
+    jacobian[6] = -x[2];
+    jacobian[7] = 0;
+    jacobian[8] = x[0];
+    jacobian[9] = 0;
+    jacobian[10] = 0;
+    jacobian[11] = 0;
+    // dR31
+    jacobian[12] = x[1];
+    jacobian[13] = -x[0];
+    jacobian[14] = 0;
+    jacobian[15] = 0;
+    jacobian[16] = 0;
+    jacobian[17] = 0;
+    // dR12
+    jacobian[18] = 0;
+    jacobian[19] = x[5];
+    jacobian[20] = -x[4];
+    jacobian[21] = 0;
+    jacobian[22] = 0;
+    jacobian[23] = 0;
+    // dR22
+    jacobian[24] = -x[5];
+    jacobian[25] = 0;
+    jacobian[26] = x[3];
+    jacobian[27] = 0;
+    jacobian[28] = 0;
+    jacobian[29] = 0;
+    // dR32
+    jacobian[30] = x[4];
+    jacobian[31] = -x[3];
+    jacobian[32] = 0;
+    jacobian[33] = 0;
+    jacobian[34] = 0;
+    jacobian[35] = 0;
+    // dR13
+    jacobian[36] = 0;
+    jacobian[37] = x[8];
+    jacobian[38] = -x[7];
+    jacobian[39] = 0;
+    jacobian[40] = 0;
+    jacobian[41] = 0;
+    // dR23
+    jacobian[42] = -x[8];
+    jacobian[43] = 0;
+    jacobian[44] = x[6];
+    jacobian[45] = 0;
+    jacobian[46] = 0;
+    jacobian[47] = 0;
+    // dR33
+    jacobian[48] = x[7];
+    jacobian[49] = -x[6];
+    jacobian[50] = 0;
+    jacobian[51] = 0;
+    jacobian[52] = 0;
+    jacobian[53] = 0;
+    // dTx
+    jacobian[54] = 0;
+    jacobian[55] = x[11];
+    jacobian[56] = -x[10];
+    jacobian[57] = 1;
+    jacobian[58] = 0;
+    jacobian[59] = 0;
+    // dTy
+    jacobian[60] = -x[11];
+    jacobian[61] = 0;
+    jacobian[62] = x[9];
+    jacobian[63] = 0;
+    jacobian[64] = 1;
+    jacobian[65] = 0;
+    // dTz
+    jacobian[66] = x[10];
+    jacobian[67] = -x[9];
+    jacobian[68] = 0;
+    jacobian[69] = 0;
+    jacobian[70] = 0;
+    jacobian[71] = 1;
 }
 
 }
