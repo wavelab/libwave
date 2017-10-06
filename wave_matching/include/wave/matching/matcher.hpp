@@ -47,7 +47,7 @@ class Matcher {
 
     virtual ~Matcher() {}
 
-    const Eigen::Affine3d &getResult() {
+    const Eigen::Affine3d getResult() {
         return this->result;
     };
     const Mat6 &getInfo() {

@@ -45,7 +45,6 @@ TARGET_LINK_LIBRARIES(
     wave_geometry
     ${CERES_LIBRARIES}
     ${PCL_LIBRARIES}
-    pcap
 )
 
 # Copy the test data
