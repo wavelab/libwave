@@ -1,4 +1,5 @@
 #include "wave/optimization/ceres/SE3Parameterization.hpp"
+#include "wave/geometry/transformation.hpp"
 
 namespace wave {
 
@@ -14,29 +15,37 @@ namespace wave {
  */
 
 bool SE3Parameterization::Plus(const double *x, const double *delta, double *x_plus_delta) const {
-    /**
-     * ^ operator on delta
-     * 0         -delta[5] delta[4]  delta[0]
-     *  delta[5] 0         -delta[3] delta[1]
-     * -delta[4] delta[3]  0         delta[2]
-     * 0         0         0         1
-     */
-    Eigen::Matrix4d deltahat, X;
-    deltahat << 0, -delta[5], delta[4], delta[0],
-            delta[5], 0,    -delta[3], delta[1],
-            -delta[4], delta[3],  0,   delta[2],
-            0, 0, 0, 1;
-    ceres::MatrixRef x_map(x, 3, 4);
+    Vec6 delta;
+    delta.data() = delta;
 
-    X.block(0,0,3,4) = x_map;
-    X(3,0) = 0;
-    X(3,1) = 0;
-    X(3,2) = 0;
-    X(3,3) = 1;
+    Mat4 T;
+    T << x[0], x[3], x[6], x[9],
+         x[1], x[4], x[7], x[10],
+         x[2], x[5], x[8], x[11];
+
+    Transformation transform;
+    transform.manifoldPlus(delta);
+    auto R = transform.getRotationMatrix();
+    auto trans = transform.getTranslation();
+
+    x_plus_delta[0] = R(0,0);
+    x_plus_delta[1] = R(1,0);
+    x_plus_delta[2] = R(2,0);
+    x_plus_delta[3] = R(0,1);
+    x_plus_delta[4] = R(1,1);
+    x_plus_delta[5] = R(2,1);
+    x_plus_delta[6] = R(0,2);
+    x_plus_delta[7] = R(1,2);
+    x_plus_delta[8] = R(2,2);
+    x_plus_delta[9] = trans(0);
+    x_plus_delta[10] = trans(1);
+    x_plus_delta[11] = trans(2);
+
+    return true;
 }
 
 /**
- * Computes new jacobian of box+ wrt the perturbation
+ * Computes new jacobian of box+ wrt the perturbation. Jacobian is taken where delta = 0
  *
  * @param x The SE3 element added to. 12-dimensional R, t, stored in column-major form
  *         aka R11, R21, R31, R12, R22, R32, R13, R23, R33, Tx, Ty, Tz
