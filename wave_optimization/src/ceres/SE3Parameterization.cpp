@@ -131,6 +131,8 @@ bool SE3Parameterization::ComputeJacobian(const double *x, double *jacobian) con
     jacobian[69] = 0;
     jacobian[70] = 0;
     jacobian[71] = 1;
+
+    return true;
 }
 
 }
