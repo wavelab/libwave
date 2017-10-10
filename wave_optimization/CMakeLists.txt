@@ -22,18 +22,23 @@ ADD_LIBRARY(
     STATIC
     src/ceres/ba.cpp
     src/ceres/ceres_examples.cpp
+    src/ceres/SE3Parameterization.cpp
+    src/ceres/point_to_point_residual.cpp
 )
 TARGET_LINK_LIBRARIES(wave_optimization ${WAVE_OPTIMIZATION_DEPS})
 
 # UNIT TESTS
 WAVE_ADD_TEST(${PROJECT_NAME}_tests
              tests/ceres/ba_test.cpp
-             tests/ceres/ceres_examples_test.cpp)
+             tests/ceres/ceres_examples_test.cpp
+            tests/ceres/SE3_local_parameter_test.cpp)
+
 TARGET_LINK_LIBRARIES(
     ${PROJECT_NAME}_tests
     ${PROJECT_NAME}
     wave_vision
     wave_utils
+    wave_geometry
     ${CERES_LIBRARIES}
 )
 

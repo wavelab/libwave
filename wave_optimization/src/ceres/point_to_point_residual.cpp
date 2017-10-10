@@ -7,9 +7,9 @@ bool AnalyticalPointToPoint::Evaluate(double const *const *parameters, double *r
     // r = T*P2 - P1;
     // parameters in order:
     // R11 R21 R31 R12 R22 R32 R13 R23 R33 X Y Z
-    r[0] = parameters[0] * this->P2[0] + parameters[3] * this->P2[1] + parameters[6] * this->P2[2] + parameters[9] - this->P1[0];
-    r[1] = parameters[1] * this->P2[0] + parameters[4] * this->P2[1] + parameters[7] * this->P2[2] + parameters[10] - this->P1[1];
-    r[2] = parameters[2] * this->P2[0] + parameters[5] * this->P2[1] + parameters[8] * this->P2[2] + parameters[11] - this->P1[2];
+    residuals[0] = parameters[0][0] * this->P2[0] + parameters[0][3] * this->P2[1] + parameters[0][6] * this->P2[2] + parameters[0][9] - this->P1[0];
+    residuals[1] = parameters[0][1] * this->P2[0] + parameters[0][4] * this->P2[1] + parameters[0][7] * this->P2[2] + parameters[0][10] - this->P1[1];
+    residuals[2] = parameters[0][2] * this->P2[0] + parameters[0][5] * this->P2[1] + parameters[0][8] * this->P2[2] + parameters[0][11] - this->P1[2];
 
     if((jacobians != NULL) && (jacobians[0] != NULL)) {
         jacobians[0][0] = this->P2[0];

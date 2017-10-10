@@ -15,16 +15,18 @@ namespace wave {
  */
 
 bool SE3Parameterization::Plus(const double *x, const double *delta, double *x_plus_delta) const {
-    Vec6 delta;
-    delta.data() = delta;
+    Vec6 delta_vec;
+    delta_vec << delta[0],delta[1],delta[2],delta[3],delta[4],delta[5];
 
     Mat4 T;
     T << x[0], x[3], x[6], x[9],
          x[1], x[4], x[7], x[10],
-         x[2], x[5], x[8], x[11];
+         x[2], x[5], x[8], x[11],
+            0,    0,    0,     1;
 
     Transformation transform;
-    transform.manifoldPlus(delta);
+    transform.setFromMatrix(T);
+    transform.manifoldPlus(delta_vec);
     auto R = transform.getRotationMatrix();
     auto trans = transform.getTranslation();
 
