@@ -76,9 +76,10 @@ class Transformation {
      * of the exp map wrt @f$ w @f$.
      *
      * @param[in] W The input vector we are taking the expmap of.
+     * @param[in]TOL Tolerance to switch between exact and taylor approximation (avoids singularity at zero)
      * @f$ W @f$.
      */
-    static Mat4 expMap(const Vec6 &W);
+    static Mat4 expMap(const Vec6 &W, double TOL);
 
     /** Computes the log map of the input and computes the Jacobian
      * of the log map wrt @f$ R @f$.
@@ -91,9 +92,10 @@ class Transformation {
     /**
      * Computes the left side Jacobian of SE3
      * @param W The twist location to calculate the jacobian of
+     * @param[in]TOL Tolerance to switch between exact and taylor approximation
      * @return Left SE3 jacobian
      */
-    static Mat6 SE3LeftJacobian(const Vec6 &W);
+    static Mat6 SE3LeftJacobian(const Vec6 &W, double TOL);
 
     /**
      * Computes the left side Jacobian using a 2nd order Taylor Expansion
@@ -148,7 +150,7 @@ class Transformation {
      * Return the inverse of the transformation matrix, while preserving original
      * @return the inverse of the transformation object;
      */
-    Transformation inverse();
+    Transformation inverse() const;
 
     /** Checks if the input transformation is sufficiently close to this transformation
      *
@@ -244,7 +246,7 @@ class Transformation {
     Mat4 getMatrix() const;
 
     /** Implements transformation composition. */
-    Transformation operator*(const Transformation &R) const;
+    Transformation operator*(const Transformation &T) const;
 };
 
 }

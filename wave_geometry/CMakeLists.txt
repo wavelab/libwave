@@ -13,10 +13,11 @@ ADD_LIBRARY(
     wave_geometry
     STATIC
     src/rotation.cpp
+    src/transformation.cpp
 )
 TARGET_LINK_LIBRARIES(${PROJECT_NAME} wave_utils)
 
 # UNIT TESTS
-WAVE_ADD_TEST(${PROJECT_NAME}_tests tests/rotation_test.cpp)
+WAVE_ADD_TEST(${PROJECT_NAME}_tests tests/rotation_test.cpp tests/transformation_test.cpp)
 TARGET_LINK_LIBRARIES(${PROJECT_NAME}_tests
     ${PROJECT_NAME})

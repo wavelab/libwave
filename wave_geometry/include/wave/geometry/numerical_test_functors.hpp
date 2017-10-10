@@ -6,13 +6,14 @@
 #define WAVE_GEOMETRY_NUMERICAL_TEST_FUNCTORS_HPP
 
 #include "wave/geometry/rotation.hpp"
+#include "wave/geometry/transformation.hpp"
 
 namespace wave {
 /** @addtogroup geometry
  *  @{ */
 
 // The Functors are used for computing finite difference Jacobians
-// of rotation expressions.
+// of rotation and/or translation expressions.
 
 class RotateAndJacobianJpointFunctor {
  public:
