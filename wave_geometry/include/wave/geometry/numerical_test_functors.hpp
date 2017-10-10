@@ -151,10 +151,145 @@ class ManifoldMinusAndJacobianJRightFunctor {
     }
 };
 
+// Transformation functors
+class TransformAndJacobianJpointFunctor {
+ public:
+    Transformation T;
+    Vec3 P;
+    TransformAndJacobianJpointFunctor(const Transformation &input_transformation) {
+        this->T = input_transformation;
+    }
+
+    Vec3 operator()(const Vec3 &input_point) {
+        Vec3 output_point = this->T.transform(input_point);
+        return output_point;
+    }
+};
+
+
+class TransformAndJacobianJparamFunctor {
+ public:
+    Transformation T;
+    Vec3 P;
+    TransformAndJacobianJparamFunctor(const Transformation &input_transformation,
+                                   const Vec3 &input_point) {
+        this->T = input_transformation;
+        this->P = input_point;
+    }
+
+    Vec3 operator()(const Vec6 &wvec) {
+        Transformation Tp = this->T;
+        Tp = Tp.manifoldPlus(wvec);
+        Vec3 output_point = Tp.transform(this->P);
+        return output_point;
+    }
+};
+
+class TComposeAndJacobianJLeftFunctor {
+ public:
+    Transformation R_left;
+    Transformation R_right;
+    TComposeAndJacobianJLeftFunctor(const Transformation &R_left,
+                                   const Transformation &R_right) {
+        this->R_left = R_left;
+        this->R_right = R_right;
+    }
+
+    Transformation operator()(const Vec6 &perturbation) {
+        Mat6 J;
+        Transformation R_perturbed = this->R_left;
+        R_perturbed = R_perturbed.manifoldPlus(perturbation);
+        return R_perturbed.composeAndJacobian(R_right, J, J);
+    }
+};
+
+class TComposeAndJacobianJRightFunctor {
+ public:
+    Transformation R_left;
+    Transformation R_right;
+    TComposeAndJacobianJRightFunctor(const Transformation &R_left,
+                                    const Transformation &R_right) {
+        this->R_left = R_left;
+        this->R_right = R_right;
+    }
+
+    Transformation operator()(const Vec6 &perturbation) {
+        Mat6 J;
+        Transformation R_perturbed = this->R_right;
+        R_perturbed = R_perturbed.manifoldPlus(perturbation);
+        return R_left.composeAndJacobian(R_perturbed, J, J);
+    }
+};
+
+class TInverseAndJacobianFunctor {
+ public:
+    Transformation R;
+    TInverseAndJacobianFunctor(const Transformation &R) {
+        this->R = R;
+    }
+
+    Transformation operator()(const Vec6 &perturbation) {
+        Transformation R_perturbed = this->R;
+        R_perturbed = R_perturbed.manifoldPlus(perturbation);
+        return R_perturbed.inverse();
+    }
+};
+
+class TLogMapAndJacobianFunctor {
+ public:
+    Transformation R;
+    TLogMapAndJacobianFunctor(const Transformation &R) {
+        this->R = R;
+    }
+
+    Vec6 operator()(const Vec6 &perturbation) {
+        Mat6 J;
+        Transformation R_perturbed = this->R;
+        R_perturbed = R_perturbed.manifoldPlus(perturbation);
+        return R_perturbed.logMap();
+    }
+};
+
+class TManifoldMinusAndJacobianJLeftFunctor {
+ public:
+    Transformation R_left;
+    Transformation R_right;
+    TManifoldMinusAndJacobianJLeftFunctor(const Transformation &R_left,
+                                         const Transformation &R_right) {
+        this->R_left = R_left;
+        this->R_right = R_right;
+    }
+
+    Vec6 operator()(const Vec6 &perturbation) {
+        Mat6 J;
+        Transformation R_perturbed = this->R_left;
+        R_perturbed = R_perturbed.manifoldPlus(perturbation);
+        return R_perturbed.manifoldMinus(this->R_right);
+    }
+};
+
+class TManifoldMinusAndJacobianJRightFunctor {
+ public:
+    Transformation R_left;
+    Transformation R_right;
+    TManifoldMinusAndJacobianJRightFunctor(const Transformation &R_left,
+                                          const Transformation &R_right) {
+        this->R_left = R_left;
+        this->R_right = R_right;
+    }
+
+    Vec6 operator()(const Vec6 &perturbation) {
+        Mat6 J;
+        Transformation R_perturbed = this->R_right;
+        R_perturbed = R_perturbed.manifoldPlus(perturbation);
+        return this->R_left.manifoldMinus(R_perturbed);
+    }
+};
+
 // Compute the perturbation points as recommended in Numerical Recipes.
 // Modify the step size so that the perturbations are exactly
 // representable numbers by adding then subtracting the same value.
-double get_perturbation_point(double evaluation_point, double step_size) {
+inline double get_perturbation_point(double evaluation_point, double step_size) {
     // Use volatile to avoid compiler optimizations.
     volatile double perturbation_point = evaluation_point + step_size;
     double exact_step_size = (perturbation_point - evaluation_point);
@@ -166,9 +301,9 @@ double get_perturbation_point(double evaluation_point, double step_size) {
 // Requires overloaded -operator to perform manifoldMinus for
 // Manifold quantities.
 
-template <typename MatrixType, typename FunctorType>
+template <typename MatrixType, typename FunctorType, typename TangentType>
 void numerical_jacobian(FunctorType F,
-                        const Vec3 &evaluation_point,
+                        const TangentType &evaluation_point,
                         Eigen::MatrixBase<MatrixType> &jac) {
     for (int i = 0; i < evaluation_point.size(); i++) {
         // Select the step size as recommended in Numerical Recipes.
@@ -180,7 +315,7 @@ void numerical_jacobian(FunctorType F,
             step_size = sqrt(std::numeric_limits<double>::epsilon());
         }
 
-        Vec3 perturbation_point = evaluation_point;
+        TangentType perturbation_point = evaluation_point;
         // Compute the function value using positive perturbations.
         perturbation_point[i] =
           get_perturbation_point(evaluation_point[i], step_size);
@@ -190,7 +325,7 @@ void numerical_jacobian(FunctorType F,
         auto F_x = F(evaluation_point);
 
         // Finally compute the finite difference.
-        Vec3 finite_difference = (F_xp1 - F_x) / (step_size);
+        VecX finite_difference = (F_xp1 - F_x) / (step_size);
         jac.col(i) = finite_difference;
     }
 }

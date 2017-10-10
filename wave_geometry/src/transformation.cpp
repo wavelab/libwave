@@ -8,6 +8,12 @@ Transformation::Transformation() {
     this->matrix.block(0, 3, 3, 1).setZero();
 }
 
+Transformation &Transformation::setIdentity() {
+    this->matrix.block(0, 0, 3, 3).setIdentity();
+    this->matrix.block(0, 3, 3, 1).setZero();
+    return *this;
+}
+
 Transformation::Transformation(const Vec3 &eulers, const Vec3 &translation) {
     this->setFromEulerXYZ(eulers, translation);
 }
@@ -29,13 +35,23 @@ Transformation &Transformation::setFromEulerXYZ(const Vec3 &eulers, const Vec3 &
     return *this;
 }
 
+Transformation &Transformation::setFromMatrix(const Mat4 &input_matrix) {
+    checkMatrixFinite(input_matrix);
+
+    this->matrix = input_matrix.block(0,0,3,4);
+
+    return *this;
+}
+
 Mat3 Transformation::skewSymmetric3(const Vec3 &V) {
     Mat3 retval;
-    retval << 0, -V(3), V(2), V(3), 0, -V(1), -V(2), V(1), 0;
+    retval << 0, -V(2), V(1), V(2), 0, -V(0), -V(1), V(0), 0;
     return retval;
 }
 
 Transformation &Transformation::setFromExpMap(const Vec6 &se3_vector) {
+    checkMatrixFinite(se3_vector);
+
     Mat4 transform = this->expMap(se3_vector, this->TOL);
 
     this->matrix = transform.block(0, 0, 3, 4);
@@ -81,7 +97,7 @@ Mat6 Transformation::SE3LeftJacobian(const Vec6 &W, double TOL) {
     // This is applying the adjoint operator to the se(3) vector: se(3) -> adj(se(3))
     adj.block(0, 0, 3, 3) = wx;
     adj.block(3, 3, 3, 3) = wx;
-    adj.block(3, 0, 3, 3) = Transformation::skewSymmetric3(W.block(3, 1, 3, 1));
+    adj.block(3, 0, 3, 3) = Transformation::skewSymmetric3(W.block(3, 0, 3, 1));
 
     double A, B, C, D;
     if (wn > TOL) {
@@ -108,7 +124,7 @@ Mat6 Transformation::SE3ApproxLeftJacobian(const Vec6 &W) {
     // This is applying the adjoint operator to the se(3) vector: se(3) -> adj(se(3))
     adj.block(0, 0, 3, 3) = wx;
     adj.block(3, 3, 3, 3) = wx;
-    adj.block(3, 0, 3, 3) = skewSymmetric3(W.block(3, 1, 3, 1));
+    adj.block(3, 0, 3, 3) = skewSymmetric3(W.block(3, 0, 3, 1));
 
     double A, B;
     // Fourth order terms are shown should you ever want to used them.
@@ -166,10 +182,10 @@ Vec3 Transformation::transformAndJacobian(const Vec3 &input_vector,
 
     Eigen::Matrix<double, 3, 6> Tpdonut;
     Tpdonut.setZero();
-    Tpdonut.block(0, 0, 3, 3) = -skewSymmetric3(input_vector);
+    Tpdonut.block(0, 0, 3, 3) = -skewSymmetric3(retval);
     Tpdonut.block(0, 3, 3, 3) = Mat3::Identity();
 
-    Jparam.noalias() = Tpdonut * SE3LeftJacobian(logMap(*this), this->TOL);
+    Jparam.noalias() = Tpdonut;
 
     return retval;
 }
@@ -279,6 +295,10 @@ Transformation Transformation::operator*(const Transformation &T) const {
             this->matrix.block(0, 0, 3, 3) * T.getTranslation() + this->matrix.block(0, 3, 3, 1);
 
     return composed;
+}
+
+Vec6 Transformation::operator-(const Transformation &T) const {
+    return this->manifoldMinus(T);
 }
 
 }

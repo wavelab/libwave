@@ -11,7 +11,7 @@ class Transformation {
  private:
     Eigen::Matrix<double, 3, 4> matrix;
 
-    const double TOL = 1.490116119384766e-08;
+    double TOL = 1.490116119384766e-08;
  public:
     /** Default constructor, initializes to Identity. */
     Transformation();
@@ -247,6 +247,9 @@ class Transformation {
 
     /** Implements transformation composition. */
     Transformation operator*(const Transformation &T) const;
+
+    /** Overload operator for manifold - */
+    Vec6 operator-(const Transformation &T) const;
 };
 
 }
