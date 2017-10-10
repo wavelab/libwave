@@ -25,8 +25,7 @@ Transformation &Transformation::setFromEulerXYZ(const Vec3 &eulers, const Vec3 &
     this->matrix.setIdentity();
 
     Mat3 rotation_matrix;
-    rotation_matrix = Eigen::AngleAxisd(eulers[2], Vec3::UnitZ()) *
-                      Eigen::AngleAxisd(eulers[1], Vec3::UnitY()) *
+    rotation_matrix = Eigen::AngleAxisd(eulers[2], Vec3::UnitZ()) * Eigen::AngleAxisd(eulers[1], Vec3::UnitY()) *
                       Eigen::AngleAxisd(eulers[0], Vec3::UnitX());
 
     this->matrix.block(0, 0, 3, 3) = rotation_matrix;
@@ -38,7 +37,7 @@ Transformation &Transformation::setFromEulerXYZ(const Vec3 &eulers, const Vec3 &
 Transformation &Transformation::setFromMatrix(const Mat4 &input_matrix) {
     checkMatrixFinite(input_matrix);
 
-    this->matrix = input_matrix.block(0,0,3,4);
+    this->matrix = input_matrix.block(0, 0, 3, 4);
 
     return *this;
 }
@@ -139,28 +138,28 @@ Mat6 Transformation::SE3ApproxLeftJacobian(const Vec6 &W) {
 }
 
 Vec6 Transformation::logMap() const {
-    Mat3 R = this->matrix.block(0,0,3,3);
-    double wn = std::acos((R.trace() - 1.0)/2.0);
+    Mat3 R = this->matrix.block(0, 0, 3, 3);
+    double wn = std::acos((R.trace() - 1.0) / 2.0);
     double A, B;
     Mat3 skew, Vinv;
-    if(wn > this->TOL) {
-        A = wn/(2*std::sin(wn));
-        B = (1-std::cos(wn))/(wn*wn);
+    if (wn > this->TOL) {
+        A = wn / (2 * std::sin(wn));
+        B = (1 - std::cos(wn)) / (wn * wn);
         skew = A * (R - R.transpose());
-        Vinv = Mat3::Identity() - 0.5*skew + (1/(wn*wn)) * (1 - (1/(4*A*B))) *skew*skew;
+        Vinv = Mat3::Identity() - 0.5 * skew + (1 / (wn * wn)) * (1 - (1 / (4 * A * B))) * skew * skew;
     } else {
         // Third order taylor expansion
-        A = 0.5 + wn*wn/12; // + wn*wn*wn*wn*(7.0/720.0)
-        B = 0.5 - wn*wn/24; // + wn*wn*wn*wn*(7.0/720.0)
+        A = 0.5 + wn * wn / 12;  // + wn*wn*wn*wn*(7.0/720.0)
+        B = 0.5 - wn * wn / 24;  // + wn*wn*wn*wn*(7.0/720.0)
         skew = A * (R - R.transpose());
-        Vinv = Mat3::Identity() - 0.5*skew;
+        Vinv = Mat3::Identity() - 0.5 * skew;
     }
     Vec6 retval;
-    retval(0) = skew(2,1);
-    retval(1) = skew(0,2);
-    retval(2) = skew(1,0);
+    retval(0) = skew(2, 1);
+    retval(1) = skew(0, 2);
+    retval(2) = skew(1, 0);
 
-    retval.block(3,0,3,1) = Vinv * this->matrix.block(0,3,3,1);
+    retval.block(3, 0, 3, 1) = Vinv * this->matrix.block(0, 3, 3, 1);
 
     return retval;
 }
@@ -205,7 +204,7 @@ Transformation &Transformation::invert() {
 Transformation Transformation::inverse() const {
     Transformation inverse;
     Mat4 t_matrix = Mat4::Identity();
-    t_matrix.block(0,0,3,4) = this->matrix;
+    t_matrix.block(0, 0, 3, 4) = this->matrix;
     inverse.setFromMatrix(t_matrix);
     inverse.invert();
     return inverse;
@@ -224,8 +223,7 @@ Transformation &Transformation::manifoldPlus(const Vec6 &omega) {
     Mat4 incremental = expMap(omega, this->TOL);
 
     this->matrix.block(0, 3, 3, 1) =
-            incremental.block(0, 0, 3, 3) * this->matrix.block(0, 3, 3, 1) +
-            incremental.block(0, 3, 3, 1);
+      incremental.block(0, 0, 3, 3) * this->matrix.block(0, 3, 3, 1) + incremental.block(0, 3, 3, 1);
     this->matrix.block(0, 0, 3, 3) = incremental.block(0, 0, 3, 3) * this->matrix.block(0, 0, 3, 3);
 
     return *this;
@@ -255,9 +253,9 @@ Transformation Transformation::composeAndJacobian(const Transformation &T_right,
     J_left.setIdentity();
     J_right.setZero();
 
-    J_right.block(0,0,3,3) = this->matrix.block(0,0,3,3);
-    J_right.block(3,3,3,3) = this->matrix.block(0,0,3,3);
-    J_right.block(3,0,3,3) = skewSymmetric3(this->matrix.block(0,3,3,1)) * this->matrix.block(0,0,3,3);
+    J_right.block(0, 0, 3, 3) = this->matrix.block(0, 0, 3, 3);
+    J_right.block(3, 3, 3, 3) = this->matrix.block(0, 0, 3, 3);
+    J_right.block(3, 0, 3, 3) = skewSymmetric3(this->matrix.block(0, 3, 3, 1)) * this->matrix.block(0, 0, 3, 3);
 
     return (*this) * T_right;
 }
@@ -267,24 +265,24 @@ Transformation Transformation::inverseAndJacobian(Mat6 &J_transformation) const 
     auto R = retval.getRotationMatrix();
 
     J_transformation.setZero();
-    J_transformation.block(0,0,3,3) = -R;
-    J_transformation.block(3,3,3,3) = -R;
-    J_transformation.block(3,0,3,3) = -skewSymmetric3(retval.getTranslation()) * R;
+    J_transformation.block(0, 0, 3, 3) = -R;
+    J_transformation.block(3, 3, 3, 3) = -R;
+    J_transformation.block(3, 0, 3, 3) = -skewSymmetric3(retval.getTranslation()) * R;
 
     return retval;
 }
 
 Mat3 Transformation::getRotationMatrix() const {
-    return this->matrix.block(0,0,3,3);
+    return this->matrix.block(0, 0, 3, 3);
 }
 
 Vec3 Transformation::getTranslation() const {
-    return this->matrix.block(0,3,3,1);
+    return this->matrix.block(0, 3, 3, 1);
 }
 
 Mat4 Transformation::getMatrix() const {
     Mat4 retval = Mat4::Identity();
-    retval.block(0,0,3,4) = this->matrix;
+    retval.block(0, 0, 3, 4) = this->matrix;
     return retval;
 }
 
@@ -292,7 +290,7 @@ Transformation Transformation::operator*(const Transformation &T) const {
     Transformation composed;
     composed.matrix.block(0, 0, 3, 3).noalias() = this->matrix.block(0, 0, 3, 3) * T.getRotationMatrix();
     composed.matrix.block(0, 3, 3, 1).noalias() =
-            this->matrix.block(0, 0, 3, 3) * T.getTranslation() + this->matrix.block(0, 3, 3, 1);
+      this->matrix.block(0, 0, 3, 3) * T.getTranslation() + this->matrix.block(0, 3, 3, 1);
 
     return composed;
 }
@@ -300,5 +298,4 @@ Transformation Transformation::operator*(const Transformation &T) const {
 Vec6 Transformation::operator-(const Transformation &T) const {
     return this->manifoldMinus(T);
 }
-
 }

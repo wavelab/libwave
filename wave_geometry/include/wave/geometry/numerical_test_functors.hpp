@@ -34,8 +34,7 @@ class RotateAndJacobianJparamFunctor {
  public:
     Rotation R;
     Vec3 P;
-    RotateAndJacobianJparamFunctor(const Rotation &input_rotation,
-                                   const Vec3 &input_point) {
+    RotateAndJacobianJparamFunctor(const Rotation &input_rotation, const Vec3 &input_point) {
         this->R = input_rotation;
         this->P = input_point;
     }
@@ -52,8 +51,7 @@ class ComposeAndJacobianJLeftFunctor {
  public:
     Rotation R_left;
     Rotation R_right;
-    ComposeAndJacobianJLeftFunctor(const Rotation &R_left,
-                                   const Rotation &R_right) {
+    ComposeAndJacobianJLeftFunctor(const Rotation &R_left, const Rotation &R_right) {
         this->R_left = R_left;
         this->R_right = R_right;
     }
@@ -70,8 +68,7 @@ class ComposeAndJacobianJRightFunctor {
  public:
     Rotation R_left;
     Rotation R_right;
-    ComposeAndJacobianJRightFunctor(const Rotation &R_left,
-                                    const Rotation &R_right) {
+    ComposeAndJacobianJRightFunctor(const Rotation &R_left, const Rotation &R_right) {
         this->R_left = R_left;
         this->R_right = R_right;
     }
@@ -119,8 +116,7 @@ class ManifoldMinusAndJacobianJLeftFunctor {
  public:
     Rotation R_left;
     Rotation R_right;
-    ManifoldMinusAndJacobianJLeftFunctor(const Rotation &R_left,
-                                         const Rotation &R_right) {
+    ManifoldMinusAndJacobianJLeftFunctor(const Rotation &R_left, const Rotation &R_right) {
         this->R_left = R_left;
         this->R_right = R_right;
     }
@@ -137,8 +133,7 @@ class ManifoldMinusAndJacobianJRightFunctor {
  public:
     Rotation R_left;
     Rotation R_right;
-    ManifoldMinusAndJacobianJRightFunctor(const Rotation &R_left,
-                                          const Rotation &R_right) {
+    ManifoldMinusAndJacobianJRightFunctor(const Rotation &R_left, const Rotation &R_right) {
         this->R_left = R_left;
         this->R_right = R_right;
     }
@@ -171,8 +166,7 @@ class TransformAndJacobianJparamFunctor {
  public:
     Transformation T;
     Vec3 P;
-    TransformAndJacobianJparamFunctor(const Transformation &input_transformation,
-                                   const Vec3 &input_point) {
+    TransformAndJacobianJparamFunctor(const Transformation &input_transformation, const Vec3 &input_point) {
         this->T = input_transformation;
         this->P = input_point;
     }
@@ -189,8 +183,7 @@ class TComposeAndJacobianJLeftFunctor {
  public:
     Transformation R_left;
     Transformation R_right;
-    TComposeAndJacobianJLeftFunctor(const Transformation &R_left,
-                                   const Transformation &R_right) {
+    TComposeAndJacobianJLeftFunctor(const Transformation &R_left, const Transformation &R_right) {
         this->R_left = R_left;
         this->R_right = R_right;
     }
@@ -207,8 +200,7 @@ class TComposeAndJacobianJRightFunctor {
  public:
     Transformation R_left;
     Transformation R_right;
-    TComposeAndJacobianJRightFunctor(const Transformation &R_left,
-                                    const Transformation &R_right) {
+    TComposeAndJacobianJRightFunctor(const Transformation &R_left, const Transformation &R_right) {
         this->R_left = R_left;
         this->R_right = R_right;
     }
@@ -254,8 +246,7 @@ class TManifoldMinusAndJacobianJLeftFunctor {
  public:
     Transformation R_left;
     Transformation R_right;
-    TManifoldMinusAndJacobianJLeftFunctor(const Transformation &R_left,
-                                         const Transformation &R_right) {
+    TManifoldMinusAndJacobianJLeftFunctor(const Transformation &R_left, const Transformation &R_right) {
         this->R_left = R_left;
         this->R_right = R_right;
     }
@@ -272,8 +263,7 @@ class TManifoldMinusAndJacobianJRightFunctor {
  public:
     Transformation R_left;
     Transformation R_right;
-    TManifoldMinusAndJacobianJRightFunctor(const Transformation &R_left,
-                                          const Transformation &R_right) {
+    TManifoldMinusAndJacobianJRightFunctor(const Transformation &R_left, const Transformation &R_right) {
         this->R_left = R_left;
         this->R_right = R_right;
     }
@@ -302,13 +292,10 @@ inline double get_perturbation_point(double evaluation_point, double step_size) 
 // Manifold quantities.
 
 template <typename MatrixType, typename FunctorType, typename TangentType>
-void numerical_jacobian(FunctorType F,
-                        const TangentType &evaluation_point,
-                        Eigen::MatrixBase<MatrixType> &jac) {
+void numerical_jacobian(FunctorType F, const TangentType &evaluation_point, Eigen::MatrixBase<MatrixType> &jac) {
     for (int i = 0; i < evaluation_point.size(); i++) {
         // Select the step size as recommended in Numerical Recipes.
-        double step_size = sqrt(std::numeric_limits<double>::epsilon()) *
-                           std::fabs(evaluation_point[i]);
+        double step_size = sqrt(std::numeric_limits<double>::epsilon()) * std::fabs(evaluation_point[i]);
         // If the step size is exactly equal to zero, just select it as
         // sqrt(eps).
         if (step_size == 0.0) {
@@ -317,8 +304,7 @@ void numerical_jacobian(FunctorType F,
 
         TangentType perturbation_point = evaluation_point;
         // Compute the function value using positive perturbations.
-        perturbation_point[i] =
-          get_perturbation_point(evaluation_point[i], step_size);
+        perturbation_point[i] = get_perturbation_point(evaluation_point[i], step_size);
         auto F_xp1 = F(perturbation_point);
 
         // Perform same operations for zero perturbation.

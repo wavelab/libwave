@@ -12,6 +12,7 @@ class Transformation {
     Eigen::Matrix<double, 3, 4> matrix;
 
     double TOL = 1.490116119384766e-08;
+
  public:
     /** Default constructor, initializes to Identity. */
     Transformation();
@@ -130,9 +131,7 @@ class Transformation {
      * rotation
      * @return the rotated vector as given by `rotate()`.
      */
-    Vec3 transformAndJacobian(const Vec3 &input_vector,
-                           Mat3 &Jpoint,
-                           Eigen::Matrix<double, 3, 6> &Jparam) const;
+    Vec3 transformAndJacobian(const Vec3 &input_vector, Mat3 &Jpoint, Eigen::Matrix<double, 3, 6> &Jparam) const;
 
     /** transforms the input vector by the inverse of this transformation.
      *
@@ -206,9 +205,7 @@ class Transformation {
      * @f$ T @f$, which is also the input transformation.
      * @return The result, @f$ \omega = T_t \boxminus T @f$
      */
-    Vec6 manifoldMinusAndJacobian(const Transformation &T,
-                                  Mat6 &J_left,
-                                  Mat6 &J_right) const;
+    Vec6 manifoldMinusAndJacobian(const Transformation &T, Mat6 &J_left, Mat6 &J_right) const;
 
     /** Composes two transformations and computes the Jacobians wrt the left
      * and right transformations:
@@ -223,9 +220,7 @@ class Transformation {
      * @f$ T_{right} @f$, which is also the input transformation.
      * @return The resulting composition @f$ T_{out} @f$.
      */
-    Transformation composeAndJacobian(const Transformation &T_right,
-                                Mat6 &J_left,
-                                Mat6 &J_right) const;
+    Transformation composeAndJacobian(const Transformation &T_right, Mat6 &J_left, Mat6 &J_right) const;
 
     /** Compute the inverse of **this** transformation and computes the Jacobian
      * of the inverse mapping wrt **this** transformation.
@@ -251,7 +246,6 @@ class Transformation {
     /** Overload operator for manifold - */
     Vec6 operator-(const Transformation &T) const;
 };
-
 }
 
-#endif //WAVE_TRANSFORMATION_HPP
+#endif  // WAVE_TRANSFORMATION_HPP
