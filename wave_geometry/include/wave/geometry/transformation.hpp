@@ -112,6 +112,15 @@ class Transformation {
      */
     static Mat3 skewSymmetric3(const Vec3 &V);
 
+    /**
+     * Returns the approximate Jacobian of an interpolated transform wrt to
+     * the end perturbation. Called A(alpha, epsilon) in Barfoot State Estimation
+     * twist quantity must be small for approximation to hold
+     * @param twist of transform
+     * @return A(alpha, twist)
+     */
+    static Mat6 Jinterpolated(const Vec6 &twist, const double &alpha);
+
     /** transforms the input vector by this transformation.
      *
      * @return the vector @f$p_o@f$, the rotated result given by @f[

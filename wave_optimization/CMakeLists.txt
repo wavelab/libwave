@@ -23,6 +23,7 @@ ADD_LIBRARY(
     src/ceres/ba.cpp
     src/ceres/ceres_examples.cpp
     src/ceres/SE3Parameterization.cpp
+    src/ceres/InterpolatedSE3.cpp
     src/ceres/point_to_point_residual.cpp
 )
 TARGET_LINK_LIBRARIES(wave_optimization ${WAVE_OPTIMIZATION_DEPS})

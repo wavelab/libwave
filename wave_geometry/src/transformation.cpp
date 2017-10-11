@@ -48,6 +48,23 @@ Mat3 Transformation::skewSymmetric3(const Vec3 &V) {
     return retval;
 }
 
+Mat6 Transformation::Jinterpolated(const Vec6 &twist, const double &alpha) {
+    // 3rd order approximation
+
+    double A, B, C;
+    A = (alpha*(alpha-1.0))*0.5;
+    B = (alpha*(alpha-1.0)*(2.0*alpha-1.0))*0.0833333333333333333;
+    C = (alpha*alpha*(alpha-1)*(alpha-1))*0.0416666666666666667;
+
+    //todo(ben) make an adjoint function
+    Mat6 adjoint = Mat6::Zero();
+    adjoint.block(0,0,3,3) = skewSymmetric3(Vec3(twist(0), twist(1), twist(2)));
+    adjoint.block(3,3,3,3) = skewSymmetric3(Vec3(twist(0), twist(1), twist(2)));
+    adjoint.block(3,0,3,3) = skewSymmetric3(Vec3(twist(3), twist(4), twist(5)));
+
+    return alpha * Mat6::Identity() + A * adjoint + B * adjoint * adjoint + C * adjoint * adjoint * adjoint;
+}
+
 Transformation &Transformation::setFromExpMap(const Vec6 &se3_vector) {
     checkMatrixFinite(se3_vector);
 
