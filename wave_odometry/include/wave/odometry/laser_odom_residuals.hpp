@@ -39,7 +39,7 @@ class AnalyticalPointToLine : public ceres::SizedCostFunction<3, 3, 3> {
         double point[3];
         ceres::AngleAxisRotatePoint(r, this->pt, point);
         if ((point[0] != point[0]) || (point[1] != point[1]) || (point[2] != point[2])) {
-            LOG_ERROR("AngleAxis shit the bed");
+
         }
 
         // trans[3,4,5] are the translation.

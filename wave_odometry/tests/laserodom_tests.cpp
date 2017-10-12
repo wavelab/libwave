@@ -6,6 +6,7 @@
 #include "wave/odometry/LaserOdom.hpp"
 #include "wave/odometry/PointXYZIT.hpp"
 #include "wave/odometry/laser_odom_residuals.hpp"
+#include "wave/odometry/se3_residuals.hpp"
 #include "wave/containers/measurement_container.hpp"
 #include "wave/matching/pointcloud_display.hpp"
 #include <boost/filesystem.hpp>
@@ -197,6 +198,123 @@ TEST(Residual_test, pointToPlaneAnalytic) {
     EXPECT_NEAR(jacobian[1][2], 1, 1e-4);
 }
 
+TEST(Residual_test, SE3pointToLineAnalytic) {
+    const double **trans;
+    trans = new const double *[1];
+    trans[0] = new const double[12]{0.999613604886095,
+                                    0.027796419313034,
+                                    0,
+                                    -0.027796419313034,
+                                    0.999613604886095,
+                                    0,
+                                    0,
+                                    0,
+                                    1,
+                                    3.599536313918120,
+                                    0.050036777340220,
+                                    0};
+
+    double **jacobian;
+    jacobian = new double *[1];
+    jacobian[0] = new double[36];
+
+    double ptA[3] = {1, 1, 0};
+    double ptB[3] = {1, 3, 0};
+    double pt[3] = {1, 2, -4};
+    double scale = 0.6;
+    double residual[3] = {0};
+
+    SE3PointToLine thing(pt, ptA, ptB, &scale);
+    thing.Evaluate(trans, residual, jacobian);
+
+    EXPECT_NEAR(residual[0], 2.126402280249646, 1e-4);
+    EXPECT_NEAR(residual[1], 0, 1e-4);
+    EXPECT_NEAR(residual[2], -4, 1e-4);
+
+    EXPECT_NEAR(jacobian[0][0], 0.6, 1e-4);
+    EXPECT_NEAR(jacobian[0][1], 0, 1e-4);
+    EXPECT_NEAR(jacobian[0][2], 0, 1e-4);
+    EXPECT_NEAR(jacobian[0][3], 1.2, 1e-4);
+    EXPECT_NEAR(jacobian[0][4], 0, 1e-4);
+    EXPECT_NEAR(jacobian[0][5], 0, 1e-4);
+    EXPECT_NEAR(jacobian[0][6], -2.4, 1e-4);
+    EXPECT_NEAR(jacobian[0][7], 0, 1e-4);
+    EXPECT_NEAR(jacobian[0][8], 0, 1e-4);
+    EXPECT_NEAR(jacobian[0][9], 0.6, 1e-4);
+    EXPECT_NEAR(jacobian[0][10], 0, 1e-4);
+    EXPECT_NEAR(jacobian[0][11], 0, 1e-4);
+    EXPECT_NEAR(jacobian[0][12], 0, 1e-4);
+    EXPECT_NEAR(jacobian[0][13], 0, 1e-4);
+    EXPECT_NEAR(jacobian[0][14], 0, 1e-4);
+    EXPECT_NEAR(jacobian[0][15], 0, 1e-4);
+    EXPECT_NEAR(jacobian[0][16], 0, 1e-4);
+    EXPECT_NEAR(jacobian[0][17], 0, 1e-4);
+    EXPECT_NEAR(jacobian[0][18], 0, 1e-4);
+    EXPECT_NEAR(jacobian[0][19], 0, 1e-4);
+    EXPECT_NEAR(jacobian[0][20], 0, 1e-4);
+    EXPECT_NEAR(jacobian[0][21], 0, 1e-4);
+    EXPECT_NEAR(jacobian[0][22], 0, 1e-4);
+    EXPECT_NEAR(jacobian[0][23], 0, 1e-4);
+    EXPECT_NEAR(jacobian[0][24], 0, 1e-4);
+    EXPECT_NEAR(jacobian[0][25], 0, 1e-4);
+    EXPECT_NEAR(jacobian[0][26], 0.6, 1e-4);
+    EXPECT_NEAR(jacobian[0][27], 0, 1e-4);
+    EXPECT_NEAR(jacobian[0][28], 0, 1e-4);
+    EXPECT_NEAR(jacobian[0][29], 1.2, 1e-4);
+    EXPECT_NEAR(jacobian[0][30], 0, 1e-4);
+    EXPECT_NEAR(jacobian[0][31], 0, 1e-4);
+    EXPECT_NEAR(jacobian[0][32], -2.4, 1e-4);
+    EXPECT_NEAR(jacobian[0][33], 0, 1e-4);
+    EXPECT_NEAR(jacobian[0][34], 0, 1e-4);
+    EXPECT_NEAR(jacobian[0][35], 0.6, 1e-4);
+}
+
+TEST(Residual_test, SE3pointToPlaneAnalytic) {
+    const double **trans;
+    trans = new const double *[1];
+    trans[0] = new const double[12]{0.999613604886095,
+                                    0.027796419313034,
+                                    0,
+                                    -0.027796419313034,
+                                    0.999613604886095,
+                                    0,
+                                    0,
+                                    0,
+                                    1,
+                                    3.599536313918120,
+                                    0.050036777340220,
+                                    0};
+
+    double **jacobian;
+    jacobian = new double *[1];
+    jacobian[0] = new double[12];
+
+    double ptA[3] = {1, 1, 0};
+    double ptB[3] = {1, 3, 0};
+    double ptC[3] = {4, -1, 0};
+    double pt[3] = {1, 2, -4};
+    double scale = 0.6;
+    double residual = 0;
+
+    SE3PointToPlane thing(pt, ptA, ptB, ptC, &scale);
+    thing.Evaluate(trans, &residual, jacobian);
+
+    EXPECT_NEAR(residual, -4, 1e-4);
+
+    EXPECT_NEAR(jacobian[0][0], 0, 1e-4);
+    EXPECT_NEAR(jacobian[0][1], 0, 1e-4);
+    EXPECT_NEAR(jacobian[0][2], 0.6, 1e-4);
+    EXPECT_NEAR(jacobian[0][3], 0, 1e-4);
+    EXPECT_NEAR(jacobian[0][4], 0, 1e-4);
+    EXPECT_NEAR(jacobian[0][5], 1.2, 1e-4);
+    EXPECT_NEAR(jacobian[0][6], 0, 1e-4);
+    EXPECT_NEAR(jacobian[0][7], 0, 1e-4);
+    EXPECT_NEAR(jacobian[0][8], -2.4, 1e-4);
+    EXPECT_NEAR(jacobian[0][9], 0, 1e-4);
+    EXPECT_NEAR(jacobian[0][10], 0, 1e-4);
+    EXPECT_NEAR(jacobian[0][11], 0.6, 1e-4);
+}
+
 // This test is for odometry for the car moving in a straight line through the garage
 TEST(OdomTest, StraightLineGarage) {
     // Load entire sequence into memory
@@ -228,9 +346,9 @@ TEST(OdomTest, StraightLineGarage) {
     params.max_correspondence_dist = 0.4;
     params.huber_delta = 0.2;
     params.opt_iters = 20;
-//    params.visualize = true;
-//    params.output_trajectory = true;
-    //params.output_correspondences = true;
+    //    params.visualize = true;
+    //    params.output_trajectory = true;
+    // params.output_correspondences = true;
     params.rotation_stiffness = 1e-5;
     params.translation_stiffness = 5e-3;
     params.T_z_multiplier = 4;
@@ -270,10 +388,10 @@ TEST(OdomTest, StraightLineGarage) {
     }
 }
 
-void dummyoutput(const TimeType * const stmap,
-                 const std::array<double, 3> * const rot,
-                 const std::array<double, 3> * const trans,
-                 const pcl::PointCloud<pcl::PointXYZI> * const cld) {
+void dummyoutput(const TimeType *const stmap,
+                 const std::array<double, 3> *const rot,
+                 const std::array<double, 3> *const trans,
+                 const pcl::PointCloud<pcl::PointXYZI> *const cld) {
     LOG_INFO("Got output!");
     LOG_INFO("%f", rot->at(0));
     LOG_INFO("%f", rot->at(1));

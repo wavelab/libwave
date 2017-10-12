@@ -79,44 +79,44 @@ bool AnalyticalPointToPointInterpolated::Evaluate(double const *const *parameter
     Eigen::Map<Vec3>(residuals, 3, 1) = err;
 
     if((jacobians != NULL) && (jacobians[0] != NULL)) {
-        jacobians[0][0] = this->P2[0];
+        jacobians[0][0] = *(this->alpha) *this->P2[0];
         jacobians[0][1] = 0;
         jacobians[0][2] = 0;
-        jacobians[0][3] = this->P2[1];
+        jacobians[0][3] = *(this->alpha) *this->P2[1];
         jacobians[0][4] = 0;
         jacobians[0][5] = 0;
-        jacobians[0][6] = this->P2[2];
+        jacobians[0][6] = *(this->alpha) *this->P2[2];
         jacobians[0][7] = 0;
         jacobians[0][8] = 0;
-        jacobians[0][9] = 1;
+        jacobians[0][9] = *(this->alpha) *1;
         jacobians[0][10] = 0;
         jacobians[0][11] = 0;
 
         jacobians[0][12] = 0;
-        jacobians[0][13] = this->P2[0];
+        jacobians[0][13] = *(this->alpha) *this->P2[0];
         jacobians[0][14] = 0;
         jacobians[0][15] = 0;
-        jacobians[0][16] = this->P2[1];
+        jacobians[0][16] = *(this->alpha) *this->P2[1];
         jacobians[0][17] = 0;
         jacobians[0][18] = 0;
-        jacobians[0][19] = this->P2[2];
+        jacobians[0][19] = *(this->alpha) *this->P2[2];
         jacobians[0][20] = 0;
         jacobians[0][21] = 0;
-        jacobians[0][22] = 1;
+        jacobians[0][22] = *(this->alpha) *1;
         jacobians[0][23] = 0;
 
         jacobians[0][24] = 0;
         jacobians[0][25] = 0;
-        jacobians[0][26] = this->P2[0];
+        jacobians[0][26] = *(this->alpha) *this->P2[0];
         jacobians[0][27] = 0;
         jacobians[0][28] = 0;
-        jacobians[0][29] = this->P2[1];
+        jacobians[0][29] = *(this->alpha) *this->P2[1];
         jacobians[0][30] = 0;
         jacobians[0][31] = 0;
-        jacobians[0][32] = this->P2[2];
+        jacobians[0][32] = *(this->alpha) *this->P2[2];
         jacobians[0][33] = 0;
         jacobians[0][34] = 0;
-        jacobians[0][35] = 1;
+        jacobians[0][35] = *(this->alpha) *1;
     }
 
     return true;

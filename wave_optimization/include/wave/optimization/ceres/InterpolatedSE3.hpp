@@ -13,6 +13,8 @@ namespace wave {
 // The global size is 12, twelve variables from the SE3 object. The interpolation variable is pointed to.
 // variable. The local size is 6 because it is assumed that the scale is known.
 
+// Don't use this
+
 class InterpolatedSE3 : public ceres::LocalParameterization {
  private:
     const double * const alpha;

@@ -19,6 +19,7 @@ ADD_LIBRARY(
     wave_odometry
     STATIC
     src/loss_functions.cpp
+    src/se3_residuals.cpp
     src/LaserOdom.cpp
 )
 
