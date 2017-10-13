@@ -80,7 +80,7 @@ class MultiMatcher {
     std::queue<std::tuple<int, PCLPointCloud, PCLPointCloud>> input;
     std::queue<std::tuple<int, Eigen::Affine3d, Mat6>> output;
     std::vector<std::thread> pool;
-    std::vector<T> matchers;
+    std::vector<T, Eigen::aligned_allocator<T>> matchers;
 
     // Synchronization
     std::mutex ip_mutex, op_mutex, cnt_mutex;
