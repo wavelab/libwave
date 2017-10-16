@@ -21,6 +21,7 @@
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 #include "wave/matching/pointcloud_display.hpp"
+#include "wave/geometry/transformation.hpp"
 #include "wave/odometry/kdtreetype.hpp"
 #include "wave/odometry/PointXYZIR.hpp"
 #include "wave/odometry/PointXYZIT.hpp"
@@ -92,8 +93,8 @@ class LaserOdom {
     std::vector<std::vector<PointXYZIT>> edges, flats;
     FeatureKDTree<double> prv_edges, prv_flats;
     // The transform is T_start_end
-    std::array<double, 3> cur_translation, prev_translation;
-    std::array<double, 3> cur_rotation, prev_rotation;
+    Transformation cur_transform, prev_transform;
+
     bool new_features = false;
 
     void rollover(TimeType stamp);
@@ -109,8 +110,8 @@ class LaserOdom {
     pcl::PointCloud<pcl::PointXYZ> undis_edges, undis_flats;
     pcl::PointCloud<pcl::PointXYZ> map_edges, map_flats;
     TimeType undistorted_stamp;
-    std::array<double, 3> undistort_translation, undistort_rotation;
-    double covar_ww[9], covar_wt[9], covar_tt[9];
+    Transformation undistort_transform;
+    double covar[144];
     std::vector<std::array<double, 12>> edge_cor;
     std::vector<std::array<double, 15>> flat_cor;
 
@@ -124,6 +125,7 @@ class LaserOdom {
     void updateViz();
     // Output trajectory file
     std::ofstream file;
+    const static Eigen::IOFormat CSVFormat(Eigen::FullPrecision, Eigen::DontAlignCols, ", ", ", ");
 
     // Flow control
     std::atomic_bool continue_output;

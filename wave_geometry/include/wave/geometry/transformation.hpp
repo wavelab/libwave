@@ -249,6 +249,9 @@ class Transformation {
     /** @return the 4x4 transformation matrix */
     Mat4 getMatrix() const;
 
+    /** @return a reference to the internal matrix object **/
+    Eigen::Matrix<double, 3, 4>& getInternalMatrix() {return this->matrix;};
+
     /** Implements transformation composition. */
     Transformation operator*(const Transformation &T) const;
 

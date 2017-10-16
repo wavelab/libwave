@@ -43,12 +43,17 @@ void LaserOdom::flagNearbyPoints(const unlong ring, const unlong index) {
 
 void LaserOdom::transformToStart(const double *const pt, const uint16_t tick, double *output) {
     double &scale = this->scale_lookup.at(tick);
+
     double angle_axis[3] = {
       scale * this->undistort_rotation[0], scale * this->undistort_rotation[1], scale * this->undistort_rotation[2]};
     ceres::AngleAxisRotatePoint(angle_axis, pt, output);
     output[0] += scale * this->undistort_translation[0];
     output[1] += scale * this->undistort_translation[1];
     output[2] += scale * this->undistort_translation[2];
+}
+
+void LaserOdom::transformToEnd(const double *const pt, const uint16_t tick, double *output) {
+
 }
 
 float LaserOdom::l2sqrd(const PCLPointXYZIT &p1, const PCLPointXYZIT &p2) {
@@ -81,10 +86,10 @@ LaserOdom::LaserOdom(const LaserOdomParams params) : param(params) {
     this->edges.resize(n_ring);
     this->edge_idx = new kd_tree_t(3, this->prv_edges, nanoflann::KDTreeSingleIndexAdaptorParams(10));
     this->flat_idx = new kd_tree_t(3, this->prv_flats, nanoflann::KDTreeSingleIndexAdaptorParams(10));
-    this->cur_translation = {0, 0, 0};
-    this->cur_rotation = {0, 0, 0};
-    this->prev_translation = {0, 0, 0};
-    this->prev_rotation = {0, 0, 0};
+
+    this->cur_transform.setIdentity();
+    this->prev_transform.setIdentity();
+
     if (params.visualize) {
         this->display = new PointCloudDisplay("laser odom", 0.05);
         this->display->startSpin();
@@ -116,9 +121,7 @@ LaserOdom::LaserOdom(const LaserOdomParams params) : param(params) {
     this->covar_options.num_threads = 4;
     this->covar_options.sparse_linear_algebra_library_type = ceres::SparseLinearAlgebraLibraryType::SUITE_SPARSE;
     this->covar_options.algorithm_type = ceres::CovarianceAlgorithmType::SPARSE_QR;
-    this->covariance_blocks.push_back(std::make_pair(this->cur_rotation.data(), this->cur_rotation.data()));
-    this->covariance_blocks.push_back(std::make_pair(this->cur_rotation.data(), this->cur_translation.data()));
-    this->covariance_blocks.push_back(std::make_pair(this->cur_translation.data(), this->cur_translation.data()));
+    this->covariance_blocks.push_back(std::make_pair(this->cur_transform.getInternalMatrix().data(), this->cur_transform.getInternalMatrix().data()));
 }
 
 void LaserOdom::updateParams(const LaserOdomParams new_params) {
@@ -290,20 +293,17 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
         this->generateFeatures();          // generate features on the current scan
         if (this->initialized) {           // there is a set of previous features from
                                            // last scan
-            double last_translation[3], last_rotation[3];
+            Transformation last_transform;
             ceres::Problem problem;
             for (int i = 0; i < this->param.opt_iters; i++) {
                 if (i > 0) {
-                    memcpy(last_translation, this->cur_translation.data(), 24);
-                    memcpy(last_rotation, this->cur_rotation.data(), 24);
+                    memcpy(last_transform.getInternalMatrix().data(), this->cur_transform.getInternalMatrix().data(), 96);
                 }
                 if (!this->match(&problem)) {
                     return;
                 }
                 if (i > 0) {
-                    double diff = getDiff(last_translation, this->cur_translation.data(), 3) +
-                                  getDiff(last_rotation, this->cur_rotation.data(), 3);
-                    if (diff < this->param.diff_tol) {
+                    if (this->cur_transform.isNear(last_transform, this->param.diff_tol)) {
                         break;
                     }
                 }
@@ -311,16 +311,12 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
 
             ceres::Covariance covariance(this->covar_options);
             covariance.Compute(this->covariance_blocks, &problem);
-            covariance.GetCovarianceBlock(this->cur_rotation.data(), this->cur_rotation.data(), this->covar_ww);
-            covariance.GetCovarianceBlock(this->cur_rotation.data(), this->cur_translation.data(), this->covar_wt);
-            covariance.GetCovarianceBlock(this->cur_translation.data(), this->cur_translation.data(), this->covar_tt);
+            covariance.GetCovarianceBlock(this->cur_transform.getInternalMatrix().data(), this->cur_transform.getInternalMatrix().data(), this->covar);
 
-            memcpy(this->prev_translation.data(), this->cur_translation.data(), 24);
-            memcpy(this->prev_rotation.data(), this->cur_rotation.data(), 24);
+            memcpy(this->prev_transform.getInternalMatrix().data(), this->cur_transform.getInternalMatrix().data(), 96);
+
             if (this->param.output_trajectory) {
-                this->file << this->cur_rotation[0] << ", " << this->cur_rotation[1] << ", " << this->cur_rotation[2]
-                           << ", " << this->cur_translation[0] << ", " << this->cur_translation[1] << ", "
-                           << this->cur_translation[2] << std::endl;
+                this->file << this->cur_transform.getInternalMatrix().format(this->CSVFormat) << std::endl;
             }
             if (this->param.visualize) {
                 this->updateViz();
@@ -333,8 +329,7 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
                         LOG_ERROR("Overwriting previous output");
                     }
                     this->undistorted_stamp = this->prv_time;
-                    memcpy(this->undistort_translation.data(), this->cur_translation.data(), 24);
-                    memcpy(this->undistort_rotation.data(), this->cur_rotation.data(), 24);
+                    memcpy(this->undistort_transform.getInternalMatrix().data(), this->cur_transform.getInternalMatrix().data(), 96);
 
                     this->undistort();
                     this->fresh_output = true;
