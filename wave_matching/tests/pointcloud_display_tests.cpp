@@ -8,7 +8,7 @@
 
 namespace wave {
 
-const auto TEST_SCAN = "data/testscan.pcd";
+const auto TEST_SCAN = "tests/data/testscan.pcd";
 
 TEST(viewer, init_test) {
     PointCloudDisplay display("init_test");

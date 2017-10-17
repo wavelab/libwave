@@ -31,6 +31,7 @@ class ConfigException : public __exception {
 template <typename T>
 class Matcher {
  public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     /** This constructor takes an argument in order to adjust how much
      * downsampling is done before matching is attempted. Pointclouds are
      * downsampled using a voxel filter.
@@ -47,7 +48,7 @@ class Matcher {
 
     virtual ~Matcher() {}
 
-    const Eigen::Affine3d &getResult() {
+    const Eigen::Affine3d getResult() {
         return this->result;
     };
     const Mat6 &getInfo() {

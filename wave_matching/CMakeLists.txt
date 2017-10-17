@@ -1,7 +1,7 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8.3)
 PROJECT(wave_matching)
 
-SET(CMAKE_BUILD_TYPE DEBUG)
+SET(CMAKE_BUILD_TYPE RELEASE)
 
 # PACKAGES
 FIND_PACKAGE(PCL 1.8 REQUIRED)
@@ -44,7 +44,7 @@ WAVE_ADD_TEST(
     tests/icp_tests.cpp
     tests/ndt_tests.cpp
     tests/gicp_tests.cpp
-    DISABLED  # Don't run this test for now
+    tests/multi_matcher_tests.cpp
 )
 
 WAVE_ADD_TEST(
