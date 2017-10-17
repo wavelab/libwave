@@ -36,7 +36,7 @@ ADD_LIBRARY(
     src/icp.cpp
     src/ndt.cpp
     src/groundSegmentation.cpp
-
+    src/pointcloud_display.cpp
 )
 TARGET_LINK_LIBRARIES(wave_matching ${WAVE_MATCHING_DEPS})
 
