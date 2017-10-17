@@ -46,7 +46,7 @@ WAVE_ADD_TEST(
     tests/icp_tests.cpp
     tests/ndt_tests.cpp
     tests/gicp_tests.cpp
-    DISABLED  # Don't run this test for now
+    tests/multi_matcher_tests.cpp
 )
 
 WAVE_ADD_TEST(

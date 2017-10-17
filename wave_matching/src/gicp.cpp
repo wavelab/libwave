@@ -3,18 +3,7 @@
 
 namespace wave {
 
-GICPMatcher::GICPMatcher(float res, const std::string &config_path) {
-    this->ref = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
-    this->target = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
-    this->final = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
-
-    if (res > 0) {
-        this->resolution = res;
-        this->filter.setLeafSize(res, res, res);
-    } else {
-        this->resolution = -1;
-    }
-
+GICPMatcherParams::GICPMatcherParams(const std::string &config_path) {
     ConfigParser parser;
     double r_eps = 1e-8, fit_eps = 1e-2;
     int corr_rand = 10, max_iter = 100;
@@ -27,11 +16,23 @@ GICPMatcher::GICPMatcher(float res, const std::string &config_path) {
         ConfigException config_exception;
         throw config_exception;
     }
+}
 
-    this->gicp.setCorrespondenceRandomness(corr_rand);
-    this->gicp.setMaximumIterations(max_iter);
-    this->gicp.setRotationEpsilon(r_eps);
-    this->gicp.setEuclideanFitnessEpsilon(fit_eps);
+GICPMatcher::GICPMatcher(GICPMatcherParams params1) : params(params1) {
+    this->ref = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
+    this->target = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
+    this->final = boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >();
+
+    if (params.res > 0) {
+        this->resolution = params.res;
+        this->filter.setLeafSize(params.res, params.res, params.res);
+    } else {
+        this->resolution = -1;
+    }
+    this->gicp.setCorrespondenceRandomness(this->params.corr_rand);
+    this->gicp.setMaximumIterations(this->params.max_iter);
+    this->gicp.setRotationEpsilon(this->params.r_eps);
+    this->gicp.setEuclideanFitnessEpsilon(this->params.fit_eps);
 }
 
 void GICPMatcher::setRef(const PCLPointCloud &ref) {
