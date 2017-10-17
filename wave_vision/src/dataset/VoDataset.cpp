@@ -93,14 +93,13 @@ void VoDataset::outputObserved(const std::string &output_dir) {
 
     for (auto state : this->states) {
         // build observed file path
-        std::ostringstream oss("");
-        oss << output_dir + "/observed_" << index << ".dat";
-        std::string obs_path = oss.str();
+        auto obs_file_name = "observed_" + std::to_string(index) + ".dat";
+        auto obs_file_path = output_dir + "/" + obs_file_name;
 
         // create observed features file
-        std::ofstream obs_file(obs_path);
+        std::ofstream obs_file(obs_file_path);
         if (!obs_file) {
-            throw std::runtime_error("Failed to open " + obs_path +
+            throw std::runtime_error("Failed to open " + obs_file_path +
                                      " to output observed features!");
         }
 
@@ -122,7 +121,7 @@ void VoDataset::outputObserved(const std::string &output_dir) {
         obs_file << std::endl;
 
         // record features observed file path to index
-        index_file << oss.str() << std::endl;
+        index_file << obs_file_name << std::endl;
         index++;
     }
     index_file << std::endl;
@@ -166,6 +165,9 @@ VoDataset VoDataset::loadFromDirectory(const std::string &input_dir) {
     VoDataset dataset;
 
     std::ifstream calib_file{input_dir + "/calib.dat"};
+    if (!calib_file) {
+        throw std::runtime_error("Could not open calib.dat");
+    }
     dataset.camera_K = matrixFromStream<3, 3>(calib_file);
 
     // Landmarks
@@ -177,8 +179,15 @@ VoDataset VoDataset::loadFromDirectory(const std::string &input_dir) {
 
     // Read the index file to get the file for each state
     std::ifstream index_file{input_dir + "/index.dat"};
+    if (!calib_file) {
+        throw std::runtime_error("Could not open index.dat");
+    }
     for (std::string obs_file_name; index_file >> obs_file_name;) {
-        std::ifstream obs_file{obs_file_name};
+        auto obs_file_path = input_dir + "/" + obs_file_name;
+        std::ifstream obs_file{obs_file_path};
+        if (!obs_file) {
+            throw std::runtime_error("Could not open " + obs_file_path);
+        }
 
         VoInstant state;
         obs_file >> state.time;

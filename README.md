@@ -19,12 +19,12 @@ This library contains reusable code for:
 - PCL 1.8
 - yaml-cpp 0.5.1
 - CMake 2.8.3
-- GCC 4.8
+- GCC 5.4
 
 The above versions are the minimum we test against.
-Some earlier minor versions may work, but are not tested.
-For convenience, we provide a script which installs these dependencies on
-Ubuntu 14.04 or Ubuntu 16.04, in `scripts/install/install_deps.bash`.
+Some earlier versions may work, but are not tested.
+For convenience, we provide a script which installs these dependencies (except 
+GCC) on Ubuntu 14.04 or Ubuntu 16.04, in `scripts/install/install_deps.bash`.
 
 ## Install
 

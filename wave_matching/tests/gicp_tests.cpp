@@ -5,8 +5,8 @@
 
 namespace wave {
 
-const auto TEST_SCAN = "data/testscan.pcd";
-const auto TEST_CONFIG = "config/gicp.yaml";
+const auto TEST_SCAN = "tests/data/testscan.pcd";
+const auto TEST_CONFIG = "tests/config/gicp.yaml";
 
 // Fixture to load same pointcloud all the time
 class GICPTest : public testing::Test {
@@ -25,8 +25,8 @@ class GICPTest : public testing::Test {
         pcl::io::loadPCDFile(TEST_SCAN, *(this->ref));
     }
 
-    void setParams(const float res, const Affine3 perturb) {
-        this->matcher = new GICPMatcher(res, TEST_CONFIG);
+    void setParams(const GICPMatcherParams params, const Affine3 perturb) {
+        this->matcher = new GICPMatcher(params);
         pcl::transformPointCloud(*(this->ref), *(this->target), perturb);
         this->matcher->setup(this->ref, this->target);
     }
@@ -36,7 +36,7 @@ class GICPTest : public testing::Test {
 };
 
 TEST(gicp_tests, initialization) {
-    GICPMatcher matcher(0.1f, TEST_CONFIG);
+    GICPMatcher matcher(GICPMatcherParams());
 }
 
 // Zero displacement without downsampling
@@ -48,7 +48,9 @@ TEST_F(GICPTest, fullResNullMatch) {
     // setup
     perturb = Affine3::Identity();
     perturb.translation() << 0, 0, 0;
-    this->setParams(-1, perturb);
+    GICPMatcherParams params(TEST_CONFIG);
+    params.res = -1;
+    this->setParams(params, perturb);
 
     // test and assert
     match_success = matcher->match();
@@ -66,7 +68,9 @@ TEST_F(GICPTest, nullDisplacement) {
     // setup
     perturb = Affine3::Identity();
     perturb.translation() << 0, 0, 0;
-    this->setParams(0.05f, perturb);
+    GICPMatcherParams params(TEST_CONFIG);
+    params.res = 0.05f;
+    this->setParams(params, perturb);
 
     // test and assert
     match_success = matcher->match();
@@ -84,7 +88,9 @@ TEST_F(GICPTest, smallDisplacement) {
     // setup
     perturb = Affine3::Identity();
     perturb.translation() << 0.2, 0, 0;
-    this->setParams(0.05f, perturb);
+    GICPMatcherParams params(TEST_CONFIG);
+    params.res = 0.05f;
+    this->setParams(params, perturb);
 
     // test and assert
     match_success = matcher->match();

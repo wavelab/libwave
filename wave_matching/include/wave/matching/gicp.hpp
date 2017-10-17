@@ -27,22 +27,41 @@ namespace wave {
 /** @addtogroup matching
  *  @{ */
 
+struct GICPMatcherParams {
+    GICPMatcherParams(const std::string &config_path);
+    GICPMatcherParams() {}
+
+    int corr_rand = 10;
+    int max_iter = 100;
+    double r_eps = 1e-8;
+    double fit_eps = 1e-2;
+    float res = 0.1;
+};
+
 class GICPMatcher : public Matcher<PCLPointCloud> {
  public:
-    explicit GICPMatcher(float resolution, const std::string &config_path);
-    /** hey there
-     *
-     * Its some function
-     * @param ref
+    explicit GICPMatcher(GICPMatcherParams params1);
+
+    /** sets the reference pointcloud for the matcher
+     * @param ref - Pointcloud
      */
     void setRef(const PCLPointCloud &ref);
+
+    /** sets the target (or scene) pointcloud for the matcher
+     * @param targer - Pointcloud
+     */
     void setTarget(const PCLPointCloud &target);
+
+    /** runs the matcher, blocks until finished.
+     * Returns true if successful
+     */
     bool match();
 
  private:
     pcl::GeneralizedIterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> gicp;
     pcl::VoxelGrid<pcl::PointXYZ> filter;
     PCLPointCloud ref, target, final;
+    GICPMatcherParams params;
 };
 
 /** @} group matching */

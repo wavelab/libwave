@@ -5,8 +5,8 @@
 
 namespace wave {
 
-const auto TEST_SCAN = "data/testscan.pcd";
-const auto TEST_CONFIG = "config/ndt.yaml";
+const auto TEST_SCAN = "tests/data/testscan.pcd";
+const auto TEST_CONFIG = "tests/config/ndt.yaml";
 
 // Fixture to load same pointcloud all the time
 class NDTTest : public testing::Test {
@@ -25,8 +25,9 @@ class NDTTest : public testing::Test {
         pcl::io::loadPCDFile(TEST_SCAN, *(this->ref));
     }
 
-    void initMatcher(const float res, const Affine3 perturb) {
-        this->matcher = new NDTMatcher(res, TEST_CONFIG);
+    void initMatcher(const NDTMatcherParams params,
+                     const Eigen::Affine3d perturb) {
+        this->matcher = new NDTMatcher(params);
         pcl::transformPointCloud(*(this->ref), *(this->target), perturb);
         this->matcher->setup(this->ref, this->target);
     }
@@ -37,7 +38,7 @@ class NDTTest : public testing::Test {
 };
 
 TEST(NDTTests, initialization) {
-    NDTMatcher matcher(1.0f, TEST_CONFIG);
+    NDTMatcher matcher(NDTMatcherParams());
 }
 
 // Zero displacement using resolution from config
@@ -49,7 +50,8 @@ TEST_F(NDTTest, fullResNullMatch) {
     // setup
     perturb = Affine3::Identity();
     perturb.translation() << 0, 0, 0;
-    this->initMatcher(-1, perturb);
+    NDTMatcherParams params(TEST_CONFIG);
+    this->initMatcher(params, perturb);
 
     // test and assert
     match_success = matcher->match();
@@ -67,7 +69,10 @@ TEST_F(NDTTest, nullDisplacement) {
     // setup
     perturb = Affine3::Identity();
     perturb.translation() << 0, 0, 0;
-    this->initMatcher(2.5f, perturb);
+
+    NDTMatcherParams params(TEST_CONFIG);
+    params.res = 0.1f;
+    this->initMatcher(params, perturb);
 
     // test and assert
     match_success = matcher->match();
@@ -85,7 +90,9 @@ TEST_F(NDTTest, smallDisplacement) {
     // setup
     perturb = Affine3::Identity();
     perturb.translation() << 0.2, 0, 0;
-    this->initMatcher(2.5f, perturb);
+    NDTMatcherParams params(TEST_CONFIG);
+    params.res = 0.3f;
+    this->initMatcher(params, perturb);
 
     // test and assert
     match_success = matcher->match();

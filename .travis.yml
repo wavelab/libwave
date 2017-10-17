@@ -9,8 +9,10 @@ cache:
 addons:
   apt:
     sources:
+      - ubuntu-toolchain-r-test
       - sourceline: 'ppa:lkoppel/robotics'
     packages:
+      - g++-5
       - libboost-dev
       - libyaml-cpp-dev
       - libeigen3-dev
@@ -21,9 +23,10 @@ addons:
       - clang-format-3.8
 
 before_script:
-  - bash scripts/ci/ci_check.bash
+  - export CXX=g++-5 CC=gcc-5  # override travis defaults
 
 script:
+  - bash scripts/ci/ci_check.bash
   - bash scripts/ci/ci_run.bash
 
 notifications:
