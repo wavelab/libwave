@@ -1,4 +1,4 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8.3)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.2)
 PROJECT(wave)
 
 # COMPILER SETTINGS
@@ -13,6 +13,8 @@ ENABLE_TESTING()
 
 # Require Eigen 3.2.92, also called 3.3 beta-1, since it's in xenial
 FIND_PACKAGE(Eigen3 3.2.92 REQUIRED)
+
+FIND_PACKAGE(Boost 1.54. REQUIRED system filesystem)
 
 # The sub-libraries, each of which is in a subdirectory of the same name
 SET(LIBWAVE_MODULES

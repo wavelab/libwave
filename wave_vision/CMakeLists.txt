@@ -1,26 +1,23 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8.3)
 PROJECT(wave_vision)
 
 # DEPENDENCIES
 FIND_PACKAGE(OpenCV REQUIRED)
-FIND_PACKAGE(Boost COMPONENTS system filesystem REQUIRED)
 
 # DEFINITIONS
 ADD_DEFINITIONS(${OpenCV_DEFINITIONS})
 
 # INCLUDES
-INCLUDE_DIRECTORIES(${OpenCV_INCLUDE_DIRS}
-    ${Boost_INCLUDE_DIR})
+INCLUDE_DIRECTORIES(${OpenCV_INCLUDE_DIRS})
 
 # LIBRARY
 SET(
     WAVE_VISION_DEPS
     yaml-cpp
     ${OpenCV_LIBS}
-    ${Boost_LIBRARIES}
     wave_kinematics
     wave_utils
     Eigen3::Eigen
+    Boost::filesystem
 )
 ADD_LIBRARY(
     wave_vision
@@ -62,7 +59,6 @@ TARGET_LINK_LIBRARIES(
     ${PROJECT_NAME}_viz_tests
     ${PROJECT_NAME}
     wave_utils
-    ${Boost_LIBRARIES}
 )
 
 # COPY TEST DATA

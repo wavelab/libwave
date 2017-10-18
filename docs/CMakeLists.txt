@@ -1,4 +1,3 @@
-cmake_minimum_required(VERSION 2.8.3)
 project(wave_docs)
 
 # DOCS_INPUT is a space-separated list of subdirectories, used for Doxygen input
