@@ -1,5 +1,7 @@
 /** @file
  * @ingroup matching
+ * @author Arun Das (adas@uwaterloo.ca)
+ * @author James Servos (jdservos@uwaterloo.ca)
  *
  * Gaussian Process Ground Segmentation
  *
@@ -7,17 +9,6 @@
 
 #ifndef WAVE_GROUNDSEGMENTATION_HPP
 #define WAVE_GROUNDSEGMENTATION_HPP
-
-/************************************************************************
- *
- *
- *  Copyright 2015  Arun Das (University of Waterloo)
- *                      [adas@uwaterloo.ca]
- *                  James Servos (University of Waterloo)
- *                      [jdservos@uwaterloo.ca]
- *
- *
- *************************************************************************/
 
 #include <vector>
 #include <pcl/point_cloud.h>

@@ -1,13 +1,3 @@
-/************************************************************************
- *
- *
- *  Copyright 2015  Arun Das (University of Waterloo)
- *                      [adas@uwaterloo.ca]
- *                  James Servos (University of Waterloo)
- *                      [jdservos@uwaterloo.ca]
- *
- *
- *************************************************************************/
 #include <Eigen/Eigenvalues>
 #include <wave/matching/groundSegmentation.hpp>
 #include <wave/matching/PointcloudXYZGD.hpp>

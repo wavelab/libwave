@@ -13,11 +13,12 @@ struct GroundSegmentationParams {
     int num_seed_points = 10;
 
     // for GP model
-    float p_l = 10;  // length parameter, so how close the points have to be in the
-    // GP model to consider them correlated
-    float p_sf = 1;      // scaling on the whole covariance function
-    float p_sn = 0.3;      // the expected noise for the mode
-    float p_tmodel = 5;  // the required confidence required in order to consider
+    float p_l = 10;  // length parameter, how close points have to be in the
+    // GP model to correlate them
+    float p_sf = 1;    // scaling on the whole covariance function
+    float p_sn = 0.3;  // the expected noise for the mode
+    float p_tmodel =
+      5;  // the required confidence required in order to consider
     // something ground
     float p_tdata = 5;  // scaled value that is required for a query point to be
     // considered ground
