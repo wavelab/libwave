@@ -3,7 +3,6 @@ PROJECT(wave_vision)
 
 # DEPENDENCIES
 FIND_PACKAGE(OpenCV REQUIRED)
-FIND_PACKAGE(Eigen3 REQUIRED)
 FIND_PACKAGE(Boost COMPONENTS system filesystem REQUIRED)
 
 # DEFINITIONS
@@ -11,7 +10,6 @@ ADD_DEFINITIONS(${OpenCV_DEFINITIONS})
 
 # INCLUDES
 INCLUDE_DIRECTORIES(${OpenCV_INCLUDE_DIRS}
-    ${EIGEN3_INCLUDE_DIR}
     ${Boost_INCLUDE_DIR})
 
 # LIBRARY
@@ -22,6 +20,7 @@ SET(
     ${Boost_LIBRARIES}
     wave_kinematics
     wave_utils
+    Eigen3::Eigen
 )
 ADD_LIBRARY(
     wave_vision
