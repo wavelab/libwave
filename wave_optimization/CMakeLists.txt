@@ -2,38 +2,31 @@ PROJECT(wave_optimization)
 
 # PACKAGES
 FIND_PACKAGE(Ceres REQUIRED)
-FIND_PACKAGE(GTSAM)
+FIND_PACKAGE(GTSAM) # optional for now; used only in tests (@todo)
 
-# INCLUDES
-INCLUDE_DIRECTORIES(include)
-INCLUDE_DIRECTORIES(${CERES_INCLUDE_DIRS})
-
-# LIBRARY
-SET(WAVE_OPTIMIZATION_DEPS
-    ${OpenCV_LIBS}
-    wave_kinematics
-    wave_utils
-    Eigen3::Eigen)
-
-ADD_LIBRARY(
-    wave_optimization
-    STATIC
+ADD_LIBRARY(${PROJECT_NAME} STATIC
     src/ceres/ba.cpp
-    src/ceres/ceres_examples.cpp
-)
-TARGET_LINK_LIBRARIES(wave_optimization ${WAVE_OPTIMIZATION_DEPS})
+    src/ceres/ceres_examples.cpp)
+
+# Use these headers when building, and make clients use them
+TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PUBLIC include)
+TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PUBLIC SYSTEM ${CERES_INCLUDE_DIRS})
+
+# Depend on these modules and external libraries, and make clients use them
+TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC
+    wave_utils
+    wave_kinematics
+    wave_vision
+    Eigen3::Eigen
+    ${OpenCV_LIBS}
+    ${CERES_LIBRARIES})
 
 # UNIT TESTS
 WAVE_ADD_TEST(${PROJECT_NAME}_tests
              tests/ceres/ba_test.cpp
              tests/ceres/ceres_examples_test.cpp)
-TARGET_LINK_LIBRARIES(
-    ${PROJECT_NAME}_tests
-    ${PROJECT_NAME}
-    wave_vision
-    wave_utils
-    ${CERES_LIBRARIES}
-)
+
+TARGET_LINK_LIBRARIES(${PROJECT_NAME}_tests ${PROJECT_NAME})
 
 IF(GTSAM_FOUND)
     # Set for consistency, since GTSAM's config file does not

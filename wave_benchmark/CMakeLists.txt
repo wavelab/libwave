@@ -1,12 +1,13 @@
 PROJECT(wave_benchmark)
 
-# DEPENDENCIES
+ADD_LIBRARY(${PROJECT_NAME}
+    src/trajectory_compare.cpp)
 
-# INCLUDES
-INCLUDE_DIRECTORIES(include)
+# Use these headers when building, and make clients use them
+TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PUBLIC include)
 
-ADD_LIBRARY(${PROJECT_NAME} src/trajectory_compare.cpp)
-TARGET_LINK_LIBRARIES(${PROJECT_NAME}
+# Depend on these modules and external libraries, and make clients use them
+TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC
     wave_utils
     wave_geometry
     Eigen3::Eigen)

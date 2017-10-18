@@ -29,37 +29,12 @@ SET(LIBWAVE_MODULES
     wave_benchmark)
 
 FOREACH(dir ${LIBWAVE_MODULES})
-    INCLUDE_DIRECTORIES(${dir}/include)
-ENDFOREACH()
-FOREACH(dir ${LIBWAVE_MODULES})
     ADD_SUBDIRECTORY(${dir})
 ENDFOREACH()
 
 # gtest
 ADD_SUBDIRECTORY(deps/googletest EXCLUDE_FROM_ALL)
 INCLUDE_DIRECTORIES(${gtest_SOURCE_DIR}/include/ ${gtest_SOURCE_DIR})
-
-# Define dependencies between modules
-# libwave_controls.a
-ADD_DEPENDENCIES(wave_controls wave_utils)
-
-# libwave_geometry.a
-ADD_DEPENDENCIES(wave_geometry wave_utils)
-
-# libwave_kinematics.a
-ADD_DEPENDENCIES(wave_kinematics wave_controls wave_utils)
-
-# libwave_matching.a
-ADD_DEPENDENCIES(wave_matching wave_utils)
-
-# libwave_optimization.a
-ADD_DEPENDENCIES(wave_optimization wave_utils)
-
-# libwave_vision.a
-ADD_DEPENDENCIES(wave_vision wave_utils)
-
-# libwave_benchmark.a
-ADD_DEPENDENCIES(wave_benchmark wave_utils)
 
 # libwave library
 SET(LIBWAVE_MODULE_LIBS
