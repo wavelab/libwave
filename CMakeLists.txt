@@ -30,7 +30,7 @@ FOREACH(dir ${LIBWAVE_MODULES})
 ENDFOREACH()
 
 # gtest
-ADD_SUBDIRECTORY(deps/googletest)
+ADD_SUBDIRECTORY(deps/googletest EXCLUDE_FROM_ALL)
 INCLUDE_DIRECTORIES(${gtest_SOURCE_DIR}/include/ ${gtest_SOURCE_DIR})
 
 # Define dependencies between modules
