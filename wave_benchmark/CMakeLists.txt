@@ -4,13 +4,13 @@ PROJECT(wave_benchmark)
 # DEPENDENCIES
 
 # INCLUDES
-INCLUDE_DIRECTORIES(
-    include
-    ${EIGEN3_INCLUDE_DIR}
-)
+INCLUDE_DIRECTORIES(include)
 
 ADD_LIBRARY(${PROJECT_NAME} src/trajectory_compare.cpp)
-TARGET_LINK_LIBRARIES(${PROJECT_NAME} wave_utils wave_geometry)
+TARGET_LINK_LIBRARIES(${PROJECT_NAME}
+    wave_utils
+    wave_geometry
+    Eigen3::Eigen)
 
 # UNIT TESTS
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)

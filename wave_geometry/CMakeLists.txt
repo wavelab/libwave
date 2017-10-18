@@ -5,15 +5,17 @@ PROJECT(wave_geometry)
 FIND_PACKAGE(kindr)
 
 # INCLUDES
-INCLUDE_DIRECTORIES(${EIGEN3_INCLUDE_DIR})
+INCLUDE_DIRECTORIES(include)
 
 #LIBRARY
 ADD_LIBRARY(
-    wave_geometry
+    ${PROJECT_NAME}
     STATIC
     src/rotation.cpp
 )
-TARGET_LINK_LIBRARIES(${PROJECT_NAME} wave_utils)
+TARGET_LINK_LIBRARIES(${PROJECT_NAME}
+    wave_utils
+    Eigen3::Eigen)
 
 # UNIT TESTS
 WAVE_ADD_TEST(${PROJECT_NAME}_tests tests/rotation_test.cpp)

@@ -2,7 +2,7 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.8.3)
 PROJECT(wave_kinematics)
 
 # INCLUDES
-INCLUDE_DIRECTORIES(${EIGEN3_INCLUDE_DIR})
+INCLUDE_DIRECTORIES(include)
 
 #LIBRARY
 ADD_LIBRARY(
@@ -13,6 +13,8 @@ ADD_LIBRARY(
     src/quadrotor.cpp
     src/two_wheel.cpp
 )
+
+TARGET_LINK_LIBRARIES(wave_kinematics Eigen3::Eigen)
 
 # UNIT TESTS
 WAVE_ADD_TEST(
