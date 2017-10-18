@@ -50,7 +50,7 @@ ADD_DEPENDENCIES(wave_matching wave_utils)
 ADD_DEPENDENCIES(wave_optimization wave_utils)
 
 # libwave_vision.a
-ADD_DEPENDENCIES(wave_vision wave_utils)
+ADD_DEPENDENCIES(wave_vision wave_kinematics wave_geometry wave_utils)
 
 # libwave_benchmark.a
 ADD_DEPENDENCIES(wave_benchmark wave_utils)
