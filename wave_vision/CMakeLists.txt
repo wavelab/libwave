@@ -27,7 +27,6 @@ TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC
     wave_utils
     Eigen3::Eigen
     Boost::filesystem
-    yaml-cpp
     ${OpenCV_LIBS})
 
 
