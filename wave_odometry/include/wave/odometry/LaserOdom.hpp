@@ -18,8 +18,12 @@
 #include <memory>
 #include <set>
 #include <exception>
+
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
+
+#include <Eigen/Core>
+
 #include "wave/matching/pointcloud_display.hpp"
 #include "wave/geometry/transformation.hpp"
 #include "wave/odometry/kdtreetype.hpp"
@@ -86,6 +90,7 @@ struct LaserOdomParams {
 
 class LaserOdom {
  public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     LaserOdom(const LaserOdomParams params);
     ~LaserOdom();
     void addPoints(const std::vector<PointXYZIR> &pts, const int tick, TimeType stamp);
@@ -100,8 +105,7 @@ class LaserOdom {
     void rollover(TimeType stamp);
     bool match(ceres::Problem *problem);
     void registerOutputFunction(std::function<void(const TimeType *const,
-                                                   const std::array<double, 3> *const,
-                                                   const std::array<double, 3> *const,
+                                                   const Transformation *const,
                                                    const pcl::PointCloud<pcl::PointXYZI> *const)> output_function);
     void registerOutputFunction(std::function<void()> output_function);
 
@@ -111,7 +115,7 @@ class LaserOdom {
     pcl::PointCloud<pcl::PointXYZ> map_edges, map_flats;
     TimeType undistorted_stamp;
     Transformation undistort_transform;
-    double covar[144];
+    double covar[36];  // use lift jacobians to reduce covariance coming out of ceres
     std::vector<std::array<double, 12>> edge_cor;
     std::vector<std::array<double, 15>> flat_cor;
 
@@ -125,7 +129,7 @@ class LaserOdom {
     void updateViz();
     // Output trajectory file
     std::ofstream file;
-    const static Eigen::IOFormat CSVFormat(Eigen::FullPrecision, Eigen::DontAlignCols, ", ", ", ");
+    Eigen::IOFormat* CSVFormat;
 
     // Flow control
     std::atomic_bool continue_output;
@@ -160,7 +164,8 @@ class LaserOdom {
     std::vector<std::array<uint16_t, 5>> flat_corrs;
 
     PCLPointXYZIT applyIMU(const PCLPointXYZIT &pt);
-    void transformToStart(const double *const pt, const uint16_t tick, double *output);
+    void transformToStart(const double *const pt, const uint16_t tick, double *output, const Vec6& twist);
+    void transformToEnd(const double *const pt, const uint16_t tick, double *output, const Vec6& twist);
 
     // store for the IMU integral
     MeasurementContainer<IMUMeasurement> imu_trans;

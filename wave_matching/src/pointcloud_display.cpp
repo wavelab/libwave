@@ -122,6 +122,10 @@ void PointCloudDisplay::updateInternal() {
 //              line.pt2, this->radius, hi, low, low, std::to_string(line.id2) + "pt");
 //        }
         // Doesn't seem to be a way to update lines
+        std::string line_id = std::to_string(line.id1) + std::to_string(line.id2) + "ln";
+        if (this->viewer->contains(line_id)) {
+            this->viewer->removeShape(line_id, 0);
+        }
         this->viewer->addLine(
           line.pt1,
           line.pt2,
