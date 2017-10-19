@@ -35,8 +35,6 @@ SET_TARGET_PROPERTIES(PCL PROPERTIES
 # Pass these external library to the linker (@todo remove if possible)
 LINK_DIRECTORIES(${PCL_LIBRARY_DIRS})
 
-FIND_PACKAGE(OpenCV REQUIRED)
-
 # Declare our library
 ADD_LIBRARY(${PROJECT_NAME} STATIC
     src/gicp.cpp
@@ -46,8 +44,6 @@ ADD_LIBRARY(${PROJECT_NAME} STATIC
 
 # Use these headers when building, and make clients use them
 TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PUBLIC include)
-TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} SYSTEM PUBLIC
-    ${OpenCV_INCLUDE_DIRS})
 
 
 # Depend on these modules and external libraries, and make clients use them
@@ -56,8 +52,7 @@ TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC
     Eigen3::Eigen
     Boost::boost
     yaml-cpp
-    PCL
-    ${OpenCV_LIBS})
+    PCL)
 
 
 # UNIT TESTS

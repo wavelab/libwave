@@ -18,7 +18,6 @@ TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC
     wave_kinematics
     wave_vision
     Eigen3::Eigen
-    ${OpenCV_LIBS}
     ${CERES_LIBRARIES})
 
 # UNIT TESTS

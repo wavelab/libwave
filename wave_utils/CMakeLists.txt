@@ -1,7 +1,8 @@
 PROJECT(wave_utils)
 
 # DEPENDENCIES
-FIND_PACKAGE(OpenCV REQUIRED)
+# OpenCV required for cv::Mat option in config parser
+FIND_PACKAGE(OpenCV 3.2.0 REQUIRED core)
 
 # LIBRARY
 ADD_LIBRARY(${PROJECT_NAME} STATIC
@@ -18,7 +19,7 @@ TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PUBLIC include)
 TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC
     Eigen3::Eigen
     yaml-cpp
-    ${OpenCV_LIBS})
+    opencv_core)
 
 # UNIT TESTS
 WAVE_ADD_TEST(
