@@ -10,7 +10,6 @@ ADD_LIBRARY(${PROJECT_NAME} STATIC
 
 # Use these headers when building, and make clients use them
 TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PUBLIC include)
-TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PUBLIC SYSTEM ${CERES_INCLUDE_DIRS})
 
 # Depend on these modules and external libraries, and make clients use them
 TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC
@@ -18,7 +17,11 @@ TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC
     wave_kinematics
     wave_vision
     Eigen3::Eigen
-    ${CERES_LIBRARIES})
+    ceres)
+
+# For some reason Ceres does not have include directories in its imported
+# target. Add them explicitly to our target.
+TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PUBLIC SYSTEM ${CERES_INCLUDE_DIRS})
 
 # UNIT TESTS
 WAVE_ADD_TEST(${PROJECT_NAME}_tests
