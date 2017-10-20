@@ -7,6 +7,9 @@ TARGET_LINK_LIBRARIES(${PROJECT_NAME} INTERFACE
     Eigen3::Eigen
     Boost::boost)
 
+# Set install destinations for all related files
+WAVE_INSTALL(${PROJECT_NAME})
+
 # UNIT TESTS
 WAVE_ADD_TEST(${PROJECT_NAME}_tests
     tests/measurement_test.cpp

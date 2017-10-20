@@ -1,6 +1,7 @@
 # - Macros used in libwave
 
 INCLUDE(CMakeParseArguments)
+INCLUDE(GNUInstallDirs)
 
 # wave_add_test: Add a gtest target
 #
@@ -38,3 +39,19 @@ FUNCTION(WAVE_ADD_TEST NAME)
     ENDIF()
 
 ENDFUNCTION(WAVE_ADD_TEST)
+
+# wave_install: Sets standard install destinations for a target
+#
+# WAVE_INSTALL(Target)
+#
+# This convenience function calls INSTALL(...) and sets standard paths for
+# binaries and header files. It also associates the target with the WaveTargets
+# export.
+FUNCTION(WAVE_INSTALL TARGET)
+    # The variables used here are defined by GNUInstallDirs
+    install(TARGETS ${TARGET} EXPORT WaveTargets
+        ARCHIVE  DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        LIBRARY  DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        RUNTIME  DESTINATION ${CMAKE_INSTALL_BINDIR}
+        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+ENDFUNCTION(WAVE_INSTALL)

@@ -15,6 +15,9 @@ TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC
     wave_controls
     Eigen3::Eigen)
 
+# Set install destinations for all related files
+WAVE_INSTALL(${PROJECT_NAME})
+
 # UNIT TESTS
 WAVE_ADD_TEST(
     ${PROJECT_NAME}_tests

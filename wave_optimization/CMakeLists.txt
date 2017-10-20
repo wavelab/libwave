@@ -23,6 +23,9 @@ TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC
 # target. Add them explicitly to our target.
 TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PUBLIC SYSTEM ${CERES_INCLUDE_DIRS})
 
+# Set install destination for all related files
+WAVE_INSTALL(${PROJECT_NAME})
+
 # UNIT TESTS
 WAVE_ADD_TEST(${PROJECT_NAME}_tests
              tests/ceres/ba_test.cpp

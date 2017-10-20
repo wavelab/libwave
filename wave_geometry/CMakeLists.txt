@@ -21,6 +21,9 @@ TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC
     Eigen3::Eigen
     Kindr)
 
+# Set install destination for all related files
+WAVE_INSTALL(${PROJECT_NAME})
+
 # UNIT TESTS
 WAVE_ADD_TEST(${PROJECT_NAME}_tests tests/rotation_test.cpp)
 TARGET_LINK_LIBRARIES(${PROJECT_NAME}_tests ${PROJECT_NAME})
