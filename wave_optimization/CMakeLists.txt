@@ -4,7 +4,7 @@ PROJECT(wave_optimization)
 FIND_PACKAGE(Ceres REQUIRED)
 FIND_PACKAGE(GTSAM) # optional for now; used only in tests (@todo)
 
-ADD_LIBRARY(${PROJECT_NAME} STATIC
+ADD_LIBRARY(${PROJECT_NAME}
     src/ceres/ba.cpp
     src/ceres/ceres_examples.cpp)
 

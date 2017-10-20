@@ -1,6 +1,6 @@
 PROJECT(wave_kinematics)
 
-ADD_LIBRARY(${PROJECT_NAME} STATIC
+ADD_LIBRARY(${PROJECT_NAME}
     src/gimbal.cpp
     src/pose.cpp
     src/quadrotor.cpp

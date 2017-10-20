@@ -7,7 +7,7 @@ FIND_PACKAGE(OpenCV 3.2.0 REQUIRED core)
 FIND_PACKAGE(yaml-cpp REQUIRED)
 
 # LIBRARY
-ADD_LIBRARY(${PROJECT_NAME} STATIC
+ADD_LIBRARY(${PROJECT_NAME}
     src/config.cpp
     src/data.cpp
     src/file.cpp

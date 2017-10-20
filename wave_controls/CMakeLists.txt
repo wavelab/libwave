@@ -1,6 +1,6 @@
 PROJECT(wave_controls)
 
-ADD_LIBRARY(${PROJECT_NAME} STATIC
+ADD_LIBRARY(${PROJECT_NAME}
     src/pid.cpp)
 
 # Use these headers when building, and make clients use them

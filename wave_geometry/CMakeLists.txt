@@ -9,7 +9,7 @@ SET_PROPERTY(TARGET Kindr PROPERTY
     INTERFACE_INCLUDE_DIRECTORIES "${kindr_INCLUDE_DIRS}")
 
 
-ADD_LIBRARY(${PROJECT_NAME} STATIC
+ADD_LIBRARY(${PROJECT_NAME}
     src/rotation.cpp)
 
 # Use these headers when building, and make clients use them

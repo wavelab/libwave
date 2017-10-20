@@ -8,7 +8,7 @@ SET(CMAKE_BUILD_TYPE RELEASE)
 LINK_DIRECTORIES(${PCL_LIBRARY_DIRS})
 
 # Declare our library
-ADD_LIBRARY(${PROJECT_NAME} STATIC
+ADD_LIBRARY(${PROJECT_NAME}
     src/gicp.cpp
     src/icp.cpp
     src/ndt.cpp

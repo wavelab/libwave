@@ -6,7 +6,7 @@ FIND_PACKAGE(OpenCV 3.2.0 REQUIRED core features2d calib3d imgproc highgui)
 # LIBRARY
 SET(WAVE_VISION_DEPS)
 
-ADD_LIBRARY(${PROJECT_NAME} STATIC
+ADD_LIBRARY(${PROJECT_NAME}
     src/utils.cpp
     src/dataset/VoDataset.cpp
     src/dataset/VoTestCamera.cpp
