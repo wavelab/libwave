@@ -1,8 +1,6 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8.3)
 PROJECT(wave_odometry)
 
-SET(CMAKE_BUILD_TYPE relwithdebinfo)
-
 # PACKAGES
 FIND_PACKAGE(PCL REQUIRED)
 FIND_PACKAGE(Ceres REQUIRED)
@@ -31,6 +29,7 @@ TARGET_LINK_LIBRARIES(
     wave_utils
     wave_matching
     wave_geometry
+    wave_optimization
     ${CERES_LIBRARIES}
     ${PCL_LIBRARIES}
 )
@@ -44,6 +43,7 @@ TARGET_LINK_LIBRARIES(
     wave_utils
     wave_matching
     wave_geometry
+    wave_optimization
     ${CERES_LIBRARIES}
     ${PCL_LIBRARIES}
 )

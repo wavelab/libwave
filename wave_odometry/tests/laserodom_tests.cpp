@@ -346,8 +346,8 @@ TEST(OdomTest, StraightLineGarage) {
     params.max_correspondence_dist = 0.4;
     params.huber_delta = 0.2;
     params.opt_iters = 20;
-    //    params.visualize = true;
-    //    params.output_trajectory = true;
+    params.visualize = true;
+//        params.output_trajectory = true;
     // params.output_correspondences = true;
     params.rotation_stiffness = 1e-5;
     params.translation_stiffness = 5e-3;
@@ -389,16 +389,16 @@ TEST(OdomTest, StraightLineGarage) {
 }
 
 void dummyoutput(const TimeType *const stmap,
-                 const std::array<double, 3> *const rot,
-                 const std::array<double, 3> *const trans,
+                 const Transformation *const transform,
                  const pcl::PointCloud<pcl::PointXYZI> *const cld) {
+    Vec6 twist = transform->logMap();
     LOG_INFO("Got output!");
-    LOG_INFO("%f", rot->at(0));
-    LOG_INFO("%f", rot->at(1));
-    LOG_INFO("%f", rot->at(2));
-    LOG_INFO("%f", trans->at(0));
-    LOG_INFO("%f", trans->at(1));
-    LOG_INFO("%f", trans->at(2));
+    LOG_INFO("%f", twist(0));
+    LOG_INFO("%f", twist(1));
+    LOG_INFO("%f", twist(2));
+    LOG_INFO("%f", twist(3));
+    LOG_INFO("%f", twist(4));
+    LOG_INFO("%f", twist(5));
     LOG_INFO("Cloud size: %lu", cld->size());
 }
 
@@ -431,11 +431,12 @@ TEST(OdomTest, OutputTest) {
     params.T_y_multiplier = 2;
     params.RP_multiplier = 20;
     params.imposePrior = true;
+    params.visualize = true;
     LaserOdom odom(params);
     std::vector<PointXYZIR> vec;
     uint16_t prev_enc = 0;
 
-    odom.registerOutputFunction(dummyoutput);
+    //odom.registerOutputFunction(dummyoutput);
 
     // Loop through pointclouds and send points grouped by encoder angle odom
     for (int i = 0; i < 10; i++) {

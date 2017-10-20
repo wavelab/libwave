@@ -24,15 +24,17 @@
 
 #include <Eigen/Core>
 
-#include "wave/matching/pointcloud_display.hpp"
+#include "wave/containers/measurement_container.hpp"
+#include "wave/containers/measurement.hpp"
 #include "wave/geometry/transformation.hpp"
+#include "wave/matching/pointcloud_display.hpp"
 #include "wave/odometry/kdtreetype.hpp"
 #include "wave/odometry/PointXYZIR.hpp"
 #include "wave/odometry/PointXYZIT.hpp"
 #include "wave/odometry/laser_odom_residuals.hpp"
+#include "wave/odometry/se3_residuals.hpp"
 #include "wave/odometry/loss_functions.hpp"
-#include "wave/containers/measurement_container.hpp"
-#include "wave/containers/measurement.hpp"
+#include "wave/optimization/ceres/SE3Parameterization.hpp"
 #include "wave/utils/math.hpp"
 
 #include <ceres/ceres.h>
@@ -103,7 +105,7 @@ class LaserOdom {
     bool new_features = false;
 
     void rollover(TimeType stamp);
-    bool match(ceres::Problem *problem);
+    bool match();
     void registerOutputFunction(std::function<void(const TimeType *const,
                                                    const Transformation *const,
                                                    const pcl::PointCloud<pcl::PointXYZI> *const)> output_function);
@@ -115,7 +117,7 @@ class LaserOdom {
     pcl::PointCloud<pcl::PointXYZ> map_edges, map_flats;
     TimeType undistorted_stamp;
     Transformation undistort_transform;
-    double covar[36];  // use lift jacobians to reduce covariance coming out of ceres
+    double covar[144];  // use lift jacobians to reduce covariance coming out of ceres
     std::vector<std::array<double, 12>> edge_cor;
     std::vector<std::array<double, 15>> flat_cor;
 
@@ -142,9 +144,6 @@ class LaserOdom {
     void undistort();
 
     // ceres optimizer stuff
-    ceres::Solver::Options ceres_options;
-    ceres::Covariance::Options covar_options;
-    ceres::Solver::Summary ceres_summary;
     std::vector<std::pair<const double *, const double *>> covariance_blocks;
 
     LaserOdomParams param;

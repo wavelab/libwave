@@ -113,21 +113,6 @@ LaserOdom::LaserOdom(const LaserOdomParams params) : param(params) {
         this->file.open(std::to_string(timestamp) + "laser_odom_traj.txt");
     }
 
-    // ceres optimizer options
-    std::vector<int> iterations = {0, 1, 2, 3, 4, 5, 6, 7, 8};
-    this->ceres_options.linear_solver_type = ceres::DENSE_QR;
-    this->ceres_options.max_num_iterations = 300;
-    this->ceres_options.function_tolerance = 1e-10;
-    this->ceres_options.parameter_tolerance = 1e-6;
-    this->ceres_options.num_threads = 4;
-    this->ceres_options.num_linear_solver_threads = 4;
-    // this->ceres_options.trust_region_minimizer_iterations_to_dump = iterations;
-    this->ceres_options.trust_region_problem_dump_format_type = ceres::DumpFormatType::TEXTFILE;
-
-    // ceres covariance setup
-    this->covar_options.num_threads = 4;
-    this->covar_options.sparse_linear_algebra_library_type = ceres::SparseLinearAlgebraLibraryType::SUITE_SPARSE;
-    this->covar_options.algorithm_type = ceres::CovarianceAlgorithmType::SPARSE_QR;
     this->covariance_blocks.push_back(std::make_pair(this->cur_transform.getInternalMatrix().data(), this->cur_transform.getInternalMatrix().data()));
 }
 
@@ -305,12 +290,12 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
         if (this->initialized) {           // there is a set of previous features from
                                            // last scan
             Transformation last_transform;
-            ceres::Problem problem;
+
             for (int i = 0; i < this->param.opt_iters; i++) {
                 if (i > 0) {
                     memcpy(last_transform.getInternalMatrix().data(), this->cur_transform.getInternalMatrix().data(), 96);
                 }
-                if (!this->match(&problem)) {
+                if (!this->match()) {
                     return;
                 }
                 if (i > 0) {
@@ -319,11 +304,6 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
                     }
                 }
             }
-
-            ceres::Covariance covariance(this->covar_options);
-            covariance.Compute(this->covariance_blocks, &problem);
-            covariance.GetCovarianceBlock(this->cur_transform.getInternalMatrix().data(), this->cur_transform.getInternalMatrix().data(), this->covar);
-
             memcpy(this->prev_transform.getInternalMatrix().data(), this->cur_transform.getInternalMatrix().data(), 96);
 
             if (this->param.output_trajectory) {
@@ -479,7 +459,7 @@ void LaserOdom::buildTrees() {
     for (uint16_t i = 0; i < this->prv_flats.points.size(); i++) {
         if (this->flat_association.at(i).first > 0) {
             Vec3 transformed_pt;
-            Eigen::Map<const Vec3> Vecpt(this->prv_edges.points.at(i).data(), 3, 1);
+            Eigen::Map<const Vec3> Vecpt(this->prv_flats.points.at(i).data(), 3, 1);
             transformed_pt = this->cur_transform.inverseTransform(Vecpt);
             // Check if feature has travelled beyond range of map
             if (l2length(transformed_pt.data(), 3) < this->param.local_map_range) {
@@ -601,7 +581,8 @@ bool LaserOdom::findCorrespondingPoints(const Vec3 &query,
     return false;
 }
 
-bool LaserOdom::match(ceres::Problem *problem) {
+bool LaserOdom::match() {
+    ceres::Problem problem;
     std::ofstream edge_cor, flat_cor;
     if (this->param.output_correspondences) {
         long timestamp = std::chrono::system_clock::now().time_since_epoch().count();
@@ -618,7 +599,6 @@ bool LaserOdom::match(ceres::Problem *problem) {
     const double **parameters;
     parameters = new const double *[1];
     parameters[0] = this->cur_transform.getInternalMatrix().data();
-
 
     Vec6 cur_twist = this->cur_transform.logMap();
     // residual blocks for edges
@@ -639,7 +619,7 @@ bool LaserOdom::match(ceres::Problem *problem) {
                     continue;
                 }
                 ceres::CostFunction *cost_function =
-                  new AnalyticalPointToLine(&(this->edges.at(i).at(idx).pt[0]),
+                  new SE3PointToLine(&(this->edges.at(i).at(idx).pt[0]),
                                             this->prv_edges.points.at(ret_indices.at(0)).data(),
                                             this->prv_edges.points.at(ret_indices.at(1)).data(),
                                             &(this->scale_lookup.at(this->edges.at(i).at(idx).tick)));
@@ -667,7 +647,7 @@ bool LaserOdom::match(ceres::Problem *problem) {
                                  << ", " << pB_ref.at(2) << ", " << scale << std::endl;
                     }
                     ceres::LossFunction *p_LossFunction = new BisquareLoss(this->param.huber_delta);
-                    problem->AddResidualBlock(
+                    problem.AddResidualBlock(
                       cost_function, p_LossFunction, this->cur_transform.getInternalMatrix().data());
                 } else {
                     delete cost_function;
@@ -683,7 +663,7 @@ bool LaserOdom::match(ceres::Problem *problem) {
 
             if (this->findCorrespondingPoints(query, 3, true, &ret_indices)) {
                 ceres::CostFunction *cost_function =
-                  new AnalyticalPointToPlane(&(this->flats.at(i).at(ind).pt[0]),
+                  new SE3PointToPlane(&(this->flats.at(i).at(ind).pt[0]),
                                              this->prv_flats.points.at(ret_indices.at(0)).data(),
                                              this->prv_flats.points.at(ret_indices.at(1)).data(),
                                              this->prv_flats.points.at(ret_indices.at(2)).data(),
@@ -707,7 +687,7 @@ bool LaserOdom::match(ceres::Problem *problem) {
                     this->flat_corrs.push_back(cur_corr);
 
                     ceres::LossFunction *p_LossFunction = new BisquareLoss(this->param.huber_delta);
-                    problem->AddResidualBlock(
+                    problem.AddResidualBlock(
                       cost_function, p_LossFunction, this->cur_transform.getInternalMatrix().data());
                 } else {
                     delete cost_function;
@@ -740,18 +720,38 @@ bool LaserOdom::match(ceres::Problem *problem) {
 //        problem->AddResidualBlock(r_diff_cost_function, NULL, this->cur_rotation.data());
     }
 
-    delete[] parameters;
+//    delete[] parameters;
+    ceres::LocalParameterization* se3_param = new SE3Parameterization;
+    problem.SetParameterization(this->cur_transform.getInternalMatrix().data(), se3_param);
 
-    if (problem->NumResidualBlocks() < this->param.min_residuals) {
+    ceres::Solver::Options options;  //ceres problem destructor apparently destructs quite a bit, so need to instantiate
+    // options struct every time :(
+    options.linear_solver_type = ceres::DENSE_QR;
+    options.max_num_iterations = 300;
+    options.function_tolerance = 1e-10;
+    options.parameter_tolerance = 1e-6;
+    options.num_threads = 4;
+    options.num_linear_solver_threads = 4;
+
+    ceres::Covariance::Options covar_options;
+    covar_options.num_threads = 4;
+    covar_options.sparse_linear_algebra_library_type = ceres::SparseLinearAlgebraLibraryType::SUITE_SPARSE;
+    covar_options.algorithm_type = ceres::CovarianceAlgorithmType::SPARSE_QR;
+
+    if (problem.NumResidualBlocks() < this->param.min_residuals) {
         LOG_ERROR("Less than expected residuals, resetting");
-        LOG_ERROR("%d residuals, threshold is %d", problem->NumResidualBlocks(), this->param.min_residuals);
+        LOG_ERROR("%d residuals, threshold is %d", problem.NumResidualBlocks(), this->param.min_residuals);
         this->cur_transform.setIdentity();
         this->prev_transform.setIdentity();
         this->initialized = false;
         return false;
     } else if (!this->param.only_extract_features) {
-        ceres::Solve(this->ceres_options, problem, &(this->ceres_summary));
-        // LOG_INFO("%s", summary.FullReport().c_str());
+        ceres::Solver::Summary summary;
+        ceres::Solve(options, &problem, &summary);
+        LOG_INFO("%s", summary.FullReport().c_str());
+        ceres::Covariance covariance(covar_options);
+        covariance.Compute(this->covariance_blocks, &problem);
+        covariance.GetCovarianceBlock(this->cur_transform.getInternalMatrix().data(), this->cur_transform.getInternalMatrix().data(), this->covar);
     }
     return true;
 }
