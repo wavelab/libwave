@@ -25,6 +25,7 @@ TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PUBLIC include)
 TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC
     wave_kinematics
     wave_utils
+    wave_containers
     Eigen3::Eigen
     Boost::filesystem
     ${OpenCV_LIBS})
