@@ -40,6 +40,25 @@ FUNCTION(WAVE_ADD_TEST NAME)
 
 ENDFUNCTION(WAVE_ADD_TEST)
 
+# wave_include_directories: Set a module's include paths so they are usable
+# from both the build and install tree
+#
+# WAVE_INCLUDE_DIRECTORIES(TARGET <INTERFACE|PUBLIC> dir1 [dir2...])
+#
+# This function expects relative paths, typically "include". It wraps
+# TARGET_INCLUDE_DIRECTORIES, using a generator expression for the includes.
+#
+# See:
+# https://cmake.org/cmake/help/v3.4/manual/cmake-buildsystem.7.html#include-directories-and-usage-requirements
+# https://stackoverflow.com/a/25681179
+FUNCTION(WAVE_INCLUDE_DIRECTORIES TARGET MODE)
+    FOREACH(path ${ARGN})
+        TARGET_INCLUDE_DIRECTORIES(${TARGET} ${MODE}
+            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/${path}>
+            $<INSTALL_INTERFACE:${path}>)
+    ENDFOREACH()
+ENDFUNCTION(WAVE_INCLUDE_DIRECTORIES)
+
 # wave_install: Sets standard install destinations for a target
 #
 # WAVE_INSTALL(Target)

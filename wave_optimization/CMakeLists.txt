@@ -9,7 +9,7 @@ ADD_LIBRARY(${PROJECT_NAME}
     src/ceres/ceres_examples.cpp)
 
 # Use these headers when building, and make clients use them
-TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PUBLIC include)
+WAVE_INCLUDE_DIRECTORIES(${PROJECT_NAME} PUBLIC include)
 
 # Depend on these modules and external libraries, and make clients use them
 TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC
@@ -21,7 +21,7 @@ TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC
 
 # For some reason Ceres does not have include directories in its imported
 # target. Add them explicitly to our target.
-TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PUBLIC SYSTEM ${CERES_INCLUDE_DIRS})
+TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} SYSTEM PUBLIC ${CERES_INCLUDE_DIRS})
 
 # Set install destination for all related files
 WAVE_INSTALL(${PROJECT_NAME})
