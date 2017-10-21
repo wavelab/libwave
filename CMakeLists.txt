@@ -64,11 +64,12 @@ EXPORT(PACKAGE Wave)
 
 # Create the WaveConfig and WaveConfigVersion files
 
-# Set variables used in the Config file
+# Set variables used to generate the Config file
 # Using these is "not recommended". For example, WAVE_INCLUDE_DIRS is not
 # relocatable; WAVE_LIBRARIES gives names but not paths
 SET(WAVE_INCLUDE_DIRS "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}")
 GET_TARGET_PROPERTY(WAVE_LIBRARIES wave INTERFACE_LINK_LIBRARIES)
+FILE(READ "cmake/ImportPCL.cmake" WAVE_IMPORT_PCL_CMAKE)
 
 # Generate the Config file
 CONFIGURE_PACKAGE_CONFIG_FILE(

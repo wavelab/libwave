@@ -9,10 +9,33 @@
 #  WAVE_LIBRARIES    - libraries to link against
 #
 
+INCLUDE(CMakeFindDependencyMacro)
+
 # This file contains definitions of IMPORTED targets
-INCLUDE ("${CMAKE_CURRENT_LIST_DIR}/WaveTargets.cmake")
+INCLUDE("${CMAKE_CURRENT_LIST_DIR}/WaveTargets.cmake")
+
 
 # Set old-fashioned variables - use only if necessary for older versions of
 # CMake which do not support imported targets.
 SET(WAVE_LIBRARIES "@WAVE_LIBRARIES@")
 SET(WAVE_INCLUDE_DIRS "@WAVE_INCLUDE_DIRS@")
+
+# Find dependencies used by Wave targets
+FIND_DEPENDENCY(Eigen3 3.2.92)
+# Make the Eigen3::Eigen target available, if not already
+IF (NOT TARGET Eigen3::Eigen)
+    ADD_LIBRARY(Eigen3::Eigen INTERFACE IMPORTED)
+    SET_PROPERTY(TARGET Eigen3::Eigen PROPERTY
+        INTERFACE_INCLUDE_DIRECTORIES ${EIGEN3_INCLUDE_DIR})
+    SET_PROPERTY(TARGET Eigen3::Eigen PROPERTY
+        INTERFACE_COMPILE_DEFINITIONS ${EIGEN3_DEFINITIONS})
+ENDIF(NOT TARGET Eigen3::Eigen)
+
+@WAVE_IMPORT_PCL_CMAKE@
+
+FIND_DEPENDENCY(Boost 1.54.0)
+FIND_DEPENDENCY(kindr)
+# Define an imported target for kindr
+ADD_LIBRARY(Kindr INTERFACE IMPORTED)
+SET_PROPERTY(TARGET Kindr PROPERTY
+    INTERFACE_INCLUDE_DIRECTORIES "${kindr_INCLUDE_DIRS}")

@@ -88,8 +88,8 @@ endif(EIGEN3_INCLUDE_DIR)
 
 # Make the Eigen3::Eigen target available, if not already
 #
-# This defined an imported targets for versions of Eigen which do not define
-# it (below 3.3.1). Eigen can then be used with
+# This defines an imported target for versions of Eigen which do not define it
+# (below 3.3.1). Eigen can then be used with
 #     TARGET_LINK_LIBRARIES(< my_target > Eigen3::Eigen)
 # instead of with INCLUDE_DIRECTORIES
 #
