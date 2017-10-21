@@ -16,6 +16,9 @@ FIND_PACKAGE(Eigen3 3.2.92 REQUIRED)
 
 FIND_PACKAGE(Boost 1.54.0 REQUIRED system filesystem)
 
+# Import a monolithic target for PCL
+INCLUDE(cmake/ImportPCL.cmake)
+
 # The sub-libraries, each of which is in a subdirectory of the same name
 SET(LIBWAVE_MODULES
     wave_controls
