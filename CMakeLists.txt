@@ -24,6 +24,11 @@ FIND_PACKAGE(Boost 1.54.0 REQUIRED system filesystem)
 FIND_PACKAGE(PCL 1.8 REQUIRED
     common filters registration kdtree search io visualization)
 
+# Add a special "wave" target including all modules
+# The WAVE_ADD_LIBRARY helper in WaveUtils.cmake will add each module to this
+ADD_LIBRARY(wave INTERFACE)
+INSTALL(TARGETS wave EXPORT WaveTargets)
+
 # Add each module to the project
 ADD_SUBDIRECTORY(wave_benchmark)
 ADD_SUBDIRECTORY(wave_controls)
@@ -48,8 +53,6 @@ ADD_SUBDIRECTORY(docs)
 set(INSTALL_CMAKE_DIR "${CMAKE_INSTALL_DATADIR}/wave/cmake" CACHE PATH
     "Installation directory for CMake files")
 
-# Add a special "wave" target including all modules
-
 # Add an export file listing all targets
 EXPORT(EXPORT WaveTargets NAMESPACE Wave:: FILE WaveTargets.cmake)
 # Install the export file
@@ -60,14 +63,20 @@ INSTALL(EXPORT WaveTargets NAMESPACE Wave:: DESTINATION "$INSTALL_CMAKE_DIR")
 EXPORT(PACKAGE Wave)
 
 # Create the WaveConfig and WaveConfigVersion files
+
 # Set variables used in the Config file
+# Using these is "not recommended". For example, WAVE_INCLUDE_DIRS is not
+# relocatable; WAVE_LIBRARIES gives names but not paths
 SET(WAVE_INCLUDE_DIRS "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}")
+GET_TARGET_PROPERTY(WAVE_LIBRARIES wave INTERFACE_LINK_LIBRARIES)
+
 # Generate the Config file
 CONFIGURE_PACKAGE_CONFIG_FILE(
     "${CMAKE_CURRENT_SOURCE_DIR}/cmake/WaveConfig.cmake.in"
     "${CMAKE_CURRENT_BINARY_DIR}/WaveConfig.cmake"
-    PATH_VARS WAVE_INCLUDE_DIRS
+    PATH_VARS WAVE_INCLUDE_DIRS WAVE_LIBRARIES
     INSTALL_DESTINATION "INSTALL_CMAKE_DIR")
+
 # Generate the Version file
 WRITE_BASIC_PACKAGE_VERSION_FILE(WaveConfigVersion.cmake
     VERSION ${WAVE_PACKAGE_VERSION}

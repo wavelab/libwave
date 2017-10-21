@@ -93,6 +93,9 @@ FUNCTION(WAVE_ADD_LIBRARY NAME)
     # The benefit is newer CMake will give immediately give an error on typos
     ADD_LIBRARY(Wave::${unprefixed_name} ALIAS ${NAME})
 
+    # Add this target to the all-inclusive "wave" library
+    SET_PROPERTY(TARGET wave APPEND PROPERTY INTERFACE_LINK_LIBRARIES ${NAME})
+
     # Add install destinations
     # The variables used here are defined by GNUInstallDirs
     INSTALL(TARGETS ${NAME} EXPORT WaveTargets

@@ -12,6 +12,7 @@
 # This file contains definitions of IMPORTED targets
 INCLUDE ("${CMAKE_CURRENT_LIST_DIR}/WaveTargets.cmake")
 
-# Set old-fashioned variables
-# @todo set(WAVE_LIBRARIES "@WAVE_LIBRARIES@")
-set(WAVE_INCLUDE_DIRS "@WAVE_INCLUDE_DIRS@")
+# Set old-fashioned variables - use only if necessary for older versions of
+# CMake which do not support imported targets.
+SET(WAVE_LIBRARIES "@WAVE_LIBRARIES@")
+SET(WAVE_INCLUDE_DIRS "@WAVE_INCLUDE_DIRS@")
