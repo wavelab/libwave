@@ -4,7 +4,7 @@ PROJECT(wave_optimization)
 FIND_PACKAGE(Ceres REQUIRED)
 FIND_PACKAGE(GTSAM) # optional for now; used only in tests (@todo)
 
-ADD_LIBRARY(${PROJECT_NAME}
+WAVE_ADD_LIBRARY(${PROJECT_NAME}
     src/ceres/ba.cpp
     src/ceres/ceres_examples.cpp)
 
@@ -13,18 +13,15 @@ WAVE_INCLUDE_DIRECTORIES(${PROJECT_NAME} PUBLIC include)
 
 # Depend on these modules and external libraries, and make clients use them
 TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC
-    wave_utils
-    wave_kinematics
-    wave_vision
+    Wave::utils
+    Wave::kinematics
+    Wave::vision
     Eigen3::Eigen
     ceres)
 
 # For some reason Ceres does not have include directories in its imported
 # target. Add them explicitly to our target.
 TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} SYSTEM PUBLIC ${CERES_INCLUDE_DIRS})
-
-# Set install destination for all related files
-WAVE_INSTALL(${PROJECT_NAME})
 
 # UNIT TESTS
 WAVE_ADD_TEST(${PROJECT_NAME}_tests
@@ -42,14 +39,14 @@ IF(GTSAM_FOUND)
         tests/gtsam/gtsam_offline_example.cpp)
     TARGET_LINK_LIBRARIES(vo_gtsam_offline_example
         ${PROJECT_NAME}
-        wave_vision
+        Wave::vision
         ${GTSAM_LIBRARIES})
 
     WAVE_ADD_TEST(vo_gtsam_offline_kitti_example
         tests/gtsam/gtsam_offline_kitti_example.cpp)
     TARGET_LINK_LIBRARIES(vo_gtsam_offline_kitti_example
         ${PROJECT_NAME}
-        wave_vision
+        Wave::vision
         ${GTSAM_LIBRARIES})
 ENDIF()
 

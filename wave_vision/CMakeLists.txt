@@ -6,7 +6,7 @@ FIND_PACKAGE(OpenCV 3.2.0 REQUIRED core features2d calib3d imgproc highgui)
 # LIBRARY
 SET(WAVE_VISION_DEPS)
 
-ADD_LIBRARY(${PROJECT_NAME}
+WAVE_ADD_LIBRARY(${PROJECT_NAME}
     src/utils.cpp
     src/dataset/VoDataset.cpp
     src/dataset/VoTestCamera.cpp
@@ -23,15 +23,12 @@ WAVE_INCLUDE_DIRECTORIES(${PROJECT_NAME} PUBLIC include)
 
 # Depend on these modules and external libraries, and make clients use them
 TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC
-    wave_kinematics
-    wave_utils
-    wave_containers
+    Wave::kinematics
+    Wave::utils
+    Wave::containers
     Eigen3::Eigen
     Boost::filesystem
     ${OpenCV_LIBS})
-
-# Set install destinations for all related files
-WAVE_INSTALL(${PROJECT_NAME})
 
 # UNIT TESTS
 WAVE_ADD_TEST(${PROJECT_NAME}_tests

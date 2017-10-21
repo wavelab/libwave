@@ -7,7 +7,7 @@ FIND_PACKAGE(OpenCV 3.2.0 REQUIRED core)
 FIND_PACKAGE(yaml-cpp REQUIRED)
 
 # LIBRARY
-ADD_LIBRARY(${PROJECT_NAME}
+WAVE_ADD_LIBRARY(${PROJECT_NAME}
     src/config.cpp
     src/data.cpp
     src/file.cpp
@@ -22,9 +22,6 @@ TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC
     Eigen3::Eigen
     yaml-cpp
     opencv_core)
-
-# Set install destinations for all related files
-WAVE_INSTALL(${PROJECT_NAME})
 
 # UNIT TESTS
 WAVE_ADD_TEST(

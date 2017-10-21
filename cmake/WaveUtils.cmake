@@ -24,7 +24,7 @@ FUNCTION(WAVE_ADD_TEST NAME)
 
     # Link gtest libraries including one providing main()
     # Link wave_utils as that contains wave_test.hpp
-    TARGET_LINK_LIBRARIES(${NAME} gtest gtest_main pthread wave_utils)
+    TARGET_LINK_LIBRARIES(${NAME} gtest gtest_main pthread Wave::utils)
 
     # Put the test executable in the tests/ directory
     SET_TARGET_PROPERTIES(${NAME} PROPERTIES
@@ -59,18 +59,45 @@ FUNCTION(WAVE_INCLUDE_DIRECTORIES TARGET MODE)
     ENDFOREACH()
 ENDFUNCTION(WAVE_INCLUDE_DIRECTORIES)
 
-# wave_install: Sets standard install destinations for a target
+# wave_add_library: Adds a libwave component library, setting standard install
+# destinations and properties
 #
-# WAVE_INSTALL(Target)
+# WAVE_ADD_LIBRARY(Name [source1...])
 #
-# This convenience function calls INSTALL(...) and sets standard paths for
-# binaries and header files. It also associates the target with the WaveTargets
-# export.
-FUNCTION(WAVE_INSTALL TARGET)
+# This convenience function wraps ADD_LIBRARY, adding either a normal library
+# with the given sources or a header-only INTERFACE library if no sources are
+# given.
+#
+# It calls INSTALL(...) and sets standard paths for binaries and header files,
+# and associates the target with the WaveTargets export.
+#
+# This function also sets the output library name to the target name prefixed
+# with "wave_". For example, for the name "utils" the library built would be
+# "libwave_utils.a".
+FUNCTION(WAVE_ADD_LIBRARY NAME)
+
+    IF(NOT ARGN)
+        # No sources given - header-only library
+        ADD_LIBRARY(${NAME} INTERFACE)
+    ELSE()
+        # Normal library, will be static unless BUILD_SHARED_LIBS is ON
+        ADD_LIBRARY(${NAME} ${ARGN})
+    ENDIF()
+
+    # Remove "wave_" prefix from exported name
+    # This means others can link to Wave::utils instead of Wave::wave_utils
+    STRING(REGEX REPLACE "^wave_" "" unprefixed_name ${NAME})
+    SET_TARGET_PROPERTIES(${NAME} PROPERTIES EXPORT_NAME ${unprefixed_name})
+
+    # Add an alias so internal target_link_libraries can also use the namespace
+    # The benefit is newer CMake will give immediately give an error on typos
+    ADD_LIBRARY(Wave::${unprefixed_name} ALIAS ${NAME})
+
+    # Add install destinations
     # The variables used here are defined by GNUInstallDirs
-    install(TARGETS ${TARGET} EXPORT WaveTargets
+    INSTALL(TARGETS ${NAME} EXPORT WaveTargets
         ARCHIVE  DESTINATION ${CMAKE_INSTALL_LIBDIR}
         LIBRARY  DESTINATION ${CMAKE_INSTALL_LIBDIR}
         RUNTIME  DESTINATION ${CMAKE_INSTALL_BINDIR}
         INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
-ENDFUNCTION(WAVE_INSTALL)
+ENDFUNCTION(WAVE_ADD_LIBRARY)

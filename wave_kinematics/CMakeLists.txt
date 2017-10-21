@@ -1,6 +1,6 @@
 PROJECT(wave_kinematics)
 
-ADD_LIBRARY(${PROJECT_NAME}
+WAVE_ADD_LIBRARY(${PROJECT_NAME}
     src/gimbal.cpp
     src/pose.cpp
     src/quadrotor.cpp
@@ -11,12 +11,9 @@ WAVE_INCLUDE_DIRECTORIES(${PROJECT_NAME} PUBLIC include)
 
 # Depend on these modules and external libraries, and make clients use them
 TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC
-    wave_utils
-    wave_controls
+    Wave::utils
+    Wave::controls
     Eigen3::Eigen)
-
-# Set install destinations for all related files
-WAVE_INSTALL(${PROJECT_NAME})
 
 # UNIT TESTS
 WAVE_ADD_TEST(

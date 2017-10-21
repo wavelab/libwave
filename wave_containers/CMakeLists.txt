@@ -1,14 +1,11 @@
 PROJECT(wave_containers)
 
 # Define a header-only library
-ADD_LIBRARY(${PROJECT_NAME} INTERFACE)
+WAVE_ADD_LIBRARY(${PROJECT_NAME})
 WAVE_INCLUDE_DIRECTORIES(${PROJECT_NAME} INTERFACE include)
 TARGET_LINK_LIBRARIES(${PROJECT_NAME} INTERFACE
     Eigen3::Eigen
     Boost::boost)
-
-# Set install destinations for all related files
-WAVE_INSTALL(${PROJECT_NAME})
 
 # UNIT TESTS
 WAVE_ADD_TEST(${PROJECT_NAME}_tests

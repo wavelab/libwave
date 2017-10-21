@@ -2,13 +2,11 @@ PROJECT(wave_matching)
 
 SET(CMAKE_BUILD_TYPE RELEASE)
 
-# PACKAGES
-
 # Pass these external library to the linker (@todo remove if possible)
 LINK_DIRECTORIES(${PCL_LIBRARY_DIRS})
 
 # Declare our library
-ADD_LIBRARY(${PROJECT_NAME}
+WAVE_ADD_LIBRARY(${PROJECT_NAME}
     src/gicp.cpp
     src/icp.cpp
     src/ndt.cpp
@@ -19,14 +17,10 @@ WAVE_INCLUDE_DIRECTORIES(${PROJECT_NAME} PUBLIC include)
 
 # Depend on these modules and external libraries, and make clients use them
 TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC
-    wave_utils
+    Wave::utils
     Eigen3::Eigen
     Boost::boost
     PCL)
-
-
-# Set install destinations for all related files
-WAVE_INSTALL(${PROJECT_NAME})
 
 # UNIT TESTS
 WAVE_ADD_TEST(
