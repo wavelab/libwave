@@ -32,9 +32,12 @@ FUNCTION(_find_pcl)
         ${BOOST_LIBRARIES}
         ${VTK_LIBRARIES})
 
+    # This gets added directly to CMAKE_CXX_FLAGS, which we're avoiding
+    LIST(APPEND PCL_DEFINITIONS ${VTK_REQUIRED_CXX_FLAGS})
+
     # PCL adds some entries with spaces instead of as a (semicolon-separated) CMake
     # list, which messes up later. Fix them here.
-    string(REPLACE " " ";" pcl_definitions "${PCL_DEFINITIONS}")
+    STRING(REPLACE " " ";" pcl_definitions "${PCL_DEFINITIONS}")
 
     SET_TARGET_PROPERTIES(PCL PROPERTIES
         INTERFACE_INCLUDE_DIRECTORIES "${PCL_INCLUDE_DIRS}"
