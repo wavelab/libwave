@@ -20,9 +20,16 @@ FIND_PACKAGE(Eigen3 3.2.92 REQUIRED)
 
 FIND_PACKAGE(Boost 1.54.0 REQUIRED system filesystem)
 
-# Use our FindPCL module to import a monolithic target for PCL
 FIND_PACKAGE(PCL 1.8 REQUIRED
     common filters registration kdtree search io visualization)
+
+FIND_PACKAGE(kindr REQUIRED)
+
+# Where dependencies do not provide imported targets, define them
+INCLUDE(cmake/ImportEigen3.cmake)
+INCLUDE(cmake/ImportBoost.cmake)
+INCLUDE(cmake/ImportPCL.cmake)
+INCLUDE(cmake/ImportKindr.cmake)
 
 # Add a special "wave" target including all modules
 # The WAVE_ADD_LIBRARY helper in WaveUtils.cmake will add each module to this
@@ -50,13 +57,13 @@ SET(WAVE_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR})
 ADD_SUBDIRECTORY(docs)
 
 # This is where .cmake files will be installed (default under share/)
-set(INSTALL_CMAKE_DIR "${CMAKE_INSTALL_DATADIR}/wave/cmake" CACHE PATH
+SET(INSTALL_CMAKE_DIR "${CMAKE_INSTALL_DATADIR}/wave/cmake" CACHE PATH
     "Installation directory for CMake files")
 
 # Add an export file listing all targets
 EXPORT(EXPORT WaveTargets NAMESPACE Wave:: FILE WaveTargets.cmake)
 # Install the export file
-INSTALL(EXPORT WaveTargets NAMESPACE Wave:: DESTINATION "$INSTALL_CMAKE_DIR")
+INSTALL(EXPORT WaveTargets NAMESPACE Wave:: DESTINATION "${INSTALL_CMAKE_DIR}")
 
 # Export this package so it can be found through CMake's registry without being
 # installed.
@@ -69,22 +76,44 @@ EXPORT(PACKAGE Wave)
 # relocatable; WAVE_LIBRARIES gives names but not paths
 SET(WAVE_INCLUDE_DIRS "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}")
 GET_TARGET_PROPERTY(WAVE_LIBRARIES wave INTERFACE_LINK_LIBRARIES)
-FILE(READ "cmake/ImportPCL.cmake" WAVE_IMPORT_PCL_CMAKE)
 
-# Generate the Config file
+# Generate the Config file for the install tree
+SET(WAVE_EXTRA_CMAKE_DIR "cmake")
+CONFIGURE_PACKAGE_CONFIG_FILE(
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/WaveConfig.cmake.in"
+    "${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/WaveConfig.cmake"
+    PATH_VARS WAVE_INCLUDE_DIRS WAVE_LIBRARIES
+    INSTALL_DESTINATION "${INSTALL_CMAKE_DIR}")
+
+# Generate the Config file for the build tree
+# They differ in where our bundled Import*.cmake scripts are included from
+# Here, use the relative path from the build directory to this source directory
+FILE(RELATIVE_PATH path_to_wave_source
+    ${CMAKE_CURRENT_BINARY_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR})
+SET(WAVE_EXTRA_CMAKE_DIR "${path_to_wave_source}cmake")
 CONFIGURE_PACKAGE_CONFIG_FILE(
     "${CMAKE_CURRENT_SOURCE_DIR}/cmake/WaveConfig.cmake.in"
     "${CMAKE_CURRENT_BINARY_DIR}/WaveConfig.cmake"
     PATH_VARS WAVE_INCLUDE_DIRS WAVE_LIBRARIES
-    INSTALL_DESTINATION "INSTALL_CMAKE_DIR")
+    INSTALL_DESTINATION "${INSTALL_CMAKE_DIR}")
+
+
+
 
 # Generate the Version file
 WRITE_BASIC_PACKAGE_VERSION_FILE(WaveConfigVersion.cmake
     VERSION ${WAVE_PACKAGE_VERSION}
     COMPATIBILITY SameMajorVersion)
 
-# Install the WaveConfig and WaveConfigVersion files
+# Install the Config and ConfigVersion files
 INSTALL(FILES
     "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/WaveConfig.cmake"
     "${PROJECT_BINARY_DIR}/WaveConfigVersion.cmake"
     DESTINATION "${INSTALL_CMAKE_DIR}")
+
+# Install our import scripts so we can use them in the Config script. That way,
+# other projects using libwave will get transient dependencies automatically
+INSTALL(DIRECTORY cmake/
+    DESTINATION "${INSTALL_CMAKE_DIR}/cmake"
+    FILES_MATCHING PATTERN "Import*.cmake")

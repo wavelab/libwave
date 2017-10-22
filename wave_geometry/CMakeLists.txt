@@ -1,14 +1,5 @@
 PROJECT(wave_geometry)
 
-# EXTERNAL PACKAGES
-FIND_PACKAGE(kindr REQUIRED)
-
-# Define an imported target for kindr
-ADD_LIBRARY(Kindr INTERFACE IMPORTED)
-SET_PROPERTY(TARGET Kindr PROPERTY
-    INTERFACE_INCLUDE_DIRECTORIES "${kindr_INCLUDE_DIRS}")
-
-
 WAVE_ADD_LIBRARY(${PROJECT_NAME}
     src/rotation.cpp)
 
@@ -19,7 +10,7 @@ WAVE_INCLUDE_DIRECTORIES(${PROJECT_NAME} PUBLIC include)
 TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC
     Wave::utils
     Eigen3::Eigen
-    Kindr)
+    Kindr::kindr)
 
 # UNIT TESTS
 WAVE_ADD_TEST(${PROJECT_NAME}_tests tests/rotation_test.cpp)

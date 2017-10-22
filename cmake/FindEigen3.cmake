@@ -84,21 +84,3 @@ else (EIGEN3_INCLUDE_DIR)
   mark_as_advanced(EIGEN3_INCLUDE_DIR)
 
 endif(EIGEN3_INCLUDE_DIR)
-
-
-# Make the Eigen3::Eigen target available, if not already
-#
-# This defines an imported target for versions of Eigen which do not define it
-# (below 3.3.1). Eigen can then be used with
-#     TARGET_LINK_LIBRARIES(< my_target > Eigen3::Eigen)
-# instead of with INCLUDE_DIRECTORIES
-#
-# This code is not part of the FindEigen3 module code above, and should be
-# maintained independently - lkoppel
-IF (NOT TARGET Eigen3::Eigen)
-    ADD_LIBRARY(Eigen3::Eigen INTERFACE IMPORTED)
-    SET_PROPERTY(TARGET Eigen3::Eigen PROPERTY
-        INTERFACE_INCLUDE_DIRECTORIES ${EIGEN3_INCLUDE_DIR})
-    SET_PROPERTY(TARGET Eigen3::Eigen PROPERTY
-        INTERFACE_COMPILE_DEFINITIONS ${EIGEN3_DEFINITIONS})
-ENDIF(NOT TARGET Eigen3::Eigen)

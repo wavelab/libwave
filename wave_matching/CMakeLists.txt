@@ -20,7 +20,7 @@ TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC
     Wave::utils
     Eigen3::Eigen
     Boost::boost
-    PCL)
+    PCL::PCL)
 
 # UNIT TESTS
 WAVE_ADD_TEST(
