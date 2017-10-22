@@ -15,6 +15,12 @@ INCLUDE(CMakePackageConfigHelpers)
 INCLUDE(cmake/WaveUtils.cmake)
 ENABLE_TESTING()
 
+# User options
+OPTION(BUILD_SHARED_LIBS "Build shared instead of static libraries" OFF)
+OPTION(EXPORT_BUILD
+ "Add this build directory to CMake's user package registry.\
+ Allows the package to be found without install." OFF)
+
 # Find common dependencies (used by multiple required modules)
 
 # Require Eigen 3.2.92, also called 3.3 beta-1, since it's in xenial
@@ -67,10 +73,6 @@ EXPORT(EXPORT WaveTargets NAMESPACE Wave:: FILE WaveTargets.cmake)
 # Install the export file
 INSTALL(EXPORT WaveTargets NAMESPACE Wave:: DESTINATION "${INSTALL_CMAKE_DIR}")
 
-# Export this package so it can be found through CMake's registry without being
-# installed.
-EXPORT(PACKAGE Wave)
-
 # Create the WaveConfig and WaveConfigVersion files
 
 # Set variables used to generate the Config file
@@ -86,22 +88,6 @@ CONFIGURE_PACKAGE_CONFIG_FILE(
     "${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/WaveConfig.cmake"
     PATH_VARS WAVE_INCLUDE_DIRS WAVE_LIBRARIES
     INSTALL_DESTINATION "${INSTALL_CMAKE_DIR}")
-
-# Generate the Config file for the build tree
-# They differ in where our bundled Import*.cmake scripts are included from
-# Here, use the relative path from the build directory to this source directory
-FILE(RELATIVE_PATH path_to_wave_source
-    ${CMAKE_CURRENT_BINARY_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR})
-SET(WAVE_EXTRA_CMAKE_DIR "${path_to_wave_source}cmake")
-CONFIGURE_PACKAGE_CONFIG_FILE(
-    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/WaveConfig.cmake.in"
-    "${CMAKE_CURRENT_BINARY_DIR}/WaveConfig.cmake"
-    PATH_VARS WAVE_INCLUDE_DIRS WAVE_LIBRARIES
-    INSTALL_DESTINATION "${INSTALL_CMAKE_DIR}")
-
-
-
 
 # Generate the Version file
 WRITE_BASIC_PACKAGE_VERSION_FILE(WaveConfigVersion.cmake
@@ -119,3 +105,23 @@ INSTALL(FILES
 INSTALL(DIRECTORY cmake/
     DESTINATION "${INSTALL_CMAKE_DIR}/cmake"
     FILES_MATCHING PATTERN "Import*.cmake")
+
+IF(EXPORT_BUILD)
+    # Export this build so the package can be found through CMake's registry
+    # without being installed.
+    EXPORT(PACKAGE Wave)
+
+    # Generate the Config file for the build tree
+    # It differs from the installed Config file in where our bundled
+    # Import*.cmake scripts are included from. Here, use the relative path from
+    # the build directory to this source directory
+    FILE(RELATIVE_PATH path_to_wave_source
+        ${CMAKE_CURRENT_BINARY_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR})
+    SET(WAVE_EXTRA_CMAKE_DIR "${path_to_wave_source}cmake")
+    CONFIGURE_PACKAGE_CONFIG_FILE(
+        "${CMAKE_CURRENT_SOURCE_DIR}/cmake/WaveConfig.cmake.in"
+        "${CMAKE_CURRENT_BINARY_DIR}/WaveConfig.cmake"
+        PATH_VARS WAVE_INCLUDE_DIRS WAVE_LIBRARIES
+        INSTALL_DESTINATION "${INSTALL_CMAKE_DIR}")
+ENDIF(EXPORT_BUILD)
