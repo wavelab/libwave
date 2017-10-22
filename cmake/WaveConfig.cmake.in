@@ -1,18 +1,90 @@
-# - Config file for the Wave package
+# libwave - Wavelab's SLAM Library
+# Copyright (c) 2017 Wavelab
 #
-# This file exports a Wave::<module> target for each present module of libwave.
-# The Wave::wave target includes all available modules. Use these tagets with
-# the TARGET_LINK_LIBRARIES command.
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
+# Config file for Wave package: find libwave and its dependencies
+#
+# This script exports a Wave::<module> target for each found module of libwave.
+# The Wave::wave target includes all available modules.
+#
+# For example, to link "my_target" against all available wave libraries and all
+# of their dependencies, call:
+#
+#     find_package(Wave)
+#     target_link_libaries(my_target Wave::wave)
+#
+# Note that this command is sufficient to add all required libraries, include
+# directories, and other compile flags to the target.
+#
+# This file defines the following variables:
+#
+# Wave_FOUND: True if Wave and required depdendencies successfully found.
+#             WAVE_FOUND is also set.
+#
+# WAVE_VERSION: The version number found
 #
 # The following variables are also defined, but are not recommended:
-#  WAVE_INCLUDE_DIRS - include directories
-#  WAVE_LIBRARIES    - libraries to link against
+#
+#  WAVE_INCLUDE_DIRS: Include directories for libwave only (not dependencies)
+#
+#  WAVE_LIBRARIES: Libraries for libwave only (not dependencies)
 #
 
 @PACKAGE_INIT@
 
 INCLUDE(CMakeFindDependencyMacro)
 
+# Prints a failure message and exits, setting WAVE_FOUND=FALSE
+# Arguments are printed at the end of the message.
+MACRO(WAVE_FAIL)
+    # Check variables set by find_package() depending on its QUIET and REQUIRED
+    # options, and print a different type of message accordingly
+    IF(Wave_FIND_QUIETLY)
+        SET(msg_mode STATUS)
+    ELSEIF(Wave_FIND_REQUIRED)
+        SET(msg_mode FATAL_ERROR)
+    ELSE()
+        SET(msg_mode SEND_ERROR)
+    ENDIF()
+
+    MESSAGE(${msg_mode} "Failed to find libwave: " ${ARGN})
+
+    SET(Wave_FOUND FALSE)
+    SET(WAVE_FOUND FALSE)
+    RETURN()
+ENDMACRO(WAVE_FAIL)
+
+# Checks if a dependency was found. Prints a message, and if not found, fails.
+MACRO(WAVE_CHECK_DEP_FOUND DEP)
+    STRING(TOUPPER "${DEP}" udep)
+    IF(${DEP}_FOUND OR ${udep}_FOUND)
+        IF(NOT Wave_FIND_QUIETLY)
+            MESSAGE(STATUS "Found required Wave dependency: "
+                "${DEP} ${${DEP}_VERSION} in ${${DEP}_DIR}")
+        ENDIF()
+    ELSE()
+        WAVE_FAIL("Missing required Wave dependency: ${DEP}")
+    ENDIF()
+ENDMACRO(WAVE_CHECK_DEP_FOUND)
+
+SET(WAVE_VERSION @WAVE_PACKAGE_VERSION@)
 SET_AND_CHECK(WAVE_EXTRA_CMAKE_DIR
     "${CMAKE_CURRENT_LIST_DIR}/@WAVE_EXTRA_CMAKE_DIR@")
 
@@ -20,12 +92,19 @@ MESSAGE(STATUS "Looking for libwave dependencies")
 
 # Find dependencies used by Wave targets
 FIND_DEPENDENCY(Eigen3 3.2.92)
+WAVE_CHECK_DEP_FOUND(Eigen3)
 FIND_DEPENDENCY(Boost 1.54.0)
+WAVE_CHECK_DEP_FOUND(Boost)
 FIND_DEPENDENCY(PCL 1.8)
+WAVE_CHECK_DEP_FOUND(PCL)
 FIND_DEPENDENCY(kindr)
+WAVE_CHECK_DEP_FOUND(kindr)
 FIND_DEPENDENCY(OpenCV 3.2.0)
+WAVE_CHECK_DEP_FOUND(OpenCV)
 FIND_DEPENDENCY(yaml-cpp)
+WAVE_CHECK_DEP_FOUND(yaml-cpp)
 FIND_DEPENDENCY(Ceres)
+WAVE_CHECK_DEP_FOUND(Ceres)
 
 # Where dependencies do not provide imported targets, define them
 INCLUDE(${WAVE_EXTRA_CMAKE_DIR}/ImportEigen3.cmake)
@@ -36,7 +115,11 @@ INCLUDE(${WAVE_EXTRA_CMAKE_DIR}/ImportKindr.cmake)
 # This file contains definitions of IMPORTED targets
 INCLUDE("${CMAKE_CURRENT_LIST_DIR}/WaveTargets.cmake")
 
-# Set old-fashioned variables - use only if necessary for older versions of
-# CMake which do not support imported targets.
+# Set deprecated variables. These do not include dependencies.
 SET(WAVE_LIBRARIES "@WAVE_LIBRARIES@")
 SET(WAVE_INCLUDE_DIRS "@WAVE_INCLUDE_DIRS@")
+
+# Everything worked out ok!
+MESSAGE(STATUS "Found libwave ${WAVE_VERSION}: ${CMAKE_CURRENT_LIST_DIR}")
+SET(Wave_FOUND TRUE)
+SET(WAVE_FOUND TRUE)
