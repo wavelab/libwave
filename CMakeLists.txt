@@ -4,10 +4,12 @@ PROJECT(wave)
 # Package version, used when other projects FIND_PACKAGE(Wave <version>)
 SET(WAVE_PACKAGE_VERSION 0.1.0)
 
-# COMPILER SETTINGS
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall -Wextra")
+# Compiler settings for all targets
+SET(CMAKE_CXX_STANDARD 11)
+SET(CMAKE_POSITION_INDEPENDENT_CODE ON)
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
 
-# CMAKE SETTINGS
+# CMake modules
 LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 INCLUDE(CMakePackageConfigHelpers)
 INCLUDE(cmake/WaveUtils.cmake)
@@ -17,12 +19,9 @@ ENABLE_TESTING()
 
 # Require Eigen 3.2.92, also called 3.3 beta-1, since it's in xenial
 FIND_PACKAGE(Eigen3 3.2.92 REQUIRED)
-
 FIND_PACKAGE(Boost 1.54.0 REQUIRED system filesystem)
-
 FIND_PACKAGE(PCL 1.8 REQUIRED
     common filters registration kdtree search io visualization)
-
 FIND_PACKAGE(kindr REQUIRED)
 
 # Where dependencies do not provide imported targets, define them
