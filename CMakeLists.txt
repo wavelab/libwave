@@ -23,6 +23,9 @@ FIND_PACKAGE(Boost 1.54.0 REQUIRED system filesystem)
 FIND_PACKAGE(PCL 1.8 REQUIRED
     common filters registration kdtree search io visualization)
 FIND_PACKAGE(kindr REQUIRED)
+FIND_PACKAGE(OpenCV 3.2.0 REQUIRED core features2d calib3d imgproc highgui)
+FIND_PACKAGE(yaml-cpp REQUIRED)
+FIND_PACKAGE(Ceres REQUIRED)
 
 # Where dependencies do not provide imported targets, define them
 INCLUDE(cmake/ImportEigen3.cmake)

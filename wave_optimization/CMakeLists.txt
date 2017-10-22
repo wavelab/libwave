@@ -1,7 +1,6 @@
 PROJECT(wave_optimization)
 
 # PACKAGES
-FIND_PACKAGE(Ceres REQUIRED)
 FIND_PACKAGE(GTSAM) # optional for now; used only in tests (@todo)
 
 WAVE_ADD_LIBRARY(${PROJECT_NAME}

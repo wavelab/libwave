@@ -1,11 +1,5 @@
 PROJECT(wave_vision)
 
-# DEPENDENCIES
-FIND_PACKAGE(OpenCV 3.2.0 REQUIRED core features2d calib3d imgproc highgui)
-
-# LIBRARY
-SET(WAVE_VISION_DEPS)
-
 WAVE_ADD_LIBRARY(${PROJECT_NAME}
     src/utils.cpp
     src/dataset/VoDataset.cpp
@@ -28,7 +22,7 @@ TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC
     Wave::containers
     Eigen3::Eigen
     Boost::filesystem
-    ${OpenCV_LIBS})
+    opencv_core opencv_features2d opencv_calib3d opencv_imgproc opencv_highgui)
 
 # UNIT TESTS
 WAVE_ADD_TEST(${PROJECT_NAME}_tests

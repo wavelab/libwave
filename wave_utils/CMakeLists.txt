@@ -1,11 +1,5 @@
 PROJECT(wave_utils)
 
-# DEPENDENCIES
-# OpenCV required for cv::Mat option in config parser
-FIND_PACKAGE(OpenCV 3.2.0 REQUIRED core)
-
-FIND_PACKAGE(yaml-cpp REQUIRED)
-
 # LIBRARY
 WAVE_ADD_LIBRARY(${PROJECT_NAME}
     src/config.cpp
