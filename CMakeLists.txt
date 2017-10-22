@@ -14,7 +14,11 @@ ENABLE_TESTING()
 # Require Eigen 3.2.92, also called 3.3 beta-1, since it's in xenial
 FIND_PACKAGE(Eigen3 3.2.92 REQUIRED)
 
-FIND_PACKAGE(Boost 1.54. REQUIRED system filesystem)
+FIND_PACKAGE(Boost 1.54.0 REQUIRED system filesystem)
+
+# Use our FindPCL module to import a monolithic target for PCL
+FIND_PACKAGE(PCL 1.8 REQUIRED
+    common filters registration kdtree search io visualization)
 
 # The sub-libraries, each of which is in a subdirectory of the same name
 SET(LIBWAVE_MODULES
@@ -29,37 +33,12 @@ SET(LIBWAVE_MODULES
     wave_benchmark)
 
 FOREACH(dir ${LIBWAVE_MODULES})
-    INCLUDE_DIRECTORIES(${dir}/include)
-ENDFOREACH()
-FOREACH(dir ${LIBWAVE_MODULES})
     ADD_SUBDIRECTORY(${dir})
 ENDFOREACH()
 
 # gtest
 ADD_SUBDIRECTORY(deps/googletest EXCLUDE_FROM_ALL)
 INCLUDE_DIRECTORIES(${gtest_SOURCE_DIR}/include/ ${gtest_SOURCE_DIR})
-
-# Define dependencies between modules
-# libwave_controls.a
-ADD_DEPENDENCIES(wave_controls wave_utils)
-
-# libwave_geometry.a
-ADD_DEPENDENCIES(wave_geometry wave_utils)
-
-# libwave_kinematics.a
-ADD_DEPENDENCIES(wave_kinematics wave_controls wave_utils)
-
-# libwave_matching.a
-ADD_DEPENDENCIES(wave_matching wave_utils)
-
-# libwave_optimization.a
-ADD_DEPENDENCIES(wave_optimization wave_utils)
-
-# libwave_vision.a
-ADD_DEPENDENCIES(wave_vision wave_utils)
-
-# libwave_benchmark.a
-ADD_DEPENDENCIES(wave_benchmark wave_utils)
 
 # libwave library
 SET(LIBWAVE_MODULE_LIBS
