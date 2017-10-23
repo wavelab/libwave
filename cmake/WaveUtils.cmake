@@ -40,6 +40,24 @@ FUNCTION(WAVE_ADD_TEST NAME)
 
 ENDFUNCTION(WAVE_ADD_TEST)
 
+# wave_add_benchmark: Add a target which links against google benchmark
+#
+# WAVE_ADD_BENCHMARK(Name src1 [src2...])
+#
+# The target will be added to the tests run by "make benchmark". It will be
+# linked against the needed libraries. Any other links can be made separately
+# with the target_link_libraries command.
+FUNCTION(WAVE_ADD_BENCHMARK NAME)
+    # Build the executable using the given sources
+    ADD_EXECUTABLE(${NAME} ${ARGN})
+
+    TARGET_LINK_LIBRARIES(${NAME} benchmark::benchmark)
+
+    # Put the executable in the benchmarks/ directory
+    SET_TARGET_PROPERTIES(${NAME} PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/benchmarks)
+ENDFUNCTION(WAVE_ADD_BENCHMARK)
+
 # wave_include_directories: Set a module's include paths so they are usable
 # from both the build and install tree
 #

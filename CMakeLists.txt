@@ -20,6 +20,10 @@ OPTION(BUILD_SHARED_LIBS "Build shared instead of static libraries" OFF)
 OPTION(EXPORT_BUILD
  "Add this build directory to CMake's user package registry.\
  Allows the package to be found without install." OFF)
+OPTION(BUILD_BENCHMARKS
+    "Build benchmarks for some components. Requires google benchmark package."
+    OFF)
+
 
 # Find common dependencies (used by multiple required modules)
 
@@ -38,6 +42,19 @@ INCLUDE(cmake/ImportEigen3.cmake)
 INCLUDE(cmake/ImportBoost.cmake)
 INCLUDE(cmake/ImportPCL.cmake)
 INCLUDE(cmake/ImportKindr.cmake)
+
+
+# Download and build benchmark library, if benchmarks enabled
+IF(BUILD_BENCHMARKS)
+    FIND_PACKAGE(benchmark REQUIRED)
+
+    STRING(TOLOWER "${CMAKE_BUILD_TYPE}" build_type)
+    IF(NOT build_type MATCHES rel)
+        MESSAGE(WARNING "Building benchmarks but not in Release mode."
+            " (CMAKE_BUILD_TYPE=\"${CMAKE_BUILD_TYPE}\")\n"
+            "Benchmark results might not be useful.")
+    ENDIF()
+ENDIF(BUILD_BENCHMARKS)
 
 # Add a special "wave" target including all modules
 # The WAVE_ADD_LIBRARY helper in WaveUtils.cmake will add each module to this
