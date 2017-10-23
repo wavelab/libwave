@@ -1,22 +1,26 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8.3)
 PROJECT(wave_geometry)
 
 # EXTERNAL PACKAGES
-FIND_PACKAGE(Eigen3 REQUIRED)
-FIND_PACKAGE(kindr)
+FIND_PACKAGE(kindr REQUIRED)
 
-# INCLUDES
-INCLUDE_DIRECTORIES(${EIGEN3_INCLUDE_DIR})
+# Define an imported target for kindr
+ADD_LIBRARY(Kindr INTERFACE IMPORTED)
+SET_PROPERTY(TARGET Kindr PROPERTY
+    INTERFACE_INCLUDE_DIRECTORIES "${kindr_INCLUDE_DIRS}")
 
-#LIBRARY
-ADD_LIBRARY(
-    wave_geometry
-    STATIC
-    src/rotation.cpp
-)
-TARGET_LINK_LIBRARIES(${PROJECT_NAME} wave_utils)
+
+ADD_LIBRARY(${PROJECT_NAME} STATIC
+    src/rotation.cpp)
+
+# Use these headers when building, and make clients use them
+TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PUBLIC include)
+
+# Depend on these modules and external libraries, and make clients use them
+TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC
+    wave_utils
+    Eigen3::Eigen
+    Kindr)
 
 # UNIT TESTS
 WAVE_ADD_TEST(${PROJECT_NAME}_tests tests/rotation_test.cpp)
-TARGET_LINK_LIBRARIES(${PROJECT_NAME}_tests
-    ${PROJECT_NAME})
+TARGET_LINK_LIBRARIES(${PROJECT_NAME}_tests ${PROJECT_NAME})

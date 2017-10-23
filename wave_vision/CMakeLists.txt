@@ -1,31 +1,12 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8.3)
 PROJECT(wave_vision)
 
 # DEPENDENCIES
-FIND_PACKAGE(OpenCV REQUIRED)
-FIND_PACKAGE(Eigen3 REQUIRED)
-FIND_PACKAGE(Boost COMPONENTS system filesystem REQUIRED)
-
-# DEFINITIONS
-ADD_DEFINITIONS(${OpenCV_DEFINITIONS})
-
-# INCLUDES
-INCLUDE_DIRECTORIES(${OpenCV_INCLUDE_DIRS}
-    ${EIGEN3_INCLUDE_DIR}
-    ${Boost_INCLUDE_DIR})
+FIND_PACKAGE(OpenCV 3.2.0 REQUIRED core features2d calib3d imgproc highgui)
 
 # LIBRARY
-SET(
-    WAVE_VISION_DEPS
-    yaml-cpp
-    ${OpenCV_LIBS}
-    ${Boost_LIBRARIES}
-    wave_kinematics
-    wave_utils
-)
-ADD_LIBRARY(
-    wave_vision
-    STATIC
+SET(WAVE_VISION_DEPS)
+
+ADD_LIBRARY(${PROJECT_NAME} STATIC
     src/utils.cpp
     src/dataset/VoDataset.cpp
     src/dataset/VoTestCamera.cpp
@@ -36,7 +17,19 @@ ADD_LIBRARY(
     src/matcher/brute_force_matcher.cpp
     src/matcher/flann_matcher.cpp
 )
-TARGET_LINK_LIBRARIES(wave_vision ${WAVE_VISION_DEPS})
+
+# Use these headers when building, and make clients use them
+TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PUBLIC include)
+
+# Depend on these modules and external libraries, and make clients use them
+TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC
+    wave_kinematics
+    wave_utils
+    wave_containers
+    Eigen3::Eigen
+    Boost::filesystem
+    ${OpenCV_LIBS})
+
 
 # UNIT TESTS
 WAVE_ADD_TEST(${PROJECT_NAME}_tests
@@ -59,12 +52,7 @@ WAVE_ADD_TEST(
     tests/viz_tests/tracker_viz_tests.cpp
     DISABLED # Requires display to run
 )
-TARGET_LINK_LIBRARIES(
-    ${PROJECT_NAME}_viz_tests
-    ${PROJECT_NAME}
-    wave_utils
-    ${Boost_LIBRARIES}
-)
+TARGET_LINK_LIBRARIES(${PROJECT_NAME}_viz_tests ${PROJECT_NAME})
 
 # COPY TEST DATA
 FILE(COPY tests/data tests/config DESTINATION ${PROJECT_BINARY_DIR}/tests)
