@@ -12,14 +12,10 @@
 #ifndef WAVE_CONTAINERS_MEASUREMENT_CONTAINER_HPP
 #define WAVE_CONTAINERS_MEASUREMENT_CONTAINER_HPP
 
-#include <chrono>
-
 namespace wave {
 
 /** @addtogroup containers
  *  @{ */
-
-using TimeType = std::chrono::steady_clock::time_point;
 
 /** Internal implementation details - for developers only */
 namespace internal {
@@ -35,9 +31,11 @@ struct measurement_container;
  * in wave/containers/measurement.hpp is designed to be used here.
  *
  * However, any class can be used that has the following public members:
- *   - `time_point` (of type `wave::TimeType`)
- *   - `sensor_id` (any type sortable by `std::less`)
+ *   - `time_point` (any sortable type)
+ *   - `sensor_id` (any sortable type)
  *   - `value` (any type)
+ *
+ * A type is sortable if it can be compared by `std::less`.
  *
  * Additionally, the non-member function
  *   ```
@@ -53,10 +51,12 @@ class MeasurementContainer {
     /** Alias for the template parameter, giving the type of Measurement stored
      * in this container */
     using MeasurementType = T;
-    /** Alias for the measurement's value.
+    /** Alias for the measurement's time type */
+    using TimeType = decltype(MeasurementType::time_point);
+    /** Alias for the measurement's value type
      * Note this does *not* correspond to a typical container's value_type. */
     using ValueType = decltype(MeasurementType::value);
-    /** Alias for template parameter giving the type of the sensor id */
+    /** Alias for the type of the sensor id */
     using SensorIdType = decltype(MeasurementType::sensor_id);
 
     using iterator =
