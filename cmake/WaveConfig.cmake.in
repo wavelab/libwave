@@ -39,13 +39,6 @@
 #             WAVE_FOUND is also set.
 #
 # WAVE_VERSION: The version number found
-#
-# The following variables are also defined, but are not recommended:
-#
-#  WAVE_INCLUDE_DIRS: Include directories for libwave only (not dependencies)
-#
-#  WAVE_LIBRARIES: Libraries for libwave only (not dependencies)
-#
 
 @PACKAGE_INIT@
 
@@ -114,10 +107,6 @@ INCLUDE(${WAVE_EXTRA_CMAKE_DIR}/ImportKindr.cmake)
 
 # This file contains definitions of IMPORTED targets
 INCLUDE("${CMAKE_CURRENT_LIST_DIR}/WaveTargets.cmake")
-
-# Set deprecated variables. These do not include dependencies.
-SET(WAVE_LIBRARIES "@WAVE_LIBRARIES@")
-SET(WAVE_INCLUDE_DIRS "@WAVE_INCLUDE_DIRS@")
 
 # Everything worked out ok!
 MESSAGE(STATUS "Found libwave ${WAVE_VERSION}: ${CMAKE_CURRENT_LIST_DIR}")

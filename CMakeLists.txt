@@ -75,18 +75,11 @@ INSTALL(EXPORT WaveTargets NAMESPACE Wave:: DESTINATION "${INSTALL_CMAKE_DIR}")
 
 # Create the WaveConfig and WaveConfigVersion files
 
-# Set variables used to generate the Config file
-# Using these is "not recommended". For example, WAVE_INCLUDE_DIRS is not
-# relocatable; WAVE_LIBRARIES gives names but not paths
-SET(WAVE_INCLUDE_DIRS "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_INCLUDEDIR}")
-GET_TARGET_PROPERTY(WAVE_LIBRARIES wave INTERFACE_LINK_LIBRARIES)
-
 # Generate the Config file for the install tree
 SET(WAVE_EXTRA_CMAKE_DIR "cmake")
 CONFIGURE_PACKAGE_CONFIG_FILE(
     "${CMAKE_CURRENT_SOURCE_DIR}/cmake/WaveConfig.cmake.in"
     "${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/WaveConfig.cmake"
-    PATH_VARS WAVE_INCLUDE_DIRS WAVE_LIBRARIES
     INSTALL_DESTINATION "${INSTALL_CMAKE_DIR}")
 
 # Generate the Version file
@@ -122,6 +115,5 @@ IF(EXPORT_BUILD)
     CONFIGURE_PACKAGE_CONFIG_FILE(
         "${CMAKE_CURRENT_SOURCE_DIR}/cmake/WaveConfig.cmake.in"
         "${CMAKE_CURRENT_BINARY_DIR}/WaveConfig.cmake"
-        PATH_VARS WAVE_INCLUDE_DIRS WAVE_LIBRARIES
         INSTALL_DESTINATION "${INSTALL_CMAKE_DIR}")
 ENDIF(EXPORT_BUILD)
