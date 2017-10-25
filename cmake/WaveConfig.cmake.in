@@ -59,7 +59,10 @@ MACRO(WAVE_FAIL)
 
     MESSAGE(${msg_mode} "Failed to find libwave: " ${ARGN})
 
+    # Tell FIND_PACKAGE that this package should be considered "not found"
     SET(Wave_FOUND FALSE)
+    # Set this all-caps version only as a courtesy to users, who may be
+    # mistakenly (but understandably) expecting this convention
     SET(WAVE_FOUND FALSE)
     RETURN()
 ENDMACRO(WAVE_FAIL)
@@ -70,7 +73,7 @@ MACRO(WAVE_CHECK_DEP_FOUND DEP)
     IF(${DEP}_FOUND OR ${udep}_FOUND)
         IF(NOT Wave_FIND_QUIETLY)
             MESSAGE(STATUS "Found required Wave dependency: "
-                "${DEP} ${${DEP}_VERSION} in ${${DEP}_DIR}")
+                "${DEP} ${${DEP}_VERSION}")
         ENDIF()
     ELSE()
         WAVE_FAIL("Missing required Wave dependency: ${DEP}")
@@ -80,8 +83,6 @@ ENDMACRO(WAVE_CHECK_DEP_FOUND)
 SET(WAVE_VERSION @WAVE_PACKAGE_VERSION@)
 SET_AND_CHECK(WAVE_EXTRA_CMAKE_DIR
     "${CMAKE_CURRENT_LIST_DIR}/@WAVE_EXTRA_CMAKE_DIR@")
-
-MESSAGE(STATUS "Looking for libwave dependencies")
 
 # Find dependencies used by Wave targets
 FIND_DEPENDENCY(Eigen3 3.2.92)
@@ -110,5 +111,10 @@ INCLUDE("${CMAKE_CURRENT_LIST_DIR}/WaveTargets.cmake")
 
 # Everything worked out ok!
 MESSAGE(STATUS "Found libwave ${WAVE_VERSION}: ${CMAKE_CURRENT_LIST_DIR}")
+
+# Wave_FOUND, with exact case, is the variable set and used by FIND_PACKAGE().
+# Setting it here is redundant, but is here for clarity. The second variable is
+# provided as a courtesy to users who may mistakenly (but understandably) expect
+# all-caps names.
 SET(Wave_FOUND TRUE)
 SET(WAVE_FOUND TRUE)
