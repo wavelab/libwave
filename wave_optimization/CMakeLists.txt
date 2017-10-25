@@ -12,9 +12,9 @@ WAVE_INCLUDE_DIRECTORIES(${PROJECT_NAME} PUBLIC include)
 
 # Depend on these modules and external libraries, and make clients use them
 TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC
-    Wave::utils
-    Wave::kinematics
-    Wave::vision
+    wave::utils
+    wave::kinematics
+    wave::vision
     Eigen3::Eigen
     ceres)
 
@@ -38,14 +38,14 @@ IF(GTSAM_FOUND)
         tests/gtsam/gtsam_offline_example.cpp)
     TARGET_LINK_LIBRARIES(vo_gtsam_offline_example
         ${PROJECT_NAME}
-        Wave::vision
+        wave::vision
         ${GTSAM_LIBRARIES})
 
     WAVE_ADD_TEST(vo_gtsam_offline_kitti_example
         tests/gtsam/gtsam_offline_kitti_example.cpp)
     TARGET_LINK_LIBRARIES(vo_gtsam_offline_kitti_example
         ${PROJECT_NAME}
-        Wave::vision
+        wave::vision
         ${GTSAM_LIBRARIES})
 ENDIF()
 

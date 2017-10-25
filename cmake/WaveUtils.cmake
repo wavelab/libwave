@@ -24,7 +24,7 @@ FUNCTION(WAVE_ADD_TEST NAME)
 
     # Link gtest libraries including one providing main()
     # Link wave_utils as that contains wave_test.hpp
-    TARGET_LINK_LIBRARIES(${NAME} gtest gtest_main pthread Wave::utils)
+    TARGET_LINK_LIBRARIES(${NAME} gtest gtest_main pthread wave::utils)
 
     # Put the test executable in the tests/ directory
     SET_TARGET_PROPERTIES(${NAME} PROPERTIES
@@ -69,7 +69,7 @@ ENDFUNCTION(WAVE_INCLUDE_DIRECTORIES)
 # given.
 #
 # It calls INSTALL(...) and sets standard paths for binaries and header files,
-# and associates the target with the WaveTargets export.
+# and associates the target with the waveTargets export.
 #
 # This function also sets the output library name to the target name prefixed
 # with "wave_". For example, for the name "utils" the library built would be
@@ -85,20 +85,20 @@ FUNCTION(WAVE_ADD_LIBRARY NAME)
     ENDIF()
 
     # Remove "wave_" prefix from exported name
-    # This means others can link to Wave::utils instead of Wave::wave_utils
+    # This means others can link to wave::utils instead of wave::wave_utils
     STRING(REGEX REPLACE "^wave_" "" unprefixed_name ${NAME})
     SET_TARGET_PROPERTIES(${NAME} PROPERTIES EXPORT_NAME ${unprefixed_name})
 
     # Add an alias so internal target_link_libraries can also use the namespace
     # The benefit is newer CMake will give immediately give an error on typos
-    ADD_LIBRARY(Wave::${unprefixed_name} ALIAS ${NAME})
+    ADD_LIBRARY(wave::${unprefixed_name} ALIAS ${NAME})
 
     # Add this target to the all-inclusive "wave" library
     SET_PROPERTY(TARGET wave APPEND PROPERTY INTERFACE_LINK_LIBRARIES ${NAME})
 
     # Add install destinations
     # The variables used here are defined by GNUInstallDirs
-    INSTALL(TARGETS ${NAME} EXPORT WaveTargets
+    INSTALL(TARGETS ${NAME} EXPORT waveTargets
         ARCHIVE  DESTINATION ${CMAKE_INSTALL_LIBDIR}
         LIBRARY  DESTINATION ${CMAKE_INSTALL_LIBDIR}
         RUNTIME  DESTINATION ${CMAKE_INSTALL_BINDIR}

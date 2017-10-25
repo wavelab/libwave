@@ -1,7 +1,7 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.2)
 PROJECT(wave)
 
-# Package version, used when other projects FIND_PACKAGE(Wave <version>)
+# Package version, used when other projects FIND_PACKAGE(wave <version>)
 SET(WAVE_PACKAGE_VERSION 0.1.0)
 
 # Compiler settings for all targets
@@ -42,7 +42,7 @@ INCLUDE(cmake/ImportKindr.cmake)
 # Add a special "wave" target including all modules
 # The WAVE_ADD_LIBRARY helper in WaveUtils.cmake will add each module to this
 ADD_LIBRARY(wave INTERFACE)
-INSTALL(TARGETS wave EXPORT WaveTargets)
+INSTALL(TARGETS wave EXPORT waveTargets)
 
 # Add each module to the project
 ADD_SUBDIRECTORY(wave_benchmark)
@@ -69,28 +69,28 @@ SET(INSTALL_CMAKE_DIR "${CMAKE_INSTALL_DATADIR}/wave/cmake" CACHE PATH
     "Installation directory for CMake files")
 
 # Add an export file listing all targets
-EXPORT(EXPORT WaveTargets NAMESPACE Wave:: FILE WaveTargets.cmake)
+EXPORT(EXPORT waveTargets NAMESPACE wave:: FILE waveTargets.cmake)
 # Install the export file
-INSTALL(EXPORT WaveTargets NAMESPACE Wave:: DESTINATION "${INSTALL_CMAKE_DIR}")
+INSTALL(EXPORT waveTargets NAMESPACE wave:: DESTINATION "${INSTALL_CMAKE_DIR}")
 
-# Create the WaveConfig and WaveConfigVersion files
+# Create the waveConfig and waveConfigVersion files
 
 # Generate the Config file for the install tree
 SET(WAVE_EXTRA_CMAKE_DIR "cmake")
 CONFIGURE_PACKAGE_CONFIG_FILE(
-    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/WaveConfig.cmake.in"
-    "${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/WaveConfig.cmake"
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/waveConfig.cmake.in"
+    "${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/waveConfig.cmake"
     INSTALL_DESTINATION "${INSTALL_CMAKE_DIR}")
 
 # Generate the Version file
-WRITE_BASIC_PACKAGE_VERSION_FILE(WaveConfigVersion.cmake
+WRITE_BASIC_PACKAGE_VERSION_FILE(waveConfigVersion.cmake
     VERSION ${WAVE_PACKAGE_VERSION}
     COMPATIBILITY SameMajorVersion)
 
 # Install the Config and ConfigVersion files
 INSTALL(FILES
-    "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/WaveConfig.cmake"
-    "${PROJECT_BINARY_DIR}/WaveConfigVersion.cmake"
+    "${PROJECT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/waveConfig.cmake"
+    "${PROJECT_BINARY_DIR}/waveConfigVersion.cmake"
     DESTINATION "${INSTALL_CMAKE_DIR}")
 
 # Install our import scripts so we can use them in the Config script. That way,
@@ -102,7 +102,7 @@ INSTALL(DIRECTORY cmake/
 IF(EXPORT_BUILD)
     # Export this build so the package can be found through CMake's registry
     # without being installed.
-    EXPORT(PACKAGE Wave)
+    EXPORT(PACKAGE wave)
 
     # Generate the Config file for the build tree
     # It differs from the installed Config file in where our bundled
@@ -113,7 +113,7 @@ IF(EXPORT_BUILD)
         ${CMAKE_CURRENT_SOURCE_DIR})
     SET(WAVE_EXTRA_CMAKE_DIR "${path_to_wave_source}cmake")
     CONFIGURE_PACKAGE_CONFIG_FILE(
-        "${CMAKE_CURRENT_SOURCE_DIR}/cmake/WaveConfig.cmake.in"
-        "${CMAKE_CURRENT_BINARY_DIR}/WaveConfig.cmake"
+        "${CMAKE_CURRENT_SOURCE_DIR}/cmake/waveConfig.cmake.in"
+        "${CMAKE_CURRENT_BINARY_DIR}/waveConfig.cmake"
         INSTALL_DESTINATION "${INSTALL_CMAKE_DIR}")
 ENDIF(EXPORT_BUILD)

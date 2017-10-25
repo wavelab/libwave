@@ -17,9 +17,9 @@ WAVE_INCLUDE_DIRECTORIES(${PROJECT_NAME} PUBLIC include)
 
 # Depend on these modules and external libraries, and make clients use them
 TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC
-    Wave::kinematics
-    Wave::utils
-    Wave::containers
+    wave::kinematics
+    wave::utils
+    wave::containers
     Eigen3::Eigen
     Boost::filesystem
     opencv_core opencv_features2d opencv_calib3d opencv_imgproc opencv_highgui)

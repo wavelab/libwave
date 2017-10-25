@@ -19,23 +19,23 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-# Config file for Wave package: find libwave and its dependencies
+# Config file for wave package: find libwave and its dependencies
 #
-# This script exports a Wave::<module> target for each found module of libwave.
-# The Wave::wave target includes all available modules.
+# This script exports a wave::<module> target for each found module of libwave.
+# The wave::wave target includes all available modules.
 #
 # For example, to link "my_target" against all available wave libraries and all
 # of their dependencies, call:
 #
-#     find_package(Wave)
-#     target_link_libaries(my_target Wave::wave)
+#     find_package(wave)
+#     target_link_libaries(my_target wave::wave)
 #
 # Note that this command is sufficient to add all required libraries, include
 # directories, and other compile flags to the target.
 #
 # This file defines the following variables:
 #
-# Wave_FOUND: True if Wave and required depdendencies successfully found.
+# wave_FOUND: True if wave and required depdendencies successfully found.
 #             WAVE_FOUND is also set.
 #
 # WAVE_VERSION: The version number found
@@ -49,9 +49,9 @@ INCLUDE(CMakeFindDependencyMacro)
 MACRO(WAVE_FAIL)
     # Check variables set by find_package() depending on its QUIET and REQUIRED
     # options, and print a different type of message accordingly
-    IF(Wave_FIND_QUIETLY)
+    IF(wave_FIND_QUIETLY)
         SET(msg_mode STATUS)
-    ELSEIF(Wave_FIND_REQUIRED)
+    ELSEIF(wave_FIND_REQUIRED)
         SET(msg_mode FATAL_ERROR)
     ELSE()
         SET(msg_mode SEND_ERROR)
@@ -60,7 +60,7 @@ MACRO(WAVE_FAIL)
     MESSAGE(${msg_mode} "Failed to find libwave: " ${ARGN})
 
     # Tell FIND_PACKAGE that this package should be considered "not found"
-    SET(Wave_FOUND FALSE)
+    SET(wave_FOUND FALSE)
     # Set this all-caps version only as a courtesy to users, who may be
     # mistakenly (but understandably) expecting this convention
     SET(WAVE_FOUND FALSE)
@@ -71,12 +71,12 @@ ENDMACRO(WAVE_FAIL)
 MACRO(WAVE_CHECK_DEP_FOUND DEP)
     STRING(TOUPPER "${DEP}" udep)
     IF(${DEP}_FOUND OR ${udep}_FOUND)
-        IF(NOT Wave_FIND_QUIETLY)
-            MESSAGE(STATUS "Found required Wave dependency: "
+        IF(NOT wave_FIND_QUIETLY)
+            MESSAGE(STATUS "Found required libwave dependency: "
                 "${DEP} ${${DEP}_VERSION}")
         ENDIF()
     ELSE()
-        WAVE_FAIL("Missing required Wave dependency: ${DEP}")
+        WAVE_FAIL("Missing required libwave dependency: ${DEP}")
     ENDIF()
 ENDMACRO(WAVE_CHECK_DEP_FOUND)
 
@@ -84,7 +84,7 @@ SET(WAVE_VERSION @WAVE_PACKAGE_VERSION@)
 SET_AND_CHECK(WAVE_EXTRA_CMAKE_DIR
     "${CMAKE_CURRENT_LIST_DIR}/@WAVE_EXTRA_CMAKE_DIR@")
 
-# Find dependencies used by Wave targets
+# Find dependencies used by wave targets
 FIND_DEPENDENCY(Eigen3 3.2.92)
 WAVE_CHECK_DEP_FOUND(Eigen3)
 FIND_DEPENDENCY(Boost 1.54.0)
@@ -107,14 +107,14 @@ INCLUDE(${WAVE_EXTRA_CMAKE_DIR}/ImportPCL.cmake)
 INCLUDE(${WAVE_EXTRA_CMAKE_DIR}/ImportKindr.cmake)
 
 # This file contains definitions of IMPORTED targets
-INCLUDE("${CMAKE_CURRENT_LIST_DIR}/WaveTargets.cmake")
+INCLUDE("${CMAKE_CURRENT_LIST_DIR}/waveTargets.cmake")
 
 # Everything worked out ok!
 MESSAGE(STATUS "Found libwave ${WAVE_VERSION}: ${CMAKE_CURRENT_LIST_DIR}")
 
-# Wave_FOUND, with exact case, is the variable set and used by FIND_PACKAGE().
+# wave_FOUND, with exact case, is the variable set and used by FIND_PACKAGE().
 # Setting it here is redundant, but is here for clarity. The second variable is
 # provided as a courtesy to users who may mistakenly (but understandably) expect
 # all-caps names.
-SET(Wave_FOUND TRUE)
+SET(wave_FOUND TRUE)
 SET(WAVE_FOUND TRUE)

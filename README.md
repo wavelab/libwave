@@ -64,15 +64,15 @@ your project's `CMakeLists.txt` file as follows:
     cmake_minimum_required(VERSION 3.0)
     project(example)
 
-    find_package(Wave REQUIRED)
+    find_package(wave REQUIRED)
 
     # Add a target depending on all of libwave
     add_executable(example example.cpp)
-    target_link_libraries(example Wave::wave)
+    target_link_libraries(example wave::wave)
 
     # Add a target depending on certain libwave components
     add_executable(example2 example2.cpp)
-    target_link_libraries(example2 Wave::geometry Wave::containers)
+    target_link_libraries(example2 wave::geometry wave::containers)
 
 
 ## Documentation

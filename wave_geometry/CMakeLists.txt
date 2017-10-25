@@ -8,7 +8,7 @@ WAVE_INCLUDE_DIRECTORIES(${PROJECT_NAME} PUBLIC include)
 
 # Depend on these modules and external libraries, and make clients use them
 TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC
-    Wave::utils
+    wave::utils
     Eigen3::Eigen
     Kindr::kindr)
 

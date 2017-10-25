@@ -11,8 +11,8 @@ WAVE_INCLUDE_DIRECTORIES(${PROJECT_NAME} PUBLIC include)
 
 # Depend on these modules and external libraries, and make clients use them
 TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC
-    Wave::utils
-    Wave::controls
+    wave::utils
+    wave::controls
     Eigen3::Eigen)
 
 # UNIT TESTS
