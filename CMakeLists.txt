@@ -54,6 +54,12 @@ IF(BUILD_BENCHMARKS)
             " (CMAKE_BUILD_TYPE=\"${CMAKE_BUILD_TYPE}\")\n"
             "Benchmark results might not be useful.")
     ENDIF()
+
+    # This target is used to run benchmarks via "make benchmark".
+    # Like "make test", it does not build anything. (@todo change?)
+    # It runs all tests labelled "benchmark" by WAVE_ADD_BENCHMARK helper.
+    ADD_CUSTOM_TARGET(benchmark
+         COMMAND ${CMAKE_CTEST_COMMAND} -C benchmark -L benchmark)
 ENDIF(BUILD_BENCHMARKS)
 
 # Add a special "wave" target including all modules

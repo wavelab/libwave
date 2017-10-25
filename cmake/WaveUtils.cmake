@@ -56,6 +56,13 @@ FUNCTION(WAVE_ADD_BENCHMARK NAME)
     # Put the executable in the benchmarks/ directory
     SET_TARGET_PROPERTIES(${NAME} PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/benchmarks)
+
+    # Add a ctest that will not be run by default.
+    # To run it the command `ctest -C benchmark -L benchmark` must be used.
+    # (Setting -C excludes it from the default set, and setting -L excludes the
+    # default tests from it). Note the target `benchmark` runs this command.
+    ADD_TEST(NAME ${NAME} COMMAND ${NAME} CONFIGURATIONS benchmark)
+    SET_TESTS_PROPERTIES(${NAME} PROPERTIES LABELS benchmark)
 ENDFUNCTION(WAVE_ADD_BENCHMARK)
 
 # wave_include_directories: Set a module's include paths so they are usable
