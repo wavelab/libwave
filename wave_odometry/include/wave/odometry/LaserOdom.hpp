@@ -80,7 +80,7 @@ struct LaserOdomParams {
     unlong key_radius = 5;        // minimum number of points between keypoints on the same laser ring
     float map_density = 0.01;     // Minimum l2squared spacing of features kept for odometry
     double azimuth_tol = 0.04;    // Minimum azimuth difference between correspondences
-    uint16_t TTL = 10;            // Maximum life of feature in local map with no correspondences
+    uint16_t TTL = 1;            // Maximum life of feature in local map with no correspondences
 
     // Setting flags
     bool imposePrior = false;             // Whether to add a prior constraint on transform from the previous scan match

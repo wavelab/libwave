@@ -14,7 +14,7 @@
 namespace wave {
 
 const std::string TEST_SCAN = "data/testscan.pcd";
-const std::string TEST_SEQUENCE_DIR = "data/garage/";
+const std::string TEST_SEQUENCE_DIR = "data/sequence/";
 const int sequence_length = 80;
 
 // Fixture to load same pointcloud all the time
@@ -436,7 +436,7 @@ TEST(OdomTest, OutputTest) {
     std::vector<PointXYZIR> vec;
     uint16_t prev_enc = 0;
 
-    //odom.registerOutputFunction(dummyoutput);
+    odom.registerOutputFunction(dummyoutput);
 
     // Loop through pointclouds and send points grouped by encoder angle odom
     for (int i = 0; i < 10; i++) {

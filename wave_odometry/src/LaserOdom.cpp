@@ -722,7 +722,7 @@ bool LaserOdom::match() {
 
 //    delete[] parameters;
     ceres::LocalParameterization* se3_param = new SE3Parameterization;
-    problem.SetParameterization(this->cur_transform.getInternalMatrix().data(), se3_param);
+    problem.AddParameterBlock(this->cur_transform.getInternalMatrix().data(), 12, se3_param);
 
     ceres::Solver::Options options;  //ceres problem destructor apparently destructs quite a bit, so need to instantiate
     // options struct every time :(
@@ -748,7 +748,7 @@ bool LaserOdom::match() {
     } else if (!this->param.only_extract_features) {
         ceres::Solver::Summary summary;
         ceres::Solve(options, &problem, &summary);
-        LOG_INFO("%s", summary.FullReport().c_str());
+        //LOG_INFO("%s", summary.FullReport().c_str());
         ceres::Covariance covariance(covar_options);
         covariance.Compute(this->covariance_blocks, &problem);
         covariance.GetCovarianceBlock(this->cur_transform.getInternalMatrix().data(), this->cur_transform.getInternalMatrix().data(), this->covar);
