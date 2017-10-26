@@ -35,7 +35,7 @@ template <typename T>
 struct measurement_container {
     // First, define which members of the Measurement object are used as keys
     // Specify that the time key corresponds to the time_point member
-    struct time_key : member<T, TimeType, &T::time_point> {};
+    struct time_key : member<T, decltype(T::time_point), &T::time_point> {};
     // Specify that the sensor key corresponds to the sensor_id member
     struct sensor_key : member<T, decltype(T::sensor_id), &T::sensor_id> {};
 
@@ -70,8 +70,8 @@ struct measurement_container {
 
     // Define a view indexed by time, for complex searches
     struct const_time_index
-      : indexed_by<ordered_unique<member<T, const TimeType, &T::time_point>>> {
-    };
+      : indexed_by<ordered_unique<
+          member<T, const decltype(T::time_point), &T::time_point>>> {};
     using time_view = boost::multi_index_container<const T *, const_time_index>;
 };
 }  // namespace internal

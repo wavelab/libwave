@@ -1,20 +1,19 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8.3)
 PROJECT(wave_kinematics)
 
-FIND_PACKAGE(Eigen3 REQUIRED)
-
-# INCLUDES
-INCLUDE_DIRECTORIES(${EIGEN3_INCLUDE_DIR})
-
-#LIBRARY
-ADD_LIBRARY(
-    wave_kinematics
-    STATIC
+WAVE_ADD_LIBRARY(${PROJECT_NAME}
     src/gimbal.cpp
     src/pose.cpp
     src/quadrotor.cpp
-    src/two_wheel.cpp
-)
+    src/two_wheel.cpp)
+
+# Use these headers when building, and make clients use them
+WAVE_INCLUDE_DIRECTORIES(${PROJECT_NAME} PUBLIC include)
+
+# Depend on these modules and external libraries, and make clients use them
+TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC
+    wave::utils
+    wave::controls
+    Eigen3::Eigen)
 
 # UNIT TESTS
 WAVE_ADD_TEST(
@@ -24,9 +23,4 @@ WAVE_ADD_TEST(
     tests/quadrotor_test.cpp
     tests/two_wheel_test.cpp
 )
-TARGET_LINK_LIBRARIES(
-    ${PROJECT_NAME}_tests
-    ${PROJECT_NAME}
-    wave_controls
-    wave_utils
-)
+TARGET_LINK_LIBRARIES(${PROJECT_NAME}_tests ${PROJECT_NAME})

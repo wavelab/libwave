@@ -1,4 +1,3 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8.3)
 PROJECT(wave_matching)
 
 SET(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
@@ -7,41 +6,26 @@ IF (NOT CMAKE_BUILD_TYPE)
   SET(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build" FORCE)
 endif()
 
-# PACKAGES
-FIND_PACKAGE(PCL 1.8 REQUIRED)
-FIND_PACKAGE(Eigen3 REQUIRED)
-FIND_PACKAGE(OpenCV REQUIRED)
-
-# DEFINITIONS
-ADD_DEFINITIONS(${PCL_DEFINITIONS})
-
-# INCLUDES
-INCLUDE_DIRECTORIES(SYSTEM
-    ${PCL_INCLUDE_DIRS}
-    ${EIGEN3_INCLUDE_DIR}
-    ${OpenCV_INCLUDE_DIRS})
-
-# LIBRARY DIRS
+# Pass these external library to the linker (@todo remove if possible)
 LINK_DIRECTORIES(${PCL_LIBRARY_DIRS})
 
-# LIBRARY
-SET(
-    WAVE_MATCHING_DEPS
-    yaml-cpp
-    wave_utils
-    ${OpenCV_LIBS}
-    ${PCL_LIBRARIES}
-)
-ADD_LIBRARY(
-    wave_matching
-    STATIC
+# Declare our library
+WAVE_ADD_LIBRARY(${PROJECT_NAME}
     src/gicp.cpp
     src/icp.cpp
     src/ndt.cpp
     src/groundSegmentation.cpp
     src/pointcloud_display.cpp
 )
-TARGET_LINK_LIBRARIES(wave_matching ${WAVE_MATCHING_DEPS})
+# Use these headers when building, and make clients use them
+WAVE_INCLUDE_DIRECTORIES(${PROJECT_NAME} PUBLIC include)
+
+# Depend on these modules and external libraries, and make clients use them
+TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC
+    wave::utils
+    Eigen3::Eigen
+    Boost::boost
+    PCL::PCL)
 
 # UNIT TESTS
 WAVE_ADD_TEST(
@@ -57,16 +41,9 @@ WAVE_ADD_TEST(
     tests/pointcloud_display_tests.cpp
     DISABLED  # probably requires display to work properly
 )
-TARGET_LINK_LIBRARIES(
-    ${PROJECT_NAME}_tests
-    ${PROJECT_NAME}
-    wave_utils
-)
+TARGET_LINK_LIBRARIES(${PROJECT_NAME}_tests ${PROJECT_NAME})
 
-TARGET_LINK_LIBRARIES(
-    ${PROJECT_NAME}_viz_tests
-    ${PROJECT_NAME}
-    wave_utils
-)
+TARGET_LINK_LIBRARIES(${PROJECT_NAME}_viz_tests ${PROJECT_NAME})
+
 # Copy the test data
 file(COPY tests/data tests/config DESTINATION ${PROJECT_BINARY_DIR}/tests)

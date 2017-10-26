@@ -1,19 +1,14 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8.8)
 PROJECT(wave_controls)
 
-FIND_PACKAGE(Eigen3 REQUIRED)
+WAVE_ADD_LIBRARY(${PROJECT_NAME}
+    src/pid.cpp)
 
-# SETTINGS
-INCLUDE_DIRECTORIES(${EIGEN3_INCLUDE_DIR})
+# Use these headers when building, and make clients use them
+WAVE_INCLUDE_DIRECTORIES(${PROJECT_NAME} PUBLIC include)
 
-# CONTROLS
-SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
-ADD_LIBRARY(
-    wave_controls
-    STATIC
-    src/pid.cpp
-)
-
+# Depend on these modules and external libraries, and make clients use them
+TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC
+    Eigen3::Eigen)
 
 # UNIT TESTS
 WAVE_ADD_TEST(${PROJECT_NAME}_tests tests/pid_test.cpp)
