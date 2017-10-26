@@ -1,12 +1,6 @@
 PROJECT(wave_vision)
 
-# DEPENDENCIES
-FIND_PACKAGE(OpenCV 3.2.0 REQUIRED core features2d calib3d imgproc highgui)
-
-# LIBRARY
-SET(WAVE_VISION_DEPS)
-
-ADD_LIBRARY(${PROJECT_NAME} STATIC
+WAVE_ADD_LIBRARY(${PROJECT_NAME}
     src/utils.cpp
     src/dataset/VoDataset.cpp
     src/dataset/VoTestCamera.cpp
@@ -19,17 +13,16 @@ ADD_LIBRARY(${PROJECT_NAME} STATIC
 )
 
 # Use these headers when building, and make clients use them
-TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PUBLIC include)
+WAVE_INCLUDE_DIRECTORIES(${PROJECT_NAME} PUBLIC include)
 
 # Depend on these modules and external libraries, and make clients use them
 TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC
-    wave_kinematics
-    wave_utils
-    wave_containers
+    wave::kinematics
+    wave::utils
+    wave::containers
     Eigen3::Eigen
     Boost::filesystem
-    ${OpenCV_LIBS})
-
+    opencv_core opencv_features2d opencv_calib3d opencv_imgproc opencv_highgui)
 
 # UNIT TESTS
 WAVE_ADD_TEST(${PROJECT_NAME}_tests

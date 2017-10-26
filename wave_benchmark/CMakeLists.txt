@@ -1,16 +1,16 @@
 PROJECT(wave_benchmark)
 
-ADD_LIBRARY(${PROJECT_NAME}
+WAVE_ADD_LIBRARY(${PROJECT_NAME}
     src/trajectory_compare.cpp)
 
 # Use these headers when building, and make clients use them
-TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PUBLIC include)
+WAVE_INCLUDE_DIRECTORIES(${PROJECT_NAME} PUBLIC include)
 
 # Depend on these modules and external libraries, and make clients use them
 TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC
-    wave_utils
-    wave_geometry
-    wave_containers
+    wave::utils
+    wave::geometry
+    wave::containers
     Eigen3::Eigen)
 
 # UNIT TESTS

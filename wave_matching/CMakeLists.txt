@@ -2,28 +2,25 @@ PROJECT(wave_matching)
 
 SET(CMAKE_BUILD_TYPE RELEASE)
 
-# PACKAGES
-
 # Pass these external library to the linker (@todo remove if possible)
 LINK_DIRECTORIES(${PCL_LIBRARY_DIRS})
 
 # Declare our library
-ADD_LIBRARY(${PROJECT_NAME} STATIC
+WAVE_ADD_LIBRARY(${PROJECT_NAME}
     src/gicp.cpp
     src/icp.cpp
     src/ndt.cpp
     src/pointcloud_display.cpp)
 
 # Use these headers when building, and make clients use them
-TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PUBLIC include)
+WAVE_INCLUDE_DIRECTORIES(${PROJECT_NAME} PUBLIC include)
 
 # Depend on these modules and external libraries, and make clients use them
 TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC
-    wave_utils
+    wave::utils
     Eigen3::Eigen
     Boost::boost
-    PCL)
-
+    PCL::PCL)
 
 # UNIT TESTS
 WAVE_ADD_TEST(

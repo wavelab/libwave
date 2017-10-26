@@ -51,6 +51,29 @@ Execute the following in the terminal where you want libwave to reside:
     cmake ..
     make
 
+Install libwave with `make install`. Alternatively, you can enable the
+`EXPORT_BUILD` option in CMake, which will make the libwave build directory 
+searchable by CMake without installation.
+
+
+## Use with CMake
+
+One libwave has been either installed or exported by CMake, it can be used in
+your project's `CMakeLists.txt` file as follows:
+
+    cmake_minimum_required(VERSION 3.0)
+    project(example)
+
+    find_package(wave REQUIRED)
+
+    # Add a target depending on all of libwave
+    add_executable(example example.cpp)
+    target_link_libraries(example wave::wave)
+
+    # Add a target depending on certain libwave components
+    add_executable(example2 example2.cpp)
+    target_link_libraries(example2 wave::geometry wave::containers)
+
 
 ## Documentation
 
