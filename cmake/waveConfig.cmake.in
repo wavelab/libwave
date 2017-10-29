@@ -24,11 +24,11 @@
 # This script exports a wave::<module> target for each found module of libwave.
 # The wave::wave target includes all available modules.
 #
-# For example, to link "my_target" against all available wave libraries and all
-# of their dependencies, call:
+# For example, to link "my_target" against the geometry and matching modules,
+# and all of their dependencies, call:
 #
-#     find_package(wave)
-#     target_link_libaries(my_target wave::wave)
+#     find_package(wave REQUIRED geometry matching)
+#     target_link_libaries(my_target wave::geometry wave::matching)
 #
 # Note that this command is sufficient to add all required libraries, include
 # directories, and other compile flags to the target.
