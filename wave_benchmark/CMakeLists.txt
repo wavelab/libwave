@@ -1,23 +1,15 @@
 PROJECT(wave_benchmark)
 
-SET(${PROJECT_NAME}_deps
+WAVE_ADD_MODULE(${PROJECT_NAME}
+    DEPENDS
     wave::utils
     wave::geometry
     wave::containers
-    Eigen3::Eigen)
-
-WAVE_CHECK_COMPONENT(${PROJECT_NAME} DEPENDS ${${PROJECT_NAME}_deps})
-
-WAVE_ADD_LIBRARY(${PROJECT_NAME}
+    Eigen3::Eigen
+    SOURCES
     src/trajectory_compare.cpp)
 
-# Use these headers when building, and make clients use them
-WAVE_INCLUDE_DIRECTORIES(${PROJECT_NAME} PUBLIC include)
-
-# Depend on these modules and external libraries, and make clients use them
-TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC ${PROJECT_NAME}_deps)
-
-# UNIT TESTS
+# Unit tests
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
 
 WAVE_ADD_TEST(

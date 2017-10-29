@@ -1,17 +1,11 @@
 PROJECT(wave_containers)
 
-SET(${PROJECT_NAME}_deps
+WAVE_ADD_MODULE(${PROJECT_NAME}
+    DEPENDS
     Eigen3::Eigen
     Boost::boost)
 
-WAVE_CHECK_COMPONENT(${PROJECT_NAME} DEPENDS ${${PROJECT_NAME}_deps})
-
-# Define a header-only library
-WAVE_ADD_LIBRARY(${PROJECT_NAME})
-WAVE_INCLUDE_DIRECTORIES(${PROJECT_NAME} INTERFACE include)
-TARGET_LINK_LIBRARIES(${PROJECT_NAME} INTERFACE ${PROJECT_NAME}_deps)
-
-# UNIT TESTS
+# Unit tests
 WAVE_ADD_TEST(${PROJECT_NAME}_tests
     tests/measurement_test.cpp
     tests/landmark_measurement_test.cpp)

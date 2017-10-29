@@ -1,16 +1,14 @@
 PROJECT(wave_vision)
 
-SET(${PROJECT_NAME}_deps
+WAVE_ADD_MODULE(${PROJECT_NAME}
+    DEPENDS
     wave::kinematics
     wave::utils
     wave::containers
     Eigen3::Eigen
     Boost::filesystem
-    opencv_core opencv_features2d opencv_calib3d opencv_imgproc opencv_highgui)
-
-WAVE_CHECK_COMPONENT(${PROJECT_NAME} DEPENDS ${${PROJECT_NAME}_deps})
-
-WAVE_ADD_LIBRARY(${PROJECT_NAME}
+    opencv_core opencv_features2d opencv_calib3d opencv_imgproc opencv_highgui
+    SOURCES
     src/utils.cpp
     src/dataset/VoDataset.cpp
     src/dataset/VoTestCamera.cpp
@@ -19,16 +17,9 @@ WAVE_ADD_LIBRARY(${PROJECT_NAME}
     src/descriptor/brisk_descriptor.cpp
     src/descriptor/orb_descriptor.cpp
     src/matcher/brute_force_matcher.cpp
-    src/matcher/flann_matcher.cpp
-)
+    src/matcher/flann_matcher.cpp)
 
-# Use these headers when building, and make clients use them
-WAVE_INCLUDE_DIRECTORIES(${PROJECT_NAME} PUBLIC include)
-
-# Depend on these modules and external libraries, and make clients use them
-TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC ${PROJECT_NAME}_deps)
-
-# UNIT TESTS
+# Unit tests
 WAVE_ADD_TEST(${PROJECT_NAME}_tests
               tests/detector_tests/fast_tests.cpp
               tests/detector_tests/orb_tests.cpp

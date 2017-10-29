@@ -1,26 +1,18 @@
 PROJECT(wave_utils)
 
-SET(${PROJECT_NAME}_deps
+WAVE_ADD_MODULE(${PROJECT_NAME}
+    DEPENDS
     Eigen3::Eigen
     yaml-cpp
-    opencv_core)
-
-WAVE_CHECK_COMPONENT(${PROJECT_NAME} DEPENDS ${${PROJECT_NAME}_deps})
-
-WAVE_ADD_LIBRARY(${PROJECT_NAME}
+    opencv_core
+    SOURCES
     src/config.cpp
     src/data.cpp
     src/file.cpp
     src/math.cpp
     src/time.cpp)
 
-# Use these headers when building, and make clients use them
-WAVE_INCLUDE_DIRECTORIES(${PROJECT_NAME} PUBLIC include)
-
-# Depend on these modules and external libraries, and make clients use them
-TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC ${PROJECT_NAME}_deps)
-
-# UNIT TESTS
+# Unit tests
 WAVE_ADD_TEST(
     ${PROJECT_NAME}_tests
     tests/utils/config_test.cpp

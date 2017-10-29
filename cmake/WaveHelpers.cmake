@@ -128,10 +128,10 @@ FUNCTION(WAVE_ADD_LIBRARY NAME)
 ENDFUNCTION(WAVE_ADD_LIBRARY)
 
 
-# wave_check_component: Declares an optional libwave component library, and
+# wave_check_module: Declares an optional libwave component library, and
 # returns from the script if it cannot or should not be built.
 #
-# WAVE_CHECK_COMPONENT(Name [DEPENDS target1...])
+# WAVE_CHECK_MODULE(Name [DEPENDS target1...])
 #
 # This macro is meant to be called from the CMakeLists script defining the
 # libwave component. It:
@@ -145,7 +145,7 @@ ENDFUNCTION(WAVE_ADD_LIBRARY)
 #
 # Note this is a macro (which does not have its own scope), so RETURN() exits
 # the calling script.
-MACRO(WAVE_CHECK_COMPONENT NAME)
+MACRO(WAVE_CHECK_MODULE NAME)
 
     # Define the arguments this macro accepts
     SET(options "")
@@ -172,4 +172,48 @@ MACRO(WAVE_CHECK_COMPONENT NAME)
 
     MESSAGE(STATUS "Building ${NAME}")
 
-ENDMACRO(WAVE_CHECK_COMPONENT)
+ENDMACRO(WAVE_CHECK_MODULE)
+
+# wave_add_module: Does everything needed to add a typical libwave component
+# library.
+#
+# WAVE_ADD_MODULE(Name
+#                [DEPENDS target1...]
+#                [SOURCES source1...])
+#
+# This macro does the equivalent of the following:
+#
+# WAVE_CHECK_MODULE(Name DEPENDS <depends>)
+# WAVE_ADD_LIBRARY(Name <sources>)
+# WAVE_INCLUDE_DIRECTORIES(Name PUBLIC "include")
+# TARGET_LINK_LIBRARIES(Name PUBLIC <depends>)
+#
+# If no SOURCES are given (for a header-only library) INTERFACE is used instead
+# of PUBLIC.
+MACRO(WAVE_ADD_MODULE NAME)
+
+    # Define the arguments this macro accepts
+    SET(options "")
+    SET(one_value_args "")
+    SET(multi_value_args DEPENDS SOURCES)
+    CMAKE_PARSE_ARGUMENTS(WAVE_ADD_MODULE
+        "${options}" "${one_value_args}" "${multi_value_args}" ${ARGN})
+
+    # Check if the module should be built, based on options and dependencies
+    WAVE_CHECK_MODULE(${NAME} DEPENDS ${WAVE_ADD_MODULE_DEPENDS})
+
+    IF(WAVE_ADD_MODULE_SOURCES)
+        SET(link_type PUBLIC)
+    ELSE()
+        # No sources given - header-only library
+        SET(link_type INTERFACE)
+    ENDIF()
+
+    WAVE_ADD_LIBRARY(${NAME} ${WAVE_ADD_MODULE_SOURCES})
+
+    # Use these headers when building, and make clients use them
+    WAVE_INCLUDE_DIRECTORIES(${NAME} ${link_type} "include")
+
+    # Depend on these modules and external libraries, and make clients use them
+    TARGET_LINK_LIBRARIES(${NAME} ${link_type} ${WAVE_ADD_MODULE_DEPENDS})
+ENDMACRO(WAVE_ADD_MODULE)
