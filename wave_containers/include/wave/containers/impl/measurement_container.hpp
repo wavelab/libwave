@@ -139,7 +139,9 @@ typename MeasurementContainer<T>::ValueType MeasurementContainer<T>::get(
 
     if (i_next == sensor_index.end() || i_next->sensor_id != s) {
         // Requested time is not between two measurements for this sensor
-        throw std::out_of_range("MeasurementContainer::get");
+        throw std::out_of_range{
+          "MeasurementContainer::get: "
+          "requested time is after last measurement for sensor"};
     }
 
     if (t == i_next->time_point) {
@@ -150,7 +152,9 @@ typename MeasurementContainer<T>::ValueType MeasurementContainer<T>::get(
     // If no exact match, need at least one previous measurement to interpolate
     if (i_next == sensor_index.begin() || std::prev(i_next)->sensor_id != s) {
         // Requested time is not between two measurements for this sensor
-        throw std::out_of_range("MeasurementContainer::get");
+        throw std::out_of_range{
+          "MeasurementContainer::get: "
+          "requested time is before first measurement for sensor"};
     }
 
     // Requested time is between two applicable measurements. Can interpolate.
