@@ -12,7 +12,7 @@ SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
 # CMake modules
 LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 INCLUDE(CMakePackageConfigHelpers)
-INCLUDE(cmake/WaveUtils.cmake)
+INCLUDE(cmake/WaveHelpers.cmake)
 ENABLE_TESTING()
 
 # User options

@@ -1,4 +1,4 @@
-# - Macros used in libwave
+# - Functions and macros used in libwave
 
 INCLUDE(CMakeParseArguments)
 INCLUDE(GNUInstallDirs)
