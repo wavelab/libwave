@@ -91,7 +91,7 @@ these can be activated by running the `githook_init.bash` from the root of the r
 
 ## LICENSE
 
-Copyright (c) 2017 Wavelab
+Copyright (c) 2017 Waterloo Autonomous Vehicles Laboratory (WAVELab)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
