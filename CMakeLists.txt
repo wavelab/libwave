@@ -43,8 +43,7 @@ INCLUDE(cmake/ImportBoost.cmake)
 INCLUDE(cmake/ImportPCL.cmake)
 INCLUDE(cmake/ImportKindr.cmake)
 
-
-# Download and build benchmark library, if benchmarks enabled
+# Optionally build benchmarks (requires `benchmark` package to be installed)
 IF(BUILD_BENCHMARKS)
     FIND_PACKAGE(benchmark REQUIRED)
 
