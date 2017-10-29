@@ -1,5 +1,14 @@
 PROJECT(wave_optimization)
 
+SET(${PROJECT_NAME}_deps
+    wave::utils
+    wave::kinematics
+    wave::vision
+    Eigen3::Eigen
+    ceres)
+
+WAVE_CHECK_COMPONENT(${PROJECT_NAME} DEPENDS ${${PROJECT_NAME}_deps})
+
 # PACKAGES
 FIND_PACKAGE(GTSAM) # optional for now; used only in tests (@todo)
 
@@ -11,12 +20,7 @@ WAVE_ADD_LIBRARY(${PROJECT_NAME}
 WAVE_INCLUDE_DIRECTORIES(${PROJECT_NAME} PUBLIC include)
 
 # Depend on these modules and external libraries, and make clients use them
-TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC
-    wave::utils
-    wave::kinematics
-    wave::vision
-    Eigen3::Eigen
-    ceres)
+TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC ${PROJECT_NAME}_deps)
 
 # For some reason Ceres does not have include directories in its imported
 # target. Add them explicitly to our target.

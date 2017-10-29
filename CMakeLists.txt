@@ -67,15 +67,17 @@ ADD_LIBRARY(wave INTERFACE)
 INSTALL(TARGETS wave EXPORT waveTargets)
 
 # Add each module to the project
+# Modules with missing dependencies are not built, and circular dependencies are
+# not supported. Thus modules must be listed after their dependencies, for now.
+ADD_SUBDIRECTORY(wave_utils)
+ADD_SUBDIRECTORY(wave_geometry)
+ADD_SUBDIRECTORY(wave_containers)
 ADD_SUBDIRECTORY(wave_benchmark)
 ADD_SUBDIRECTORY(wave_controls)
-ADD_SUBDIRECTORY(wave_containers)
-ADD_SUBDIRECTORY(wave_geometry)
 ADD_SUBDIRECTORY(wave_kinematics)
 ADD_SUBDIRECTORY(wave_matching)
-ADD_SUBDIRECTORY(wave_optimization)
-ADD_SUBDIRECTORY(wave_utils)
 ADD_SUBDIRECTORY(wave_vision)
+ADD_SUBDIRECTORY(wave_optimization)
 
 # gtest
 ADD_SUBDIRECTORY(deps/googletest EXCLUDE_FROM_ALL)

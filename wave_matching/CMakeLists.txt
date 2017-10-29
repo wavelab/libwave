@@ -1,5 +1,13 @@
 PROJECT(wave_matching)
 
+SET(${PROJECT_NAME}_deps
+    wave::utils
+    Eigen3::Eigen
+    Boost::boost
+    PCL::PCL)
+
+WAVE_CHECK_COMPONENT(${PROJECT_NAME} DEPENDS ${${PROJECT_NAME}_deps})
+
 SET(CMAKE_BUILD_TYPE RELEASE)
 
 # Pass these external library to the linker (@todo remove if possible)
@@ -16,11 +24,7 @@ WAVE_ADD_LIBRARY(${PROJECT_NAME}
 WAVE_INCLUDE_DIRECTORIES(${PROJECT_NAME} PUBLIC include)
 
 # Depend on these modules and external libraries, and make clients use them
-TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC
-    wave::utils
-    Eigen3::Eigen
-    Boost::boost
-    PCL::PCL)
+TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC ${PROJECT_NAME}_deps)
 
 # UNIT TESTS
 WAVE_ADD_TEST(

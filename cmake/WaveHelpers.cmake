@@ -129,3 +129,50 @@ FUNCTION(WAVE_ADD_LIBRARY NAME)
         RUNTIME  DESTINATION ${CMAKE_INSTALL_BINDIR}
         INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 ENDFUNCTION(WAVE_ADD_LIBRARY)
+
+
+# wave_check_component: Declares an optional libwave component library, and
+# returns from the script if it cannot or should not be built.
+#
+# WAVE_CHECK_COMPONENT(Name [DEPENDS target1...])
+#
+# This macro is meant to be called from the CMakeLists script defining the
+# libwave component. It:
+#  - Adds a user option BUILD_name, which is ON by default but can be disabled
+#  - Checks that each target listed after DEPENDS exists
+#
+# If the user option is disabled or one of the DEPENDS does not exist, this
+# macro returns from the calling script (returning to the top-level CMake
+# assuming it was called from a subdirectory). In either case, it prints a
+# message whether the component is being built, and the reason if not.
+#
+# Note this is a macro (which does not have its own scope), so RETURN() exits
+# the calling script.
+MACRO(WAVE_CHECK_COMPONENT NAME)
+
+    # Define the arguments this macro accepts
+    SET(options "")
+    SET(one_value_args "")
+    SET(multi_value_args "DEPENDS")
+    CMAKE_PARSE_ARGUMENTS(WAVE_COMPONENT
+        "${options}" "${one_value_args}" "${multi_value_args}" ${ARGN})
+
+    # Add a user option
+    OPTION(BUILD_${NAME} "Build the ${NAME} library" ON)
+
+    IF(NOT ${BUILD_${NAME}})
+        MESSAGE(STATUS "Not building ${NAME}: Disabled by user")
+        RETURN()
+    ENDIF()
+
+    # Check that each of the given DEPENDS (if any) exists as a target
+    FOREACH(dep IN LISTS WAVE_COMPONENT_DEPENDS)
+        IF(NOT TARGET ${dep})
+            MESSAGE(STATUS "Not building ${NAME}: Requires ${dep}")
+            RETURN()
+        ENDIF()
+    ENDFOREACH()
+
+    MESSAGE(STATUS "Building ${NAME}")
+
+ENDMACRO(WAVE_CHECK_COMPONENT)
