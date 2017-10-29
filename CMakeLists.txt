@@ -9,6 +9,15 @@ SET(CMAKE_CXX_STANDARD 11)
 SET(CMAKE_POSITION_INDEPENDENT_CODE ON)
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
 
+# Default to Release build type, otherwise some modules will be slow
+IF(NOT CMAKE_BUILD_TYPE)
+   MESSAGE(STATUS "Using 'Release' build type as CMAKE_BUILD_TYPE is not set")
+   # Set the value but keep it as an option in CMake GUI
+   SET(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
+   SET_PROPERTY(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS
+       "None" "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
+ENDIF()
+
 # CMake modules
 LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 INCLUDE(CMakePackageConfigHelpers)
