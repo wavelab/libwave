@@ -148,16 +148,14 @@ typename MeasurementContainer<T>::ValueType MeasurementContainer<T>::get(
     }
 
     // If no exact match, need at least one previous measurement to interpolate
-    const auto i_prev = std::prev(i_next);
-
-    if (i_next == sensor_index.begin() || i_prev->sensor_id != s) {
+    if (i_next == sensor_index.begin() || std::prev(i_next)->sensor_id != s) {
         // Requested time is not between two measurements for this sensor
         throw std::out_of_range("MeasurementContainer::get");
     }
 
     // Requested time is between two applicable measurements. Can interpolate.
     // Get pointer to the first element < t (since keys are unique)
-    return interpolate(*i_prev, *i_next, t);
+    return interpolate(*std::prev(i_next), *i_next, t);
 }
 
 template <typename T>
