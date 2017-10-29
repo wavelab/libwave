@@ -30,10 +30,7 @@ FUNCTION(WAVE_ADD_TEST NAME)
     SET_TARGET_PROPERTIES(${NAME} PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
 
-    IF(WAVE_ADD_TEST_DISABLED)
-        MESSAGE(WARNING "Test ${NAME} is disabled: building, but not adding it to tests")
-    ELSE()
-        MESSAGE(STATUS "Adding test ${NAME}")
+    IF(NOT WAVE_ADD_TEST_DISABLED)
         # Add the executable as a test, so it runs with "make test"
         ADD_TEST(NAME ${NAME} COMMAND ${NAME})
     ENDIF()
