@@ -9,6 +9,15 @@ SET(CMAKE_CXX_STANDARD 11)
 SET(CMAKE_POSITION_INDEPENDENT_CODE ON)
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
 
+# Default to Release build type, otherwise some modules will be slow
+IF(NOT CMAKE_BUILD_TYPE)
+   MESSAGE(STATUS "Using 'Release' build type as CMAKE_BUILD_TYPE is not set")
+   # Set the value but keep it as an option in CMake GUI
+   SET(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
+   SET_PROPERTY(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS
+       "None" "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
+ENDIF()
+
 # CMake modules
 LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 INCLUDE(CMakePackageConfigHelpers)
@@ -25,19 +34,19 @@ OPTION(BUILD_BENCHMARKS
     OFF)
 
 
-# Find common dependencies (used by multiple required modules)
+# Find all dependencies here, and ensure they have IMPORTED targets
 
 # Require Eigen 3.2.92, also called 3.3 beta-1, since it's in xenial
-FIND_PACKAGE(Eigen3 3.2.92 REQUIRED)
-FIND_PACKAGE(Boost 1.54.0 REQUIRED system filesystem)
-FIND_PACKAGE(PCL 1.8 REQUIRED
+FIND_PACKAGE(Eigen3 REQUIRED 3.2.92)
+FIND_PACKAGE(Boost 1.54.0 COMPONENTS system filesystem)
+FIND_PACKAGE(PCL 1.8 COMPONENTS
     common filters registration kdtree search io visualization)
-FIND_PACKAGE(kindr REQUIRED)
+FIND_PACKAGE(kindr)
 FIND_PACKAGE(OpenCV 3.2.0 REQUIRED core features2d calib3d imgproc highgui)
 FIND_PACKAGE(yaml-cpp REQUIRED)
-FIND_PACKAGE(Ceres REQUIRED)
+FIND_PACKAGE(Ceres)
 
-# Where dependencies do not provide imported targets, define them
+# Where dependencies do not provide IMPORTED targets, define them
 INCLUDE(cmake/ImportEigen3.cmake)
 INCLUDE(cmake/ImportBoost.cmake)
 INCLUDE(cmake/ImportPCL.cmake)
@@ -67,15 +76,17 @@ ADD_LIBRARY(wave INTERFACE)
 INSTALL(TARGETS wave EXPORT waveTargets)
 
 # Add each module to the project
+# Modules with missing dependencies are not built, and circular dependencies are
+# not supported. Thus modules must be listed after their dependencies, for now.
+ADD_SUBDIRECTORY(wave_utils)
+ADD_SUBDIRECTORY(wave_geometry)
+ADD_SUBDIRECTORY(wave_containers)
 ADD_SUBDIRECTORY(wave_benchmark)
 ADD_SUBDIRECTORY(wave_controls)
-ADD_SUBDIRECTORY(wave_containers)
-ADD_SUBDIRECTORY(wave_geometry)
 ADD_SUBDIRECTORY(wave_kinematics)
 ADD_SUBDIRECTORY(wave_matching)
-ADD_SUBDIRECTORY(wave_optimization)
-ADD_SUBDIRECTORY(wave_utils)
 ADD_SUBDIRECTORY(wave_vision)
+ADD_SUBDIRECTORY(wave_optimization)
 
 # gtest
 ADD_SUBDIRECTORY(deps/googletest EXCLUDE_FROM_ALL)

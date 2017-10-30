@@ -1,0 +1,15 @@
+<package format="2">
+  <name>libwave</name>
+  <version>0.1.0</version>
+  <description>libwave</description>
+
+  <maintainer email="chutsu@gmail.com">Chris Choi</maintainer>
+  <maintainer email="lkoppel@uwaterloo.ca">Leo Koppel</maintainer>
+  <license>MIT</license>
+
+  <!-- This file lets catkin build this non-catkin package-->
+  <buildtool_depend>catkin</buildtool_depend>
+  <export>
+    <build_type>cmake</build_type>
+  </export>
+</package>
