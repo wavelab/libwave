@@ -62,8 +62,8 @@ FUNCTION(WAVE_ADD_BENCHMARK NAME)
     SET_TESTS_PROPERTIES(${NAME} PROPERTIES LABELS benchmark)
 ENDFUNCTION(WAVE_ADD_BENCHMARK)
 
-# wave_include_directories: Set a module's include paths so they are usable
-# from both the build and install tree
+# wave_include_directories: Set a module's public include paths so they are
+# usable from both the build and install tree
 #
 # WAVE_INCLUDE_DIRECTORIES(TARGET <INTERFACE|PUBLIC> dir1 [dir2...])
 #
@@ -78,6 +78,7 @@ FUNCTION(WAVE_INCLUDE_DIRECTORIES TARGET MODE)
         TARGET_INCLUDE_DIRECTORIES(${TARGET} ${MODE}
             $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/${path}>
             $<INSTALL_INTERFACE:${path}>)
+        INSTALL(DIRECTORY ${path} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
     ENDFOREACH()
 ENDFUNCTION(WAVE_INCLUDE_DIRECTORIES)
 
@@ -125,6 +126,9 @@ FUNCTION(WAVE_ADD_LIBRARY NAME)
         LIBRARY  DESTINATION ${CMAKE_INSTALL_LIBDIR}
         RUNTIME  DESTINATION ${CMAKE_INSTALL_BINDIR}
         INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+    # Note INCLUDES DESTINATION does not actually install anything; it only sets
+    # paths on the exported targets. Due to this quirk we also call INSTALL in
+    # WAVE_INCLUDE_DIRECTORIES.
 ENDFUNCTION(WAVE_ADD_LIBRARY)
 
 
