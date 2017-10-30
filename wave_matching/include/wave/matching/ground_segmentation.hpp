@@ -5,6 +5,8 @@
  *
  * Gaussian Process Ground Segmentation
  *
+ * Based on approach in https://link.springer.com/article/10.1007/s10846-013-9889-4
+ *
  */
 
 #ifndef WAVE_GROUNDSEGMENTATION_HPP
