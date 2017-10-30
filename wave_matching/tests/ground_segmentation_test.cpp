@@ -45,15 +45,14 @@ TEST(ground_segmentation, how_to_use) {
       new pcl::FieldComparison<pcl::PointXYZ>(
         "x", pcl::ComparisonOps::LT, -3)));
     x_cond->addComparison(pcl::FieldComparison<pcl::PointXYZ>::ConstPtr(
-            new pcl::FieldComparison<pcl::PointXYZ>(
-                    "x", pcl::ComparisonOps::GT, 3)));
+      new pcl::FieldComparison<pcl::PointXYZ>("x", pcl::ComparisonOps::GT, 3)));
 
     y_cond->addComparison(pcl::FieldComparison<pcl::PointXYZ>::ConstPtr(
-            new pcl::FieldComparison<pcl::PointXYZ>(
-                    "y", pcl::ComparisonOps::LT, -1.1)));
+      new pcl::FieldComparison<pcl::PointXYZ>(
+        "y", pcl::ComparisonOps::LT, -1.1)));
     y_cond->addComparison(pcl::FieldComparison<pcl::PointXYZ>::ConstPtr(
-            new pcl::FieldComparison<pcl::PointXYZ>(
-                    "y", pcl::ComparisonOps::GT, 1.1)));
+      new pcl::FieldComparison<pcl::PointXYZ>(
+        "y", pcl::ComparisonOps::GT, 1.1)));
 
     total_cond->addCondition(x_cond);
     total_cond->addCondition(y_cond);
