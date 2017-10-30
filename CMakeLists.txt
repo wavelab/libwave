@@ -37,13 +37,13 @@ OPTION(BUILD_BENCHMARKS
 # Find all dependencies here, and ensure they have IMPORTED targets
 
 # Require Eigen 3.2.92, also called 3.3 beta-1, since it's in xenial
-FIND_PACKAGE(Eigen3 3.2.92)
+FIND_PACKAGE(Eigen3 REQUIRED 3.2.92)
 FIND_PACKAGE(Boost 1.54.0 COMPONENTS system filesystem)
 FIND_PACKAGE(PCL 1.8 COMPONENTS
     common filters registration kdtree search io visualization)
 FIND_PACKAGE(kindr)
-FIND_PACKAGE(OpenCV 3.2.0 COMPONENTS core features2d calib3d imgproc highgui)
-FIND_PACKAGE(yaml-cpp)
+FIND_PACKAGE(OpenCV 3.2.0 REQUIRED core features2d calib3d imgproc highgui)
+FIND_PACKAGE(yaml-cpp REQUIRED)
 FIND_PACKAGE(Ceres)
 
 # Where dependencies do not provide IMPORTED targets, define them
