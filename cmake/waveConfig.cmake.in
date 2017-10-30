@@ -24,11 +24,11 @@
 # This script exports a wave::<module> target for each found module of libwave.
 # The wave::wave target includes all available modules.
 #
-# For example, to link "my_target" against all available wave libraries and all
-# of their dependencies, call:
+# For example, to link "my_target" against the geometry and matching modules,
+# and all of their dependencies, call:
 #
-#     find_package(wave)
-#     target_link_libaries(my_target wave::wave)
+#     find_package(wave REQUIRED geometry matching)
+#     target_link_libaries(my_target wave::geometry wave::matching)
 #
 # Note that this command is sufficient to add all required libraries, include
 # directories, and other compile flags to the target.
@@ -42,22 +42,16 @@
 
 @PACKAGE_INIT@
 
-INCLUDE(CMakeFindDependencyMacro)
-
 # Prints a failure message and exits, setting WAVE_FOUND=FALSE
 # Arguments are printed at the end of the message.
 MACRO(WAVE_FAIL)
     # Check variables set by find_package() depending on its QUIET and REQUIRED
     # options, and print a different type of message accordingly
-    IF(wave_FIND_QUIETLY)
-        SET(msg_mode STATUS)
-    ELSEIF(wave_FIND_REQUIRED)
-        SET(msg_mode FATAL_ERROR)
-    ELSE()
-        SET(msg_mode SEND_ERROR)
+    IF(wave_FIND_REQUIRED)
+        MESSAGE(FATAL_ERROR "Failed to find libwave: " ${ARGN})
+    ELSEIF(NOT wave_FIND_QUIETLY)
+        MESSAGE(WARNING "Failed to find libwave: " ${ARGN})
     ENDIF()
-
-    MESSAGE(${msg_mode} "Failed to find libwave: " ${ARGN})
 
     # Tell FIND_PACKAGE that this package should be considered "not found"
     SET(wave_FOUND FALSE)
@@ -67,38 +61,40 @@ MACRO(WAVE_FAIL)
     RETURN()
 ENDMACRO(WAVE_FAIL)
 
-# Checks if a dependency was found. Prints a message, and if not found, fails.
-MACRO(WAVE_CHECK_DEP_FOUND DEP)
-    STRING(TOUPPER "${DEP}" udep)
-    IF(${DEP}_FOUND OR ${udep}_FOUND)
-        IF(NOT wave_FIND_QUIETLY)
-            MESSAGE(STATUS "Found required libwave dependency: "
-                "${DEP} ${${DEP}_VERSION}")
-        ENDIF()
+# Checks if a target and all its INTERFACE_LINK_LIBRARIES exist, and sets VAR
+# with the result. If MESSAGE_MODE is given, prints that type of message for
+# each nonexistent dep (unless in QUIET mode).
+FUNCTION(WAVE_CHECK_DEPS VAR TARGET MESSAGE_MODE)
+    SET(${VAR} TRUE PARENT_SCOPE)
+    IF(NOT TARGET ${TARGET})
+        SET(${VAR} FALSE PARENT_SCOPE)
     ELSE()
-        WAVE_FAIL("Missing required libwave dependency: ${DEP}")
+        GET_TARGET_PROPERTY(link_libraries ${TARGET} INTERFACE_LINK_LIBRARIES)
+        FOREACH(lib IN LISTS link_libraries)
+            IF(NOT TARGET ${lib})
+                SET(${VAR} FALSE)
+                IF(MESSAGE_MODE AND NOT wave_FIND_QUIETLY)
+                    MESSAGE(${MESSAGE_MODE}
+                            "Missing ${lib}, required for ${TARGET}")
+                ENDIF()
+            ENDIF()
+        ENDFOREACH()
     ENDIF()
-ENDMACRO(WAVE_CHECK_DEP_FOUND)
+ENDFUNCTION(WAVE_CHECK_DEPS)
 
 SET(WAVE_VERSION @WAVE_PACKAGE_VERSION@)
 SET_AND_CHECK(WAVE_EXTRA_CMAKE_DIR
     "${CMAKE_CURRENT_LIST_DIR}/@WAVE_EXTRA_CMAKE_DIR@")
 
-# Find dependencies used by wave targets
-FIND_DEPENDENCY(Eigen3 3.2.92)
-WAVE_CHECK_DEP_FOUND(Eigen3)
-FIND_DEPENDENCY(Boost 1.54.0)
-WAVE_CHECK_DEP_FOUND(Boost)
-FIND_DEPENDENCY(PCL 1.8)
-WAVE_CHECK_DEP_FOUND(PCL)
-FIND_DEPENDENCY(kindr)
-WAVE_CHECK_DEP_FOUND(kindr)
-FIND_DEPENDENCY(OpenCV 3.2.0)
-WAVE_CHECK_DEP_FOUND(OpenCV)
-FIND_DEPENDENCY(yaml-cpp)
-WAVE_CHECK_DEP_FOUND(yaml-cpp)
-FIND_DEPENDENCY(Ceres)
-WAVE_CHECK_DEP_FOUND(Ceres)
+# Find dependencies which *may* be used by wave targets
+# These are not REQUIRED here, but are checked later for each libwave component
+FIND_PACKAGE(Eigen3 3.2.92 QUIET)
+FIND_PACKAGE(Boost 1.54.0 QUIET)
+FIND_PACKAGE(PCL 1.8 QUIET)
+FIND_PACKAGE(kindr QUIET)
+FIND_PACKAGE(OpenCV 3.2.0 QUIET)
+FIND_PACKAGE(yaml-cpp QUIET)
+FIND_PACKAGE(Ceres QUIET)
 
 # Where dependencies do not provide imported targets, define them
 INCLUDE(${WAVE_EXTRA_CMAKE_DIR}/ImportEigen3.cmake)
@@ -109,12 +105,39 @@ INCLUDE(${WAVE_EXTRA_CMAKE_DIR}/ImportKindr.cmake)
 # This file contains definitions of IMPORTED targets
 INCLUDE("${CMAKE_CURRENT_LIST_DIR}/waveTargets.cmake")
 
+# Check that for each component in waveTargets (even non-requested ones), its
+# dependencies are found. If not, print a warning in non-quiet mode (since they
+# must have been there at build time, something is up).
+GET_TARGET_PROPERTY(built_components wave::wave INTERFACE_LINK_LIBRARIES)
+MESSAGE(STATUS "built_components ${built_components}")
+SET(WAVE_FOUND_COMPONENTS "")
+FOREACH(target IN LISTS built_components)
+    WAVE_CHECK_DEPS(${target}_FOUND ${target} WARNING)
+
+    # Build up a list of found components
+    STRING(REGEX REPLACE "^.*::" "" unprefixed_name ${target})
+    LIST(APPEND WAVE_FOUND_COMPONENTS ${unprefixed_name})
+ENDFOREACH()
+
+# Check that requested components, including their dependencies, are found.
+# Fail if a REQUIRED component is not found.
+FOREACH(c IN LISTS wave_FIND_COMPONENTS)
+    IF(NOT wave::${c}_FOUND)
+        # Explictly set false, in case this component isn't in waveTargets
+        SET(wave::${c}_FOUND FALSE)
+        IF(wave_FIND_REQUIRED_${c})
+            WAVE_FAIL("wave::${c} not found")
+        ENDIF()
+    ENDIF()
+ENDFOREACH()
+
 # Everything worked out ok!
-MESSAGE(STATUS "Found libwave ${WAVE_VERSION}: ${CMAKE_CURRENT_LIST_DIR}")
+STRING(REPLACE ";" ", " WAVE_FOUND_COMPONENTS_STRING "${WAVE_FOUND_COMPONENTS}")
+MESSAGE(STATUS "Found libwave ${WAVE_VERSION}: ${CMAKE_CURRENT_LIST_DIR}"
+    " with components: ${WAVE_FOUND_COMPONENTS_STRING}")
 
 # wave_FOUND, with exact case, is the variable set and used by FIND_PACKAGE().
-# Setting it here is redundant, but is here for clarity. The second variable is
-# provided as a courtesy to users who may mistakenly (but understandably) expect
-# all-caps names.
+# Setting it here is redundant, but is done for clarity. The second variable is
+# provided only as a courtesy to users who may expect all-caps names.
 SET(wave_FOUND TRUE)
 SET(WAVE_FOUND TRUE)

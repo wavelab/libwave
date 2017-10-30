@@ -30,10 +30,7 @@ FUNCTION(WAVE_ADD_TEST NAME)
     SET_TARGET_PROPERTIES(${NAME} PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
 
-    IF(WAVE_ADD_TEST_DISABLED)
-        MESSAGE(WARNING "Test ${NAME} is disabled: building, but not adding it to tests")
-    ELSE()
-        MESSAGE(STATUS "Adding test ${NAME}")
+    IF(NOT WAVE_ADD_TEST_DISABLED)
         # Add the executable as a test, so it runs with "make test"
         ADD_TEST(NAME ${NAME} COMMAND ${NAME})
     ENDIF()
@@ -65,8 +62,8 @@ FUNCTION(WAVE_ADD_BENCHMARK NAME)
     SET_TESTS_PROPERTIES(${NAME} PROPERTIES LABELS benchmark)
 ENDFUNCTION(WAVE_ADD_BENCHMARK)
 
-# wave_include_directories: Set a module's include paths so they are usable
-# from both the build and install tree
+# wave_include_directories: Set a module's public include paths so they are
+# usable from both the build and install tree
 #
 # WAVE_INCLUDE_DIRECTORIES(TARGET <INTERFACE|PUBLIC> dir1 [dir2...])
 #
@@ -81,6 +78,7 @@ FUNCTION(WAVE_INCLUDE_DIRECTORIES TARGET MODE)
         TARGET_INCLUDE_DIRECTORIES(${TARGET} ${MODE}
             $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/${path}>
             $<INSTALL_INTERFACE:${path}>)
+        INSTALL(DIRECTORY ${path} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
     ENDFOREACH()
 ENDFUNCTION(WAVE_INCLUDE_DIRECTORIES)
 
@@ -128,4 +126,98 @@ FUNCTION(WAVE_ADD_LIBRARY NAME)
         LIBRARY  DESTINATION ${CMAKE_INSTALL_LIBDIR}
         RUNTIME  DESTINATION ${CMAKE_INSTALL_BINDIR}
         INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+    # Note INCLUDES DESTINATION does not actually install anything; it only sets
+    # paths on the exported targets. Due to this quirk we also call INSTALL in
+    # WAVE_INCLUDE_DIRECTORIES.
 ENDFUNCTION(WAVE_ADD_LIBRARY)
+
+
+# wave_check_module: Declares an optional libwave component library, and
+# returns from the script if it cannot or should not be built.
+#
+# WAVE_CHECK_MODULE(Name [DEPENDS target1...])
+#
+# This macro is meant to be called from the CMakeLists script defining the
+# libwave component. It:
+#  - Adds a user option BUILD_name, which is ON by default but can be disabled
+#  - Checks that each target listed after DEPENDS exists
+#
+# If the user option is disabled or one of the DEPENDS does not exist, this
+# macro returns from the calling script (returning to the top-level CMake
+# assuming it was called from a subdirectory). In either case, it prints a
+# message whether the component is being built, and the reason if not.
+#
+# Note this is a macro (which does not have its own scope), so RETURN() exits
+# the calling script.
+MACRO(WAVE_CHECK_MODULE NAME)
+
+    # Define the arguments this macro accepts
+    SET(options "")
+    SET(one_value_args "")
+    SET(multi_value_args "DEPENDS")
+    CMAKE_PARSE_ARGUMENTS(WAVE_COMPONENT
+        "${options}" "${one_value_args}" "${multi_value_args}" ${ARGN})
+
+    # Add a user option
+    OPTION(BUILD_${NAME} "Build the ${NAME} library" ON)
+
+    IF(NOT ${BUILD_${NAME}})
+        MESSAGE(STATUS "Not building ${NAME}: Disabled by user")
+        RETURN()
+    ENDIF()
+
+    # Check that each of the given DEPENDS (if any) exists as a target
+    FOREACH(dep IN LISTS WAVE_COMPONENT_DEPENDS)
+        IF(NOT TARGET ${dep})
+            MESSAGE(STATUS "Not building ${NAME}: Requires ${dep}")
+            RETURN()
+        ENDIF()
+    ENDFOREACH()
+
+    MESSAGE(STATUS "Building ${NAME}")
+
+ENDMACRO(WAVE_CHECK_MODULE)
+
+# wave_add_module: Does everything needed to add a typical libwave component
+# library.
+#
+# WAVE_ADD_MODULE(Name
+#                [DEPENDS target1...]
+#                [SOURCES source1...])
+#
+# This macro does the equivalent of the following:
+#
+# WAVE_CHECK_MODULE(Name DEPENDS <depends>)
+# WAVE_ADD_LIBRARY(Name <sources>)
+# WAVE_INCLUDE_DIRECTORIES(Name PUBLIC "include")
+# TARGET_LINK_LIBRARIES(Name PUBLIC <depends>)
+#
+# If no SOURCES are given (for a header-only library) INTERFACE is used instead
+# of PUBLIC.
+MACRO(WAVE_ADD_MODULE NAME)
+
+    # Define the arguments this macro accepts
+    SET(options "")
+    SET(one_value_args "")
+    SET(multi_value_args DEPENDS SOURCES)
+    CMAKE_PARSE_ARGUMENTS(WAVE_ADD_MODULE
+        "${options}" "${one_value_args}" "${multi_value_args}" ${ARGN})
+
+    # Check if the module should be built, based on options and dependencies
+    WAVE_CHECK_MODULE(${NAME} DEPENDS ${WAVE_ADD_MODULE_DEPENDS})
+
+    IF(WAVE_ADD_MODULE_SOURCES)
+        SET(link_type PUBLIC)
+    ELSE()
+        # No sources given - header-only library
+        SET(link_type INTERFACE)
+    ENDIF()
+
+    WAVE_ADD_LIBRARY(${NAME} ${WAVE_ADD_MODULE_SOURCES})
+
+    # Use these headers when building, and make clients use them
+    WAVE_INCLUDE_DIRECTORIES(${NAME} ${link_type} "include")
+
+    # Depend on these modules and external libraries, and make clients use them
+    TARGET_LINK_LIBRARIES(${NAME} ${link_type} ${WAVE_ADD_MODULE_DEPENDS})
+ENDMACRO(WAVE_ADD_MODULE)

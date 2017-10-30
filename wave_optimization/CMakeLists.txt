@@ -1,28 +1,20 @@
 PROJECT(wave_optimization)
 
-# PACKAGES
-FIND_PACKAGE(GTSAM) # optional for now; used only in tests (@todo)
-
-WAVE_ADD_LIBRARY(${PROJECT_NAME}
-    src/ceres/ba.cpp
-    src/ceres/ceres_examples.cpp)
-
-# Use these headers when building, and make clients use them
-WAVE_INCLUDE_DIRECTORIES(${PROJECT_NAME} PUBLIC include)
-
-# Depend on these modules and external libraries, and make clients use them
-TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC
+WAVE_ADD_MODULE(${PROJECT_NAME} DEPENDS
     wave::utils
     wave::kinematics
     wave::vision
     Eigen3::Eigen
-    ceres)
+    ceres
+    SOURCES
+    src/ceres/ba.cpp
+    src/ceres/ceres_examples.cpp)
 
 # For some reason Ceres does not have include directories in its imported
 # target. Add them explicitly to our target.
 TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} SYSTEM PUBLIC ${CERES_INCLUDE_DIRS})
 
-# UNIT TESTS
+# Unit tests
 WAVE_ADD_TEST(${PROJECT_NAME}_tests
              tests/ceres/ba_test.cpp
              tests/ceres/ceres_examples_test.cpp)

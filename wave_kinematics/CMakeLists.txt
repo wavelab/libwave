@@ -1,21 +1,17 @@
 PROJECT(wave_kinematics)
 
-WAVE_ADD_LIBRARY(${PROJECT_NAME}
+WAVE_ADD_MODULE(${PROJECT_NAME}
+    DEPENDS
+    wave::utils
+    wave::controls
+    Eigen3::Eigen
+    SOURCES
     src/gimbal.cpp
     src/pose.cpp
     src/quadrotor.cpp
     src/two_wheel.cpp)
 
-# Use these headers when building, and make clients use them
-WAVE_INCLUDE_DIRECTORIES(${PROJECT_NAME} PUBLIC include)
-
-# Depend on these modules and external libraries, and make clients use them
-TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC
-    wave::utils
-    wave::controls
-    Eigen3::Eigen)
-
-# UNIT TESTS
+# Unit tests
 WAVE_ADD_TEST(
     ${PROJECT_NAME}_tests
     tests/gimbal_test.cpp

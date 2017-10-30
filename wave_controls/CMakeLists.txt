@@ -1,15 +1,11 @@
 PROJECT(wave_controls)
 
-WAVE_ADD_LIBRARY(${PROJECT_NAME}
+WAVE_ADD_MODULE(${PROJECT_NAME}
+    DEPENDS
+    Eigen3::Eigen
+    SOURCES
     src/pid.cpp)
 
-# Use these headers when building, and make clients use them
-WAVE_INCLUDE_DIRECTORIES(${PROJECT_NAME} PUBLIC include)
-
-# Depend on these modules and external libraries, and make clients use them
-TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC
-    Eigen3::Eigen)
-
-# UNIT TESTS
+# Unit tests
 WAVE_ADD_TEST(${PROJECT_NAME}_tests tests/pid_test.cpp)
 TARGET_LINK_LIBRARIES(${PROJECT_NAME}_tests ${PROJECT_NAME})
