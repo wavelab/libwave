@@ -126,9 +126,9 @@ BENCHMARK_TEMPLATE(BM_ContainerEmplace, MeasurementContainer<TestMeas>)
   ->Ranges({{1 << 15, 1 << 20}, {1, 10}})
   ->Complexity();
 
-BENCHMARK(BM_BaselineGet)->Range(1 << 12, 1 << 22)->Complexity();
+BENCHMARK(BM_BaselineGet)->Range(1 << 15, 1 << 22)->Complexity();
 
-BENCHMARK(BM_ContainerGet)->Range(1 << 8, 1 << 18)->Complexity();
+BENCHMARK(BM_ContainerGet)->Range(1 << 15, 1 << 22)->Complexity();
 
 }  // namespace wave
 
