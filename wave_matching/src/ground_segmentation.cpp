@@ -1,5 +1,5 @@
 #include <Eigen/Eigenvalues>
-#include <wave/matching/groundSegmentation.hpp>
+#include <wave/matching/ground_segmentation.hpp>
 #include <wave/matching/PointcloudXYZGD.hpp>
 #include <wave/utils/log.hpp>
 
@@ -9,18 +9,19 @@ bool compareSignalPoints(const signalPoint &a, const signalPoint &b) {
     return a.height < b.height;
 }
 
-groundSegmentation::groundSegmentation(GroundSegmentationParams config) {
+GroundSegmentation::GroundSegmentation(GroundSegmentationParams config) {
     this->params = config;
     this->pBG = new polarBinGrid;
     initializePolarBinGrid();
 }
 
-void groundSegmentation::initializePolarBinGrid(void) {
+void GroundSegmentation::initializePolarBinGrid(void) {
     this->pBG->aCell.resize(this->params.num_bins_a);
     for (int i = 0; i < this->params.num_bins_a; i++) {
         this->pBG->aCell[i].sigPoints.clear();
         this->pBG->aCell[i].lCell.resize(this->params.num_bins_l);
         this->pBG->aCell[i].sigPoints.resize(this->params.num_bins_l);
+        this->pBG->aCell[i].rangeHeightSignal.resize(this->params.num_bins_l);
         std::vector<signalPoint>().swap(pBG->aCell[i].sigPoints);
         for (int j = 0; j < this->params.num_bins_l; j++) {
             pBG->aCell[i].lCell[j].binPoints.clear();
@@ -44,7 +45,7 @@ void groundSegmentation::initializePolarBinGrid(void) {
     }
 }
 
-void groundSegmentation::setupGroundSegmentation(
+void GroundSegmentation::setupGroundSegmentation(
   pcl::PointCloud<pcl::PointXYZ>::Ptr inputCloud,
   pcl::PointCloud<PointXYZGD>::Ptr groundCloud,
   pcl::PointCloud<PointXYZGD>::Ptr obsCloud,
@@ -64,7 +65,7 @@ void groundSegmentation::setupGroundSegmentation(
     genPolarBinGrid(refCloud);
 }
 
-void groundSegmentation::genPolarBinGrid(
+void GroundSegmentation::genPolarBinGrid(
   pcl::PointCloud<pcl::PointXYZ>::Ptr inputCloud) {
     initializePolarBinGrid();
 
@@ -111,7 +112,7 @@ void groundSegmentation::genPolarBinGrid(
 }
 
 
-MatX groundSegmentation::genGPModel(std::vector<signalPoint> &ps1,
+MatX GroundSegmentation::genGPModel(std::vector<signalPoint> &ps1,
                                     std::vector<signalPoint> &ps2,
                                     float sig_f,
                                     float p_l) {
@@ -131,13 +132,13 @@ MatX groundSegmentation::genGPModel(std::vector<signalPoint> &ps1,
     return CMAT;
 }
 
-void groundSegmentation::segmentGround() {
+void GroundSegmentation::segmentGround() {
     for (int i = 0; i < this->params.num_bins_a; i++) {
         sectorINSAC(i);
     }
 }
 
-void groundSegmentation::sectorINSAC(int sectorIndex) {
+void GroundSegmentation::sectorINSAC(int sectorIndex) {
     if (sectorIndex >= this->params.num_bins_a) {
         return;
     }

@@ -16,7 +16,7 @@
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/registration/transforms.h>
 #include <wave/matching/PointcloudXYZGD.hpp>
-#include <wave/matching/groundSegmentationParams.hpp>
+#include <wave/matching/ground_segmentation_params.hpp>
 #include <wave/utils/math.hpp>
 
 namespace wave {
@@ -66,7 +66,7 @@ struct polarBinGrid {
  * This is a class to perform ground segmentation on pointclouds.
  * Can be a useful preprocessing step.
  */
-class groundSegmentation {
+class GroundSegmentation {
  public:
     /**
      * Collection of all configurable parameters
@@ -86,7 +86,7 @@ class groundSegmentation {
      * Constructor
      * @param config: GroundSegmentationParams settings
      */
-    groundSegmentation(GroundSegmentationParams config);
+    GroundSegmentation(GroundSegmentationParams config);
 
     /**
      * Used to give pointcloud to segmentor as well as pointers to

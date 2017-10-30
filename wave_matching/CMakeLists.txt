@@ -3,10 +3,6 @@ PROJECT(wave_matching)
 
 SET(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
 
-IF (NOT CMAKE_BUILD_TYPE)
-  SET(CMAKE_BUILD_TYPE "Release" CACHE STRING "Choose the type of build" FORCE)
-endif()
-
 # PACKAGES
 FIND_PACKAGE(PCL 1.8 REQUIRED)
 FIND_PACKAGE(Eigen3 REQUIRED)
@@ -38,9 +34,10 @@ ADD_LIBRARY(
     src/gicp.cpp
     src/icp.cpp
     src/ndt.cpp
-    src/groundSegmentation.cpp
+    src/ground_segmentation.cpp
     src/pointcloud_display.cpp
 )
+
 TARGET_LINK_LIBRARIES(wave_matching ${WAVE_MATCHING_DEPS})
 
 # UNIT TESTS
@@ -57,6 +54,12 @@ WAVE_ADD_TEST(
     tests/pointcloud_display_tests.cpp
     DISABLED  # probably requires display to work properly
 )
+
+WAVE_ADD_TEST(${PROJECT_NAME}_ground_segmentation_tests
+        tests/ground_segmentation_test.cpp
+        DISABLED  # Uses viewer to check results
+)
+
 TARGET_LINK_LIBRARIES(
     ${PROJECT_NAME}_tests
     ${PROJECT_NAME}
@@ -67,6 +70,12 @@ TARGET_LINK_LIBRARIES(
     ${PROJECT_NAME}_viz_tests
     ${PROJECT_NAME}
     wave_utils
+)
+
+TARGET_LINK_LIBRARIES(
+        ${PROJECT_NAME}_ground_segmentation_tests
+        ${PROJECT_NAME}
+        wave_utils
 )
 # Copy the test data
 file(COPY tests/data tests/config DESTINATION ${PROJECT_BINARY_DIR}/tests)
