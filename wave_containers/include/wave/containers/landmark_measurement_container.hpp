@@ -5,13 +5,9 @@
 #ifndef WAVE_CONTAINERS_LANDMARK_MEASUREMENT_CONTAINER_HPP
 #define WAVE_CONTAINERS_LANDMARK_MEASUREMENT_CONTAINER_HPP
 
-#include <chrono>
-
 namespace wave {
 /** @addtogroup containers
  *  @{ */
-
-using TimeType = std::chrono::steady_clock::time_point;
 
 /** Internal implementation details - for developers only */
 namespace internal {
@@ -27,10 +23,12 @@ struct landmark_container;
  * template is designed to be used here.
  *
  * However, any class can be used that has the following public members:
- *   - `time_point` (of type \c wave::TimeType)
- *   - `sensor_id` (any type sortable by \c std::less)
- *   - `landmark_id` (any type sortable by \c std::less)
+ *   - `time_point` (any sortable type)
+ *   - `sensor_id` (any sortable type)
+ *   - `landmark_id` (any sortable type)
  *   - `value` (any type)
+ *
+ * A type is sortable if it can be compared by `std::less`.
  */
 template <typename T>
 class LandmarkMeasurementContainer {
@@ -40,7 +38,9 @@ class LandmarkMeasurementContainer {
     /** Alias for the template parameter, giving the type of measurement stored
      * in this container */
     using MeasurementType = T;
-    /** Alias for the measurement's value.
+    /** Alias for the measurement's time type */
+    using TimeType = decltype(MeasurementType::time_point);
+    /** Alias for the measurement's value type.
      * Note this does *not* correspond to a typical container's value_type. */
     using ValueType = decltype(MeasurementType::value);
     /** Alias for the type of the sensor id */

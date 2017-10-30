@@ -1,4 +1,3 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8.3)
 PROJECT(wave_matching)
 
 SET(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
@@ -20,25 +19,23 @@ INCLUDE_DIRECTORIES(SYSTEM
 # LIBRARY DIRS
 LINK_DIRECTORIES(${PCL_LIBRARY_DIRS})
 
-# LIBRARY
-SET(
-    WAVE_MATCHING_DEPS
-    yaml-cpp
-    wave_utils
-    ${OpenCV_LIBS}
-    ${PCL_LIBRARIES}
-)
-ADD_LIBRARY(
-    wave_matching
-    STATIC
+# Declare our library
+WAVE_ADD_LIBRARY(${PROJECT_NAME}
     src/gicp.cpp
     src/icp.cpp
     src/ndt.cpp
     src/ground_segmentation.cpp
     src/pointcloud_display.cpp
 )
+# Use these headers when building, and make clients use them
+WAVE_INCLUDE_DIRECTORIES(${PROJECT_NAME} PUBLIC include)
 
-TARGET_LINK_LIBRARIES(wave_matching ${WAVE_MATCHING_DEPS})
+# Depend on these modules and external libraries, and make clients use them
+TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC
+    wave::utils
+    Eigen3::Eigen
+    Boost::boost
+    PCL::PCL)
 
 # UNIT TESTS
 WAVE_ADD_TEST(

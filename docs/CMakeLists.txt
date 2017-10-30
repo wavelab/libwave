@@ -1,4 +1,3 @@
-cmake_minimum_required(VERSION 2.8.3)
 project(wave_docs)
 
 # DOCS_INPUT is a space-separated list of subdirectories, used for Doxygen input
@@ -26,8 +25,6 @@ if(DOXYGEN_FOUND)
         WORKING_DIRECTORY ${WAVE_SOURCE_DIR}/docs
         COMMENT "Generating API documentation with Doxygen" VERBATIM
         )
-
-
 
 endif()
 

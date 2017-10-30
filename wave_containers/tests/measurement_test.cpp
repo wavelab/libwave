@@ -136,7 +136,7 @@ class FilledMeasurementContainer : public ::testing::Test {
  protected:
     MeasurementContainer<TestMeasurement> m;
     // Define some sample input measurements
-    const TimeType t_start = std::chrono::steady_clock::now();
+    const TimePoint t_start = std::chrono::steady_clock::now();
     const std::vector<double> inputs = {1.2, 10, 3.4, 25, 5.6, -7, 7.8, 0};
 
 

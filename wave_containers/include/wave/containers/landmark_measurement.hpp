@@ -6,7 +6,6 @@
 #define WAVE_CONTAINERS_LANDMARK_MEASUREMENT_HPP
 
 #include <chrono>
-
 #include "wave/utils/math.hpp"
 
 namespace wave {
@@ -19,7 +18,7 @@ namespace wave {
  */
 using ImageNum = std::size_t;
 using LandmarkId = std::size_t;
-using TimeType = std::chrono::steady_clock::time_point;
+using TimePoint = std::chrono::steady_clock::time_point;
 
 /** Storage type for a landmark measurement as a 2D position.
  *
@@ -39,13 +38,13 @@ using TimeType = std::chrono::steady_clock::time_point;
  */
 template <typename SensorIdType>
 struct LandmarkMeasurement {
-    TimeType time_point;
+    TimePoint time_point;
     SensorIdType sensor_id;
     LandmarkId landmark_id;
     ImageNum image;
     Vec2 value;
 
-    LandmarkMeasurement(const TimeType &t,
+    LandmarkMeasurement(const TimePoint &t,
                         const SensorIdType &s,
                         const LandmarkId &id,
                         const ImageNum &img,
