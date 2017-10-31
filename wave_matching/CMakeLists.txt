@@ -13,22 +13,21 @@ WAVE_ADD_MODULE(${PROJECT_NAME}
     src/pointcloud_display.cpp)
 
 # Unit tests
-WAVE_ADD_TEST(
-    ${PROJECT_NAME}_tests
-    tests/icp_tests.cpp
-    tests/ndt_tests.cpp
-    tests/gicp_tests.cpp
-    tests/multi_matcher_tests.cpp
-)
+IF(BUILD_TESTING)
+    WAVE_ADD_TEST(${PROJECT_NAME}_tests
+        tests/icp_tests.cpp
+        tests/ndt_tests.cpp
+        tests/gicp_tests.cpp
+        tests/multi_matcher_tests.cpp)
 
-WAVE_ADD_TEST(
-    ${PROJECT_NAME}_viz_tests
-    tests/pointcloud_display_tests.cpp
-    DISABLED  # probably requires display to work properly
-)
-TARGET_LINK_LIBRARIES(${PROJECT_NAME}_tests ${PROJECT_NAME})
+    WAVE_ADD_TEST(${PROJECT_NAME}_viz_tests
+        tests/pointcloud_display_tests.cpp
+        DISABLED)  # probably requires display to work properly
 
-TARGET_LINK_LIBRARIES(${PROJECT_NAME}_viz_tests ${PROJECT_NAME})
+    TARGET_LINK_LIBRARIES(${PROJECT_NAME}_tests ${PROJECT_NAME})
 
-# Copy the test data
-file(COPY tests/data tests/config DESTINATION ${PROJECT_BINARY_DIR}/tests)
+    TARGET_LINK_LIBRARIES(${PROJECT_NAME}_viz_tests ${PROJECT_NAME})
+
+    # Copy the test data
+    file(COPY tests/data tests/config DESTINATION ${PROJECT_BINARY_DIR}/tests)
+ENDIF(BUILD_TESTING)
