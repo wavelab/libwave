@@ -181,4 +181,160 @@ class ConfigParser {
 /** @} group utils */
 }  // namespace wave
 
+
+namespace YAML {
+
+/** Custom conversion functions for YAML -> Eigen matrix
+ *
+ * @note We require the yaml node to have three nested keys in order to parse a
+ * matrix. They are `rows`, `cols` and `data`.
+ *
+ * For example:
+ * ```yaml
+ * some_matrix:
+ *   rows: 3
+ *   cols: 3
+ *   data: [1.1, 2.2, 3.3,
+ *          4.4, 5.5, 6.6,
+ *          7.7, 8.8, 9.9]
+ * ```
+ *
+ */
+template <typename Scalar, int Rows, int Cols>
+struct convert<Eigen::Matrix<Scalar, Rows, Cols>> {
+    static Node encode(const Eigen::Matrix<Scalar, Rows, Cols> &) {
+        throw std::logic_error("Writing matrix to yaml not implemented");
+    }
+
+    /** Convert YAML node to Eigen Matrix
+     *
+     * @throws YAML::InvalidNode if nested keys not found
+     * @returns true if conversion successful
+     */
+    static bool decode(const Node &node,
+                       Eigen::Matrix<Scalar, Rows, Cols> &out) {
+        int rows = node["rows"].as<int>();
+        int cols = node["cols"].as<int>();
+        const auto &data = node["data"];
+
+        // Check `rows` and `cols` values
+        if ((rows != Rows && Rows != Eigen::Dynamic) ||
+            (cols != Cols && Cols != Eigen::Dynamic)) {
+            return false;
+        }
+
+        // Check data node is a list of the right length
+        std::size_t expected_size = rows * cols;
+        if (!data.IsSequence() || data.size() != expected_size) {
+            return false;
+        }
+
+        // Copy it to destination
+        // In case it's dynamic, resize (no effect on fixed)
+        out.resize(rows, cols);
+        for (int i = 0, index = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                out(i, j) = data[index++].as<double>();
+            }
+        }
+        return true;
+    }
+};
+
+/** Custom conversion functions for YAML -> Eigen vector
+ *
+ * For example:
+ * ```yaml
+ * some_vector: [1.1, 2.2, 3.3]
+ * ```
+ */
+template <typename Scalar, int Rows>
+struct convert<Eigen::Matrix<Scalar, Rows, 1>> {
+    static Node encode(const Eigen::Matrix<Scalar, Rows, 1> &) {
+        throw std::logic_error("Writing vector to yaml not implemented");
+    }
+
+    /** Convert YAML node to Eigen Matrix
+     * @returns true if conversion successful
+     */
+    static bool decode(const Node &node, Eigen::Matrix<Scalar, Rows, 1> &out) {
+        int rows = node.size();
+
+        // Check data node is a list of the right length
+        if (!node.IsSequence()) {
+            return false;
+        }
+        // For fixed-size destination, yaml list must match
+        if (rows != Rows && Rows != Eigen::Dynamic) {
+            return false;
+        }
+
+        // In case it's dynamic, resize (no effect on fixed)
+        out.resize(rows);
+
+        // Copy it to destination
+        for (int i = 0, index = 0; i < rows; i++) {
+            out(i) = node[index++].as<double>();
+        }
+        return true;
+    }
+};
+
+/** Custom conversion functions for YAML -> cv::Mat
+ *
+ * @note We require the yaml node to have three nested keys in order to parse a
+ * matrix. They are `rows`, `cols` and `data`.
+ *
+ * For example:
+ * ```yaml
+ * some_matrix:
+ *   rows: 3
+ *   cols: 3
+ *   data: [1.1, 2.2, 3.3,
+ *          4.4, 5.5, 6.6,
+ *          7.7, 8.8, 9.9]
+ * ```
+ *
+
+ */
+template <>
+struct convert<cv::Mat> {
+    static Node encode(const cv::Mat &) {
+        throw std::logic_error("Writing matrix to yaml not implemented");
+    }
+
+    /** Convert YAML node to cv matrix
+     *
+     * @throws YAML::InvalidNode if nested keys not found
+     * @returns true if conversion successful
+     */
+    static bool decode(const Node &node, cv::Mat &out) {
+        int rows = node["rows"].as<int>();
+        int cols = node["cols"].as<int>();
+        const auto &data = node["data"];
+
+        // Check `rows` and `cols` values
+        if (rows <= 0 || cols <= 0) {
+            return false;
+        }
+
+        // Check data node is a list of the right length
+        std::size_t expected_size = rows * cols;
+        if (!data.IsSequence() || data.size() != expected_size) {
+            return false;
+        }
+
+        // Copy it to destination
+        out = cv::Mat{rows, cols, CV_64F};
+        for (int i = 0, index = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                out.at<double>(i, j) = node["data"][index++].as<double>();
+            }
+        }
+        return true;
+    }
+};
+
+}  // namespace YAML
+
 #endif  // WAVE_UTILS_CONFIG_HPP

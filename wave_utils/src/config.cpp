@@ -70,7 +70,7 @@ int ConfigParser::loadParam(const ConfigParamBase &param) {
     // Attempt to parse
     try {
         param.load(node);
-    } catch (const YAML::BadConversion &e) {
+    } catch (const YAML::RepresentationException &e) {
         // The convert() function for the value type returned false
         return -4;
     }

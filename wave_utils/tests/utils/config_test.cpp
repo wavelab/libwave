@@ -2,7 +2,7 @@
 #include "wave/utils/data.hpp"
 #include "wave/utils/config.hpp"
 
-#define TEST_CONFIG "tests/data/config.yaml"
+const auto TEST_CONFIG = "tests/data/config.yaml";
 
 
 TEST(Utils_config_ConfigParser, constructor) {
@@ -166,6 +166,7 @@ TEST(Utils_config_ConfigParser, loadVector) {
     wave::Vec4 vec4;
     wave::VecX vecx;
     wave::ConfigParser parser;
+    int res;
 
     // setup
     parser.root = YAML::LoadFile(TEST_CONFIG);
@@ -173,22 +174,26 @@ TEST(Utils_config_ConfigParser, loadVector) {
 
     // VECTOR 2
     wave::ConfigParam<wave::Vec2> vec2_param{"vector2", &vec2};
-    parser.loadParam(vec2_param);
+    res = parser.loadParam(vec2_param);
+
+    EXPECT_EQ(0, res);
     ASSERT_FLOAT_EQ(1.1, vec2(0));
     ASSERT_FLOAT_EQ(2.2, vec2(1));
 
     // VECTOR 3
     wave::ConfigParam<wave::Vec3> vec3_param{"vector3", &vec3};
-    parser.loadParam(vec3_param);
+    res = parser.loadParam(vec3_param);
 
+    EXPECT_EQ(0, res);
     ASSERT_FLOAT_EQ(1.1, vec3(0));
     ASSERT_FLOAT_EQ(2.2, vec3(1));
     ASSERT_FLOAT_EQ(3.3, vec3(2));
 
     // VECTOR 4
     wave::ConfigParam<wave::Vec4> vec4_param{"vector4", &vec4};
-    parser.loadParam(vec4_param);
+    res = parser.loadParam(vec4_param);
 
+    EXPECT_EQ(0, res);
     ASSERT_FLOAT_EQ(1.1, vec4(0));
     ASSERT_FLOAT_EQ(2.2, vec4(1));
     ASSERT_FLOAT_EQ(3.3, vec4(2));
@@ -196,7 +201,9 @@ TEST(Utils_config_ConfigParser, loadVector) {
 
     // VECTOR X
     wave::ConfigParam<wave::VecX> vecx_param{"vector", &vecx};
-    parser.loadParam(vecx_param);
+    res = parser.loadParam(vecx_param);
+
+    EXPECT_EQ(0, res);
     for (int i = 0; i < 9; i++) {
         ASSERT_FLOAT_EQ((i + 1) * 1.1, vecx(i));
     }
