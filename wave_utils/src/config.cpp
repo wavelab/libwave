@@ -7,7 +7,6 @@ ConfigParser::ConfigParser(void) {
     this->config_loaded = false;
 }
 
-
 int ConfigParser::getYamlNode(std::string key, YAML::Node &node) {
     std::string element;
     std::istringstream iss(key);
@@ -103,3 +102,88 @@ int ConfigParser::load(std::string config_file) {
 }
 
 }  // namespace wave
+
+
+namespace YAML {
+
+template <typename Scalar, int Rows, int Cols>
+bool convert<Eigen::Matrix<Scalar, Rows, Cols>>::decode(
+  const Node &node, Eigen::Matrix<Scalar, Rows, Cols> &out) {
+    int rows = node["rows"].as<int>();
+    int cols = node["cols"].as<int>();
+    const auto &data = node["data"];
+
+    // Check `rows` and `cols` values
+    if ((rows != Rows && Rows != Eigen::Dynamic) ||
+        (cols != Cols && Cols != Eigen::Dynamic)) {
+        return false;
+    }
+
+    // Check data node is a list of the right length
+    std::size_t expected_size = rows * cols;
+    if (!data.IsSequence() || data.size() != expected_size) {
+        return false;
+    }
+
+    // Copy it to destination
+    // In case it's dynamic, resize (no effect on fixed)
+    out.resize(rows, cols);
+    for (int i = 0, index = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+            out(i, j) = data[index++].as<double>();
+        }
+    }
+    return true;
+}
+
+template <typename Scalar, int Rows>
+bool convert<Eigen::Matrix<Scalar, Rows, 1>>::decode(
+  const Node &node, Eigen::Matrix<Scalar, Rows, 1> &out) {
+    int rows = node.size();
+
+    // Check data node is a list of the right length
+    if (!node.IsSequence()) {
+        return false;
+    }
+    // For fixed-size destination, yaml list must match
+    if (rows != Rows && Rows != Eigen::Dynamic) {
+        return false;
+    }
+
+    // In case it's dynamic, resize (no effect on fixed)
+    out.resize(rows);
+
+    // Copy it to destination
+    for (int i = 0, index = 0; i < rows; i++) {
+        out(i) = node[index++].as<double>();
+    }
+    return true;
+}
+
+bool convert<cv::Mat>::decode(const Node &node, cv::Mat &out) {
+    int rows = node["rows"].as<int>();
+    int cols = node["cols"].as<int>();
+    const auto &data = node["data"];
+
+    // Check `rows` and `cols` values
+    if (rows <= 0 || cols <= 0) {
+        return false;
+    }
+
+    // Check data node is a list of the right length
+    std::size_t expected_size = rows * cols;
+    if (!data.IsSequence() || data.size() != expected_size) {
+        return false;
+    }
+
+    // Copy it to destination
+    out = cv::Mat{rows, cols, CV_64F};
+    for (int i = 0, index = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+            out.at<double>(i, j) = node["data"][index++].as<double>();
+        }
+    }
+    return true;
+}
+
+}  // namespace YAML

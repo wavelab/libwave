@@ -199,46 +199,21 @@ namespace YAML {
  *          7.7, 8.8, 9.9]
  * ```
  *
+ * Conversions for the following types are included in of wave_utils:
+ * - wave::Mat2
+ * - wave::Mat3
+ * - wave::Mat4
+ * - wave::MatX
  */
 template <typename Scalar, int Rows, int Cols>
 struct convert<Eigen::Matrix<Scalar, Rows, Cols>> {
-    static Node encode(const Eigen::Matrix<Scalar, Rows, Cols> &) {
-        throw std::logic_error("Writing matrix to yaml not implemented");
-    }
-
     /** Convert YAML node to Eigen Matrix
      *
      * @throws YAML::InvalidNode if nested keys not found
      * @returns true if conversion successful
      */
     static bool decode(const Node &node,
-                       Eigen::Matrix<Scalar, Rows, Cols> &out) {
-        int rows = node["rows"].as<int>();
-        int cols = node["cols"].as<int>();
-        const auto &data = node["data"];
-
-        // Check `rows` and `cols` values
-        if ((rows != Rows && Rows != Eigen::Dynamic) ||
-            (cols != Cols && Cols != Eigen::Dynamic)) {
-            return false;
-        }
-
-        // Check data node is a list of the right length
-        std::size_t expected_size = rows * cols;
-        if (!data.IsSequence() || data.size() != expected_size) {
-            return false;
-        }
-
-        // Copy it to destination
-        // In case it's dynamic, resize (no effect on fixed)
-        out.resize(rows, cols);
-        for (int i = 0, index = 0; i < rows; i++) {
-            for (int j = 0; j < cols; j++) {
-                out(i, j) = data[index++].as<double>();
-            }
-        }
-        return true;
-    }
+                       Eigen::Matrix<Scalar, Rows, Cols> &out);
 };
 
 /** Custom conversion functions for YAML -> Eigen vector
@@ -247,40 +222,34 @@ struct convert<Eigen::Matrix<Scalar, Rows, Cols>> {
  * ```yaml
  * some_vector: [1.1, 2.2, 3.3]
  * ```
+ *
+ * Conversions for the following types are compiled as part of wave_utils:
+ * - wave::Vec2
+ * - wave::Vec3
+ * - wave::Vec4
+ * - wave::VecX
  */
 template <typename Scalar, int Rows>
 struct convert<Eigen::Matrix<Scalar, Rows, 1>> {
-    static Node encode(const Eigen::Matrix<Scalar, Rows, 1> &) {
-        throw std::logic_error("Writing vector to yaml not implemented");
-    }
-
     /** Convert YAML node to Eigen Matrix
      * @returns true if conversion successful
      */
-    static bool decode(const Node &node, Eigen::Matrix<Scalar, Rows, 1> &out) {
-        int rows = node.size();
-
-        // Check data node is a list of the right length
-        if (!node.IsSequence()) {
-            return false;
-        }
-        // For fixed-size destination, yaml list must match
-        if (rows != Rows && Rows != Eigen::Dynamic) {
-            return false;
-        }
-
-        // In case it's dynamic, resize (no effect on fixed)
-        out.resize(rows);
-
-        // Copy it to destination
-        for (int i = 0, index = 0; i < rows; i++) {
-            out(i) = node[index++].as<double>();
-        }
-        return true;
-    }
+    static bool decode(const Node &node, Eigen::Matrix<Scalar, Rows, 1> &out);
 };
 
-/** Custom conversion functions for YAML -> cv::Mat
+// Explicit instantiations: include these in the compiled wave_utils library
+// Since the function definition is in a .cpp file, other types will not work
+template struct convert<wave::Mat2>;
+template struct convert<wave::Mat3>;
+template struct convert<wave::Mat4>;
+template struct convert<wave::MatX>;
+template struct convert<wave::Vec2>;
+template struct convert<wave::Vec3>;
+template struct convert<wave::Vec4>;
+template struct convert<wave::VecX>;
+
+
+/** Custom conversion for YAML -> cv::Mat
  *
  * @note We require the yaml node to have three nested keys in order to parse a
  * matrix. They are `rows`, `cols` and `data`.
@@ -299,40 +268,12 @@ struct convert<Eigen::Matrix<Scalar, Rows, 1>> {
  */
 template <>
 struct convert<cv::Mat> {
-    static Node encode(const cv::Mat &) {
-        throw std::logic_error("Writing matrix to yaml not implemented");
-    }
-
     /** Convert YAML node to cv matrix
      *
      * @throws YAML::InvalidNode if nested keys not found
      * @returns true if conversion successful
      */
-    static bool decode(const Node &node, cv::Mat &out) {
-        int rows = node["rows"].as<int>();
-        int cols = node["cols"].as<int>();
-        const auto &data = node["data"];
-
-        // Check `rows` and `cols` values
-        if (rows <= 0 || cols <= 0) {
-            return false;
-        }
-
-        // Check data node is a list of the right length
-        std::size_t expected_size = rows * cols;
-        if (!data.IsSequence() || data.size() != expected_size) {
-            return false;
-        }
-
-        // Copy it to destination
-        out = cv::Mat{rows, cols, CV_64F};
-        for (int i = 0, index = 0; i < rows; i++) {
-            for (int j = 0; j < cols; j++) {
-                out.at<double>(i, j) = node["data"][index++].as<double>();
-            }
-        }
-        return true;
-    }
+    static bool decode(const Node &node, cv::Mat &out);
 };
 
 }  // namespace YAML
