@@ -10,10 +10,10 @@ WAVE_ADD_MODULE(${PROJECT_NAME}
     src/trajectory_compare.cpp)
 
 # Unit tests
-SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
+IF(BUILD_TESTING)
+    SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
 
-WAVE_ADD_TEST(
-    ${PROJECT_NAME}_tests
-    tests/benchmark/benchmark_tests.cpp
-)
-TARGET_LINK_LIBRARIES(${PROJECT_NAME}_tests ${PROJECT_NAME})
+    WAVE_ADD_TEST(${PROJECT_NAME}_tests
+        tests/benchmark/benchmark_tests.cpp)
+    TARGET_LINK_LIBRARIES(${PROJECT_NAME}_tests ${PROJECT_NAME})
+ENDIF(BUILD_TESTING)

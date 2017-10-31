@@ -15,31 +15,33 @@ WAVE_ADD_MODULE(${PROJECT_NAME} DEPENDS
 TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} SYSTEM PUBLIC ${CERES_INCLUDE_DIRS})
 
 # Unit tests
-WAVE_ADD_TEST(${PROJECT_NAME}_tests
-             tests/ceres/ba_test.cpp
-             tests/ceres/ceres_examples_test.cpp)
+IF(BUILD_TESTING)
+    WAVE_ADD_TEST(${PROJECT_NAME}_tests
+                 tests/ceres/ba_test.cpp
+                 tests/ceres/ceres_examples_test.cpp)
 
-TARGET_LINK_LIBRARIES(${PROJECT_NAME}_tests ${PROJECT_NAME})
+    TARGET_LINK_LIBRARIES(${PROJECT_NAME}_tests ${PROJECT_NAME})
 
-IF(GTSAM_FOUND)
-    # Set for consistency, since GTSAM's config file does not
-    SET(GTSAM_LIBRARIES gtsam)
-    INCLUDE_DIRECTORIES(${GTSAM_INCLUDE_DIR})
+    IF(GTSAM_FOUND)
+        # Set for consistency, since GTSAM's config file does not
+        SET(GTSAM_LIBRARIES gtsam)
+        INCLUDE_DIRECTORIES(${GTSAM_INCLUDE_DIR})
 
-    WAVE_ADD_TEST(vo_gtsam_offline_example
-        tests/gtsam/gtsam_offline_example.cpp)
-    TARGET_LINK_LIBRARIES(vo_gtsam_offline_example
-        ${PROJECT_NAME}
-        wave::vision
-        ${GTSAM_LIBRARIES})
+        WAVE_ADD_TEST(vo_gtsam_offline_example
+            tests/gtsam/gtsam_offline_example.cpp)
+        TARGET_LINK_LIBRARIES(vo_gtsam_offline_example
+            ${PROJECT_NAME}
+            wave::vision
+            ${GTSAM_LIBRARIES})
 
-    WAVE_ADD_TEST(vo_gtsam_offline_kitti_example
-        tests/gtsam/gtsam_offline_kitti_example.cpp)
-    TARGET_LINK_LIBRARIES(vo_gtsam_offline_kitti_example
-        ${PROJECT_NAME}
-        wave::vision
-        ${GTSAM_LIBRARIES})
-ENDIF()
+        WAVE_ADD_TEST(vo_gtsam_offline_kitti_example
+            tests/gtsam/gtsam_offline_kitti_example.cpp)
+        TARGET_LINK_LIBRARIES(vo_gtsam_offline_kitti_example
+            ${PROJECT_NAME}
+            wave::vision
+            ${GTSAM_LIBRARIES})
+    ENDIF()
 
-# COPY TEST DATA
-FILE(COPY tests/data DESTINATION ${PROJECT_BINARY_DIR}/tests)
+    # COPY TEST DATA
+    FILE(COPY tests/data DESTINATION ${PROJECT_BINARY_DIR}/tests)
+ENDIF(BUILD_TESTING)
