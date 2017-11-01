@@ -30,6 +30,9 @@ FUNCTION(WAVE_ADD_TEST NAME)
     SET_TARGET_PROPERTIES(${NAME} PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
 
+    # Build this test on "make tests"
+    ADD_DEPENDENCIES(tests ${NAME})
+
     IF(NOT WAVE_ADD_TEST_DISABLED)
         # Add the executable as a test, so it runs with "make test"
         ADD_TEST(NAME ${NAME} COMMAND ${NAME})

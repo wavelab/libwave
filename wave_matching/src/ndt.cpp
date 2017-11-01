@@ -10,7 +10,7 @@ NDTMatcherParams::NDTMatcherParams(const std::string &config_path) {
     parser.addParam("t_eps", &this->t_eps);
     parser.addParam("res", &this->res);
 
-    if (parser.load(config_path) != 0) {
+    if (parser.load(config_path) != ConfigStatus::OK) {
         ConfigException config_exception;
         throw config_exception;
     }

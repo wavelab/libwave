@@ -53,7 +53,7 @@ struct GroundSegmentationParams {
         parser.addParam("robotheight", &robot_height);
         parser.addParam("seeding_maxrange", &max_seed_range);
         parser.addParam("seeding_maxheight", &max_seed_height);
-        if (parser.load(config_path) != 0) {
+        if (parser.load(config_path) != ConfigStatus::OK) {
             LOG_ERROR("Unable to load config");
         }
     }

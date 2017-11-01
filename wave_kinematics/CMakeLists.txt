@@ -12,11 +12,11 @@ WAVE_ADD_MODULE(${PROJECT_NAME}
     src/two_wheel.cpp)
 
 # Unit tests
-WAVE_ADD_TEST(
-    ${PROJECT_NAME}_tests
-    tests/gimbal_test.cpp
-    tests/pose_test.cpp
-    tests/quadrotor_test.cpp
-    tests/two_wheel_test.cpp
-)
-TARGET_LINK_LIBRARIES(${PROJECT_NAME}_tests ${PROJECT_NAME})
+IF(BUILD_TESTING)
+    WAVE_ADD_TEST(${PROJECT_NAME}_tests
+        tests/gimbal_test.cpp
+        tests/pose_test.cpp
+        tests/quadrotor_test.cpp
+        tests/two_wheel_test.cpp)
+    TARGET_LINK_LIBRARIES(${PROJECT_NAME}_tests ${PROJECT_NAME})
+ENDIF(BUILD_TESTING)

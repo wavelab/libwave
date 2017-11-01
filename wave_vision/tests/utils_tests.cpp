@@ -3,8 +3,9 @@
 
 namespace wave {
 
-const std::string IMG_FOLDER_PATH =
-  "tests/data/tracker_test_sequence/frame0057.jpg";
+const auto IMG_FOLDER_PATH = "tests/data/tracker_test_sequence/frame0057.jpg";
+
+const auto TEST_CONFIG_FILE = "tests/data/config.yaml";
 
 TEST(VisionCommon, focal_length) {
     double f = focal_length(60, 640);
@@ -195,6 +196,41 @@ TEST_F(PinholeProjectTest, projectKnownPoint) {
     auto res = pinholeProject(this->K, R_GC, G_p_GC, G_p_GF, meas);
     EXPECT_TRUE(res);
     EXPECT_PRED2(VectorsNear, expected, meas);
+}
+
+TEST(VisionYamlConfig, loadCvMatParam) {
+    wave::ConfigParser parser;
+    cv::Mat cvmat;
+
+    // setup
+    parser.root = YAML::LoadFile(TEST_CONFIG_FILE);
+    parser.config_loaded = true;
+
+    // CV MATRIX
+    wave::ConfigParam<cv::Mat> cvmat_param{"test_matrix", &cvmat};
+    parser.loadParam(cvmat_param);
+
+
+    for (int i = 0, index = 0; i < 3; i++) {
+        for (int j = 0; j < 4; j++) {
+            ASSERT_FLOAT_EQ((index + 1) * 1.1, cvmat.at<double>(i, j));
+            index++;
+        }
+    }
+}
+
+TEST(VisionYamlConfig, cvMatWithConfigParser) {
+    cv::Mat cvmat;
+    wave::ConfigParser parser;
+    parser.addParam("test_matrix", &cvmat);
+    parser.load(TEST_CONFIG_FILE);
+
+    for (int i = 0, index = 0; i < 3; i++) {
+        for (int j = 0; j < 4; j++) {
+            ASSERT_FLOAT_EQ((index + 1) * 1.1, cvmat.at<double>(i, j));
+            index++;
+        }
+    }
 }
 
 }  // namespace wave

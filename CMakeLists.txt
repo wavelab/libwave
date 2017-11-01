@@ -29,6 +29,7 @@ OPTION(BUILD_SHARED_LIBS "Build shared instead of static libraries" OFF)
 OPTION(EXPORT_BUILD
  "Add this build directory to CMake's user package registry.\
  Allows the package to be found without install." OFF)
+OPTION(BUILD_TESTING "Build tests" ON)
 OPTION(BUILD_BENCHMARKS
     "Build benchmarks for some components. Requires google benchmark package."
     OFF)
@@ -37,20 +38,31 @@ OPTION(BUILD_BENCHMARKS
 # Find all dependencies here, and ensure they have IMPORTED targets
 
 # Require Eigen 3.2.92, also called 3.3 beta-1, since it's in xenial
-FIND_PACKAGE(Eigen3 REQUIRED 3.2.92)
+FIND_PACKAGE(Eigen3 3.2.92 REQUIRED)
 FIND_PACKAGE(Boost 1.54.0 COMPONENTS system filesystem)
 FIND_PACKAGE(PCL 1.8 COMPONENTS
     common filters registration kdtree search io visualization)
 FIND_PACKAGE(kindr)
-FIND_PACKAGE(OpenCV 3.2.0 REQUIRED core features2d calib3d imgproc highgui)
+FIND_PACKAGE(OpenCV 3.2.0 COMPONENTS core features2d calib3d imgproc highgui)
 FIND_PACKAGE(yaml-cpp REQUIRED)
-FIND_PACKAGE(Ceres)
+FIND_PACKAGE(Ceres 1.12)
 
 # Where dependencies do not provide IMPORTED targets, define them
 INCLUDE(cmake/ImportEigen3.cmake)
 INCLUDE(cmake/ImportBoost.cmake)
 INCLUDE(cmake/ImportPCL.cmake)
 INCLUDE(cmake/ImportKindr.cmake)
+
+# Optionally build tests. `gtest` is included with this project
+IF(BUILD_TESTING)
+    # Build gtest from source
+    ADD_SUBDIRECTORY(deps/googletest EXCLUDE_FROM_ALL)
+    INCLUDE_DIRECTORIES(${gtest_SOURCE_DIR}/include/ ${gtest_SOURCE_DIR})
+
+    # This target is used to build all tests, without running them
+    ADD_CUSTOM_TARGET(tests)
+    MESSAGE(STATUS "Building tests")
+ENDIF(BUILD_TESTING)
 
 # Optionally build benchmarks (requires `benchmark` package to be installed)
 IF(BUILD_BENCHMARKS)
@@ -68,6 +80,7 @@ IF(BUILD_BENCHMARKS)
     # It runs all tests labelled "benchmark" by WAVE_ADD_BENCHMARK helper.
     ADD_CUSTOM_TARGET(benchmark
          COMMAND ${CMAKE_CTEST_COMMAND} -C benchmark -L benchmark)
+    MESSAGE(STATUS "Building benchmarks")
 ENDIF(BUILD_BENCHMARKS)
 
 # Add a special "wave" target including all modules
@@ -87,10 +100,6 @@ ADD_SUBDIRECTORY(wave_kinematics)
 ADD_SUBDIRECTORY(wave_matching)
 ADD_SUBDIRECTORY(wave_vision)
 ADD_SUBDIRECTORY(wave_optimization)
-
-# gtest
-ADD_SUBDIRECTORY(deps/googletest EXCLUDE_FROM_ALL)
-INCLUDE_DIRECTORIES(${gtest_SOURCE_DIR}/include/ ${gtest_SOURCE_DIR})
 
 # Documentation
 SET(WAVE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})

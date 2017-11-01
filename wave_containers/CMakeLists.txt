@@ -6,11 +6,13 @@ WAVE_ADD_MODULE(${PROJECT_NAME}
     Boost::boost)
 
 # Unit tests
-WAVE_ADD_TEST(${PROJECT_NAME}_tests
-    tests/measurement_test.cpp
-    tests/landmark_measurement_test.cpp)
+IF(BUILD_TESTING)
+    WAVE_ADD_TEST(${PROJECT_NAME}_tests
+        tests/measurement_test.cpp
+        tests/landmark_measurement_test.cpp)
 
-TARGET_LINK_LIBRARIES(${PROJECT_NAME}_tests ${PROJECT_NAME})
+    TARGET_LINK_LIBRARIES(${PROJECT_NAME}_tests ${PROJECT_NAME})
+ENDIF(BUILD_TESTING)
 
 IF(BUILD_BENCHMARKS)
     WAVE_ADD_BENCHMARK(${PROJECT_NAME}_benchmark
