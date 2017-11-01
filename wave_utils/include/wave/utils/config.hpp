@@ -130,23 +130,24 @@ class ConfigParser {
      */
     template <typename T>
     void addParam(std::string key, T *out, bool optional = false) {
-        auto ptr = std::make_shared<ConfigParam<T>>(key, out, optional);
+        auto ptr =
+          std::make_shared<ConfigParam<T>>(std::move(key), out, optional);
         this->params.push_back(ptr);
     }
 
     /** Get yaml node given yaml `key`. The result is assigned to `node` if
      * `key` matches anything in the config file, else `node` is set to `NULL`.
      */
-    ConfigStatus getYamlNode(std::string key, YAML::Node &node);
+    ConfigStatus getYamlNode(const std::string &key, YAML::Node &node);
 
     /** Check whether a key is present in the yaml file */
-    ConfigStatus checkKey(std::string key, bool optional);
+    ConfigStatus checkKey(const std::string &key, bool optional);
 
     /** Load yaml param primitive, array, vector or matrix. */
     ConfigStatus loadParam(const ConfigParamBase &param);
 
     /** Load yaml file at `config_file`. */
-    ConfigStatus load(std::string config_file);
+    ConfigStatus load(const std::string &config_file);
 };
 
 /** @} group utils */

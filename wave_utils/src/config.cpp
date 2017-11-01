@@ -7,7 +7,8 @@ ConfigParser::ConfigParser(void) {
     this->config_loaded = false;
 }
 
-ConfigStatus ConfigParser::getYamlNode(std::string key, YAML::Node &node) {
+ConfigStatus ConfigParser::getYamlNode(const std::string &key,
+                                       YAML::Node &node) {
     std::string element;
     std::istringstream iss(key);
     std::vector<YAML::Node> traversal;
@@ -34,7 +35,7 @@ ConfigStatus ConfigParser::getYamlNode(std::string key, YAML::Node &node) {
     return ConfigStatus::OK;
 }
 
-ConfigStatus ConfigParser::checkKey(std::string key, bool optional) {
+ConfigStatus ConfigParser::checkKey(const std::string &key, bool optional) {
     YAML::Node node;
 
     // pre-check
@@ -76,7 +77,7 @@ ConfigStatus ConfigParser::loadParam(const ConfigParamBase &param) {
     return ConfigStatus::OK;
 }
 
-ConfigStatus ConfigParser::load(std::string config_file) {
+ConfigStatus ConfigParser::load(const std::string &config_file) {
     // pre-check
     if (file_exists(config_file) == false) {
         LOG_ERROR("File not found: %s", config_file.c_str());
