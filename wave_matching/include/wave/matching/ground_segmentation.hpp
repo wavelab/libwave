@@ -29,40 +29,40 @@ namespace wave {
 /**
  *  Structure to hold point data for ground model
  */
-struct signalPoint {
+struct SignalPoint {
     double range;
     double height;
-    int idx;
-    bool isGround;
+    int index;
+    bool is_ground;
 };
 
 /**
  * Structure to hold collection of points in each linear bin
  */
-struct linCell {
-    std::vector<PointXYZGD> binPoints;  // all the points
-    std::vector<PointXYZGD> obsPoints;  // just the obs points
-    std::vector<PointXYZGD> drvPoints;
-    std::vector<PointXYZGD> groundPoints;  // just the ground points
-    PointXYZGD prototypePoint;
-    int cAssigned;  // what cluster is it assigned to
-    Vec3 obsMean;   // mean of obstacle points
+struct LinCell {
+    std::vector<PointXYZGD> bin_points;  // all the points
+    std::vector<PointXYZGD> obs_points;  // just the obs points
+    std::vector<PointXYZGD> drv_points;
+    std::vector<PointXYZGD> ground_points;  // just the ground points
+    PointXYZGD prototype_point;
+    int cluster_assigned;  // what cluster is it assigned to
+    Vec3 obs_mean;         // mean of obstacle points
 };
 
 /**
  *  Structure to hold all linear bins in that angular bin
  */
-struct angCell {
-    std::vector<signalPoint> sigPoints;  // range height signal for that sector
-    std::vector<linCell> lCell;  // the linear cells within that angle sector
-    std::vector<pcl::PointXY> rangeHeightSignal;
+struct AngCell {
+    std::vector<SignalPoint> sig_points;  // range height signal for that sector
+    std::vector<LinCell> lin_cell;  // the linear cells within that angle sector
+    std::vector<pcl::PointXY> range_height_signal;
 };
 
 /**
 *  Structure to hold all angular bins
 */
-struct polarBinGrid {
-    std::vector<angCell> aCell;
+struct PolarBinGrid {
+    std::vector<AngCell> ang_cell;
 };
 
 /**
@@ -79,11 +79,11 @@ class GroundSegmentation {
     /**
      * Data storage
      */
-    polarBinGrid *pBG;
-    pcl::PointCloud<pcl::PointXYZ>::Ptr refCloud;
-    pcl::PointCloud<PointXYZGD>::Ptr gCloud;  // ground points
-    pcl::PointCloud<PointXYZGD>::Ptr oCloud;  // obstacle points
-    pcl::PointCloud<PointXYZGD>::Ptr dCloud;  // drivable points
+    PolarBinGrid *polar_bin_grid;
+    pcl::PointCloud<pcl::PointXYZ>::Ptr ref_cloud;
+    pcl::PointCloud<PointXYZGD>::Ptr ground_cloud;  // ground points
+    pcl::PointCloud<PointXYZGD>::Ptr obs_cloud;     // obstacle points
+    pcl::PointCloud<PointXYZGD>::Ptr drv_cloud;     // drivable points
 
     /**
      * Constructor
@@ -95,22 +95,23 @@ class GroundSegmentation {
      * Used to give pointcloud to segmentor as well as pointers to
      * return segmented clouds
      *
-     * @param[in]inputCloud - Pointer of input cloud
-     * @param[out]drvCloud - pointer of cloud to place all drivable points
-     * @param[out]groundCloud - pointer of cloud to place all ground points
-     * @param[out]obsCloud - pointer of cloud to place all obstacle points
+     * @param[in]input_cloud - Pointer of input cloud
+     * @param[out]ground_cloud - pointer of cloud to place all ground points
+     * @param[out]obs_cloud - pointer of cloud to place all obstacle points
+     * @param[out]drv_cloud - pointer of cloud to place all drivable points
      */
-    void setupGroundSegmentation(pcl::PointCloud<pcl::PointXYZ>::Ptr inputCloud,
-                                 pcl::PointCloud<PointXYZGD>::Ptr groundCloud,
-                                 pcl::PointCloud<PointXYZGD>::Ptr obsCloud,
-                                 pcl::PointCloud<PointXYZGD>::Ptr drvCloud);
+    void setupGroundSegmentation(
+      pcl::PointCloud<pcl::PointXYZ>::Ptr input_cloud,
+      pcl::PointCloud<PointXYZGD>::Ptr out_ground_cloud,
+      pcl::PointCloud<PointXYZGD>::Ptr out_obs_cloud,
+      pcl::PointCloud<PointXYZGD>::Ptr out_drv_cloud);
 
     /**
      * Bins all points from the input cloud
      *
-     * @param[in] inputCloud
+     * @param[in] input_cloud
      */
-    void genPolarBinGrid(pcl::PointCloud<pcl::PointXYZ>::Ptr inputCloud);
+    void genPolarBinGrid(pcl::PointCloud<pcl::PointXYZ>::Ptr input_cloud);
 
     /**
      * Resets bin data structure
@@ -126,8 +127,8 @@ class GroundSegmentation {
      * @param[in] sig_f Kernel hyperparameter
      * @return  Gram Matrix
      */
-    MatX genGPModel(std::vector<signalPoint> &ps1,
-                    std::vector<signalPoint> &ps2,
+    MatX genGPModel(std::vector<SignalPoint> &ps1,
+                    std::vector<SignalPoint> &ps2,
                     float sig_f,
                     float p_l);
 

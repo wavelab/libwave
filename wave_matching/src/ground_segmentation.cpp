@@ -5,78 +5,83 @@
 
 namespace wave {
 
-bool compareSignalPoints(const signalPoint &a, const signalPoint &b) {
+bool compareSignalPoints(const SignalPoint &a, const SignalPoint &b) {
     return a.height < b.height;
 }
 
 GroundSegmentation::GroundSegmentation(GroundSegmentationParams config) {
     this->params = config;
-    this->pBG = new polarBinGrid;
+    this->polar_bin_grid = new PolarBinGrid;
     initializePolarBinGrid();
 }
 
 void GroundSegmentation::initializePolarBinGrid(void) {
-    this->pBG->aCell.resize(this->params.num_bins_a);
+    this->polar_bin_grid->ang_cell.resize(this->params.num_bins_a);
     for (int i = 0; i < this->params.num_bins_a; i++) {
-        this->pBG->aCell[i].sigPoints.clear();
-        this->pBG->aCell[i].lCell.resize(this->params.num_bins_l);
-        this->pBG->aCell[i].sigPoints.resize(this->params.num_bins_l);
-        this->pBG->aCell[i].rangeHeightSignal.resize(this->params.num_bins_l);
-        std::vector<signalPoint>().swap(pBG->aCell[i].sigPoints);
+        this->polar_bin_grid->ang_cell[i].sig_points.clear();
+        this->polar_bin_grid->ang_cell[i].lin_cell.resize(
+          this->params.num_bins_l);
+        this->polar_bin_grid->ang_cell[i].sig_points.resize(
+          this->params.num_bins_l);
+        this->polar_bin_grid->ang_cell[i].range_height_signal.resize(
+          this->params.num_bins_l);
+        std::vector<SignalPoint>().swap(polar_bin_grid->ang_cell[i].sig_points);
         for (int j = 0; j < this->params.num_bins_l; j++) {
-            pBG->aCell[i].lCell[j].binPoints.clear();
-            pBG->aCell[i].lCell[j].obsPoints.clear();
-            pBG->aCell[i].lCell[j].drvPoints.clear();
-            pBG->aCell[i].lCell[j].groundPoints.clear();
-            pBG->aCell[i].lCell[j].prototypePoint = PointXYZGD();
-            pBG->aCell[i].lCell[j].prototypePoint.x = NAN;
-            pBG->aCell[i].lCell[j].prototypePoint.y = NAN;
-            pBG->aCell[i].lCell[j].prototypePoint.z = NAN;
-            pBG->aCell[i].rangeHeightSignal[j].x = NAN;
-            pBG->aCell[i].rangeHeightSignal[j].y = NAN;
-            pBG->aCell[i].lCell[j].cAssigned = -1;
+            polar_bin_grid->ang_cell[i].lin_cell[j].bin_points.clear();
+            polar_bin_grid->ang_cell[i].lin_cell[j].obs_points.clear();
+            polar_bin_grid->ang_cell[i].lin_cell[j].drv_points.clear();
+            polar_bin_grid->ang_cell[i].lin_cell[j].ground_points.clear();
+            polar_bin_grid->ang_cell[i].lin_cell[j].prototype_point =
+              PointXYZGD();
+            polar_bin_grid->ang_cell[i].lin_cell[j].prototype_point.x = NAN;
+            polar_bin_grid->ang_cell[i].lin_cell[j].prototype_point.y = NAN;
+            polar_bin_grid->ang_cell[i].lin_cell[j].prototype_point.z = NAN;
+            polar_bin_grid->ang_cell[i].range_height_signal[j].x = NAN;
+            polar_bin_grid->ang_cell[i].range_height_signal[j].y = NAN;
+            polar_bin_grid->ang_cell[i].lin_cell[j].cluster_assigned = -1;
 
             // force memory deletion of std::vectors
-            std::vector<PointXYZGD>().swap(pBG->aCell[i].lCell[j].binPoints);
-            std::vector<PointXYZGD>().swap(pBG->aCell[i].lCell[j].obsPoints);
-            std::vector<PointXYZGD>().swap(pBG->aCell[i].lCell[j].drvPoints);
-            std::vector<PointXYZGD>().swap(pBG->aCell[i].lCell[j].groundPoints);
+            std::vector<PointXYZGD>().swap(
+              polar_bin_grid->ang_cell[i].lin_cell[j].bin_points);
+            std::vector<PointXYZGD>().swap(
+              polar_bin_grid->ang_cell[i].lin_cell[j].obs_points);
+            std::vector<PointXYZGD>().swap(
+              polar_bin_grid->ang_cell[i].lin_cell[j].drv_points);
+            std::vector<PointXYZGD>().swap(
+              polar_bin_grid->ang_cell[i].lin_cell[j].ground_points);
         }
     }
 }
 
 void GroundSegmentation::setupGroundSegmentation(
-  pcl::PointCloud<pcl::PointXYZ>::Ptr inputCloud,
-  pcl::PointCloud<PointXYZGD>::Ptr groundCloud,
-  pcl::PointCloud<PointXYZGD>::Ptr obsCloud,
-  pcl::PointCloud<PointXYZGD>::Ptr drvCloud) {
-    groundCloud->clear();
-    obsCloud->clear();
+  pcl::PointCloud<pcl::PointXYZ>::Ptr input_cloud,
+  pcl::PointCloud<PointXYZGD>::Ptr out_ground_cloud,
+  pcl::PointCloud<PointXYZGD>::Ptr out_obs_cloud,
+  pcl::PointCloud<PointXYZGD>::Ptr out_drv_cloud) {
+    ref_cloud = input_cloud;  // set the cloud datastructure;
+    // Save the given pointers, and clear the output clouds
+    this->obs_cloud = out_obs_cloud;
+    this->ground_cloud = out_ground_cloud;
+    this->drv_cloud = out_drv_cloud;
+    this->obs_cloud->clear();
+    this->ground_cloud->clear();
+    this->drv_cloud->clear();
 
-    refCloud = inputCloud;  // set the cloud datastructure;
-    oCloud = obsCloud;      // set obs cloud
-    gCloud = groundCloud;   // set ground cloud
-    dCloud = drvCloud;
-
-    oCloud->clear();
-    gCloud->clear();
-    dCloud->clear();
-
-    genPolarBinGrid(refCloud);
+    this->genPolarBinGrid(ref_cloud);
 }
 
 void GroundSegmentation::genPolarBinGrid(
-  pcl::PointCloud<pcl::PointXYZ>::Ptr inputCloud) {
+  pcl::PointCloud<pcl::PointXYZ>::Ptr input_cloud) {
     initializePolarBinGrid();
 
-    size_t nPts = inputCloud->size();
+    size_t num_points = input_cloud->size();
     double bsize_rad = (double) ((360.0) / this->params.num_bins_a);
     double bsize_lin = (double) this->params.rmax / this->params.num_bins_l;
-    for (size_t i = 0; i < nPts; i++) {
-        PointXYZGD curPt;
-        float px = curPt.x = inputCloud->points[i].x;
-        float py = curPt.y = inputCloud->points[i].y;
-        float pz = curPt.z = inputCloud->points[i].z;
+    for (size_t i = 0; i < num_points; i++) {
+        PointXYZGD cur_point;
+        float px = cur_point.x = input_cloud->points[i].x;
+        float py = cur_point.y = input_cloud->points[i].y;
+        float pz = cur_point.z = input_cloud->points[i].z;
 
         if (sqrt(px * px + py * py + pz * pz) < this->params.rmax) {
             double ph = (atan2(py, px)) * (180 / M_PI);  // in degrees
@@ -89,127 +94,143 @@ void GroundSegmentation::genPolarBinGrid(
               static_cast<unsigned int>(ph / bsize_rad);  // got the radial bin
 
             // get the linear bin
-            float xyDist = sqrt(px * px + py * py);
+            float xy_dist = std::sqrt(px * px + py * py);
 
             unsigned int bind_lin = static_cast<unsigned int>(
-              xyDist / bsize_lin);  // got the radial bin
+              xy_dist / bsize_lin);  // got the radial bin
 
-            pBG->aCell[bind_rad].lCell[bind_lin].binPoints.push_back(curPt);
+            this->polar_bin_grid->ang_cell[bind_rad]
+              .lin_cell[bind_lin]
+              .bin_points.push_back(cur_point);
             // add the point to the bin
             // check the protoype point
 
-            if (isnanf(pBG->aCell[bind_rad].lCell[bind_lin].prototypePoint.z) ||
-                pz < pBG->aCell[bind_rad]
-                       .lCell[bind_lin]
-                       .prototypePoint.z)  // smallest by z
+            if (isnanf(polar_bin_grid->ang_cell[bind_rad]
+                         .lin_cell[bind_lin]
+                         .prototype_point.z) ||
+                pz < polar_bin_grid->ang_cell[bind_rad]
+                       .lin_cell[bind_lin]
+                       .prototype_point.z)  // smallest by z
             {
-                pBG->aCell[bind_rad].lCell[bind_lin].prototypePoint = curPt;
-                pBG->aCell[bind_rad].rangeHeightSignal[bind_lin].x = xyDist;
-                pBG->aCell[bind_rad].rangeHeightSignal[bind_lin].y = pz;
+                this->polar_bin_grid->ang_cell[bind_rad]
+                  .lin_cell[bind_lin]
+                  .prototype_point = cur_point;
+                this->polar_bin_grid->ang_cell[bind_rad]
+                  .range_height_signal[bind_lin]
+                  .x = xy_dist;
+                this->polar_bin_grid->ang_cell[bind_rad]
+                  .range_height_signal[bind_lin]
+                  .y = pz;
             }
         }
     }
 }
 
 
-MatX GroundSegmentation::genGPModel(std::vector<signalPoint> &ps1,
-                                    std::vector<signalPoint> &ps2,
+MatX GroundSegmentation::genGPModel(std::vector<SignalPoint> &ps1,
+                                    std::vector<SignalPoint> &ps2,
                                     float sig_f,
                                     float p_l) {
     size_t nP1 = ps1.size();
     size_t nP2 = ps2.size();
 
-    MatX CMAT;
-    CMAT.resize(nP1, nP2);
+    MatX cmat;
+    cmat.resize(nP1, nP2);
     float coeff = (-1 / (2 * p_l * p_l));
 
     for (size_t i = 0; i < nP1; i++) {
         for (size_t j = 0; j < nP2; j++) {
             double diff = (ps1[i].range - ps2[j].range);
-            CMAT(i, j) = sig_f * exp(coeff * (diff * diff));
+            cmat(i, j) = sig_f * exp(coeff * (diff * diff));
         }
     }
-    return CMAT;
+    return cmat;
 }
 
 void GroundSegmentation::segmentGround() {
     for (int i = 0; i < this->params.num_bins_a; i++) {
-        sectorINSAC(i);
+        this->sectorINSAC(i);
     }
 }
 
-void GroundSegmentation::sectorINSAC(int sectorIndex) {
-    if (sectorIndex >= this->params.num_bins_a) {
+void GroundSegmentation::sectorINSAC(int sector_index) {
+    if (sector_index >= this->params.num_bins_a) {
         return;
     }
-    int numFilled = 0;
+    int num_filled = 0;
 
     // pull out the valid points from the sector
-    std::vector<signalPoint> &sigPtr = pBG->aCell[sectorIndex].sigPoints;
-    sigPtr.clear();
+    auto &sig_points = polar_bin_grid->ang_cell[sector_index].sig_points;
+    sig_points.clear();
     for (int i = 0; i < this->params.num_bins_l; i++) {
-        if (!std::isnan(pBG->aCell[sectorIndex].rangeHeightSignal[i].x) &&
-            pBG->aCell[sectorIndex].lCell[i].binPoints.size() > 5) {
+        if (!std::isnan(polar_bin_grid->ang_cell[sector_index]
+                          .range_height_signal[i]
+                          .x) &&
+            this->polar_bin_grid->ang_cell[sector_index]
+                .lin_cell[i]
+                .bin_points.size() > 5) {
             // bin has a valid point, and enough points to make a good
             // guess for a protopoint
-            signalPoint newPoint;
-            newPoint.range = pBG->aCell[sectorIndex].rangeHeightSignal[i].x;
-            newPoint.height = pBG->aCell[sectorIndex].rangeHeightSignal[i].y;
-            newPoint.idx = i;
-            sigPtr.push_back(newPoint);
-            numFilled++;
+            SignalPoint new_point;
+            new_point.range =
+              polar_bin_grid->ang_cell[sector_index].range_height_signal[i].x;
+            new_point.height =
+              polar_bin_grid->ang_cell[sector_index].range_height_signal[i].y;
+            new_point.index = i;
+            sig_points.push_back(new_point);
+            num_filled++;
         }
     }
     // get the seed points.  Select the 3 lowest points.  Sort based on height
     // values
-    sort(sigPtr.begin(), sigPtr.end(), compareSignalPoints);
+    sort(sig_points.begin(), sig_points.end(), compareSignalPoints);
 
     // now that the z points are sorted by height, take the
     // this->params.num_seed_points worth
     // as the seed
-    size_t npt =
-      sigPtr.size() < static_cast<size_t>(this->params.num_seed_points)
-        ? sigPtr.size()
+    size_t num_points =
+      sig_points.size() < static_cast<size_t>(this->params.num_seed_points)
+        ? sig_points.size()
         : static_cast<size_t>(this->params.num_seed_points);
-    std::vector<signalPoint> currentModel;
-    int ptCtr = 0;
-    int currIdx = 0;
-    bool keepGoing = true;
-    bool sufficientModel = true;
+    std::vector<SignalPoint> current_model;
+    int point_count = 0;
+    int curr_idx = 0;
+    bool keep_going = true;
+    bool sufficient_model = true;
 
     while (true) {
-        if (static_cast<size_t>(currIdx) >= sigPtr.size())  // overflow
+        if (static_cast<size_t>(curr_idx) >= sig_points.size())  // overflow
         {
             break;
         }
 
-        if (sigPtr[currIdx].range < this->params.max_seed_range &&
-            fabs(sigPtr[currIdx].height) < this->params.max_seed_height) {
+        if (sig_points[curr_idx].range < this->params.max_seed_range &&
+            fabs(sig_points[curr_idx].height) < this->params.max_seed_height) {
             // close enough to
             // robot and height
             // makese sense in
             // robot locality
 
-            sigPtr[currIdx].isGround = true;
-            currentModel.push_back(sigPtr[currIdx]);
-            sigPtr.erase(sigPtr.begin() + currIdx);
-            ptCtr++;
+            sig_points[curr_idx].is_ground = true;
+            current_model.push_back(sig_points[curr_idx]);
+            sig_points.erase(sig_points.begin() + curr_idx);
+            point_count++;
 
         } else {
-            currIdx++;
+            curr_idx++;
         }
 
-        if (static_cast<size_t>(ptCtr) >= npt)  // done
+        if (static_cast<size_t>(point_count) >= num_points)  // done
         {
             break;
         }
     }
 
     // check size
-    if (currentModel.size() < 2)  // not enough for model, all obs pts
+    if (current_model.size() < 2)  // not enough for model, all obs pts
     {
-        keepGoing = false;
-        sufficientModel = false;
+        keep_going = false;
+        sufficient_model = false;
     }
 
     // got the seedpoints, start theINSAC process
@@ -219,60 +240,61 @@ void GroundSegmentation::sectorINSAC(int sectorIndex) {
     MatX C_XsXs;
     MatX C_XXs;
 
-    if (sigPtr.size() == 0)
+    if (sig_points.size() == 0)
         // no points to insac, put the seed points in as ground
-        keepGoing = false;
+        keep_going = false;
 
     MatX temp;
     MatX f_s;
     MatX Vf_s;
-    while (keepGoing) {
+    while (keep_going) {
         // generate the covariance matrices
 
-        C_XsX =
-          genGPModel(sigPtr, currentModel, this->params.p_sf, this->params.p_l);
+        C_XsX = genGPModel(
+          sig_points, current_model, this->params.p_sf, this->params.p_l);
         C_XX = genGPModel(
-          currentModel, currentModel, this->params.p_sf, this->params.p_l);
-        C_XsXs =
-          genGPModel(sigPtr, sigPtr, this->params.p_sf, this->params.p_l);
+          current_model, current_model, this->params.p_sf, this->params.p_l);
+        C_XsXs = genGPModel(
+          sig_points, sig_points, this->params.p_sf, this->params.p_l);
         C_XXs = C_XsX.transpose();
 
         // temporary calc
-        MatX tCalc1 =
+        MatX temp_calc1 =
           C_XX + (this->params.p_sn * MatX::Identity(C_XX.rows(), C_XX.cols()));
-        MatX tCalc2 = C_XsX * tCalc1.inverse();
+        MatX temp_calc2 = C_XsX * temp_calc1.inverse();
 
         // test the points against the current model
 
-        MatX modelZ(currentModel.size(), 1);
-        for (unsigned int i = 0; i < currentModel.size(); i++) {
-            modelZ(i, 0) = currentModel[i].height;
+        MatX model_z(current_model.size(), 1);
+        for (unsigned int i = 0; i < current_model.size(); i++) {
+            model_z(i, 0) = current_model[i].height;
         }
 
-        f_s = tCalc2 * modelZ;
-        Vf_s = C_XsXs - tCalc2 * C_XXs;
+        f_s = temp_calc2 * model_z;
+        Vf_s = C_XsXs - temp_calc2 * C_XXs;
 
         if (Vf_s.rows() == 0) {
-            keepGoing = false;
+            keep_going = false;
             LOG_INFO("WARNING BREAKING LOOP: VF_s does not exist");
             continue;
         }
 
-        bool searchCandidatePoints = true;
+        bool search_candidate_points = true;
         unsigned int k = 0;
         // test for inliers using INSAC algorithm
-        int startSize = currentModel.size();  // beginning size of the model set
-        while (searchCandidatePoints) {
+        const auto start_size =
+          current_model.size();  // beginning size of the model set
+        while (search_candidate_points) {
             double vf = Vf_s(k, k);
-            double met =
-              (sigPtr[k].height - f_s(k)) / (sqrt(this->params.p_sn + vf * vf));
+            double met = (sig_points[k].height - f_s(k)) /
+                         (sqrt(this->params.p_sn + vf * vf));
 
             if (vf < this->params.p_tmodel &&
                 std::abs(met) < this->params.p_tdata) {  // we have an inlier!
                 // add to model set
-                currentModel.push_back(sigPtr[k]);
+                current_model.push_back(sig_points[k]);
                 // remove from sample set
-                sigPtr.erase(sigPtr.begin() + k);
+                sig_points.erase(sig_points.begin() + k);
 
                 // delete row from f_s
                 temp = f_s;
@@ -299,85 +321,89 @@ void GroundSegmentation::sectorINSAC(int sectorIndex) {
                 k++;
             }
 
-            if (sigPtr.size() == k) {
-                searchCandidatePoints = false;
+            if (sig_points.size() == k) {
+                search_candidate_points = false;
             }
         }
 
-        int endSize = currentModel.size();  // end size of the model set
-        if (startSize == endSize || sigPtr.size() == 0) {
-            keepGoing = false;
+        const auto end_size =
+          current_model.size();  // end size of the model set
+        if (start_size == end_size || sig_points.size() == 0) {
+            keep_going = false;
         }
     }  // end INSAC
 
     // fill in the ground and obs pointclouds
 
-    double numObs = 0;
-    Vec3 obsSum(0, 0, 0);
+    double num_obs = 0;
+    Vec3 obs_sum(0, 0, 0);
 
-    for (int i = 0; i < (int) currentModel.size(); i++) {
-        int currIdx = currentModel[i].idx;
-        linCell *curCell = &pBG->aCell[sectorIndex].lCell[currIdx];
+    for (int i = 0; i < (int) current_model.size(); i++) {
+        int currIdx = current_model[i].index;
+        auto &cur_cell =
+          this->polar_bin_grid->ang_cell[sector_index].lin_cell[currIdx];
 
         // go through all the points in this cell and assign to ground/not
         // ground
-        for (unsigned int j = 0; j < curCell->binPoints.size(); j++) {
+        for (unsigned int j = 0; j < cur_cell.bin_points.size(); j++) {
             float h =
-              std::abs(currentModel[i].height - curCell->binPoints[j].z);
+              std::abs(current_model[i].height - cur_cell.bin_points[j].z);
             if (h < this->params.p_tg)  // z heights are close
             {
-                gCloud->push_back(
-                  curCell->binPoints[j]);  // add the point to ground
-                curCell->groundPoints.push_back(curCell->binPoints[j]);
+                ground_cloud->push_back(
+                  cur_cell.bin_points[j]);  // add the point to ground
+                cur_cell.ground_points.push_back(cur_cell.bin_points[j]);
             } else {
                 // check drivability
                 if (h > this->params.robot_height) {
                     // drivable
-                    curCell->binPoints[j].drivable = 1;
+                    cur_cell.bin_points[j].drivable = 1;
                 } else {
-                    curCell->binPoints[j].drivable = 0;
-                    dCloud->push_back(curCell->binPoints[j]);  // add to obs
-                    curCell->drvPoints.push_back(curCell->binPoints[j]);
+                    cur_cell.bin_points[j].drivable = 0;
+                    drv_cloud->push_back(cur_cell.bin_points[j]);  // add to obs
+                    cur_cell.drv_points.push_back(cur_cell.bin_points[j]);
                 }
-                oCloud->push_back(curCell->binPoints[j]);  // add to obs
-                curCell->obsPoints.push_back(curCell->binPoints[j]);
-                obsSum += Vec3(curCell->binPoints[j].x,
-                               curCell->binPoints[j].y,
-                               curCell->binPoints[j].z);
-                numObs++;
+                this->obs_cloud->push_back(
+                  cur_cell.bin_points[j]);  // add to obs
+                cur_cell.obs_points.push_back(cur_cell.bin_points[j]);
+                obs_sum += Vec3(cur_cell.bin_points[j].x,
+                                cur_cell.bin_points[j].y,
+                                cur_cell.bin_points[j].z);
+                num_obs++;
             }
         }
         // mean of obs points
-        curCell->obsMean = obsSum / numObs;
+        cur_cell.obs_mean = obs_sum / num_obs;
     }
 
     // FIXME: WHY IS F_S < SIGPTR SOMETIMES?
     int i;
-    if (sufficientModel) {
+    if (sufficient_model) {
         // add all the obs points from the non ground classified pts
-        for (i = 0; i < (int) sigPtr.size(); i++) {
-            linCell *curCell = &pBG->aCell[sectorIndex].lCell[sigPtr[i].idx];
+        for (i = 0; i < (int) sig_points.size(); i++) {
+            auto &cur_cell = polar_bin_grid->ang_cell[sector_index]
+                               .lin_cell[sig_points[i].index];
 
-            for (int j = 0; j < (int) curCell->binPoints.size(); j++) {
-                float h = std::abs(curCell->binPoints[j].z - f_s(i));
+            for (int j = 0; j < (int) cur_cell.bin_points.size(); j++) {
+                float h = std::abs(cur_cell.bin_points[j].z - f_s(i));
                 // check drivability
                 if (h > this->params.robot_height) {
                     // drivable
-                    curCell->binPoints[j].drivable = 1;
+                    cur_cell.bin_points[j].drivable = 1;
                 } else {
-                    curCell->binPoints[j].drivable = 0;
-                    dCloud->push_back(curCell->binPoints[j]);  // add to obs
-                    curCell->drvPoints.push_back(curCell->binPoints[j]);
+                    cur_cell.bin_points[j].drivable = 0;
+                    drv_cloud->push_back(cur_cell.bin_points[j]);  // add to obs
+                    cur_cell.drv_points.push_back(cur_cell.bin_points[j]);
                 }
-                oCloud->push_back(curCell->binPoints[j]);  // add to obs
-                curCell->obsPoints.push_back(curCell->binPoints[j]);
-                obsSum += Vec3(curCell->binPoints[j].x,
-                               curCell->binPoints[j].y,
-                               curCell->binPoints[j].z);
-                numObs++;
+                obs_cloud->push_back(cur_cell.bin_points[j]);  // add to obs
+                cur_cell.obs_points.push_back(cur_cell.bin_points[j]);
+                obs_sum += Vec3(cur_cell.bin_points[j].x,
+                                cur_cell.bin_points[j].y,
+                                cur_cell.bin_points[j].z);
+                num_obs++;
             }
             // mean of obs points
-            curCell->obsMean = obsSum / numObs;
+            cur_cell.obs_mean = obs_sum / num_obs;
         }
     } else {
         LOG_INFO("WARNING:Insufficient Model for angular slice");
