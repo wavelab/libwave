@@ -45,7 +45,7 @@ FIND_PACKAGE(PCL 1.8 COMPONENTS
 FIND_PACKAGE(kindr)
 FIND_PACKAGE(OpenCV 3.2.0 COMPONENTS core features2d calib3d imgproc highgui)
 FIND_PACKAGE(yaml-cpp REQUIRED)
-FIND_PACKAGE(Ceres)
+FIND_PACKAGE(Ceres 1.12)
 
 # Where dependencies do not provide IMPORTED targets, define them
 INCLUDE(cmake/ImportEigen3.cmake)
