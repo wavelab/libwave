@@ -7,14 +7,14 @@ ConfigParser::ConfigParser(void) {
     this->config_loaded = false;
 }
 
-int ConfigParser::getYamlNode(std::string key, YAML::Node &node) {
+ConfigStatus ConfigParser::getYamlNode(std::string key, YAML::Node &node) {
     std::string element;
     std::istringstream iss(key);
     std::vector<YAML::Node> traversal;
 
     // pre-check
     if (this->config_loaded == false) {
-        return -1;
+        return ConfigStatus::FileError;
     }
 
     // recurse down config key
@@ -31,36 +31,35 @@ int ConfigParser::getYamlNode(std::string key, YAML::Node &node) {
     // tree/graph, to avoid this problem we store the visited YAML::Node into
     // a std::vector and return the last visited YAML::Node
 
-    return 0;
+    return ConfigStatus::OK;
 }
 
-int ConfigParser::checkKey(std::string key, bool optional) {
+ConfigStatus ConfigParser::checkKey(std::string key, bool optional) {
     YAML::Node node;
 
     // pre-check
     if (this->config_loaded == false) {
-        return -1;
+        return ConfigStatus::FileError;
     }
 
     // check key
     this->getYamlNode(key, node);
     if (!node && optional == false) {
-        LOG_ERROR("Opps [%s] missing in yaml file!", key.c_str());
-        return -2;
+        LOG_ERROR("[%s] missing in yaml file!", key.c_str());
+        return ConfigStatus::KeyError;
     } else if (!node && optional == true) {
-        return -3;
+        return ConfigStatus::MissingOptionalKey;
     }
 
-    return 0;
+    return ConfigStatus::OK;
 }
 
-int ConfigParser::loadParam(const ConfigParamBase &param) {
-    int retval;
+ConfigStatus ConfigParser::loadParam(const ConfigParamBase &param) {
     YAML::Node node;
 
     // Check that the key exists
-    retval = this->checkKey(param.key, param.optional);
-    if (retval != 0) {
+    const auto retval = this->checkKey(param.key, param.optional);
+    if (retval != ConfigStatus::OK) {
         return retval;
     }
 
@@ -71,19 +70,17 @@ int ConfigParser::loadParam(const ConfigParamBase &param) {
         param.load(node);
     } catch (const YAML::RepresentationException &e) {
         // The convert() function for the value type returned false
-        return -4;
+        return ConfigStatus::ConversionError;
     }
 
-    return 0;
+    return ConfigStatus::OK;
 }
 
-int ConfigParser::load(std::string config_file) {
-    int retval;
-
+ConfigStatus ConfigParser::load(std::string config_file) {
     // pre-check
     if (file_exists(config_file) == false) {
         LOG_ERROR("File not found: %s", config_file.c_str());
-        return 1;
+        return ConfigStatus::FileError;
     }
 
     // load and parse file
@@ -91,14 +88,13 @@ int ConfigParser::load(std::string config_file) {
     this->config_loaded = true;
 
     for (const auto &param_ptr : this->params) {
-        retval = this->loadParam(*param_ptr);
-        if (retval != 0 && retval != -3) {
-            // Error, return immediately
+        const auto retval = this->loadParam(*param_ptr);
+        if (retval != ConfigStatus::OK) {
             return retval;
         }
     }
 
-    return 0;
+    return ConfigStatus::OK;
 }
 
 }  // namespace wave

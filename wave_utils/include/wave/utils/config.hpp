@@ -25,19 +25,17 @@ namespace wave {
 /** @addtogroup utils
  *  @{ */
 
-/**
- * An enum used by `ConfigParam` to denote the yaml value type.
- *
- *  Currently we support parsing of the following data types:
- *  - **Primitives**: `bool`, `int`, `float`, `double`, `std::string`
- *  - **Arrays**: `std::vector<bool>`, `std::vector<int>`, `std::vector<float>`,
- * `std::vector<double>`, `std::vector<std::string>`
- *  - **Vectors**: `Eigen::Vector2d`, `Eigen::Vector3d`, `Eigen::Vector4d`,
- * `Eigen::VectorXd`
- *  - **Matrices**: `Eigen::Matrix2d`, `Eigen::Matrix3d`, `Eigen::Matrix4d`,
- * `Eigen::MatrixXd`
- */
-
+/** Return codes for ConfigParser methods */
+enum class ConfigStatus {
+    OK = 0,                  ///< Success
+    MissingOptionalKey = 1,  ///< key not found, but parameter is optional
+    // Note: errors are != ConfigStatus::OK
+    FileError = -1,      ///< Success
+    KeyError = -2,       ///< key not found, parameter is not optional
+    ConversionError = -3 /**< Invalid value for conversion
+                           * e.g. wrong-size list for vector, missing
+                           * key 'rows', 'cols' or 'data' (for matrix) */
+};
 
 /** Base class representing a parameter to be parsed in the yaml file */
 struct ConfigParamBase {
@@ -139,43 +137,16 @@ class ConfigParser {
     /** Get yaml node given yaml `key`. The result is assigned to `node` if
      * `key` matches anything in the config file, else `node` is set to `NULL`.
      */
-    int getYamlNode(std::string key, YAML::Node &node);
+    ConfigStatus getYamlNode(std::string key, YAML::Node &node);
 
-    /** @return a status code meaning
-      * - `0`: On success
-      * - `-1`: Config file is not loaded
-      * - `-2`: `key` not found in yaml file, parameter is not optional
-      * - `-3`: `key` not found in yaml file, parameter is optional
-      * - `-4`: Invalid value for conversion: e.g. wrong size list (for vector),
-      *   missing yaml key 'rows', 'cols' or 'data' (for matrix)
-      *
-      * @todo refactor return codes into an enum which can be documented
-      */
-    int checkKey(std::string key, bool optional);
+    /** Check whether a key is present in the yaml file */
+    ConfigStatus checkKey(std::string key, bool optional);
 
-    /** Load yaml param primitive, array, vector or matrix.
-     * @return
-     * - `0`: On success
-     * - `-1`: Config file is not loaded
-     * - `-2`: `key` not found in yaml file, parameter is not optional
-     * - `-3`: `key` not found in yaml file, parameter is optional
-     * - `-4`: Invalid value for conversion: e.g. wrong size list (for vector),
-     *   missing yaml key 'rows', 'cols' or 'data' (for matrix)
-     * - `-6`: Invalid param type
-     */
-    int loadParam(const ConfigParamBase &param);
+    /** Load yaml param primitive, array, vector or matrix. */
+    ConfigStatus loadParam(const ConfigParamBase &param);
 
-    /** Load yaml file at `config_file`.
-     * @return
-     * - `0`: On success
-     * - `1`: File not found
-     * - `-1`: Config file is not loaded
-     * - `-2`: `key` not found in yaml file
-     * - `-4`: Invalid value for conversion: e.g. wrong size list (for vector),
-     *   missing yaml key 'rows', 'cols' or 'data' (for matrix)
-     * - `-6`: Invalid param type
-     */
-    int load(std::string config_file);
+    /** Load yaml file at `config_file`. */
+    ConfigStatus load(std::string config_file);
 };
 
 /** @} group utils */
@@ -200,10 +171,10 @@ namespace YAML {
  * ```
  *
  * Conversions for the following types are included in of wave_utils:
- * - wave::Mat2
- * - wave::Mat3
- * - wave::Mat4
- * - wave::MatX
+ * - Eigen::Matrix2d
+ * - Eigen::Matrix3d
+ * - Eigen::Matrix4d
+ * - Eigen::MatrixXd
  */
 template <typename Scalar, int Rows, int Cols>
 struct convert<Eigen::Matrix<Scalar, Rows, Cols>> {
@@ -224,10 +195,10 @@ struct convert<Eigen::Matrix<Scalar, Rows, Cols>> {
  * ```
  *
  * Conversions for the following types are compiled as part of wave_utils:
- * - wave::Vec2
- * - wave::Vec3
- * - wave::Vec4
- * - wave::VecX
+ * - Eigen::Vector2d
+ * - Eigen::Vector3d
+ * - Eigen::Vector4d
+ * - Eigen::VectorXd
  */
 template <typename Scalar, int Rows>
 struct convert<Eigen::Matrix<Scalar, Rows, 1>> {

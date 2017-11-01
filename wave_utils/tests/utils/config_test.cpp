@@ -166,7 +166,7 @@ TEST(Utils_config_ConfigParser, loadVector) {
     wave::Vec4 vec4;
     wave::VecX vecx;
     wave::ConfigParser parser;
-    int res;
+    wave::ConfigStatus res;
 
     // setup
     parser.root = YAML::LoadFile(TEST_CONFIG);
@@ -176,7 +176,7 @@ TEST(Utils_config_ConfigParser, loadVector) {
     wave::ConfigParam<wave::Vec2> vec2_param{"vector2", &vec2};
     res = parser.loadParam(vec2_param);
 
-    EXPECT_EQ(0, res);
+    EXPECT_EQ(wave::ConfigStatus::OK, res);
     ASSERT_FLOAT_EQ(1.1, vec2(0));
     ASSERT_FLOAT_EQ(2.2, vec2(1));
 
@@ -184,7 +184,7 @@ TEST(Utils_config_ConfigParser, loadVector) {
     wave::ConfigParam<wave::Vec3> vec3_param{"vector3", &vec3};
     res = parser.loadParam(vec3_param);
 
-    EXPECT_EQ(0, res);
+    EXPECT_EQ(wave::ConfigStatus::OK, res);
     ASSERT_FLOAT_EQ(1.1, vec3(0));
     ASSERT_FLOAT_EQ(2.2, vec3(1));
     ASSERT_FLOAT_EQ(3.3, vec3(2));
@@ -193,7 +193,7 @@ TEST(Utils_config_ConfigParser, loadVector) {
     wave::ConfigParam<wave::Vec4> vec4_param{"vector4", &vec4};
     res = parser.loadParam(vec4_param);
 
-    EXPECT_EQ(0, res);
+    EXPECT_EQ(wave::ConfigStatus::OK, res);
     ASSERT_FLOAT_EQ(1.1, vec4(0));
     ASSERT_FLOAT_EQ(2.2, vec4(1));
     ASSERT_FLOAT_EQ(3.3, vec4(2));
@@ -203,7 +203,7 @@ TEST(Utils_config_ConfigParser, loadVector) {
     wave::ConfigParam<wave::VecX> vecx_param{"vector", &vecx};
     res = parser.loadParam(vecx_param);
 
-    EXPECT_EQ(0, res);
+    EXPECT_EQ(wave::ConfigStatus::OK, res);
     for (int i = 0; i < 9; i++) {
         ASSERT_FLOAT_EQ((i + 1) * 1.1, vecx(i));
     }
@@ -280,7 +280,6 @@ TEST(Utils_config_ConfigParser, loadMatrix) {
 }
 
 TEST(Utils_config_ConfigParser, load) {
-    int retval;
     bool b;
     int i;
     float f;
@@ -329,10 +328,8 @@ TEST(Utils_config_ConfigParser, load) {
     parser.addParam("matrix", &matx);
     parser.addParam("matrix", &cvmat);
 
-    retval = parser.load(TEST_CONFIG);
-    if (retval != 0) {
-        FAIL();
-    }
+    auto res = parser.load(TEST_CONFIG);
+    EXPECT_EQ(wave::ConfigStatus::OK, res);
 
     std::cout << "bool: " << b << std::endl;
     std::cout << "int: " << i << std::endl;

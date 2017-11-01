@@ -22,7 +22,7 @@ int main() {
     // Note: We support the dot notation for yaml keys
 
     // load the config file and assign values to variables
-    if (parser.load("example_params.yaml") != 0) {
+    if (parser.load("example_params.yaml") != ConfigStatus::OK) {
         return -1;
     }
 }

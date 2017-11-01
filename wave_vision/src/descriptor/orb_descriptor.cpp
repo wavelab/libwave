@@ -15,7 +15,7 @@ ORBDescriptorParams::ORBDescriptorParams(const std::string &config_path) {
     parser.addParam("tuple_size", &tuple_size);
     parser.addParam("patch_size", &patch_size);
 
-    if (parser.load(config_path) != 0) {
+    if (parser.load(config_path) != ConfigStatus::OK) {
         throw std::invalid_argument(
           "Failed to Load ORBDescriptorParams Configuration");
     }
