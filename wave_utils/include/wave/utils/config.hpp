@@ -14,8 +14,6 @@
 
 #include <yaml-cpp/yaml.h>
 
-#include <opencv2/core/core.hpp>
-
 #include "wave/utils/math.hpp"
 #include "wave/utils/log.hpp"
 #include "wave/utils/file.hpp"
@@ -219,34 +217,6 @@ template struct convert<wave::Vec2>;
 template struct convert<wave::Vec3>;
 template struct convert<wave::Vec4>;
 template struct convert<wave::VecX>;
-
-
-/** Custom conversion for YAML -> cv::Mat
- *
- * @note We require the yaml node to have three nested keys in order to parse a
- * matrix. They are `rows`, `cols` and `data`.
- *
- * For example:
- * ```yaml
- * some_matrix:
- *   rows: 3
- *   cols: 3
- *   data: [1.1, 2.2, 3.3,
- *          4.4, 5.5, 6.6,
- *          7.7, 8.8, 9.9]
- * ```
- *
-
- */
-template <>
-struct convert<cv::Mat> {
-    /** Convert YAML node to cv matrix
-     *
-     * @throws YAML::InvalidNode if nested keys not found
-     * @returns true if conversion successful
-     */
-    static bool decode(const Node &node, cv::Mat &out);
-};
 
 }  // namespace YAML
 

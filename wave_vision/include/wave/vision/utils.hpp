@@ -126,4 +126,31 @@ std::vector<cv::Mat> readImageSequence(const std::string &images_path);
 /** @} group vision */
 }  // namespace wave
 
+namespace YAML {
+/** Custom conversion for YAML -> cv::Mat
+ *
+ * @note We require the yaml node to have three nested keys in order to parse a
+ * matrix. They are `rows`, `cols` and `data`.
+ *
+ * For example:
+ * ```yaml
+ * some_matrix:
+ *   rows: 3
+ *   cols: 3
+ *   data: [1.1, 2.2, 3.3,
+ *          4.4, 5.5, 6.6,
+ *          7.7, 8.8, 9.9]
+ * ```
+ */
+template <>
+struct convert<cv::Mat> {
+    /** Convert YAML node to cv matrix
+     *
+     * @throws YAML::InvalidNode if nested keys not found
+     * @returns true if conversion successful
+     */
+    static bool decode(const Node &node, cv::Mat &out);
+};
+}  // namespace YAML
+
 #endif  // WAVE_VISION_COMMON_HPP

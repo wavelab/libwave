@@ -29,9 +29,13 @@ IF(BUILD_TESTING)
                   tests/matcher_tests/brute_force_tests.cpp
                   tests/matcher_tests/flann_tests.cpp
                   tests/tracker_tests/tracker_tests.cpp
-                  tests/dataset_tests/vo_dataset_tests.cpp
-                  tests/utils_tests.cpp)
+                  tests/dataset_tests/vo_dataset_tests.cpp)
     TARGET_LINK_LIBRARIES(${PROJECT_NAME}_tests ${PROJECT_NAME})
+
+    WAVE_ADD_TEST(${PROJECT_NAME}_utils_tests
+        tests/utils_tests.cpp)
+    TARGET_LINK_LIBRARIES(${PROJECT_NAME}_utils_tests ${PROJECT_NAME})
+
 
     WAVE_ADD_TEST(${PROJECT_NAME}_viz_tests
         tests/viz_tests/detector_viz_tests.cpp
