@@ -16,7 +16,7 @@ ICPMatcherParams::ICPMatcherParams(const std::string &config_path) {
     this->covar_estimator =
       static_cast<ICPMatcherParams::covar_method>(covar_est_temp);
 
-    if (parser.load(config_path) != 0) {
+    if (parser.load(config_path) != ConfigStatus::OK) {
         ConfigException config_exception;
         throw config_exception;
     }

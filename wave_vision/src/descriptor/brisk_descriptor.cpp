@@ -19,7 +19,7 @@ BRISKDescriptorParams::BRISKDescriptorParams(const std::string &config_path) {
     parser.addParam("d_max", &d_max);
     parser.addParam("d_min", &d_min);
 
-    if (parser.load(config_path) != 0) {
+    if (parser.load(config_path) != ConfigStatus::OK) {
         throw std::invalid_argument(
           "Failed to Load BRISKDescriptorParams Configuration");
     }
