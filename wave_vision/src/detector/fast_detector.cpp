@@ -17,7 +17,7 @@ FASTDetectorParams::FASTDetectorParams(const std::string &config_path) {
     parser.addParam("nonmax_suppression", &nonmax_suppression);
     parser.addParam("type", &type);
 
-    if (parser.load(config_path) != 0) {
+    if (parser.load(config_path) != ConfigStatus::OK) {
         throw std::invalid_argument(
           "Failed to Load FASTDetectorParams Configuration");
     }

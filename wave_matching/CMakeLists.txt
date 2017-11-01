@@ -1,64 +1,37 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8.3)
 PROJECT(wave_matching)
 
-SET(CMAKE_CXX_FLAGS "-std=gnu++11 ${CMAKE_CXX_FLAGS}")
-SET(CMAKE_BUILD_TYPE release)
-
-# PACKAGES
-FIND_PACKAGE(PCL 1.8 REQUIRED)
-FIND_PACKAGE(Eigen3 REQUIRED)
-FIND_PACKAGE(OpenCV REQUIRED)
-
-# DEFINITIONS
-ADD_DEFINITIONS(${PCL_DEFINITIONS})
-
-# INCLUDES
-INCLUDE_DIRECTORIES(SYSTEM
-    ${PCL_INCLUDE_DIRS}
-    ${EIGEN3_INCLUDE_DIR}
-    ${OpenCV_INCLUDE_DIRS})
-
-# LIBRARY DIRS
-LINK_DIRECTORIES(${PCL_LIBRARY_DIRS})
-
-# LIBRARY
-SET(
-    WAVE_MATCHING_DEPS
-    yaml-cpp
-    wave_utils
-    ${OpenCV_LIBS}
-    ${PCL_LIBRARIES}
-)
-ADD_LIBRARY(
-    wave_matching
-    STATIC
+WAVE_ADD_MODULE(${PROJECT_NAME}
+    DEPENDS
+    wave::utils
+    Eigen3::Eigen
+    Boost::boost
+    PCL::PCL
+    SOURCES
     src/gicp.cpp
     src/icp.cpp
     src/ndt.cpp
-    src/groundSegmentation.cpp
-    src/pointcloud_display.cpp
-)
-TARGET_LINK_LIBRARIES(wave_matching ${WAVE_MATCHING_DEPS})
+    src/ground_segmentation.cpp
+    src/pointcloud_display.cpp)
 
-# UNIT TESTS
-WAVE_ADD_TEST(
-    ${PROJECT_NAME}_tests
-    tests/icp_tests.cpp
-    tests/ndt_tests.cpp
-    tests/gicp_tests.cpp
-    tests/multi_matcher_tests.cpp
-)
-
-WAVE_ADD_TEST(
-        ${PROJECT_NAME}_ground_seg_tests
-        tests/ground_seg_tests.cpp
-)
+# Unit tests
+IF(BUILD_TESTING)
+    WAVE_ADD_TEST(${PROJECT_NAME}_tests
+        tests/icp_tests.cpp
+        tests/ndt_tests.cpp
+        tests/gicp_tests.cpp
+        tests/multi_matcher_tests.cpp)
 
 WAVE_ADD_TEST(
     ${PROJECT_NAME}_viz_tests
     tests/pointcloud_display_tests.cpp
     DISABLED  # probably requires display to work properly
 )
+
+WAVE_ADD_TEST(${PROJECT_NAME}_ground_segmentation_tests
+    tests/ground_segmentation_test.cpp
+    DISABLED  # Uses viewer to check results
+)
+
 TARGET_LINK_LIBRARIES(
     ${PROJECT_NAME}_tests
     ${PROJECT_NAME}
@@ -72,9 +45,13 @@ TARGET_LINK_LIBRARIES(
 )
 
 TARGET_LINK_LIBRARIES(
-        ${PROJECT_NAME}_ground_seg_tests
-        ${PROJECT_NAME}
-        wave_utils
+    ${PROJECT_NAME}_ground_segmentation_tests
+    ${PROJECT_NAME}
+    wave_utils
 )
-# Copy the test data
-file(COPY tests/data tests/config DESTINATION ${PROJECT_BINARY_DIR}/tests)
+
+    TARGET_LINK_LIBRARIES(${PROJECT_NAME}_viz_tests ${PROJECT_NAME})
+
+    # Copy the test data
+    file(COPY tests/data tests/config DESTINATION ${PROJECT_BINARY_DIR}/tests)
+ENDIF(BUILD_TESTING)

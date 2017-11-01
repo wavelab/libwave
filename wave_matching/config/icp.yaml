@@ -1,0 +1,7 @@
+max_corr: 3   #maxCorrespondences
+max_iter: 100 #maxIterations
+t_eps: 1e-8   #transformationEpsilon
+fit_eps: 1e-2 #euclideanFitnessEpsilon
+lidar_ang_covar: 8e-8 #for use with censi
+lidar_lin_covar: 2.5e-3 #for use with censi
+covar_estimator: 0 #0 for LUM, 1 for Censi

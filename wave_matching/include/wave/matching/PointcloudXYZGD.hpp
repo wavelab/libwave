@@ -1,14 +1,11 @@
-
-/************************************************************************
+/** @file
+ * @ingroup matching
+ * @author Arun Das (adas@uwaterloo.ca)
+ * @author James Servos (jdservos@uwaterloo.ca)
  *
+ * Custom PCL point type with additional fields
  *
- *  Copyright 2015  Arun Das (University of Waterloo)
- *                      [adas@uwaterloo.ca]
- *                  James Servos (University of Waterloo)
- *                      [jdservos@uwaterloo.ca]
- *
- *
- *************************************************************************/
+ */
 
 #ifndef WAVE_POINTCLOUDXYZGD_HPP
 #define WAVE_POINTCLOUDXYZGD_HPP

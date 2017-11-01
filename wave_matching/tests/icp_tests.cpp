@@ -6,10 +6,8 @@
 
 namespace wave {
 
-//const auto TEST_SCAN = "tests/data/testscan.pcd";
-//const auto TEST_CONFIG = "tests/config/icp.yaml";
-const auto TEST_SCAN = "data/testscan.pcd";
-const auto TEST_CONFIG = "config/icp.yaml";
+const auto TEST_SCAN = "tests/data/testscan.pcd";
+const auto TEST_CONFIG = "tests/config/icp.yaml";
 
 // Fixture to load same pointcloud all the time
 class ICPTest : public testing::Test {

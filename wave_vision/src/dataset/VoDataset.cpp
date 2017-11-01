@@ -25,7 +25,7 @@ void VoDatasetGenerator::configure(const std::string &config_file) {
     parser.addParam("landmarks.y.max", &this->landmark_y_bounds(1));
     parser.addParam("landmarks.z.min", &this->landmark_z_bounds(0));
     parser.addParam("landmarks.z.max", &this->landmark_z_bounds(1));
-    if (parser.load(config_file) != 0) {
+    if (parser.load(config_file) != ConfigStatus::OK) {
         throw std::runtime_error("Failed to load " + config_file);
     }
 

@@ -31,7 +31,7 @@ struct ICPMatcherParams {
     ICPMatcherParams(const std::string &config_path);
     ICPMatcherParams() {}
 
-    double max_corr = 3;
+    int max_corr = 3;
     int max_iter = 100;
     double t_eps = 1e-8;
     double fit_eps = 1e-2;
@@ -95,6 +95,8 @@ class ICPMatcher : public Matcher<PCLPointCloud> {
      * Calculates a covariance estimate based on Censi
      */
     void estimateCensi();
+
+    ICPMatcherParams params;
 };
 
 /** @} group matching */
