@@ -7,7 +7,7 @@ SET(WAVE_PACKAGE_VERSION 0.1.0)
 # Compiler settings for all targets
 SET(CMAKE_CXX_STANDARD 11)
 SET(CMAKE_POSITION_INDEPENDENT_CODE ON)
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
+ADD_COMPILE_OPTIONS(-Wall -Wextra -Wno-strict-overflow)
 
 # Default to Release build type, otherwise some modules will be slow
 IF(NOT CMAKE_BUILD_TYPE)
