@@ -37,9 +37,16 @@ struct ICPMatcherParams {
     double fit_eps = 1e-2;
     double lidar_ang_covar = 7.78e-9;
     double lidar_lin_covar = 2.5e-4;
-    int multiscale_steps = 3;  // How many times to match at a coarser scale.
-                               // Each step is a factor of two apart
-    float res = 0.1;           // Resolution of finest scale
+
+    /// When set to more than 0, each match is performed multiple times from
+    /// a coarse to fine scale (in terms of voxel downsampling).
+    /// Each step doubles the resolution
+    int multiscale_steps = 3;
+
+    /// Voxel side length for downsampling. If set to 0, downsampling is
+    /// not performed. If multiscale matching is set, this is the resolution
+    /// of the final, fine-scale match
+    float res = 0.1;
     enum covar_method : int {
         LUM,
         CENSI,
