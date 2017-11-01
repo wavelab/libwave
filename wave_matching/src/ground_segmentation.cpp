@@ -268,7 +268,7 @@ void GroundSegmentation::sectorINSAC(int sectorIndex) {
               (sigPtr[k].height - f_s(k)) / (sqrt(this->params.p_sn + vf * vf));
 
             if (vf < this->params.p_tmodel &&
-                abs(met) < this->params.p_tdata) {  // we have an inlier!
+                std::abs(met) < this->params.p_tdata) {  // we have an inlier!
                 // add to model set
                 currentModel.push_back(sigPtr[k]);
                 // remove from sample set
@@ -322,7 +322,8 @@ void GroundSegmentation::sectorINSAC(int sectorIndex) {
         // go through all the points in this cell and assign to ground/not
         // ground
         for (unsigned int j = 0; j < curCell->binPoints.size(); j++) {
-            float h = abs(currentModel[i].height - curCell->binPoints[j].z);
+            float h =
+              std::abs(currentModel[i].height - curCell->binPoints[j].z);
             if (h < this->params.p_tg)  // z heights are close
             {
                 gCloud->push_back(
@@ -358,7 +359,7 @@ void GroundSegmentation::sectorINSAC(int sectorIndex) {
             linCell *curCell = &pBG->aCell[sectorIndex].lCell[sigPtr[i].idx];
 
             for (int j = 0; j < (int) curCell->binPoints.size(); j++) {
-                float h = abs(curCell->binPoints[j].z - f_s(i));
+                float h = std::abs(curCell->binPoints[j].z - f_s(i));
                 // check drivability
                 if (h > this->params.robot_height) {
                     // drivable
