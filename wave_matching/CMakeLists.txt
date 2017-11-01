@@ -10,6 +10,7 @@ WAVE_ADD_MODULE(${PROJECT_NAME}
     src/gicp.cpp
     src/icp.cpp
     src/ndt.cpp
+    src/ground_segmentation.cpp
     src/pointcloud_display.cpp)
 
 # Unit tests
@@ -20,11 +21,34 @@ IF(BUILD_TESTING)
         tests/gicp_tests.cpp
         tests/multi_matcher_tests.cpp)
 
-    WAVE_ADD_TEST(${PROJECT_NAME}_viz_tests
-        tests/pointcloud_display_tests.cpp
-        DISABLED)  # probably requires display to work properly
+WAVE_ADD_TEST(
+    ${PROJECT_NAME}_viz_tests
+    tests/pointcloud_display_tests.cpp
+    DISABLED  # probably requires display to work properly
+)
 
-    TARGET_LINK_LIBRARIES(${PROJECT_NAME}_tests ${PROJECT_NAME})
+WAVE_ADD_TEST(${PROJECT_NAME}_ground_segmentation_tests
+    tests/ground_segmentation_test.cpp
+    DISABLED  # Uses viewer to check results
+)
+
+TARGET_LINK_LIBRARIES(
+    ${PROJECT_NAME}_tests
+    ${PROJECT_NAME}
+    wave_utils
+)
+
+TARGET_LINK_LIBRARIES(
+    ${PROJECT_NAME}_viz_tests
+    ${PROJECT_NAME}
+    wave_utils
+)
+
+TARGET_LINK_LIBRARIES(
+    ${PROJECT_NAME}_ground_segmentation_tests
+    ${PROJECT_NAME}
+    wave_utils
+)
 
     TARGET_LINK_LIBRARIES(${PROJECT_NAME}_viz_tests ${PROJECT_NAME})
 
