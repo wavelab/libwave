@@ -37,9 +37,14 @@ struct ICPMatcherParams {
     double fit_eps = 1e-2;
     double lidar_ang_covar = 7.78e-9;
     double lidar_lin_covar = 2.5e-4;
-    int multiscale_steps = 3;  // How many times to match at a coarser scale. Each step is a factor of two apart
-    float res = 0.1;  // Resolution of finest scale
-    enum covar_method : int { LUM, CENSI, LUMold } covar_estimator = covar_method::LUM;
+    int multiscale_steps = 3;  // How many times to match at a coarser scale.
+                               // Each step is a factor of two apart
+    float res = 0.1;           // Resolution of finest scale
+    enum covar_method : int {
+        LUM,
+        CENSI,
+        LUMold
+    } covar_estimator = covar_method::LUM;
 };
 
 class ICPMatcher : public Matcher<PCLPointCloud> {
@@ -95,8 +100,6 @@ class ICPMatcher : public Matcher<PCLPointCloud> {
      * Calculates a covariance estimate based on Censi
      */
     void estimateCensi();
-
-    ICPMatcherParams params;
 };
 
 /** @} group matching */
