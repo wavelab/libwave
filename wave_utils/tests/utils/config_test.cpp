@@ -33,7 +33,6 @@ TEST(Utils_config_ConfigParser, addParam) {
     wave::Mat3 mat3;
     wave::Mat4 mat4;
     wave::MatX matx;
-    cv::Mat cvmat;
 
     wave::ConfigParser parser;
 
@@ -58,9 +57,8 @@ TEST(Utils_config_ConfigParser, addParam) {
     parser.addParam("matrix3", &mat3);
     parser.addParam("matrix4", &mat4);
     parser.addParam("matrix", &matx);
-    parser.addParam("matrix", &cvmat);
 
-    ASSERT_EQ(19, (int) parser.params.size());
+    ASSERT_EQ(18, (int) parser.params.size());
     ASSERT_EQ("bool", parser.params[0]->key);
 }
 
@@ -215,7 +213,6 @@ TEST(Utils_config_ConfigParser, loadMatrix) {
     wave::Mat3 mat3;
     wave::Mat4 mat4;
     wave::MatX matx;
-    cv::Mat cvmat;
     wave::ConfigParser parser;
 
     // setup
@@ -265,18 +262,6 @@ TEST(Utils_config_ConfigParser, loadMatrix) {
             index++;
         }
     }
-
-    // CV MATRIX
-    wave::ConfigParam<cv::Mat> cvmat_param{"matrix", &cvmat};
-    parser.loadParam(cvmat_param);
-
-    index = 0;
-    for (int i = 0; i < 3; i++) {
-        for (int j = 0; j < 4; j++) {
-            ASSERT_FLOAT_EQ((index + 1) * 1.1, cvmat.at<double>(i, j));
-            index++;
-        }
-    }
 }
 
 TEST(Utils_config_ConfigParser, load) {
@@ -301,7 +286,6 @@ TEST(Utils_config_ConfigParser, load) {
     wave::Mat3 mat3;
     wave::Mat4 mat4;
     wave::MatX matx;
-    cv::Mat cvmat;
 
     wave::ConfigParser parser;
 
@@ -326,7 +310,6 @@ TEST(Utils_config_ConfigParser, load) {
     parser.addParam("matrix3", &mat3);
     parser.addParam("matrix4", &mat4);
     parser.addParam("matrix", &matx);
-    parser.addParam("matrix", &cvmat);
 
     auto res = parser.load(TEST_CONFIG);
     EXPECT_EQ(wave::ConfigStatus::OK, res);
@@ -348,6 +331,5 @@ TEST(Utils_config_ConfigParser, load) {
     std::cout << "matrix3: \n" << mat3 << std::endl;
     std::cout << "matrix4: \n" << mat4 << std::endl;
     std::cout << "matrix: \n" << matx << std::endl;
-    std::cout << "cvmatrix: \n" << cvmat << std::endl;
     std::cout << std::endl;
 }

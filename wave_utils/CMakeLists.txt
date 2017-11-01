@@ -4,7 +4,6 @@ WAVE_ADD_MODULE(${PROJECT_NAME}
     DEPENDS
     Eigen3::Eigen
     yaml-cpp
-    opencv_core
     SOURCES
     src/config.cpp
     src/data.cpp

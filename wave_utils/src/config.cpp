@@ -157,30 +157,4 @@ bool convert<Eigen::Matrix<Scalar, Rows, 1>>::decode(
     return true;
 }
 
-bool convert<cv::Mat>::decode(const Node &node, cv::Mat &out) {
-    int rows = node["rows"].as<int>();
-    int cols = node["cols"].as<int>();
-    const auto &data = node["data"];
-
-    // Check `rows` and `cols` values
-    if (rows <= 0 || cols <= 0) {
-        return false;
-    }
-
-    // Check data node is a list of the right length
-    std::size_t expected_size = rows * cols;
-    if (!data.IsSequence() || data.size() != expected_size) {
-        return false;
-    }
-
-    // Copy it to destination
-    out = cv::Mat{rows, cols, CV_64F};
-    for (int i = 0, index = 0; i < rows; i++) {
-        for (int j = 0; j < cols; j++) {
-            out.at<double>(i, j) = node["data"][index++].as<double>();
-        }
-    }
-    return true;
-}
-
 }  // namespace YAML
