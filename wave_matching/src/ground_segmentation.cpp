@@ -18,37 +18,30 @@ GroundSegmentation::GroundSegmentation(GroundSegmentationParams config) {
 void GroundSegmentation::initializePolarBinGrid(void) {
     this->polar_bin_grid->ang_cell.resize(this->params.num_bins_a);
     for (int i = 0; i < this->params.num_bins_a; i++) {
-        this->polar_bin_grid->ang_cell[i].sig_points.clear();
-        this->polar_bin_grid->ang_cell[i].lin_cell.resize(
-          this->params.num_bins_l);
-        this->polar_bin_grid->ang_cell[i].sig_points.resize(
-          this->params.num_bins_l);
-        this->polar_bin_grid->ang_cell[i].range_height_signal.resize(
-          this->params.num_bins_l);
-        std::vector<SignalPoint>().swap(polar_bin_grid->ang_cell[i].sig_points);
+        auto &ang_cell = this->polar_bin_grid->ang_cell[i];
+        ang_cell.sig_points.clear();
+        ang_cell.lin_cell.resize(this->params.num_bins_l);
+        ang_cell.sig_points.resize(this->params.num_bins_l);
+        ang_cell.range_height_signal.resize(this->params.num_bins_l);
+        polar_bin_grid->ang_cell[i].sig_points.shrink_to_fit();
         for (int j = 0; j < this->params.num_bins_l; j++) {
-            polar_bin_grid->ang_cell[i].lin_cell[j].bin_points.clear();
-            polar_bin_grid->ang_cell[i].lin_cell[j].obs_points.clear();
-            polar_bin_grid->ang_cell[i].lin_cell[j].drv_points.clear();
-            polar_bin_grid->ang_cell[i].lin_cell[j].ground_points.clear();
-            polar_bin_grid->ang_cell[i].lin_cell[j].prototype_point =
-              PointXYZGD();
-            polar_bin_grid->ang_cell[i].lin_cell[j].prototype_point.x = NAN;
-            polar_bin_grid->ang_cell[i].lin_cell[j].prototype_point.y = NAN;
-            polar_bin_grid->ang_cell[i].lin_cell[j].prototype_point.z = NAN;
-            polar_bin_grid->ang_cell[i].range_height_signal[j].x = NAN;
-            polar_bin_grid->ang_cell[i].range_height_signal[j].y = NAN;
-            polar_bin_grid->ang_cell[i].lin_cell[j].cluster_assigned = -1;
+            ang_cell.lin_cell[j].bin_points.clear();
+            ang_cell.lin_cell[j].obs_points.clear();
+            ang_cell.lin_cell[j].drv_points.clear();
+            ang_cell.lin_cell[j].ground_points.clear();
+            ang_cell.lin_cell[j].prototype_point = PointXYZGD();
+            ang_cell.lin_cell[j].prototype_point.x = NAN;
+            ang_cell.lin_cell[j].prototype_point.y = NAN;
+            ang_cell.lin_cell[j].prototype_point.z = NAN;
+            ang_cell.range_height_signal[j].x = NAN;
+            ang_cell.range_height_signal[j].y = NAN;
+            ang_cell.lin_cell[j].cluster_assigned = -1;
 
-            // force memory deletion of std::vectors
-            std::vector<PointXYZGD>().swap(
-              polar_bin_grid->ang_cell[i].lin_cell[j].bin_points);
-            std::vector<PointXYZGD>().swap(
-              polar_bin_grid->ang_cell[i].lin_cell[j].obs_points);
-            std::vector<PointXYZGD>().swap(
-              polar_bin_grid->ang_cell[i].lin_cell[j].drv_points);
-            std::vector<PointXYZGD>().swap(
-              polar_bin_grid->ang_cell[i].lin_cell[j].ground_points);
+            // remove unused memory from std::vectors
+            ang_cell.lin_cell[j].bin_points.shrink_to_fit();
+            ang_cell.lin_cell[j].obs_points.shrink_to_fit();
+            ang_cell.lin_cell[j].drv_points.shrink_to_fit();
+            ang_cell.lin_cell[j].ground_points.shrink_to_fit();
         }
     }
 }

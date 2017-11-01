@@ -40,10 +40,14 @@ struct SignalPoint {
  * Structure to hold collection of points in each linear bin
  */
 struct LinCell {
-    std::vector<PointXYZGD> bin_points;  // all the points
-    std::vector<PointXYZGD> obs_points;  // just the obs points
-    std::vector<PointXYZGD> drv_points;
-    std::vector<PointXYZGD> ground_points;  // just the ground points
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    std::vector<PointXYZGD, Eigen::aligned_allocator<PointXYZGD>>
+      bin_points;  // all the points
+    std::vector<PointXYZGD, Eigen::aligned_allocator<PointXYZGD>>
+      obs_points;  // just the obs points
+    std::vector<PointXYZGD, Eigen::aligned_allocator<PointXYZGD>> drv_points;
+    std::vector<PointXYZGD, Eigen::aligned_allocator<PointXYZGD>>
+      ground_points;  // just the ground points
     PointXYZGD prototype_point;
     int cluster_assigned;  // what cluster is it assigned to
     Vec3 obs_mean;         // mean of obstacle points
@@ -54,7 +58,8 @@ struct LinCell {
  */
 struct AngCell {
     std::vector<SignalPoint> sig_points;  // range height signal for that sector
-    std::vector<LinCell> lin_cell;  // the linear cells within that angle sector
+    std::vector<LinCell, Eigen::aligned_allocator<LinCell>>
+      lin_cell;  // the linear cells within that angle sector
     std::vector<pcl::PointXY> range_height_signal;
 };
 
@@ -62,7 +67,7 @@ struct AngCell {
 *  Structure to hold all angular bins
 */
 struct PolarBinGrid {
-    std::vector<AngCell> ang_cell;
+    std::vector<AngCell, Eigen::aligned_allocator<AngCell>> ang_cell;
 };
 
 /**
