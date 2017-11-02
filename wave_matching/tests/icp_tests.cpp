@@ -164,7 +164,7 @@ TEST(ICPTests, lumvslum) {
 
     pcl::transformPointCloud(*(ref), *(target), perturb);
     // need to distort one scan or there will be infinite information
-    for (size_t i = 0; i< target->size(); i++) {
+    for (size_t i = 0; i < target->size(); i++) {
         target->at(i).x += unif(re);
         target->at(i).y += unif(re);
         target->at(i).z += unif(re);
