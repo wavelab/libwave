@@ -46,12 +46,12 @@ NDTMatcher::~NDTMatcher() {
     }
 }
 
-void NDTMatcher::setRef(const PCLPointCloud &ref) {
+void NDTMatcher::setRef(const PCLPointCloudPtr &ref) {
     this->ref = ref;
     this->ndt.setInputSource(this->ref);
 }
 
-void NDTMatcher::setTarget(const PCLPointCloud &target) {
+void NDTMatcher::setTarget(const PCLPointCloudPtr &target) {
     this->target = target;
     this->ndt.setInputTarget(this->target);
 }

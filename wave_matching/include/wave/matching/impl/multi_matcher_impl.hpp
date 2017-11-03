@@ -27,7 +27,7 @@ void MultiMatcher<T, R>::initPool(R params) {
 
 template <class T, class R>
 void MultiMatcher<T, R>::spin(int threadid) {
-    std::tuple<int, PCLPointCloud, PCLPointCloud> val;
+    std::tuple<int, PCLPointCloudPtr, PCLPointCloudPtr> val;
     while (true) {
         {
             std::unique_lock<std::mutex> lock(this->ip_mutex);
@@ -63,8 +63,8 @@ void MultiMatcher<T, R>::spin(int threadid) {
 
 template <class T, class R>
 void MultiMatcher<T, R>::insert(const int &id,
-                                const PCLPointCloud &src,
-                                const PCLPointCloud &target) {
+                                const PCLPointCloudPtr &src,
+                                const PCLPointCloudPtr &target) {
     {
         std::unique_lock<std::mutex> lock(this->ip_mutex);
         while (this->input.size() >= static_cast<size_t>(this->queue_size)) {

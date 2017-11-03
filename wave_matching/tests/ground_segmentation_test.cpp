@@ -14,7 +14,7 @@ TEST(ground_segmentation, how_to_use) {
     GroundSegmentationParams params(TEST_CONFIG);
     GroundSegmentation ground_segmentation(params);
 
-    PCLPointCloud ref;
+    PCLPointCloudPtr ref;
     pcl::PointCloud<pcl::PointXYZI>::Ptr vizobs, vizground, vizdrv;
 
     ref = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();

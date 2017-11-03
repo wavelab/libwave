@@ -41,7 +41,7 @@ struct NDTMatcherParams {
     const float min_res = 0.05f;
 };
 
-class NDTMatcher : public Matcher<PCLPointCloud> {
+class NDTMatcher : public Matcher<PCLPointCloudPtr> {
  public:
     /** This constructor takes an argument in order to specify resolution. The
      * resolution given takes precedence over the one in the config file. If
@@ -54,12 +54,12 @@ class NDTMatcher : public Matcher<PCLPointCloud> {
     /** sets the reference pointcloud for the matcher
      * @param ref - Pointcloud
      */
-    void setRef(const PCLPointCloud &ref);
+    void setRef(const PCLPointCloudPtr &ref);
 
     /** sets the target (or scene) pointcloud for the matcher
      * @param targer - Pointcloud
      */
-    void setTarget(const PCLPointCloud &target);
+    void setTarget(const PCLPointCloudPtr &target);
 
     /** runs the matcher, blocks until finished.
      * Note that this version of ndt is SLOW
@@ -75,7 +75,7 @@ class NDTMatcher : public Matcher<PCLPointCloud> {
      * is not exposed. PCL's NDT class creates an aligned verison of the target
      * pointcloud after matching, so the "final" member is used as a sink for
      * it. */
-    PCLPointCloud ref, target, final;
+    PCLPointCloudPtr ref, target, final;
     NDTMatcherParams params;
 };
 

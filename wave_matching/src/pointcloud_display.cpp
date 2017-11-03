@@ -38,7 +38,7 @@ void PointCloudDisplay::spin() {
     this->viewer.reset();
 }
 
-void PointCloudDisplay::addPointcloud(const PCLPointCloud &cld, int id) {
+void PointCloudDisplay::addPointcloud(const PCLPointCloudPtr &cld, int id) {
     this->update_mutex.lock();
     this->clouds.emplace(Cloud{cld, id});
     this->update_mutex.unlock();

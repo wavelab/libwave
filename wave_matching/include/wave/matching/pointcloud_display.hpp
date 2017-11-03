@@ -56,7 +56,7 @@ class PointCloudDisplay {
      * @param id: id of cloud to be added. Same id can be
      * used to update cloud later
      */
-    void addPointcloud(const PCLPointCloud &cld, int id);
+    void addPointcloud(const PCLPointCloudPtr &cld, int id);
 
     void addPointcloud(const pcl::PointCloud<pcl::PointXYZI>::Ptr &cld, int id);
 
@@ -99,7 +99,7 @@ class PointCloudDisplay {
     std::mutex update_mutex;  ///< Protects buffers
     /** Struct for cloud buffer */
     struct Cloud {
-        PCLPointCloud cloud;
+        PCLPointCloudPtr cloud;
         int id;
     };
 

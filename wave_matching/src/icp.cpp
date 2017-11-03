@@ -65,11 +65,11 @@ ICPMatcher::~ICPMatcher() {
     }
 }
 
-void ICPMatcher::setRef(const PCLPointCloud &ref) {
+void ICPMatcher::setRef(const PCLPointCloudPtr &ref) {
     this->ref = ref;
 }
 
-void ICPMatcher::setTarget(const PCLPointCloud &target) {
+void ICPMatcher::setTarget(const PCLPointCloudPtr &target) {
     this->target = target;
 }
 
@@ -156,8 +156,9 @@ void ICPMatcher::estimateInfo() {
 // http://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=7153246
 
 //@INPROCEEDINGS{3d_icp_cov,
-//author={Prakhya, S.M. and Liu Bingbing and Yan Rui and Weisi Lin},
-//        booktitle={Machine Vision Applications (MVA), 2015 14th IAPR International Conference on},
+// author={Prakhya, S.M. and Liu Bingbing and Yan Rui and Weisi Lin},
+//        booktitle={Machine Vision Applications (MVA), 2015 14th IAPR
+//        International Conference on},
 //        title={A closed-form estimate of 3D ICP covariance},
 //        year={2015},
 //        pages={526-529},

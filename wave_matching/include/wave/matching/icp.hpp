@@ -35,14 +35,17 @@ struct ICPMatcherParams {
     double max_corr = 3;
     /// Maximum iterations of ICP
     int max_iter = 100;
-    /// Transformation epsilon. Stopping criteria. If the transform changes by less
+    /// Transformation epsilon. Stopping criteria. If the transform changes by
+    /// less
     /// than this amount, stop
     double t_eps = 1e-8;
     /// Stopping criteria, if cost function decreases by less than this, stop
     double fit_eps = 1e-2;
-    /// Angular variance for lidar sensor model. Used if Censi covariance estimation is set
+    /// Angular variance for lidar sensor model. Used if Censi covariance
+    /// estimation is set
     double lidar_ang_covar = 7.78e-9;
-    /// Linear variance for lidar sensor model. Used if Censi covariance estimation is set
+    /// Linear variance for lidar sensor model. Used if Censi covariance
+    /// estimation is set
     double lidar_lin_covar = 2.5e-4;
 
     /// When set to more than 0, each match is performed multiple times from
@@ -61,7 +64,7 @@ struct ICPMatcherParams {
     } covar_estimator = covar_method::LUM;
 };
 
-class ICPMatcher : public Matcher<PCLPointCloud> {
+class ICPMatcher : public Matcher<PCLPointCloudPtr> {
  public:
     /** This constructor takes an argument in order to adjust how much
      * downsampling is done before matching is attempted. Pointclouds are
@@ -74,12 +77,12 @@ class ICPMatcher : public Matcher<PCLPointCloud> {
     /** sets the reference pointcloud for the matcher
      * @param ref - Pointcloud
      */
-    void setRef(const PCLPointCloud &ref);
+    void setRef(const PCLPointCloudPtr &ref);
 
     /** sets the target (or scene) pointcloud for the matcher
      * @param targer - Pointcloud
      */
-    void setTarget(const PCLPointCloud &target);
+    void setTarget(const PCLPointCloudPtr &target);
 
     /** runs the matcher, blocks until finished.
      * Returns true if successful
@@ -102,7 +105,7 @@ class ICPMatcher : public Matcher<PCLPointCloud> {
      * is not exposed. PCL's ICP class creates an aligned verison of the target
      * pointcloud after matching, so the "final" member is used as a sink for
      * it. */
-    PCLPointCloud ref, target, final, downsampled_ref, downsampled_target;
+    PCLPointCloudPtr ref, target, final, downsampled_ref, downsampled_target;
 
     /**
      * Calculates a covariance estimate based on Lu and Milios Scan Matching
