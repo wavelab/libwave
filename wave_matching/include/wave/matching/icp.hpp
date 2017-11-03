@@ -31,11 +31,18 @@ struct ICPMatcherParams {
     ICPMatcherParams(const std::string &config_path);
     ICPMatcherParams() {}
 
-    int max_corr = 3;
+    /// Maximum distance to correspond points for icp
+    double max_corr = 3;
+    /// Maximum iterations of ICP
     int max_iter = 100;
+    /// Transformation epsilon. Stopping criteria. If the transform changes by less
+    /// than this amount, stop
     double t_eps = 1e-8;
+    /// Stopping criteria, if cost function decreases by less than this, stop
     double fit_eps = 1e-2;
+    /// Angular variance for lidar sensor model. Used if Censi covariance estimation is set
     double lidar_ang_covar = 7.78e-9;
+    /// Linear variance for lidar sensor model. Used if Censi covariance estimation is set
     double lidar_lin_covar = 2.5e-4;
 
     /// When set to more than 0, each match is performed multiple times from

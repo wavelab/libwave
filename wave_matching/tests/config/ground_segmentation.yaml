@@ -1,3 +1,5 @@
+# See http://ieeexplore.ieee.org/abstract/document/6166587/ for in-depth explanation of what these parameters do
+
 rmax:                     100 #maximum radius of points to consider
 num_maxbinpoints:         200 #max Number of Points in each Bin
 num_seedpoints:           10  #Number of seed points to use in GP
@@ -12,6 +14,6 @@ gp_groundmodelconfidence: 5
 gp_grounddataconfidence:  5
 
 gp_groundthreshold:       0.3 #Ground Height Threshold
-robotheight:              1.2 #Used for drivable surface detections I think
+robotheight:              1.2 #Used for drivable surface detections
 seeding_maxrange:         50  #Maximum range for seed points
 seeding_maxheight:        15  #Maximum height for seed points
