@@ -22,9 +22,14 @@ FUNCTION(WAVE_ADD_TEST NAME)
     # Build the test executable using the given sources
     ADD_EXECUTABLE(${NAME} ${WAVE_ADD_TEST_UNPARSED_ARGUMENTS})
 
+    # gtest needs pthread to be linked.
+    # @todo maybe this is automatic in some newer version of gtest
+    set(THREADS_PREFER_PTHREAD_FLAG ON)
+    find_package(Threads REQUIRED)
+
     # Link gtest libraries including one providing main()
     # Link wave_utils as that contains wave_test.hpp
-    TARGET_LINK_LIBRARIES(${NAME} gtest gtest_main pthread wave::utils)
+    TARGET_LINK_LIBRARIES(${NAME} gtest gtest_main Threads::Threads wave::utils)
 
     # Put the test executable in the tests/ directory
     SET_TARGET_PROPERTIES(${NAME} PROPERTIES
