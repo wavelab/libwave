@@ -10,10 +10,6 @@ WAVE_ADD_MODULE(${PROJECT_NAME} DEPENDS
     src/ceres/ba.cpp
     src/ceres/ceres_examples.cpp)
 
-# For some reason Ceres does not have include directories in its imported
-# target. Add them explicitly to our target.
-TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} SYSTEM PUBLIC ${CERES_INCLUDE_DIRS})
-
 # Unit tests
 IF(BUILD_TESTING)
     WAVE_ADD_TEST(${PROJECT_NAME}_tests
