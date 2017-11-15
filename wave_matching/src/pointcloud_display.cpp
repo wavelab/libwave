@@ -21,9 +21,9 @@ void PointCloudDisplay::spin() {
     // Initialize viewer
     this->viewer =
       std::make_shared<pcl::visualization::PCLVisualizer>(this->display_name);
-    this->viewer->initCameraParameters();
     this->viewer->setBackgroundColor(0, 0, 0);
     this->viewer->addCoordinateSystem(1.0);
+    this->viewer->resetCamera();
     while (this->continueFlag.test_and_set(std::memory_order_relaxed) &&
            !(this->viewer->wasStopped())) {
         this->viewer->spinOnce(3);
@@ -68,6 +68,11 @@ void PointCloudDisplay::updateInternal() {
             this->viewer->updatePointCloud(cld.cloud, std::to_string(cld.id));
         } else {
             this->viewer->addPointCloud(cld.cloud, std::to_string(cld.id));
+            if (!this->camera_initialized) {
+                // Fit to view for the first object added
+                this->viewer->resetCamera();
+                this->camera_initialized = true;
+            }
         }
         this->clouds.pop();
     }
@@ -82,6 +87,11 @@ void PointCloudDisplay::updateInternal() {
         } else {
             this->viewer->addPointCloud(
               cld.cloud, col_handler, std::to_string(cld.id));
+            if (!this->camera_initialized) {
+                // Fit to view for the first object added
+                this->viewer->resetCamera();
+                this->camera_initialized = true;
+            }
         }
         this->cloudsi.pop();
     }

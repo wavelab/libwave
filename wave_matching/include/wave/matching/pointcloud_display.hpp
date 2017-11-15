@@ -114,6 +114,7 @@ class PointCloudDisplay {
         int id1, id2;
     };
 
+    bool camera_initialized = false;
     std::queue<Cloud> clouds;
     std::queue<CloudI> cloudsi;
     std::queue<Line> lines;
