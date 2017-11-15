@@ -38,25 +38,28 @@ void PointCloudDisplay::spin() {
     this->viewer.reset();
 }
 
-void PointCloudDisplay::addPointcloud(const PCLPointCloud &cld, int id) {
+void PointCloudDisplay::addPointcloud(const PCLPointCloud &cld,
+                                      int id,
+                                      bool reset_camera) {
     this->update_mutex.lock();
-    this->clouds.emplace(Cloud{cld, id});
+    this->clouds.emplace(Cloud{cld, id, reset_camera});
     this->update_mutex.unlock();
 }
 
 void PointCloudDisplay::addPointcloud(
-  const pcl::PointCloud<pcl::PointXYZI>::Ptr &cld, int id) {
+  const pcl::PointCloud<pcl::PointXYZI>::Ptr &cld, int id, bool reset_camera) {
     this->update_mutex.lock();
-    this->cloudsi.emplace(CloudI{cld, id});
+    this->cloudsi.emplace(CloudI{cld, id, reset_camera});
     this->update_mutex.unlock();
 }
 
 void PointCloudDisplay::addLine(const pcl::PointXYZ &pt1,
                                 const pcl::PointXYZ &pt2,
                                 int id1,
-                                int id2) {
+                                int id2,
+                                bool reset_camera) {
     this->update_mutex.lock();
-    this->lines.emplace(Line{pt1, pt2, id1, id2});
+    this->lines.emplace(Line{pt1, pt2, id1, id2, reset_camera});
     this->update_mutex.unlock();
 }
 
@@ -84,11 +87,9 @@ void PointCloudDisplay::updateInternal() {
         } else {
             this->viewer->addPointCloud(
               cld.cloud, col_handler, std::to_string(cld.id));
-            if (!this->camera_initialized) {
-                // Fit to view for the first object added
-                this->viewer->resetCamera();
-                this->camera_initialized = true;
-            }
+        }
+        if (cld.reset_camera) {
+            this->viewer->resetCamera();
         }
         this->clouds.pop();
     }
@@ -103,11 +104,9 @@ void PointCloudDisplay::updateInternal() {
         } else {
             this->viewer->addPointCloud(
               cld.cloud, col_handler, std::to_string(cld.id));
-            if (!this->camera_initialized) {
-                // Fit to view for the first object added
-                this->viewer->resetCamera();
-                this->camera_initialized = true;
-            }
+        }
+        if (cld.reset_camera) {
+            this->viewer->resetCamera();
         }
         this->cloudsi.pop();
     }
@@ -140,6 +139,9 @@ void PointCloudDisplay::updateInternal() {
           hi,
           low,
           std::to_string(line.id1) + std::to_string(line.id2) + "ln");
+        if (line.reset_camera) {
+            this->viewer->resetCamera();
+        }
         this->lines.pop();
     }
 }
