@@ -70,16 +70,13 @@ void PointCloudDisplay::updateInternal() {
         // Give each id a unique color, using the Glasbey table of maximally
         // different colors. Use white for 0
         // Note the color handler uses the odd format of doubles 0-255
-        double r = 255., g = 255., b = 255.;
+        Eigen::Vector3d rgb{255., 255., 255.};
         if (cld.id > 0 &&
             static_cast<unsigned>(cld.id) < pcl::GlasbeyLUT::size()) {
-            const auto rgb = pcl::GlasbeyLUT::at(cld.id);
-            r = static_cast<double>(rgb.r);
-            g = static_cast<double>(rgb.g);
-            b = static_cast<double>(rgb.b);
+            rgb = pcl::GlasbeyLUT::at(cld.id).getRGBVector3i().cast<double>();
         }
         pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ>
-          col_handler{cld.cloud, r, g, b};
+          col_handler{cld.cloud, rgb[0], rgb[1], rgb[2]};
 
         if (this->viewer->contains(std::to_string(cld.id))) {
             this->viewer->updatePointCloud(
