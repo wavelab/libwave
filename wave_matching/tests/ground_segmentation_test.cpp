@@ -82,9 +82,9 @@ TEST(ground_segmentation, how_to_use) {
 
     PointCloudDisplay display("groundsegmenter");
     display.startSpin();
-    display.addPointcloud(vizground, 1);
+    display.addPointcloud(vizground, 0);
     std::this_thread::sleep_for(std::chrono::seconds(10));
-    display.addPointcloud(vizobs, 2);
+    display.addPointcloud(vizobs, 1);
     std::this_thread::sleep_for(std::chrono::seconds(10));
 
     display.stopSpin();
