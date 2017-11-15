@@ -15,12 +15,12 @@ TEST(ground_segmentation, how_to_use) {
     GroundSegmentation ground_segmentation(params);
 
     PCLPointCloud ref;
-    pcl::PointCloud<pcl::PointXYZI>::Ptr vizobs, vizground, vizdrv;
+    pcl::PointCloud<pcl::PointXYZ>::Ptr vizobs, vizground, vizdrv;
 
     ref = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
-    vizobs = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
-    vizground = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
-    vizdrv = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
+    vizobs = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+    vizground = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+    vizdrv = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
 
     pcl::PointCloud<PointXYZGD>::Ptr groundCloud =
       boost::make_shared<pcl::PointCloud<PointXYZGD>>();
@@ -70,21 +70,13 @@ TEST(ground_segmentation, how_to_use) {
     pcl::copyPointCloud(*obsCloud, *vizobs);
     pcl::copyPointCloud(*drvCloud, *vizdrv);
 
-    for (uint64_t i = 0; i < vizground->size(); i++) {
-        vizground->at(i).intensity = 1;
-    }
-    for (uint64_t i = 0; i < vizdrv->size(); i++) {
-        vizdrv->at(i).intensity = 2;
-    }
-    for (uint64_t i = 0; i < vizobs->size(); i++) {
-        vizobs->at(i).intensity = 3;
-    }
-
     PointCloudDisplay display("groundsegmenter");
     display.startSpin();
     display.addPointcloud(vizground, 0);
-    std::this_thread::sleep_for(std::chrono::seconds(10));
+    std::this_thread::sleep_for(std::chrono::seconds(1));
     display.addPointcloud(vizobs, 1);
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    display.addPointcloud(vizdrv, 1);
     std::this_thread::sleep_for(std::chrono::seconds(10));
 
     display.stopSpin();
