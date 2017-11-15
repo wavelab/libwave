@@ -64,10 +64,26 @@ void PointCloudDisplay::updateInternal() {
     // add or update clouds in the viewer until the queue is empty
     while (this->clouds.size() != 0) {
         const auto &cld = this->clouds.front();
+        // Give each id a unique color, using the Glasbey table of maximally
+        // different colors. Use white for 0
+        // Note the color handler uses the odd format of doubles 0-255
+        double r = 255., g = 255., b = 255.;
+        if (cld.id > 0 &&
+            static_cast<unsigned>(cld.id) < pcl::GlasbeyLUT::size()) {
+            const auto rgb = pcl::GlasbeyLUT::at(cld.id);
+            r = static_cast<double>(rgb.r);
+            g = static_cast<double>(rgb.g);
+            b = static_cast<double>(rgb.b);
+        }
+        pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ>
+          col_handler{cld.cloud, r, g, b};
+
         if (this->viewer->contains(std::to_string(cld.id))) {
-            this->viewer->updatePointCloud(cld.cloud, std::to_string(cld.id));
+            this->viewer->updatePointCloud(
+              cld.cloud, col_handler, std::to_string(cld.id));
         } else {
-            this->viewer->addPointCloud(cld.cloud, std::to_string(cld.id));
+            this->viewer->addPointCloud(
+              cld.cloud, col_handler, std::to_string(cld.id));
             if (!this->camera_initialized) {
                 // Fit to view for the first object added
                 this->viewer->resetCamera();
