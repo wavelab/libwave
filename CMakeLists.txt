@@ -43,7 +43,7 @@ FIND_PACKAGE(Boost 1.54.0 COMPONENTS system filesystem)
 FIND_PACKAGE(PCL 1.8 COMPONENTS
     common filters registration kdtree search io visualization)
 FIND_PACKAGE(kindr)
-FIND_PACKAGE(OpenCV 3.2.0 COMPONENTS core features2d calib3d imgproc highgui)
+FIND_PACKAGE(OpenCV 3.2.0)
 FIND_PACKAGE(yaml-cpp REQUIRED)
 FIND_PACKAGE(Ceres 1.12)
 
