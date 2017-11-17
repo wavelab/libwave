@@ -55,10 +55,15 @@ class PointCloudDisplay {
      * @param cld: cloud to be added
      * @param id: id of cloud to be added. Same id can be
      * used to update cloud later
+     * @param reset_camera if true, moves the camera to fit the scene
      */
-    void addPointcloud(const PCLPointCloud &cld, int id);
+    void addPointcloud(const PCLPointCloud &cld,
+                       int id,
+                       bool reset_camera = false);
 
-    void addPointcloud(const pcl::PointCloud<pcl::PointXYZI>::Ptr &cld, int id);
+    void addPointcloud(const pcl::PointCloud<pcl::PointXYZI>::Ptr &cld,
+                       int id,
+                       bool reset_camera = false);
 
     /**
      * Queues a line to be added to the display.
@@ -69,11 +74,13 @@ class PointCloudDisplay {
      * @param pt2 End coordinate of line
      * @param id1 Start point ID
      * @param id2 End point ID
+     * @param reset_camera if true, moves the camera to fit the scene
      */
     void addLine(const pcl::PointXYZ &pt1,
                  const pcl::PointXYZ &pt2,
                  int id1,
-                 int id2);
+                 int id2,
+                 bool reset_camera = false);
 
  private:
     std::string display_name;
@@ -101,17 +108,20 @@ class PointCloudDisplay {
     struct Cloud {
         PCLPointCloud cloud;
         int id;
+        bool reset_camera;
     };
 
     struct CloudI {
         pcl::PointCloud<pcl::PointXYZI>::Ptr cloud;
         int id;
+        bool reset_camera;
     };
 
     /** Struct for line buffer */
     struct Line {
         pcl::PointXYZ pt1, pt2;
         int id1, id2;
+        bool reset_camera;
     };
 
     std::queue<Cloud> clouds;
