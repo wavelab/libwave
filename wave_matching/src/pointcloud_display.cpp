@@ -42,14 +42,14 @@ void PointCloudDisplay::addPointcloud(const PCLPointCloud &cld,
                                       int id,
                                       bool reset_camera) {
     this->update_mutex.lock();
-    this->clouds.emplace(Cloud{cld, id, reset_camera});
+    this->clouds.emplace(Cloud{cld->makeShared(), id, reset_camera});
     this->update_mutex.unlock();
 }
 
 void PointCloudDisplay::addPointcloud(
   const pcl::PointCloud<pcl::PointXYZI>::Ptr &cld, int id, bool reset_camera) {
     this->update_mutex.lock();
-    this->cloudsi.emplace(CloudI{cld, id, reset_camera});
+    this->cloudsi.emplace(CloudI{cld->makeShared(), id, reset_camera});
     this->update_mutex.unlock();
 }
 

@@ -52,9 +52,13 @@ class PointCloudDisplay {
     /**
      * Queues a pointcloud to be added to the display.
      * If worker thread isn't running nothing will happen.
+     *
+     * A copy of the cloud is taken. To show changes, call addPointcloud again
+     * with the same id.
+     *
      * @param cld: cloud to be added
-     * @param id: id of cloud to be added. Same id can be
-     * used to update cloud later
+     * @param id: identifier of cloud to be added. The id can be used to update
+     * the cloud later.
      * @param reset_camera if true, moves the camera to fit the scene
      */
     void addPointcloud(const PCLPointCloud &cld,
