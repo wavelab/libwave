@@ -24,7 +24,11 @@ FUNCTION(WAVE_ADD_TEST NAME)
 
     # Link gtest libraries including one providing main()
     # Link wave_utils as that contains wave_test.hpp
-    TARGET_LINK_LIBRARIES(${NAME} gtest gtest_main wave::utils)
+    if (QNX)
+        TARGET_LINK_LIBRARIES(${NAME} gtest gtest_main wave::utils)
+    else()
+        TARGET_LINK_LIBRARIES(${NAME} gtest gtest_main pthread wave::utils)
+    endif()
 
     # Put the test executable in the tests/ directory
     SET_TARGET_PROPERTIES(${NAME} PROPERTIES

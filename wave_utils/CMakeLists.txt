@@ -11,6 +11,10 @@ WAVE_ADD_MODULE(${PROJECT_NAME}
     src/math.cpp
     src/time.cpp)
 
+if (QNX)
+    INCLUDE_DIRECTORIES(${PROJECT_NAME} ${YAML_CPP_INCLUDE_DIR})
+endif()
+
 # Unit tests
 IF(BUILD_TESTING)
     WAVE_ADD_TEST(${PROJECT_NAME}_tests
