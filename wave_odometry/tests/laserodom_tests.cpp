@@ -477,6 +477,7 @@ TEST_F(OdomTestFile, VisualizeFeatures) {
     LaserOdomParams params;
     params.n_flat = 30;
     params.n_edge = 40;
+    params.edge_tol = 2;
     LaserOdom odom(params);
     std::vector<PointXYZIR> vec;
     pcl::PointCloud<pcl::PointXYZI>::Ptr vizref(new pcl::PointCloud<pcl::PointXYZI>),
@@ -504,7 +505,7 @@ TEST_F(OdomTestFile, VisualizeFeatures) {
     LOG_INFO("Feature extraction took %lu ms", extract_time.count());
 
     for (uint16_t i = 0; i < 32; i++) {
-        for (auto iter = odom.edges.at(i).begin(); iter < odom.edges.at(i).end(); iter++) {
+        for (auto iter = odom.feature_points.at(0).at(i).begin(); iter < odom.feature_points.at(0).at(i).end(); iter++) {
             pcl::PointXYZI pt;
             pt.x = iter->pt[0];
             pt.y = iter->pt[1];
@@ -512,7 +513,7 @@ TEST_F(OdomTestFile, VisualizeFeatures) {
             pt.intensity = 1;
             vizedge->push_back(pt);
         }
-        for (auto iter = odom.flats.at(i).begin(); iter < odom.flats.at(i).end(); iter++) {
+        for (auto iter = odom.feature_points.at(1).at(i).begin(); iter < odom.feature_points.at(1).at(i).end(); iter++) {
             pcl::PointXYZI pt;
             pt.x = iter->pt[0];
             pt.y = iter->pt[1];

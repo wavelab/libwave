@@ -100,6 +100,8 @@ LaserOdom::LaserOdom(const LaserOdomParams params) : param(params) {
     this->prv_feature_points.resize(this->N_FEATURES);
     this->feature_corrs.resize(this->N_FEATURES);
     this->output_corrs.resize(this->N_FEATURES);
+    this->feature_idx.resize(this->N_FEATURES);
+    this->feature_association.resize(this->N_FEATURES);
 
     for (uint32_t i = 0; i < this->N_SIGNALS; i++) {
         this->signals.at(i).resize(n_ring);
@@ -310,7 +312,7 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
         p.intensity = pt.intensity;
         p.tick = (uint16_t) tick;
         this->cur_scan.at(pt.ring).push_back(this->applyIMU(p));
-        this->signals[0].at(pt.ring).push_back(l2sqrd(p));
+        this->signals[0].at(pt.ring).push_back(std::sqrt(l2sqrd(p)));
         this->signals[1].at(pt.ring).push_back((double) p.intensity);
     }
 
@@ -672,7 +674,7 @@ void LaserOdom::prefilter() {
         std::vector<bool> valid(this->signals[0].at(i).size(), true);
 //        const uint32_t offsets[2] = {(this->kernels[0]->size() - 1) / 2, (this->kernels[1]->size() - 1) / 2};
         // Now loop through the points in this ring and set valid_idx accordingly
-        for (unlong j = 1; j < this->cur_scan.at(i).size() - 1; j++) {
+        for (unlong j = 1; j + 1 < this->cur_scan.at(i).size(); j++) {
             auto delforward = this->l2sqrd(this->cur_scan.at(i).at(j), this->cur_scan.at(i).at(j + 1));
             auto delback = this->l2sqrd(this->cur_scan.at(i).at(j), this->cur_scan.at(i).at(j - 1));
             // First section excludes any points who's score is likely caused
