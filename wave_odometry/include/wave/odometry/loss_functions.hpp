@@ -15,15 +15,6 @@ class BisquareLoss : public ceres::LossFunction {
     const double k2_;
 };
 
-class HuberBisquareLoss : public ceres::LossFunction {
- public:
-    explicit HuberBisquareLoss(double k) : k_(k) {}
-    virtual void Evaluate(double ip, double* op) const;
-
- private:
-    const double k_;
-};
-
 }  // namespace wave
 
 #endif //WAVE_LOSS_FUNCTIONS_HPP

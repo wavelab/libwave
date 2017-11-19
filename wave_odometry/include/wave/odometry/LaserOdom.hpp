@@ -23,6 +23,7 @@
 #include <pcl/point_cloud.h>
 
 #include <Eigen/Core>
+#include <eigen3/unsupported/Eigen/CXX11/Tensor>
 
 #include "wave/containers/measurement_container.hpp"
 #include "wave/containers/measurement.hpp"
@@ -34,6 +35,7 @@
 #include "wave/odometry/laser_odom_residuals.hpp"
 #include "wave/odometry/se3_residuals.hpp"
 #include "wave/odometry/loss_functions.hpp"
+#include "wave/odometry/kernels.hpp"
 #include "wave/optimization/ceres/SE3Parameterization.hpp"
 #include "wave/utils/math.hpp"
 
@@ -79,8 +81,9 @@ struct LaserOdomParams {
     unlong knn = 5;               // 1/2 nearest neighbours for computing curvature
     unlong key_radius = 5;        // minimum number of points between keypoints on the same laser ring
     float map_density = 0.01;     // Minimum l2squared spacing of features kept for odometry
-    double azimuth_tol = 0.04;    // Minimum azimuth difference between correspondences
-    uint16_t TTL = 1;            // Maximum life of feature in local map with no correspondences
+    // one degree. Beam spacing is 1.33deg, so this should be sufficient
+    double azimuth_tol = 0.0174532925199433;    // Minimum azimuth difference across correspondences
+    uint16_t TTL = 1;             // Maximum life of feature in local map with no correspondences
 
     // Setting flags
     bool imposePrior = false;             // Whether to add a prior constraint on transform from the previous scan match
@@ -97,8 +100,8 @@ class LaserOdom {
     ~LaserOdom();
     void addPoints(const std::vector<PointXYZIR> &pts, const int tick, TimeType stamp);
     void addIMU(std::vector<double> linacc, Quaternion orientation);
-    std::vector<std::vector<PointXYZIT>> edges, flats;
-    FeatureKDTree<double> prv_edges, prv_flats;
+    std::vector<std::vector<std::vector<PointXYZIT>>> feature_points;  // edges, flats;
+    std::vector<FeatureKDTree<double>> prv_feature_points;             // prv_edges, prv_flats;
     // The transform is T_start_end
     Transformation cur_transform, prev_transform;
 
@@ -113,16 +116,18 @@ class LaserOdom {
 
     // Shared memory
     pcl::PointCloud<pcl::PointXYZI> undistorted_cld;
-    pcl::PointCloud<pcl::PointXYZ> undis_edges, undis_flats;
-    pcl::PointCloud<pcl::PointXYZ> map_edges, map_flats;
+    std::vector<pcl::PointCloud<pcl::PointXYZ>> undis_features;  // undis_edges, undis_flats;
+    std::vector<pcl::PointCloud<pcl::PointXYZ>> map_features;    // map_edges, map_flats;
+    std::vector<std::vector<std::vector<double>>> output_corrs;
     TimeType undistorted_stamp;
     Transformation undistort_transform;
     double covar[144];  // use lift jacobians to reduce covariance coming out of ceres
-    std::vector<std::array<double, 12>> edge_cor;
-    std::vector<std::array<double, 15>> flat_cor;
 
     void updateParams(const LaserOdomParams);
     LaserOdomParams getParams();
+
+    const uint32_t N_SIGNALS = 2;
+    const uint32_t N_FEATURES = 5;
 
  private:
     // Visualizer elements, not allocated unless used
@@ -131,7 +136,7 @@ class LaserOdom {
     void updateViz();
     // Output trajectory file
     std::ofstream file;
-    Eigen::IOFormat* CSVFormat;
+    Eigen::IOFormat *CSVFormat;
 
     // Flow control
     std::atomic_bool continue_output;
@@ -151,20 +156,17 @@ class LaserOdom {
     int prv_tick = std::numeric_limits<int>::max();
     std::vector<double> scale_lookup;
 
-    void computeCurvature();
+    void computeScores();
     void prefilter();
     void generateFeatures();
     void buildTrees();
     bool findCorrespondingPoints(const Vec3 &query,
-                                 const uint16_t knn,
-                                 const bool searchPlanarPoints,
+                                 const uint32_t &f_idx,
                                  std::vector<size_t> *index);
-    std::vector<std::array<uint16_t, 4>> edge_corrs;
-    std::vector<std::array<uint16_t, 5>> flat_corrs;
 
     PCLPointXYZIT applyIMU(const PCLPointXYZIT &pt);
-    void transformToStart(const double *const pt, const uint16_t tick, double *output, const Vec6& twist);
-    void transformToEnd(const double *const pt, const uint16_t tick, double *output, const Vec6& twist);
+    void transformToStart(const double *const pt, const uint16_t tick, double *output, const Vec6 &twist);
+    void transformToEnd(const double *const pt, const uint16_t tick, double *output, const Vec6 &twist);
 
     // store for the IMU integral
     MeasurementContainer<IMUMeasurement> imu_trans;
@@ -174,19 +176,54 @@ class LaserOdom {
     static float l2sqrd(const PCLPointXYZIT &p1, const PCLPointXYZIT &p2);
     static float l2sqrd(const PCLPointXYZIT &pt);
     static PCLPointXYZIT scale(const PCLPointXYZIT &pt, const float scale);
-    void flagNearbyPoints(const unlong ring, const unlong index);
+    void flagNearbyPoints(const unlong f_idx, const unlong ring, const unlong p_idx);
 
-    // first input layer
-    std::vector<std::vector<std::pair<bool, float>>> cur_curve;
-    std::vector<std::vector<std::pair<unlong, float>>> filter;
+    // The input, in order of processing
+
+    // Input set of points. Grouped by laser
     std::vector<pcl::PointCloud<PCLPointXYZIT>> cur_scan;
-    kd_tree_t *edge_idx;
-    kd_tree_t *flat_idx;
+    // The range and intensity signals, grouped by kernel and ring
+    std::vector<std::vector<std::vector<double>>> signals;
+    // The resulting scores for each signal, grouped by kernel and ring
+    std::vector<std::vector<std::vector<double>>> scores;
+    // Whether points are still considered candidates. Required to avoid picking neighbouring points
+    std::vector<std::vector<std::vector<bool>>> valid_pts;
+    // Shared pointers to scoring kernels
+    std::vector<std::shared_ptr<Eigen::Tensor<double, 1>>> kernels;
+    // Container to sort scores with. Each is built depending on feature specification
+    std::vector<std::vector<std::vector<std::pair<unlong, double>>>> filtered_scores;
+    void buildFilteredScore(const std::vector<bool> &valid, const uint32_t &f_idx, const uint32_t &ring);
 
+    std::vector<std::shared_ptr<kd_tree_t>> feature_idx;
+    // This is container to hold indices of for each feature used in the optimization
+    // It is indexed by feature_id, then by ring_id, then by correspondence.
+    // It contains a vector of indices, the first is the feature point, the next are the indices of the
+    // map or prv feature points it corresponds to
+    std::vector<std::vector<std::vector<std::vector<uint64_t>>>> feature_corrs;
     enum AssociationStatus { CORRESPONDED, UNCORRESPONDED };
 
-    std::vector<std::pair<uint16_t, AssociationStatus>> edge_association;
-    std::vector<std::pair<uint16_t, AssociationStatus>> flat_association;
+    // Eventually connect to yamls to be able to change
+    // kernels & policies very quickly
+    enum SelectionPolicy { HIGH_POS, HIGH_NEG, NEAR_ZERO };
+    enum Kernel { LOAM, LOG, FOG };
+    enum ResidualType { PointToLine, PointToPlane };
+    struct Criteria {
+        Kernel kernel;
+        SelectionPolicy sel_pol;
+        double threshold;
+    };
+
+    struct FeatureDefinition {
+        // score criteria. First item defines sort, any other criteria
+        // is checked for validity.
+        std::vector<Criteria> criteria;
+        // Type of residual to use with this feature type
+        ResidualType residual;
+        int n_limit;
+    };
+    std::vector<FeatureDefinition> feature_definitions;
+
+    std::vector<std::vector<std::pair<uint64_t, AssociationStatus>>> feature_association;
 };
 
 }  // namespace wave
