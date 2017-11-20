@@ -333,7 +333,7 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
                 }
                 this->output_condition.notify_one();
             }
-            this->undistort();
+//            this->undistort();
         }
         this->rollover(stamp);
     }
