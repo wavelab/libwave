@@ -62,7 +62,7 @@ class PointCloudDisplay {
      * @param reset_camera if true, moves the camera to fit the scene
      */
   
-    void addPointcloud(const PCLPointCloud &cld,
+    void addPointcloud(const PCLPointCloudPtr &cld,
                        int id,
                        bool reset_camera = false);
 

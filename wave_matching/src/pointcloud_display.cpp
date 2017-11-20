@@ -38,7 +38,7 @@ void PointCloudDisplay::spin() {
     this->viewer.reset();
 }
 
-void PointCloudDisplay::addPointcloud(const PCLPointCloud &cld,
+void PointCloudDisplay::addPointcloud(const PCLPointCloudPtr &cld,
                                       int id,
                                       bool reset_camera) {
     this->update_mutex.lock();
