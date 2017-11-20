@@ -19,7 +19,7 @@ namespace wave {
  * implementations are
  * wrapped, so they use the same datatype for the pointcloud.
  */
-typedef pcl::PointCloud<pcl::PointXYZ>::Ptr PCLPointCloud;
+typedef pcl::PointCloud<pcl::PointXYZ>::Ptr PCLPointCloudPtr;
 
 /** @} group matching */
 }  // namespace wave

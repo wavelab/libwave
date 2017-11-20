@@ -61,7 +61,8 @@ class PointCloudDisplay {
      * the cloud later.
      * @param reset_camera if true, moves the camera to fit the scene
      */
-    void addPointcloud(const PCLPointCloud &cld,
+
+    void addPointcloud(const PCLPointCloudPtr &cld,
                        int id,
                        bool reset_camera = false);
 
@@ -110,7 +111,7 @@ class PointCloudDisplay {
     std::mutex update_mutex;  ///< Protects buffers
     /** Struct for cloud buffer */
     struct Cloud {
-        PCLPointCloud cloud;
+        PCLPointCloudPtr cloud;
         int id;
         bool reset_camera;
     };

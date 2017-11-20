@@ -35,7 +35,7 @@ GICPMatcher::GICPMatcher(GICPMatcherParams params1) : params(params1) {
     this->gicp.setEuclideanFitnessEpsilon(this->params.fit_eps);
 }
 
-void GICPMatcher::setRef(const PCLPointCloud &ref) {
+void GICPMatcher::setRef(const PCLPointCloudPtr &ref) {
     if (this->resolution > 0) {
         this->filter.setInputCloud(ref);
         this->filter.filter(*(this->ref));
@@ -45,7 +45,7 @@ void GICPMatcher::setRef(const PCLPointCloud &ref) {
     this->gicp.setInputSource(this->ref);
 }
 
-void GICPMatcher::setTarget(const PCLPointCloud &target) {
+void GICPMatcher::setTarget(const PCLPointCloudPtr &target) {
     if (resolution > 0) {
         this->filter.setInputCloud(target);
         this->filter.filter(*(this->target));

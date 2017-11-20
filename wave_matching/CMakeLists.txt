@@ -9,6 +9,7 @@ WAVE_ADD_MODULE(${PROJECT_NAME}
     SOURCES
     src/gicp.cpp
     src/icp.cpp
+    src/icp_pcl_functions.cpp
     src/ndt.cpp
     src/ground_segmentation.cpp
     src/pointcloud_display.cpp)
