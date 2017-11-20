@@ -54,6 +54,7 @@ struct LaserOdomParams {
     float diff_tol = 1e-6;  // norm of transform vector must change by more than this to continue
     float huber_delta = 0.2;
     float max_correspondence_dist = 0.4;  // correspondences greater than this are discarded
+    double max_residual_val = 0.1;        // Residuals with an initial error greater than this are not used.
     double rotation_stiffness = 1;
     double translation_stiffness = 1;
     double T_z_multiplier = 1;
@@ -76,14 +77,18 @@ struct LaserOdomParams {
     float keypt_radius = 0.05;    // m2. Non maximum suppression distance
     float edge_tol = 0.1;         // Edge features must have score higher than this
     float flat_tol = 0.1;         // Plane features must have score lower than this
+    float int_edge_tol = 2;       // Intensity edge features must have score greater than this
+    float int_flat_tol = 0.1;     // Intensity edges must have range score lower than this
     int n_edge = 40;              // How many edge features to pick out per ring
     int n_flat = 100;             // How many plane features to pick out per ring
+    int n_int_edge = 0;           // How many intensity edges to pick out per ring
     unlong knn = 5;               // 1/2 nearest neighbours for computing curvature
     unlong key_radius = 5;        // minimum number of points between keypoints on the same laser ring
     float map_density = 0.01;     // Minimum l2squared spacing of features kept for odometry
     // one degree. Beam spacing is 1.33deg, so this should be sufficient
     double azimuth_tol = 0.0174532925199433;    // Minimum azimuth difference across correspondences
     uint16_t TTL = 1;             // Maximum life of feature in local map with no correspondences
+    double iso_var = 0.005;       // Variance to use if weighing is set.
 
     // Setting flags
     bool imposePrior = false;             // Whether to add a prior constraint on transform from the previous scan match
@@ -91,6 +96,7 @@ struct LaserOdomParams {
     bool output_trajectory = false;       // Whether to output solutions for debugging/plotting
     bool output_correspondences = false;  // Whether to output correpondences for debugging/plotting
     bool only_extract_features = false;   // If set, no transforms are calculated
+    bool use_weighting = false;
 };
 
 class LaserOdom {
@@ -127,6 +133,7 @@ class LaserOdom {
     LaserOdomParams getParams();
 
     const uint32_t N_SIGNALS = 2;
+    const uint32_t N_SCORES = 3;
     const uint32_t N_FEATURES = 5;
 
  private:

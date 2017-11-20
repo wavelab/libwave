@@ -1,3 +1,5 @@
+// for matrix square root
+#include <eigen3/unsupported/Eigen/MatrixFunctions>
 #include "wave/optimization/ceres/SE3Parameterization.hpp"
 #include "wave/geometry/transformation.hpp"
 
@@ -29,6 +31,13 @@ bool SE3Parameterization::Plus(const double *x, const double *delta, double *x_p
     transform.manifoldPlus(delta_vec);
     auto R = transform.getRotationMatrix();
     auto trans = transform.getTranslation();
+
+    // Check if R has strayed too far outside SO(3)
+    // and if so normalize
+    if ((R.matrix().determinant() - 1) > 1e-5) {
+        decltype(R) temp = R * R.transpose();
+        R = temp.sqrt().inverse() * R;
+    }
 
     x_plus_delta[0] = R(0,0);
     x_plus_delta[1] = R(1,0);

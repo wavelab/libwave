@@ -36,6 +36,9 @@ bool SE3PointToLine::Evaluate(double const *const *parameters, double *residuals
     residuals[0] = point[0] - p_Tl[0];
     residuals[1] = point[1] - p_Tl[1];
     residuals[2] = point[2] - p_Tl[2];
+    Eigen::Map<Vec3> res(residuals, 3, 1);
+    res = this->weight_matrix * res;
+    Eigen::Map<Vec3>(residuals, 3, 1) = res;
 
     if (jacobians != NULL) {
         // This is the Jacobian of the cost function wrt the transformed point
@@ -53,7 +56,7 @@ bool SE3PointToLine::Evaluate(double const *const *parameters, double *residuals
         Eigen::Matrix<double, 3, 12> Jr_T;
 
         // Identity * scale is approximating the Jacobian of the Interpolated Transform wrt the complete Transform
-        Jr_T = Jres_P * JP_T * *(this->scale);
+        Jr_T = this->weight_matrix * Jres_P * JP_T * *(this->scale);
 
         Eigen::Map<Eigen::Matrix<double, 3, 12, Eigen::RowMajor>>(jacobians[0], 3, 12) = Jr_T;
     }
@@ -88,7 +91,7 @@ bool SE3PointToPlane::Evaluate(double const *const *parameters, double *residual
     double den = ceres::sqrt(cBA_BC[0] * cBA_BC[0] + cBA_BC[1] * cBA_BC[1] + cBA_BC[2] * cBA_BC[2]);
     double num = cBA_BC[0] * d_B[0] + cBA_BC[1] * d_B[1] + cBA_BC[2] * d_B[2];
 
-    residuals[0] = num / den;
+    residuals[0] = this->weight * (num / den);
 
     if((jacobians != NULL) && (jacobians[0] != NULL)) {
         // This is the Jacobian of the cost function wrt the transformed point
@@ -111,7 +114,7 @@ bool SE3PointToPlane::Evaluate(double const *const *parameters, double *residual
         Eigen::Matrix<double, 1, 12> Jr_T;
 
         // Identity * scale is approximating the Jacobian of the Interpolated Transform wrt the complete Transform
-        Jr_T = Jr_P * JP_T * *(this->scale);
+        Jr_T = this->weight * Jr_P * JP_T * *(this->scale);
 
         Eigen::Map<Eigen::Matrix<double, 1, 12, Eigen::RowMajor>>(jacobians[0], 1, 12) = Jr_T;
     }

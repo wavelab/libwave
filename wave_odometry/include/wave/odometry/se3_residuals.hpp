@@ -14,11 +14,12 @@ class SE3PointToLine : public ceres::SizedCostFunction<3, 12> {
     const double *const ptA;
     const double *const ptB;
     const double *const scale;
+    Mat3 weight_matrix;
 
  public:
     virtual ~SE3PointToLine() {}
-    SE3PointToLine(const double *const p, const double *const pA, const double *const pB, const double *const scal)
-        : pt(p), ptA(pA), ptB(pB), scale(scal) {}
+    SE3PointToLine(const double *const p, const double *const pA, const double *const pB, const double *const scal, Mat3 weight)
+        : pt(p), ptA(pA), ptB(pB), scale(scal), weight_matrix(weight) {}
     virtual bool Evaluate(double const *const *parameters, double *residuals, double **jacobians) const;
 };
 
@@ -29,6 +30,7 @@ class SE3PointToPlane : public ceres::SizedCostFunction<1, 12> {
     const double *const ptB;
     const double *const ptC;
     const double *const scale;
+    double weight;
 
  public:
     virtual ~SE3PointToPlane() {}
@@ -36,8 +38,9 @@ class SE3PointToPlane : public ceres::SizedCostFunction<1, 12> {
                     const double *const pA,
                     const double *const pB,
                     const double *const pC,
-                    const double *const scal)
-        : pt(p), ptA(pA), ptB(pB), ptC(pC), scale(scal) {}
+                    const double *const scal,
+                    double weighting)
+        : pt(p), ptA(pA), ptB(pB), ptC(pC), scale(scal), weight(weighting) {}
     virtual bool Evaluate(double const *const *parameters, double *residuals, double **jacobians) const;
 };
 }

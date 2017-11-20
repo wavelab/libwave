@@ -1,4 +1,5 @@
 #include "wave/odometry/LaserOdom.hpp"
+#include "wave/odometry/weighting_functions.hpp"
 
 namespace wave {
 
@@ -8,6 +9,14 @@ double l2length(const double *const vec, uint16_t length) {
         retval += vec[i] * vec[i];
     }
     return retval;
+}
+
+double norm(const std::vector<double> &vec) {
+    double retval = 0;
+    for (size_t i = 0; i < vec.size(); i++) {
+        retval += vec[i] * vec[i];
+    }
+    return std::sqrt(retval);
 }
 
 void LaserOdom::flagNearbyPoints(const unlong f_idx, const unlong ring, const unlong p_idx) {
@@ -69,30 +78,34 @@ LaserOdom::LaserOdom(const LaserOdomParams params) : param(params) {
 
     auto n_ring = static_cast<size_t>(param.n_ring);
     this->cur_scan.resize(n_ring);
-    this->kernels.resize(N_SIGNALS);
+    this->kernels.resize(this->N_SCORES);
     this->kernels.at(0) = std::make_shared<Eigen::Tensor<double, 1>>(11);
     memcpy(this->kernels.at(0)->data(), loam_kernel, 88);
     this->kernels.at(1) = std::make_shared<Eigen::Tensor<double, 1>>(11);
     memcpy(this->kernels.at(1)->data(), LoG_kernel, 88);
+    this->kernels.at(2) = std::make_shared<Eigen::Tensor<double, 1>>(9);
+    memcpy(this->kernels.at(2)->data(), FoG_kernel, 72);
 
     // Define features
     std::vector<Criteria> edge_high, edge_low, flat, edge_int_high, edge_int_low;
     edge_high.emplace_back(Criteria{Kernel::LOAM, SelectionPolicy::HIGH_POS, param.edge_tol});
     edge_low.emplace_back(Criteria{Kernel::LOAM, SelectionPolicy::HIGH_NEG, param.edge_tol});
     flat.emplace_back(Criteria{Kernel::LOAM, SelectionPolicy::NEAR_ZERO, param.flat_tol});
-    edge_int_high.emplace_back(Criteria{Kernel::LOG, SelectionPolicy::HIGH_POS, param.edge_tol});
-    edge_int_high.emplace_back(Criteria{Kernel::LOAM, SelectionPolicy::NEAR_ZERO, param.flat_tol});
-    edge_int_low.emplace_back(Criteria{Kernel::LOG, SelectionPolicy::HIGH_POS, param.edge_tol});
-    edge_int_low.emplace_back(Criteria{Kernel::LOAM, SelectionPolicy::NEAR_ZERO, param.flat_tol});
+    edge_int_high.emplace_back(Criteria{Kernel::FOG, SelectionPolicy::HIGH_POS, param.int_edge_tol});
+    edge_int_high.emplace_back(Criteria{Kernel::LOAM, SelectionPolicy::NEAR_ZERO, param.int_flat_tol});
+    edge_int_low.emplace_back(Criteria{Kernel::FOG, SelectionPolicy::HIGH_POS, param.int_edge_tol});
+    edge_int_low.emplace_back(Criteria{Kernel::LOAM, SelectionPolicy::NEAR_ZERO, param.int_flat_tol});
 
     this->feature_definitions.emplace_back(FeatureDefinition{edge_high, ResidualType::PointToLine, param.n_edge});
     this->feature_definitions.emplace_back(FeatureDefinition{edge_low, ResidualType::PointToLine, param.n_edge});
     this->feature_definitions.emplace_back(FeatureDefinition{flat, ResidualType::PointToPlane, param.n_flat});
-    this->feature_definitions.emplace_back(FeatureDefinition{edge_int_high, ResidualType::PointToLine, param.n_edge});
-    this->feature_definitions.emplace_back(FeatureDefinition{edge_int_low, ResidualType::PointToLine, param.n_edge});
+    this->feature_definitions.emplace_back(
+      FeatureDefinition{edge_int_high, ResidualType::PointToLine, param.n_int_edge});
+    this->feature_definitions.emplace_back(
+      FeatureDefinition{edge_int_low, ResidualType::PointToLine, param.n_int_edge});
 
     this->signals.resize(this->N_SIGNALS);
-    this->scores.resize(this->N_SIGNALS);
+    this->scores.resize(this->N_SCORES);
 
     this->valid_pts.resize(this->N_FEATURES);
     this->filtered_scores.resize(this->N_FEATURES);
@@ -102,9 +115,14 @@ LaserOdom::LaserOdom(const LaserOdomParams params) : param(params) {
     this->output_corrs.resize(this->N_FEATURES);
     this->feature_idx.resize(this->N_FEATURES);
     this->feature_association.resize(this->N_FEATURES);
+    this->undis_features.resize(this->N_FEATURES);
+    this->map_features.resize(this->N_FEATURES);
 
     for (uint32_t i = 0; i < this->N_SIGNALS; i++) {
         this->signals.at(i).resize(n_ring);
+    }
+
+    for (uint32_t i = 0; i < this->N_SCORES; i++) {
         this->scores.at(i).resize(n_ring);
     }
 
@@ -215,9 +233,9 @@ void LaserOdom::undistort() {
         }
         for (uint32_t j = 0; j < this->N_FEATURES; j++) {
             for (uint32_t i = 0; i < this->feature_points.at(j).at(r_idx).size(); i++) {
-                double point[3] = {
-                        this->feature_points.at(j).at(r_idx).at(i).pt[0], feature_points.at(j).at(r_idx).at(i).pt[1],
-                        feature_points.at(j).at(r_idx).at(i).pt[2]};
+                double point[3] = {this->feature_points.at(j).at(r_idx).at(i).pt[0],
+                                   feature_points.at(j).at(r_idx).at(i).pt[1],
+                                   feature_points.at(j).at(r_idx).at(i).pt[2]};
                 double u_pt[3];
                 this->transformToStart(point, feature_points.at(j).at(r_idx).at(i).tick, u_pt, undistort_twist);
                 pcl::PointXYZ op_pt;
@@ -232,15 +250,30 @@ void LaserOdom::undistort() {
                 std::vector<double> undis(3 * (corr_list.size() + 1));
                 this->transformToStart(&(this->feature_points.at(j).at(r_idx).at(corr_list.at(0)).pt[0]),
                                        this->feature_points.at(j).at(r_idx).at(corr_list.at(0)).tick,
-                                       &(undis[corr_list.size() - 3]),
+                                       &(undis[undis.size() - 3]),
                                        undistort_twist);
                 memcpy(undis.data(), this->feature_points.at(j).at(r_idx).at(corr_list.at(0)).pt, 24);
-                for (uint32_t k = 1; k + 1 < corr_list.size(); k++) {
-                    memcpy(undis.data() + 3*k, this->prv_feature_points.at(j).points.at(corr_list.at(k)).data(), 24);
+                for (uint32_t k = 1; k < corr_list.size(); k++) {
+                    memcpy(undis.data() + 3 * k, this->prv_feature_points.at(j).points.at(corr_list.at(k)).data(), 24);
                 }
 
                 this->output_corrs.at(j).emplace_back(std::vector<double>(undis.begin(), undis.end()));
             }
+        }
+    }
+
+    if (this->param.output_correspondences) {
+        long timestamp = std::chrono::system_clock::now().time_since_epoch().count();
+        for (uint32_t i = 0; i < this->N_FEATURES; i++) {
+            ofstream cur_file;
+            cur_file.open(std::to_string(timestamp) + "feature_" + std::to_string(i) + "_cor.txt");
+            for (auto vec : this->output_corrs.at(i)) {
+                for (auto val : vec) {
+                    cur_file << std::to_string(val) << " ";
+                }
+                cur_file << std::endl;
+            }
+            cur_file.close();
         }
     }
 
@@ -300,6 +333,7 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
                 }
                 this->output_condition.notify_one();
             }
+            this->undistort();
         }
         this->rollover(stamp);
     }
@@ -328,7 +362,9 @@ void LaserOdom::updateViz() {
     Vec6 cur_twist = this->cur_transform.logMap();
 
     for (uint32_t i = 0; i < this->N_FEATURES; i++) {
-        for (auto iter = this->prv_feature_points.at(i).points.begin(); iter != this->prv_feature_points.at(i).points.end(); iter++) {
+        for (auto iter = this->prv_feature_points.at(i).points.begin();
+             iter != this->prv_feature_points.at(i).points.end();
+             iter++) {
             pcl::PointXYZI pt;
             pt.x = (float) (*iter).at(0);
             pt.y = (float) (*iter).at(1);
@@ -410,6 +446,13 @@ void LaserOdom::buildTrees() {
                     continue;
                 }
             }
+            auto loc = this->prv_feature_points.at(i).points.size() - 1;
+            memcpy(this->prv_feature_points.at(i).points.at(j).data(),
+                   this->prv_feature_points.at(i).points.at(loc).data(),
+                   24);
+            this->feature_association.at(i).at(j) = this->feature_association.at(i).at(loc);
+            this->prv_feature_points.at(i).points.resize(loc);
+            this->feature_association.at(i).resize(loc);
         }
         // rebuild kdtree index
         if (this->prv_feature_points.at(i).points.size() > 0) {
@@ -424,9 +467,10 @@ void LaserOdom::buildTrees() {
 
                 this->feature_idx.at(i)->findNeighbors(resultSet, transformed_pt, nanoflann::SearchParams(32, 1));
                 if (out_dist_sqr > this->param.map_density) {
-                    this->feature_association.at(i).push_back(std::make_pair(this->param.TTL, AssociationStatus::UNCORRESPONDED));
+                    this->feature_association.at(i).push_back(
+                      std::make_pair(this->param.TTL, AssociationStatus::UNCORRESPONDED));
                     this->prv_feature_points.at(i).points.push_back(
-                            std::array<double, 3>{transformed_pt[0], transformed_pt[1], transformed_pt[2]});
+                      std::array<double, 3>{transformed_pt[0], transformed_pt[1], transformed_pt[2]});
                 }
             }
         }
@@ -438,22 +482,15 @@ void LaserOdom::buildTrees() {
     }
 }
 
-bool LaserOdom::findCorrespondingPoints(const Vec3 &query,
-                                        const uint32_t &f_idx,
-                                        std::vector<size_t> *index) {
+bool LaserOdom::findCorrespondingPoints(const Vec3 &query, const uint32_t &f_idx, std::vector<size_t> *index) {
     using ContType = std::pair<size_t, double>;
     std::vector<ContType> indices_dists;
     nanoflann::RadiusResultSet<double, size_t> resultSet(this->param.max_correspondence_dist, indices_dists);
     uint32_t knn = 0;
-    switch(this->feature_definitions.at(f_idx).residual) {
-        case PointToLine:
-            knn = 2;
-            break;
-        case PointToPlane:
-            knn = 3;
-            break;
-        default:
-            knn = 0;
+    switch (this->feature_definitions.at(f_idx).residual) {
+        case PointToLine: knn = 2; break;
+        case PointToPlane: knn = 3; break;
+        default: knn = 0;
     }
     this->feature_idx.at(f_idx)->findNeighbors(resultSet, query.data(), nanoflann::SearchParams());
     if (indices_dists.size() < knn) {
@@ -467,40 +504,36 @@ bool LaserOdom::findCorrespondingPoints(const Vec3 &query,
     // In order to ensure correspondences are not picked along a scan line,
     // use bins and enforce that the set of correspondences should fall into at
     // least 2 bins
-    std::set<int> bins;
     double offset = 0;
     double current_azimuth = 0;
     uint16_t counter = 0;
+    bool non_zero_bin = false;
     double const *point;
     while (counter < indices_dists.size()) {
         point = this->prv_feature_points.at(f_idx).points.at(indices_dists.at(counter).first).data();
         if (counter == 0) {
             offset = std::atan2(point[2], std::sqrt(point[0] * point[0] + point[1] * point[1]));
+        } else {
+            current_azimuth = std::atan2(point[2], std::sqrt(point[0] * point[0] + point[1] * point[1]));
+            double t_bin = (current_azimuth - offset) / this->param.azimuth_tol;
+            int cur_bin = t_bin > 0 ? (int) (t_bin + 0.5) : (int) (t_bin - 0.5);
+            if (cur_bin != 0) {
+                non_zero_bin = true;
+            }
         }
-        current_azimuth = std::atan2(point[2], std::sqrt(point[0] * point[0] + point[1] * point[1]));
-        double t_bin = (current_azimuth - offset) / this->param.azimuth_tol;
-        int cur_bin = t_bin > 0 ? (int) (t_bin + 0.5) : (int) (t_bin - 0.5);
-        if (index->size() + 1 != knn || (bins.find(cur_bin) == bins.end())) {
+        if (index->size() + 1 != knn || non_zero_bin) {
             index->push_back(indices_dists.at(counter).first);
-            bins.insert(cur_bin);
-            ++counter;
-            continue;
         }
         if (index->size() == knn) {
             return true;
         }
+        ++counter;
     }
     return false;
 }
 
 bool LaserOdom::match() {
     ceres::Problem problem;
-    std::ofstream edge_cor, flat_cor;
-    if (this->param.output_correspondences) {
-        long timestamp = std::chrono::system_clock::now().time_since_epoch().count();
-        edge_cor.open(std::to_string(timestamp) + "edges_cor.txt");
-        flat_cor.open(std::to_string(timestamp) + "flat_cor.txt");
-    }
 
     std::vector<size_t> ret_indices;
     std::vector<double> out_dist_sqr;
@@ -515,36 +548,66 @@ bool LaserOdom::match() {
     for (uint16_t i = 0; i < this->N_FEATURES; i++) {
         for (uint16_t j = 0; j < this->param.n_ring; j++) {
             this->feature_corrs.at(i).at(j).clear();
-            uint64_t pt_cntr = 0;
-            for (auto pt : this->feature_points.at(i).at(j)) {
+            for (uint64_t pt_cntr = 0; pt_cntr < this->feature_points.at(i).at(j).size(); pt_cntr++) {
                 double transformed[3];
-                this->transformToStart(pt.pt, pt.tick, transformed, cur_twist);
+                this->transformToStart(this->feature_points.at(i).at(j).at(pt_cntr).pt,
+                                       this->feature_points.at(i).at(j).at(pt_cntr).tick,
+                                       transformed,
+                                       cur_twist);
                 Eigen::Map<const Vec3> query(transformed, 3, 1);
                 ret_indices.clear();
                 out_dist_sqr.clear();
                 if (this->findCorrespondingPoints(query, i, &ret_indices)) {
                     ceres::CostFunction *cost_function;
+                    std::vector<double> residuals;
+                    Mat3 weightPtL;
+                    weightPtL.setIdentity();
+                    double weightPtP = 1;
                     switch (this->feature_definitions.at(i).residual) {
                         case PointToLine:
-                            cost_function = new SE3PointToLine(pt.pt,
-                                                               this->prv_feature_points.at(i).points.at(ret_indices.at(0)).data(),
-                                                               this->prv_feature_points.at(i).points.at(ret_indices.at(1)).data(),
-                                                               &(this->scale_lookup.at(pt.tick)));
+                            if (this->param.use_weighting) {
+                                weightPtL = calculatePointToLineWeight(
+                                  this->feature_points.at(i).at(j).at(pt_cntr).pt,
+                                  this->prv_feature_points.at(i).points.at(ret_indices.at(0)).data(),
+                                  this->prv_feature_points.at(i).points.at(ret_indices.at(1)).data(),
+                                  this->param.iso_var);
+                            }
+                            cost_function = new SE3PointToLine(
+                              this->feature_points.at(i).at(j).at(pt_cntr).pt,
+                              this->prv_feature_points.at(i).points.at(ret_indices.at(0)).data(),
+                              this->prv_feature_points.at(i).points.at(ret_indices.at(1)).data(),
+                              &(this->scale_lookup.at(this->feature_points.at(i).at(j).at(pt_cntr).tick)),
+                              weightPtL);
+                            residuals.resize(3);
                             break;
                         case PointToPlane:
-                            cost_function = new SE3PointToPlane(pt.pt,
-                                                                this->prv_feature_points.at(i).points.at(ret_indices.at(0)).data(),
-                                                                this->prv_feature_points.at(i).points.at(ret_indices.at(1)).data(),
-                                                                this->prv_feature_points.at(i).points.at(ret_indices.at(2)).data(),
-                                                                &(this->scale_lookup.at(pt.tick)));
+                            if (this->param.use_weighting) {
+                                weightPtP = calculatePointToPlaneWeight(
+                                  this->feature_points.at(i).at(j).at(pt_cntr).pt,
+                                  this->prv_feature_points.at(i).points.at(ret_indices.at(0)).data(),
+                                  this->prv_feature_points.at(i).points.at(ret_indices.at(1)).data(),
+                                  this->prv_feature_points.at(i).points.at(ret_indices.at(2)).data(),
+                                  this->param.iso_var);
+                            }
+                            cost_function = new SE3PointToPlane(
+                              this->feature_points.at(i).at(j).at(pt_cntr).pt,
+                              this->prv_feature_points.at(i).points.at(ret_indices.at(0)).data(),
+                              this->prv_feature_points.at(i).points.at(ret_indices.at(1)).data(),
+                              this->prv_feature_points.at(i).points.at(ret_indices.at(2)).data(),
+                              &(this->scale_lookup.at(this->feature_points.at(i).at(j).at(pt_cntr).tick)),
+                              weightPtP);
+                            residuals.resize(1);
                             break;
                         default: continue;
                     }
 
-                    double residuals[3];
                     double **jacobians = nullptr;
-                    if (!cost_function->Evaluate(parameters, residuals, jacobians)) {
+                    if (!cost_function->Evaluate(parameters, residuals.data(), jacobians)) {
                         LOG_ERROR("Point to line cost function did not evaluate");
+                        delete cost_function;
+                        continue;
+                    }
+                    if (norm(residuals) > this->param.max_residual_val) {
                         delete cost_function;
                         continue;
                     }
@@ -557,9 +620,10 @@ bool LaserOdom::match() {
                     this->feature_corrs.at(i).at(j).emplace_back(corr_list);
                     ceres::LossFunction *p_LossFunction = new BisquareLoss(this->param.huber_delta);
                     problem.AddResidualBlock(
-                            cost_function, p_LossFunction, this->cur_transform.getInternalMatrix().data());
+                      cost_function, p_LossFunction, this->cur_transform.getInternalMatrix().data());
+                    //                    problem.AddResidualBlock(
+                    //                            cost_function, NULL, this->cur_transform.getInternalMatrix().data());
                 }
-                pt_cntr++;
             }
         }
     }
@@ -574,11 +638,11 @@ bool LaserOdom::match() {
     options.max_num_iterations = 300;
     options.function_tolerance = 1e-10;
     options.parameter_tolerance = 1e-6;
-    options.num_threads = 4;
-    options.num_linear_solver_threads = 4;
+    options.num_threads = 1;
+    options.num_linear_solver_threads = 1;
 
     ceres::Covariance::Options covar_options;
-    covar_options.num_threads = 4;
+    covar_options.num_threads = 1;
     covar_options.sparse_linear_algebra_library_type = ceres::SparseLinearAlgebraLibraryType::SUITE_SPARSE;
     covar_options.algorithm_type = ceres::CovarianceAlgorithmType::SPARSE_QR;
 
@@ -592,11 +656,12 @@ bool LaserOdom::match() {
     } else if (!this->param.only_extract_features) {
         ceres::Solver::Summary summary;
         ceres::Solve(options, &problem, &summary);
-        // LOG_INFO("%s", summary.FullReport().c_str());
-        ceres::Covariance covariance(covar_options);
-        covariance.Compute(this->covariance_blocks, &problem);
-        covariance.GetCovarianceBlock(
-          this->cur_transform.getInternalMatrix().data(), this->cur_transform.getInternalMatrix().data(), this->covar);
+        LOG_INFO("%s", summary.FullReport().c_str());
+        //        ceres::Covariance covariance(covar_options);
+        //        covariance.Compute(this->covariance_blocks, &problem);
+        //        covariance.GetCovarianceBlock(
+        //          this->cur_transform.getInternalMatrix().data(), this->cur_transform.getInternalMatrix().data(),
+        //          this->covar);
     }
     return true;
 }
@@ -629,7 +694,7 @@ void LaserOdom::generateFeatures() {
             }
             this->feature_points.at(i).at(j).clear();
             int f_cnt = 0;
-            for(auto iter = filt_scores.begin(); iter != filt_scores.end(); iter++) {
+            for (auto iter = filt_scores.begin(); iter != filt_scores.end(); iter++) {
                 if (f_cnt >= def.n_limit) {
                     break;
                 }
@@ -651,14 +716,24 @@ void LaserOdom::computeScores() {
     Eigen::array<ptrdiff_t, 1> dims({0});
     for (unlong i = 0; i < this->param.n_ring; i++) {
         // todo(ben) TensorMaps seem broken. Research further at some point
-        for (ulong j = 0; j < this->N_SIGNALS; j++) {
-            Eigen::Tensor<double, 1> inputmap((int) this->signals.at(j).at(i).size());
-            memcpy(inputmap.data(), this->signals.at(j).at(i).data(), 8 * this->signals.at(j).at(i).size());
-            //Eigen::TensorMap<double, 1> inputmap(this->signals.at(j).at(i).data(), (int)this->signals.at(j).at(i).size());
+        for (ulong j = 0; j < this->N_SCORES; j++) {
+            // todo(ben) Include signal to score explicitly in feature definitions and get
+            // rid of this hack.
+            ulong s_idx = 0;
+            if (j < 1) {
+                s_idx = 0;
+            } else {
+                s_idx = 1;
+            }
+            Eigen::Tensor<double, 1> inputmap((int) this->signals.at(s_idx).at(i).size());
+            memcpy(inputmap.data(), this->signals.at(s_idx).at(i).data(), 8 * this->signals.at(s_idx).at(i).size());
+            // Eigen::TensorMap<double, 1> inputmap(this->signals.at(j).at(i).data(),
+            // (int)this->signals.at(j).at(i).size());
             if (inputmap.size() + 1 > kernels.at(j)->size()) {
                 this->scores.at(j).at(i).resize(inputmap.size() - kernels.at(j)->size() + 1);
                 Eigen::Tensor<double, 1> outputmap((int) inputmap.size() - kernels.at(j)->size() + 1);
-                //Eigen::TensorMap<double, 1> outputmap(this->scores.at(j).at(i).data(), this->scores.at(j).at(i).size());
+                // Eigen::TensorMap<double, 1> outputmap(this->scores.at(j).at(i).data(),
+                // this->scores.at(j).at(i).size());
                 outputmap = inputmap.convolve(*(this->kernels.at(j)), dims);
                 memcpy(this->scores.at(j).at(i).data(), outputmap.data(), 8 * outputmap.size());
             }
@@ -672,7 +747,6 @@ void LaserOdom::prefilter() {
     for (uint32_t i = 0; i < this->param.n_ring; i++) {
         // The scores will be offset from the points by (kernel_size - 1)/2
         std::vector<bool> valid(this->signals[0].at(i).size(), true);
-//        const uint32_t offsets[2] = {(this->kernels[0]->size() - 1) / 2, (this->kernels[1]->size() - 1) / 2};
         // Now loop through the points in this ring and set valid_idx accordingly
         for (unlong j = 1; j + 1 < this->cur_scan.at(i).size(); j++) {
             auto delforward = this->l2sqrd(this->cur_scan.at(i).at(j), this->cur_scan.at(i).at(j + 1));
@@ -686,7 +760,7 @@ void LaserOdom::prefilter() {
                 auto unit2 = this->scale(this->cur_scan.at(i).at(j + 1), 1.0 / d2);
                 auto diff = std::sqrt(this->l2sqrd(unit1, unit2));
                 if (diff < this->param.occlusion_tol) {
-                    //todo(ben) replace magic 5 with something
+                    // todo(ben) replace magic 5 with something
                     if (d1 > d2) {
                         for (unlong l = 0; l <= 5; l++) {
                             if (j >= l) {
@@ -734,53 +808,48 @@ bool null_score(double score, double threshold) {
     return false;
 }
 
-void LaserOdom::buildFilteredScore(const std::vector<bool> &valid,
-                                   const uint32_t &f_idx,
-                                   const uint32_t &ring) {
-
+void LaserOdom::buildFilteredScore(const std::vector<bool> &valid, const uint32_t &f_idx, const uint32_t &ring) {
     this->filtered_scores.at(f_idx).at(ring).clear();
     this->valid_pts.at(f_idx).at(ring).clear();
     auto &def = this->feature_definitions.at(f_idx);
     // get primary score index by kernel type
     std::vector<std::function<bool(double, double)>> compfuns;
     std::vector<uint32_t> k_idx;
+    std::vector<uint32_t> k_offsets;
     uint32_t offset = 0;
     compfuns.resize(def.criteria.size());
     k_idx.resize(def.criteria.size());
     for (uint32_t i = 0; i < def.criteria.size(); i++) {
         switch (def.criteria.at(i).sel_pol) {
-            case SelectionPolicy::NEAR_ZERO:
-                compfuns.at(i) = near_zero_score;
-                break;
-            case SelectionPolicy::HIGH_POS:
-                compfuns.at(i) = high_pos_score;
-                break;
-            case SelectionPolicy::HIGH_NEG:
-                compfuns.at(i) = high_neg_score;
-                break;
+            case SelectionPolicy::NEAR_ZERO: compfuns.at(i) = near_zero_score; break;
+            case SelectionPolicy::HIGH_POS: compfuns.at(i) = high_pos_score; break;
+            case SelectionPolicy::HIGH_NEG: compfuns.at(i) = high_neg_score; break;
             default: compfuns.at(i) = null_score;
         }
         switch (def.criteria.at(i).kernel) {
-            case Kernel::LOAM: k_idx.at(i) = 0;
-            case Kernel::LOG: k_idx.at(i) = 1;
-            case Kernel::FOG: k_idx.at(i) = 2;
+            case Kernel::LOAM: k_idx.at(i) = 0; break;
+            case Kernel::LOG: k_idx.at(i) = 1; break;
+            case Kernel::FOG: k_idx.at(i) = 2; break;
             default: k_idx.at(i) = 0;
         }
-        if (offset < (this->kernels.at(k_idx.at(i))->size() - 1)/2) {
-            offset = (this->kernels.at(k_idx.at(i))->size() - 1)/2;
+        k_offsets.emplace_back((this->kernels.at(k_idx.at(i))->size() - 1) / 2);
+        if (offset < (this->kernels.at(k_idx.at(i))->size() - 1) / 2) {
+            offset = (this->kernels.at(k_idx.at(i))->size() - 1) / 2;
         }
     }
 
-    //copy valid vector for use later
+    // copy valid vector for use later
     this->valid_pts.at(f_idx).at(ring) = std::vector<bool>(valid.begin(), valid.end());
 
     for (uint64_t j = offset; j + offset < valid.size(); j++) {
         if (valid.at(j)) {
             bool still_good = true;
             for (uint32_t l = 0; l < def.criteria.size(); l++) {
-                //todo(ben) Each score should have a different offset. But for now the offset between kernels is the same
+                // todo(ben) Each score should have a different offset. But for now the offset between kernels is the
+                // same
                 // so it doesn't matter yet
-                if (!(compfuns.at(l))(this->scores.at(k_idx.at(l)).at(ring).at(j - offset), def.criteria.at(l).threshold)) {
+                if (!(compfuns.at(l))(this->scores.at(k_idx.at(l)).at(ring).at(j - k_offsets.at(l)),
+                                      def.criteria.at(l).threshold)) {
                     still_good = false;
                     break;
                 }

@@ -18,6 +18,7 @@ ADD_LIBRARY(
     STATIC
     src/loss_functions.cpp
     src/se3_residuals.cpp
+    src/weighting_functions.cpp
     src/LaserOdom.cpp
 )
 
