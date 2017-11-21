@@ -8,6 +8,7 @@ WAVE_ADD_MODULE(${PROJECT_NAME}
     Eigen3::Eigen
     Boost::filesystem
     opencv_core opencv_features2d opencv_calib3d opencv_imgproc opencv_highgui
+    opencv_videoio
     SOURCES
     src/utils.cpp
     src/dataset/VoDataset.cpp
