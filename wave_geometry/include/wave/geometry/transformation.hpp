@@ -11,9 +11,8 @@ class Transformation {
  private:
     Eigen::Matrix<double, 3, 4> matrix;
 
-    double TOL = 1e-04;
-
  public:
+    double TOL = 1e-04;
     /** Default constructor, initializes to Identity. */
     Transformation();
 

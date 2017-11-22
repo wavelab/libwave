@@ -54,6 +54,7 @@ TEST_F(TransformationTestFixture, testFromExpMap) {
 }
 
 TEST_F(TransformationTestFixture, testLogMap) {
+    this->transform_expected.TOL = 1e-8;
     Vec6 copy = this->transform_expected.logMap();
     Vec6 err = copy - this->transformation_twist_parameters;
     ASSERT_LE(err.norm(), this->comparison_threshold);
