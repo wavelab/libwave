@@ -31,17 +31,40 @@ struct ICPMatcherParams {
     ICPMatcherParams(const std::string &config_path);
     ICPMatcherParams() {}
 
-    int max_corr = 3;
+    /// Maximum distance to correspond points for icp
+    double max_corr = 3;
+    /// Maximum iterations of ICP
     int max_iter = 100;
+    /// Transformation epsilon. Stopping criteria. If the transform changes by
+    /// less
+    /// than this amount, stop
     double t_eps = 1e-8;
+    /// Stopping criteria, if cost function decreases by less than this, stop
     double fit_eps = 1e-2;
+    /// Angular variance for lidar sensor model. Used if Censi covariance
+    /// estimation is set
     double lidar_ang_covar = 7.78e-9;
+    /// Linear variance for lidar sensor model. Used if Censi covariance
+    /// estimation is set
     double lidar_lin_covar = 2.5e-4;
+
+    /// When set to more than 0, each match is performed multiple times from
+    /// a coarse to fine scale (in terms of voxel downsampling).
+    /// Each step doubles the resolution
+    int multiscale_steps = 3;
+
+    /// Voxel side length for downsampling. If set to 0, downsampling is
+    /// not performed. If multiscale matching is set, this is the resolution
+    /// of the final, fine-scale match
     float res = 0.1;
-    enum covar_method : int { LUM, CENSI } covar_estimator = covar_method::LUM;
+    enum covar_method : int {
+        LUM,
+        CENSI,
+        LUMold
+    } covar_estimator = covar_method::LUM;
 };
 
-class ICPMatcher : public Matcher<PCLPointCloud> {
+class ICPMatcher : public Matcher<PCLPointCloudPtr> {
  public:
     /** This constructor takes an argument in order to adjust how much
      * downsampling is done before matching is attempted. Pointclouds are
@@ -54,12 +77,12 @@ class ICPMatcher : public Matcher<PCLPointCloud> {
     /** sets the reference pointcloud for the matcher
      * @param ref - Pointcloud
      */
-    void setRef(const PCLPointCloud &ref);
+    void setRef(const PCLPointCloudPtr &ref);
 
     /** sets the target (or scene) pointcloud for the matcher
      * @param targer - Pointcloud
      */
-    void setTarget(const PCLPointCloud &target);
+    void setTarget(const PCLPointCloudPtr &target);
 
     /** runs the matcher, blocks until finished.
      * Returns true if successful
@@ -69,6 +92,8 @@ class ICPMatcher : public Matcher<PCLPointCloud> {
     /** runs covariance estimator, blocks until finished.
      */
     void estimateInfo();
+
+    ICPMatcherParams params;
 
  private:
     /** An instance of the ICP class from PCL */
@@ -80,19 +105,18 @@ class ICPMatcher : public Matcher<PCLPointCloud> {
      * is not exposed. PCL's ICP class creates an aligned verison of the target
      * pointcloud after matching, so the "final" member is used as a sink for
      * it. */
-    PCLPointCloud ref, target, final;
+    PCLPointCloudPtr ref, target, final, downsampled_ref, downsampled_target;
 
     /**
      * Calculates a covariance estimate based on Lu and Milios Scan Matching
      */
     void estimateLUM();
+    void estimateLUMold();
 
     /**
      * Calculates a covariance estimate based on Censi
      */
     void estimateCensi();
-
-    ICPMatcherParams params;
 };
 
 /** @} group matching */

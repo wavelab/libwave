@@ -51,6 +51,24 @@ Execute the following in the terminal where you want libwave to reside:
     cmake ..
     make
 
+Install libwave with `make install`. Alternatively, you can enable the
+`EXPORT_BUILD` option in CMake, which will make the libwave build directory 
+searchable by CMake without installation.
+
+
+## Use with CMake
+
+One libwave has been either installed or exported by CMake, it can be used in
+your project's `CMakeLists.txt` file as follows:
+
+    cmake_minimum_required(VERSION 3.0)
+    project(example)
+
+    find_package(wave REQUIRED geometry matching)
+
+    add_executable(example example.cpp)
+    target_link_libraries(example wave::geometry wave::matching)
+
 
 ## Documentation
 
@@ -73,7 +91,7 @@ these can be activated by running the `githook_init.bash` from the root of the r
 
 ## LICENSE
 
-Copyright (c) <2017> <Wavelab>
+Copyright (c) 2017 Waterloo Autonomous Vehicles Laboratory (WAVELab)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

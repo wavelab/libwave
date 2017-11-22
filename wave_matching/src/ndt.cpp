@@ -10,7 +10,7 @@ NDTMatcherParams::NDTMatcherParams(const std::string &config_path) {
     parser.addParam("t_eps", &this->t_eps);
     parser.addParam("res", &this->res);
 
-    if (parser.load(config_path) != 0) {
+    if (parser.load(config_path) != ConfigStatus::OK) {
         ConfigException config_exception;
         throw config_exception;
     }
@@ -46,12 +46,12 @@ NDTMatcher::~NDTMatcher() {
     }
 }
 
-void NDTMatcher::setRef(const PCLPointCloud &ref) {
+void NDTMatcher::setRef(const PCLPointCloudPtr &ref) {
     this->ref = ref;
     this->ndt.setInputSource(this->ref);
 }
 
-void NDTMatcher::setTarget(const PCLPointCloud &target) {
+void NDTMatcher::setTarget(const PCLPointCloudPtr &target) {
     this->target = target;
     this->ndt.setInputTarget(this->target);
 }

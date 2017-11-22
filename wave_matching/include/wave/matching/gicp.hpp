@@ -38,19 +38,19 @@ struct GICPMatcherParams {
     float res = 0.1;
 };
 
-class GICPMatcher : public Matcher<PCLPointCloud> {
+class GICPMatcher : public Matcher<PCLPointCloudPtr> {
  public:
     explicit GICPMatcher(GICPMatcherParams params1);
 
     /** sets the reference pointcloud for the matcher
      * @param ref - Pointcloud
      */
-    void setRef(const PCLPointCloud &ref);
+    void setRef(const PCLPointCloudPtr &ref);
 
     /** sets the target (or scene) pointcloud for the matcher
      * @param targer - Pointcloud
      */
-    void setTarget(const PCLPointCloud &target);
+    void setTarget(const PCLPointCloudPtr &target);
 
     /** runs the matcher, blocks until finished.
      * Returns true if successful
@@ -60,7 +60,7 @@ class GICPMatcher : public Matcher<PCLPointCloud> {
  private:
     pcl::GeneralizedIterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> gicp;
     pcl::VoxelGrid<pcl::PointXYZ> filter;
-    PCLPointCloud ref, target, final;
+    PCLPointCloudPtr ref, target, final;
     GICPMatcherParams params;
 };
 

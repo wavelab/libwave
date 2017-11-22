@@ -141,7 +141,7 @@ class FilledLandmarkContainer : public ::testing::Test {
  protected:
     TestContainer m;
     // Define some sample input measurements
-    const TimeType t_start = std::chrono::steady_clock::now();
+    const TimePoint t_start = std::chrono::steady_clock::now();
     const std::vector<std::vector<LandmarkId>> input_ids_l = {
       {2}, {2}, {3, 4, 2}, {2, 5, 3}, {6}, {1}, {3}};
     const std::vector<std::vector<LandmarkId>> input_ids_r = {
@@ -451,7 +451,7 @@ TEST_F(FilledLandmarkContainer, getTrackInWindowAll) {
       this->m.getTrackInWindow(CameraSensors::Right, 4, t, t + seconds(10));
     // These expected values were chosen manually from the fixture
     auto expected_times =
-      std::vector<TimeType>{t + seconds(2), t + seconds(3), t + seconds(6)};
+      std::vector<TimePoint>{t + seconds(2), t + seconds(3), t + seconds(6)};
 
     ASSERT_EQ(expected_times.size(), track.size());
     for (auto i = 0u; i < track.size(); ++i) {
@@ -468,7 +468,7 @@ TEST_F(FilledLandmarkContainer, getTrackInWindowSome) {
       CameraSensors::Right, 4, t + seconds(3), t + seconds(4));
 
     // These expected values were chosen manually from the fixture
-    auto expected_times = std::vector<TimeType>{t + seconds(3)};
+    auto expected_times = std::vector<TimePoint>{t + seconds(3)};
 
     ASSERT_EQ(expected_times.size(), track.size());
     for (auto i = 0u; i < track.size(); ++i) {
@@ -485,7 +485,7 @@ TEST_F(FilledLandmarkContainer, getTrack) {
     // This expected results are the same as getTrackInWindowAll
     // These expected values were chosen manually from the fixture
     auto expected_times =
-      std::vector<TimeType>{t + seconds(2), t + seconds(3), t + seconds(6)};
+      std::vector<TimePoint>{t + seconds(2), t + seconds(3), t + seconds(6)};
 
     ASSERT_EQ(expected_times.size(), track.size());
     for (auto i = 0u; i < track.size(); ++i) {

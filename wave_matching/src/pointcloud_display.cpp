@@ -33,9 +33,9 @@ void PointCloudDisplay::spin() {
     // Initialize viewer
     this->viewer =
       std::make_shared<pcl::visualization::PCLVisualizer>(this->display_name);
-    this->viewer->initCameraParameters();
     this->viewer->setBackgroundColor(0, 0, 0);
     this->viewer->addCoordinateSystem(1.0);
+    this->viewer->resetCamera();
     while (this->continueFlag.test_and_set(std::memory_order_relaxed) &&
            !(this->viewer->wasStopped())) {
         this->viewer->spinOnce(3);
@@ -50,25 +50,28 @@ void PointCloudDisplay::spin() {
     this->viewer.reset();
 }
 
-void PointCloudDisplay::addPointcloud(const PCLPointCloud &cld, int id) {
+void PointCloudDisplay::addPointcloud(const PCLPointCloudPtr &cld,
+                                      int id,
+                                      bool reset_camera) {
     this->update_mutex.lock();
-    this->clouds.emplace(Cloud{cld, id});
+    this->clouds.emplace(Cloud{cld->makeShared(), id, reset_camera});
     this->update_mutex.unlock();
 }
 
 void PointCloudDisplay::addPointcloud(
-  const pcl::PointCloud<pcl::PointXYZI>::Ptr &cld, int id) {
+  const pcl::PointCloud<pcl::PointXYZI>::Ptr &cld, int id, bool reset_camera) {
     this->update_mutex.lock();
-    this->cloudsi.emplace(CloudI{cld, id});
+    this->cloudsi.emplace(CloudI{cld->makeShared(), id, reset_camera});
     this->update_mutex.unlock();
 }
 
 void PointCloudDisplay::addLine(const pcl::PointXYZ &pt1,
                                 const pcl::PointXYZ &pt2,
                                 int id1,
-                                int id2) {
+                                int id2,
+                                bool reset_camera) {
     this->update_mutex.lock();
-    this->lines.emplace(Line{pt1, pt2, id1, id2});
+    this->lines.emplace(Line{pt1, pt2, id1, id2, reset_camera});
     this->update_mutex.unlock();
 }
 
@@ -80,10 +83,26 @@ void PointCloudDisplay::updateInternal() {
     // add or update clouds in the viewer until the queue is empty
     while (this->clouds.size() != 0) {
         const auto &cld = this->clouds.front();
+        // Give each id a unique color, using the Glasbey table of maximally
+        // different colors. Use white for 0
+        // Note the color handler uses the odd format of doubles 0-255
+        Eigen::Vector3d rgb{255., 255., 255.};
+        if (cld.id > 0 &&
+            static_cast<unsigned>(cld.id) < pcl::GlasbeyLUT::size()) {
+            rgb = pcl::GlasbeyLUT::at(cld.id).getRGBVector3i().cast<double>();
+        }
+        pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ>
+          col_handler{cld.cloud, rgb[0], rgb[1], rgb[2]};
+
         if (this->viewer->contains(std::to_string(cld.id))) {
-            this->viewer->updatePointCloud(cld.cloud, std::to_string(cld.id));
+            this->viewer->updatePointCloud(
+              cld.cloud, col_handler, std::to_string(cld.id));
         } else {
-            this->viewer->addPointCloud(cld.cloud, std::to_string(cld.id));
+            this->viewer->addPointCloud(
+              cld.cloud, col_handler, std::to_string(cld.id));
+        }
+        if (cld.reset_camera) {
+            this->viewer->resetCamera();
         }
         this->clouds.pop();
     }
@@ -98,6 +117,9 @@ void PointCloudDisplay::updateInternal() {
         } else {
             this->viewer->addPointCloud(
               cld.cloud, col_handler, std::to_string(cld.id));
+        }
+        if (cld.reset_camera) {
+            this->viewer->resetCamera();
         }
         this->cloudsi.pop();
     }
@@ -133,6 +155,9 @@ void PointCloudDisplay::updateInternal() {
           hi,
           low,
           std::to_string(line.id1) + std::to_string(line.id2) + "ln");
+        if (line.reset_camera) {
+            this->viewer->resetCamera();
+        }
         this->lines.pop();
     }
 }

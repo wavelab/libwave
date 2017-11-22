@@ -30,7 +30,7 @@ using PoseMeasurement = Measurement<BenchmarkPose, ComparisonKey>;
 */
 inline BenchmarkPose interpolate(const PoseMeasurement &m1,
                                  const PoseMeasurement &m2,
-                                 const TimeType &t) {
+                                 const TimePoint &t) {
     auto w2 = 1.0 * (t - m1.time_point) / (m2.time_point - m1.time_point);
 
     auto m1inverse = m1.value.rotation;

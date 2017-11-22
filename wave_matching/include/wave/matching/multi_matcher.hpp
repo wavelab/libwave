@@ -49,8 +49,8 @@ class MultiMatcher {
      * @param target pointcloud
      */
     void insert(const int &id,
-                const PCLPointCloud &src,
-                const PCLPointCloud &target);
+                const PCLPointCloudPtr &src,
+                const PCLPointCloudPtr &target);
 
     /**
      * Checks to see if there are any remaining matches in the queue.
@@ -77,10 +77,10 @@ class MultiMatcher {
     const int queue_size;
     int remaining_matches;
     R config;
-    std::queue<std::tuple<int, PCLPointCloud, PCLPointCloud>> input;
+    std::queue<std::tuple<int, PCLPointCloudPtr, PCLPointCloudPtr>> input;
     std::queue<std::tuple<int, Eigen::Affine3d, Mat6>> output;
     std::vector<std::thread> pool;
-    std::vector<T> matchers;
+    std::vector<T, Eigen::aligned_allocator<T>> matchers;
 
     // Synchronization
     std::mutex ip_mutex, op_mutex, cnt_mutex;

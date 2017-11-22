@@ -14,10 +14,6 @@
 
 #include <yaml-cpp/yaml.h>
 
-#include <opencv2/core/core.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
-#include <opencv2/highgui/highgui.hpp>
-
 #include "wave/utils/math.hpp"
 #include "wave/utils/log.hpp"
 #include "wave/utils/file.hpp"
@@ -27,57 +23,54 @@ namespace wave {
 /** @addtogroup utils
  *  @{ */
 
-/**
- * An enum used by `ConfigParam` to denote the yaml value type.
- *
- *  Currently we support parsing of the following data types:
- *  - **Primitives**: `bool`, `int`, `float`, `double`, `std::string`
- *  - **Arrays**: `std::vector<bool>`, `std::vector<int>`, `std::vector<float>`,
- * `std::vector<double>`, `std::vector<std::string>`
- *  - **Vectors**: `Eigen::Vector2d`, `Eigen::Vector3d`, `Eigen::Vector4d`,
- * `Eigen::VectorXd`
- *  - **Matrices**: `Eigen::Matrix2d`, `Eigen::Matrix3d`, `Eigen::Matrix4d`,
- * `Eigen::MatrixXd`
- */
-enum ConfigDataType {
-    TYPE_NOT_SET = 0,
-    // PRIMITIVES
-    BOOL = 1,
-    INT = 2,
-    FLOAT = 3,
-    DOUBLE = 4,
-    STRING = 5,
-    // ARRAY
-    BOOL_ARRAY = 11,
-    INT_ARRAY = 12,
-    FLOAT_ARRAY = 13,
-    DOUBLE_ARRAY = 14,
-    STRING_ARRAY = 15,
-    // VECTOR
-    VEC2 = 21,
-    VEC3 = 22,
-    VEC4 = 23,
-    VECX = 24,
-    // MATRIX
-    MAT2 = 31,
-    MAT3 = 32,
-    MAT4 = 33,
-    MATX = 34,
-    CVMAT = 35
+/** Return codes for ConfigParser methods */
+enum class ConfigStatus {
+    OK = 0,                  ///< Success
+    MissingOptionalKey = 1,  ///< key not found, but parameter is optional
+    // Note: errors are != ConfigStatus::OK
+    FileError = -1,      ///< Success
+    KeyError = -2,       ///< key not found, parameter is not optional
+    ConversionError = -3 /**< Invalid value for conversion
+                           * e.g. wrong-size list for vector, missing
+                           * key 'rows', 'cols' or 'data' (for matrix) */
+};
+
+/** Base class representing a parameter to be parsed in the yaml file */
+struct ConfigParamBase {
+    ConfigParamBase(std::string key, bool optional)
+        : key{std::move(key)}, optional{optional} {};
+
+
+    /** Parse the given node as T, and write the value into `destination`.
+     * @note no lookup by key is performed; the node must already be correct
+     * @throws YAML::BadConversion if node is not convertible to destination
+     */
+    virtual void load(const YAML::Node &node) const = 0;
+
+    std::string key;  //!< yaml key to parse from
+    bool optional;    //!< if true, it is not an error if the key is not found
+
+ protected:
+    ~ConfigParamBase() = default;  // disallow deletion through pointer to base
 };
 
 /** Represents a parameter to be parsed in the yaml file */
-class ConfigParam {
+template <typename T>
+class ConfigParam : public ConfigParamBase {
  public:
-    enum ConfigDataType type = TYPE_NOT_SET;  //!< parameter type (e.g `INT`)
-    std::string key;                          //!< yaml key to parse from
-    void *data = nullptr;  //!< pointer to variable to store the parameter value
-    bool optional = false;
+    ConfigParam(std::string key, T *destination, bool optional = false)
+        : ConfigParamBase{std::move(key), optional}, data{destination} {}
 
-    ConfigParam() {}
+    /** Parse the given node as T, and write the value into `destination`.
+     * @note no lookup by key is performed; the node must already be correct
+     * @throws YAML::BadConversion if node is not convertible to destination
+     */
+    void load(const YAML::Node &node) const override {
+        *(this->data) = node.as<T>();
+    }
 
-    ConfigParam(ConfigDataType type, std::string key, void *out, bool optional)
-        : type{type}, key{key}, data{out}, optional{optional} {};
+ protected:
+    T *data = nullptr;  //!< where we will store the parsed value
 };
 
 /** Parses yaml files for parameters of different types.
@@ -117,7 +110,7 @@ class ConfigParser {
     bool config_loaded;
 
     YAML::Node root;
-    std::vector<ConfigParam> params;
+    std::vector<std::shared_ptr<ConfigParamBase>> params;
 
     /** Default constructor. By default it sets:
      *
@@ -133,93 +126,98 @@ class ConfigParser {
      * `optional` parameter to define whether `ConfigParser` should fail if the
      * parameter is not found.
      */
-    void addParam(std::string key, bool *out, bool optional = false);
-    void addParam(std::string key, int *out, bool optional = false);
-    void addParam(std::string key, float *out, bool optional = false);
-    void addParam(std::string key, double *out, bool optional = false);
-    void addParam(std::string key, std::string *out, bool optional = false);
-    void addParam(std::string key,
-                  std::vector<bool> *out,
-                  bool optional = false);
-    void addParam(std::string key,
-                  std::vector<int> *out,
-                  bool optional = false);
-    void addParam(std::string key,
-                  std::vector<float> *out,
-                  bool optional = false);
-    void addParam(std::string key,
-                  std::vector<double> *out,
-                  bool optional = false);
-    void addParam(std::string key,
-                  std::vector<std::string> *out,
-                  bool optional = false);
-    void addParam(std::string key, Vec2 *out, bool optional = false);
-    void addParam(std::string key, Vec3 *out, bool optional = false);
-    void addParam(std::string key, Vec4 *out, bool optional = false);
-    void addParam(std::string key, VecX *out, bool optional = false);
-    void addParam(std::string key, Mat2 *out, bool optional = false);
-    void addParam(std::string key, Mat3 *out, bool optional = false);
-    void addParam(std::string key, Mat4 *out, bool optional = false);
-    void addParam(std::string key, MatX *out, bool optional = false);
-    void addParam(std::string key, cv::Mat *out, bool optional = false);
+    template <typename T>
+    void addParam(std::string key, T *out, bool optional = false) {
+        auto ptr =
+          std::make_shared<ConfigParam<T>>(std::move(key), out, optional);
+        this->params.push_back(ptr);
+    }
 
     /** Get yaml node given yaml `key`. The result is assigned to `node` if
      * `key` matches anything in the config file, else `node` is set to `NULL`.
      */
-    int getYamlNode(std::string key, YAML::Node &node);
+    ConfigStatus getYamlNode(const std::string &key, YAML::Node &node);
 
-    /** @return a status code meaning
-      * - `0`: On success
-      * - `-1`: Config file is not loaded
-      * - `-2`: `key` not found in yaml file, parameter is not optional
-      * - `-3`: `key` not found in yaml file, parameter is optional
-      * - `-4`: Invalid vector (wrong size)
-      * - `-5`: Invalid matrix (missing yaml key 'rows', 'cols' or 'data' for
-      * matrix)
-      */
-    /** @return see `getYamlNode` */
-    int checkKey(std::string key, bool optional);
+    /** Check whether a key is present in the yaml file */
+    ConfigStatus checkKey(const std::string &key, bool optional);
 
-    /** @return see `checkKey`
-     *
-     * @todo refactor return codes into an enum which can be documented
-     */
-    int checkVector(std::string key, enum ConfigDataType type, bool optional);
+    /** Load yaml param primitive, array, vector or matrix. */
+    ConfigStatus loadParam(const ConfigParamBase &param);
 
-    /** @return see `checkKey` */
-    int checkMatrix(std::string key, bool optional);
-
-    /** Load yaml param primitive, array, vector or matrix.
-     * @return
-     * - `0`: On success
-     * - `-1`: Config file is not loaded
-     * - `-2`: `key` not found in yaml file, parameter is not optional
-     * - `-3`: `key` not found in yaml file, parameter is optional
-     * - `-4`: Invalid vector (wrong size)
-     * - `-5`: Invalid matrix (missing yaml key 'rows', 'cols' or 'data' for
-     * matrix)
-     * - `-6`: Invalid param type
-     */
-    int loadPrimitive(ConfigParam param);
-    int loadArray(ConfigParam param);
-    int loadVector(ConfigParam param);
-    int loadMatrix(ConfigParam param);
-
-    /** Load yaml file at `config_file`.
-     * @return
-     * - `0`: On success
-     * - `1`: File not found
-     * - `-1`: Config file is not loaded
-     * - `-2`: `key` not found in yaml file
-     * - `-4`: Invalid vector (wrong size)
-     * - `-5`: Invalid matrix (missing yaml key 'rows', 'cols' or 'data' for
-     * matrix)
-     * - `-6`: Invalid param type
-     */
-    int load(std::string config_file);
+    /** Load yaml file at `config_file`. */
+    ConfigStatus load(const std::string &config_file);
 };
 
 /** @} group utils */
 }  // namespace wave
+
+
+namespace YAML {
+
+/** Custom conversion functions for YAML -> Eigen matrix
+ *
+ * @note We require the yaml node to have three nested keys in order to parse a
+ * matrix. They are `rows`, `cols` and `data`.
+ *
+ * For example:
+ * ```yaml
+ * some_matrix:
+ *   rows: 3
+ *   cols: 3
+ *   data: [1.1, 2.2, 3.3,
+ *          4.4, 5.5, 6.6,
+ *          7.7, 8.8, 9.9]
+ * ```
+ *
+ * Conversions for the following types are included in of wave_utils:
+ * - Eigen::Matrix2d
+ * - Eigen::Matrix3d
+ * - Eigen::Matrix4d
+ * - Eigen::MatrixXd
+ */
+template <typename Scalar, int Rows, int Cols>
+struct convert<Eigen::Matrix<Scalar, Rows, Cols>> {
+    /** Convert YAML node to Eigen Matrix
+     *
+     * @throws YAML::InvalidNode if nested keys not found
+     * @returns true if conversion successful
+     */
+    static bool decode(const Node &node,
+                       Eigen::Matrix<Scalar, Rows, Cols> &out);
+};
+
+/** Custom conversion functions for YAML -> Eigen vector
+ *
+ * For example:
+ * ```yaml
+ * some_vector: [1.1, 2.2, 3.3]
+ * ```
+ *
+ * Conversions for the following types are compiled as part of wave_utils:
+ * - Eigen::Vector2d
+ * - Eigen::Vector3d
+ * - Eigen::Vector4d
+ * - Eigen::VectorXd
+ */
+template <typename Scalar, int Rows>
+struct convert<Eigen::Matrix<Scalar, Rows, 1>> {
+    /** Convert YAML node to Eigen Matrix
+     * @returns true if conversion successful
+     */
+    static bool decode(const Node &node, Eigen::Matrix<Scalar, Rows, 1> &out);
+};
+
+// Explicit instantiations: include these in the compiled wave_utils library
+// Since the function definition is in a .cpp file, other types will not work
+template struct convert<wave::Mat2>;
+template struct convert<wave::Mat3>;
+template struct convert<wave::Mat4>;
+template struct convert<wave::MatX>;
+template struct convert<wave::Vec2>;
+template struct convert<wave::Vec3>;
+template struct convert<wave::Vec4>;
+template struct convert<wave::VecX>;
+
+}  // namespace YAML
 
 #endif  // WAVE_UTILS_CONFIG_HPP
