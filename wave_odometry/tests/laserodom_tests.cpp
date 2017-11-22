@@ -357,6 +357,7 @@ TEST(OdomTest, StraightLineGarage) {
 //    params.only_extract_features = true;
     params.output_trajectory = true;
 //    params.output_correspondences = true;
+    params.check_gradients = true;
 
     LaserOdom odom(params);
     std::vector<PointXYZIR> vec;

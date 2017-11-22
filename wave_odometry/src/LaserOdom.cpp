@@ -1,3 +1,4 @@
+#include <ceres/gradient_checker.h>
 #include "wave/odometry/LaserOdom.hpp"
 #include "wave/odometry/weighting_functions.hpp"
 
@@ -544,6 +545,11 @@ bool LaserOdom::match() {
     parameters[0] = this->cur_transform.getInternalMatrix().data();
     Vec6 cur_twist = this->cur_transform.logMap();
 
+    ceres::LocalParameterization *se3_param = new SE3Parameterization;
+    std::vector<const ceres::LocalParameterization*> local_param_vec;
+    local_param_vec.emplace_back(se3_param);
+    problem.AddParameterBlock(this->cur_transform.getInternalMatrix().data(), 12, se3_param);
+
     // now loop over each type of feature, and generate residuals for each
     for (uint16_t i = 0; i < this->N_FEATURES; i++) {
         for (uint16_t j = 0; j < this->param.n_ring; j++) {
@@ -611,6 +617,14 @@ bool LaserOdom::match() {
                         delete cost_function;
                         continue;
                     }
+                    if (this->param.check_gradients) {
+                        ceres::NumericDiffOptions ndiff_options;
+                        ceres::GradientChecker g_check(cost_function, &local_param_vec, ndiff_options);
+                        ceres::GradientChecker::ProbeResults g_results;
+                        if (!g_check.Probe(parameters, 1e-5, &g_results)) {
+                            LOG_ERROR("%s", g_results.error_log.c_str());
+                        }
+                    }
                     std::vector<uint64_t> corr_list;
                     corr_list.emplace_back(pt_cntr);
                     for (uint32_t k = 0; k < ret_indices.size(); k++) {
@@ -627,9 +641,6 @@ bool LaserOdom::match() {
             }
         }
     }
-
-    ceres::LocalParameterization *se3_param = new SE3Parameterization;
-    problem.AddParameterBlock(this->cur_transform.getInternalMatrix().data(), 12, se3_param);
 
     ceres::Solver::Options options;  // ceres problem destructor apparently destructs quite a bit, so need to
                                      // instantiate
@@ -656,7 +667,7 @@ bool LaserOdom::match() {
     } else if (!this->param.only_extract_features) {
         ceres::Solver::Summary summary;
         ceres::Solve(options, &problem, &summary);
-        LOG_INFO("%s", summary.FullReport().c_str());
+//        LOG_INFO("%s", summary.FullReport().c_str());
         //        ceres::Covariance covariance(covar_options);
         //        covariance.Compute(this->covariance_blocks, &problem);
         //        covariance.GetCovarianceBlock(

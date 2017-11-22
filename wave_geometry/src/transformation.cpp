@@ -156,7 +156,13 @@ Mat6 Transformation::SE3ApproxLeftJacobian(const Vec6 &W) {
 
 Vec6 Transformation::logMap() const {
     Mat3 R = this->matrix.block(0, 0, 3, 3);
-    double wn = std::acos((R.trace() - 1.0) / 2.0);
+    double wn;
+    // Need to pander to ceres gradient checker a bit here
+    if (R.trace() > 1) {
+        wn = 0;
+    } else {
+        wn = std::acos((R.trace() - 1.0) / 2.0);
+    }
     double A, B;
     Mat3 skew, Vinv;
     if (wn > this->TOL) {

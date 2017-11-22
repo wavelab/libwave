@@ -96,7 +96,8 @@ struct LaserOdomParams {
     bool output_trajectory = false;       // Whether to output solutions for debugging/plotting
     bool output_correspondences = false;  // Whether to output correpondences for debugging/plotting
     bool only_extract_features = false;   // If set, no transforms are calculated
-    bool use_weighting = false;
+    bool use_weighting = false;           // If set, pre-whiten residuals
+    bool check_gradients = false;         // If set, use Ceres gradient checker on each jacobians
 };
 
 class LaserOdom {

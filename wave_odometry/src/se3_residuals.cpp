@@ -13,7 +13,8 @@ bool SE3PointToLine::Evaluate(double const *const *parameters, double *residuals
     Transformation interpolated;
 
     Eigen::Map<const Vec3> PT(pt, 3, 1);
-    interpolated.setFromExpMap(*(this->scale) * transform.logMap());
+    auto twist = transform.logMap();
+    interpolated.setFromExpMap(*(this->scale) * twist);
     Vec3 POINT = interpolated.transform(PT);
     double point[3];
     Eigen::Map<Vec3>(point, 3, 1) = POINT;
