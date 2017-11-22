@@ -98,6 +98,15 @@ class Rotation {
      */
     Vec3 logMap() const;
 
+    /** Computes the exp map of the input and computes the Jacobian
+     * of the exp map wrt @f$ w @f$.
+     *
+     * @param[in] W The input vector we are taking the expmap of.
+     * @param[out] J_expmap Jacobian of the exp map wrt to the input
+     * @f$ W @f$.
+     */
+    static Mat3 expMapAndJacobian(const Vec3 &W, Mat3 &J_expmap);
+
     /** Computes the log map of the input and computes the Jacobian
      * of the log map wrt @f$ R @f$.
      *
