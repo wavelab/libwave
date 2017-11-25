@@ -6,9 +6,11 @@ WAVE_ADD_MODULE(${PROJECT_NAME} DEPENDS
     wave::vision
     Eigen3::Eigen
     ceres
+    gtsam
     SOURCES
     src/ceres/ba.cpp
-    src/ceres/ceres_examples.cpp)
+    src/ceres/ceres_examples.cpp
+    src/gtsam/hand_eye.cpp)
 
 # Unit tests
 IF(BUILD_TESTING)
@@ -36,6 +38,12 @@ IF(BUILD_TESTING)
             ${PROJECT_NAME}
             wave::vision
             ${GTSAM_LIBRARIES})
+
+        WAVE_ADD_TEST(hand_eye_gtsam_test
+                tests/gtsam/hand_eye_test.cpp)
+        TARGET_LINK_LIBRARIES(hand_eye_gtsam_test
+                ${PROJECT_NAME}
+                ${GTSAM_LIBRARIES})
     ENDIF()
 
     # COPY TEST DATA
