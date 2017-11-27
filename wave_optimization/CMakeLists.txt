@@ -10,7 +10,8 @@ WAVE_ADD_MODULE(${PROJECT_NAME} DEPENDS
     SOURCES
     src/ceres/ba.cpp
     src/ceres/ceres_examples.cpp
-    src/gtsam/hand_eye.cpp)
+    src/gtsam/hand_eye.cpp
+    src/gtsam/decaying_bias.cpp)
 
 # Unit tests
 IF(BUILD_TESTING)
@@ -42,6 +43,12 @@ IF(BUILD_TESTING)
         WAVE_ADD_TEST(hand_eye_gtsam_test
                 tests/gtsam/hand_eye_test.cpp)
         TARGET_LINK_LIBRARIES(hand_eye_gtsam_test
+                ${PROJECT_NAME}
+                ${GTSAM_LIBRARIES})
+
+        WAVE_ADD_TEST(decaying_bias_gtsam_test
+                tests/gtsam/decaying_bias_test.cpp)
+        TARGET_LINK_LIBRARIES(decaying_bias_gtsam_test
                 ${PROJECT_NAME}
                 ${GTSAM_LIBRARIES})
     ENDIF()

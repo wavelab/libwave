@@ -21,12 +21,6 @@ gtsam::Vector HandEyeFactor::evaluateError(
     gtsam::Matrix J_between_left, J_between_right;
     gtsam::Matrix J_logmap, J_bias;
 
-    // R1, t1 * R2, t2 = R1R2, R1t2 + t1
-
-//    gtsam::Rot3 rot_T_LOCAL_S1(this->T_LOCAL_S1.rotation());
-//    gtsam::Point3 t_T_LOCAL_S1(this->T_LOCAL_S1.translation());
-//    t_T_LOCAL_S1.data()[2] += B_Z;
-
     gtsam::Point3 D_bias;
     D_bias.data()[0] = 0;
     D_bias.data()[1] = 0;
