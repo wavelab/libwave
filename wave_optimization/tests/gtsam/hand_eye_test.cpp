@@ -105,7 +105,10 @@ TEST(hand_eye, jacobians) {
 
     gtsam::Matrix J_loc2num = gtsam::numericalDerivative31<gtsam::Vector, gtsam::Pose3, gtsam::Pose3, double>(fun, T_loc_2, T_s1s2, B_Z, 1e-6);
     gtsam::Matrix J_s1s2num = gtsam::numericalDerivative32<gtsam::Vector, gtsam::Pose3, gtsam::Pose3, double>(fun, T_loc_2, T_s1s2, B_Z, 1e-6);
-    gtsam::Matrix J_BZnum = gtsam::numericalDerivative33<gtsam::Vector, gtsam::Pose3, gtsam::Pose3, double>(fun, T_loc_2, T_s1s2, B_Z, 1e-6);
+    gtsam::Matrix J_BZnum;
+    double BZe = B_Z + 1e-6;
+    auto err2 = factor.evaluateError(T_loc_2, T_s1s2, BZe, boost::none, boost::none, boost::none);
+    J_BZnum = 1e6 * (err2 - err);
 
     EXPECT_NEAR(err.norm(), 0, 1e-6);
 
