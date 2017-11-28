@@ -16,9 +16,9 @@
 #include <vector>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
+#include <pcl/filters/filter.h>
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/registration/transforms.h>
-#include <wave/matching/PointcloudXYZGD.hpp>
 #include <wave/matching/ground_segmentation_params.hpp>
 #include <wave/utils/math.hpp>
 
@@ -41,16 +41,14 @@ struct SignalPoint {
  */
 struct LinCell {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    std::vector<PointXYZGD, Eigen::aligned_allocator<PointXYZGD>>
-      bin_points;  // all the points
-    std::vector<PointXYZGD, Eigen::aligned_allocator<PointXYZGD>>
-      obs_points;  // just the obs points
-    std::vector<PointXYZGD, Eigen::aligned_allocator<PointXYZGD>> drv_points;
-    std::vector<PointXYZGD, Eigen::aligned_allocator<PointXYZGD>>
-      ground_points;  // just the ground points
-    PointXYZGD prototype_point;
-    int cluster_assigned;  // what cluster is it assigned to
-    Vec3 obs_mean;         // mean of obstacle points
+    // Points in the input cloud are referred to by indices
+    std::vector<int> bin_indices;  // all the points
+    std::vector<int> obs_indices;  // just the obs points
+    std::vector<int> drv_indices;
+    std::vector<int> ground_indices;  // just the ground points
+    int prototype_index;              // index of prototype point
+    int cluster_assigned;             // what cluster is it assigned to
+    Vec3 obs_mean;                    // mean of obstacle points
 };
 
 /**
@@ -67,61 +65,75 @@ struct AngCell {
 *  Structure to hold all angular bins
 */
 struct PolarBinGrid {
-    std::vector<AngCell, Eigen::aligned_allocator<AngCell>> ang_cell;
+    std::vector<AngCell, Eigen::aligned_allocator<AngCell>> ang_cells;
 };
 
 /**
- * This is a class to perform ground segmentation on pointclouds.
+ * Performs ground segmentation on pointclouds.
  * Can be a useful preprocessing step.
  */
-class GroundSegmentation {
+template <typename PointT>
+class GroundSegmentation : public pcl::Filter<PointT> {
  public:
-    /**
-     * Collection of all configurable parameters
-     */
-    GroundSegmentationParams params;
+    using PointCloud = typename pcl::Filter<PointT>::PointCloud;
 
-    /**
-     * Data storage
-     */
-    PolarBinGrid *polar_bin_grid;
-    pcl::PointCloud<pcl::PointXYZ>::Ptr ref_cloud;
-    pcl::PointCloud<PointXYZGD>::Ptr ground_cloud;  // ground points
-    pcl::PointCloud<PointXYZGD>::Ptr obs_cloud;     // obstacle points
-    pcl::PointCloud<PointXYZGD>::Ptr drv_cloud;     // drivable points
+    /** If true, include ground points in the output of filter() */
+    void setKeepGround(bool v) {
+        this->keep_ground = v;
+    }
+
+    /** If true, include undrivable obstacle points in the output of filter() */
+    void setKeepObstacle(bool v) {
+        this->keep_obs = v;
+    }
+
+    /** If true, include "drivable" overhanging obstacle points in the output of
+     * filter() */
+    void setKeepOverhanging(bool v) {
+        this->keep_drv = v;
+    }
 
     /**
      * Constructor
      * @param config: GroundSegmentationParams settings
      */
-    GroundSegmentation(GroundSegmentationParams config);
+    explicit GroundSegmentation(const GroundSegmentationParams &config);
 
+    /** Filters the input and sets the output */
+    void applyFilter(PointCloud &output) override;
+
+
+ private:
     /**
-     * Used to give pointcloud to segmentor as well as pointers to
-     * return segmented clouds
-     *
-     * @param[in]input_cloud - Pointer of input cloud
-     * @param[out]ground_cloud - pointer of cloud to place all ground points
-     * @param[out]obs_cloud - pointer of cloud to place all obstacle points
-     * @param[out]drv_cloud - pointer of cloud to place all drivable points
+     * Collection of all configurable parameters
      */
-    void setupGroundSegmentation(
-      pcl::PointCloud<pcl::PointXYZ>::Ptr input_cloud,
-      pcl::PointCloud<PointXYZGD>::Ptr out_ground_cloud,
-      pcl::PointCloud<PointXYZGD>::Ptr out_obs_cloud,
-      pcl::PointCloud<PointXYZGD>::Ptr out_drv_cloud);
+    GroundSegmentationParams params;
+
+    // Data storage
+    // The input pointcloud is in the input_ member inherited from pcl::Filter.
+    // Instead of copying points, we keep track of indices to input_.
+    PolarBinGrid *polar_bin_grid;
+    std::vector<int> ground_indices;  // indices of ground points in input cloud
+    std::vector<int> obs_indices;  // indices of obstacle points in input cloud
+    std::vector<int> drv_indices;  // indices of drivable points in input cloud
+
+    // Options on which outputs to keep when fliter() is called
+    bool keep_ground = false;
+    bool keep_obs = true;
+    bool keep_drv = true;
+
 
     /**
      * Bins all points from the input cloud
      *
      * @param[in] input_cloud
      */
-    void genPolarBinGrid(pcl::PointCloud<pcl::PointXYZ>::Ptr input_cloud);
+    void genPolarBinGrid();
 
     /**
      * Resets bin data structure
      */
-    void initializePolarBinGrid(void);
+    void initializePolarBinGrid();
 
     /**
      * Calculates Gram Matrix for given data points. Squared exponential kernel
@@ -136,11 +148,6 @@ class GroundSegmentation {
                     std::vector<SignalPoint> &ps2,
                     float sig_f,
                     float p_l);
-
-    /**
-     * Segments ground
-     */
-    void segmentGround(void);
 
     /**
      * Iteratively builds up ground model
