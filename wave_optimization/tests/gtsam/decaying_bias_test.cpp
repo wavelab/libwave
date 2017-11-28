@@ -18,8 +18,13 @@ TEST(decaying_bias, init) {
 TEST(decaying_bias, zero_error) {
     gtsam::Key B_1 = 0;
     gtsam::Key B_2 = 1;
-    double B1val = 10;
-    double B2val = 10 * std::exp(-(0.1/5.0));
+    gtsam::Point3 B1val, B2val;
+    B1val.matrix()(0) = 10;
+    B1val.matrix()(1) = 10;
+    B1val.matrix()(2) = 10;
+    B2val.matrix()(0) = 10 * std::exp(-(0.1/5.0));
+    B2val.matrix()(1) = 10 * std::exp(-(0.1/5.0));
+    B2val.matrix()(2) = 10 * std::exp(-(0.1/5.0));
 
     gtsam::Matrix1 info;
     info.setIdentity();
@@ -35,8 +40,13 @@ TEST(decaying_bias, zero_error) {
 TEST(decaying_bias, jacobians) {
     gtsam::Key B_1 = 0;
     gtsam::Key B_2 = 1;
-    double B1val = 10;
-    double B2val = 10 * std::exp(-(0.1/5.0));
+    gtsam::Point3 B1val, B2val;
+    B1val.matrix()(0) = 10;
+    B1val.matrix()(1) = 10;
+    B1val.matrix()(2) = 10;
+    B2val.matrix()(0) = 10 * std::exp(-(0.1/5.0));
+    B2val.matrix()(1) = 10 * std::exp(-(0.1/5.0));
+    B2val.matrix()(2) = 10 * std::exp(-(0.1/5.0));
 
     gtsam::Matrix1 info;
     info.setIdentity();
@@ -50,13 +60,17 @@ TEST(decaying_bias, jacobians) {
 
     auto fun = boost::bind(&DecayingBias::evaluateError, boost::ref(factor), _1, _2, boost::none, boost::none);
 
-    gtsam::Matrix J_B_1num = gtsam::numericalDerivative21<gtsam::Vector, double, double>(fun, B1val, B2val, 1e-6);
-    gtsam::Matrix J_B_2num = gtsam::numericalDerivative22<gtsam::Vector, double, double>(fun, B1val, B2val, 1e-6);
+    gtsam::Matrix J_B_1num = gtsam::numericalDerivative21<gtsam::Vector, gtsam::Point3, gtsam::Point3>(fun, B1val, B2val, 1e-6);
+    gtsam::Matrix J_B_2num = gtsam::numericalDerivative22<gtsam::Vector, gtsam::Point3, gtsam::Point3>(fun, B1val, B2val, 1e-6);
 
     EXPECT_NEAR(err.norm(), 0, 1e-8);
 
-    EXPECT_NEAR(J_B_1(0,0), J_B_1num(0,0), 1e-8);
-    EXPECT_NEAR(J_B_2(0,0), J_B_2num(0,0), 1e-8);
+    for (uint32_t i = 0; i<3; i++) {
+        for (uint32_t j = 0; j < 3; j++) {
+            EXPECT_NEAR(J_B_1(i, j), J_B_1num(i, j), 1e-8);
+            EXPECT_NEAR(J_B_2(i, j), J_B_2num(i, j), 1e-8);
+        }
+    }
 
 }
 
