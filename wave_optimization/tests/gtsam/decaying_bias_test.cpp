@@ -71,7 +71,6 @@ TEST(decaying_bias, jacobians) {
             EXPECT_NEAR(J_B_2(i, j), J_B_2num(i, j), 1e-8);
         }
     }
-
 }
 
 }

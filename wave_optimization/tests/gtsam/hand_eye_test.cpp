@@ -29,7 +29,7 @@ TEST(hand_eye, zero_error) {
     Eigen::Affine3d T_local_s1;
     Eigen::Affine3d T_local_s2;
     Eigen::Affine3d T_s1_s2;
-    double B_Z = 0;
+    gtsam::Point3 B_Z;
 
     T_local_s1.matrix() << 0.936293363584199, -0.275095847318244,
       0.218350663146334, 32.000000000000000, 0.289629477625516,
@@ -70,7 +70,7 @@ TEST(hand_eye, jacobians) {
     Eigen::Affine3d T_local_s1;
     Eigen::Affine3d T_local_s2;
     Eigen::Affine3d T_s1_s2;
-    double B_Z = 0;
+    gtsam::Point3 B_Z;
 
     T_local_s1.matrix() << 0.936293363584199, -0.275095847318244,
             0.218350663146334, 32.000000000000000, 0.289629477625516,
@@ -103,12 +103,9 @@ TEST(hand_eye, jacobians) {
 
     auto fun = boost::bind(&HandEyeFactor::evaluateError, boost::ref(factor), _1, _2, _3, boost::none, boost::none, boost::none);
 
-    gtsam::Matrix J_loc2num = gtsam::numericalDerivative31<gtsam::Vector, gtsam::Pose3, gtsam::Pose3, double>(fun, T_loc_2, T_s1s2, B_Z, 1e-6);
-    gtsam::Matrix J_s1s2num = gtsam::numericalDerivative32<gtsam::Vector, gtsam::Pose3, gtsam::Pose3, double>(fun, T_loc_2, T_s1s2, B_Z, 1e-6);
-    gtsam::Matrix J_BZnum;
-    double BZe = B_Z + 1e-6;
-    auto err2 = factor.evaluateError(T_loc_2, T_s1s2, BZe, boost::none, boost::none, boost::none);
-    J_BZnum = 1e6 * (err2 - err);
+    gtsam::Matrix J_loc2num = gtsam::numericalDerivative31<gtsam::Vector, gtsam::Pose3, gtsam::Pose3, gtsam::Point3>(fun, T_loc_2, T_s1s2, B_Z, 1e-6);
+    gtsam::Matrix J_s1s2num = gtsam::numericalDerivative32<gtsam::Vector, gtsam::Pose3, gtsam::Pose3, gtsam::Point3>(fun, T_loc_2, T_s1s2, B_Z, 1e-6);
+    gtsam::Matrix J_BZnum = gtsam::numericalDerivative33<gtsam::Vector, gtsam::Pose3, gtsam::Pose3, gtsam::Point3>(fun, T_loc_2, T_s1s2, B_Z, 1e-6);
 
     EXPECT_NEAR(err.norm(), 0, 1e-6);
 
@@ -117,7 +114,9 @@ TEST(hand_eye, jacobians) {
             EXPECT_NEAR(J_loc2(i,j) - J_loc2num(i,j), 0, 1e-8);
             EXPECT_NEAR(J_s1s2(i,j) - J_s1s2num(i,j), 0, 1e-8);
         }
-        EXPECT_NEAR(J_BZnum(i), J_B_Z(i), 1e-8);
+        for (int j = 0; j < 3; j++) {
+            EXPECT_NEAR(J_BZnum(i,j), J_B_Z(i,j), 1e-8);
+        }
     }
 }
 

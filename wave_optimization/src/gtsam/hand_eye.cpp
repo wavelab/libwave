@@ -12,7 +12,7 @@ HandEyeFactor::HandEyeFactor(gtsam::Key O_S2,
 gtsam::Vector HandEyeFactor::evaluateError(
   const gtsam::Pose3 &T_LOCAL_S2,
   const gtsam::Pose3 &T_S1_S2,
-  const double &B_Z,
+  const gtsam::Point3 &B_Z,
   boost::optional<gtsam::Matrix &> J_T_LOCAL_S2,
   boost::optional<gtsam::Matrix &> J_T_S1_S2,
   boost::optional<gtsam::Matrix &> J_B_Z) const {
@@ -21,12 +21,8 @@ gtsam::Vector HandEyeFactor::evaluateError(
     gtsam::Matrix J_between_left, J_between_right;
     gtsam::Matrix J_logmap, J_bias;
 
-    gtsam::Point3 D_bias;
-    D_bias.data()[0] = 0;
-    D_bias.data()[1] = 0;
-    D_bias.data()[2] = B_Z;
     gtsam::Rot3 IdenRot;
-    gtsam::Pose3 Lifted_Bias(IdenRot, D_bias);
+    gtsam::Pose3 Lifted_Bias(IdenRot, B_Z);
 
     gtsam::Pose3 bias_T_S1_S2 = Lifted_Bias.compose(T_S1_S2, J_compose_left2, J_compose_right2);
 
@@ -47,10 +43,12 @@ gtsam::Vector HandEyeFactor::evaluateError(
         *J_T_S1_S2 = J_logmap * J_between_left * J_compose_right * J_compose_right2;
     }
     if (J_B_Z) {
-        J_B_Z->resize(6, 1);
-        J_bias.resize(6, 1);
+        J_B_Z->resize(6, 3);
+        J_bias.resize(6, 3);
         J_bias.setZero();
-        J_bias(5) = 1;
+        J_bias(3,0) = 1;
+        J_bias(4,1) = 1;
+        J_bias(5,2) = 1;
 
         *J_B_Z = J_logmap * J_between_left * J_compose_right * J_compose_left2 * J_bias;
     }

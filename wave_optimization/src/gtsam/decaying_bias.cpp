@@ -27,7 +27,7 @@ gtsam::Vector DecayingBias::evaluateError(const gtsam::Point3 &B_1, const gtsam:
     gtsam::Vector retval;
     retval.resize(B_1.dimension);
     retval = B_2 - B_1 * (this->factor);
-    return retval;  
+    return retval;
 }
 
 }
