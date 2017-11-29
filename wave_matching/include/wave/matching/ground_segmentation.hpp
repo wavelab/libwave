@@ -2,6 +2,7 @@
  * @ingroup matching
  * @author Arun Das (adas@uwaterloo.ca)
  * @author James Servos (jdservos@uwaterloo.ca)
+ * @author Leo Koppel (lkoppel@uwaterloo.ca)
  *
  * Gaussian Process Ground Segmentation
  *
@@ -69,8 +70,37 @@ struct PolarBinGrid {
 };
 
 /**
- * Performs ground segmentation on pointclouds.
- * Can be a useful preprocessing step.
+ * Gaussian process-based ground segmentation filter for point cloud data.
+ *
+ * Based on Chen, Tongtong, et al. "Gaussian-process-based real-time ground
+ * segmentation for autonomous land vehicles." Journal of Intelligent & Robotic
+ * Systems 76.3-4 (2014)
+ *
+ * (https://link.springer.com/article/10.1007/s10846-013-9889-4)
+ *
+ * Can be a useful pre-processing step for ground vehicle pointclouds.
+ *
+ * This filter segments the input into three pointclouds:
+ *  - ground
+ *  - obstacles
+ *  - overhanging obstacles - non-ground points which are "drivable" under,
+ *  based on the value of GroundSegmentationParams.robot_height.
+ *
+ *  Use this filter as follows:
+ *  pcl::PointCloud<pcl::PointXYZ>::ConstPtr input = getInputSomehow(...);
+ *  pcl::PointCloud<pcl::PointXYZ> output{};
+ *
+ *  ```
+ *  GroundSegmentationParams params{};
+ *  // Set some params, or keep the default
+ *  GroundSegmentation<pcl::PointXYZ> gs{params};
+ *  gs.setInputCloud(input);
+ *  gs.filter(output);
+ *  ```
+ *
+ *  By default, the output contains obstacles and overhanging obstacles. To
+ *  change this, use the setKeepGround, setKeepObstacle, and setKeepOverhanging
+ *  methods before calling filter().
  */
 template <typename PointT>
 class GroundSegmentation : public pcl::Filter<PointT> {
