@@ -387,7 +387,11 @@ void GroundSegmentation<PointT>::applyFilter(PointCloud &output) {
 
 // Helper for explicitly instantiating this template
 // See http://pointclouds.org/documentation/tutorials/writing_new_classes.php
+#ifdef PCL_NO_PRECOMPILE
+#include "impl/ground_segmentation.hpp"
+#else
 #define PCL_INSTANTIATE_GroundSegmentation(T) \
     template class PCL_EXPORTS wave::GroundSegmentation<T>;
+#endif  // PCL_NO_PRECOMPILE
 
 #endif  // WAVE_GROUNDSEGMENTATION_IMPL_HPP

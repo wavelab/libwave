@@ -101,6 +101,14 @@ struct PolarBinGrid {
  *  By default, the output contains obstacles and overhanging obstacles. To
  *  change this, use the setKeepGround, setKeepObstacle, and setKeepOverhanging
  *  methods before calling filter().
+ *
+ *  @note this filter is templated on the point type. It is pre-compiled in
+ *  libwave_matching for PCL's standard 3D point types (see
+ *  PCL_XYZ_POINT_TYPES).
+ *  To use it with a custom point type, add the following to your source file:
+ *  ```
+ *  #include <wave/matching/impl/ground_segmentation.hpp>
+ *  ```
  */
 template <typename PointT>
 class GroundSegmentation : public pcl::Filter<PointT> {
