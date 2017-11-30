@@ -16,9 +16,9 @@ TEST(ground_segmentation, how_to_use) {
 
     PCLPointCloudPtr input =
       boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
-    auto vizground = input->makeShared();
-    auto vizobs = input->makeShared();
-    auto vizdrv = input->makeShared();
+    auto out_ground = input->makeShared();
+    auto out_obs = input->makeShared();
+    auto out_drv = input->makeShared();
 
 
     pcl::io::loadPCDFile(TEST_SCAN, *input);
@@ -61,24 +61,26 @@ TEST(ground_segmentation, how_to_use) {
     ground_segmentation.setKeepGround(true);
     ground_segmentation.setKeepObstacle(false);
     ground_segmentation.setKeepOverhanging(false);
-    ground_segmentation.filter(*vizground);
+    ground_segmentation.filter(*out_ground);
 
     ground_segmentation.setKeepGround(false);
     ground_segmentation.setKeepObstacle(true);
-    ground_segmentation.filter(*vizobs);
+    ground_segmentation.filter(*out_obs);
 
     ground_segmentation.setKeepObstacle(false);
     ground_segmentation.setKeepOverhanging(true);
-    ground_segmentation.filter(*vizdrv);
+    ground_segmentation.filter(*out_drv);
 
     PointCloudDisplay display("groundsegmenter");
     display.startSpin();
-    display.addPointcloud(vizground, 0, true);
+    display.addPointcloud(input, 0, true);
     std::this_thread::sleep_for(std::chrono::seconds(1));
-    display.addPointcloud(vizobs, 1);
+    display.addPointcloud(out_ground, 1);
     std::this_thread::sleep_for(std::chrono::seconds(1));
-    display.addPointcloud(vizdrv, 2);
-    std::this_thread::sleep_for(std::chrono::seconds(10));
+    display.addPointcloud(out_obs, 2);
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    display.addPointcloud(out_drv, 3);
+    std::this_thread::sleep_for(std::chrono::seconds(20));
 
     display.stopSpin();
 }
