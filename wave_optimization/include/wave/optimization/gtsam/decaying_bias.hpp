@@ -17,7 +17,8 @@ class DecayingBias
 
  public:
     /**
-     * Follows standard GTSAM constructor style, non-standard arguments are detailed
+     * Follows standard GTSAM constructor style, non-standard arguments are
+     * detailed
      * @param B_1
      * @param B_2
      * @param dT: Input, the time different between bias states
