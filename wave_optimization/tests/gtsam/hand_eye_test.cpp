@@ -203,6 +203,9 @@ TEST(HandEye, Sample_Problem) {
     gtsam::Pose3 init_T_S1_S2;
     initial.insert(200, init_T_S1_S2);
 
+    gtsam::Point3 init_bias;
+    initial.insert(300, init_bias);
+
     gtsam::LevenbergMarquardtParams params;
     params.absoluteErrorTol = 1e-18;
     params.setVerbosity("TERMINATION");
