@@ -24,6 +24,7 @@ struct GroundSegmentationParams {
     // considered ground
     float p_tg = 0.3;  // ground height threshold
 
+    /// Height the robot (m), used to distinguish "drivable" overhanging points
     double robot_height = 1.2;
 
     // seeding parameters
