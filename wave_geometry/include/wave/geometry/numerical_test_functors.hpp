@@ -34,7 +34,8 @@ class RotateAndJacobianJparamFunctor {
  public:
     Rotation R;
     Vec3 P;
-    RotateAndJacobianJparamFunctor(const Rotation &input_rotation, const Vec3 &input_point) {
+    RotateAndJacobianJparamFunctor(const Rotation &input_rotation,
+                                   const Vec3 &input_point) {
         this->R = input_rotation;
         this->P = input_point;
     }
@@ -51,7 +52,8 @@ class ComposeAndJacobianJLeftFunctor {
  public:
     Rotation R_left;
     Rotation R_right;
-    ComposeAndJacobianJLeftFunctor(const Rotation &R_left, const Rotation &R_right) {
+    ComposeAndJacobianJLeftFunctor(const Rotation &R_left,
+                                   const Rotation &R_right) {
         this->R_left = R_left;
         this->R_right = R_right;
     }
@@ -68,7 +70,8 @@ class ComposeAndJacobianJRightFunctor {
  public:
     Rotation R_left;
     Rotation R_right;
-    ComposeAndJacobianJRightFunctor(const Rotation &R_left, const Rotation &R_right) {
+    ComposeAndJacobianJRightFunctor(const Rotation &R_left,
+                                    const Rotation &R_right) {
         this->R_left = R_left;
         this->R_right = R_right;
     }
@@ -116,7 +119,8 @@ class ManifoldMinusAndJacobianJLeftFunctor {
  public:
     Rotation R_left;
     Rotation R_right;
-    ManifoldMinusAndJacobianJLeftFunctor(const Rotation &R_left, const Rotation &R_right) {
+    ManifoldMinusAndJacobianJLeftFunctor(const Rotation &R_left,
+                                         const Rotation &R_right) {
         this->R_left = R_left;
         this->R_right = R_right;
     }
@@ -133,7 +137,8 @@ class ManifoldMinusAndJacobianJRightFunctor {
  public:
     Rotation R_left;
     Rotation R_right;
-    ManifoldMinusAndJacobianJRightFunctor(const Rotation &R_left, const Rotation &R_right) {
+    ManifoldMinusAndJacobianJRightFunctor(const Rotation &R_left,
+                                          const Rotation &R_right) {
         this->R_left = R_left;
         this->R_right = R_right;
     }
@@ -149,7 +154,8 @@ class ManifoldMinusAndJacobianJRightFunctor {
 // Compute the perturbation points as recommended in Numerical Recipes.
 // Modify the step size so that the perturbations are exactly
 // representable numbers by adding then subtracting the same value.
-inline double get_perturbation_point(double evaluation_point, double step_size) {
+inline double get_perturbation_point(double evaluation_point,
+                                     double step_size) {
     // Use volatile to avoid compiler optimizations.
     volatile double perturbation_point = evaluation_point + step_size;
     double exact_step_size = (perturbation_point - evaluation_point);
@@ -162,10 +168,13 @@ inline double get_perturbation_point(double evaluation_point, double step_size) 
 // Manifold quantities.
 
 template <typename MatrixType, typename FunctorType, typename TangentType>
-void numerical_jacobian(FunctorType F, const TangentType &evaluation_point, Eigen::MatrixBase<MatrixType> &jac) {
+void numerical_jacobian(FunctorType F,
+                        const TangentType &evaluation_point,
+                        Eigen::MatrixBase<MatrixType> &jac) {
     for (int i = 0; i < evaluation_point.size(); i++) {
         // Select the step size as recommended in Numerical Recipes.
-        double step_size = sqrt(std::numeric_limits<double>::epsilon()) * std::fabs(evaluation_point[i]);
+        double step_size = sqrt(std::numeric_limits<double>::epsilon()) *
+                           std::fabs(evaluation_point[i]);
         // If the step size is exactly equal to zero, just select it as
         // sqrt(eps).
         if (step_size == 0.0) {
@@ -174,7 +183,8 @@ void numerical_jacobian(FunctorType F, const TangentType &evaluation_point, Eige
 
         TangentType perturbation_point = evaluation_point;
         // Compute the function value using positive perturbations.
-        perturbation_point[i] = get_perturbation_point(evaluation_point[i], step_size);
+        perturbation_point[i] =
+          get_perturbation_point(evaluation_point[i], step_size);
         auto F_xp1 = F(perturbation_point);
 
         // Perform same operations for zero perturbation.

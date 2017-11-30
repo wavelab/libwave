@@ -73,21 +73,21 @@ TEST(hand_eye, jacobians) {
     gtsam::Point3 B_Z;
 
     T_local_s1.matrix() << 0.936293363584199, -0.275095847318244,
-            0.218350663146334, 32.000000000000000, 0.289629477625516,
-            0.956425085849232, -0.036957013524625, 2.000000000000000,
-            -0.198669330795061, 0.097843395007256, 0.975170327201816,
-            3.000000000000000, 0, 0, 0, 1.000000000000000;
+      0.218350663146334, 32.000000000000000, 0.289629477625516,
+      0.956425085849232, -0.036957013524625, 2.000000000000000,
+      -0.198669330795061, 0.097843395007256, 0.975170327201816,
+      3.000000000000000, 0, 0, 0, 1.000000000000000;
 
     T_s1_s2.matrix() << 1.000000000000000, 0, 0, 0.200000000000000, 0,
-            0.995004165278026, -0.099833416646828, 0.300000000000000, 0,
-            0.099833416646828, 0.995004165278026, -0.100000000000000, 0, 0, 0,
-            1.000000000000000;
+      0.995004165278026, -0.099833416646828, 0.300000000000000, 0,
+      0.099833416646828, 0.995004165278026, -0.100000000000000, 0, 0, 0,
+      1.000000000000000;
 
     T_local_s2.matrix() << 0.936293363584199, -0.251922821203341,
-            0.244723577664956, 32.082894852206735, 0.289629477625516,
-            0.947957399267153, -0.132255566480303, 2.348549122632335,
-            -0.198669330795061, 0.194709171154326, 0.960530497001443,
-            2.892102119622983, 0, 0, 0, 1.000000000000000;
+      0.244723577664956, 32.082894852206735, 0.289629477625516,
+      0.947957399267153, -0.132255566480303, 2.348549122632335,
+      -0.198669330795061, 0.194709171154326, 0.960530497001443,
+      2.892102119622983, 0, 0, 0, 1.000000000000000;
 
     gtsam::Pose3 T_loc_1(T_local_s1.matrix());
     gtsam::Pose3 T_loc_2(T_local_s2.matrix());
@@ -99,23 +99,43 @@ TEST(hand_eye, jacobians) {
     HandEyeFactor factor(O_S2, S1_S2, BiasKey, T_loc_1, model);
 
     gtsam::Matrix J_loc2, J_s1s2, J_B_Z;
-    auto err = factor.evaluateError(T_loc_2, T_s1s2, B_Z, J_loc2, J_s1s2, J_B_Z);
+    auto err =
+      factor.evaluateError(T_loc_2, T_s1s2, B_Z, J_loc2, J_s1s2, J_B_Z);
 
-    auto fun = boost::bind(&HandEyeFactor::evaluateError, boost::ref(factor), _1, _2, _3, boost::none, boost::none, boost::none);
+    auto fun = boost::bind(&HandEyeFactor::evaluateError,
+                           boost::ref(factor),
+                           _1,
+                           _2,
+                           _3,
+                           boost::none,
+                           boost::none,
+                           boost::none);
 
-    gtsam::Matrix J_loc2num = gtsam::numericalDerivative31<gtsam::Vector, gtsam::Pose3, gtsam::Pose3, gtsam::Point3>(fun, T_loc_2, T_s1s2, B_Z, 1e-6);
-    gtsam::Matrix J_s1s2num = gtsam::numericalDerivative32<gtsam::Vector, gtsam::Pose3, gtsam::Pose3, gtsam::Point3>(fun, T_loc_2, T_s1s2, B_Z, 1e-6);
-    gtsam::Matrix J_BZnum = gtsam::numericalDerivative33<gtsam::Vector, gtsam::Pose3, gtsam::Pose3, gtsam::Point3>(fun, T_loc_2, T_s1s2, B_Z, 1e-6);
+    gtsam::Matrix J_loc2num = gtsam::numericalDerivative31<gtsam::Vector,
+                                                           gtsam::Pose3,
+                                                           gtsam::Pose3,
+                                                           gtsam::Point3>(
+      fun, T_loc_2, T_s1s2, B_Z, 1e-6);
+    gtsam::Matrix J_s1s2num = gtsam::numericalDerivative32<gtsam::Vector,
+                                                           gtsam::Pose3,
+                                                           gtsam::Pose3,
+                                                           gtsam::Point3>(
+      fun, T_loc_2, T_s1s2, B_Z, 1e-6);
+    gtsam::Matrix J_BZnum = gtsam::numericalDerivative33<gtsam::Vector,
+                                                         gtsam::Pose3,
+                                                         gtsam::Pose3,
+                                                         gtsam::Point3>(
+      fun, T_loc_2, T_s1s2, B_Z, 1e-6);
 
     EXPECT_NEAR(err.norm(), 0, 1e-6);
 
     for (int i = 0; i < 6; i++) {
         for (int j = 0; j < 6; j++) {
-            EXPECT_NEAR(J_loc2(i,j) - J_loc2num(i,j), 0, 1e-8);
-            EXPECT_NEAR(J_s1s2(i,j) - J_s1s2num(i,j), 0, 1e-8);
+            EXPECT_NEAR(J_loc2(i, j) - J_loc2num(i, j), 0, 1e-8);
+            EXPECT_NEAR(J_s1s2(i, j) - J_s1s2num(i, j), 0, 1e-8);
         }
         for (int j = 0; j < 3; j++) {
-            EXPECT_NEAR(J_BZnum(i,j), J_B_Z(i,j), 1e-8);
+            EXPECT_NEAR(J_BZnum(i, j), J_B_Z(i, j), 1e-8);
         }
     }
 }
@@ -134,15 +154,13 @@ double truncate(double val, double min, double max) {
     }
     return val;
 }
-
 }
 
 TEST(HandEye, Sample_Problem) {
     Eigen::Affine3d T_S1_S2;
-    T_S1_S2.matrix() << 1.000000000000000, 0, 0, 0.200000000000000, 0,
-            1, 0, 0.300000000000000, 0,
-            0, 1, -0.100000000000000, 0, 0, 0,
-            1.000000000000000;
+    T_S1_S2.matrix() << 1.000000000000000, 0, 0, 0.200000000000000, 0, 1, 0,
+      0.300000000000000, 0, 0, 1, -0.100000000000000, 0, 0, 0,
+      1.000000000000000;
 
     gtsam::NonlinearFactorGraph graph;
 
@@ -153,13 +171,13 @@ TEST(HandEye, Sample_Problem) {
 
     gtsam::Values initial;
 
-    //Generate random poses
+    // Generate random poses
     std::random_device rd;
     std::mt19937_64 gen(rd());
     std::uniform_real_distribution<> angles(-1, 1), displacements(-50, 50);
     std::normal_distribution<> noise_ang(0, 0.01);
     std::normal_distribution<> noise_dis(0, 0.01);
-    for(unsigned long i = 0; i < 20; i++) {
+    for (unsigned long i = 0; i < 20; i++) {
         double roll = angles(gen);
         double pitch = angles(gen);
         double yaw = angles(gen);
@@ -191,13 +209,16 @@ TEST(HandEye, Sample_Problem) {
         Mat6 info;
         info.setIdentity();
         auto model = gtsam::noiseModel::Gaussian::Information(info);
-        graph.push_back(HandEyeFactor(i, 200, 300, noisy_T_O_S1.at(i), model));  // T_O_S1
+        graph.push_back(
+          HandEyeFactor(i, 200, 300, noisy_T_O_S1.at(i), model));  // T_O_S1
         initial.insert(i, noisy_T_O_S1.at(i));
 
         if (i > 0) {
             auto betmodel = gtsam::noiseModel::Gaussian::Information(info);
-            fake_odom.push_back(true_T_O_S2.at(i - 1).between(true_T_O_S2.at(i)));
-            graph.push_back(gtsam::BetweenFactor<gtsam::Pose3>(i - 1, i, fake_odom.at(i-1), betmodel));
+            fake_odom.push_back(
+              true_T_O_S2.at(i - 1).between(true_T_O_S2.at(i)));
+            graph.push_back(gtsam::BetweenFactor<gtsam::Pose3>(
+              i - 1, i, fake_odom.at(i - 1), betmodel));
         }
     }
     gtsam::Pose3 init_T_S1_S2;
@@ -210,22 +231,23 @@ TEST(HandEye, Sample_Problem) {
     params.absoluteErrorTol = 1e-18;
     params.setVerbosity("TERMINATION");
     params.maxIterations = 300000;
-    gtsam::LevenbergMarquardtOptimizer optimizer(
-            graph, initial, params);
+    gtsam::LevenbergMarquardtOptimizer optimizer(graph, initial, params);
 
-//    gtsam::GaussNewtonParams params;
-//    params.setVerbosity("TERMINATION");
-//    params.absoluteErrorTol = 1e-18;
-//    gtsam::GaussNewtonOptimizer optimizer(graph, initial, params);
+    //    gtsam::GaussNewtonParams params;
+    //    params.setVerbosity("TERMINATION");
+    //    params.absoluteErrorTol = 1e-18;
+    //    gtsam::GaussNewtonOptimizer optimizer(graph, initial, params);
 
     auto result = optimizer.optimize();
 
-    for(unsigned long i = 0; i < 20; i++) {
-        EXPECT_NEAR((result.at<gtsam::Pose3>(i).matrix() - true_T_O_S2.at(i).matrix()).norm(), 0, 1e-3);
+    for (unsigned long i = 0; i < 20; i++) {
+        EXPECT_NEAR(
+          (result.at<gtsam::Pose3>(i).matrix() - true_T_O_S2.at(i).matrix())
+            .norm(),
+          0,
+          1e-3);
     }
     gtsam::Pose3 opt_T_S1_S2 = result.at<gtsam::Pose3>(200);
     EXPECT_NEAR((opt_T_S1_S2.matrix() - true_T_S1_S2.matrix()).norm(), 0, 1e-3);
-
 }
-
 }
