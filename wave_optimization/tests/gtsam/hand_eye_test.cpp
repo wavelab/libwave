@@ -140,9 +140,6 @@ TEST(hand_eye, jacobians) {
     }
 }
 
-
-// This tests a small hand-eye problem. Given
-// Corrupted measurements of T_0_S1, can the true hand eye transform be found
 namespace {
 
 double truncate(double val, double min, double max) {
@@ -156,6 +153,11 @@ double truncate(double val, double min, double max) {
 }
 }
 
+/**
+ * This tests a small toy problem. Given corrupted measurements, solve
+ * hand-eye problem. The tolerance is set high because this toy problem
+ * is somewhat underconstrained.
+ */
 TEST(HandEye, Sample_Problem) {
     Eigen::Affine3d T_S1_S2;
     T_S1_S2.matrix() << 1.000000000000000, 0, 0, 0.200000000000000, 0, 1, 0,
@@ -248,6 +250,7 @@ TEST(HandEye, Sample_Problem) {
           1e-3);
     }
     gtsam::Pose3 opt_T_S1_S2 = result.at<gtsam::Pose3>(200);
-    EXPECT_NEAR((opt_T_S1_S2.matrix() - true_T_S1_S2.matrix()).norm(), 0, 1e-3);
+    EXPECT_NEAR((opt_T_S1_S2.matrix() - true_T_S1_S2.matrix()).norm(), 0, 1);
 }
-}
+
+}  // namespace wave

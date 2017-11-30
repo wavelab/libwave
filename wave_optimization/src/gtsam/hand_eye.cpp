@@ -2,12 +2,13 @@
 
 namespace wave {
 
-HandEyeFactor::HandEyeFactor(gtsam::Key O_S2,
+HandEyeFactor::HandEyeFactor(gtsam::Key LOCAL_S2,
                              gtsam::Key S1_S2,
                              gtsam::Key BiasKey,
                              gtsam::Pose3 T_local_s1,
                              const gtsam::SharedNoiseModel &model)
-    : NoiseModelFactor3(model, O_S2, S1_S2, BiasKey), T_LOCAL_S1(T_local_s1) {}
+    : NoiseModelFactor3(model, LOCAL_S2, S1_S2, BiasKey),
+      T_LOCAL_S1(T_local_s1) {}
 
 gtsam::Vector HandEyeFactor::evaluateError(
   const gtsam::Pose3 &T_LOCAL_S2,

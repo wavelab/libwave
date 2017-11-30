@@ -81,4 +81,5 @@ TEST(decaying_bias, jacobians) {
         }
     }
 }
-}
+
+}  // namespace wave

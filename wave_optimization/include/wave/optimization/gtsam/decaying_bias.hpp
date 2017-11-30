@@ -7,7 +7,8 @@
 namespace wave {
 
 /**
- * This residual models exponentially decaying linear bias
+ * This residual models exponentially decaying translational bias
+ * b2 = b1 * exp(-dt/Tau)
  */
 
 class DecayingBias
@@ -15,6 +16,14 @@ class DecayingBias
     double factor;
 
  public:
+    /**
+     * Follows standard GTSAM constructor style, non-standard arguments are detailed
+     * @param B_1
+     * @param B_2
+     * @param dT: Input, the time different between bias states
+     * @param T:  Input, the time decay constant
+     * @param model
+     */
     DecayingBias(gtsam::Key B_1,
                  gtsam::Key B_2,
                  double dT,
