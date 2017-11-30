@@ -309,19 +309,19 @@ void GroundSegmentation<PointT>::sectorINSAC(int sector_index) {
             } else {
                 // check drivability
                 if (h > this->params.robot_height) {
-                    // drivable
-                } else {
-                    this->drv_indices.push_back(j);  // add to obs
-                    // @todo wrong comment above, or wrong code?
+                    // @todo repetitive code
+                    this->drv_indices.push_back(j);
                     cur_cell.drv_indices.push_back(j);
+                } else {
+                    this->obs_indices.push_back(j);
+                    cur_cell.obs_indices.push_back(j);
+                    obs_sum += Vec3(cur_point.x, cur_point.y, cur_point.z);
+                    num_obs++;
                 }
-                this->obs_indices.push_back(j);  // add to obs
-                cur_cell.obs_indices.push_back(j);
-                obs_sum += Vec3(cur_point.x, cur_point.y, cur_point.z);
-                num_obs++;
             }
         }
         // mean of obs points
+        // @todo is this unused?
         cur_cell.obs_mean = obs_sum / num_obs;
     }
 
@@ -338,18 +338,19 @@ void GroundSegmentation<PointT>::sectorINSAC(int sector_index) {
                 float h = std::abs(cur_point.z - f_s(i));
                 // check drivability
                 if (h > this->params.robot_height) {
-                    // drivable
-                } else {
-                    this->drv_indices.push_back(j);  // add to obs
-                    // @todo wrong comment above, or wrong code?
+                    // @todo repetitive code
+                    this->drv_indices.push_back(j);
                     cur_cell.drv_indices.push_back(j);
+                } else {
+                    this->obs_indices.push_back(j);
+                    cur_cell.obs_indices.push_back(j);
+                    cur_cell.obs_indices.push_back(j);
+                    obs_sum += Vec3{cur_point.x, cur_point.y, cur_point.z};
+                    num_obs++;
                 }
-                this->obs_indices.push_back(j);  // add to obs
-                cur_cell.obs_indices.push_back(j);
-                obs_sum += Vec3{cur_point.x, cur_point.y, cur_point.z};
-                num_obs++;
             }
             // mean of obs points
+            // @todo is this unused?
             cur_cell.obs_mean = obs_sum / num_obs;
         }
     } else {
