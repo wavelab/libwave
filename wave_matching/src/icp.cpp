@@ -135,11 +135,12 @@ bool ICPMatcher::match() {
 
 void ICPMatcher::estimateInfo() {
     switch (this->params.covar_estimator) {
-        case ICPMatcherParams::covar_method::LUM: this->estimateLUM();
+        case ICPMatcherParams::covar_method::LUM: this->estimateLUM(); break;
+        case ICPMatcherParams::covar_method::CENSI:
+            this->estimateCensi();
             break;
-        case ICPMatcherParams::covar_method::CENSI: this->estimateCensi();
-            break;
-        case ICPMatcherParams::covar_method::LUMold: this->estimateLUMold();
+        case ICPMatcherParams::covar_method::LUMold:
+            this->estimateLUMold();
             break;
         default:
     }
