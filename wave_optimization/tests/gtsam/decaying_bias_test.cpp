@@ -71,7 +71,6 @@ TEST(decaying_bias, jacobians) {
     EXPECT_NEAR(err.norm(), 0, 1e-8);
     EXPECT_NEAR((J_B_1 - J_B_1num).norm(), 0, 1e-8);
     EXPECT_NEAR((J_B_1 - J_B_1num).norm(), 0, 1e-8);
-
 }
 
 }  // namespace wave
