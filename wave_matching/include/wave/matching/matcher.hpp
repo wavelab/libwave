@@ -18,7 +18,7 @@ namespace wave {
 /** @addtogroup matching
  *  @{ */
 
-class ConfigException : public __exception {
+class ConfigException : public std::exception {
     virtual const char *what() const throw() {
         return "Failed to Load Matcher Config";
     }
