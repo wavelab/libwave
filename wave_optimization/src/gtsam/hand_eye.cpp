@@ -17,7 +17,7 @@ gtsam::Vector HandEyeFactor::evaluateError(
   boost::optional<gtsam::Matrix &> J_T_LOCAL_S2,
   boost::optional<gtsam::Matrix &> J_T_S1_S2,
   boost::optional<gtsam::Matrix &> J_B_Z) const {
-    gtsam::Matrix J_compose_left, J_compose_right;
+    gtsam::Matrix J_compose_right;
     gtsam::Matrix J_compose_left2, J_compose_right2;
     gtsam::Matrix J_between_left, J_between_right;
     gtsam::Matrix J_logmap, J_bias;

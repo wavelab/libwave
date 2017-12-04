@@ -41,12 +41,8 @@ TEST(decaying_bias, jacobians) {
     gtsam::Key B_1 = 0;
     gtsam::Key B_2 = 1;
     gtsam::Point3 B1val, B2val;
-    B1val.matrix()(0) = 10;
-    B1val.matrix()(1) = 10;
-    B1val.matrix()(2) = 10;
-    B2val.matrix()(0) = 10 * std::exp(-(0.1 / 5.0));
-    B2val.matrix()(1) = 10 * std::exp(-(0.1 / 5.0));
-    B2val.matrix()(2) = 10 * std::exp(-(0.1 / 5.0));
+    B1val.matrix().setConstant(10.0);
+    B2val.matrix().setConstant(10.0 * std::exp(-(0.1 / 5.0)));
 
     gtsam::Matrix1 info;
     info.setIdentity();
@@ -73,13 +69,9 @@ TEST(decaying_bias, jacobians) {
         fun, B1val, B2val, 1e-6);
 
     EXPECT_NEAR(err.norm(), 0, 1e-8);
+    EXPECT_NEAR((J_B_1 - J_B_1num).norm(), 0, 1e-8);
+    EXPECT_NEAR((J_B_1 - J_B_1num).norm(), 0, 1e-8);
 
-    for (uint32_t i = 0; i < 3; i++) {
-        for (uint32_t j = 0; j < 3; j++) {
-            EXPECT_NEAR(J_B_1(i, j), J_B_1num(i, j), 1e-8);
-            EXPECT_NEAR(J_B_2(i, j), J_B_2num(i, j), 1e-8);
-        }
-    }
 }
 
 }  // namespace wave

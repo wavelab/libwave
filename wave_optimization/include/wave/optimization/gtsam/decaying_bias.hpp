@@ -13,7 +13,7 @@ namespace wave {
 
 class DecayingBias
   : public gtsam::NoiseModelFactor2<gtsam::Point3, gtsam::Point3> {
-    double factor;
+    double decay_factor;
 
  public:
     /**
