@@ -12,7 +12,7 @@ namespace wave {
  *  @{ */
 
 // The Functors are used for computing finite difference Jacobians
-// of rotation expressions.
+// of rotation and/or translation expressions.
 
 class RotateAndJacobianJpointFunctor {
  public:
@@ -153,7 +153,8 @@ class ManifoldMinusAndJacobianJRightFunctor {
 // Compute the perturbation points as recommended in Numerical Recipes.
 // Modify the step size so that the perturbations are exactly
 // representable numbers by adding then subtracting the same value.
-double get_perturbation_point(double evaluation_point, double step_size) {
+inline double get_perturbation_point(double evaluation_point,
+                                     double step_size) {
     // Use volatile to avoid compiler optimizations.
     volatile double perturbation_point = evaluation_point + step_size;
     double exact_step_size = (perturbation_point - evaluation_point);
@@ -165,9 +166,9 @@ double get_perturbation_point(double evaluation_point, double step_size) {
 // Requires overloaded -operator to perform manifoldMinus for
 // Manifold quantities.
 
-template <typename MatrixType, typename FunctorType>
+template <typename MatrixType, typename FunctorType, typename TangentType>
 void numerical_jacobian(FunctorType F,
-                        const Vec3 &evaluation_point,
+                        const TangentType &evaluation_point,
                         Eigen::MatrixBase<MatrixType> &jac) {
     for (int i = 0; i < evaluation_point.size(); i++) {
         // Select the step size as recommended in Numerical Recipes.
@@ -179,7 +180,7 @@ void numerical_jacobian(FunctorType F,
             step_size = sqrt(std::numeric_limits<double>::epsilon());
         }
 
-        Vec3 perturbation_point = evaluation_point;
+        TangentType perturbation_point = evaluation_point;
         // Compute the function value using positive perturbations.
         perturbation_point[i] =
           get_perturbation_point(evaluation_point[i], step_size);
@@ -189,7 +190,7 @@ void numerical_jacobian(FunctorType F,
         auto F_x = F(evaluation_point);
 
         // Finally compute the finite difference.
-        Vec3 finite_difference = (F_xp1 - F_x) / (step_size);
+        VecX finite_difference = (F_xp1 - F_x) / (step_size);
         jac.col(i) = finite_difference;
     }
 }
