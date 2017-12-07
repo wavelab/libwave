@@ -21,9 +21,11 @@ class GPSFactorWBiasEx : public gtsam::NoiseModelFactor1<T> {
     gtsam::Pose3 T_LOCAL_S1;
 
  public:
-    GPSFactorWBiasEx(gtsam::Key key, T m, const gtsam::SharedNoiseModel &model)
+    GPSFactorWBiasEx(gtsam::Key key,
+                     gtsam::Pose3 m,
+                     const gtsam::SharedNoiseModel &model)
         : gtsam::NoiseModelFactor1<T>::NoiseModelFactor1(model, key),
-          T_LOCAL_S1(m.pose) {}
+          T_LOCAL_S1(m) {}
 
     gtsam::Vector evaluateError(
       const T &m, boost::optional<gtsam::Matrix &> H = boost::none) const;
