@@ -30,7 +30,7 @@ TEST(custom_state, init) {
     info.setIdentity();
     auto model = gtsam::noiseModel::Gaussian::Information(info);
 
-    auto factor = GPSFactorWBiasEx<PoseVelBias>(key, dummy, model);
+    auto factor = GPSFactorWBiasEx<PoseVelBias>(key, dummy.pose, model);
 }
 
 // Test that the factor produces zero error when transforms form a chain
