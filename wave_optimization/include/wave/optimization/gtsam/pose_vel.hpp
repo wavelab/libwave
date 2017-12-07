@@ -74,8 +74,8 @@ struct traits<wave::PoseVel> {
 
     static wave::PoseVel Retract(const wave::PoseVel& origin, const TangentVector& v) {
         wave::PoseVel retval;
-        retval.pose = traits<Pose3>::Retract(origin.pose, v.block<6,1>(0,0).noalias());
-        retval.vel = traits<decltype(retval.vel)>::Retract(origin.vel, v.block<6,1>(6,0).noalias());
+        retval.pose = traits<Pose3>::Retract(origin.pose, v.block<6,1>(0,0).);
+        retval.vel = traits<decltype(retval.vel)>::Retract(origin.vel, v.block<6,1>(6,0).);
         return retval;
     }
 
@@ -117,14 +117,14 @@ struct traits<wave::PoseVel> {
         if (Hv) {
             Hv->resize(dimension, dimension);
             Hv->setZero();
-            retval.pose = traits<Pose3>::Expmap(v.block<6,1>(0,0).noalias(), J1);
-            retval.vel = traits<decltype(m.vel)>::Logmap(v.block<6,1>(6,0).noalias(), J2);
+            retval.pose = traits<Pose3>::Expmap(v.block<6,1>(0,0)., J1);
+            retval.vel = traits<decltype(m.vel)>::Logmap(v.block<6,1>(6,0)., J2);
 
             Hv->block<6,6>(0,0).noalias() = *J1;
             Hv->block<6,6>(6,6).noalias() = *J2;
         } else {
-            retval.pose = traits<Pose3>::Expmap(v.block<6,1>(0,0).noalias(), boost::none);
-            retval.vel = traits<decltype(m.vel)>::Logmap(v.block<6,1>(6,0).noalias(), boost::none);
+            retval.pose = traits<Pose3>::Expmap(v.block<6,1>(0,0)., boost::none);
+            retval.vel = traits<decltype(m.vel)>::Logmap(v.block<6,1>(6,0)., boost::none);
         }
         return retval;
     }
@@ -201,6 +201,7 @@ PoseVel operator*(const PoseVel& m1, const PoseVel& m2) {
     wave::PoseVel retval;
     retval.pose = m1.pose * m2.pose;
     retval.vel = m1.vel + m2.vel;
+    return retval;
 }
 
 }

@@ -88,10 +88,10 @@ struct traits<wave::PoseVelAccBias> {
 
     static wave::PoseVelAccBias Retract(const wave::PoseVelAccBias& origin, const TangentVector& v) {
         wave::PoseVelAccBias retval;
-        retval.pose = traits<Pose3>::Retract(origin.pose, v.block<6,1>(0,0).noalias());
-        retval.vel = traits<decltype(retval.vel)>::Retract(origin.vel, v.block<6,1>(6,0).noalias());
-        retval.acc = traits<decltype(retval.acc)>::Retract(origin.acc, v.block<6,1>(12,0).noalias());
-        retval.bias = traits<decltype(retval.bias)>::Retract(origin.bias, v.block<3,1>(18,0).noalias());
+        retval.pose = traits<Pose3>::Retract(origin.pose, v.block<6,1>(0,0).);
+        retval.vel = traits<decltype(retval.vel)>::Retract(origin.vel, v.block<6,1>(6,0).);
+        retval.acc = traits<decltype(retval.acc)>::Retract(origin.acc, v.block<6,1>(12,0).);
+        retval.bias = traits<decltype(retval.bias)>::Retract(origin.bias, v.block<3,1>(18,0).);
         return retval;
     }
 
@@ -143,20 +143,20 @@ struct traits<wave::PoseVelAccBias> {
         if (Hv) {
             Hv->resize(dimension, dimension);
             Hv->setZero();
-            retval.pose = traits<Pose3>::Expmap(v.block<6,1>(0,0).noalias(), J1);
-            retval.vel = traits<decltype(m.vel)>::Logmap(v.block<6,1>(6,0).noalias(), J2);
-            retval.acc = traits<decltype(m.acc)>::Logmap(v.block<6,1>(12,0).noalias(), J3);
-            retval.bias = traits<decltype(m.bias)>::Logmap(v.block<3,1>(18,0).noalias(), J4);
+            retval.pose = traits<Pose3>::Expmap(v.block<6,1>(0,0)., J1);
+            retval.vel = traits<decltype(m.vel)>::Logmap(v.block<6,1>(6,0)., J2);
+            retval.acc = traits<decltype(m.acc)>::Logmap(v.block<6,1>(12,0)., J3);
+            retval.bias = traits<decltype(m.bias)>::Logmap(v.block<3,1>(18,0)., J4);
 
             Hv->block<6,6>(0,0).noalias() = *J1;
             Hv->block<6,6>(6,6).noalias() = *J2;
             Hv->block<6,6>(12,12).noalias() = *J3;
             Hv->block<3,3>(18,18).noalias() = *J4;
         } else {
-            retval.pose = traits<Pose3>::Expmap(v.block<6,1>(0,0).noalias(), boost::none);
-            retval.vel = traits<decltype(m.vel)>::Logmap(v.block<6,1>(6,0).noalias(), boost::none);
-            retval.acc = traits<decltype(m.acc)>::Logmap(v.block<6,1>(12,0).noalias(), boost::none);
-            retval.bias = traits<decltype(m.bias)>::Logmap(v.block<3,1>(18,0).noalias(), boost::none);
+            retval.pose = traits<Pose3>::Expmap(v.block<6,1>(0,0)., boost::none);
+            retval.vel = traits<decltype(m.vel)>::Logmap(v.block<6,1>(6,0)., boost::none);
+            retval.acc = traits<decltype(m.acc)>::Logmap(v.block<6,1>(12,0)., boost::none);
+            retval.bias = traits<decltype(m.bias)>::Logmap(v.block<3,1>(18,0)., boost::none);
         }
         return retval;
     }

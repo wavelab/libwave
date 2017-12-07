@@ -81,9 +81,9 @@ struct traits<wave::PoseVelBias> {
 
     static wave::PoseVelBias Retract(const wave::PoseVelBias& origin, const TangentVector& v) {
         wave::PoseVelBias retval;
-        retval.pose = traits<Pose3>::Retract(origin.pose, v.block<6,1>(0,0).noalias());
-        retval.vel = traits<decltype(retval.vel)>::Retract(origin.vel, v.block<6,1>(6,0).noalias());
-        retval.bias = traits<decltype(retval.bias)>::Retract(origin.bias, v.block<3,1>(12,0).noalias());
+        retval.pose = traits<Pose3>::Retract(origin.pose, v.block<6,1>(0,0));
+        retval.vel = traits<decltype(retval.vel)>::Retract(origin.vel, v.block<6,1>(6,0));
+        retval.bias = traits<decltype(retval.bias)>::Retract(origin.bias, v.block<3,1>(12,0));
         return retval;
     }
 
@@ -125,22 +125,22 @@ struct traits<wave::PoseVelBias> {
     static wave::PoseVelBias Expmap(const TangentVector& v, ChartJacobian Hv = boost::none) {
         wave::PoseVelBias retval;
         traits<Pose3>::ChartJacobian J1;
-        traits<decltype(m.vel)>::ChartJacobian J2;
-        traits<decltype(m.bias)>::ChartJacobian J3;
+        traits<decltype(retval.vel)>::ChartJacobian J2;
+        traits<decltype(retval.bias)>::ChartJacobian J3;
         if (Hv) {
             Hv->resize(dimension, dimension);
             Hv->setZero();
-            retval.pose = traits<Pose3>::Expmap(v.block<6,1>(0,0).noalias(), J1);
-            retval.vel = traits<decltype(m.vel)>::Logmap(v.block<6,1>(6,0).noalias(), J2);
-            retval.bias = traits<decltype(m.bias)>::Logmap(v.block<3,1>(12,0).noalias(), J3);
+            retval.pose = traits<Pose3>::Expmap(v.block<6,1>(0,0), J1);
+            retval.vel = traits<decltype(retval.vel)>::Logmap(v.block<6,1>(6,0), J2);
+            retval.bias = traits<decltype(retval.bias)>::Logmap(v.block<3,1>(12,0), J3);
 
             Hv->block<6,6>(0,0).noalias() = *J1;
             Hv->block<6,6>(6,6).noalias() = *J2;
             Hv->block<3,3>(12,12).noalias() = *J3;
         } else {
-            retval.pose = traits<Pose3>::Expmap(v.block<6,1>(0,0).noalias(), boost::none);
-            retval.vel = traits<decltype(m.vel)>::Logmap(v.block<6,1>(6,0).noalias(), boost::none);
-            retval.bias = traits<decltype(m.bias)>::Logmap(v.block<3,1>(12,0).noalias(), boost::none);
+            retval.pose = traits<Pose3>::Expmap(v.block<6,1>(0,0), boost::none);
+            retval.vel = traits<decltype(retval.vel)>::Logmap(v.block<6,1>(6,0), boost::none);
+            retval.bias = traits<decltype(retval.bias)>::Logmap(v.block<3,1>(12,0), boost::none);
         }
         return retval;
     }
@@ -148,12 +148,12 @@ struct traits<wave::PoseVelBias> {
     static wave::PoseVelBias Compose(const wave::PoseVelBias& m1, const wave::PoseVelBias& m2, ChartJacobian H1 = boost::none, ChartJacobian H2 = boost::none) {
         wave::PoseVelBias retval;
         traits<Pose3>::ChartJacobian J1, J2;
-        traits<decltype(m.vel)>::ChartJacobian J3, J4;
-        traits<decltype(m.bias)>::ChartJacobian J5, J6;
+        traits<decltype(retval.vel)>::ChartJacobian J3, J4;
+        traits<decltype(retval.bias)>::ChartJacobian J5, J6;
 
         retval.pose = traits<Pose3>::Compose(m1.pose, m2.pose, J1, J2);
-        retval.vel = traits<decltype(m.vel)>::Compose(m1.vel, m2.vel, J3, J4);
-        retval.bias = traits<decltype(m.bias)>::Compose(m1.bias, m2.bias, J5, J6);
+        retval.vel = traits<decltype(retval.vel)>::Compose(m1.vel, m2.vel, J3, J4);
+        retval.bias = traits<decltype(retval.bias)>::Compose(m1.bias, m2.bias, J5, J6);
 
         if(H1) {
             H1->resize(dimension, dimension);
@@ -175,12 +175,12 @@ struct traits<wave::PoseVelBias> {
     static wave::PoseVelBias Between(const wave::PoseVelBias& m1, const wave::PoseVelBias& m2, ChartJacobian H1 = boost::none, ChartJacobian H2 = boost::none) {
         wave::PoseVelBias retval;
         traits<Pose3>::ChartJacobian J1, J2;
-        traits<decltype(m.vel)>::ChartJacobian J3, J4;
-        traits<decltype(m.bias)>::ChartJacobian J5, J6;
+        traits<decltype(retval.vel)>::ChartJacobian J3, J4;
+        traits<decltype(retval.bias)>::ChartJacobian J5, J6;
 
         retval.pose = traits<Pose3>::Between(m1.pose, m2.pose, J1, J2);
-        retval.vel = traits<decltype(m.vel)>::Between(m1.vel, m2.vel, J3, J4);
-        retval.bias = traits<decltype(m.bias)>::Between(m1.bias, m2.bias, J5, J6);
+        retval.vel = traits<decltype(retval.vel)>::Between(m1.vel, m2.vel, J3, J4);
+        retval.bias = traits<decltype(retval.bias)>::Between(m1.bias, m2.bias, J5, J6);
 
         if(H1) {
             H1->resize(dimension, dimension);
@@ -219,17 +219,6 @@ struct traits<wave::PoseVelBias> {
     }
 
 };
-
-}
-
-namespace wave {
-
-PoseVelBias operator*(const PoseVelBias& m1, const PoseVelBias& m2) {
-    wave::PoseVelBias retval;
-    retval.pose = m1.pose * m2.pose;
-    retval.vel = m1.vel + m2.vel;
-    retval.bias = m1.bias + m2.bias;
-}
 
 }
 
