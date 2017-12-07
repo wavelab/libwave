@@ -2,12 +2,11 @@
 
 namespace wave {
 
-PoseVelBias operator*(const PoseVelBias& m1, const PoseVelBias& m2) {
+PoseVelBias operator*(const PoseVelBias &m1, const PoseVelBias &m2) {
     wave::PoseVelBias retval;
     retval.pose = m1.pose * m2.pose;
     retval.vel = m1.vel + m2.vel;
     retval.bias = m1.bias + m2.bias;
     return retval;
 }
-
 }
