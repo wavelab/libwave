@@ -47,19 +47,21 @@ TEST(pose_vel_bias_state, trivial_problem) {
     auto model = gtsam::noiseModel::Gaussian::Information(info);
     graph.add(gtsam::PriorFactor<PoseVelBias>(0, states.at(0), model));
 
-    for(uint16_t i = 1; i < states.size(); i++) {
+    for (uint16_t i = 1; i < states.size(); i++) {
         initial.insert(i, states.at(i));
-        states.at(i).pose = states.at(i-1).pose.retract(delta_t * states.at(i-1).vel);
-        states.at(i).vel = states.at(i-1).vel;
-        graph.add(MotionFactor(i-1, i, delta_t, model));
+        states.at(i).pose =
+          states.at(i - 1).pose.retract(delta_t * states.at(i - 1).vel);
+        states.at(i).vel = states.at(i - 1).vel;
+        graph.add(MotionFactor(i - 1, i, delta_t, model));
     }
 
     gtsam::LevenbergMarquardtOptimizer optimizer(graph, initial);
     auto result = optimizer.optimize();
 
-    for(uint64_t i = 0; i < result.size(); i++) {
+    for (uint64_t i = 0; i < result.size(); i++) {
         PoseVelBias res = result.at<PoseVelBias>(i);
-        EXPECT_TRUE(gtsam::traits<PoseVelBias>::Equals(states.at(i), res, 1e-3));
+        EXPECT_TRUE(
+          gtsam::traits<PoseVelBias>::Equals(states.at(i), res, 1e-3));
     }
 }
 

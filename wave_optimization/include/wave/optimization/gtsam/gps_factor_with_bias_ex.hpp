@@ -22,12 +22,12 @@ class GPSFactorWBiasEx : public gtsam::NoiseModelFactor1<T> {
 
  public:
     GPSFactorWBiasEx(gtsam::Key key, T m, const gtsam::SharedNoiseModel &model)
-            : gtsam::NoiseModelFactor1<T>::NoiseModelFactor1(model, key), T_LOCAL_S1(m.pose) {}
+        : gtsam::NoiseModelFactor1<T>::NoiseModelFactor1(model, key),
+          T_LOCAL_S1(m.pose) {}
 
     gtsam::Vector evaluateError(
-            const T &m, boost::optional<gtsam::Matrix &> H = boost::none) const;
+      const T &m, boost::optional<gtsam::Matrix &> H = boost::none) const;
 };
-
 }
 
 #include "wave/optimization/gtsam/impl/gps_factor_with_bias_impl.hpp"

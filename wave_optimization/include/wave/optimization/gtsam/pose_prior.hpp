@@ -10,20 +10,23 @@
 
 namespace wave {
 
-template<class T>
+template <class T>
 class PosePrior : public gtsam::NoiseModelFactor1<T> {
  private:
     gtsam::Pose3 prior;
+
  public:
-    PosePrior(gtsam::Key key, T m, const gtsam::SharedNoiseModel &model)
-            : gtsam::NoiseModelFactor1<T>::NoiseModelFactor1(model, key), prior(m.pose) {}
+    PosePrior(gtsam::Key key,
+              gtsam::Pose3 m,
+              const gtsam::SharedNoiseModel &model)
+        : gtsam::NoiseModelFactor1<T>::NoiseModelFactor1(model, key),
+          prior(m) {}
 
     gtsam::Vector evaluateError(
-            const T &m, boost::optional<gtsam::Matrix &> H = boost::none) const;
+      const T &m, boost::optional<gtsam::Matrix &> H = boost::none) const;
 };
-
 }
 
 #include "wave/optimization/gtsam/impl/pose_prior_impl.hpp"
 
-#endif //WAVE_POSE_PRIOR_HPP
+#endif  // WAVE_POSE_PRIOR_HPP

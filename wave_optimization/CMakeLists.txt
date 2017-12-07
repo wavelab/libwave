@@ -61,6 +61,12 @@ IF(BUILD_TESTING)
         TARGET_LINK_LIBRARIES(pose_vel_state_test
                 ${PROJECT_NAME}
                 ${GTSAM_LIBRARIES})
+
+        WAVE_ADD_TEST(prior_test
+                tests/gtsam/prior_tests.cpp)
+        TARGET_LINK_LIBRARIES(prior_test
+                ${PROJECT_NAME}
+                ${GTSAM_LIBRARIES})
     ENDIF()
 
     # COPY TEST DATA

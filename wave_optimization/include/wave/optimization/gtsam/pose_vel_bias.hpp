@@ -28,9 +28,7 @@ struct PoseVelBias {
         bias.setZero();
     }
 
-    enum {pose_offset = 0,
-          vel_offset = 6,
-          bias_offset = 12};
+    enum { pose_offset = 0, vel_offset = 6, bias_offset = 12 };
 };
 }
 
