@@ -88,7 +88,6 @@ ENDIF(BUILD_BENCHMARKS)
 
 # Add a special "wave" target including all modules
 # The WAVE_ADD_LIBRARY helper in WaveUtils.cmake will add each module to this
-ADD_LIBRARY(wave INTERFACE)
 INSTALL(TARGETS wave EXPORT waveTargets)
 
 # Add each module to the project
