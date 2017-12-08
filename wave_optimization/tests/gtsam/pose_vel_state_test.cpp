@@ -34,6 +34,56 @@ TEST(pose_vel_bias_state, example) {
     EXPECT_TRUE(err.isZero());
 }
 
+TEST(pose_vel_bias_state, single_prior) {
+    gtsam::Values initial;
+    gtsam::NonlinearFactorGraph graph;
+
+    PoseVelBias state;
+    initial.insert(1, state);
+
+    Eigen::Affine3d T_local_s1;
+    T_local_s1.matrix() << 0.936293363584199, -0.275095847318244,
+      0.218350663146334, 32.000000000000000, 0.289629477625516,
+      0.956425085849232, -0.036957013524625, 2.000000000000000,
+      -0.198669330795061, 0.097843395007256, 0.975170327201816,
+      3.000000000000000, 0, 0, 0, 1.000000000000000;
+
+    gtsam::Pose3 prior_pose(T_local_s1.matrix());
+    state.pose = prior_pose;
+    state.vel << -0.4, 0.3, 0.1, 5, 2, 1;
+    state.bias << 0.2, -0.1, 0.4;
+
+    Eigen::Matrix<double, 15, 15> info;
+    info.setIdentity();
+    auto model = gtsam::noiseModel::Gaussian::Information(info);
+    auto factor = gtsam::PriorFactor<PoseVelBias>(1, state, model);
+    graph.add(factor);
+
+    gtsam::LevenbergMarquardtOptimizer optimizer(graph, initial);
+    auto result = optimizer.optimize();
+
+    EXPECT_TRUE(
+      gtsam::traits<PoseVelBias>::Equals(state, result.at<PoseVelBias>(1)));
+}
+
+TEST(pose_vel_bias_state, logmap) {
+    Eigen::Affine3d T_local_s1;
+    T_local_s1.matrix() << 0.936293363584199, -0.275095847318244,
+      0.218350663146334, 32.000000000000000, 0.289629477625516,
+      0.956425085849232, -0.036957013524625, 2.000000000000000,
+      -0.198669330795061, 0.097843395007256, 0.975170327201816,
+      3.000000000000000, 0, 0, 0, 1.000000000000000;
+
+    PoseVelBias state;
+    gtsam::Pose3 prior_pose(T_local_s1.matrix());
+    state.pose = prior_pose;
+    state.vel << -0.4, 0.3, 0.1, 5, 2, 1;
+    state.bias << 0.2, -0.1, 0.4;
+
+    gtsam::Matrix H;
+    auto tangent = gtsam::traits<PoseVelBias>::Logmap(state, H);
+}
+
 TEST(pose_vel_bias_state, trivial_problem) {
     gtsam::Values initial;
     gtsam::NonlinearFactorGraph graph;

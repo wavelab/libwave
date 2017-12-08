@@ -6,7 +6,7 @@
 #include <gtsam/slam/PriorFactor.h>
 #include <gtsam/slam/BetweenFactor.h>
 #include "wave/optimization/gtsam/gps_factor_with_bias.hpp"
-#include "wave/optimization/gtsam/gps_factor_with_bias_ex.hpp"
+#include "wave/optimization/gtsam/gps_factor_with_bias_general.hpp"
 #include "wave/optimization/gtsam/pose_vel_bias.hpp"
 #include "wave/wave_test.hpp"
 
@@ -30,7 +30,7 @@ TEST(custom_state, init) {
     info.setIdentity();
     auto model = gtsam::noiseModel::Gaussian::Information(info);
 
-    auto factor = GPSFactorWBiasEx<PoseVelBias>(key, dummy.pose, model);
+    auto factor = GPSFactorWithBiasGeneral<PoseVelBias>(key, dummy.pose, model);
 }
 
 // Test that the factor produces zero error when transforms form a chain

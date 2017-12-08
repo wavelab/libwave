@@ -4,7 +4,7 @@
 namespace wave {
 
 template <class T>
-gtsam::Vector GPSFactorWBiasEx<T>::evaluateError(
+gtsam::Vector GPSFactorWithBiasGeneral<T>::evaluateError(
   const T &m, boost::optional<gtsam::Matrix &> H) const {
     gtsam::Vector6 retval;
     gtsam::Matrix J_compose_left, J_compose_right, J_between_right, J_logmap;

@@ -1,5 +1,5 @@
-#ifndef WAVE_GPS_FACTOR_WITH_BIAS_EX_HPP
-#define WAVE_GPS_FACTOR_WITH_BIAS_EX_HPP
+#ifndef WAVE_GPS_FACTOR_WITH_BIAS_GENERAL_HPP
+#define WAVE_GPS_FACTOR_WITH_BIAS_GENERAL_HPP
 
 #include <gtsam/nonlinear/NonlinearFactor.h>
 #include <gtsam/geometry/Pose3.h>
@@ -16,14 +16,14 @@ namespace wave {
  * It is assumed that T_LOCAL_S1 is a measurement, the rest are states
  */
 template <class T>
-class GPSFactorWBiasEx : public gtsam::NoiseModelFactor1<T> {
+class GPSFactorWithBiasGeneral : public gtsam::NoiseModelFactor1<T> {
  private:
     gtsam::Pose3 T_LOCAL_S1;
 
  public:
-    GPSFactorWBiasEx(gtsam::Key key,
-                     gtsam::Pose3 m,
-                     const gtsam::SharedNoiseModel &model)
+    GPSFactorWithBiasGeneral(gtsam::Key key,
+                             gtsam::Pose3 m,
+                             const gtsam::SharedNoiseModel &model)
         : gtsam::NoiseModelFactor1<T>::NoiseModelFactor1(model, key),
           T_LOCAL_S1(m) {}
 
@@ -34,4 +34,4 @@ class GPSFactorWBiasEx : public gtsam::NoiseModelFactor1<T> {
 
 #include "wave/optimization/gtsam/impl/gps_factor_with_bias_impl.hpp"
 
-#endif  // WAVE_GPS_FACTOR_WITH_BIAS_EX_HPP
+#endif  // WAVE_GPS_FACTOR_WITH_BIAS_GENERAL_HPP

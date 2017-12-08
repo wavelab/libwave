@@ -4,7 +4,7 @@
 #include "wave/optimization/gtsam/pose_prior.hpp"
 #include "wave/optimization/gtsam/twist_prior.hpp"
 #include "wave/optimization/gtsam/bias_prior.hpp"
-#include "wave/optimization/gtsam/gps_factor_with_bias_ex.hpp"
+#include "wave/optimization/gtsam/gps_factor_with_bias_general.hpp"
 #include "wave/wave_test.hpp"
 
 /**
@@ -102,7 +102,8 @@ TEST(prior, gps_bias) {
     Mat6 info = Mat6::Identity();
     auto model = gtsam::noiseModel::Gaussian::Information(info);
 
-    auto pose_factor = GPSFactorWBiasEx<PoseVelBias>(1, meas_pose, model);
+    auto pose_factor =
+      GPSFactorWithBiasGeneral<PoseVelBias>(1, meas_pose, model);
     auto vel_factor = TwistPrior<PoseVelBias>(1, vel_prior, model);
 
     Mat3 info1 = Mat3::Identity();
