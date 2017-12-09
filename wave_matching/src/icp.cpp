@@ -16,8 +16,7 @@ ICPMatcherParams::ICPMatcherParams(const std::string &config_path) {
     parser.addParam("multiscale_steps", &(this->multiscale_steps));
 
     if (parser.load(config_path) != ConfigStatus::OK) {
-        ConfigException config_exception;
-        throw config_exception;
+        throw std::runtime_error{"Failed to Load Matcher Config"};
     }
 
     if ((covar_est_temp >= ICPMatcherParams::covar_method::LUM) &&
