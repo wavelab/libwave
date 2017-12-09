@@ -32,6 +32,6 @@ class GPSFactorWithBiasGeneral : public gtsam::NoiseModelFactor1<T> {
 };
 }
 
-#include "wave/optimization/gtsam/impl/gps_factor_with_bias_impl.hpp"
+#include "wave/gtsam/impl/gps_factor_with_bias_impl.hpp"
 
 #endif  // WAVE_GPS_FACTOR_WITH_BIAS_GENERAL_HPP

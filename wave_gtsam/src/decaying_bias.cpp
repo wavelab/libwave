@@ -1,4 +1,4 @@
-#include "wave/optimization/gtsam/decaying_bias.hpp"
+#include "wave/gtsam/decaying_bias.hpp"
 
 namespace wave {
 

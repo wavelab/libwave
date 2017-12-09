@@ -1,4 +1,4 @@
-#include "wave/optimization/gtsam/gps_factor_with_bias.hpp"
+#include "wave/gtsam/gps_factor_with_bias.hpp"
 
 namespace wave {
 

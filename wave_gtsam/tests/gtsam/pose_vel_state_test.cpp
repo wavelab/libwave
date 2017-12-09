@@ -5,8 +5,8 @@
 #include <gtsam/nonlinear/GaussNewtonOptimizer.h>
 #include <gtsam/slam/PriorFactor.h>
 #include <gtsam/slam/BetweenFactor.h>
-#include "wave/optimization/gtsam/motion_factor.hpp"
-#include "wave/optimization/gtsam/pose_vel_bias.hpp"
+#include "wave/gtsam/motion_factor.hpp"
+#include "wave/gtsam/pose_vel_bias.hpp"
 #include "wave/wave_test.hpp"
 
 namespace wave {

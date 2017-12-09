@@ -103,6 +103,7 @@ ADD_SUBDIRECTORY(wave_kinematics)
 ADD_SUBDIRECTORY(wave_matching)
 ADD_SUBDIRECTORY(wave_vision)
 ADD_SUBDIRECTORY(wave_optimization)
+ADD_SUBDIRECTORY(wave_gtsam)
 
 # Documentation
 SET(WAVE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})

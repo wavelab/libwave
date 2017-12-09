@@ -1,4 +1,4 @@
-#include "wave/optimization/gtsam/motion_factor.hpp"
+#include "wave/gtsam/motion_factor.hpp"
 
 namespace wave {
 

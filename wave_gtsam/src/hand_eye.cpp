@@ -1,4 +1,4 @@
-#include "wave/optimization/gtsam/hand_eye.hpp"
+#include "wave/gtsam/hand_eye.hpp"
 
 namespace wave {
 

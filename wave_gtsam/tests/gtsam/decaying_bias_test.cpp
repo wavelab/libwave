@@ -1,5 +1,5 @@
 #include <gtsam/base/numericalDerivative.h>
-#include "wave/optimization/gtsam/decaying_bias.hpp"
+#include "wave/gtsam/decaying_bias.hpp"
 #include "wave/wave_test.hpp"
 
 namespace wave {

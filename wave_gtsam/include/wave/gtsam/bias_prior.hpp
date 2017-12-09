@@ -22,6 +22,6 @@ class BiasPrior : public gtsam::NoiseModelFactor1<T> {
 };
 }
 
-#include "wave/optimization/gtsam/impl/bias_prior_impl.hpp"
+#include "wave/gtsam/impl/bias_prior_impl.hpp"
 
 #endif  // WAVE_BIAS_PRIOR_HPP
