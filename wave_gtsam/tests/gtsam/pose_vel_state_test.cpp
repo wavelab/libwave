@@ -80,8 +80,25 @@ TEST(pose_vel_bias_state, logmap) {
     state.vel << -0.4, 0.3, 0.1, 5, 2, 1;
     state.bias << 0.2, -0.1, 0.4;
 
-    gtsam::Matrix H;
-    auto tangent = gtsam::traits<PoseVelBias>::Logmap(state, H);
+    gtsam::Matrix H_combined, H_pose, H_vel, H_bias;
+
+    // Expected values from separate objects
+    auto tangent_pose = gtsam::Pose3::Logmap(state.pose, H_pose);
+    auto tangent_vel = gtsam::traits<gtsam::Vector6>::Logmap(state.vel, H_vel);
+    auto tangent_bias =
+      gtsam::traits<gtsam::Vector3>::Logmap(state.bias, H_bias);
+
+    // Actual value
+    auto tangent_combined =
+      gtsam::traits<PoseVelBias>::Logmap(state, H_combined);
+
+    EXPECT_PRED2(VectorsNear, tangent_combined.segment<6>(0), tangent_pose);
+    EXPECT_PRED2(VectorsNear, tangent_combined.segment<6>(6), tangent_vel);
+    EXPECT_PRED2(VectorsNear, tangent_combined.segment<3>(12), tangent_bias);
+    EXPECT_PRED2(MatricesNear, (H_combined.block<6, 6>(0, 0)), H_pose);
+    EXPECT_PRED2(MatricesNear, (H_combined.block<6, 6>(6, 6)), H_vel);
+    EXPECT_PRED2(MatricesNear, (H_combined.block<3, 3>(12, 12)), H_bias);
+    EXPECT_TRUE((H_combined.block<6, 9>(0, 6)).isZero());
 }
 
 TEST(pose_vel_bias_state, trivial_problem) {
