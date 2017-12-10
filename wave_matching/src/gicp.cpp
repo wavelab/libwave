@@ -13,8 +13,7 @@ GICPMatcherParams::GICPMatcherParams(const std::string &config_path) {
     parser.addParam("fit_eps", &fit_eps);
 
     if (parser.load(config_path) != ConfigStatus::OK) {
-        ConfigException config_exception;
-        throw config_exception;
+        throw std::runtime_error{"Failed to Load Matcher Config"};
     }
 }
 

@@ -10,19 +10,11 @@
 #ifndef WAVE_MATCHING_MATCHER_HPP
 #define WAVE_MATCHING_MATCHER_HPP
 
-#include <exception>
-
 #include "wave/utils/utils.hpp"
 
 namespace wave {
 /** @addtogroup matching
  *  @{ */
-
-class ConfigException : public __exception {
-    virtual const char *what() const throw() {
-        return "Failed to Load Matcher Config";
-    }
-};
 
 /**
  * This class is inherited by each of the different matching algorithms.
