@@ -1,10 +1,10 @@
 #include <gtsam/nonlinear/LevenbergMarquardtOptimizer.h>
 #include <gtsam/nonlinear/NonlinearFactorGraph.h>
-#include "wave/optimization/gtsam/pose_vel_bias.hpp"
-#include "wave/optimization/gtsam/pose_prior.hpp"
-#include "wave/optimization/gtsam/twist_prior.hpp"
-#include "wave/optimization/gtsam/bias_prior.hpp"
-#include "wave/optimization/gtsam/gps_factor_with_bias_general.hpp"
+#include "wave/gtsam/pose_vel_bias.hpp"
+#include "wave/gtsam/pose_prior.hpp"
+#include "wave/gtsam/twist_prior.hpp"
+#include "wave/gtsam/bias_prior.hpp"
+#include "wave/gtsam/gps_factor_with_bias_general.hpp"
 #include "wave/wave_test.hpp"
 
 /**

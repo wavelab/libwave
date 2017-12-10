@@ -22,6 +22,6 @@ class TwistPrior : public gtsam::NoiseModelFactor1<T> {
 };
 }
 
-#include "wave/optimization/gtsam/impl/twist_prior_impl.hpp"
+#include "wave/gtsam/impl/twist_prior_impl.hpp"
 
 #endif  // WAVE_TWIST_PRIOR_HPP

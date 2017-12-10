@@ -3,7 +3,7 @@
 
 #include <gtsam/nonlinear/NonlinearFactor.h>
 #include <gtsam/base/Matrix.h>
-#include "wave/optimization/gtsam/pose_vel_bias.hpp"
+#include "wave/gtsam/pose_vel_bias.hpp"
 
 /**
  * This factor is designed for used with the PoseVelBias states. It implements

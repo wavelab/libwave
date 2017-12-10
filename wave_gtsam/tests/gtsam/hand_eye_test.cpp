@@ -5,7 +5,7 @@
 #include <gtsam/nonlinear/GaussNewtonOptimizer.h>
 #include <gtsam/slam/PriorFactor.h>
 #include <gtsam/slam/BetweenFactor.h>
-#include "wave/optimization/gtsam/hand_eye.hpp"
+#include "wave/gtsam/hand_eye.hpp"
 #include "wave/wave_test.hpp"
 
 namespace wave {

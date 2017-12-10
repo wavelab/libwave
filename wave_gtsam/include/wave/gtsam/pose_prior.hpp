@@ -27,6 +27,6 @@ class PosePrior : public gtsam::NoiseModelFactor1<T> {
 };
 }
 
-#include "wave/optimization/gtsam/impl/pose_prior_impl.hpp"
+#include "wave/gtsam/impl/pose_prior_impl.hpp"
 
 #endif  // WAVE_POSE_PRIOR_HPP

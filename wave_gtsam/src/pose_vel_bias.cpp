@@ -1,4 +1,4 @@
-#include "wave/optimization/gtsam/pose_vel_bias.hpp"
+#include "wave/gtsam/pose_vel_bias.hpp"
 
 namespace wave {
 
