@@ -134,9 +134,13 @@ bool ICPMatcher::match() {
 
 void ICPMatcher::estimateInfo() {
     switch (this->params.covar_estimator) {
-        case ICPMatcherParams::covar_method::LUM: this->estimateLUM();
-        case ICPMatcherParams::covar_method::CENSI: this->estimateCensi();
-        case ICPMatcherParams::covar_method::LUMold: this->estimateLUMold();
+        case ICPMatcherParams::covar_method::LUM: this->estimateLUM(); break;
+        case ICPMatcherParams::covar_method::CENSI:
+            this->estimateCensi();
+            break;
+        case ICPMatcherParams::covar_method::LUMold:
+            this->estimateLUMold();
+            break;
         default: return;
     }
 }
@@ -390,9 +394,12 @@ void ICPMatcher::estimateCensi() {
                 // clang-format on
             }
         }
-        MatX inverse =
-          (d2J_dX2.selfadjointView<Eigen::Upper>()).toDenseMatrix().inverse();
-        this->information = (inverse * middle * inverse).inverse();
+        // The covariance is approximately: (Prakhya eqn. 3)
+        // d2J_dX2^-1 * d2J_dZdX*cov(z)*d2J_dZdX' *  d2J_dX2^-1
+        // = d2J_dX2^-1 * middle * d2J_dX2^-1
+        //
+        // To get the information matrix, we apply the inverse
+        this->information = (d2J_dX2 * middle.inverse() * d2J_dX2);
     }
 }
 
