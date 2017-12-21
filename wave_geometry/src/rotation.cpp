@@ -116,7 +116,7 @@ Vec3 Rotation::logMap() const {
     return this->rotation_object.logarithmicMap();
 }
 
-Mat3 Rotation::expMapAndJacobian(const Vec3& Vec, Mat3 &J_expmap) {
+Mat3 Rotation::expMapAndJacobian(const Vec3 &Vec, Mat3 &J_expmap) {
     Rotation rot;
     rot.setFromExpMap(Vec);
 

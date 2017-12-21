@@ -279,7 +279,8 @@ class TManifoldMinusAndJacobianJRightFunctor {
 // Compute the perturbation points as recommended in Numerical Recipes.
 // Modify the step size so that the perturbations are exactly
 // representable numbers by adding then subtracting the same value.
-inline double get_perturbation_point(double evaluation_point, double step_size) {
+inline double get_perturbation_point(double evaluation_point,
+                                     double step_size) {
     // Use volatile to avoid compiler optimizations.
     volatile double perturbation_point = evaluation_point + step_size;
     double exact_step_size = (perturbation_point - evaluation_point);
@@ -292,7 +293,9 @@ inline double get_perturbation_point(double evaluation_point, double step_size) 
 // Manifold quantities.
 
 template <typename MatrixType, typename FunctorType, typename TangentType>
-void numerical_jacobian(FunctorType F, const TangentType &evaluation_point, Eigen::MatrixBase<MatrixType> &jac) {
+void numerical_jacobian(FunctorType F,
+                        const TangentType &evaluation_point,
+                        Eigen::MatrixBase<MatrixType> &jac) {
     for (int i = 0; i < evaluation_point.size(); i++) {
         // Select the step size as recommended in Numerical Recipes.
         double step_size = sqrt(std::numeric_limits<double>::epsilon()) * std::fabs(evaluation_point[i]);
