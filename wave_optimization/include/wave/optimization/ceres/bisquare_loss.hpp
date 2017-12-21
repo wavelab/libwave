@@ -1,5 +1,5 @@
-#ifndef WAVE_LOSS_FUNCTIONS_HPP
-#define WAVE_LOSS_FUNCTIONS_HPP
+#ifndef WAVE_BISQUARE_LOSS_HPP
+#define WAVE_BISQUARE_LOSS_HPP
 
 #include <ceres/loss_function.h>
 
@@ -17,4 +17,4 @@ class BisquareLoss : public ceres::LossFunction {
 
 }  // namespace wave
 
-#endif //WAVE_LOSS_FUNCTIONS_HPP
+#endif //WAVE_BISQUARE_LOSS_HPP

@@ -4,7 +4,8 @@ PROJECT(wave_optimization)
 WAVE_ADD_MODULE(${PROJECT_NAME} DEPENDS
     wave::utils
     wave::kinematics
-    wave::vision
+    wave::geometry
+    #wave::vision
     Eigen3::Eigen
     ceres
     SOURCES
@@ -12,16 +13,26 @@ WAVE_ADD_MODULE(${PROJECT_NAME} DEPENDS
     src/ceres/ceres_examples.cpp
     src/ceres/SE3Parameterization.cpp
     src/ceres/InterpolatedSE3.cpp
-    src/ceres/point_to_point_residual.cpp)
+    src/ceres/point_to_point_residual.cpp
+    src/ceres/bisquare_loss.cpp
+    src/ceres/point_to_line_interpolated_transform.cpp
+    src/ceres/point_to_plane_interpolated_transform.cpp)
 
 # Unit tests
 IF(BUILD_TESTING)
     WAVE_ADD_TEST(${PROJECT_NAME}_tests
-                 tests/ceres/ba_test.cpp
+                 #tests/ceres/ba_test.cpp
                  tests/ceres/ceres_examples_test.cpp
                  tests/ceres/SE3_local_parameter_test.cpp)
 
+    WAVE_ADD_TEST(odometry_residual_tests
+            tests/ceres/point_to_line_test.cpp
+            tests/ceres/point_to_plane_test.cpp)
+
     TARGET_LINK_LIBRARIES(${PROJECT_NAME}_tests ${PROJECT_NAME})
+
+    TARGET_LINK_LIBRARIES(odometry_residual_tests
+            ${PROJECT_NAME})
 
     # COPY TEST DATA
     FILE(COPY tests/data DESTINATION ${PROJECT_BINARY_DIR}/tests)

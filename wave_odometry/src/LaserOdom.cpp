@@ -139,7 +139,7 @@ LaserOdom::LaserOdom(const LaserOdomParams params) : param(params) {
     this->prev_transform.setIdentity();
 
     if (params.visualize) {
-        this->display = new PointCloudDisplay("laser odom", 0.05);
+        this->display = new PointCloudDisplay("laser odom");
         this->display->startSpin();
         // Allocate space for visualization clouds
         this->prev_viz = boost::shared_ptr<pcl::PointCloud<pcl::PointXYZI>>(new pcl::PointCloud<pcl::PointXYZI>);

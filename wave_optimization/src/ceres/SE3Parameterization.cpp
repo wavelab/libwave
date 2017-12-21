@@ -1,5 +1,5 @@
 // for matrix square root
-#include <eigen3/unsupported/Eigen/MatrixFunctions>
+#include <eigen344/unsupported/Eigen/MatrixFunctions>
 #include "wave/optimization/ceres/SE3Parameterization.hpp"
 #include "wave/geometry/transformation.hpp"
 

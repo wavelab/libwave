@@ -121,6 +121,12 @@ class Transformation {
      */
     static Mat6 Jinterpolated(const Vec6 &twist, const double &alpha);
 
+    /**
+     * Returns the "lift" Jacobian for use with Ceres solver
+     * @return
+     */
+    Eigen::Matrix<double, 12, 6> J_lift();
+
     /** transforms the input vector by this transformation.
      *
      * @return the vector @f$p_o@f$, the rotated result given by @f[

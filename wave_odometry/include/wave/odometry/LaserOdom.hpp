@@ -32,11 +32,11 @@
 #include "wave/odometry/kdtreetype.hpp"
 #include "wave/odometry/PointXYZIR.hpp"
 #include "wave/odometry/PointXYZIT.hpp"
-#include "wave/odometry/laser_odom_residuals.hpp"
-#include "wave/odometry/se3_residuals.hpp"
-#include "wave/odometry/loss_functions.hpp"
 #include "wave/odometry/kernels.hpp"
 #include "wave/optimization/ceres/SE3Parameterization.hpp"
+#include "wave/optimization/ceres/point_to_plane_interpolated_transform.hpp"
+#include "wave/optimization/ceres/point_to_line_interpolated_transform.hpp"
+#include "wave/optimization/ceres/bisquare_loss.hpp"
 #include "wave/utils/math.hpp"
 
 #include <ceres/ceres.h>
@@ -47,6 +47,7 @@ namespace wave {
 
 using IMUMeasurement = Measurement<Vec6, char>;
 using unlong = unsigned long;
+using TimeType = std::chrono::steady_clock::time_point;
 
 struct LaserOdomParams {
     // Optimizer parameters
@@ -106,7 +107,6 @@ class LaserOdom {
     LaserOdom(const LaserOdomParams params);
     ~LaserOdom();
     void addPoints(const std::vector<PointXYZIR> &pts, const int tick, TimeType stamp);
-    void addIMU(std::vector<double> linacc, Quaternion orientation);
     std::vector<std::vector<std::vector<PointXYZIT>>> feature_points;  // edges, flats;
     std::vector<FeatureKDTree<double>> prv_feature_points;             // prv_edges, prv_flats;
     // The transform is T_start_end

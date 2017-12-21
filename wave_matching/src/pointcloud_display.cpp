@@ -3,7 +3,7 @@
 
 namespace wave {
 
-PointCloudDisplay::PointCloudDisplay(const std::string &name, double rad    ) {
+PointCloudDisplay::PointCloudDisplay(const std::string &name, double rad) {
     this->display_name = name;
     this->radius = rad;
 }

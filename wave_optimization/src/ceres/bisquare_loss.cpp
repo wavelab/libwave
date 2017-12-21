@@ -1,4 +1,4 @@
-#include "wave/odometry/loss_functions.hpp"
+#include "wave/optimization/ceres/bisquare_loss.hpp"
 
 namespace wave {
 
