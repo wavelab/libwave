@@ -47,7 +47,7 @@ TEST(Residual_test, SE3pointToLineAnalytic) {
     ceres::NumericDiffOptions ndiff_options;
     ceres::GradientChecker g_check(cost_function, &local_param_vec, ndiff_options);
     ceres::GradientChecker::ProbeResults g_results;
-    EXPECT_TRUE(g_check.Probe(trans, 1e-6, &g_results));
+    EXPECT_TRUE(g_check.Probe(trans, 1.1e-6, &g_results));
     LOG_INFO("%s", g_results.error_log.c_str());
 }
 
