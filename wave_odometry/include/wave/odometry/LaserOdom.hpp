@@ -23,7 +23,7 @@
 #include <pcl/point_cloud.h>
 
 #include <Eigen/Core>
-#include <eigen3/unsupported/Eigen/CXX11/Tensor>
+#include <unsupported/Eigen/CXX11/Tensor>
 
 #include "wave/containers/measurement_container.hpp"
 #include "wave/containers/measurement.hpp"

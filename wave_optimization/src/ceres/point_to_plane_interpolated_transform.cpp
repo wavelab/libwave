@@ -13,7 +13,8 @@ bool SE3PointToPlane::Evaluate(double const *const *parameters, double *residual
     Transformation interpolated;
 
     Eigen::Map<const Vec3> PT(pt, 3, 1);
-    interpolated.setFromExpMap(*(this->scale) * transform.logMap());
+    auto twist = transform.logMap();
+    interpolated.setFromExpMap(*(this->scale) * twist);
     Vec3 POINT = interpolated.transform(PT);
     double point[3];
     Eigen::Map<Vec3>(point, 3, 1) = POINT;
@@ -51,8 +52,16 @@ bool SE3PointToPlane::Evaluate(double const *const *parameters, double *residual
 
         Eigen::Matrix<double, 1, 12> Jr_T;
 
+        // Have to apply the "lift" jacobian to the Interpolation Jacobian because
+        // of Ceres local parameterization
+        auto J_int = Transformation::Jinterpolated(twist, *(this->scale));
+        Eigen::MatrixXd J_lift = interpolated.J_lift();
+
+        Eigen::MatrixXd J_lift_full = transform.J_lift();
+        Eigen::MatrixXd pseudo = J_lift_full.completeOrthogonalDecomposition().pseudoInverse();
+
         // Identity * scale is approximating the Jacobian of the Interpolated Transform wrt the complete Transform
-        Jr_T = this->weight * Jr_P * JP_T * *(this->scale);
+        Jr_T = this->weight * Jr_P * JP_T * J_lift * J_int * pseudo;
 
         Eigen::Map<Eigen::Matrix<double, 1, 12, Eigen::RowMajor>>(jacobians[0], 1, 12) = Jr_T;
     }

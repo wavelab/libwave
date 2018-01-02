@@ -1,3 +1,5 @@
+#include <ceres/gradient_checker.h>
+
 #include "wave/wave_test.hpp"
 #include "wave/geometry/transformation.hpp"
 #include "wave/optimization/ceres/point_to_plane_interpolated_transform.hpp"
@@ -32,23 +34,20 @@ TEST(Residual_test, SE3pointToPlaneAnalytic) {
     double scale = 0.6;
     double residual = 0;
 
-    SE3PointToPlane thing(pt, ptA, ptB, ptC, &scale, 1.0);
-    thing.Evaluate(trans, &residual, jacobian);
+    ceres::CostFunction* cost_function = new SE3PointToPlane(pt, ptA, ptB, ptC, &scale, 1.0);
+    cost_function->Evaluate(trans, &residual, jacobian);
 
     EXPECT_NEAR(residual, -4, 1e-4);
 
-    EXPECT_NEAR(jacobian[0][0], 0, 1e-4);
-    EXPECT_NEAR(jacobian[0][1], 0, 1e-4);
-    EXPECT_NEAR(jacobian[0][2], 0.6, 1e-4);
-    EXPECT_NEAR(jacobian[0][3], 0, 1e-4);
-    EXPECT_NEAR(jacobian[0][4], 0, 1e-4);
-    EXPECT_NEAR(jacobian[0][5], 1.2, 1e-4);
-    EXPECT_NEAR(jacobian[0][6], 0, 1e-4);
-    EXPECT_NEAR(jacobian[0][7], 0, 1e-4);
-    EXPECT_NEAR(jacobian[0][8], -2.4, 1e-4);
-    EXPECT_NEAR(jacobian[0][9], 0, 1e-4);
-    EXPECT_NEAR(jacobian[0][10], 0, 1e-4);
-    EXPECT_NEAR(jacobian[0][11], 0.6, 1e-4);
+    ceres::LocalParameterization *se3_param = new SE3Parameterization;
+    std::vector<const ceres::LocalParameterization*> local_param_vec;
+    local_param_vec.emplace_back(se3_param);
+
+    ceres::NumericDiffOptions ndiff_options;
+    ceres::GradientChecker g_check(cost_function, &local_param_vec, ndiff_options);
+    ceres::GradientChecker::ProbeResults g_results;
+    EXPECT_TRUE(g_check.Probe(trans, 1e-6, &g_results));
+    LOG_INFO("%s", g_results.error_log.c_str());
 }
 
 }

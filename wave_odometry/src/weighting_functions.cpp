@@ -1,5 +1,5 @@
 #include "wave/odometry/weighting_functions.hpp"
-#include <eigen3/unsupported/Eigen/MatrixFunctions>  // For matrix sqrt
+#include <unsupported/Eigen/MatrixFunctions>  // For matrix square root
 
 namespace {
 
