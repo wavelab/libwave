@@ -621,7 +621,7 @@ bool LaserOdom::match() {
                         ceres::NumericDiffOptions ndiff_options;
                         ceres::GradientChecker g_check(cost_function, &local_param_vec, ndiff_options);
                         ceres::GradientChecker::ProbeResults g_results;
-                        if (!g_check.Probe(parameters, 1e-5, &g_results)) {
+                        if (!g_check.Probe(parameters, 1e-4, &g_results)) {
                             LOG_ERROR("%s", g_results.error_log.c_str());
                         }
                     }
@@ -635,8 +635,6 @@ bool LaserOdom::match() {
                     ceres::LossFunction *p_LossFunction = new BisquareLoss(this->param.huber_delta);
                     problem.AddResidualBlock(
                       cost_function, p_LossFunction, this->cur_transform.getInternalMatrix().data());
-                    //                    problem.AddResidualBlock(
-                    //                            cost_function, NULL, this->cur_transform.getInternalMatrix().data());
                 }
             }
         }
@@ -649,11 +647,11 @@ bool LaserOdom::match() {
     options.max_num_iterations = 300;
     options.function_tolerance = 1e-10;
     options.parameter_tolerance = 1e-6;
-    options.num_threads = 1;
-    options.num_linear_solver_threads = 1;
+    options.num_threads = std::thread::hardware_concurrency();
+    options.num_linear_solver_threads = std::thread::hardware_concurrency();
 
     ceres::Covariance::Options covar_options;
-    covar_options.num_threads = 1;
+    covar_options.num_threads = std::thread::hardware_concurrency();
     covar_options.sparse_linear_algebra_library_type = ceres::SparseLinearAlgebraLibraryType::SUITE_SPARSE;
     covar_options.algorithm_type = ceres::CovarianceAlgorithmType::SPARSE_QR;
 
