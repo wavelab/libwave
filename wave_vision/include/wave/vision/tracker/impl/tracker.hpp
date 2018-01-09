@@ -107,15 +107,13 @@ Tracker<TDetector, TDescriptor, TMatcher>::registerKeypoints(
 // Public Functions
 template <typename TDetector, typename TDescriptor, typename TMatcher>
 std::vector<FeatureTrack> Tracker<TDetector, TDescriptor, TMatcher>::getTracks(
-  const int img_num) const {
+  const size_t img_num) const {
     std::vector<FeatureTrack> feature_tracks;
 
     // Determine how many images have been added
-    int img_count = (int) this->img_times.size() - 1;
+    size_t img_count = this->img_times.size() - 1;
 
-    if (img_num < 0) {
-        throw std::out_of_range("Image requested must be a positive number!");
-    } else if (img_num > (int) img_count) {
+    if (img_num > img_count) {
         throw std::out_of_range("Image requested is in the future!");
     } else if (this->window_size > 0 && img_num < this->cleared_img_threshold) {
         // for non-zero window_size, the measurement container is periodically
@@ -195,7 +193,7 @@ Tracker<TDetector, TDescriptor, TMatcher>::offlineTracker(
 
     std::chrono::steady_clock clock;
 
-    int num_images = 0;
+    size_t num_images = 0;
 
     if (!image_sequence.empty()) {
         for (auto img_it = image_sequence.begin();

@@ -60,7 +60,7 @@ class Tracker {
      * @return tracks corresponding to all detected landmarks in the image, from
      * the start of time to the given image.
      */
-    std::vector<FeatureTrack> getTracks(const int img_num) const;
+    std::vector<FeatureTrack> getTracks(const size_t img_num) const;
 
     /** Track features within an image (presumably the next in a sequence).
      *
@@ -106,12 +106,12 @@ class Tracker {
      *
      *  If set to zero (default), all measurements are kept for offline use.
      */
-    int window_size;
+    size_t window_size;
 
     /** If in sliding window mode, this represents the highest image number that
      *  can be requested to extract tracks from.
      */
-    int cleared_img_threshold = 0;
+    size_t cleared_img_threshold = 0;
 
     // Keypoints and descriptors from the previous timestep
     std::vector<cv::KeyPoint> prev_kp;
