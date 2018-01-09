@@ -130,7 +130,7 @@ LaserOdom::LaserOdom(const LaserOdomParams params) : param(params) {
     for (uint32_t i = 0; i < this->N_FEATURES; i++) {
         this->valid_pts.at(i).resize(n_ring);
         this->feature_points.at(i).resize(n_ring);
-        this->feature_idx.at(i) = std::make_shared<kd_tree_t>(3, this->prv_feature_points.at(i));
+        this->feature_idx.at(i) = std::make_shared<kd_tree_t>(3, this->prv_feature_points.at(i), nanoflann::KDTreeSingleIndexAdaptorParams(20));
         this->filtered_scores.at(i).resize(n_ring);
         this->feature_corrs.at(i).resize(n_ring);
     }

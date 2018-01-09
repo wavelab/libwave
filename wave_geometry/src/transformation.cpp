@@ -48,7 +48,7 @@ Mat3 Transformation::skewSymmetric3(const Vec3 &V) {
     return retval;
 }
 
-Mat6 Transformation::Jinterpolated(const Vec6 &twist, const double &alpha) {
+void Transformation::Jinterpolated(const Vec6 &twist, const double &alpha, Mat6 &retval) {
     // 3rd order approximation
 
     double A, B, C;
@@ -56,24 +56,76 @@ Mat6 Transformation::Jinterpolated(const Vec6 &twist, const double &alpha) {
     B = (alpha*(alpha-1.0)*(2.0*alpha-1.0))*0.0833333333333333333;
     C = (alpha*alpha*(alpha-1)*(alpha-1))*0.0416666666666666667;
 
-    //todo(ben) make an adjoint function
-    Mat6 adjoint = Mat6::Zero();
-    adjoint.block<3,3>(0,0) = skewSymmetric3(Vec3(twist(0), twist(1), twist(2)));
-    adjoint.block<3,3>(3,3) = skewSymmetric3(Vec3(twist(0), twist(1), twist(2)));
-    adjoint.block<3,3>(3,0) = skewSymmetric3(Vec3(twist(3), twist(4), twist(5)));
+    Mat6 adjoint;
+    Transformation::Adjoint(twist, adjoint);
 
-    return alpha * Mat6::Identity() + A * adjoint + B * adjoint * adjoint + C * adjoint * adjoint * adjoint;
+    retval.noalias() = alpha * Mat6::Identity() + A * adjoint + B * adjoint * adjoint + C * adjoint * adjoint * adjoint;
+    return;
 }
 
-Eigen::Matrix<double, 12, 6> Transformation::J_lift() {
-    Eigen::Matrix<double, 12, 6> retval;
+void Transformation::Adjoint(const Vec6 &twist, Mat6& retval) {
     retval.setZero();
-    retval.block<3,3>(0, 0) = -skewSymmetric3(this->matrix.block<3,1>(0, 0));
-    retval.block<3,3>(3, 0) = -skewSymmetric3(this->matrix.block<3,1>(0, 1));
-    retval.block<3,3>(6, 0) = -skewSymmetric3(this->matrix.block<3,1>(0, 2));
-    retval.block<3,3>(9, 0) = -skewSymmetric3(this->matrix.block<3,1>(0, 3));
-    retval.block<3,3>(9, 3).setIdentity();
-    return retval;
+
+    retval(0,1) = -twist(2);
+    retval(0,2) = twist(1);
+    retval(1,0) = twist(2);
+    retval(1,2) = -twist(0);
+    retval(2,0) = -twist(1);
+    retval(2,1) = twist(0);
+
+    retval(3,4) = -twist(2);
+    retval(3,5) = twist(1);
+    retval(4,3) = twist(2);
+    retval(4,5) = -twist(0);
+    retval(5,3) = -twist(1);
+    retval(5,4) = twist(0);
+
+    retval(3,1) = -twist(5);
+    retval(3,2) = twist(4);
+    retval(4,0) = twist(5);
+    retval(4,2) = -twist(3);
+    retval(5,0) = -twist(4);
+    retval(5,1) = twist(3);
+
+    return;
+}
+
+void Transformation::J_lift(Eigen::Matrix<double, 12, 6> &retval) {
+    retval.setZero();
+
+    retval(0,1) = this->matrix(2,0);
+    retval(0,2) = -this->matrix(1,0);
+    retval(1,0) = -this->matrix(2,0);
+    retval(1,2) = this->matrix(0,0);
+    retval(2,0) = this->matrix(1,0);
+    retval(2,1) = -this->matrix(0,0);
+
+    retval(3,1) = this->matrix(2,1);
+    retval(3,2) = -this->matrix(1,1);
+    retval(4,0) = -this->matrix(2,1);
+    retval(4,2) = this->matrix(0,1);
+    retval(5,0) = this->matrix(1,1);
+    retval(5,1) = -this->matrix(0,1);
+
+    retval(6,1) = this->matrix(2,2);
+    retval(6,2) = -this->matrix(1,2);
+    retval(7,0) = -this->matrix(2,2);
+    retval(7,2) = this->matrix(0,2);
+    retval(8,0) = this->matrix(1,2);
+    retval(8,1) = -this->matrix(0,2);
+
+    retval(9,1) = this->matrix(2,3);
+    retval(9,2) = -this->matrix(1,3);
+    retval(10,0) = -this->matrix(2,3);
+    retval(10,2) = this->matrix(0,3);
+    retval(11,0) = this->matrix(1,3);
+    retval(11,1) = -this->matrix(0,3);
+
+    retval(9,3) = 1;
+    retval(10,4) = 1;
+    retval(11,5) = 1;
+
+    return;
 }
 
 Transformation &Transformation::setFromExpMap(const Vec6 &se3_vector) {

@@ -9,6 +9,8 @@
 #include "wave/matching/pointcloud_display.hpp"
 #include <boost/filesystem.hpp>
 
+#define EIGEN_NO_MALLOC 1
+
 namespace wave {
 
 const std::string TEST_SCAN = "data/testscan.pcd";
@@ -117,13 +119,13 @@ TEST(OdomTest, StraightLineGarage) {
     params.flat_tol = 0.05;
     params.int_flat_tol = 0.05;
     params.int_edge_tol = 5;
-    params.max_correspondence_dist = 0.3;
+    params.max_correspondence_dist = 0.2;
     params.huber_delta = 0.04;
-    params.opt_iters = 10;
+    params.opt_iters = 5;
     params.visualize = true;
 //    params.use_weighting = true;
 //    params.only_extract_features = true;
-    params.output_trajectory = true;
+    params.output_trajectory = false;
 //    params.output_correspondences = true;
     params.check_gradients = false;
 

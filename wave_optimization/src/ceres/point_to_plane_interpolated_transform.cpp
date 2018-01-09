@@ -33,8 +33,6 @@ bool SE3PointToPlane::Evaluate(double const *const *parameters, double *residual
     residuals[0] = this->weight * (num / den);
 
     if((jacobians != NULL) && (jacobians[0] != NULL)) {
-        // This is the Jacobian of the cost function wrt the transformed point
-        Eigen::Matrix<double, 1, 3> Jr_P;
         // setup alias to make importing matlab string easier
         const double &XA1 = this->ptA[0], &XA2 = this->ptA[1], &XA3 = this->ptA[2], &XB1 = this->ptB[0],
                 &XB2 = this->ptB[1], &XB3 = this->ptB[2], &XC1 = this->ptC[0], &XC2 = this->ptC[1],
@@ -44,24 +42,16 @@ bool SE3PointToPlane::Evaluate(double const *const *parameters, double *residual
                 ((XA1-XB1)*(XB3-XC3)-(XA3-XB3)*(XB1-XC1))*1.0/sqrt(pow(((XA1-XB1)*(XB2-XC2)-(XA2-XB2)*(XB1-XC1)),2)+pow(((XA1-XB1)*(XB3-XC3)-(XA3-XB3)*(XB1-XC1)),2)+pow(((XA2-XB2)*(XB3-XC3)-(XA3-XB3)*(XB2-XC2)),2)),
                 -((XA1-XB1)*(XB2-XC2)-(XA2-XB2)*(XB1-XC1))*1.0/sqrt(pow(((XA1-XB1)*(XB2-XC2)-(XA2-XB2)*(XB1-XC1)),2)+pow(((XA1-XB1)*(XB3-XC3)-(XA3-XB3)*(XB1-XC1)),2)+pow(((XA2-XB2)*(XB3-XC3)-(XA3-XB3)*(XB2-XC2)),2));
 
-        // Jacobian of transformed point wrt the overparameterized transform
-        Eigen::Matrix<double, 3, 12> JP_T;
-        JP_T << this->pt[0], 0, 0, this->pt[1], 0, 0, this->pt[2], 0, 0, 1, 0, 0, //
-                0, this->pt[0], 0, 0, this->pt[1], 0, 0, this->pt[2], 0, 0, 1, 0, //
-                0, 0, this->pt[0], 0, 0, this->pt[1], 0, 0, this->pt[2], 0, 0, 1;
-
-        Eigen::Matrix<double, 1, 12> Jr_T;
-
         // Have to apply the "lift" jacobian to the Interpolation Jacobian because
         // of Ceres local parameterization
-        auto J_int = Transformation::Jinterpolated(twist, *(this->scale));
-        Eigen::MatrixXd J_lift = interpolated.J_lift();
+        Transformation::Jinterpolated(twist, *(this->scale), this->J_int);
+        interpolated.J_lift(this->J_lift);
+        transform.J_lift(this->J_lift_full);
 
-        Eigen::MatrixXd J_lift_full = transform.J_lift();
-        Eigen::MatrixXd pseudo = J_lift_full.completeOrthogonalDecomposition().pseudoInverse();
+        this->J_lift_full_pinv = (this->J_lift_full.transpose() * this->J_lift_full).inverse() * this->J_lift_full.transpose();
 
         // Identity * scale is approximating the Jacobian of the Interpolated Transform wrt the complete Transform
-        Jr_T = this->weight * Jr_P * JP_T * J_lift * J_int * pseudo;
+        Jr_T = this->weight * Jr_P * JP_T * J_lift * J_int * this->J_lift_full_pinv;
 
         Eigen::Map<Eigen::Matrix<double, 1, 12, Eigen::RowMajor>>(jacobians[0], 1, 12) = Jr_T;
     }

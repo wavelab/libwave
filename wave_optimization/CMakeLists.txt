@@ -25,13 +25,19 @@ IF(BUILD_TESTING)
                  tests/ceres/ceres_examples_test.cpp
                  tests/ceres/SE3_local_parameter_test.cpp)
 
+    TARGET_LINK_LIBRARIES(${PROJECT_NAME}_tests ${PROJECT_NAME})
+
     WAVE_ADD_TEST(odometry_residual_tests
             tests/ceres/point_to_line_test.cpp
             tests/ceres/point_to_plane_test.cpp)
 
-    TARGET_LINK_LIBRARIES(${PROJECT_NAME}_tests ${PROJECT_NAME})
-
     TARGET_LINK_LIBRARIES(odometry_residual_tests
+            ${PROJECT_NAME})
+
+    WAVE_ADD_TEST(geometry_residual_tests
+            tests/ceres/transform_prior_test.cpp)
+
+    TARGET_LINK_LIBRARIES(geometry_residual_tests
             ${PROJECT_NAME})
 
     # COPY TEST DATA

@@ -119,13 +119,15 @@ class Transformation {
      * @param twist of transform
      * @return A(alpha, twist)
      */
-    static Mat6 Jinterpolated(const Vec6 &twist, const double &alpha);
+    static void Jinterpolated(const Vec6 &twist, const double &alpha, Mat6& retval);
+
+    static void Adjoint(const Vec6 &twist, Mat6& retval);
 
     /**
      * Returns the "lift" Jacobian for use with Ceres solver
      * @return
      */
-    Eigen::Matrix<double, 12, 6> J_lift();
+    void J_lift(Eigen::Matrix<double, 12, 6> &retval);
 
     /** transforms the input vector by this transformation.
      *

@@ -81,7 +81,8 @@ bool InterpolatedSE3::ComputeJacobian(const double *x, double *jacobian) const {
             -x[11],     0,   x[9], 0, 1, 0, //
              x[10], -x[9],      0, 0, 0, 1; //
 
-    Mat6 J_interpolated = Transformation::Jinterpolated(epsilon, *(this->alpha));
+    Mat6 J_interpolated;
+    Transformation::Jinterpolated(epsilon, *(this->alpha), J_interpolated);
 
     Eigen::Map<Eigen::Matrix<double, 12, 6, Eigen::RowMajor>>(jacobian, 12, 6) = J_lift * J_interpolated;
 

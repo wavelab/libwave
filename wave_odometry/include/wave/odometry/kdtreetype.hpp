@@ -14,17 +14,6 @@ struct FeatureKDTree {
         return points.size();
     }
 
-    // Returns the distance between the vector "p1[0:size-1]" and the data point
-    // with index "idx_p2" stored in the class:
-    inline T kdtree_distance(const T *p1,
-                             const size_t idx_p2,
-                             size_t /*size*/) const {
-        const T d0 = p1[0] - points[idx_p2][0];
-        const T d1 = p1[1] - points[idx_p2][1];
-        const T d2 = p1[2] - points[idx_p2][2];
-        return d0 * d0 + d1 * d1 + d2 * d2;
-    }
-
     // Returns the dim'th component of the idx'th point in the class:
     // Since this is inlined and the "dim" argument is typically an immediate
     // value, the

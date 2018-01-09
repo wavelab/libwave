@@ -5,10 +5,9 @@ namespace wave {
 
 bool SE3PointToLine::Evaluate(double const *const *parameters, double *residuals, double **jacobians) const {
     Mat4 transform_matrix = Mat4::Identity();
-    transform_matrix << parameters[0][0], parameters[0][3], parameters[0][6], parameters[0][9],
-            parameters[0][1], parameters[0][4], parameters[0][7], parameters[0][10],
-            parameters[0][2], parameters[0][5], parameters[0][8], parameters[0][11],
-            0, 0, 0, 1;
+    transform_matrix << parameters[0][0], parameters[0][3], parameters[0][6], parameters[0][9], parameters[0][1],
+      parameters[0][4], parameters[0][7], parameters[0][10], parameters[0][2], parameters[0][5], parameters[0][8],
+      parameters[0][11], 0, 0, 0, 1;
     Transformation transform;
     transform.setFromMatrix(transform_matrix);
     Transformation interpolated;
@@ -43,31 +42,28 @@ bool SE3PointToLine::Evaluate(double const *const *parameters, double *residuals
     Eigen::Map<Vec3>(residuals, 3, 1) = res;
 
     if (jacobians != NULL) {
-        // This is the Jacobian of the cost function wrt the transformed point
-        Mat3 Jres_P;
-        Jres_P << 1 - (diff[0] * diff[0] / bottom), -(diff[0] * diff[1] / bottom), -(diff[0] * diff[2] / bottom),
-                -(diff[1] * diff[0] / bottom), 1 - (diff[1] * diff[1] / bottom), -(diff[1] * diff[2] / bottom),
-                -(diff[2] * diff[0] / bottom), -(diff[2] * diff[1] / bottom), 1 - (diff[2] * diff[2] / bottom);
-
-        // Jacobian of transformed point wrt the overparameterized transform
-        Eigen::Matrix<double, 3, 12> JP_T;
-        JP_T << this->pt[0], 0, 0, this->pt[1], 0, 0, this->pt[2], 0, 0, 1, 0, 0, //
-                0, this->pt[0], 0, 0, this->pt[1], 0, 0, this->pt[2], 0, 0, 1, 0, //
-                0, 0, this->pt[0], 0, 0, this->pt[1], 0, 0, this->pt[2], 0, 0, 1;
-
-        Eigen::Matrix<double, 3, 12> Jr_T;
+        this->Jres_P(0,0) = 1 - (diff[0] * diff[0] / bottom);
+        this->Jres_P(0,1) = -(diff[0] * diff[1] / bottom);
+        this->Jres_P(0,2) = -(diff[0] * diff[2] / bottom);
+        this->Jres_P(1,0) = -(diff[1] * diff[0] / bottom);
+        this->Jres_P(1,1) = 1 - (diff[1] * diff[1] / bottom);
+        this->Jres_P(1,2) = -(diff[1] * diff[2] / bottom);
+        this->Jres_P(2,0) = -(diff[2] * diff[0] / bottom);
+        this->Jres_P(2,1) = -(diff[2] * diff[1] / bottom);
+        this->Jres_P(2,2) = 1 -(diff[2] * diff[2] / bottom);
 
         // Have to apply the "lift" jacobian to the Interpolation Jacobian because
         // of Ceres local parameterization
-        auto J_int = Transformation::Jinterpolated(twist, *(this->scale));
-        Eigen::MatrixXd J_lift = interpolated.J_lift();
+        Transformation::Jinterpolated(twist, *(this->scale), this->J_int);
+        interpolated.J_lift(this->J_lift);
+        transform.J_lift(this->J_lift_full);
 
-        Eigen::MatrixXd J_lift_full = transform.J_lift();
-        Eigen::MatrixXd pseudo = J_lift_full.completeOrthogonalDecomposition().pseudoInverse();
+        this->J_lift_full_pinv = (this->J_lift_full.transpose() * this->J_lift_full).inverse() * this->J_lift_full.transpose();
 
-        Jr_T = this->weight_matrix * Jres_P * JP_T * J_lift * J_int * pseudo;
+        this->Jr_T =
+          this->weight_matrix * this->Jres_P * this->JP_T * this->J_lift * this->J_int * this->J_lift_full_pinv;
 
-        Eigen::Map<Eigen::Matrix<double, 3, 12, Eigen::RowMajor>>(jacobians[0], 3, 12) = Jr_T;
+        Eigen::Map<Eigen::Matrix<double, 3, 12, Eigen::RowMajor>>(jacobians[0], 3, 12) = this->Jr_T;
     }
 
     return true;
