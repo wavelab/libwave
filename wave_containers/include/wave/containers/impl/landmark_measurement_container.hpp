@@ -21,7 +21,7 @@ using boost::multi_index::tag;
 template <typename T>
 struct landmark_container {
     // First, define which members of the Measurement object are used as keys
-    struct time_key : member<T, TimeType, &T::time_point> {};
+    struct time_key : member<T, decltype(T::time_point), &T::time_point> {};
     struct sensor_key : member<T, decltype(T::sensor_id), &T::sensor_id> {};
     struct landmark_key : member<T, decltype(T::landmark_id), &T::landmark_id> {
     };
@@ -64,8 +64,8 @@ struct landmark_container {
 
     // Define a view indexed by time, for complex searches
     struct const_time_index
-      : indexed_by<
-          ordered_non_unique<member<T, const TimeType, &T::time_point>>> {};
+      : indexed_by<ordered_non_unique<
+          member<T, const decltype(T::time_point), &T::time_point>>> {};
     using time_view = boost::multi_index_container<const T *, const_time_index>;
 };
 }  // namespace internal

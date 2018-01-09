@@ -5,14 +5,15 @@ namespace wave {
 
 GICPMatcherParams::GICPMatcherParams(const std::string &config_path) {
     ConfigParser parser;
-    parser.addParam("corr_rand", &this->corr_rand);
-    parser.addParam("max_iter", &this->max_iter);
-    parser.addParam("r_eps", &this->r_eps);
-    parser.addParam("fit_eps", &this->fit_eps);
+    double r_eps = 1e-8, fit_eps = 1e-2;
+    int corr_rand = 10, max_iter = 100;
+    parser.addParam("corr_rand", &corr_rand);
+    parser.addParam("max_iter", &max_iter);
+    parser.addParam("r_eps", &r_eps);
+    parser.addParam("fit_eps", &fit_eps);
 
-    if (parser.load(config_path) != 0) {
-        ConfigException config_exception;
-        throw config_exception;
+    if (parser.load(config_path) != ConfigStatus::OK) {
+        throw std::runtime_error{"Failed to Load Matcher Config"};
     }
 }
 
@@ -33,7 +34,7 @@ GICPMatcher::GICPMatcher(GICPMatcherParams params1) : params(params1) {
     this->gicp.setEuclideanFitnessEpsilon(this->params.fit_eps);
 }
 
-void GICPMatcher::setRef(const PCLPointCloud &ref) {
+void GICPMatcher::setRef(const PCLPointCloudPtr &ref) {
     if (this->resolution > 0) {
         this->filter.setInputCloud(ref);
         this->filter.filter(*(this->ref));
@@ -43,7 +44,7 @@ void GICPMatcher::setRef(const PCLPointCloud &ref) {
     this->gicp.setInputSource(this->ref);
 }
 
-void GICPMatcher::setTarget(const PCLPointCloud &target) {
+void GICPMatcher::setTarget(const PCLPointCloudPtr &target) {
     if (resolution > 0) {
         this->filter.setInputCloud(target);
         this->filter.filter(*(this->target));

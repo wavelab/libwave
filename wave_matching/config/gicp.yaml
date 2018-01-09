@@ -1,0 +1,4 @@
+corr_rand: 10 #correspondenceRandomness
+max_iter: 100 #maxIterations
+r_eps: 1e-8   #rotationEpsilon
+fit_eps: 1e-2 #euclideanFitnessEpsilon

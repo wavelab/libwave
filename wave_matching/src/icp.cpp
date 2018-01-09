@@ -13,12 +13,19 @@ ICPMatcherParams::ICPMatcherParams(const std::string &config_path) {
     parser.addParam("lidar_lin_covar", &(this->lidar_lin_covar));
     parser.addParam("covar_estimator", &covar_est_temp);
     parser.addParam("res", &(this->res));
-    this->covar_estimator =
-      static_cast<ICPMatcherParams::covar_method>(covar_est_temp);
+    parser.addParam("multiscale_steps", &(this->multiscale_steps));
 
-    if (parser.load(config_path) != 0) {
-        ConfigException config_exception;
-        throw config_exception;
+    if (parser.load(config_path) != ConfigStatus::OK) {
+        throw std::runtime_error{"Failed to Load Matcher Config"};
+    }
+
+    if ((covar_est_temp >= ICPMatcherParams::covar_method::LUM) &&
+        (covar_est_temp <= ICPMatcherParams::covar_method::LUMold)) {
+        this->covar_estimator =
+          static_cast<ICPMatcherParams::covar_method>(covar_est_temp);
+    } else {
+        LOG_ERROR("Invalid covariance estimate method, using LUM");
+        this->covar_estimator = ICPMatcherParams::covar_method::LUM;
     }
 }
 
@@ -26,6 +33,10 @@ ICPMatcher::ICPMatcher(ICPMatcherParams params1) : params(params1) {
     this->ref = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
     this->target = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
     this->final = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+    this->downsampled_ref =
+      boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+    this->downsampled_target =
+      boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
 
     if (this->params.res > 0) {
         this->filter.setLeafSize(
@@ -42,40 +53,81 @@ ICPMatcher::ICPMatcher(ICPMatcherParams params1) : params(params1) {
 ICPMatcher::~ICPMatcher() {
     if (this->ref) {
         this->ref.reset();
+        this->downsampled_ref.reset();
     }
     if (this->target) {
         this->target.reset();
+        this->downsampled_target.reset();
     }
     if (this->final) {
         this->final.reset();
     }
 }
 
-void ICPMatcher::setRef(const PCLPointCloud &ref) {
-    if (this->resolution > 0) {
-        this->filter.setInputCloud(ref);
-        this->filter.filter(*(this->ref));
-    } else {
-        this->ref = ref;
-    }
-    this->icp.setInputSource(this->ref);
+void ICPMatcher::setRef(const PCLPointCloudPtr &ref) {
+    this->ref = ref;
 }
 
-void ICPMatcher::setTarget(const PCLPointCloud &target) {
-    if (this->resolution > 0) {
-        this->filter.setInputCloud(target);
-        this->filter.filter(*(this->target));
-    } else {
-        this->target = target;
-    }
-    this->icp.setInputTarget(this->target);
+void ICPMatcher::setTarget(const PCLPointCloudPtr &target) {
+    this->target = target;
 }
 
 bool ICPMatcher::match() {
-    this->icp.align(*(this->final));
-    if (this->icp.hasConverged()) {
-        this->result.matrix() = icp.getFinalTransformation().cast<double>();
-        return true;
+    if (this->params.res > 0) {
+        if (this->params.multiscale_steps > 0) {
+            Affine3 running_transform = Affine3::Identity();
+            for (int i = this->params.multiscale_steps; i >= 0; i--) {
+                float leaf_size = pow(2, i) * this->params.res;
+                this->filter.setLeafSize(leaf_size, leaf_size, leaf_size);
+                this->filter.setInputCloud(this->ref);
+                this->filter.filter(*(this->downsampled_ref));
+                pcl::transformPointCloud(*(this->downsampled_ref),
+                                         *(this->downsampled_ref),
+                                         running_transform);
+                this->icp.setInputSource(this->downsampled_ref);
+
+                this->filter.setInputCloud(this->target);
+                this->filter.filter(*(this->downsampled_target));
+                this->icp.setInputTarget(this->downsampled_target);
+
+                this->icp.setMaxCorrespondenceDistance(pow(2, i) *
+                                                       this->params.max_corr);
+                this->icp.align(*(this->final));
+                if (!icp.hasConverged()) {
+                    return false;
+                }
+                running_transform.matrix() =
+                  icp.getFinalTransformation().cast<double>() *
+                  running_transform.matrix();
+            }
+            this->result = running_transform;
+            return true;
+        } else {
+            this->filter.setLeafSize(
+              this->params.res, this->params.res, this->params.res);
+            this->filter.setInputCloud(this->ref);
+            this->filter.filter(*(this->downsampled_ref));
+            this->icp.setInputSource(this->downsampled_ref);
+
+            this->filter.setInputCloud(this->target);
+            this->filter.filter(*(this->downsampled_target));
+            this->icp.setInputTarget(this->downsampled_target);
+
+            this->icp.align(*(this->final));
+            if (icp.hasConverged()) {
+                this->result =
+                  this->icp.getFinalTransformation().cast<double>();
+                return true;
+            }
+        }
+    } else {
+        this->icp.setInputTarget(this->target);
+        this->icp.setInputSource(this->ref);
+        this->icp.align(*(this->final));
+        if (this->icp.hasConverged()) {
+            this->result.matrix() = icp.getFinalTransformation().cast<double>();
+            return true;
+        }
     }
     return false;
 }
@@ -84,109 +136,8 @@ void ICPMatcher::estimateInfo() {
     switch (this->params.covar_estimator) {
         case ICPMatcherParams::covar_method::LUM: this->estimateLUM();
         case ICPMatcherParams::covar_method::CENSI: this->estimateCensi();
+        case ICPMatcherParams::covar_method::LUMold: this->estimateLUMold();
         default: return;
-    }
-}
-
-// Taken from the Lu and Milios matcher in PCL
-void ICPMatcher::estimateLUM() {
-    if (this->icp.hasConverged()) {
-        auto list = this->icp.correspondences_.get();
-        Mat6 MM = Mat6::Zero();
-        Vec6 MZ = Vec6::Zero();
-        std::vector<Eigen::Vector3f> corrs_aver;
-        std::vector<Eigen::Vector3f> corrs_diff;
-
-
-        int numCorr = 0;
-        for (auto it = list->begin(); it != list->end(); ++it) {
-            if (it->index_match > -1) {
-                corrs_aver.push_back(Eigen::Vector3f(
-                  0.5f * (this->ref->points[it->index_query].x +
-                          this->target->points[it->index_match].x),
-                  0.5f * (this->ref->points[it->index_query].y +
-                          this->target->points[it->index_match].y),
-                  0.5f * (this->ref->points[it->index_query].z +
-                          this->target->points[it->index_match].z)));
-                corrs_diff.push_back(
-                  Eigen::Vector3f(this->ref->points[it->index_query].x -
-                                    this->target->points[it->index_match].x,
-                                  this->ref->points[it->index_query].y -
-                                    this->target->points[it->index_match].y,
-                                  this->ref->points[it->index_query].z -
-                                    this->target->points[it->index_match].z));
-                numCorr++;
-            }
-        }
-
-        for (int ci = 0; ci != numCorr; ++ci)  // ci = correspondence iterator
-        {
-            // Fast computation of summation elements of M'M
-            MM(0, 4) -= corrs_aver[ci](1);
-            MM(0, 5) += corrs_aver[ci](2);
-            MM(1, 3) -= corrs_aver[ci](2);
-            MM(1, 4) += corrs_aver[ci](0);
-            MM(2, 3) += corrs_aver[ci](1);
-            MM(2, 5) -= corrs_aver[ci](0);
-            MM(3, 4) -= corrs_aver[ci](0) * corrs_aver[ci](2);
-            MM(3, 5) -= corrs_aver[ci](0) * corrs_aver[ci](1);
-            MM(4, 5) -= corrs_aver[ci](1) * corrs_aver[ci](2);
-            MM(3, 3) += corrs_aver[ci](1) * corrs_aver[ci](1) +
-                        corrs_aver[ci](2) * corrs_aver[ci](2);
-            MM(4, 4) += corrs_aver[ci](0) * corrs_aver[ci](0) +
-                        corrs_aver[ci](1) * corrs_aver[ci](1);
-            MM(5, 5) += corrs_aver[ci](0) * corrs_aver[ci](0) +
-                        corrs_aver[ci](2) * corrs_aver[ci](2);
-
-            // Fast computation of M'Z
-            MZ(0) += corrs_diff[ci](0);
-            MZ(1) += corrs_diff[ci](1);
-            MZ(2) += corrs_diff[ci](2);
-            MZ(3) += corrs_aver[ci](1) * corrs_diff[ci](2) -
-                     corrs_aver[ci](2) * corrs_diff[ci](1);
-            MZ(4) += corrs_aver[ci](0) * corrs_diff[ci](1) -
-                     corrs_aver[ci](1) * corrs_diff[ci](0);
-            MZ(5) += corrs_aver[ci](2) * corrs_diff[ci](0) -
-                     corrs_aver[ci](0) * corrs_diff[ci](2);
-        }
-        // Remaining elements of M'M
-        MM(0, 0) = MM(1, 1) = MM(2, 2) = static_cast<float>(numCorr);
-        MM(4, 0) = MM(0, 4);
-        MM(5, 0) = MM(0, 5);
-        MM(3, 1) = MM(1, 3);
-        MM(4, 1) = MM(1, 4);
-        MM(3, 2) = MM(2, 3);
-        MM(5, 2) = MM(2, 5);
-        MM(4, 3) = MM(3, 4);
-        MM(5, 3) = MM(3, 5);
-        MM(5, 4) = MM(4, 5);
-
-        // Compute pose difference estimation
-        Vec6 D = static_cast<Vec6>(MM.inverse() * MZ);
-
-        // Compute s^2
-        float ss = 0.0f;
-        for (int ci = 0; ci != numCorr; ++ci)  // ci = correspondence iterator
-        {
-            ss += static_cast<float>(
-              pow(corrs_diff[ci](0) - (D(0) + corrs_aver[ci](2) * D(5) -
-                                       corrs_aver[ci](1) * D(4)),
-                  2.0f) +
-              pow(corrs_diff[ci](1) - (D(1) + corrs_aver[ci](0) * D(4) -
-                                       corrs_aver[ci](2) * D(3)),
-                  2.0f) +
-              pow(corrs_diff[ci](2) - (D(2) + corrs_aver[ci](1) * D(3) -
-                                       corrs_aver[ci](0) * D(5)),
-                  2.0f));
-        }
-
-        // When reaching the limitations of computation due to linearization
-        if (ss < 0.0000000000001 || !pcl_isfinite(ss)) {
-            this->information = Mat6::Identity();
-            return;
-        }
-
-        this->information = MM * (1.0f / ss);
     }
 }
 
@@ -203,7 +154,23 @@ void ICPMatcher::estimateLUM() {
 // version of
 // http://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=7153246
 
+//@INPROCEEDINGS{3d_icp_cov,
+// author={Prakhya, S.M. and Liu Bingbing and Yan Rui and Weisi Lin},
+//        booktitle={Machine Vision Applications (MVA), 2015 14th IAPR
+//        International Conference on},
+//        title={A closed-form estimate of 3D ICP covariance},
+//        year={2015},
+//        pages={526-529},
+//        doi={10.1109/MVA.2015.7153246},
+//        month={May},}
+
 void ICPMatcher::estimateCensi() {
+    auto &ref = this->ref;
+    auto &target = this->target;
+    if (this->params.res > 0) {
+        ref = this->downsampled_ref;
+        target = this->downsampled_target;
+    }
     if (this->icp.hasConverged()) {
         const auto eulers = this->result.rotation().eulerAngles(0, 1, 2);
         const auto translation = this->result.translation();
@@ -248,12 +215,12 @@ void ICPMatcher::estimateCensi() {
             if (it->index_match > -1) {
                 // it is -1 if there is no match in the target cloud
                 // set up some aliases to make following lines more compact
-                const float &Z1 = (this->target->points[it->index_match].x),
-                            Z2 = (this->target->points[it->index_match].y),
-                            Z3 = (this->target->points[it->index_match].z),
-                            Z4 = (this->ref->points[it->index_query].x),
-                            Z5 = (this->ref->points[it->index_query].y),
-                            Z6 = (this->ref->points[it->index_query].z);
+                const float &Z1 = (target->points[it->index_match].x),
+                            Z2 = (target->points[it->index_match].y),
+                            Z3 = (target->points[it->index_match].z),
+                            Z4 = (ref->points[it->index_query].x),
+                            Z5 = (ref->points[it->index_query].y),
+                            Z6 = (ref->points[it->index_query].z);
 
                 rg = std::sqrt(Z1 * Z1 + Z2 * Z2 + Z3 * Z3);
                 br = std::atan2(Z2, Z1);

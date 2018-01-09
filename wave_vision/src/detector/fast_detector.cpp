@@ -19,7 +19,7 @@ FASTDetectorParams::FASTDetectorParams(const std::string &config_path) {
     parser.addParam("type", &type);
     parser.addParam("num_features", &num_features);
 
-    if (parser.load(config_path) != 0) {
+    if (parser.load(config_path) != ConfigStatus::OK) {
         throw std::invalid_argument(
           "Failed to Load FASTDetectorParams Configuration");
     }

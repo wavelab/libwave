@@ -23,7 +23,7 @@ ORBDetectorParams::ORBDetectorParams(const std::string &config_path) {
     parser.addParam("score_type", &score_type);
     parser.addParam("fast_threshold", &fast_threshold);
 
-    if (parser.load(config_path) != 0) {
+    if (parser.load(config_path) != ConfigStatus::OK) {
         throw std::invalid_argument(
           "Failed to Load ORBDetectorParams Configuration");
     }

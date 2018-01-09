@@ -23,7 +23,7 @@ BFMatcherParams::BFMatcherParams(const std::string &config_path) {
     parser.addParam("auto_remove_outliers", &auto_remove_outliers);
     parser.addParam("fm_method", &fm_method);
 
-    if (parser.load(config_path) != 0) {
+    if (parser.load(config_path) != ConfigStatus::OK) {
         throw std::invalid_argument(
           "Failed to Load BFMatcherParams Configuration");
     }

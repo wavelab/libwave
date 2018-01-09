@@ -2,17 +2,8 @@
 #include "wave/utils/data.hpp"
 #include "wave/utils/config.hpp"
 
-#define TEST_CONFIG "tests/data/config.yaml"
+const auto TEST_CONFIG = "tests/data/config.yaml";
 
-
-TEST(Utils_config_ConfigParam, constructor) {
-    wave::ConfigParam param;
-
-    ASSERT_EQ(wave::TYPE_NOT_SET, param.type);
-    ASSERT_EQ("", param.key);
-    ASSERT_FALSE(param.optional);
-    ASSERT_EQ(NULL, param.data);
-}
 
 TEST(Utils_config_ConfigParser, constructor) {
     wave::ConfigParser parser;
@@ -42,7 +33,6 @@ TEST(Utils_config_ConfigParser, addParam) {
     wave::Mat3 mat3;
     wave::Mat4 mat4;
     wave::MatX matx;
-    cv::Mat cvmat;
 
     wave::ConfigParser parser;
 
@@ -67,12 +57,9 @@ TEST(Utils_config_ConfigParser, addParam) {
     parser.addParam("matrix3", &mat3);
     parser.addParam("matrix4", &mat4);
     parser.addParam("matrix", &matx);
-    parser.addParam("matrix", &cvmat);
 
-    ASSERT_EQ(19, (int) parser.params.size());
-    ASSERT_EQ(wave::BOOL, parser.params[0].type);
-    ASSERT_EQ("bool", parser.params[0].key);
-    ASSERT_TRUE(parser.params[0].data != NULL);
+    ASSERT_EQ(18, (int) parser.params.size());
+    ASSERT_EQ("bool", parser.params[0]->key);
 }
 
 TEST(Utils_config_ConfigParser, getYamlNode) {
@@ -94,42 +81,29 @@ TEST(Utils_config_ConfigParser, loadPrimitive) {
     double d;
     std::string s;
     wave::ConfigParser parser;
-    wave::ConfigParam param;
 
     // setup
     parser.root = YAML::LoadFile(TEST_CONFIG);
     parser.config_loaded = true;
 
     // INTEGER
-    param.optional = false;
-    param.type = wave::INT;
-    param.key = "int";
-    param.data = &i;
-    parser.loadPrimitive(param);
+    wave::ConfigParam<int> int_param{"int", &i, false};
+    parser.loadParam(int_param);
     ASSERT_EQ(1, i);
 
     // FLOAT
-    param.optional = false;
-    param.type = wave::FLOAT;
-    param.key = "float";
-    param.data = &f;
-    parser.loadPrimitive(param);
+    wave::ConfigParam<float> float_param{"float", &f, false};
+    parser.loadParam(float_param);
     ASSERT_FLOAT_EQ(2.2, f);
 
     // DOUBLE
-    param.optional = false;
-    param.type = wave::DOUBLE;
-    param.key = "double";
-    param.data = &d;
-    parser.loadPrimitive(param);
+    wave::ConfigParam<double> double_param{"double", &d, false};
+    parser.loadParam(double_param);
     ASSERT_FLOAT_EQ(3.3, d);
 
     // STRING
-    param.optional = false;
-    param.type = wave::STRING;
-    param.key = "string";
-    param.data = &s;
-    parser.loadPrimitive(param);
+    wave::ConfigParam<std::string> str_param{"string", &s, false};
+    parser.loadParam(str_param);
     ASSERT_EQ("hello world!", s);
 }
 
@@ -140,64 +114,44 @@ TEST(Utils_config_ConfigParser, loadArray) {
     std::vector<double> d_array;
     std::vector<std::string> s_array;
     wave::ConfigParser parser;
-    wave::ConfigParam param;
 
     // setup
     parser.root = YAML::LoadFile(TEST_CONFIG);
     parser.config_loaded = true;
 
     // BOOL ARRAY
-    param.optional = false;
-    param.type = wave::BOOL_ARRAY;
-    param.key = "bool_array";
-    param.data = &b_array;
-    parser.loadArray(param);
-
+    wave::ConfigParam<std::vector<bool>> b_param{"bool_array", &b_array};
+    parser.loadParam(b_param);
     ASSERT_TRUE(b_array[0]);
     ASSERT_FALSE(b_array[1]);
     ASSERT_TRUE(b_array[2]);
     ASSERT_FALSE(b_array[3]);
 
     // INTEGER
-    param.optional = false;
-    param.type = wave::INT_ARRAY;
-    param.key = "int_array";
-    param.data = &i_array;
-    parser.loadArray(param);
-
+    wave::ConfigParam<std::vector<int>> i_param{"int_array", &i_array};
+    parser.loadParam(i_param);
     for (int i = 0; i < 4; i++) {
         ASSERT_EQ(i + 1, i_array[i]);
     }
 
     // FLOAT
-    param.optional = false;
-    param.type = wave::FLOAT_ARRAY;
-    param.key = "float_array";
-    param.data = &f_array;
-    parser.loadArray(param);
-
+    wave::ConfigParam<std::vector<float>> f_param{"float_array", &f_array};
+    parser.loadParam(f_param);
     for (int i = 0; i < 4; i++) {
         ASSERT_FLOAT_EQ((i + 1) * 1.1, f_array[i]);
     }
 
     // DOUBLE
-    param.optional = false;
-    param.type = wave::DOUBLE_ARRAY;
-    param.key = "double_array";
-    param.data = &d_array;
-    parser.loadArray(param);
-
+    wave::ConfigParam<std::vector<double>> d_param{"double_array", &d_array};
+    parser.loadParam(d_param);
     for (int i = 0; i < 4; i++) {
         ASSERT_FLOAT_EQ((i + 1) * 1.1, d_array[i]);
     }
 
     // STRING
-    param.optional = false;
-    param.type = wave::STRING_ARRAY;
-    param.key = "string_array";
-    param.data = &s_array;
-    parser.loadArray(param);
-
+    wave::ConfigParam<std::vector<std::string>> s_param{"string_array",
+                                                        &s_array};
+    parser.loadParam(s_param);
     ASSERT_EQ("1.1", s_array[0]);
     ASSERT_EQ("2.2", s_array[1]);
     ASSERT_EQ("3.3", s_array[2]);
@@ -210,52 +164,44 @@ TEST(Utils_config_ConfigParser, loadVector) {
     wave::Vec4 vec4;
     wave::VecX vecx;
     wave::ConfigParser parser;
-    wave::ConfigParam param;
+    wave::ConfigStatus res;
 
     // setup
     parser.root = YAML::LoadFile(TEST_CONFIG);
     parser.config_loaded = true;
 
     // VECTOR 2
-    param.optional = false;
-    param.type = wave::VEC2;
-    param.key = "vector2";
-    param.data = &vec2;
-    parser.loadVector(param);
+    wave::ConfigParam<wave::Vec2> vec2_param{"vector2", &vec2};
+    res = parser.loadParam(vec2_param);
 
+    EXPECT_EQ(wave::ConfigStatus::OK, res);
     ASSERT_FLOAT_EQ(1.1, vec2(0));
     ASSERT_FLOAT_EQ(2.2, vec2(1));
 
     // VECTOR 3
-    param.optional = false;
-    param.type = wave::VEC3;
-    param.key = "vector3";
-    param.data = &vec3;
-    parser.loadVector(param);
+    wave::ConfigParam<wave::Vec3> vec3_param{"vector3", &vec3};
+    res = parser.loadParam(vec3_param);
 
+    EXPECT_EQ(wave::ConfigStatus::OK, res);
     ASSERT_FLOAT_EQ(1.1, vec3(0));
     ASSERT_FLOAT_EQ(2.2, vec3(1));
     ASSERT_FLOAT_EQ(3.3, vec3(2));
 
     // VECTOR 4
-    param.optional = false;
-    param.type = wave::VEC4;
-    param.key = "vector4";
-    param.data = &vec4;
-    parser.loadVector(param);
+    wave::ConfigParam<wave::Vec4> vec4_param{"vector4", &vec4};
+    res = parser.loadParam(vec4_param);
 
+    EXPECT_EQ(wave::ConfigStatus::OK, res);
     ASSERT_FLOAT_EQ(1.1, vec4(0));
     ASSERT_FLOAT_EQ(2.2, vec4(1));
     ASSERT_FLOAT_EQ(3.3, vec4(2));
     ASSERT_FLOAT_EQ(4.4, vec4(3));
 
     // VECTOR X
-    param.optional = false;
-    param.type = wave::VECX;
-    param.key = "vector";
-    param.data = &vecx;
-    parser.loadVector(param);
+    wave::ConfigParam<wave::VecX> vecx_param{"vector", &vecx};
+    res = parser.loadParam(vecx_param);
 
+    EXPECT_EQ(wave::ConfigStatus::OK, res);
     for (int i = 0; i < 9; i++) {
         ASSERT_FLOAT_EQ((i + 1) * 1.1, vecx(i));
     }
@@ -267,20 +213,15 @@ TEST(Utils_config_ConfigParser, loadMatrix) {
     wave::Mat3 mat3;
     wave::Mat4 mat4;
     wave::MatX matx;
-    cv::Mat cvmat;
     wave::ConfigParser parser;
-    wave::ConfigParam param;
 
     // setup
     parser.root = YAML::LoadFile(TEST_CONFIG);
     parser.config_loaded = true;
 
     // MATRIX 2
-    param.optional = false;
-    param.type = wave::MAT2;
-    param.key = "matrix2";
-    param.data = &mat2;
-    parser.loadMatrix(param);
+    wave::ConfigParam<wave::Mat2> mat2_param{"matrix2", &mat2};
+    parser.loadParam(mat2_param);
 
     ASSERT_FLOAT_EQ(1.1, mat2(0, 0));
     ASSERT_FLOAT_EQ(2.2, mat2(0, 1));
@@ -288,11 +229,8 @@ TEST(Utils_config_ConfigParser, loadMatrix) {
     ASSERT_FLOAT_EQ(4.4, mat2(1, 1));
 
     // MATRIX 3
-    param.optional = false;
-    param.type = wave::MAT3;
-    param.key = "matrix3";
-    param.data = &mat3;
-    parser.loadMatrix(param);
+    wave::ConfigParam<wave::Mat3> mat3_param{"matrix3", &mat3};
+    parser.loadParam(mat3_param);
 
     index = 0;
     for (int i = 0; i < 3; i++) {
@@ -303,11 +241,8 @@ TEST(Utils_config_ConfigParser, loadMatrix) {
     }
 
     // MATRIX 4
-    param.optional = false;
-    param.type = wave::MAT4;
-    param.key = "matrix4";
-    param.data = &mat4;
-    parser.loadMatrix(param);
+    wave::ConfigParam<wave::Mat4> mat4_param{"matrix4", &mat4};
+    parser.loadParam(mat4_param);
 
     index = 0;
     for (int i = 0; i < 4; i++) {
@@ -318,12 +253,8 @@ TEST(Utils_config_ConfigParser, loadMatrix) {
     }
 
     // MATRIX X
-    param.optional = false;
-    param.type = wave::MATX;
-    param.key = "matrix";
-    param.data = &matx;
-    parser.loadMatrix(param);
-
+    wave::ConfigParam<wave::MatX> matx_param{"matrix", &matx};
+    parser.loadParam(matx_param);
     index = 0;
     for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 4; j++) {
@@ -331,25 +262,9 @@ TEST(Utils_config_ConfigParser, loadMatrix) {
             index++;
         }
     }
-
-    // CV MATRIX
-    param.optional = false;
-    param.type = wave::CVMAT;
-    param.key = "matrix";
-    param.data = &cvmat;
-    parser.loadMatrix(param);
-
-    index = 0;
-    for (int i = 0; i < 3; i++) {
-        for (int j = 0; j < 4; j++) {
-            ASSERT_FLOAT_EQ((index + 1) * 1.1, cvmat.at<double>(i, j));
-            index++;
-        }
-    }
 }
 
 TEST(Utils_config_ConfigParser, load) {
-    int retval;
     bool b;
     int i;
     float f;
@@ -371,7 +286,6 @@ TEST(Utils_config_ConfigParser, load) {
     wave::Mat3 mat3;
     wave::Mat4 mat4;
     wave::MatX matx;
-    cv::Mat cvmat;
 
     wave::ConfigParser parser;
 
@@ -396,12 +310,9 @@ TEST(Utils_config_ConfigParser, load) {
     parser.addParam("matrix3", &mat3);
     parser.addParam("matrix4", &mat4);
     parser.addParam("matrix", &matx);
-    parser.addParam("matrix", &cvmat);
 
-    retval = parser.load(TEST_CONFIG);
-    if (retval != 0) {
-        FAIL();
-    }
+    auto res = parser.load(TEST_CONFIG);
+    EXPECT_EQ(wave::ConfigStatus::OK, res);
 
     std::cout << "bool: " << b << std::endl;
     std::cout << "int: " << i << std::endl;
@@ -420,6 +331,5 @@ TEST(Utils_config_ConfigParser, load) {
     std::cout << "matrix3: \n" << mat3 << std::endl;
     std::cout << "matrix4: \n" << mat4 << std::endl;
     std::cout << "matrix: \n" << matx << std::endl;
-    std::cout << "cvmatrix: \n" << cvmat << std::endl;
     std::cout << std::endl;
 }

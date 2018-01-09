@@ -116,6 +116,14 @@ Vec3 Rotation::logMap() const {
     return this->rotation_object.logarithmicMap();
 }
 
+Mat3 Rotation::expMapAndJacobian(const Vec3 &Vec, Mat3 &J_expmap) {
+    Rotation rot;
+    rot.setFromExpMap(Vec);
+
+    J_expmap = kindr::getJacobianOfExponentialMap(Vec);
+    return rot.toRotationMatrix();
+}
+
 Vec3 Rotation::logMapAndJacobian(const Rotation &R, Mat3 &J_logmap) {
     Vec3 log_params = R.logMap();
     // compute the derivative. First get the Jacobian of the expMap

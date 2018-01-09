@@ -1,23 +1,19 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8.3)
 PROJECT(wave_benchmark)
 
-# DEPENDENCIES
-FIND_PACKAGE(Eigen3 REQUIRED)
+WAVE_ADD_MODULE(${PROJECT_NAME}
+    DEPENDS
+    wave::utils
+    wave::geometry
+    wave::containers
+    Eigen3::Eigen
+    SOURCES
+    src/trajectory_compare.cpp)
 
-# INCLUDES
-INCLUDE_DIRECTORIES(
-    include
-    ${EIGEN3_INCLUDE_DIR}
-)
+# Unit tests
+IF(BUILD_TESTING)
+    SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
 
-ADD_LIBRARY(${PROJECT_NAME} src/trajectory_compare.cpp)
-TARGET_LINK_LIBRARIES(${PROJECT_NAME} wave_utils wave_geometry)
-
-# UNIT TESTS
-SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/tests)
-
-WAVE_ADD_TEST(
-    ${PROJECT_NAME}_tests
-    tests/benchmark/benchmark_tests.cpp
-)
-TARGET_LINK_LIBRARIES(${PROJECT_NAME}_tests ${PROJECT_NAME})
+    WAVE_ADD_TEST(${PROJECT_NAME}_tests
+        tests/benchmark/benchmark_tests.cpp)
+    TARGET_LINK_LIBRARIES(${PROJECT_NAME}_tests ${PROJECT_NAME})
+ENDIF(BUILD_TESTING)
