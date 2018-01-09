@@ -18,7 +18,7 @@ namespace wave {
 
 /** Configuration parameters for the BruteForceMatcher */
 struct BFMatcherParams {
-    BFMatcherParams() {}
+    BFMatcherParams() = default;
 
     /** Constructor with user selected values. Only to be used if the user
      *  desires the ratio test as the first pass to filter outliers.
@@ -50,7 +50,7 @@ struct BFMatcherParams {
      *
      *  @param config_path the path to the location of the configuration file
      */
-    BFMatcherParams(const std::string &config_path);
+    explicit BFMatcherParams(const std::string &config_path);
 
     /** Norm type to use for distance calculation between feature descriptors.
      *
@@ -155,19 +155,6 @@ struct BFMatcherParams {
  */
 class BruteForceMatcher : public DescriptorMatcher {
  public:
-    /** The number of matches prior to any filtering or outlier removal. */
-    size_t num_raw_matches = 0u;
-
-    /** The number of matches after being filtered by the distance/ratio test.
-     *  This is the input to the outlierRejection method.
-     */
-    size_t num_filtered_matches = 0u;
-
-    /** The size of matches remaining after outlier removal via RANSAC or a
-     *  similar method.
-     */
-    size_t num_good_matches = 0u;
-
     /** Default constructor. The user can also specify their own struct with
      *  desired values. If no struct is provided, default values are used.
      *

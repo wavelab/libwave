@@ -38,6 +38,10 @@ class FeatureDetector {
      */
     virtual std::vector<cv::KeyPoint> detectFeatures(const cv::Mat &image) = 0;
 
+ public:
+    /** The number of keypoints detected. For use with diagnostic tools. */
+    size_t num_keypoints_detected = 0u;
+
  protected:
     virtual ~FeatureDetector() = default;
 };

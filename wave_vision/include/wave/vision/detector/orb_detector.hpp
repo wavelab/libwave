@@ -27,7 +27,7 @@ namespace wave {
  *  http://docs.opencv.org/trunk/db/d95/classcv_1_1ORB.html#adc371099dc902a9674bd98936e79739c
  */
 struct ORBDetectorParams {
-    ORBDetectorParams() {}
+    ORBDetectorParams() = default;
 
     ORBDetectorParams(int num_features,
                       float scale_factor,
@@ -111,9 +111,6 @@ struct ORBDetectorParams {
  */
 class ORBDetector : public FeatureDetector {
  public:
-    /** The number of keypoints detected */
-    size_t num_keypoints = 0u;
-
     /** Default constructor. The user can also specify their own struct with
      *  desired values. If no struct is provided, default values are used.
      *

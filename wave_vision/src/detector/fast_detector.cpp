@@ -89,7 +89,8 @@ std::vector<cv::KeyPoint> FASTDetector::detectFeatures(const cv::Mat &image) {
         cv::KeyPointsFilter::retainBest(keypoints, this->num_features);
     }
 
-    this->num_keypoints = keypoints.size();
+    // Store num detected keypoints for diagnostics
+    this->num_keypoints_detected = keypoints.size();
 
     return keypoints;
 }
