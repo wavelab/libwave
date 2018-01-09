@@ -18,7 +18,7 @@ namespace wave {
 
 /** Configuration parameters for the FASTDetector. */
 struct FASTDetectorParams {
-    FASTDetectorParams() {}
+    FASTDetectorParams() = default;
 
     FASTDetectorParams(int threshold,
                        bool nonmax_suppression,
@@ -33,7 +33,7 @@ struct FASTDetectorParams {
      *
      *  @param config_path the path to the location of the configuration file.
      */
-    FASTDetectorParams(const std::string &config_path);
+    explicit FASTDetectorParams(const std::string &config_path);
 
     /** Threshold on difference between intensity of the central pixel, and
      *  pixels in a circle (Bresenham radius 3) around this pixel.

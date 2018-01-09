@@ -9,6 +9,8 @@
 #include <exception>
 #include <vector>
 
+#include <opencv2/features2d/features2d.hpp>
+
 #include "wave/utils/utils.hpp"
 #include "wave/vision/utils.hpp"
 
