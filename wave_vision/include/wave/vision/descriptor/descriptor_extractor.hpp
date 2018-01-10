@@ -9,7 +9,6 @@
 #include <exception>
 #include <vector>
 
-#include "wave/utils/utils.hpp"
 #include "wave/vision/utils.hpp"
 
 namespace wave {

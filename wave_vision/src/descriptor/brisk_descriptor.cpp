@@ -35,12 +35,18 @@ BRISKDescriptor::BRISKDescriptor(const BRISKDescriptorParams &config) {
     // Ensure parameters are valid
     this->checkConfiguration(config);
 
+    // OpenCV refers to this as a parameter for "index remapping of the bits."
+    // Kaehler and Bradski's book, "Learning OpenCV3: Computer Vision in C++
+    // with the OpenCV Library" states this parameter is unused, and should be
+    // omitted.
+    std::vector<int> index_change;
+
     // Create cv::BRISK object with the desired parameters
     this->brisk_descriptor = cv::BRISK::create(config.radius_list,
                                                config.number_list,
                                                config.d_max,
                                                config.d_min,
-                                               config.index_change);
+                                               index_change);
 
     // Store configuration parameters within member struct
     this->current_config = config;

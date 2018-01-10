@@ -18,18 +18,22 @@ namespace wave {
 
 /** Configuration parameters for the FASTDetector. */
 struct FASTDetectorParams {
-    FASTDetectorParams() {}
+    FASTDetectorParams() = default;
 
-    FASTDetectorParams(int threshold, bool nonmax_suppression, int type)
+    FASTDetectorParams(const int threshold,
+                       const bool nonmax_suppression,
+                       const int type,
+                       const int num_features)
         : threshold(threshold),
           nonmax_suppression(nonmax_suppression),
-          type(type) {}
+          type(type),
+          num_features(num_features) {}
 
     /** Constructor using parameters extracted from a configuration file.
      *
      *  @param config_path the path to the location of the configuration file.
      */
-    FASTDetectorParams(const std::string &config_path);
+    explicit FASTDetectorParams(const std::string &config_path);
 
     /** Threshold on difference between intensity of the central pixel, and
      *  pixels in a circle (Bresenham radius 3) around this pixel.
@@ -55,6 +59,15 @@ struct FASTDetectorParams {
      *  cv::FastFeatureDetector::TYPE_9_16 (recommended)
      */
     int type = cv::FastFeatureDetector::TYPE_9_16;
+
+    /** The number of features to keep from detection.
+     *
+     *  If set to 0, the detector will keep all features detected. Else, it will
+     *  retain the best keypoints up to the number specified.
+     *
+     *  Default: 0.
+     */
+    int num_features = 0;
 };
 
 /** Representation of a feature detector using the FAST algorithm.
@@ -100,6 +113,12 @@ class FASTDetector : public FeatureDetector {
  private:
     /** The pointer to the wrapped cv::FastFeatureDetector object. */
     cv::Ptr<cv::FastFeatureDetector> fast_detector;
+
+    /** The number of features to retain. This is a custom parameter for the
+     *  FASTDetector, and it cannot be returned from the
+     *  cv::FastFeatureDetector::get** functions.
+     */
+    int num_features;
 
     /** Checks whether the desired configuration is valid.
      *

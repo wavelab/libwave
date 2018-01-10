@@ -117,7 +117,6 @@ std::vector<cv::Mat> readImageSequence(const std::string &path) {
 
     return image_sequence;
 }
-
 }  // namespace wave
 
 namespace YAML {

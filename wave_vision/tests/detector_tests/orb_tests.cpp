@@ -130,8 +130,29 @@ TEST(ORBDetectorTests, ConfigurationTests) {
 
 TEST(ORBDetectorTests, BadNewConfiguration) {
     ORBDetector detector;
-    ORBDetectorParams bad_config{-1, 1.5f, 8, 31, cv::ORB::FAST_SCORE, 20};
+    ORBDetectorParams config;
+    config.num_features = -1;
 
-    ASSERT_THROW(detector.configure(bad_config), std::invalid_argument);
+    ASSERT_THROW(detector.configure(config), std::invalid_argument);
+
+    ORBDetectorParams config2;
+    config2.scale_factor = 0.99;
+    ASSERT_THROW(detector.configure(config2), std::invalid_argument);
+
+    ORBDetectorParams config3;
+    config3.num_levels = -1;
+    ASSERT_THROW(detector.configure(config3), std::invalid_argument);
+
+    ORBDetectorParams config4;
+    config4.edge_threshold = -1;
+    ASSERT_THROW(detector.configure(config4), std::invalid_argument);
+
+    ORBDetectorParams config5;
+    config5.score_type = -1;
+    ASSERT_THROW(detector.configure(config5), std::invalid_argument);
+
+    ORBDetectorParams config6;
+    config6.fast_threshold = -1;
+    ASSERT_THROW(detector.configure(config6), std::invalid_argument);
 }
 }  // namespace wave

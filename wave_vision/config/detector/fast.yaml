@@ -25,3 +25,12 @@ nonmax_suppression: true
 # 2: cv::FastFeatureDetector::TYPE_9_16 (recommended)
 #
 type: 2
+
+# The number of features to keep from detection.
+#
+# If set to 0, the detector will keep all features detected. Else, it will
+# retain the best keypoints up to the number specified.
+#
+# Default: 0
+#
+num_features: 0

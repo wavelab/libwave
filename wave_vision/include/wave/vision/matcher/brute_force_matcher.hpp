@@ -18,15 +18,15 @@ namespace wave {
 
 /** Configuration parameters for the BruteForceMatcher */
 struct BFMatcherParams {
-    BFMatcherParams() {}
+    BFMatcherParams() = default;
 
     /** Constructor with user selected values. Only to be used if the user
      *  desires the ratio test as the first pass to filter outliers.
      */
-    BFMatcherParams(int norm_type,
-                    double ratio_threshold,
-                    bool auto_remove_outliers,
-                    int fm_method)
+    BFMatcherParams(const int norm_type,
+                    const double ratio_threshold,
+                    const bool auto_remove_outliers,
+                    const int fm_method)
         : norm_type(norm_type),
           use_knn(true),
           ratio_threshold(ratio_threshold),
@@ -36,10 +36,10 @@ struct BFMatcherParams {
     /** Overloaded method. Only to be used if the user desires the distance
      *  threshold test as the first pass to filter outliers.
      */
-    BFMatcherParams(int norm_type,
-                    int distance_threshold,
-                    bool auto_remove_outliers,
-                    int fm_method)
+    BFMatcherParams(const int norm_type,
+                    const int distance_threshold,
+                    const bool auto_remove_outliers,
+                    const int fm_method)
         : norm_type(norm_type),
           use_knn(false),
           distance_threshold(distance_threshold),
@@ -50,7 +50,7 @@ struct BFMatcherParams {
      *
      *  @param config_path the path to the location of the configuration file
      */
-    BFMatcherParams(const std::string &config_path);
+    explicit BFMatcherParams(const std::string &config_path);
 
     /** Norm type to use for distance calculation between feature descriptors.
      *
@@ -207,7 +207,7 @@ class BruteForceMatcher : public DescriptorMatcher {
       cv::Mat &descriptors_2,
       const std::vector<cv::KeyPoint> &keypoints_1,
       const std::vector<cv::KeyPoint> &keypoints_2,
-      cv::InputArray mask = cv::noArray()) const override;
+      cv::InputArray mask = cv::noArray()) override;
 
  private:
     /** The pointer to the wrapped cv::BFMatcher object */
@@ -220,8 +220,6 @@ class BruteForceMatcher : public DescriptorMatcher {
      *  first pass to determine good matches.
      *
      *  @param matches the unfiltered matches computed from two images.
-     *
-     *  @return the filtered matches.
      */
     std::vector<cv::DMatch> filterMatches(
       const std::vector<cv::DMatch> &matches) const override;
@@ -237,10 +235,9 @@ class BruteForceMatcher : public DescriptorMatcher {
     std::vector<cv::DMatch> filterMatches(
       const std::vector<std::vector<cv::DMatch>> &matches) const override;
 
-
-    /** Checks whether the desired configuration is valid
+    /** Checks whether the desired configuration is valid.
      *
-     *  @param check_config containing the desired configuration values.
+     * @param check_config the desired configuration values.
      */
     void checkConfiguration(const BFMatcherParams &check_config) const;
 };

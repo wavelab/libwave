@@ -1,7 +1,5 @@
 #include "wave/wave_test.hpp"
 #include "wave/vision/utils.hpp"
-#include "wave/vision/detector/fast_detector.hpp"
-#include "wave/vision/descriptor/brisk_descriptor.hpp"
 #include "wave/vision/matcher/brute_force_matcher.hpp"
 
 namespace wave {

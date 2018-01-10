@@ -23,12 +23,12 @@ namespace wave {
  *  brightness comparison tests to construct the descriptor.
  */
 struct BRISKDescriptorParams {
-    BRISKDescriptorParams() {}
+    BRISKDescriptorParams() = default;
 
-    BRISKDescriptorParams(std::vector<float> rlist,
-                          std::vector<int> nlist,
-                          float d_max,
-                          float d_min)
+    BRISKDescriptorParams(const std::vector<float> &rlist,
+                          const std::vector<int> &nlist,
+                          const float d_max,
+                          const float d_min)
         : radius_list(rlist), number_list(nlist), d_max(d_max), d_min(d_min) {}
 
     /** Constructor using parameters extracted from a configuration file.
@@ -70,13 +70,6 @@ struct BRISKDescriptorParams {
      *  Recommended:  d_min = 8.2f
      */
     float d_min = 8.2f;
-
-    /** OpenCV refers to this as a parameter for "index remapping of the bits."
-     *  Kaehler and Bradski's book, "Learning OpenCV3: Computer Vision in C++
-     *  with the OpenCV Library" states this parameter is unused, and should be
-     *  omitted.
-     */
-    std::vector<int> index_change;
 };
 
 /** Representation of a descriptor extractor using the BRISK algorithm.
