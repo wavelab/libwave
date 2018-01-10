@@ -20,10 +20,10 @@ namespace wave {
 struct FASTDetectorParams {
     FASTDetectorParams() = default;
 
-    FASTDetectorParams(const int &threshold,
-                       const bool &nonmax_suppression,
-                       const int &type,
-                       const int &num_features)
+    FASTDetectorParams(const int threshold,
+                       const bool nonmax_suppression,
+                       const int type,
+                       const int num_features)
         : threshold(threshold),
           nonmax_suppression(nonmax_suppression),
           type(type),
