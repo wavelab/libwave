@@ -29,12 +29,12 @@ namespace wave {
 struct ORBDetectorParams {
     ORBDetectorParams() = default;
 
-    ORBDetectorParams(int num_features,
-                      float scale_factor,
-                      int num_levels,
-                      int edge_threshold,
-                      int score_type,
-                      int fast_threshold)
+    ORBDetectorParams(const int &num_features,
+                      const float &scale_factor,
+                      const int &num_levels,
+                      const int &edge_threshold,
+                      const int &score_type,
+                      const int &fast_threshold)
         : num_features(num_features),
           scale_factor(scale_factor),
           num_levels(num_levels),

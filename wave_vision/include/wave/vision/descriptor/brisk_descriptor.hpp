@@ -25,10 +25,10 @@ namespace wave {
 struct BRISKDescriptorParams {
     BRISKDescriptorParams() = default;
 
-    BRISKDescriptorParams(std::vector<float> rlist,
-                          std::vector<int> nlist,
-                          float d_max,
-                          float d_min)
+    BRISKDescriptorParams(const std::vector<float> &rlist,
+                          const std::vector<int> &nlist,
+                          const float &d_max,
+                          const float &d_min)
         : radius_list(rlist), number_list(nlist), d_max(d_max), d_min(d_min) {}
 
     /** Constructor using parameters extracted from a configuration file.

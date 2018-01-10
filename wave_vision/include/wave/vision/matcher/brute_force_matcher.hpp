@@ -23,10 +23,10 @@ struct BFMatcherParams {
     /** Constructor with user selected values. Only to be used if the user
      *  desires the ratio test as the first pass to filter outliers.
      */
-    BFMatcherParams(int norm_type,
-                    double ratio_threshold,
-                    bool auto_remove_outliers,
-                    int fm_method)
+    BFMatcherParams(const int &norm_type,
+                    const double &ratio_threshold,
+                    const bool &auto_remove_outliers,
+                    const int &fm_method)
         : norm_type(norm_type),
           use_knn(true),
           ratio_threshold(ratio_threshold),
@@ -36,10 +36,10 @@ struct BFMatcherParams {
     /** Overloaded method. Only to be used if the user desires the distance
      *  threshold test as the first pass to filter outliers.
      */
-    BFMatcherParams(int norm_type,
-                    int distance_threshold,
-                    bool auto_remove_outliers,
-                    int fm_method)
+    BFMatcherParams(const int &norm_type,
+                    const int &distance_threshold,
+                    const bool &auto_remove_outliers,
+                    const int &fm_method)
         : norm_type(norm_type),
           use_knn(false),
           distance_threshold(distance_threshold),

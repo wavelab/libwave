@@ -29,7 +29,7 @@ namespace wave {
 struct ORBDescriptorParams {
     ORBDescriptorParams() = default;
 
-    ORBDescriptorParams(int tuple_size, int patch_size)
+    ORBDescriptorParams(const int &tuple_size, const int &patch_size)
         : tuple_size(tuple_size), patch_size(patch_size) {}
 
     /** Constructor using parameters extracted from a configuration file.

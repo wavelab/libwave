@@ -56,10 +56,10 @@ struct FLANNMatcherParams {
     /** Constructor with user selected values. Only to be used if the user
      *  desires the ratio test as the first pass to filter outliers.
      */
-    FLANNMatcherParams(int flann_method,
-                       double ratio_threshold,
-                       bool auto_remove_outliers,
-                       int fm_method)
+    FLANNMatcherParams(const int &flann_method,
+                       const double &ratio_threshold,
+                       const bool &auto_remove_outliers,
+                       const int &fm_method)
         : flann_method(flann_method),
           use_knn(true),
           ratio_threshold(ratio_threshold),
