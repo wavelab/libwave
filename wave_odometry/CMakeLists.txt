@@ -8,6 +8,7 @@ WAVE_ADD_MODULE(${PROJECT_NAME}
     PCL::PCL
     SOURCES
     src/weighting_functions.cpp
+    src/integrals.cpp
     src/LaserOdom.cpp)
 
 IF(BUILD_TESTING)

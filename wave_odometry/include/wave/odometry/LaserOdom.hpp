@@ -23,6 +23,7 @@
 #include <pcl/point_cloud.h>
 
 #include <Eigen/Core>
+#include <Eigen/Eigenvalues>
 #include <unsupported/Eigen/CXX11/Tensor>
 
 #include "wave/containers/measurement_container.hpp"
@@ -33,9 +34,11 @@
 #include "wave/odometry/PointXYZIR.hpp"
 #include "wave/odometry/PointXYZIT.hpp"
 #include "wave/odometry/kernels.hpp"
+#include "wave/odometry/integrals.hpp"
 #include "wave/optimization/ceres/SE3Parameterization.hpp"
 #include "wave/optimization/ceres/point_to_plane_interpolated_transform.hpp"
 #include "wave/optimization/ceres/point_to_line_interpolated_transform.hpp"
+#include "wave/optimization/ceres/transform_prior.hpp"
 #include "wave/optimization/ceres/bisquare_loss.hpp"
 #include "wave/utils/math.hpp"
 
@@ -50,18 +53,16 @@ using unlong = unsigned long;
 using TimeType = std::chrono::steady_clock::time_point;
 
 struct LaserOdomParams {
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
+    /// The covariance matrix for noise on acceleration
+    Mat6 Qc = Mat6::Identity();
     // Optimizer parameters
     int opt_iters = 25;     // How many times to refind correspondences
     float diff_tol = 1e-6;  // norm of transform vector must change by more than this to continue
     float huber_delta = 0.2;
     float max_correspondence_dist = 0.4;  // correspondences greater than this are discarded
     double max_residual_val = 0.1;        // Residuals with an initial error greater than this are not used.
-    double rotation_stiffness = 1;
-    double translation_stiffness = 1;
-    double T_z_multiplier = 1;
-    double T_y_multiplier = 1;
-    double RP_multiplier = 1;
-    double decay_parameter = 1;
     int min_residuals = 30;
     double local_map_range = 10000;  // Maximum range of features to keep. square metres
 
@@ -73,9 +74,7 @@ struct LaserOdomParams {
     // Feature extraction parameters
     float occlusion_tol = 0.1;    // Radians
     float occlusion_tol_2 = 0.1;  // m^2. Distance between points to initiate occlusion check
-    float max_line_dist = 0.5;    // Radians. Points defining the lines must be at least this close
     float parallel_tol = 0.002;   // ditto
-    float keypt_radius = 0.05;    // m2. Non maximum suppression distance
     float edge_tol = 0.1;         // Edge features must have score higher than this
     float flat_tol = 0.1;         // Plane features must have score lower than this
     float int_edge_tol = 2;       // Intensity edge features must have score greater than this
@@ -180,6 +179,7 @@ class LaserOdom {
     MeasurementContainer<IMUMeasurement> imu_trans;
 
     std::vector<double> lin_vel = {0, 0, 0};
+    Mat6 sqrtinfo;
     TimeType prv_time, cur_time;
     static float l2sqrd(const PCLPointXYZIT &p1, const PCLPointXYZIT &p2);
     static float l2sqrd(const PCLPointXYZIT &pt);

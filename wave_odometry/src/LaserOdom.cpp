@@ -311,6 +311,13 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
             }
             memcpy(this->prev_transform.getInternalMatrix().data(), this->cur_transform.getInternalMatrix().data(), 96);
 
+            /// Recalculate covariance for next match
+            ConstantAccelerationCovariance covar(this->param.Qc, 0.1, this->prev_transform.logMap() / 0.1);
+            Mat6 covariance;
+            covar.calculateCovariance(covariance);
+            Eigen::SelfAdjointEigenSolver<Mat6> es(covariance.inverse());
+            this->sqrtinfo = es.operatorSqrt();
+
             if (this->param.output_trajectory) {
                 this->file << this->cur_transform.getInternalMatrix().format(*(this->CSVFormat)) << std::endl;
             }
@@ -638,6 +645,12 @@ bool LaserOdom::match() {
                 }
             }
         }
+    }
+
+    // If use prior is set, add prior factor
+    if (this->param.imposePrior) {
+        ceres::CostFunction *cost_function = new TransformPrior(this->sqrtinfo, this->prev_transform);
+        problem.AddResidualBlock(cost_function, NULL, this->cur_transform.getInternalMatrix().data());
     }
 
     ceres::Solver::Options options;  // ceres problem destructor apparently destructs quite a bit, so need to
