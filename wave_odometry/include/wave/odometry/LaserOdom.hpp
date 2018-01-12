@@ -35,6 +35,7 @@
 #include "wave/odometry/PointXYZIT.hpp"
 #include "wave/odometry/kernels.hpp"
 #include "wave/odometry/integrals.hpp"
+#include "wave/odometry/sensor_model.hpp"
 #include "wave/optimization/ceres/SE3Parameterization.hpp"
 #include "wave/optimization/ceres/point_to_plane_interpolated_transform.hpp"
 #include "wave/optimization/ceres/point_to_line_interpolated_transform.hpp"
@@ -60,7 +61,7 @@ struct LaserOdomParams {
     // Optimizer parameters
     int opt_iters = 25;     // How many times to refind correspondences
     float diff_tol = 1e-6;  // norm of transform vector must change by more than this to continue
-    float huber_delta = 0.2;
+    float robust_param = 0.2;
     float max_correspondence_dist = 0.4;  // correspondences greater than this are discarded
     double max_residual_val = 0.1;        // Residuals with an initial error greater than this are not used.
     int min_residuals = 30;
@@ -71,14 +72,16 @@ struct LaserOdomParams {
     int max_ticks = 36000;    // encoder ticks per revolution
     unlong n_ring = 32;       // number of laser-detector pairs
 
+    RangeSensorParams sensor_params;
+
     // Feature extraction parameters
     float occlusion_tol = 0.1;    // Radians
     float occlusion_tol_2 = 0.1;  // m^2. Distance between points to initiate occlusion check
     float parallel_tol = 0.002;   // ditto
-    float edge_tol = 0.1;         // Edge features must have score higher than this
-    float flat_tol = 0.1;         // Plane features must have score lower than this
-    float int_edge_tol = 2;       // Intensity edge features must have score greater than this
-    float int_flat_tol = 0.1;     // Intensity edges must have range score lower than this
+    double edge_tol = 0.1;         // Edge features must have score higher than this
+    double flat_tol = 0.1;         // Plane features must have score lower than this
+    double int_edge_tol = 2;       // Intensity edge features must have score greater than this
+    double int_flat_tol = 0.1;     // Intensity edges must have range score lower than this
     int n_edge = 40;              // How many edge features to pick out per ring
     int n_flat = 100;             // How many plane features to pick out per ring
     int n_int_edge = 0;           // How many intensity edges to pick out per ring
@@ -178,6 +181,9 @@ class LaserOdom {
     // store for the IMU integral
     MeasurementContainer<IMUMeasurement> imu_trans;
 
+    // Lidar Sensor Model
+    std::shared_ptr<RangeSensor> range_sensor;
+
     std::vector<double> lin_vel = {0, 0, 0};
     Mat6 sqrtinfo;
     TimeType prv_time, cur_time;
@@ -218,7 +224,7 @@ class LaserOdom {
     struct Criteria {
         Kernel kernel;
         SelectionPolicy sel_pol;
-        double threshold;
+        double* threshold;
     };
 
     struct FeatureDefinition {
@@ -227,7 +233,7 @@ class LaserOdom {
         std::vector<Criteria> criteria;
         // Type of residual to use with this feature type
         ResidualType residual;
-        int n_limit;
+        int* n_limit;
     };
     std::vector<FeatureDefinition> feature_definitions;
 

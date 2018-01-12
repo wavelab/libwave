@@ -9,6 +9,7 @@ WAVE_ADD_MODULE(${PROJECT_NAME}
     SOURCES
     src/weighting_functions.cpp
     src/integrals.cpp
+    src/sensor_model.cpp
     src/LaserOdom.cpp)
 
 IF(BUILD_TESTING)

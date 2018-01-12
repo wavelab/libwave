@@ -2,6 +2,27 @@
 
 namespace wave {
 
+SE3PointToPlane::SE3PointToPlane(const double *const p,
+                const double *const pA,
+                const double *const pB,
+                const double *const pC,
+                const double *const scal,
+                const Mat3 &covZ,
+                bool use_weighting)
+        : pt(p), ptA(pA), ptB(pB), ptC(pC), scale(scal) {
+    this->JP_T << this->pt[0], 0, 0, this->pt[1], 0, 0, this->pt[2], 0, 0, 1, 0, 0, //
+            0, this->pt[0], 0, 0, this->pt[1], 0, 0, this->pt[2], 0, 0, 1, 0, //
+            0, 0, this->pt[0], 0, 0, this->pt[1], 0, 0, this->pt[2], 0, 0, 1;
+
+    if (use_weighting) {
+        Eigen::Matrix<double, 1, 3> JTPoint;
+        this->calculateJTPoint(JTPoint);
+        this->weight = (JTPoint * covZ * JTPoint.transpose()).inverse().sqrt()(0);
+    } else {
+        this->weight = 1;
+    }
+}
+
 bool SE3PointToPlane::Evaluate(double const *const *parameters, double *residuals, double **jacobians) const {
     Mat4 transform_matrix = Mat4::Identity();
     transform_matrix << parameters[0][0], parameters[0][3], parameters[0][6], parameters[0][9],
@@ -57,6 +78,16 @@ bool SE3PointToPlane::Evaluate(double const *const *parameters, double *residual
     }
 
     return true;
+}
+
+void SE3PointToPlane::calculateJTPoint(Eigen::Matrix<double, 1, 3> &JTPoint) const {
+    const double &XA1 = this->ptA[0], &XA2 = this->ptA[1], &XA3 = this->ptA[2], &XB1 = this->ptB[0],
+            &XB2 = this->ptB[1], &XB3 = this->ptB[2], &XC1 = this->ptC[0], &XC2 = this->ptC[1],
+            &XC3 = this->ptC[2];
+
+    JTPoint << -((XA2-XB2)*(XB3-XC3)-(XA3-XB3)*(XB2-XC2))*1.0/sqrt(pow(((XA1-XB1)*(XB2-XC2)-(XA2-XB2)*(XB1-XC1)),2)+pow(((XA1-XB1)*(XB3-XC3)-(XA3-XB3)*(XB1-XC1)),2)+pow(((XA2-XB2)*(XB3-XC3)-(XA3-XB3)*(XB2-XC2)),2)),
+            ((XA1-XB1)*(XB3-XC3)-(XA3-XB3)*(XB1-XC1))*1.0/sqrt(pow(((XA1-XB1)*(XB2-XC2)-(XA2-XB2)*(XB1-XC1)),2)+pow(((XA1-XB1)*(XB3-XC3)-(XA3-XB3)*(XB1-XC1)),2)+pow(((XA2-XB2)*(XB3-XC3)-(XA3-XB3)*(XB2-XC2)),2)),
+            -((XA1-XB1)*(XB2-XC2)-(XA2-XB2)*(XB1-XC1))*1.0/sqrt(pow(((XA1-XB1)*(XB2-XC2)-(XA2-XB2)*(XB1-XC1)),2)+pow(((XA1-XB1)*(XB3-XC3)-(XA3-XB3)*(XB1-XC1)),2)+pow(((XA2-XB2)*(XB3-XC3)-(XA3-XB3)*(XB2-XC2)),2));
 }
 
 }  // namespace wave

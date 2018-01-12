@@ -87,23 +87,25 @@ LaserOdom::LaserOdom(const LaserOdomParams params) : param(params) {
     this->kernels.at(2) = std::make_shared<Eigen::Tensor<double, 1>>(9);
     memcpy(this->kernels.at(2)->data(), FoG_kernel, 72);
 
+    this->range_sensor = std::make_shared<RangeSensor>(param.sensor_params);
+
     // Define features
     std::vector<Criteria> edge_high, edge_low, flat, edge_int_high, edge_int_low;
-    edge_high.emplace_back(Criteria{Kernel::LOAM, SelectionPolicy::HIGH_POS, param.edge_tol});
-    edge_low.emplace_back(Criteria{Kernel::LOAM, SelectionPolicy::HIGH_NEG, param.edge_tol});
-    flat.emplace_back(Criteria{Kernel::LOAM, SelectionPolicy::NEAR_ZERO, param.flat_tol});
-    edge_int_high.emplace_back(Criteria{Kernel::FOG, SelectionPolicy::HIGH_POS, param.int_edge_tol});
-    edge_int_high.emplace_back(Criteria{Kernel::LOAM, SelectionPolicy::NEAR_ZERO, param.int_flat_tol});
-    edge_int_low.emplace_back(Criteria{Kernel::FOG, SelectionPolicy::HIGH_POS, param.int_edge_tol});
-    edge_int_low.emplace_back(Criteria{Kernel::LOAM, SelectionPolicy::NEAR_ZERO, param.int_flat_tol});
+    edge_high.emplace_back(Criteria{Kernel::LOAM, SelectionPolicy::HIGH_POS, &(param.edge_tol)});
+    edge_low.emplace_back(Criteria{Kernel::LOAM, SelectionPolicy::HIGH_NEG, &(param.edge_tol)});
+    flat.emplace_back(Criteria{Kernel::LOAM, SelectionPolicy::NEAR_ZERO, &(param.flat_tol)});
+    edge_int_high.emplace_back(Criteria{Kernel::FOG, SelectionPolicy::HIGH_POS, &(param.int_edge_tol)});
+    edge_int_high.emplace_back(Criteria{Kernel::LOAM, SelectionPolicy::NEAR_ZERO, &(param.int_flat_tol)});
+    edge_int_low.emplace_back(Criteria{Kernel::FOG, SelectionPolicy::HIGH_POS, &(param.int_edge_tol)});
+    edge_int_low.emplace_back(Criteria{Kernel::LOAM, SelectionPolicy::NEAR_ZERO, &(param.int_flat_tol)});
 
-    this->feature_definitions.emplace_back(FeatureDefinition{edge_high, ResidualType::PointToLine, param.n_edge});
-    this->feature_definitions.emplace_back(FeatureDefinition{edge_low, ResidualType::PointToLine, param.n_edge});
-    this->feature_definitions.emplace_back(FeatureDefinition{flat, ResidualType::PointToPlane, param.n_flat});
+    this->feature_definitions.emplace_back(FeatureDefinition{edge_high, ResidualType::PointToLine, &(param.n_edge)});
+    this->feature_definitions.emplace_back(FeatureDefinition{edge_low, ResidualType::PointToLine, &(param.n_edge)});
+    this->feature_definitions.emplace_back(FeatureDefinition{flat, ResidualType::PointToPlane, &(param.n_flat)});
     this->feature_definitions.emplace_back(
-      FeatureDefinition{edge_int_high, ResidualType::PointToLine, param.n_int_edge});
+      FeatureDefinition{edge_int_high, ResidualType::PointToLine, &(param.n_int_edge)});
     this->feature_definitions.emplace_back(
-      FeatureDefinition{edge_int_low, ResidualType::PointToLine, param.n_int_edge});
+      FeatureDefinition{edge_int_low, ResidualType::PointToLine, &(param.n_int_edge)});
 
     this->signals.resize(this->N_SIGNALS);
     this->scores.resize(this->N_SCORES);
@@ -137,6 +139,7 @@ LaserOdom::LaserOdom(const LaserOdomParams params) : param(params) {
 
     this->cur_transform.setIdentity();
     this->prev_transform.setIdentity();
+    this->sqrtinfo.setIdentity();
 
     if (params.visualize) {
         this->display = new PointCloudDisplay("laser odom");
@@ -570,45 +573,31 @@ bool LaserOdom::match() {
                 Eigen::Map<const Vec3> query(transformed, 3, 1);
                 ret_indices.clear();
                 out_dist_sqr.clear();
+                Eigen::Matrix3f covZ;
+                this->range_sensor->getEuclideanCovariance(query.data(), j, covZ);
                 if (this->findCorrespondingPoints(query, i, &ret_indices)) {
                     ceres::CostFunction *cost_function;
                     std::vector<double> residuals;
-                    Mat3 weightPtL;
-                    weightPtL.setIdentity();
-                    double weightPtP = 1;
                     switch (this->feature_definitions.at(i).residual) {
                         case PointToLine:
-                            if (this->param.use_weighting) {
-                                weightPtL = calculatePointToLineWeight(
-                                  this->feature_points.at(i).at(j).at(pt_cntr).pt,
-                                  this->prv_feature_points.at(i).points.at(ret_indices.at(0)).data(),
-                                  this->prv_feature_points.at(i).points.at(ret_indices.at(1)).data(),
-                                  this->param.iso_var);
-                            }
                             cost_function = new SE3PointToLine(
-                              this->feature_points.at(i).at(j).at(pt_cntr).pt,
-                              this->prv_feature_points.at(i).points.at(ret_indices.at(0)).data(),
-                              this->prv_feature_points.at(i).points.at(ret_indices.at(1)).data(),
-                              &(this->scale_lookup.at(this->feature_points.at(i).at(j).at(pt_cntr).tick)),
-                              weightPtL);
+                                    this->feature_points.at(i).at(j).at(pt_cntr).pt,
+                                    this->prv_feature_points.at(i).points.at(ret_indices.at(0)).data(),
+                                    this->prv_feature_points.at(i).points.at(ret_indices.at(1)).data(),
+                                    &(this->scale_lookup.at(this->feature_points.at(i).at(j).at(pt_cntr).tick)),
+                                    covZ.cast<double>(),
+                                    this->param.use_weighting);
                             residuals.resize(3);
                             break;
                         case PointToPlane:
-                            if (this->param.use_weighting) {
-                                weightPtP = calculatePointToPlaneWeight(
-                                  this->feature_points.at(i).at(j).at(pt_cntr).pt,
-                                  this->prv_feature_points.at(i).points.at(ret_indices.at(0)).data(),
-                                  this->prv_feature_points.at(i).points.at(ret_indices.at(1)).data(),
-                                  this->prv_feature_points.at(i).points.at(ret_indices.at(2)).data(),
-                                  this->param.iso_var);
-                            }
                             cost_function = new SE3PointToPlane(
                               this->feature_points.at(i).at(j).at(pt_cntr).pt,
                               this->prv_feature_points.at(i).points.at(ret_indices.at(0)).data(),
                               this->prv_feature_points.at(i).points.at(ret_indices.at(1)).data(),
                               this->prv_feature_points.at(i).points.at(ret_indices.at(2)).data(),
                               &(this->scale_lookup.at(this->feature_points.at(i).at(j).at(pt_cntr).tick)),
-                              weightPtP);
+                              covZ.cast<double>(),
+                              this->param.use_weighting);
                             residuals.resize(1);
                             break;
                         default: continue;
@@ -639,7 +628,7 @@ bool LaserOdom::match() {
                         this->feature_association.at(i).at(ret_indices.at(k)).second = AssociationStatus::CORRESPONDED;
                     }
                     this->feature_corrs.at(i).at(j).emplace_back(corr_list);
-                    ceres::LossFunction *p_LossFunction = new BisquareLoss(this->param.huber_delta);
+                    ceres::LossFunction *p_LossFunction = new BisquareLoss(this->param.robust_param);
                     problem.AddResidualBlock(
                       cost_function, p_LossFunction, this->cur_transform.getInternalMatrix().data());
                 }
@@ -717,7 +706,7 @@ void LaserOdom::generateFeatures() {
             this->feature_points.at(i).at(j).clear();
             int f_cnt = 0;
             for (auto iter = filt_scores.begin(); iter != filt_scores.end(); iter++) {
-                if (f_cnt >= def.n_limit) {
+                if (f_cnt >= *(def.n_limit)) {
                     break;
                 }
                 if (this->valid_pts.at(i).at(j).at(iter->first)) {
@@ -871,7 +860,7 @@ void LaserOdom::buildFilteredScore(const std::vector<bool> &valid, const uint32_
                 // same
                 // so it doesn't matter yet
                 if (!(compfuns.at(l))(this->scores.at(k_idx.at(l)).at(ring).at(j - k_offsets.at(l)),
-                                      def.criteria.at(l).threshold)) {
+                                      *(def.criteria.at(l).threshold))) {
                     still_good = false;
                     break;
                 }

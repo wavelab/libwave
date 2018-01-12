@@ -3,6 +3,7 @@
 
 #include <ceres/ceres.h>
 #include <ceres/rotation.h>
+#include <unsupported/Eigen/MatrixFunctions>
 #include "wave/geometry/transformation.hpp"
 
 namespace wave {
@@ -14,7 +15,6 @@ class SE3PointToPlane : public ceres::SizedCostFunction<1, 12> {
     const double *const ptB;
     const double *const ptC;
     const double *const scale;
-    double weight;
 
     // Preallocate memory for jacobian calculations to avoid it during residual evaluation
     // This is the Jacobian of the cost function wrt the transformed point
@@ -33,19 +33,20 @@ class SE3PointToPlane : public ceres::SizedCostFunction<1, 12> {
     mutable Eigen::Matrix<double, 1, 12> Jr_T;
 
  public:
+    double weight;
+
     virtual ~SE3PointToPlane() {}
     SE3PointToPlane(const double *const p,
                     const double *const pA,
                     const double *const pB,
                     const double *const pC,
                     const double *const scal,
-                    double weighting)
-            : pt(p), ptA(pA), ptB(pB), ptC(pC), scale(scal), weight(weighting) {
-        this->JP_T << this->pt[0], 0, 0, this->pt[1], 0, 0, this->pt[2], 0, 0, 1, 0, 0, //
-                0, this->pt[0], 0, 0, this->pt[1], 0, 0, this->pt[2], 0, 0, 1, 0, //
-                0, 0, this->pt[0], 0, 0, this->pt[1], 0, 0, this->pt[2], 0, 0, 1;
-    }
+                    const Mat3 &covZ,
+                    bool use_weighting);
+
     virtual bool Evaluate(double const *const *parameters, double *residuals, double **jacobians) const;
+
+    void calculateJTPoint(Eigen::Matrix<double, 1, 3> &JTPoint) const;
 };
 }
 

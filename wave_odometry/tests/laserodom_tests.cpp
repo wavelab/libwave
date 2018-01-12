@@ -120,14 +120,27 @@ TEST(OdomTest, StraightLineGarage) {
     params.int_flat_tol = 0.05;
     params.int_edge_tol = 5;
     params.max_correspondence_dist = 0.2;
-    params.huber_delta = 0.04;
+    params.robust_param = 0.04;
     params.opt_iters = 5;
     params.visualize = true;
-//    params.use_weighting = true;
+
+    params.sensor_params.rings = 32;
+    float ang = -0.5352924815866609;
+    for (int i = 0; i < 32; i++) {
+        params.sensor_params.elevation_angles.emplace_back(ang);
+        ang += 0.0232748100894986;
+    }
+    Eigen::Matrix3f variance;
+    variance << 0.1, 0, 0, 0, 0.1, 0, 0, 0, 0.1;
+
+    params.sensor_params.sigma_spherical = &variance;
+    params.use_weighting = true;
 //    params.only_extract_features = true;
     params.output_trajectory = false;
 //    params.output_correspondences = true;
     params.check_gradients = false;
+    params.imposePrior = true;
+    params.Qc = Eigen::Matrix<double, 6, 6>::Identity();
 
     LaserOdom odom(params);
     std::vector<PointXYZIR> vec;
@@ -198,13 +211,8 @@ TEST(OdomTest, OutputTest) {
     params.n_flat = 50;
     params.n_edge = 40;
     params.max_correspondence_dist = 0.4;
-    params.huber_delta = 0.2;
+    params.robust_param = 0.2;
     params.opt_iters = 5;
-    params.rotation_stiffness = 1e-5;
-    params.translation_stiffness = 5e-3;
-    params.T_z_multiplier = 4;
-    params.T_y_multiplier = 2;
-    params.RP_multiplier = 20;
     params.imposePrior = true;
     params.visualize = true;
     LaserOdom odom(params);
