@@ -140,7 +140,7 @@ TEST(OdomTest, StraightLineGarage) {
 //    params.output_correspondences = true;
     params.check_gradients = false;
     params.imposePrior = true;
-    params.Qc = Eigen::Matrix<double, 6, 6>::Identity();
+    params.Qc = 10000*Eigen::Matrix<double, 6, 6>::Identity();
 
     LaserOdom odom(params);
     std::vector<PointXYZIR> vec;

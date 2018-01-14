@@ -605,7 +605,7 @@ bool LaserOdom::match() {
 
                     double **jacobians = nullptr;
                     if (!cost_function->Evaluate(parameters, residuals.data(), jacobians)) {
-                        LOG_ERROR("Point to line cost function did not evaluate");
+                        LOG_ERROR("Cost function did not evaluate");
                         delete cost_function;
                         continue;
                     }
@@ -617,7 +617,7 @@ bool LaserOdom::match() {
                         ceres::NumericDiffOptions ndiff_options;
                         ceres::GradientChecker g_check(cost_function, &local_param_vec, ndiff_options);
                         ceres::GradientChecker::ProbeResults g_results;
-                        if (!g_check.Probe(parameters, 1e-4, &g_results)) {
+                        if (!g_check.Probe(parameters, 1, &g_results)) {
                             LOG_ERROR("%s", g_results.error_log.c_str());
                         }
                     }

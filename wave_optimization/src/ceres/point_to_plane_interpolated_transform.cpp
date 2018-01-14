@@ -10,14 +10,19 @@ SE3PointToPlane::SE3PointToPlane(const double *const p,
                 const Mat3 &covZ,
                 bool use_weighting)
         : pt(p), ptA(pA), ptB(pB), ptC(pC), scale(scal) {
-    this->JP_T << this->pt[0], 0, 0, this->pt[1], 0, 0, this->pt[2], 0, 0, 1, 0, 0, //
+    Eigen::Matrix<double, 3, 12> JP_Ti;
+    Eigen::Matrix<double, 1, 3> Jr_P;
+
+    JP_Ti << this->pt[0], 0, 0, this->pt[1], 0, 0, this->pt[2], 0, 0, 1, 0, 0, //
             0, this->pt[0], 0, 0, this->pt[1], 0, 0, this->pt[2], 0, 0, 1, 0, //
             0, 0, this->pt[0], 0, 0, this->pt[1], 0, 0, this->pt[2], 0, 0, 1;
 
+    this->calculateJr_P(Jr_P);
+    this->Jr_Ti = Jr_P * JP_Ti;
+
     if (use_weighting) {
-        Eigen::Matrix<double, 1, 3> JTPoint;
-        this->calculateJTPoint(JTPoint);
-        this->weight = (JTPoint * covZ * JTPoint.transpose()).inverse().sqrt()(0);
+        double covR = (Jr_P * covZ * Jr_P.transpose())(0);
+        this->weight = std::sqrt(1.0/covR);
     } else {
         this->weight = 1;
     }
@@ -54,15 +59,6 @@ bool SE3PointToPlane::Evaluate(double const *const *parameters, double *residual
     residuals[0] = this->weight * (num / den);
 
     if((jacobians != NULL) && (jacobians[0] != NULL)) {
-        // setup alias to make importing matlab string easier
-        const double &XA1 = this->ptA[0], &XA2 = this->ptA[1], &XA3 = this->ptA[2], &XB1 = this->ptB[0],
-                &XB2 = this->ptB[1], &XB3 = this->ptB[2], &XC1 = this->ptC[0], &XC2 = this->ptC[1],
-                &XC3 = this->ptC[2];
-
-        Jr_P << -((XA2-XB2)*(XB3-XC3)-(XA3-XB3)*(XB2-XC2))*1.0/sqrt(pow(((XA1-XB1)*(XB2-XC2)-(XA2-XB2)*(XB1-XC1)),2)+pow(((XA1-XB1)*(XB3-XC3)-(XA3-XB3)*(XB1-XC1)),2)+pow(((XA2-XB2)*(XB3-XC3)-(XA3-XB3)*(XB2-XC2)),2)),
-                ((XA1-XB1)*(XB3-XC3)-(XA3-XB3)*(XB1-XC1))*1.0/sqrt(pow(((XA1-XB1)*(XB2-XC2)-(XA2-XB2)*(XB1-XC1)),2)+pow(((XA1-XB1)*(XB3-XC3)-(XA3-XB3)*(XB1-XC1)),2)+pow(((XA2-XB2)*(XB3-XC3)-(XA3-XB3)*(XB2-XC2)),2)),
-                -((XA1-XB1)*(XB2-XC2)-(XA2-XB2)*(XB1-XC1))*1.0/sqrt(pow(((XA1-XB1)*(XB2-XC2)-(XA2-XB2)*(XB1-XC1)),2)+pow(((XA1-XB1)*(XB3-XC3)-(XA3-XB3)*(XB1-XC1)),2)+pow(((XA2-XB2)*(XB3-XC3)-(XA3-XB3)*(XB2-XC2)),2));
-
         // Have to apply the "lift" jacobian to the Interpolation Jacobian because
         // of Ceres local parameterization
         Transformation::Jinterpolated(twist, *(this->scale), this->J_int);
@@ -72,20 +68,21 @@ bool SE3PointToPlane::Evaluate(double const *const *parameters, double *residual
         this->J_lift_full_pinv = (this->J_lift_full.transpose() * this->J_lift_full).inverse() * this->J_lift_full.transpose();
 
         // Identity * scale is approximating the Jacobian of the Interpolated Transform wrt the complete Transform
-        Jr_T = this->weight * Jr_P * JP_T * J_lift * J_int * this->J_lift_full_pinv;
+        this->Jr_T = this->weight * this->Jr_Ti * J_lift * J_int * this->J_lift_full_pinv;
 
-        Eigen::Map<Eigen::Matrix<double, 1, 12, Eigen::RowMajor>>(jacobians[0], 1, 12) = Jr_T;
+        Eigen::Map<Eigen::Matrix<double, 1, 12, Eigen::RowMajor>>(jacobians[0], 1, 12) = this->Jr_T;
     }
 
     return true;
 }
 
-void SE3PointToPlane::calculateJTPoint(Eigen::Matrix<double, 1, 3> &JTPoint) const {
+/// Jacobian of the residual wrt the transformed point
+void SE3PointToPlane::calculateJr_P(Eigen::Matrix<double, 1, 3> &Jr_P) const {
     const double &XA1 = this->ptA[0], &XA2 = this->ptA[1], &XA3 = this->ptA[2], &XB1 = this->ptB[0],
             &XB2 = this->ptB[1], &XB3 = this->ptB[2], &XC1 = this->ptC[0], &XC2 = this->ptC[1],
             &XC3 = this->ptC[2];
 
-    JTPoint << -((XA2-XB2)*(XB3-XC3)-(XA3-XB3)*(XB2-XC2))*1.0/sqrt(pow(((XA1-XB1)*(XB2-XC2)-(XA2-XB2)*(XB1-XC1)),2)+pow(((XA1-XB1)*(XB3-XC3)-(XA3-XB3)*(XB1-XC1)),2)+pow(((XA2-XB2)*(XB3-XC3)-(XA3-XB3)*(XB2-XC2)),2)),
+    Jr_P << -((XA2-XB2)*(XB3-XC3)-(XA3-XB3)*(XB2-XC2))*1.0/sqrt(pow(((XA1-XB1)*(XB2-XC2)-(XA2-XB2)*(XB1-XC1)),2)+pow(((XA1-XB1)*(XB3-XC3)-(XA3-XB3)*(XB1-XC1)),2)+pow(((XA2-XB2)*(XB3-XC3)-(XA3-XB3)*(XB2-XC2)),2)),
             ((XA1-XB1)*(XB3-XC3)-(XA3-XB3)*(XB1-XC1))*1.0/sqrt(pow(((XA1-XB1)*(XB2-XC2)-(XA2-XB2)*(XB1-XC1)),2)+pow(((XA1-XB1)*(XB3-XC3)-(XA3-XB3)*(XB1-XC1)),2)+pow(((XA2-XB2)*(XB3-XC3)-(XA3-XB3)*(XB2-XC2)),2)),
             -((XA1-XB1)*(XB2-XC2)-(XA2-XB2)*(XB1-XC1))*1.0/sqrt(pow(((XA1-XB1)*(XB2-XC2)-(XA2-XB2)*(XB1-XC1)),2)+pow(((XA1-XB1)*(XB3-XC3)-(XA3-XB3)*(XB1-XC1)),2)+pow(((XA2-XB2)*(XB3-XC3)-(XA3-XB3)*(XB2-XC2)),2));
 }

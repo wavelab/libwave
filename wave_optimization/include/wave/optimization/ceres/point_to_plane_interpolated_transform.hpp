@@ -17,10 +17,8 @@ class SE3PointToPlane : public ceres::SizedCostFunction<1, 12> {
     const double *const scale;
 
     // Preallocate memory for jacobian calculations to avoid it during residual evaluation
-    // This is the Jacobian of the cost function wrt the transformed point
-    mutable Eigen::Matrix<double, 1, 3> Jr_P;
-    // Jacobian of transformed point wrt the overparameterized transform
-    Eigen::Matrix<double, 3, 12> JP_T;
+    // This is the Jacobian of the cost function wrt the overparameterized interpolated transform
+    Eigen::Matrix<double, 1, 12> Jr_Ti;
 
     // Jacobian of interpolated tranform wrt full transform
     mutable Mat6 J_int;
@@ -46,7 +44,7 @@ class SE3PointToPlane : public ceres::SizedCostFunction<1, 12> {
 
     virtual bool Evaluate(double const *const *parameters, double *residuals, double **jacobians) const;
 
-    void calculateJTPoint(Eigen::Matrix<double, 1, 3> &JTPoint) const;
+    void calculateJr_P(Eigen::Matrix<double, 1, 3> &Jr_P) const;
 };
 }
 

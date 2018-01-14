@@ -19,10 +19,8 @@ class SE3PointToLine : public ceres::SizedCostFunction<2, 12> {
     double bottom;
 
     // Preallocate memory for jacobian calculations to avoid it during residual evaluation
-    // This is the Jacobian of the cost function wrt the transformed point
-    Eigen::Matrix<double, 3, 3> Jres_P;
-    // Jacobian of transformed point wrt the overparameterized transform
-    Eigen::Matrix<double, 3, 12> JP_T;
+    // This is the Jacobian of the cost function wrt the overparameterized transform
+    Eigen::Matrix<double, 3, 12> Jres_T;
 
     // Jacobian of interpolated tranform wrt full transform
     mutable Mat6 J_int;
@@ -31,8 +29,10 @@ class SE3PointToLine : public ceres::SizedCostFunction<2, 12> {
     mutable Eigen::Matrix<double, 12, 6> J_lift, J_lift_full;
     mutable Eigen::Matrix<double, 6, 12> J_lift_full_pinv;
 
-    // Complete Jacobian
+    // Complete Jacobian will null row
     mutable Eigen::Matrix<double, 3, 12> Jr_T;
+    // Reduced Jacobian
+    mutable Eigen::Matrix<double, 2, 12> Jr_T_reduced;
 
     /**
      * This is used to rotate the residual into a frame where one of the unit vectors is
