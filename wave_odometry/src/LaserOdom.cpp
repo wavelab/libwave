@@ -137,8 +137,15 @@ LaserOdom::LaserOdom(const LaserOdomParams params) : param(params) {
         this->feature_corrs.at(i).resize(n_ring);
     }
 
-    this->cur_transform.setIdentity();
-    this->prev_transform.setIdentity();
+    for (uint32_t i = 0; i < this->param.num_trajectory_states; i++) {
+        Trajectory unit;
+        unit.pose.setIdentity();
+        unit.twist.setZero();
+        this->trajectory_prior.emplace_back(unit);
+        this->cur_trajectory.emplace_back(unit);
+        this->prev_trajectory.emplace_back(unit);
+    }
+
     this->sqrtinfo.setIdentity();
 
     if (params.visualize) {

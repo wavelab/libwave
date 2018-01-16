@@ -59,12 +59,16 @@ struct LaserOdomParams {
     /// The covariance matrix for noise on acceleration
     Mat6 Qc = Mat6::Identity();
     // Optimizer parameters
+    // How many states per revolution to optimize over
+    uint32_t num_trajectory_states = 5;
+
     int opt_iters = 25;     // How many times to refind correspondences
-    float diff_tol = 1e-6;  // norm of transform vector must change by more than this to continue
-    float robust_param = 0.2;
+    float diff_tol = 1e-6;  // If the transform from one iteration to the next changes less than this,
+    // skip the next iterations
+    float robust_param = 0.2;  // Hyper-parameter for bisquare (Tukey) loss function
     float max_correspondence_dist = 0.4;  // correspondences greater than this are discarded
     double max_residual_val = 0.1;        // Residuals with an initial error greater than this are not used.
-    int min_residuals = 30;
+    int min_residuals = 30;          // Problem will be reset if the number of residuals is less than this
     double local_map_range = 10000;  // Maximum range of features to keep. square metres
 
     // Sensor parameters
@@ -112,7 +116,17 @@ class LaserOdom {
     std::vector<std::vector<std::vector<PointXYZIT>>> feature_points;  // edges, flats;
     std::vector<FeatureKDTree<double>> prv_feature_points;             // prv_edges, prv_flats;
     // The transform is T_start_end
-    Transformation cur_transform, prev_transform;
+    struct Trajectory {
+        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+        Transformation pose;
+        Vec6 twist;
+    };
+
+    std::vector<Trajectory> cur_trajectory, prev_trajectory;
+
+    std::vector<Trajectory> trajectory_prior;
+
+    //Transformation cur_transform, prev_transform;
 
     bool new_features = false;
 
@@ -184,7 +198,6 @@ class LaserOdom {
     // Lidar Sensor Model
     std::shared_ptr<RangeSensor> range_sensor;
 
-    std::vector<double> lin_vel = {0, 0, 0};
     Mat6 sqrtinfo;
     TimeType prv_time, cur_time;
     static float l2sqrd(const PCLPointXYZIT &p1, const PCLPointXYZIT &p2);
