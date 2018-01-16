@@ -16,7 +16,8 @@ WAVE_ADD_MODULE(${PROJECT_NAME} DEPENDS
     src/ceres/point_to_point_residual.cpp
     src/ceres/bisquare_loss.cpp
     src/ceres/point_to_line_interpolated_transform.cpp
-    src/ceres/point_to_plane_interpolated_transform.cpp)
+    src/ceres/point_to_plane_interpolated_transform.cpp
+    src/ceres/constant_velocity.cpp)
 
 # Unit tests
 IF(BUILD_TESTING)
@@ -35,7 +36,8 @@ IF(BUILD_TESTING)
             ${PROJECT_NAME})
 
     WAVE_ADD_TEST(geometry_residual_tests
-            tests/ceres/transform_prior_test.cpp)
+            tests/ceres/transform_prior_test.cpp
+            tests/ceres/constant_velocity_test.cpp)
 
     TARGET_LINK_LIBRARIES(geometry_residual_tests
             ${PROJECT_NAME})

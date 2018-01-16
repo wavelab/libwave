@@ -48,6 +48,14 @@ Mat3 Transformation::skewSymmetric3(const Vec3 &V) {
     return retval;
 }
 
+Mat6 Transformation::skewSymmetric6(const Vec6 &W) {
+    Mat6 retval = Mat6::Zero();
+    retval.block<3,3>(0,0) = skewSymmetric3(W.block<3,1>(0,0));
+    retval.block<3,3>(3,3) = skewSymmetric3(W.block<3,1>(0,0));
+    retval.block<3,3>(3,0) = skewSymmetric3(W.block<3,1>(3,0));
+    return retval;
+}
+
 void Transformation::Jinterpolated(const Vec6 &twist, const double &alpha, Mat6 &retval) {
     // 3rd order approximation
 
@@ -163,6 +171,28 @@ Mat4 Transformation::expMap(const Vec6 &W, double TOL) {
     retval.block<3,1>(0, 3).noalias() = V * W.block<3,1>(3, 0);
 
     return retval;
+}
+
+Mat6 Transformation::expMapAdjoint(const Vec6 &W, double TOL) {
+    double wn = W.block<3,1>(0, 0).norm();
+
+    auto skew = skewSymmetric6(W);
+
+    double s = std::sin(wn);
+    double c = std::cos(wn);
+
+    double A, B, C, D;
+    if (wn > TOL) {
+        A = (3*s - wn * c) / (2*wn);
+        B = (4 - wn*s - 4*c) / (2*wn*wn);
+        C = (s - wn*c) / (2*wn*wn*wn);
+        D = (2 - wn*s - 2*c) / (2 * wn * wn * wn * wn);
+
+        return Mat6::Identity() + A * skew + B * skew * skew + C * skew * skew * skew + D * skew * skew * skew * skew;
+    } else {
+        // Fudge it
+        return Mat6::Identity() + skew;
+    }
 }
 
 Mat6 Transformation::SE3LeftJacobian(const Vec6 &W, double TOL) {

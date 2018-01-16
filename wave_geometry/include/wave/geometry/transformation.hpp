@@ -82,6 +82,14 @@ class Transformation {
      */
     static Mat4 expMap(const Vec6 &W, double TOL);
 
+    /**
+     * Computes the exponential map of the for the adjoint
+     * @param W The input vector we are taking the expmap of.
+     * @param TOL Tolerance to switch between exact and taylor approximation (avoids singularity at zero)
+     * @return
+     */
+    static Mat6 expMapAdjoint(const Vec6 &W, double TOL);
+
     /** Computes the log map of the input and computes the Jacobian
      * of the log map wrt @f$ R @f$.
      *
@@ -111,6 +119,8 @@ class Transformation {
      * @return V^
      */
     static Mat3 skewSymmetric3(const Vec3 &V);
+
+    static Mat6 skewSymmetric6(const Vec6 &W);
 
     /**
      * Returns the approximate Jacobian of an interpolated transform wrt to
