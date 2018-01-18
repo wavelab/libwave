@@ -49,7 +49,6 @@
 
 namespace wave {
 
-using IMUMeasurement = Measurement<Vec6, char>;
 using unlong = unsigned long;
 using TimeType = std::chrono::steady_clock::time_point;
 
@@ -126,10 +125,6 @@ class LaserOdom {
 
     std::vector<Trajectory> trajectory_prior;
 
-    //Transformation cur_transform, prev_transform;
-
-    bool new_features = false;
-
     void rollover(TimeType stamp);
     bool match();
     void registerOutputFunction(std::function<void(const TimeType *const,
@@ -174,6 +169,10 @@ class LaserOdom {
 
     // ceres optimizer stuff
     std::vector<std::pair<const double *, const double *>> covariance_blocks;
+    /// Given the previous scan's solution generate priors for the next scan
+    void generateInitialPrior();
+    /// Given one optimization, regenerate priors with updated velocities.
+    void updatePrior();
 
     LaserOdomParams param;
     bool initialized = false;
@@ -191,9 +190,6 @@ class LaserOdom {
     PCLPointXYZIT applyIMU(const PCLPointXYZIT &pt);
     void transformToStart(const double *const pt, const uint16_t tick, double *output, const Vec6 &twist);
     void transformToEnd(const double *const pt, const uint16_t tick, double *output, const Vec6 &twist);
-
-    // store for the IMU integral
-    MeasurementContainer<IMUMeasurement> imu_trans;
 
     // Lidar Sensor Model
     std::shared_ptr<RangeSensor> range_sensor;

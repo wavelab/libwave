@@ -314,28 +314,60 @@ void LaserOdom::undistort() {
     }
 }
 
+void LaserOdom::generateInitialPrior() {
+    //todo(ben) find the scan period automatically
+    double step_size = 0.1 / (double) this->param.num_trajectory_states;
+    Vec6 neg_increment;
+    neg_increment = - this->cur_trajectory.back().twist;
+    neg_increment = neg_increment * step_size;
+
+    for(uint32_t i = 0; i < this->param.num_trajectory_states; i++) {
+        this->trajectory_prior.at(i).twist = this->cur_trajectory.back().twist;
+        if (i == 0) {
+            this->trajectory_prior.at(i).pose.setFromExpMap(neg_increment);
+        } else {
+            this->trajectory_prior.at(i).pose = this->trajectory_prior.at(i-1).pose;
+            this->trajectory_prior.at(i).pose.manifoldPlus(neg_increment);
+        }
+    }
+}
+
+void LaserOdom::updatePrior() {
+    //todo(ben) find the scan period automatically
+    double step_size = 0.1 / (double) this->param.num_trajectory_states;
+
+    // Do not change first prior, start at the second
+    for(uint32_t i = 1; i < this->param.num_trajectory_states; i++) {
+        this->trajectory_prior.at(i).twist = this->cur_trajectory.at(i).twist;
+        this->trajectory_prior.at(i).pose = this->trajectory_prior.at(i-1).pose;
+        this->trajectory_prior.at(i).pose.manifoldPlus(-step_size * this->trajectory_prior.at(i-1).twist);
+    }
+}
+
 void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, TimeType stamp) {
     if ((tick - this->prv_tick) < -200) {  // tolerate minor nonlinearity error
         this->generateFeatures();          // generate features on the current scan
         if (this->initialized) {           // there is a set of previous features from
                                            // last scan
             Transformation last_transform;
+            auto &ref = this->cur_trajectory.back().pose;
 
+            this->generateInitialPrior();
             for (int i = 0; i < this->param.opt_iters; i++) {
                 if (i > 0) {
                     memcpy(
-                      last_transform.getInternalMatrix().data(), this->cur_transform.getInternalMatrix().data(), 96);
+                      last_transform.getInternalMatrix().data(), ref.getInternalMatrix().data(), 96);
                 }
                 if (!this->match()) {
                     return;
                 }
                 if (i > 0) {
-                    if (this->cur_transform.isNear(last_transform, this->param.diff_tol)) {
+                    if (ref.isNear(last_transform, this->param.diff_tol)) {
                         break;
                     }
                 }
+                this->updatePrior();
             }
-            memcpy(this->prev_transform.getInternalMatrix().data(), this->cur_transform.getInternalMatrix().data(), 96);
 
             /// Recalculate covariance for next match
             ConstantAccelerationCovariance covar(this->param.Qc, 0.1, this->prev_transform.logMap() / 0.1);
