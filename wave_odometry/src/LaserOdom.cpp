@@ -20,60 +20,6 @@ double norm(const std::vector<double> &vec) {
     return std::sqrt(retval);
 }
 
-void LaserOdom::flagNearbyPoints(const unlong f_idx, const unlong ring, const unlong p_idx) {
-    for (unlong j = 0; j < this->param.key_radius; j++) {
-        if (p_idx + j + 1 >= this->valid_pts.at(f_idx).at(ring).size()) {
-            break;
-        }
-        this->valid_pts.at(f_idx).at(ring).at(p_idx + j + 1) = false;
-    }
-    for (unlong j = 0; j < this->param.key_radius; j++) {
-        if (p_idx < j + 1) {
-            break;
-        }
-        this->valid_pts.at(f_idx).at(ring).at(p_idx - j - 1) = false;
-    }
-}
-
-void LaserOdom::transformToStart(const double *const pt, const uint16_t tick, double *output, const Vec6 &twist) {
-    double &scale = this->scale_lookup.at(tick);
-    Transformation interpolated;
-    interpolated.setFromExpMap(scale * twist);
-    Eigen::Map<const Vec3> Vecpt(pt, 3, 1);
-    Vec3 transformed = interpolated.transform(Vecpt);
-    Eigen::Map<Vec3>(output, 3, 1) = transformed;
-}
-
-void LaserOdom::transformToEnd(const double *const pt, const uint16_t tick, double *output, const Vec6 &twist) {
-    double scale = 1 - this->scale_lookup.at(tick);
-    Transformation interpolated;
-    interpolated.setFromExpMap(-scale * twist);
-    Eigen::Map<const Vec3> Vecpt(pt, 3, 1);
-    Vec3 transformed = interpolated.transform(Vecpt);
-    Eigen::Map<Vec3>(output, 3, 1) = transformed;
-}
-
-float LaserOdom::l2sqrd(const PCLPointXYZIT &p1, const PCLPointXYZIT &p2) {
-    float dx = p1.x - p2.x;
-    float dy = p1.y - p2.y;
-    float dz = p1.z - p2.z;
-    return dx * dx + dy * dy + dz * dz;
-}
-
-float LaserOdom::l2sqrd(const PCLPointXYZIT &pt) {
-    return pt.x * pt.x + pt.y * pt.y + pt.z * pt.z;
-}
-
-PCLPointXYZIT LaserOdom::scale(const PCLPointXYZIT &pt, const float scale) {
-    PCLPointXYZIT p;
-    p.x = pt.x * scale;
-    p.y = pt.y * scale;
-    p.z = pt.z * scale;
-    p.intensity = pt.intensity;
-    p.tick = pt.tick;
-    return p;
-}
-
 LaserOdom::LaserOdom(const LaserOdomParams params) : param(params) {
     this->CSVFormat = new Eigen::IOFormat(Eigen::FullPrecision, Eigen::DontAlignCols, ", ", ", ");
 
@@ -165,7 +111,77 @@ LaserOdom::LaserOdom(const LaserOdomParams params) : param(params) {
     }
 
     this->covariance_blocks.push_back(
-      std::make_pair(this->cur_transform.getInternalMatrix().data(), this->cur_transform.getInternalMatrix().data()));
+      std::make_pair(this->cur_trajectory.back().pose.getInternalMatrix().data(), this->cur_trajectory.back().pose.getInternalMatrix().data()));
+    this->covariance_blocks.push_back(
+            std::make_pair(this->cur_trajectory.back().pose.getInternalMatrix().data(), this->cur_trajectory.back().twist.data()));
+    this->covariance_blocks.push_back(
+            std::make_pair(this->cur_trajectory.back().twist.data(), this->cur_trajectory.back().twist.data()));
+}
+
+void LaserOdom::getTransformIndices(const uint32_t &tick, uint32_t &start, uint32_t &end) {
+    static bool first_run = true;
+    static double divisor;
+    if (first_run) {
+        divisor = (double) param.max_ticks / (double) this->param.num_trajectory_states;
+        first_run = false;
+    }
+    // This will round down to provide first transform index
+    start = static_cast<uint32_t>((double) tick / divisor);
+    end = start + 1;
+}
+
+void LaserOdom::flagNearbyPoints(const unlong f_idx, const unlong ring, const unlong p_idx) {
+    for (unlong j = 0; j < this->param.key_radius; j++) {
+        if (p_idx + j + 1 >= this->valid_pts.at(f_idx).at(ring).size()) {
+            break;
+        }
+        this->valid_pts.at(f_idx).at(ring).at(p_idx + j + 1) = false;
+    }
+    for (unlong j = 0; j < this->param.key_radius; j++) {
+        if (p_idx < j + 1) {
+            break;
+        }
+        this->valid_pts.at(f_idx).at(ring).at(p_idx - j - 1) = false;
+    }
+}
+
+void LaserOdom::transformToStart(const double *const pt, const uint16_t tick, double *output, const Vec6 &twist) {
+    double &scale = this->scale_lookup.at(tick);
+    Transformation interpolated;
+    interpolated.setFromExpMap(scale * twist);
+    Eigen::Map<const Vec3> Vecpt(pt, 3, 1);
+    Vec3 transformed = interpolated.transform(Vecpt);
+    Eigen::Map<Vec3>(output, 3, 1) = transformed;
+}
+
+void LaserOdom::transformToEnd(const double *const pt, const uint16_t tick, double *output, const Vec6 &twist) {
+    double scale = 1 - this->scale_lookup.at(tick);
+    Transformation interpolated;
+    interpolated.setFromExpMap(-scale * twist);
+    Eigen::Map<const Vec3> Vecpt(pt, 3, 1);
+    Vec3 transformed = interpolated.transform(Vecpt);
+    Eigen::Map<Vec3>(output, 3, 1) = transformed;
+}
+
+float LaserOdom::l2sqrd(const PCLPointXYZIT &p1, const PCLPointXYZIT &p2) {
+    float dx = p1.x - p2.x;
+    float dy = p1.y - p2.y;
+    float dz = p1.z - p2.z;
+    return dx * dx + dy * dy + dz * dz;
+}
+
+float LaserOdom::l2sqrd(const PCLPointXYZIT &pt) {
+    return pt.x * pt.x + pt.y * pt.y + pt.z * pt.z;
+}
+
+PCLPointXYZIT LaserOdom::scale(const PCLPointXYZIT &pt, const float scale) {
+    PCLPointXYZIT p;
+    p.x = pt.x * scale;
+    p.y = pt.y * scale;
+    p.z = pt.z * scale;
+    p.intensity = pt.intensity;
+    p.tick = pt.tick;
+    return p;
 }
 
 void LaserOdom::updateParams(const LaserOdomParams new_params) {

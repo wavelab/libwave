@@ -247,7 +247,7 @@ Mat6 Transformation::SE3ApproxLeftJacobian(const Vec6 &W) {
     return retval;
 }
 
-Vec6 Transformation::logMap() const {
+Vec6 Transformation::logMap(double tolerance) const {
     Mat3 R = this->matrix.block<3,3>(0, 0);
     double wn;
     // Need to pander to ceres gradient checker a bit here
@@ -258,7 +258,7 @@ Vec6 Transformation::logMap() const {
     }
     double A, B;
     Mat3 skew, Vinv;
-    if (wn > this->TOL) {
+    if (wn > tolerance) {
         A = wn / (2 * std::sin(wn));
         B = (1 - std::cos(wn)) / (wn * wn);
         skew = A * (R - R.transpose());
@@ -374,6 +374,19 @@ Transformation Transformation::composeAndJacobian(const Transformation &T_right,
     J_right.block<3,3>(3, 0) = skewSymmetric3(this->matrix.block<3,1>(0, 3)) * this->matrix.block<3,3>(0, 0);
 
     return (*this) * T_right;
+}
+
+Transformation &Transformation::normalizeMaybe(double tolerance) {
+    // Check if R has strayed too far outside SO(3)
+    // and if so normalize
+    if ((this->matrix.block<3,3>(0,0).determinant() - 1) > tolerance) {
+        Mat3 R = this->matrix.block<3,3>(0,0);
+        Mat3 temp = R * R.transpose();
+        temp = temp.sqrt().inverse();
+        this->matrix.block<3,3>(0,0) = temp * R;
+    }
+
+    return *this;
 }
 
 Transformation Transformation::inverseAndJacobian(Mat6 &J_transformation) const {

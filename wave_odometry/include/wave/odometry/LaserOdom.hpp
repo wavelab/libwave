@@ -200,6 +200,9 @@ class LaserOdom {
 
     Mat6 sqrtinfo;
     TimeType prv_time, cur_time;
+
+    void getTransformIndices(const uint32_t &tick, uint32_t &start, uint32_t &end);
+
     static float l2sqrd(const PCLPointXYZIT &p1, const PCLPointXYZIT &p2);
     static float l2sqrd(const PCLPointXYZIT &pt);
     static PCLPointXYZIT scale(const PCLPointXYZIT &pt, const float scale);

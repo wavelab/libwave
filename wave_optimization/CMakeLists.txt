@@ -12,6 +12,9 @@ WAVE_ADD_MODULE(${PROJECT_NAME} DEPENDS
     src/ceres/ba.cpp
     src/ceres/ceres_examples.cpp
     src/ceres/SE3Parameterization.cpp
+    src/ceres/null_SE3_parameterization.cpp
+    src/ceres/point_to_line_gp.cpp
+    src/ceres/point_to_plane_gp.cpp
     src/ceres/InterpolatedSE3.cpp
     src/ceres/point_to_point_residual.cpp
     src/ceres/bisquare_loss.cpp
@@ -37,7 +40,8 @@ IF(BUILD_TESTING)
 
     WAVE_ADD_TEST(geometry_residual_tests
             tests/ceres/transform_prior_test.cpp
-            tests/ceres/constant_velocity_test.cpp)
+            tests/ceres/constant_velocity_test.cpp
+            tests/ceres/ceres_local_jacobian_test.cpp)
 
     TARGET_LINK_LIBRARIES(geometry_residual_tests
             ${PROJECT_NAME})

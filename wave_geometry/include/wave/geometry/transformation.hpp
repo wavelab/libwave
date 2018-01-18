@@ -2,6 +2,7 @@
 #define WAVE_TRANSFORMATION_HPP
 
 #include <Eigen/Core>
+#include "unsupported/Eigen/MatrixFunctions"
 
 #include "wave/utils/utils.hpp"
 
@@ -28,6 +29,14 @@ class Transformation {
      * constructed using the rotation about @f x, y @f, and @fz@f, respectively.
      */
     explicit Transformation(const Vec3 &eulers, const Vec3 &translation);
+
+    /**
+     * Create a transformation object using reference
+     * @param ref
+     */
+    explicit Transformation(Eigen::Matrix<double, 3, 4> &ref) : matrix(ref) {}
+
+    explicit Transformation(const Eigen::Matrix<double, 3, 4> &ref) : matrix(ref) {}
 
     /** Sets from Euler angles.
      *
@@ -63,6 +72,11 @@ class Transformation {
      */
     Transformation &setIdentity();
 
+    /** Checks if matrix determinant is within given tolerance of 1 and normalizes
+     * rotation component if not
+     */
+    Transformation &normalizeMaybe(double tolerance);
+
     /** Returns the se3 Lie algebra parameters for this rotation.
      * @return the vector @f$ w @f$ given by
      * @f[
@@ -71,7 +85,7 @@ class Transformation {
      * where @f$ w_\times @f$ is the skew-symmetric matrix form of the Lie
      * algebra parameters @f$ w \in \mathbb{R}^3 @f$.
      */
-    Vec6 logMap() const;
+    Vec6 logMap(double tolerance = 1e-4) const;
 
     /** Computes the exp map of the input and computes the Jacobian
      * of the exp map wrt @f$ w @f$.
