@@ -4,6 +4,7 @@ WAVE_ADD_MODULE(${PROJECT_NAME}
     DEPENDS
     wave::optimization
     wave::geometry
+    wave::kinematics
     wave::matching
     PCL::PCL
     SOURCES

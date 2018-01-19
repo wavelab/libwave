@@ -83,6 +83,9 @@ LaserOdom::LaserOdom(const LaserOdomParams params) : param(params) {
         this->feature_corrs.at(i).resize(n_ring);
     }
 
+    if(this->param.num_trajectory_states < 2) {
+        throw std::out_of_range("Number of parameter states must be at least 2");
+    }
     for (uint32_t i = 0; i < this->param.num_trajectory_states; i++) {
         Trajectory unit;
         unit.pose.setIdentity();
@@ -606,14 +609,22 @@ bool LaserOdom::match() {
 
     // set up pointer for evaluating residuals
     const double **parameters;
-    parameters = new const double *[1];
-    parameters[0] = this->cur_transform.getInternalMatrix().data();
-    Vec6 cur_twist = this->cur_transform.logMap();
+    parameters = new const double *[2];
 
-    ceres::LocalParameterization *se3_param = new SE3Parameterization;
+    ceres::LocalParameterization *se3_param = new NullSE3Parameterization;
+
     std::vector<const ceres::LocalParameterization*> local_param_vec;
-    local_param_vec.emplace_back(se3_param);
-    problem.AddParameterBlock(this->cur_transform.getInternalMatrix().data(), 12, se3_param);
+    for (uint32_t i = 0; i < this->param.num_trajectory_states; i++) {
+        local_param_vec.emplace_back(se3_param);
+        problem.AddParameterBlock(this->cur_trajectory.at(i).pose.getInternalMatrix().data(), 12, se3_param);
+        problem.AddParameterBlock(this->cur_trajectory.at(i).twist.data(), 6);
+    }
+    // Add prior residual for the first set of pose + twist.
+    // The prior for the pose is identity, the prior for twist is the twist at the end of the previous
+    // trajectory.
+
+    ceres::CostFunction *cost_function = new TransformPrior(this->sqrtinfo, this->prev_transform);
+    problem.AddResidualBlock(cost_function, NULL, this->cur_transform.getInternalMatrix().data());
 
     // now loop over each type of feature, and generate residuals for each
     for (uint16_t i = 0; i < this->N_FEATURES; i++) {
@@ -623,8 +634,7 @@ bool LaserOdom::match() {
                 double transformed[3];
                 this->transformToStart(this->feature_points.at(i).at(j).at(pt_cntr).pt,
                                        this->feature_points.at(i).at(j).at(pt_cntr).tick,
-                                       transformed,
-                                       cur_twist);
+                                       transformed);
                 Eigen::Map<const Vec3> query(transformed, 3, 1);
                 ret_indices.clear();
                 out_dist_sqr.clear();
@@ -689,12 +699,6 @@ bool LaserOdom::match() {
                 }
             }
         }
-    }
-
-    // If use prior is set, add prior factor
-    if (this->param.imposePrior) {
-        ceres::CostFunction *cost_function = new TransformPrior(this->sqrtinfo, this->prev_transform);
-        problem.AddResidualBlock(cost_function, NULL, this->cur_transform.getInternalMatrix().data());
     }
 
     ceres::Solver::Options options;  // ceres problem destructor apparently destructs quite a bit, so need to

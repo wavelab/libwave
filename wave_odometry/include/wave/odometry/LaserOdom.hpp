@@ -36,7 +36,7 @@
 #include "wave/odometry/kernels.hpp"
 #include "wave/odometry/integrals.hpp"
 #include "wave/odometry/sensor_model.hpp"
-#include "wave/optimization/ceres/SE3Parameterization.hpp"
+#include "wave/optimization/ceres/null_SE3_parameterization.hpp"
 #include "wave/optimization/ceres/point_to_plane_interpolated_transform.hpp"
 #include "wave/optimization/ceres/point_to_line_interpolated_transform.hpp"
 #include "wave/optimization/ceres/transform_prior.hpp"
@@ -59,6 +59,7 @@ struct LaserOdomParams {
     Mat6 Qc = Mat6::Identity();
     // Optimizer parameters
     // How many states per revolution to optimize over
+    // There must be at minimum two.
     uint32_t num_trajectory_states = 5;
 
     int opt_iters = 25;     // How many times to refind correspondences
@@ -97,7 +98,6 @@ struct LaserOdomParams {
     double iso_var = 0.005;       // Variance to use if weighing is set.
 
     // Setting flags
-    bool imposePrior = false;             // Whether to add a prior constraint on transform from the previous scan match
     bool visualize = false;               // Whether to run a visualization for debugging
     bool output_trajectory = false;       // Whether to output solutions for debugging/plotting
     bool output_correspondences = false;  // Whether to output correpondences for debugging/plotting
@@ -168,6 +168,7 @@ class LaserOdom {
     void undistort();
 
     // ceres optimizer stuff
+    const Transformation identity_transform;
     std::vector<std::pair<const double *, const double *>> covariance_blocks;
     /// Given the previous scan's solution generate priors for the next scan
     void generateInitialPrior();

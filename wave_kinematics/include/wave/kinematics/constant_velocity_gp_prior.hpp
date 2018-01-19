@@ -10,9 +10,12 @@ namespace wave_kinematics {
 struct ConstantVelocityPrior {
     using Mat12 = Eigen::Matrix<double, 12, 12>;
 
+    ConstantVelocityPrior() = delete;
+    ConstantVelocityPrior(const double &tk, const double &tkp1, const double* tau, const wave::Vec6 &omega, const wave::Mat6& Qc);
+
     const double &tk;
     const double &tkp1;
-    const double &tau;
+    const double *tau;
     const wave::Vec6 &omega;
     const wave::Mat6 &Qc;
 

@@ -4,6 +4,7 @@ WAVE_ADD_MODULE(${PROJECT_NAME}
     DEPENDS
     wave::utils
     wave::controls
+    wave::geometry
     Eigen3::Eigen
     SOURCES
     src/gimbal.cpp
