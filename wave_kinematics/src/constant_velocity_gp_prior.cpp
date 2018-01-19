@@ -6,7 +6,7 @@ ConstantVelocityPrior::ConstantVelocityPrior(const double &tk, const double &tkp
                                              const wave::Vec6 &omega, const wave::Mat6 &Qc) :
                                             tk(tk), tkp1(tkp1), tau(tau), omega(omega), Qc(Qc) {}
 
-void ConstantVelocityPrior::calculateTransitionMatrix(const double &t1, const double &t2, Mat12 &transition) {
+void ConstantVelocityPrior::calculateTransitionMatrix(Mat12 &transition, const double &t1, const double &t2) {
     transition.block<6,6>(6,6).setIdentity();
     transition.block<6,6>(6,0).setZero();
 
@@ -27,16 +27,18 @@ void ConstantVelocityPrior::calculateLinCovariance(Mat12 &covariance, const doub
 
 void ConstantVelocityPrior::calculateStuff(Mat12 &hat, Mat12 &candle) {
     Mat12 trans_tau_k, trans_kp1_tau, trans_kp1_k;
-    this->calculateTransitionMatrix(this->tk, *(this->tau), trans_tau_k);
-    this->calculateTransitionMatrix(*(this->tau), this->tkp1, trans_kp1_tau);
-    this->calculateTransitionMatrix(this->tk, this->tkp1, trans_kp1_k);
+    this->calculateTransitionMatrix(trans_tau_k, this->tk, *(this->tau));
+    this->calculateTransitionMatrix(trans_kp1_tau, *(this->tau), this->tkp1);
+    this->calculateTransitionMatrix(trans_kp1_k, this->tk, this->tkp1);
 
     Mat12 Q, Qtau;
     this->calculateLinCovariance(Q, this->tk, this->tkp1);
     this->calculateLinCovariance(Qtau, this->tk, *(this->tau));
 
-    hat = trans_tau_k - Qtau * trans_kp1_tau.transpose() * Q.inverse() * trans_kp1_k;
-    candle = Qtau * trans_kp1_tau.transpose() * Q.inverse();
+    auto info = Q.llt().solve(Mat12::Identity());
+
+    hat = trans_tau_k - Qtau * trans_kp1_tau.transpose() * info * trans_kp1_k;
+    candle = Qtau * trans_kp1_tau.transpose() * info;
 }
 
 }

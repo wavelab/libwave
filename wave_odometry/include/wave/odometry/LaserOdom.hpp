@@ -37,15 +37,17 @@
 #include "wave/odometry/integrals.hpp"
 #include "wave/odometry/sensor_model.hpp"
 #include "wave/optimization/ceres/null_SE3_parameterization.hpp"
-#include "wave/optimization/ceres/point_to_plane_interpolated_transform.hpp"
-#include "wave/optimization/ceres/point_to_line_interpolated_transform.hpp"
-#include "wave/optimization/ceres/transform_prior.hpp"
+#include "wave/optimization/ceres/point_to_line_gp.hpp"
+#include "wave/optimization/ceres/point_to_plane_gp.hpp"
+#include "wave/optimization/ceres/trajectory_prior.hpp"
+#include "wave/optimization/ceres/constant_velocity.hpp"
 #include "wave/optimization/ceres/bisquare_loss.hpp"
 #include "wave/utils/math.hpp"
 
 #include <ceres/ceres.h>
 #include <ceres/normal_prior.h>
 #include <ceres/rotation.h>
+#include <wave/kinematics/constant_velocity_gp_prior.hpp>
 
 namespace wave {
 
@@ -189,16 +191,19 @@ class LaserOdom {
                                  std::vector<size_t> *index);
 
     PCLPointXYZIT applyIMU(const PCLPointXYZIT &pt);
-    void transformToStart(const double *const pt, const uint16_t tick, double *output, const Vec6 &twist);
-    void transformToEnd(const double *const pt, const uint16_t tick, double *output, const Vec6 &twist);
+    void transformToStart(const double *const pt, const uint16_t tick, double *output, Transformation &prior, uint32_t &k, uint32_t &kp1);
+    void transformToEnd(const double *const pt, const uint16_t tick, double *output);
 
     // Lidar Sensor Model
     std::shared_ptr<RangeSensor> range_sensor;
+    // Motion Model
+    std::vector<wave_kinematics::ConstantVelocityPrior> cv_vector;
+    std::vector<double> trajectory_stamps;
 
     Mat6 sqrtinfo;
     TimeType prv_time, cur_time;
 
-    void getTransformIndices(const uint32_t &tick, uint32_t &start, uint32_t &end);
+    void getTransformIndices(const uint32_t &tick, uint32_t &start, uint32_t &end, double &frac);
 
     static float l2sqrd(const PCLPointXYZIT &p1, const PCLPointXYZIT &p2);
     static float l2sqrd(const PCLPointXYZIT &pt);

@@ -78,14 +78,18 @@ LaserOdom::LaserOdom(const LaserOdomParams params) : param(params) {
     for (uint32_t i = 0; i < this->N_FEATURES; i++) {
         this->valid_pts.at(i).resize(n_ring);
         this->feature_points.at(i).resize(n_ring);
-        this->feature_idx.at(i) = std::make_shared<kd_tree_t>(3, this->prv_feature_points.at(i), nanoflann::KDTreeSingleIndexAdaptorParams(20));
+        this->feature_idx.at(i) =
+          std::make_shared<kd_tree_t>(3, this->prv_feature_points.at(i), nanoflann::KDTreeSingleIndexAdaptorParams(20));
         this->filtered_scores.at(i).resize(n_ring);
         this->feature_corrs.at(i).resize(n_ring);
     }
 
-    if(this->param.num_trajectory_states < 2) {
+    if (this->param.num_trajectory_states < 2) {
         throw std::out_of_range("Number of parameter states must be at least 2");
     }
+
+    // todo(ben) automatically get the scan period
+    double step_size = 0.1 / (double) (this->param.num_trajectory_states - 1);
     for (uint32_t i = 0; i < this->param.num_trajectory_states; i++) {
         Trajectory unit;
         unit.pose.setIdentity();
@@ -93,6 +97,14 @@ LaserOdom::LaserOdom(const LaserOdomParams params) : param(params) {
         this->trajectory_prior.emplace_back(unit);
         this->cur_trajectory.emplace_back(unit);
         this->prev_trajectory.emplace_back(unit);
+        this->trajectory_stamps.emplace_back((double) (i) *step_size);
+        if (i > 0) {
+            this->cv_vector.emplace_back(new wave_kinematics::ConstantVelocityPrior(this->trajectory_stamps.at(i - 1),
+                                                                                    this->trajectory_stamps.at(i),
+                                                                                    nullptr,
+                                                                                    this->trajectory_prior.at(i).twist,
+                                                                                    this->param.Qc));
+        }
     }
 
     this->sqrtinfo.setIdentity();
@@ -113,22 +125,26 @@ LaserOdom::LaserOdom(const LaserOdomParams params) : param(params) {
         this->file.open(std::to_string(timestamp) + "laser_odom_traj.txt");
     }
 
+    this->covariance_blocks.push_back(std::make_pair(this->cur_trajectory.back().pose.getInternalMatrix().data(),
+                                                     this->cur_trajectory.back().pose.getInternalMatrix().data()));
+    this->covariance_blocks.push_back(std::make_pair(this->cur_trajectory.back().pose.getInternalMatrix().data(),
+                                                     this->cur_trajectory.back().twist.data()));
     this->covariance_blocks.push_back(
-      std::make_pair(this->cur_trajectory.back().pose.getInternalMatrix().data(), this->cur_trajectory.back().pose.getInternalMatrix().data()));
-    this->covariance_blocks.push_back(
-            std::make_pair(this->cur_trajectory.back().pose.getInternalMatrix().data(), this->cur_trajectory.back().twist.data()));
-    this->covariance_blocks.push_back(
-            std::make_pair(this->cur_trajectory.back().twist.data(), this->cur_trajectory.back().twist.data()));
+      std::make_pair(this->cur_trajectory.back().twist.data(), this->cur_trajectory.back().twist.data()));
 }
 
-void LaserOdom::getTransformIndices(const uint32_t &tick, uint32_t &start, uint32_t &end) {
+/// tau is the time after the start transform
+void LaserOdom::getTransformIndices(const uint32_t &tick, uint32_t &start, uint32_t &end, double &tau) {
     static bool first_run = true;
     static double divisor;
     if (first_run) {
-        divisor = (double) param.max_ticks / (double) this->param.num_trajectory_states;
+        divisor = (double) param.max_ticks / (double) (this->param.num_trajectory_states - 1);
         first_run = false;
     }
     // This will round down to provide first transform index
+    // todo(ben) you know what to do
+    const double period = 0.1;
+    tau = (double) (tick - start) * period / divisor;
     start = static_cast<uint32_t>((double) tick / divisor);
     end = start + 1;
 }
@@ -148,16 +164,37 @@ void LaserOdom::flagNearbyPoints(const unlong f_idx, const unlong ring, const un
     }
 }
 
-void LaserOdom::transformToStart(const double *const pt, const uint16_t tick, double *output, const Vec6 &twist) {
-    double &scale = this->scale_lookup.at(tick);
-    Transformation interpolated;
-    interpolated.setFromExpMap(scale * twist);
+void LaserOdom::transformToStart(
+  const double *const pt, const uint16_t tick, double *output, Transformation &prior, uint32_t &k, uint32_t &kp1) {
+    double tau;
+    this->getTransformIndices(tick, k, kp1, tau);
+
+    Transformation transform;
+    // First find the prior
+    transform.setFromExpMap(tau * this->trajectory_prior.at(k).twist);
+    transform = transform * this->trajectory_prior.at(k).pose.inverse();
+    prior = transform;
+
+    Eigen::Matrix<double, 12, 12> hat, candle;
+    this->cv_vector.at(k).tau = &tau;
+    this->cv_vector.at(k).calculateStuff(hat, candle);
+
+    Eigen::Matrix<double, 12, 1> dk, dkp1, increment;
+    dk.block<6, 1>(0, 0) = (this->prev_trajectory.at(k).pose * this->trajectory_prior.at(k).pose).logMap(0.1);
+    dk.block<6, 1>(0, 0) = this->prev_trajectory.at(k).twist - this->trajectory_prior.at(k).twist;
+
+    dk.block<6, 1>(0, 0) = (this->prev_trajectory.at(kp1).pose * this->trajectory_prior.at(kp1).pose).logMap(0.1);
+    dk.block<6, 1>(0, 0) = this->prev_trajectory.at(kp1).twist - this->trajectory_prior.at(kp1).twist;
+
+    increment = hat * dk + candle * dkp1;
+    transform = Transformation::expMap(increment.block<6, 1>(0, 0), 0.1) * transform;
+
     Eigen::Map<const Vec3> Vecpt(pt, 3, 1);
-    Vec3 transformed = interpolated.transform(Vecpt);
+    Vec3 transformed = transform.transform(Vecpt);
     Eigen::Map<Vec3>(output, 3, 1) = transformed;
 }
 
-void LaserOdom::transformToEnd(const double *const pt, const uint16_t tick, double *output, const Vec6 &twist) {
+void LaserOdom::transformToEnd(const double *const pt, const uint16_t tick, double *output) {
     double scale = 1 - this->scale_lookup.at(tick);
     Transformation interpolated;
     interpolated.setFromExpMap(-scale * twist);
@@ -318,32 +355,32 @@ void LaserOdom::undistort() {
 }
 
 void LaserOdom::generateInitialPrior() {
-    //todo(ben) find the scan period automatically
-    double step_size = 0.1 / (double) this->param.num_trajectory_states;
+    // todo(ben) find the scan period automatically
+    double step_size = 0.1 / (double) (this->param.num_trajectory_states - 1);
     Vec6 neg_increment;
-    neg_increment = - this->cur_trajectory.back().twist;
+    neg_increment = -this->cur_trajectory.back().twist;
     neg_increment = neg_increment * step_size;
 
-    for(uint32_t i = 0; i < this->param.num_trajectory_states; i++) {
+    for (uint32_t i = 0; i < this->param.num_trajectory_states; i++) {
         this->trajectory_prior.at(i).twist = this->cur_trajectory.back().twist;
         if (i == 0) {
-            this->trajectory_prior.at(i).pose.setFromExpMap(neg_increment);
+            this->trajectory_prior.at(i).pose.setIdentity();
         } else {
-            this->trajectory_prior.at(i).pose = this->trajectory_prior.at(i-1).pose;
+            this->trajectory_prior.at(i).pose = this->trajectory_prior.at(i - 1).pose;
             this->trajectory_prior.at(i).pose.manifoldPlus(neg_increment);
         }
     }
 }
 
 void LaserOdom::updatePrior() {
-    //todo(ben) find the scan period automatically
-    double step_size = 0.1 / (double) this->param.num_trajectory_states;
+    // todo(ben) find the scan period automatically
+    double step_size = 0.1 / (double) (this->param.num_trajectory_states - 1);
 
     // Do not change first prior, start at the second
-    for(uint32_t i = 1; i < this->param.num_trajectory_states; i++) {
+    for (uint32_t i = 1; i < this->param.num_trajectory_states; i++) {
         this->trajectory_prior.at(i).twist = this->cur_trajectory.at(i).twist;
-        this->trajectory_prior.at(i).pose = this->trajectory_prior.at(i-1).pose;
-        this->trajectory_prior.at(i).pose.manifoldPlus(-step_size * this->trajectory_prior.at(i-1).twist);
+        this->trajectory_prior.at(i).pose = this->trajectory_prior.at(i - 1).pose;
+        this->trajectory_prior.at(i).pose.manifoldPlus(-step_size * this->trajectory_prior.at(i - 1).twist);
     }
 }
 
@@ -358,8 +395,7 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
             this->generateInitialPrior();
             for (int i = 0; i < this->param.opt_iters; i++) {
                 if (i > 0) {
-                    memcpy(
-                      last_transform.getInternalMatrix().data(), ref.getInternalMatrix().data(), 96);
+                    memcpy(last_transform.getInternalMatrix().data(), ref.getInternalMatrix().data(), 96);
                 }
                 if (!this->match()) {
                     return;
@@ -402,7 +438,7 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
                 }
                 this->output_condition.notify_one();
             }
-//            this->undistort();
+            //            this->undistort();
         }
         this->rollover(stamp);
     }
@@ -494,7 +530,6 @@ void LaserOdom::buildTrees() {
     double out_dist_sqr;
     nanoflann::KNNResultSet<double> resultSet(1);
     resultSet.init(&ret_index, &out_dist_sqr);
-    Vec6 cur_twist = this->cur_transform.logMap();
 
     // First step is to transform still active map features into the next frame
     for (uint32_t i = 0; i < this->N_FEATURES; i++) {
@@ -612,21 +647,53 @@ bool LaserOdom::match() {
     parameters = new const double *[2];
 
     ceres::LocalParameterization *se3_param = new NullSE3Parameterization;
+    std::vector<const ceres::LocalParameterization *> local_param_vec;
 
-    std::vector<const ceres::LocalParameterization*> local_param_vec;
+    // Add motion residuals
+    // The prior for the pose is identity, the prior for twist is the twist at the end of the previous
+    // trajectory
+    this->cv_vector.at(0).calculateLinCovariance();
+
+    ceres::CostFunction *prior_cost =
+      new TrajectoryPrior(this->cv_vector.at(0).covar.llt().solve(Eigen::Matrix<double, 12, 12>::Identity()).sqrt(),
+                          this->trajectory_prior.at(0).pose,
+                          this->trajectory_prior.at(0).twist);
+
+    problem.AddResidualBlock(prior_cost,
+                             NULL,
+                             this->cur_trajectory.at(0).pose.getInternalMatrix().data(),
+                             this->cur_trajectory.at(0).twist.data());
+
     for (uint32_t i = 0; i < this->param.num_trajectory_states; i++) {
         local_param_vec.emplace_back(se3_param);
         problem.AddParameterBlock(this->cur_trajectory.at(i).pose.getInternalMatrix().data(), 12, se3_param);
         problem.AddParameterBlock(this->cur_trajectory.at(i).twist.data(), 6);
-    }
-    // Add prior residual for the first set of pose + twist.
-    // The prior for the pose is identity, the prior for twist is the twist at the end of the previous
-    // trajectory.
 
-    ceres::CostFunction *cost_function = new TransformPrior(this->sqrtinfo, this->prev_transform);
-    problem.AddResidualBlock(cost_function, NULL, this->cur_transform.getInternalMatrix().data());
+        if (i + 1 < this->param.num_trajectory_states) {
+            this->cv_vector.at(i).calculateLinCovariance();
+            this->cv_vector.at(i).calculateTransitionMatrix();
+
+            ceres::CostFunction *motion_cost = new ConstantVelocityPrior(
+              this->cv_vector.at(i).covar.llt().solve(Eigen::Matrix<double, 12, 12>::Identity()).sqrt(),
+              this->trajectory_prior.at(i).pose,
+              this->trajectory_prior.at(i + 1).pose,
+              this->trajectory_prior.at(i).twist,
+              this->trajectory_prior.at(i + 1).twist,
+              this->cv_vector.at(i).t_mat);
+            problem.AddResidualBlock(motion_cost,
+                                     nullptr,
+                                     this->cur_trajectory.at(i).pose.getInternalMatrix().data(),
+                                     this->cur_trajectory.at(i + 1).pose.getInternalMatrix().data(),
+                                     this->cur_trajectory.at(i).twist.data(),
+                                     this->cur_trajectory.at(i + 1).twist.data());
+        }
+    }
 
     // now loop over each type of feature, and generate residuals for each
+    Mat6 candle, hat;
+    Transformation prior;
+    uint32_t k, kp1;
+
     for (uint16_t i = 0; i < this->N_FEATURES; i++) {
         for (uint16_t j = 0; j < this->param.n_ring; j++) {
             this->feature_corrs.at(i).at(j).clear();
@@ -634,7 +701,10 @@ bool LaserOdom::match() {
                 double transformed[3];
                 this->transformToStart(this->feature_points.at(i).at(j).at(pt_cntr).pt,
                                        this->feature_points.at(i).at(j).at(pt_cntr).tick,
-                                       transformed);
+                                       transformed,
+                                       prior,
+                                       k,
+                                       kp1);
                 Eigen::Map<const Vec3> query(transformed, 3, 1);
                 ret_indices.clear();
                 out_dist_sqr.clear();
@@ -645,31 +715,52 @@ bool LaserOdom::match() {
                     std::vector<double> residuals;
                     switch (this->feature_definitions.at(i).residual) {
                         case PointToLine:
-                            cost_function = new SE3PointToLine(
-                                    this->feature_points.at(i).at(j).at(pt_cntr).pt,
-                                    this->prv_feature_points.at(i).points.at(ret_indices.at(0)).data(),
-                                    this->prv_feature_points.at(i).points.at(ret_indices.at(1)).data(),
-                                    &(this->scale_lookup.at(this->feature_points.at(i).at(j).at(pt_cntr).tick)),
-                                    covZ.cast<double>(),
-                                    this->param.use_weighting);
-                            residuals.resize(3);
-                            break;
+                            cost_function =
+                              new SE3PointToLineGP(this->feature_points.at(i).at(j).at(pt_cntr).pt,
+                                                   this->prv_feature_points.at(i).points.at(ret_indices.at(0)).data(),
+                                                   this->prv_feature_points.at(i).points.at(ret_indices.at(1)).data(),
+                                                   prior,
+                                                   this->trajectory_prior.at(k).pose,
+                                                   this->trajectory_prior.at(kp1).pose,
+                                                   hat,
+                                                   candle,
+                                                   covZ.cast<double>(),
+                                                   this->param.use_weighting);                                                            )
+                              //                            cost_function = new SE3PointToLine(
+                              //                              this->feature_points.at(i).at(j).at(pt_cntr).pt,
+                              //                              this->prv_feature_points.at(i).points.at(ret_indices.at(0)).data(),
+                              //                              this->prv_feature_points.at(i).points.at(ret_indices.at(1)).data(),
+                              //                              &(this->scale_lookup.at(this->feature_points.at(i).at(j).at(pt_cntr).tick)),
+                              //                              covZ.cast<double>(),
+                              //                              this->param.use_weighting);
+                              //                            residuals.resize(3);
+                              break;
                         case PointToPlane:
-                            cost_function = new SE3PointToPlane(
-                              this->feature_points.at(i).at(j).at(pt_cntr).pt,
-                              this->prv_feature_points.at(i).points.at(ret_indices.at(0)).data(),
-                              this->prv_feature_points.at(i).points.at(ret_indices.at(1)).data(),
-                              this->prv_feature_points.at(i).points.at(ret_indices.at(2)).data(),
-                              &(this->scale_lookup.at(this->feature_points.at(i).at(j).at(pt_cntr).tick)),
-                              covZ.cast<double>(),
-                              this->param.use_weighting);
-                            residuals.resize(1);
+                            new SE3PointToPlaneGP(this->feature_points.at(i).at(j).at(pt_cntr).pt,
+                                                  this->prv_feature_points.at(i).points.at(ret_indices.at(0)).data(),
+                                                  this->prv_feature_points.at(i).points.at(ret_indices.at(1)).data(),
+                                                  this->prv_feature_points.at(i).points.at(ret_indices.at(2)).data(),
+                                                  prior,
+                                                  this->trajectory_prior.at(k).pose,
+                                                  this->trajectory_prior.at(kp1).pose,
+                                                  hat,
+                                                  candle,
+                                                  covZ.cast<double>(),
+                                                  this->param.use_weighting);
+                            //                            cost_function = new SE3PointToPlane(
+                            //                              this->feature_points.at(i).at(j).at(pt_cntr).pt,
+                            //                              this->prv_feature_points.at(i).points.at(ret_indices.at(0)).data(),
+                            //                              this->prv_feature_points.at(i).points.at(ret_indices.at(1)).data(),
+                            //                              this->prv_feature_points.at(i).points.at(ret_indices.at(2)).data(),
+                            //                              &(this->scale_lookup.at(this->feature_points.at(i).at(j).at(pt_cntr).tick)),
+                            //                              covZ.cast<double>(),
+                            //                              this->param.use_weighting);
+                            //                            residuals.resize(1);
                             break;
                         default: continue;
                     }
 
-                    double **jacobians = nullptr;
-                    if (!cost_function->Evaluate(parameters, residuals.data(), jacobians)) {
+                    if (!cost_function->Evaluate(parameters, residuals.data(), nullptr)) {
                         LOG_ERROR("Cost function did not evaluate");
                         delete cost_function;
                         continue;
@@ -678,14 +769,15 @@ bool LaserOdom::match() {
                         delete cost_function;
                         continue;
                     }
-                    if (this->param.check_gradients) {
-                        ceres::NumericDiffOptions ndiff_options;
-                        ceres::GradientChecker g_check(cost_function, &local_param_vec, ndiff_options);
-                        ceres::GradientChecker::ProbeResults g_results;
-                        if (!g_check.Probe(parameters, 1, &g_results)) {
-                            LOG_ERROR("%s", g_results.error_log.c_str());
-                        }
-                    }
+                    //                    if (this->param.check_gradients) {
+                    //                        ceres::NumericDiffOptions ndiff_options;
+                    //                        ceres::GradientChecker g_check(cost_function, &local_param_vec,
+                    //                        ndiff_options);
+                    //                        ceres::GradientChecker::ProbeResults g_results;
+                    //                        if (!g_check.Probe(parameters, 1, &g_results)) {
+                    //                            LOG_ERROR("%s", g_results.error_log.c_str());
+                    //                        }
+                    //                    }
                     std::vector<uint64_t> corr_list;
                     corr_list.emplace_back(pt_cntr);
                     for (uint32_t k = 0; k < ret_indices.size(); k++) {
@@ -726,7 +818,7 @@ bool LaserOdom::match() {
     } else if (!this->param.only_extract_features) {
         ceres::Solver::Summary summary;
         ceres::Solve(options, &problem, &summary);
-//        LOG_INFO("%s", summary.FullReport().c_str());
+        //        LOG_INFO("%s", summary.FullReport().c_str());
         //        ceres::Covariance covariance(covar_options);
         //        covariance.Compute(this->covariance_blocks, &problem);
         //        covariance.GetCovarianceBlock(

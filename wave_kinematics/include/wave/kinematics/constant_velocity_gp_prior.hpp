@@ -19,11 +19,13 @@ struct ConstantVelocityPrior {
     const wave::Vec6 &omega;
     const wave::Mat6 &Qc;
 
+    Mat12 t_mat, covar;
+
     /// Function to generate transition matrix
-    void calculateTransitionMatrix(const double& t1, const double& t2, Mat12 &transition);
+    void calculateTransitionMatrix(Mat12 &transition = this->t_mat, const double &t1 = this->tk, const double &t2 = this->tkp1);
 
     /// Function to calculate linearized covariance
-    void calculateLinCovariance(Mat12 &covariance, const double &t1, const double &t2);
+    void calculateLinCovariance(Mat12 &covariance = this->covar, const double &t1 = this->tk, const double &t2 = this->tkp1);
 
     //todo(ben) figure out what to call these
     /// Function to calculate hat and candle matrices
