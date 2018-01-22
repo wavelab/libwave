@@ -191,8 +191,10 @@ class LaserOdom {
                                  std::vector<size_t> *index);
 
     PCLPointXYZIT applyIMU(const PCLPointXYZIT &pt);
-    void transformToStart(const double *const pt, const uint16_t tick, double *output, Transformation &prior, uint32_t &k, uint32_t &kp1);
+    void transformToStart(const double *const pt, const uint16_t tick, double *output, Transformation &prior, uint32_t &k, uint32_t &kp1, double &tau);
+    void transformToStart(const double *const pt, const uint16_t tick, double *output);
     void transformToEnd(const double *const pt, const uint16_t tick, double *output);
+    void resetTrajectory();
 
     // Lidar Sensor Model
     std::shared_ptr<RangeSensor> range_sensor;

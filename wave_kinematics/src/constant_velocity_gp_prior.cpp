@@ -14,6 +14,10 @@ void ConstantVelocityPrior::calculateTransitionMatrix(Mat12 &transition, const d
     transition.block<6,6>(0,6) = (t2 - t1) * wave::Transformation::SE3LeftJacobian((t2-t1)*this->omega, 1e-2);
 }
 
+void ConstantVelocityPrior::calculateTransitionMatrix() {
+    this->calculateTransitionMatrix(this->t_mat, this->tk, this->tkp1);
+}
+
 void ConstantVelocityPrior::calculateLinCovariance(Mat12 &covariance, const double &t1, const double &t2) {
     double dT = t2 - t1;
     auto skew = wave::Transformation::skewSymmetric6(this->omega);
@@ -23,6 +27,10 @@ void ConstantVelocityPrior::calculateLinCovariance(Mat12 &covariance, const doub
     covariance.block<6,6>(0,6) = 0.5 * dT * dT * this->Qc + 0.166666666666666 * dT * dT * dT * skew * this->Qc;
     covariance.block<6,6>(6,0) = covariance.block<6,6>(0,6).transpose();
     covariance.block<6,6>(6,6) = dT * this->Qc;
+}
+
+void ConstantVelocityPrior::calculateLinCovariance() {
+    this->calculateLinCovariance(this->covar, this->tk, this->tkp1);
 }
 
 void ConstantVelocityPrior::calculateStuff(Mat12 &hat, Mat12 &candle) {

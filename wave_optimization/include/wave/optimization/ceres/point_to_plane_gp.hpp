@@ -8,7 +8,9 @@
 
 namespace wave {
 
-class SE3PointToPlaneGP : public ceres::SizedCostFunction<1, 12, 12> {
+class SE3PointToPlaneGP : public ceres::SizedCostFunction<1, 12, 12, 6, 6> {
+ public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
  private:
     const double *const pt;
     const double *const ptA;
@@ -27,11 +29,14 @@ class SE3PointToPlaneGP : public ceres::SizedCostFunction<1, 12, 12> {
     const Transformation T_prior;
     const Transformation &T_k_inverse_prior;
     const Transformation &T_kp1_inverse_prior;
+    // Prior Velocities
+    const Vec6 &vel_k_prior;
+    const Vec6 &vel_kp1_prior;
 
     // Jacobian of Interpolated transform wrt Tk
-    const Eigen::Matrix<double, 6, 6> JT_Tk;
+    const Eigen::Matrix<double, 6, 12> JT_Tk;
     // Jacobian of Interpolated transform wrt Tk+1
-    const Eigen::Matrix<double, 6, 6> JT_Kp1;
+    const Eigen::Matrix<double, 6, 12> JT_Kp1;
 
     // Jacobian of the transformed point wrt the interpolated transform
     mutable Eigen::Matrix<double, 3, 6> JP_T;
@@ -53,8 +58,10 @@ class SE3PointToPlaneGP : public ceres::SizedCostFunction<1, 12, 12> {
                     const Transformation &prior,
                     const Transformation &T_k_inverse_prior,
                     const Transformation &T_kp1_inverse_prior,
-                    const Mat6 &JT_Tk,
-                    const Mat6 &JT_Tkp1,
+                    const Vec6 &vel_k_prior,
+                    const Vec6 &vel_kp1_prior,
+                    const Eigen::Matrix<double, 6, 12> &JT_Tk,
+                    const Eigen::Matrix<double, 6, 12> &JT_Tkp1,
                     const Mat3 &covZ,
                     bool use_weighting);
 

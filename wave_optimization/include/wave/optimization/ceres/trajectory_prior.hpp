@@ -14,8 +14,8 @@ class TrajectoryPrior : public ceres::SizedCostFunction<12, 12, 6> {
  private:
     using Mat12 = Eigen::Matrix<double, 12, 12>;
     using Vec12 = Eigen::Matrix<double, 12, 1>;
-    Transformation &inv_prior;
-    Vec6 &twist_prior;
+    const Transformation &inv_prior;
+    const Vec6 &twist_prior;
     /// Set to be the square root of the inverse covariance
     const Mat12 weight_matrix;
 
@@ -23,8 +23,9 @@ class TrajectoryPrior : public ceres::SizedCostFunction<12, 12, 6> {
     mutable Eigen::Matrix<double, 12, 12> J_T;
 
  public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     virtual ~TrajectoryPrior() {}
-    TrajectoryPrior(Mat12 weight_matrix, Transformation inv_prior, Vec6 twist_prior)
+    TrajectoryPrior(Mat12 weight_matrix, const Transformation &inv_prior, const Vec6 &twist_prior)
         : inv_prior(inv_prior), twist_prior(twist_prior), weight_matrix(weight_matrix) {
         this->J_T.setZero();
     }

@@ -47,6 +47,12 @@ IF(BUILD_TESTING)
     TARGET_LINK_LIBRARIES(geometry_residual_tests
             ${PROJECT_NAME})
 
+    WAVE_ADD_TEST(manual_jacobian_tests
+            tests/ceres/gp_jacobian_test.cpp)
+
+    TARGET_LINK_LIBRARIES(manual_jacobian_tests
+            ${PROJECT_NAME})
+
     # COPY TEST DATA
     FILE(COPY tests/data DESTINATION ${PROJECT_BINARY_DIR}/tests)
 ENDIF(BUILD_TESTING)
