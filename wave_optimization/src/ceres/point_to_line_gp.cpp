@@ -142,6 +142,7 @@ bool SE3PointToLineGP::Evaluate(double const *const *parameters, double *residua
         if (jacobians[2]) {
             Eigen::Map<Eigen::Matrix<double, 2, 6, Eigen::RowMajor>> jac_map(jacobians[2], 2, 6);
             jac_map = this->weight_matrix * this->Jr_T.block<2,6>(0,0) * this->JT_Tk.block<6,6>(0,6);
+            Eigen::Map<Eigen::Matrix<double, 2, 6, Eigen::RowMajor>>(jacobians[2], 2, 6) = jac_map;
         }
         if (jacobians[3]) {
             Eigen::Map<Eigen::Matrix<double, 2, 6, Eigen::RowMajor>> jac_map(jacobians[3], 2, 6);

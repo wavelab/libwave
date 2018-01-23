@@ -1,3 +1,4 @@
+#include <exception>
 #include "wave/optimization/ceres/constant_velocity.hpp"
 
 namespace wave {

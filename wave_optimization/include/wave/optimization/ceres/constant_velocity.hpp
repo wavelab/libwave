@@ -17,7 +17,7 @@ class ConstantVelocityPrior : public ceres::SizedCostFunction<12, 12, 12, 6, 6> 
     const Vec6& cur_vel_prior;
 
     /// Weight Matrix (square-root of information matrix)
-    const Eigen::Matrix<double, 12, 12>& weight;
+    const Eigen::Matrix<double, 12, 12> weight;
 
     const Eigen::Matrix<double, 12, 12>& transition_matrix;
 

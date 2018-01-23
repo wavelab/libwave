@@ -112,7 +112,7 @@ TEST(OdomTest, StraightLineGarage) {
     // odom setup
     LaserOdomParams params;
     params.TTL = 4;
-    params.n_flat = 0;
+    params.n_flat = 40;
     params.n_edge = 20;
     params.n_int_edge = 0;
     params.edge_tol = 2;
@@ -124,7 +124,7 @@ TEST(OdomTest, StraightLineGarage) {
     params.opt_iters = 5;
     params.min_residuals = 30;
     params.visualize = true;
-    params.num_trajectory_states = 2;
+    params.num_trajectory_states = 5;
 
     params.sensor_params.rings = 32;
     float ang = -0.5352924815866609;
@@ -138,7 +138,7 @@ TEST(OdomTest, StraightLineGarage) {
     params.sensor_params.sigma_spherical = &variance;
     params.use_weighting = true;
 //    params.only_extract_features = true;
-    params.output_trajectory = false;
+    params.output_trajectory = true;
 //    params.output_correspondences = true;
     params.check_gradients = false;
     params.Qc = 1e-4 * Eigen::Matrix<double, 6, 6>::Identity();
