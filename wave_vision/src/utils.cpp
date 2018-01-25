@@ -137,7 +137,7 @@ bool convert<cv::Mat>::decode(const Node &node, cv::Mat &out) {
     }
 
     // Copy it to destination
-    out = cv::Mat{rows, cols, CV_64F};
+    out = cv::Mat(rows, cols, CV_64F);
     for (int i = 0, index = 0; i < rows; i++) {
         for (int j = 0; j < cols; j++) {
             out.at<double>(i, j) = node["data"][index++].as<double>();
