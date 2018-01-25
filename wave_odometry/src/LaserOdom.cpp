@@ -451,7 +451,7 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
                         break;
                     }
                 }
-                this->updatePrior();
+//                this->updatePrior();
             }
 
             /// Recalculate covariance for next match

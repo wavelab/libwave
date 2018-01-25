@@ -33,7 +33,7 @@ void RangeSensor::getEuclideanCovariance(const double *point,
     this->J(2,1) = rng*this->cos_elev[ring];
     this->J(2,2) = 0;
 
-    covar_euclid.noalias() = J * *(this->param.sigma_spherical) * J.transpose();
+    covar_euclid.noalias() = J * this->param.sigma_spherical * J.transpose();
 }
 
 }

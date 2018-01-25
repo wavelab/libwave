@@ -13,4 +13,7 @@ WAVE_ADD_MODULE(${PROJECT_NAME}
 IF(BUILD_TESTING)
     WAVE_ADD_TEST(${PROJECT_NAME}_tests tests/rotation_test.cpp tests/transformation_test.cpp)
     TARGET_LINK_LIBRARIES(${PROJECT_NAME}_tests ${PROJECT_NAME})
+
+    WAVE_ADD_TEST(interpolate_tests tests/interpolated_transform_test.cpp)
+    TARGET_LINK_LIBRARIES(interpolate_tests ${PROJECT_NAME} wave::kinematics)
 ENDIF(BUILD_TESTING)

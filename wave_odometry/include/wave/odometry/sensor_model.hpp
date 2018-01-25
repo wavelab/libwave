@@ -15,8 +15,11 @@ struct RangeSensorParams {
     /// The elevation angles should be sorted in same order as feature rings
     std::vector<float> elevation_angles;
 
-    /// Covariance of noise in spherical coordinates
-    Eigen::Matrix3f *sigma_spherical;
+    /** Covariance of noise in spherical coordinates
+    * Noise should be in linear, angular, angular units
+     * on range, elevation, azimuth in that order
+    */
+    Eigen::Matrix3f sigma_spherical;
 };
 
 /**

@@ -13,6 +13,8 @@
 
 namespace wave {
 
+namespace {
+
 const std::string TEST_SCAN = "data/testscan.pcd";
 const std::string TEST_SEQUENCE_DIR = "data/garage/";
 const int sequence_length = 80;
@@ -33,8 +35,23 @@ class OdomTestFile : public testing::Test {
             }
         }
     }
+
     pcl::PointCloud<PointXYZIR> ref;
 };
+
+void LoadParameters(const std::string &path, LaserOdomParams &params) {
+    wave::ConfigParser parser;
+    parser.addParam("num_trajectory_states", &(params.num_trajectory_states));
+    parser.addParam("opt_iters", &(params.opt_iters));
+    parser.addParam("diff_tol", &(params.diff_tol));
+    parser.addParam("robust_param", &(params.robust_param));
+    parser.addParam("max_correspondence_dist", &(params.max_correspondence_dist));
+    parser.addParam("max_residual_val", &(params.max_residual_val));
+    parser.addParam("min_residuals", &(params.min_residuals));
+//    parser.addParam("")
+}
+
+}
 
 TEST(laserodom, Init) {
     LaserOdom odom(LaserOdomParams());
@@ -120,8 +137,8 @@ TEST(OdomTest, StraightLineGarage) {
     params.int_flat_tol = 0.05;
     params.int_edge_tol = 5;
     params.max_correspondence_dist = 0.05;
-    params.robust_param = 0.04;
-    params.opt_iters = 5;
+    params.robust_param = 1;
+    params.opt_iters = 25;
     params.min_residuals = 30;
     params.visualize = true;
     params.num_trajectory_states = 5;
@@ -135,13 +152,13 @@ TEST(OdomTest, StraightLineGarage) {
     Eigen::Matrix3f variance;
     variance << 0.1, 0, 0, 0, 0.1, 0, 0, 0, 0.1;
 
-    params.sensor_params.sigma_spherical = &variance;
+    params.sensor_params.sigma_spherical = variance;
     params.use_weighting = true;
 //    params.only_extract_features = true;
     params.output_trajectory = true;
 //    params.output_correspondences = true;
     params.check_gradients = false;
-    params.Qc = 1e-4 * Eigen::Matrix<double, 6, 6>::Identity();
+    params.Qc = 10 * Eigen::Matrix<double, 6, 6>::Identity();
 
     LaserOdom odom(params);
     std::vector<PointXYZIR> vec;

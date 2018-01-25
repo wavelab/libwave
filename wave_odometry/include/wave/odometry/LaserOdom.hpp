@@ -57,7 +57,7 @@ using TimeType = std::chrono::steady_clock::time_point;
 struct LaserOdomParams {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-    /// The covariance matrix for noise on acceleration
+    /// The covariance matrix for noise on velocity
     Mat6 Qc = Mat6::Identity();
     // Optimizer parameters
     // How many states per revolution to optimize over

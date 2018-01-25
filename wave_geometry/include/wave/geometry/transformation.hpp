@@ -77,6 +77,35 @@ class Transformation {
      */
     Transformation &normalizeMaybe(double tolerance);
 
+    static Transformation interpolate(const Transformation &T_k,
+                                               const Transformation &T_kp1,
+                                               const Vec6 &twist_k,
+                                               const Vec6 &twist_kp1,
+                                               const Eigen::Matrix<double, 12, 12> &hat,
+                                               const Eigen::Matrix<double, 12, 12> &candle);
+
+    /**
+     * Returns an interpolated tranform at time t where t is between t_k and t_kp1.
+     * Method is the one proposed in "Full STEAM Ahead" Anderson & Barfoot
+     * @param T_k: Transform at time t_k
+     * @param T_kp1: Transform at time t_kp1
+     * @param twist_k: Twist at time t_k
+     * @param twist_kp1: Twist at time t_kp1
+     * @param hat: first interpolation factor
+     * @param candle: second interpolation factor
+     * @return Transformation at time t
+     */
+    static Transformation interpolateAndJacobians(const Transformation &T_k,
+                                                  const Transformation &T_kp1,
+                                                  const Vec6 &twist_k,
+                                                  const Vec6 &twist_kp1,
+                                                  const Eigen::Matrix<double, 12, 12> &hat,
+                                                  const Eigen::Matrix<double, 12, 12> &candle,
+                                                  Mat6 &J_Tk,
+                                                  Mat6 &J_Tkp1,
+                                                  Mat6 &J_twist_k,
+                                                  Mat6 &J_twist_kp1);
+
     /** Returns the se3 Lie algebra parameters for this rotation.
      * @return the vector @f$ w @f$ given by
      * @f[
@@ -86,6 +115,8 @@ class Transformation {
      * algebra parameters @f$ w \in \mathbb{R}^3 @f$.
      */
     Vec6 logMap(double tolerance = 1e-4) const;
+
+    Mat6 adjointRep() const;
 
     /** Computes the exp map of the input and computes the Jacobian
      * of the exp map wrt @f$ w @f$.
@@ -121,11 +152,18 @@ class Transformation {
     static Mat6 SE3LeftJacobian(const Vec6 &W, double TOL);
 
     /**
-     * Computes the left side Jacobian using a 2nd order Taylor Expansion
+     * Computes the left side Jacobian using a 1st order Taylor Expansion
      * @param W The twist location to calculate the jacobian of
      * @return Left SE3 jacobian
      */
     static Mat6 SE3ApproxLeftJacobian(const Vec6 &W);
+
+    /**
+     * Computes the inverse left side Jacobian using a 1st order Taylor Expansion
+     * @param W The twist
+     * @return Inverse Left SE3 Jacobian
+     */
+    static Mat6 SE3ApproxInvLeftJacobian(const Vec6 &W);
 
     /**
      * Implements ^ operator mapping a vector to a skew symmetric matrix
@@ -143,9 +181,9 @@ class Transformation {
      * @param twist of transform
      * @return A(alpha, twist)
      */
-    static void Jinterpolated(const Vec6 &twist, const double &alpha, Mat6& retval);
+    static void Jinterpolated(const Vec6 &twist, const double &alpha, Mat6 &retval);
 
-    static void Adjoint(const Vec6 &twist, Mat6& retval);
+    static void Adjoint(const Vec6 &twist, Mat6 &retval);
 
     /**
      * Returns the "lift" Jacobian for use with Ceres solver
@@ -282,7 +320,9 @@ class Transformation {
     Mat4 getMatrix() const;
 
     /** @return a reference to the internal matrix object **/
-    Eigen::Matrix<double, 3, 4>& getInternalMatrix() {return this->matrix;};
+    Eigen::Matrix<double, 3, 4> &getInternalMatrix() {
+        return this->matrix;
+    };
 
     /** Implements transformation composition. */
     Transformation operator*(const Transformation &T) const;

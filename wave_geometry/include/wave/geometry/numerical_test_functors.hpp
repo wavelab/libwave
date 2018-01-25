@@ -276,11 +276,128 @@ class TManifoldMinusAndJacobianJRightFunctor {
     }
 };
 
+class TInterpolatedJTLeftFunctor {
+ public:
+    using Mat12 = Eigen::Matrix<double, 12, 12>;
+    Transformation T_k;
+    Transformation T_kp1;
+    Vec6 vel_k;
+    Vec6 vel_kp1;
+
+    Mat12 hat, candle;
+
+    Transformation T_t;
+    TInterpolatedJTLeftFunctor(const Transformation &T_k,
+                               const Transformation &T_kp1,
+                               const Vec6 &vel_k,
+                               const Vec6 &vel_kp1,
+                               const Mat12 &hat,
+                               const Mat12 &candle)
+        : T_k(T_k), T_kp1(T_kp1), vel_k(vel_k), vel_kp1(vel_kp1), hat(hat), candle(candle) {
+        T_t = Transformation::interpolate(this->T_k, this->T_kp1, this->vel_k, this->vel_kp1, this->hat, this->candle);
+    }
+
+    Transformation operator()(const Vec6 &perturbation) {
+        Transformation T_k_perturb = this->T_k;
+        T_k_perturb.manifoldPlus(perturbation);
+        Transformation T_int;
+        T_int = Transformation::interpolate(T_k_perturb, this->T_kp1, this->vel_k, this->vel_kp1, this->hat, this->candle);
+        return T_int;
+    }
+};
+
+class TInterpolatedJTRightFunctor {
+ public:
+    using Mat12 = Eigen::Matrix<double, 12, 12>;
+    Transformation T_k;
+    Transformation T_kp1;
+    Vec6 vel_k;
+    Vec6 vel_kp1;
+
+    Mat12 hat, candle;
+
+    Transformation T_t;
+    TInterpolatedJTRightFunctor(const Transformation &T_k,
+                               const Transformation &T_kp1,
+                               const Vec6 &vel_k,
+                               const Vec6 &vel_kp1,
+                               const Mat12 &hat,
+                               const Mat12 &candle)
+            : T_k(T_k), T_kp1(T_kp1), vel_k(vel_k), vel_kp1(vel_kp1), hat(hat), candle(candle) {
+        T_t = Transformation::interpolate(this->T_k, this->T_kp1, this->vel_k, this->vel_kp1, this->hat, this->candle);
+    }
+
+    Transformation operator()(const Vec6 &perturbation) {
+        Transformation T_kp1_perturb = this->T_kp1;
+        T_kp1_perturb.manifoldPlus(perturbation);
+        Transformation T_int;
+        T_int = Transformation::interpolate(this->T_k, T_kp1_perturb, this->vel_k, this->vel_kp1, this->hat, this->candle);
+        return T_int;
+    }
+};
+
+class TInterpolatedJVLeftFunctor {
+ public:
+    using Mat12 = Eigen::Matrix<double, 12, 12>;
+    Transformation T_k;
+    Transformation T_kp1;
+    Vec6 vel_k;
+    Vec6 vel_kp1;
+
+    Mat12 hat, candle;
+
+    Transformation T_t;
+    TInterpolatedJVLeftFunctor(const Transformation &T_k,
+                                const Transformation &T_kp1,
+                                const Vec6 &vel_k,
+                                const Vec6 &vel_kp1,
+                                const Mat12 &hat,
+                                const Mat12 &candle)
+            : T_k(T_k), T_kp1(T_kp1), vel_k(vel_k), vel_kp1(vel_kp1), hat(hat), candle(candle) {
+        T_t = Transformation::interpolate(this->T_k, this->T_kp1, this->vel_k, this->vel_kp1, this->hat, this->candle);
+    }
+
+    Transformation operator()(const Vec6 &perturbation) {
+        Vec6 vel_k_perturb = this->vel_k + perturbation;
+        Transformation T_int;
+        T_int = Transformation::interpolate(this->T_k, this->T_kp1, vel_k_perturb, this->vel_kp1, this->hat, this->candle);
+        return T_int;
+    }
+};
+
+class TInterpolatedJVRightFunctor {
+ public:
+    using Mat12 = Eigen::Matrix<double, 12, 12>;
+    Transformation T_k;
+    Transformation T_kp1;
+    Vec6 vel_k;
+    Vec6 vel_kp1;
+
+    Mat12 hat, candle;
+
+    Transformation T_t;
+    TInterpolatedJVRightFunctor(const Transformation &T_k,
+                               const Transformation &T_kp1,
+                               const Vec6 &vel_k,
+                               const Vec6 &vel_kp1,
+                               const Mat12 &hat,
+                               const Mat12 &candle)
+            : T_k(T_k), T_kp1(T_kp1), vel_k(vel_k), vel_kp1(vel_kp1), hat(hat), candle(candle) {
+        T_t = Transformation::interpolate(this->T_k, this->T_kp1, this->vel_k, this->vel_kp1, this->hat, this->candle);
+    }
+
+    Transformation operator()(const Vec6 &perturbation) {
+        Vec6 vel_kp1_perturb = this->vel_kp1 + perturbation;
+        Transformation T_int;
+        T_int = Transformation::interpolate(this->T_k, this->T_kp1, this->vel_k, vel_kp1_perturb, this->hat, this->candle);
+        return T_int;
+    }
+};
+
 // Compute the perturbation points as recommended in Numerical Recipes.
 // Modify the step size so that the perturbations are exactly
 // representable numbers by adding then subtracting the same value.
-inline double get_perturbation_point(double evaluation_point,
-                                     double step_size) {
+inline double get_perturbation_point(double evaluation_point, double step_size) {
     // Use volatile to avoid compiler optimizations.
     volatile double perturbation_point = evaluation_point + step_size;
     double exact_step_size = (perturbation_point - evaluation_point);
@@ -293,9 +410,7 @@ inline double get_perturbation_point(double evaluation_point,
 // Manifold quantities.
 
 template <typename MatrixType, typename FunctorType, typename TangentType>
-void numerical_jacobian(FunctorType F,
-                        const TangentType &evaluation_point,
-                        Eigen::MatrixBase<MatrixType> &jac) {
+void numerical_jacobian(FunctorType F, const TangentType &evaluation_point, Eigen::MatrixBase<MatrixType> &jac) {
     for (int i = 0; i < evaluation_point.size(); i++) {
         // Select the step size as recommended in Numerical Recipes.
         double step_size = sqrt(std::numeric_limits<double>::epsilon()) * std::fabs(evaluation_point[i]);

@@ -1,0 +1,53 @@
+# The covariance matrix for noise on velocity
+Qc:
+  rows: 6
+  cols: 6
+  data: [1, 0, 0, 0, 0, 0,
+         0, 1, 0, 0, 0, 0,
+         0, 0, 1, 0, 0, 0,
+         0, 0, 0, 1, 0, 0,
+         0, 0, 0, 0, 1, 0,
+         0, 0, 0, 0, 0, 1]
+
+# How many states per revolution to optimize over, there must be at minimum two.
+num_trajectory_states: 4
+opt_iters: 25  # how many iterations of the matcher to run
+diff_tol: 1e-6 # norm of solution difference for stopping criteria
+robust_param: 0.2 # Parameter used in tukey loss function
+
+max_correspondence_dist: 0.4  #  correspondences greater than this are discarded
+max_residual_val: 0.1        #  Residuals with an initial error greater than this are not used.
+min_residuals: 30          #  Problem will be reset if the number of residuals is less than this
+local_map_range: 10000  #  Maximum range of features to keep. square metres
+
+#  Sensor parameters
+scan_period: 0.1  #  Seconds
+max_ticks: 36000    #  encoder ticks per revolution
+unlong n_ring: 32       #  number of laser-detector pairs
+
+#  Feature extraction parameters
+occlusion_tol: 0.1    #  Radians
+occlusion_tol_2: 0.1  #  m^2. Distance between points to initiate occlusion check
+parallel_tol: 0.002   #  ditto
+edge_tol: 0.1         #  Edge features must have score higher than this
+flat_tol: 0.1         #  Plane features must have score lower than this
+int_edge_tol: 2       #  Intensity edge features must have score greater than this
+int_flat_tol: 0.1     #  Intensity edges must have range score lower than this
+n_edge: 40              #  How many edge features to pick out per ring
+n_flat: 100             #  How many plane features to pick out per ring
+n_int_edge: 0           #  How many intensity edges to pick out per ring
+unlong knn: 5               #  1/2 nearest neighbours for computing curvature
+unlong key_radius: 5        #  minimum number of points between keypoints on the same laser ring
+map_density: 0.01     #  Minimum l2squared spacing of features kept for odometry
+#  one degree. Beam spacing is 1.33deg, so this should be sufficient
+azimuth_tol: 0.0174532925199433    #  Minimum azimuth difference across correspondences
+TTL: 1             #  Maximum life of feature in local map with no correspondences
+iso_var: 0.005       #  Variance to use if weighing is set.
+
+#  Setting flags
+bool visualize: false               #  Whether to run a visualization for debugging
+bool output_trajectory: false       #  Whether to output solutions for debugging/plotting
+bool output_correspondences: false  #  Whether to output correpondences for debugging/plotting
+bool only_extract_features: false   #  If set, no transforms are calculated
+bool use_weighting: false           #  If set, pre-whiten residuals
+bool check_gradients: false         #  If set, use Ceres gradient checker on each jacobians

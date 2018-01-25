@@ -2,6 +2,7 @@
 #define WAVE_CONSTANT_VELOCITY_GP_PRIOR_HPP
 
 #include <Eigen/Core>
+#include <unsupported/Eigen/MatrixFunctions>
 #include "wave/geometry/transformation.hpp"
 #include "wave/utils/math.hpp"
 
@@ -11,27 +12,30 @@ struct ConstantVelocityPrior {
     using Mat12 = Eigen::Matrix<double, 12, 12>;
 
     ConstantVelocityPrior() = delete;
-    ConstantVelocityPrior(const double &tk, const double &tkp1, const double* tau, const wave::Vec6 &omega, const wave::Mat6& Qc);
+    ConstantVelocityPrior(const double &tk, const double &tkp1, const double* tau, const wave::Mat6& Qc);
 
     const double &tk;
     const double &tkp1;
     const double *tau;
-    const wave::Vec6 &omega;
     const wave::Mat6 &Qc;
 
-    Mat12 t_mat, covar;
+    wave::Mat6 inv_Qc;
+    Mat12 t_mat, inv_covar;
 
     /// Function to generate transition matrix
     void calculateTransitionMatrix(Mat12 &transition, const double &t1, const double &t2);
     void calculateTransitionMatrix();
 
-    /// Function to calculate linearized covariance
+    /// Functions for linearized covariance
+    void calculateLinInvCovariance(Mat12 &covariance, const double &t1, const double &t2);
     void calculateLinCovariance(Mat12 &covariance, const double &t1, const double &t2);
-    void calculateLinCovariance();
+    void calculateLinInvCovariance();
 
     //todo(ben) figure out what to call these
-    /// Function to calculate hat and candle matrices
+    /// Functions to calculate hat and candle matrices
     void calculateStuff(Mat12 &hat, Mat12 &candle);
+
+    void calculateCandle(Mat12 &candle);
 
 };
 }

@@ -9,39 +9,31 @@ namespace wave {
 
 class ConstantVelocityPrior : public ceres::SizedCostFunction<12, 12, 12, 6, 6> {
  private:
-    /// Transform prior
-    const Transformation& inv_prev_transform_prior;
-    const Transformation& inv_cur_transform_prior;
-    /// Velocity prior
-    const Vec6& prev_vel_prior;
-    const Vec6& cur_vel_prior;
-
     /// Weight Matrix (square-root of information matrix)
     const Eigen::Matrix<double, 12, 12> weight;
+    const double delta_t;
 
     const Eigen::Matrix<double, 12, 12>& transition_matrix;
 
     ///Pre-allocated space for jacobian calculations
     mutable Eigen::Matrix<double, 12, 12> J12;
-    mutable Eigen::Matrix<double, 12, 6> J6;
+
+    Eigen::Matrix<double, 12, 6> Jr_wi, Jr_wip1;
 
  public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     virtual ~ConstantVelocityPrior() {}
-    ConstantVelocityPrior(const Eigen::Matrix<double, 12, 12> &weight,
-                          const Transformation& inv_prev_prior,
-                          const Transformation& inv_cur_prior,
-                          const Vec6& prev_vel_prior,
-                          const Vec6& cur_vel_prior,
-                          const Eigen::Matrix<double, 12, 12> &transition_matrix)
-        : inv_prev_transform_prior(inv_prev_prior),
-          inv_cur_transform_prior(inv_cur_prior),
-          prev_vel_prior(prev_vel_prior),
-          cur_vel_prior(cur_vel_prior),
-          weight(weight),
-          transition_matrix(transition_matrix) {
+    ConstantVelocityPrior(const Eigen::Matrix<double, 12, 12> &weight, const double &delta_t)
+        : weight(weight), delta_t(delta_t) {
         J12.block<12, 6>(0,6).setZero();
+        Eigen::Matrix<double, 12, 6> temp;
+        temp.block<6,6>(0,0) = -this->delta_t * Mat6::Identity();
+        temp.block<6,6>(6,0) = - Mat6::Identity();
+        this->Jr_wi = this->weight * temp;
+        this->Jr_wip1.setZero();
+        this->Jr_wip1.block<6,6>(6,0).setIdentity();
+
     }
 
     virtual bool Evaluate(double const *const *parameters, double *residuals, double **jacobians) const;

@@ -13,6 +13,146 @@
 
 namespace wave {
 
+TEST(interpolated_jacobian) {
+    Transformation T_k, T_kp1;
+    Vec6 vel_k, vel_kp1;
+
+    params[0] = T_k.getInternalMatrix().data();
+    params[1] = T_kp1.getInternalMatrix().data();
+    params[2] = vel_k.data();
+    params[3] = vel_kp1.data();
+
+    T_k.setIdentity();
+    vel_k << 0.1, -0.1, 0.2, 5, 1, -1;
+    vel_kp1 = vel_k;
+    T_kp1 = T_k;
+    T_kp1.manifoldPlus(vel_k * delta_T);
+
+    // Get some priors;
+    Transformation Tk_inv_prior, Tkp1_inv_prior;
+    Vec6 vel_k_prior, vel_kp1_prior;
+    Tk_inv_prior = T_k.inverse();
+    Tkp1_inv_prior = T_kp1.inverse();
+    vel_k_prior = vel_k;
+    vel_kp1_prior = vel_kp1;
+
+    double zero = 0;
+    double tau = 0.34;
+    Mat6 Qc = Mat6::Identity();
+
+    wave_kinematics::ConstantVelocityPrior motion_prior(zero, delta_T, &tau, vel_k_prior, Qc);
+
+    Eigen::Matrix<double, 12, 12> hat, candle;
+
+    motion_prior.calculateStuff(hat, candle);
+
+    Transformation prior;
+    prior = T_k;
+    prior.manifoldPlus(tau * vel_k);
+
+    ceres::CostFunction *cost_function = new SE3PointToLineGP(pt,
+                                                              ptA,
+                                                              ptB,
+                                                              prior,
+                                                              Tk_inv_prior,
+                                                              Tkp1_inv_prior,
+                                                              vel_k_prior,
+                                                              vel_kp1_prior,
+                                                              hat.block<6, 12>(0, 0),
+                                                              candle.block<6, 12>(0, 0),
+                                                              Mat3::Identity(),
+                                                              true);
+    double **jacobian;
+    jacobian = new double *[4];
+    jacobian[0] = new double[24];
+    jacobian[1] = new double[24];
+    jacobian[2] = new double[12];
+    jacobian[3] = new double[12];
+
+    Vec2 op_result;
+
+    cost_function->Evaluate(params, op_result.data(), jacobian);
+
+    double const step_size = 1e-9;
+    Transformation Tk_perturbed, Tkp1_perturbed;
+    Vec6 vel_k_perturbed, vel_kp1_perturbed;
+
+    Tk_perturbed = T_k;
+    Tkp1_perturbed = T_kp1;
+    vel_k_perturbed = vel_k;
+    vel_kp1_perturbed = vel_kp1;
+
+    params[0] = Tk_perturbed.getInternalMatrix().data();
+    params[1] = Tkp1_perturbed.getInternalMatrix().data();
+    params[2] = vel_k_perturbed.data();
+    params[3] = vel_kp1_perturbed.data();
+
+    std::vector<Eigen::Matrix<double, 2, 6>> an_jacs, num_jacs;
+    an_jacs.resize(4);
+    num_jacs.resize(4);
+
+    Vec6 delta;
+    delta.setZero();
+
+    Vec2 result;
+    Vec2 diff;
+
+    double inv_step = 1.0 / step_size;
+
+    for (uint32_t i = 0; i < 6; i++) {
+        delta(i) = step_size;
+        // First parameter
+        Tk_perturbed.manifoldPlus(delta);
+        cost_function->Evaluate(params, result.data(), nullptr);
+        diff = result - op_result;
+        num_jacs.at(0).block<2,1>(0,i) = inv_step * diff;
+        Tk_perturbed = T_k;
+        // Second parameter
+        Tkp1_perturbed.manifoldPlus(delta);
+        cost_function->Evaluate(params, result.data(), nullptr);
+        diff = result - op_result;
+        num_jacs.at(1).block<2,1>(0,i) = inv_step * diff;
+        Tkp1_perturbed = T_kp1;
+        // Third parameter
+        vel_k_perturbed = vel_k_perturbed + delta;
+        cost_function->Evaluate(params, result.data(), nullptr);
+        diff = result - op_result;
+        num_jacs.at(2).block<2,1>(0,i) = inv_step * diff;
+        vel_k_perturbed = vel_k;
+        // Fourth parameter
+        vel_kp1_perturbed = vel_kp1_perturbed + delta;
+        cost_function->Evaluate(params, result.data(), nullptr);
+        diff = result - op_result;
+        num_jacs.at(3).block<2,1>(0,i) = diff * inv_step;
+        vel_kp1_perturbed = vel_kp1;
+
+        delta.setZero();
+    }
+
+    // now get the analytical jacobians
+    Eigen::Map<Eigen::Matrix<double, 2, 12, Eigen::RowMajor>> an_jac_1(jacobian[0], 2, 12);
+    an_jacs.at(0) = an_jac_1.block<2,6>(0,0);
+
+    Eigen::Map<Eigen::Matrix<double, 2, 12, Eigen::RowMajor>> an_jac_2(jacobian[1], 2, 12);
+    an_jacs.at(1) = an_jac_2.block<2,6>(0,0);
+
+    Eigen::Map<Eigen::Matrix<double, 2, 6, Eigen::RowMajor>> an_jac_3(jacobian[2], 2, 6);
+    an_jacs.at(2) = an_jac_3;
+
+    Eigen::Map<Eigen::Matrix<double, 2, 6, Eigen::RowMajor>> an_jac_4(jacobian[3], 2, 6);
+    an_jacs.at(3) = an_jac_4;
+
+    for (uint32_t i = 0; i < 4; i++) {
+        auto diff = (num_jacs.at(i) - an_jacs.at(i)).norm();
+        if (diff > 1e-5) {
+            std::cout << "Failed on index " << i << std::endl
+                      << "Numerical: " << std::endl << num_jacs.at(i) << std::endl
+                      << "Analytical:" << std::endl << an_jacs.at(i) << std::endl << std::endl;
+        }
+        EXPECT_NEAR(diff, 0.0, 1e-5);
+    }
+}
+
 TEST(point_to_line, jacobian) {
 
     double ptA[3] = {1, 1, 0};
