@@ -56,29 +56,22 @@ TEST_F(TransformationTestFixture, testInterpolation) {
     Vec6 increment;
 
     auto Tint = Transformation::interpolateAndJacobians(
-      this->transform_expected, T_kp1, vel_k, vel_kp1, hat, candle, J_T_k_an, J_T_kp1_an, J_vel_k_an, J_vel_kp1_an);
+      this->transform_expected, T_kp1, vel_k, vel_kp1, hat.block<6,12>(0,0), candle.block<6,12>(0,0), J_T_k_an, J_T_kp1_an, J_vel_k_an, J_vel_kp1_an);
 
-    TInterpolatedJTLeftFunctor J_Tleft_functor(this->transform_expected, T_kp1, vel_k, vel_kp1, hat, candle);
+    TInterpolatedJTLeftFunctor J_Tleft_functor(this->transform_expected, T_kp1, vel_k, vel_kp1, hat.block<6,12>(0,0), candle.block<6,12>(0,0));
     numerical_jacobian(J_Tleft_functor, perturbation_vec, J_T_k_num);
+    perturbation_vec = Vec6::Zero();
 
-    TInterpolatedJTRightFunctor J_Tright_functor(this->transform_expected, T_kp1, vel_k, vel_kp1, hat, candle);
+    TInterpolatedJTRightFunctor J_Tright_functor(this->transform_expected, T_kp1, vel_k, vel_kp1, hat.block<6,12>(0,0), candle.block<6,12>(0,0));
     numerical_jacobian(J_Tright_functor, perturbation_vec, J_T_kp1_num);
+    perturbation_vec = Vec6::Zero();
 
-    TInterpolatedJVLeftFunctor J_Vleft_functor(this->transform_expected, T_kp1, vel_k, vel_kp1, hat, candle);
+    TInterpolatedJVLeftFunctor J_Vleft_functor(this->transform_expected, T_kp1, vel_k, vel_kp1, hat.block<6,12>(0,0), candle.block<6,12>(0,0));
     numerical_jacobian(J_Vleft_functor, perturbation_vec, J_vel_k_num);
+    perturbation_vec = Vec6::Zero();
 
-    TInterpolatedJVRightFunctor J_Vright_functor(this->transform_expected, T_kp1, vel_k, vel_kp1, hat, candle);
+    TInterpolatedJVRightFunctor J_Vright_functor(this->transform_expected, T_kp1, vel_k, vel_kp1, hat.block<6,12>(0,0), candle.block<6,12>(0,0));
     numerical_jacobian(J_Vright_functor, perturbation_vec, J_vel_kp1_num);
-
-    std::cout << "Tk analytical: " << std::endl;
-    std::cout << J_T_k_an << std::endl;
-    std::cout << "Tk numerical: " << std::endl;
-    std::cout << J_T_k_num << std::endl;
-
-    std::cout << "Tkp1 analytical: " << std::endl;
-    std::cout << J_T_kp1_an << std::endl;
-    std::cout << "Tkp1 numerical: " << std::endl;
-    std::cout << J_T_kp1_num << std::endl;
 
     wave::MatX errmat = J_T_k_an - J_T_k_num;
     EXPECT_LE(errmat.norm(), this->comparison_threshold);

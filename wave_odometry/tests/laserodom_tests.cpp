@@ -138,10 +138,10 @@ TEST(OdomTest, StraightLineGarage) {
     params.int_edge_tol = 5;
     params.max_correspondence_dist = 0.05;
     params.robust_param = 1;
-    params.opt_iters = 25;
+    params.opt_iters = 10;
     params.min_residuals = 30;
     params.visualize = true;
-    params.num_trajectory_states = 2;
+    params.num_trajectory_states = 3;
 
     params.sensor_params.rings = 32;
     float ang = -0.5352924815866609;
@@ -153,7 +153,7 @@ TEST(OdomTest, StraightLineGarage) {
     variance << 0.1, 0, 0, 0, 0.1, 0, 0, 0, 0.1;
 
     params.sensor_params.sigma_spherical = variance;
-    params.use_weighting = true;
+    params.use_weighting = false;
 //    params.only_extract_features = true;
     params.output_trajectory = true;
 //    params.output_correspondences = true;

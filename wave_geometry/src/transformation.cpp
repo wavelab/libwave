@@ -62,16 +62,45 @@ Transformation Transformation::interpolate(const Transformation &T_k,
                                            const Vec6 &twist_kp1,
                                            const Eigen::Matrix<double, 6, 12> &hat,
                                            const Eigen::Matrix<double, 6, 12> &candle) {
+//    Transformation retval;
+//    auto eps = T_kp1.manifoldMinus(T_k);
+//    auto Jinv = Transformation::SE3ApproxInvLeftJacobian(eps);
+//
+//    retval = T_k;
+//    Vec6 increment = hat.block<6, 6>(0, 6) * twist_k + candle.block<6, 6>(0, 0) * eps +
+//                     candle.block<6, 6>(0, 6) * Jinv * twist_kp1;
+//    retval.manifoldPlus(increment);
+//    return retval;
     Transformation retval;
-    auto eps = T_kp1.manifoldMinus(T_k);
-    auto Jinv = Transformation::SE3ApproxInvLeftJacobian(eps);
+    Mat6 J_left, J_right;
+    auto eps = T_kp1.manifoldMinusAndJacobian(T_k, J_left, J_right);
+//    auto Jlogmap = Transformation::SE3ApproxInvLeftJacobian(eps);
 
     retval = T_k;
     Vec6 increment = hat.block<6, 6>(0, 6) * twist_k + candle.block<6, 6>(0, 0) * eps +
-                     candle.block<6, 6>(0, 6) * Jinv * twist_kp1;
-    retval.manifoldPlus(increment);
+                     candle.block<6, 6>(0, 6) * J_left * twist_kp1;
+    Transformation T_inc;
+    T_inc.setFromExpMap(increment);
+    Mat6 J_comp_left, J_comp_right;
+
+    retval = T_inc.composeAndJacobian(T_k, J_comp_left, J_comp_right);
     return retval;
 }
+
+Eigen::Matrix<double, 12, 1> Transformation::localDiff(const Transformation &T_k,
+                                               const Transformation &T_kp1,
+                                               const Vec6 &twist_k,
+                                               const Vec6 &twist_kp1,
+                                               Eigen::Matrix<double, 12, 6> &J_Tk,
+                                               Eigen::Matrix<double, 12, 6> &J_Tkp1,
+                                               Eigen::Matrix<double, 12, 6> &J_twist_k,
+                                               Eigen::Matrix<double, 12, 6> &J_twist_kp1) {
+    Eigen::Matrix<double, 12, 1> retval;
+    Mat6 J_left, J_right;
+    retval.block<6,1>(0,0) = T_kp1.manifoldMinusAndJacobian(T_k, J_left, J_right);
+
+//    retval.block<6,1>(6,0) = Transformation::SE3LeftJacobian(retval.block<6,1>(0,0), )
+};
 
 Transformation Transformation::interpolateAndJacobians(const Transformation &T_k,
                                                        const Transformation &T_kp1,
@@ -89,8 +118,9 @@ Transformation Transformation::interpolateAndJacobians(const Transformation &T_k
 //    auto Jlogmap = Transformation::SE3ApproxInvLeftJacobian(eps);
 
     retval = T_k;
+    Vec6 gamma = J_left * twist_kp1;
     Vec6 increment = hat.block<6, 6>(0, 6) * twist_k + candle.block<6, 6>(0, 0) * eps +
-                candle.block<6, 6>(0, 6) * J_left * twist_kp1;
+                candle.block<6, 6>(0, 6) * gamma;
     Transformation T_inc;
     T_inc.setFromExpMap(increment);
     Mat6 J_comp_left, J_comp_right;
@@ -100,7 +130,7 @@ Transformation Transformation::interpolateAndJacobians(const Transformation &T_k
 //    auto Jexp = Transformation::SE3ApproxLeftJacobian(increment);
     auto Jexp = Transformation::SE3LeftJacobian(increment, 1e-4);
 
-    auto bsfactor = skewSymmetric6(-0.5*twist_kp1);
+    auto bsfactor = skewSymmetric6(0.5*twist_kp1);
 
     J_Tk = Jexp * (candle.block<6,6>(0,0) * J_right + candle.block<6,6>(0,6) * bsfactor * J_right) + J_comp_right;
     J_Tkp1 = Jexp * (candle.block<6,6>(0,0) * J_left + candle.block<6,6>(0,6) * bsfactor * J_left);
@@ -124,7 +154,7 @@ void Transformation::Jinterpolated(const Vec6 &twist, const double &alpha, Mat6 
     double A, B, C;
     A = (alpha * (alpha - 1.0)) * 0.5;
     B = (alpha * (alpha - 1.0) * (2.0 * alpha - 1.0)) * 0.0833333333333333333;
-    C = (alpha * alpha * (alpha - 1) * (alpha - 1)) * 0.0416666666666666667;
+    C = (alpha * alpha * (alpha - 1) * (alpha - 1.0)) * 0.0416666666666666667;
 
     Mat6 adjoint;
     Transformation::Adjoint(twist, adjoint);
@@ -215,13 +245,13 @@ Mat4 Transformation::expMap(const Vec6 &W, double TOL) {
     double A, B, C;
     if (wn > TOL) {
         A = std::sin(wn) / wn;
-        B = (1 - std::cos(wn)) / (wn * wn);
-        C = (1 - A) / (wn * wn);
+        B = (1.0 - std::cos(wn)) / (wn * wn);
+        C = (1.0 - A) / (wn * wn);
     } else {
         // Use taylor expansion
-        A = 1 - (wn * wn) / 6 + (wn * wn * wn * wn) / 120;
-        B = 0.5 - (wn * wn) / 24 + (wn * wn * wn * wn) / 720;
-        C = 1 / 6 - (wn * wn / 120) + (wn * wn * wn * wn) / 5040;
+        A = 1.0 - 0.16666666666666667 * (wn * wn) + 8.33333333333333333e-3 * (wn * wn * wn * wn);
+        B = 0.5 - 4.166666666666666667e-2 * (wn * wn) + 1.38888888888888888889e-3 * (wn * wn * wn * wn);
+        C = 0.16666666666666667 - 8.33333333333333333e-3 * (wn * wn) + 1.984126984126984e-04 * (wn * wn * wn * wn);
     }
     Mat3 V;
     V = Mat3::Identity() + B * wx + C * wx * wx;
@@ -245,10 +275,10 @@ Mat6 Transformation::expMapAdjoint(const Vec6 &W, double TOL) {
 
     double A, B, C, D;
     if (wn > TOL) {
-        A = (3 * s - wn * c) / (2 * wn);
-        B = (4 - wn * s - 4 * c) / (2 * wn * wn);
-        C = (s - wn * c) / (2 * wn * wn * wn);
-        D = (2 - wn * s - 2 * c) / (2 * wn * wn * wn * wn);
+        A = (3.0 * s - wn * c) / (2.0 * wn);
+        B = (4.0 - wn * s - 4.0 * c) / (2.0 * wn * wn);
+        C = (s - wn * c) / (2.0 * wn * wn * wn);
+        D = (2.0 - wn * s - 2.0 * c) / (2.0 * wn * wn * wn * wn);
 
         return Mat6::Identity() + A * skew + B * skew * skew + C * skew * skew * skew + D * skew * skew * skew * skew;
     } else {
@@ -272,10 +302,10 @@ Mat6 Transformation::SE3LeftJacobian(const Vec6 &W, double TOL) {
 
     double A, B, C, D;
     if (wn > TOL) {
-        A = ((4 - wn * std::sin(wn) - 4 * cos(wn)) / (2 * wn * wn));
-        B = (((4 * wn - 5 * std::sin(wn) + wn * std::cos(wn))) / (2 * wn * wn * wn));
-        C = ((2 - wn * std::sin(wn) - 2 * std::cos(wn)) / (2 * wn * wn * wn * wn));
-        D = ((2 * wn - 3 * std::sin(wn) + wn * std::cos(wn)) / (2 * wn * wn * wn * wn * wn));
+        A = ((4.0 - wn * std::sin(wn) - 4.0 * cos(wn)) / (2.0 * wn * wn));
+        B = (((4.0 * wn - 5.0 * std::sin(wn) + wn * std::cos(wn))) / (2.0 * wn * wn * wn));
+        C = ((2.0 - wn * std::sin(wn) - 2.0 * std::cos(wn)) / (2.0 * wn * wn * wn * wn));
+        D = ((2.0 * wn - 3.0 * std::sin(wn) + wn * std::cos(wn)) / (2.0 * wn * wn * wn * wn * wn));
 
         retval.noalias() = Mat6::Identity() + A * adj + B * adj * adj + C * adj * adj * adj + D * adj * adj * adj * adj;
     } else {
@@ -330,7 +360,7 @@ Vec6 Transformation::logMap(double tolerance) const {
     Mat3 R = this->matrix.block<3, 3>(0, 0);
     double wn;
     // Need to pander to ceres gradient checker a bit here
-    if ((R.trace() - 1.0) / 2.0 > 1) {
+    if ((R.trace() - 1.0) / 2.0 > 1.0) {
         wn = 0;
     } else {
         wn = std::acos((R.trace() - 1.0) / 2.0);
@@ -344,8 +374,8 @@ Vec6 Transformation::logMap(double tolerance) const {
         Vinv = Mat3::Identity() - 0.5 * skew + (1 / (wn * wn)) * (1 - (1 / (4 * A * B))) * skew * skew;
     } else {
         // Third order taylor expansion
-        A = 0.5 + wn * wn / 12;  // + wn*wn*wn*wn*(7.0/720.0)
-        B = 0.5 - wn * wn / 24;  // + wn*wn*wn*wn*(7.0/720.0)
+        A = 0.5 + wn * wn / 12.0 + wn*wn*wn*wn*(7.0/720.0);
+        B = 0.5 - wn * wn / 24.0 + wn*wn*wn*wn*(7.0/720.0);
         skew = A * (R - R.transpose());
         Vinv = Mat3::Identity() - 0.5 * skew;
     }

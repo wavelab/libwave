@@ -12,7 +12,7 @@ class Transformation {
  private:
     Eigen::Matrix<double, 3, 4> matrix;
 
-    double TOL = 1e-04;
+    double TOL = 1e-5;
 
  public:
     /** Default constructor, initializes to Identity. */
@@ -95,6 +95,16 @@ class Transformation {
      * @param candle: second interpolation factor
      * @return Transformation at time t
      */
+
+    static Eigen::Matrix<double, 12, 1> localDiff(const Transformation &T_k,
+                                                   const Transformation &T_kp1,
+                                                   const Vec6 &twist_k,
+                                                   const Vec6 &twist_kp1,
+                                                   Eigen::Matrix<double, 12, 6> &J_Tk,
+                                                   Eigen::Matrix<double, 12, 6> &J_Tkp1,
+                                                   Eigen::Matrix<double, 12, 6> &J_twist_k,
+                                                   Eigen::Matrix<double, 12, 6> &J_twist_kp1);
+
     static Transformation interpolateAndJacobians(const Transformation &T_k,
                                                   const Transformation &T_kp1,
                                                   const Vec6 &twist_k,

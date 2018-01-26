@@ -284,15 +284,15 @@ class TInterpolatedJTLeftFunctor {
     Vec6 vel_k;
     Vec6 vel_kp1;
 
-    Mat12 hat, candle;
+    Eigen::Matrix<double, 6, 12> hat, candle;
 
     Transformation T_t;
     TInterpolatedJTLeftFunctor(const Transformation &T_k,
                                const Transformation &T_kp1,
                                const Vec6 &vel_k,
                                const Vec6 &vel_kp1,
-                               const Mat12 &hat,
-                               const Mat12 &candle)
+                               const Eigen::Matrix<double, 6, 12> &hat,
+                               const Eigen::Matrix<double, 6, 12> &candle)
         : T_k(T_k), T_kp1(T_kp1), vel_k(vel_k), vel_kp1(vel_kp1), hat(hat), candle(candle) {
         T_t = Transformation::interpolate(this->T_k, this->T_kp1, this->vel_k, this->vel_kp1, this->hat, this->candle);
     }
@@ -314,15 +314,15 @@ class TInterpolatedJTRightFunctor {
     Vec6 vel_k;
     Vec6 vel_kp1;
 
-    Mat12 hat, candle;
+    Eigen::Matrix<double, 6, 12> hat, candle;
 
     Transformation T_t;
     TInterpolatedJTRightFunctor(const Transformation &T_k,
                                const Transformation &T_kp1,
                                const Vec6 &vel_k,
                                const Vec6 &vel_kp1,
-                               const Mat12 &hat,
-                               const Mat12 &candle)
+                               const Eigen::Matrix<double, 6, 12> &hat,
+                               const Eigen::Matrix<double, 6, 12> &candle)
             : T_k(T_k), T_kp1(T_kp1), vel_k(vel_k), vel_kp1(vel_kp1), hat(hat), candle(candle) {
         T_t = Transformation::interpolate(this->T_k, this->T_kp1, this->vel_k, this->vel_kp1, this->hat, this->candle);
     }
@@ -344,15 +344,15 @@ class TInterpolatedJVLeftFunctor {
     Vec6 vel_k;
     Vec6 vel_kp1;
 
-    Mat12 hat, candle;
+    Eigen::Matrix<double, 6, 12> hat, candle;
 
     Transformation T_t;
     TInterpolatedJVLeftFunctor(const Transformation &T_k,
                                 const Transformation &T_kp1,
                                 const Vec6 &vel_k,
                                 const Vec6 &vel_kp1,
-                                const Mat12 &hat,
-                                const Mat12 &candle)
+                                const Eigen::Matrix<double, 6, 12> &hat,
+                                const Eigen::Matrix<double, 6, 12> &candle)
             : T_k(T_k), T_kp1(T_kp1), vel_k(vel_k), vel_kp1(vel_kp1), hat(hat), candle(candle) {
         T_t = Transformation::interpolate(this->T_k, this->T_kp1, this->vel_k, this->vel_kp1, this->hat, this->candle);
     }
@@ -373,15 +373,15 @@ class TInterpolatedJVRightFunctor {
     Vec6 vel_k;
     Vec6 vel_kp1;
 
-    Mat12 hat, candle;
+    Eigen::Matrix<double, 6, 12> hat, candle;
 
     Transformation T_t;
     TInterpolatedJVRightFunctor(const Transformation &T_k,
                                const Transformation &T_kp1,
                                const Vec6 &vel_k,
                                const Vec6 &vel_kp1,
-                               const Mat12 &hat,
-                               const Mat12 &candle)
+                               const Eigen::Matrix<double, 6, 12> &hat,
+                               const Eigen::Matrix<double, 6, 12> &candle)
             : T_k(T_k), T_kp1(T_kp1), vel_k(vel_k), vel_kp1(vel_kp1), hat(hat), candle(candle) {
         T_t = Transformation::interpolate(this->T_k, this->T_kp1, this->vel_k, this->vel_kp1, this->hat, this->candle);
     }

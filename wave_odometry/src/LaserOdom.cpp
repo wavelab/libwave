@@ -405,6 +405,7 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
             //            covar.calculateCovariance(covariance);
             //            Eigen::SelfAdjointEigenSolver<Mat6> es(covariance.inverse());
             //            this->sqrtinfo = es.operatorSqrt();
+            std::cout << this->cur_trajectory.back().pose.getInternalMatrix().format(*(this->CSVFormat)) << std::endl;
 
             if (this->param.output_trajectory) {
                 this->file << this->cur_trajectory.back().pose.getInternalMatrix().format(*(this->CSVFormat))
@@ -513,6 +514,10 @@ void LaserOdom::rollover(TimeType stamp) {
         if (feature_count >= (size_t)(this->param.n_edge + this->param.n_flat)) {
             this->initialized = true;
         }
+    }
+    for (uint32_t i = 0; i < this->param.num_trajectory_states; i++) {
+        this->prev_trajectory.at(i).pose = this->cur_trajectory.at(i).pose;
+        this->prev_trajectory.at(i).twist = this->prev_trajectory.at(i).twist;
     }
 }
 
@@ -793,6 +798,7 @@ bool LaserOdom::match() {
     options.parameter_tolerance = 1e-6;
     options.num_threads = std::thread::hardware_concurrency();
     options.num_linear_solver_threads = std::thread::hardware_concurrency();
+    options.max_num_consecutive_invalid_steps = 2;
 
     ceres::Covariance::Options covar_options;
     covar_options.num_threads = std::thread::hardware_concurrency();
@@ -808,7 +814,7 @@ bool LaserOdom::match() {
     } else if (!this->param.only_extract_features) {
         ceres::Solver::Summary summary;
         ceres::Solve(options, &problem, &summary);
-        LOG_INFO("%s", summary.FullReport().c_str());
+        //LOG_INFO("%s", summary.FullReport().c_str());
         //        ceres::Covariance covariance(covar_options);
         //        covariance.Compute(this->covariance_blocks, &problem);
         //        covariance.GetCovarianceBlock(
