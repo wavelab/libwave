@@ -60,8 +60,8 @@ Transformation Transformation::interpolate(const Transformation &T_k,
                                            const Transformation &T_kp1,
                                            const Vec6 &twist_k,
                                            const Vec6 &twist_kp1,
-                                           const Eigen::Matrix<double, 12, 12> &hat,
-                                           const Eigen::Matrix<double, 12, 12> &candle) {
+                                           const Eigen::Matrix<double, 6, 12> &hat,
+                                           const Eigen::Matrix<double, 6, 12> &candle) {
     Transformation retval;
     auto eps = T_kp1.manifoldMinus(T_k);
     auto Jinv = Transformation::SE3ApproxInvLeftJacobian(eps);
@@ -77,27 +77,35 @@ Transformation Transformation::interpolateAndJacobians(const Transformation &T_k
                                                        const Transformation &T_kp1,
                                                        const Vec6 &twist_k,
                                                        const Vec6 &twist_kp1,
-                                                       const Eigen::Matrix<double, 12, 12> &hat,
-                                                       const Eigen::Matrix<double, 12, 12> &candle,
+                                                       const Eigen::Matrix<double, 6, 12> &hat,
+                                                       const Eigen::Matrix<double, 6, 12> &candle,
                                                        Mat6 &J_Tk,
                                                        Mat6 &J_Tkp1,
                                                        Mat6 &J_twist_k,
                                                        Mat6 &J_twist_kp1) {
     Transformation retval;
-    auto eps = T_kp1.manifoldMinus(T_k);
-    auto Jinv = Transformation::SE3ApproxInvLeftJacobian(eps);
+    Mat6 J_left, J_right;
+    auto eps = T_kp1.manifoldMinusAndJacobian(T_k, J_left, J_right);
+//    auto Jlogmap = Transformation::SE3ApproxInvLeftJacobian(eps);
 
     retval = T_k;
     Vec6 increment = hat.block<6, 6>(0, 6) * twist_k + candle.block<6, 6>(0, 0) * eps +
-                candle.block<6, 6>(0, 6) * Jinv * twist_kp1;
-    retval.manifoldPlus(increment);
+                candle.block<6, 6>(0, 6) * J_left * twist_kp1;
+    Transformation T_inc;
+    T_inc.setFromExpMap(increment);
+    Mat6 J_comp_left, J_comp_right;
 
-    auto Jexp = Transformation::SE3ApproxLeftJacobian(increment);
+    retval = T_inc.composeAndJacobian(T_k, J_comp_left, J_comp_right);
 
-    J_Tk = Mat6::Identity() - candle.block<6, 6>(0, 0);
-    J_Tkp1 = Jexp * (candle.block<6, 6>(0, 0) + candle.block<6,6>(0,6) * (-0.5 * skewSymmetric6(twist_kp1))) * Jinv;
+//    auto Jexp = Transformation::SE3ApproxLeftJacobian(increment);
+    auto Jexp = Transformation::SE3LeftJacobian(increment, 1e-4);
+
+    auto bsfactor = skewSymmetric6(-0.5*twist_kp1);
+
+    J_Tk = Jexp * (candle.block<6,6>(0,0) * J_right + candle.block<6,6>(0,6) * bsfactor * J_right) + J_comp_right;
+    J_Tkp1 = Jexp * (candle.block<6,6>(0,0) * J_left + candle.block<6,6>(0,6) * bsfactor * J_left);
     J_twist_k = Jexp * hat.block<6, 6>(0, 6);
-    J_twist_kp1 = Jexp * candle.block<6, 6>(0, 6) * Jinv;
+    J_twist_kp1 = Jexp * candle.block<6, 6>(0, 6) * J_left;
 
     return retval;
 }
@@ -423,17 +431,26 @@ Vec6 Transformation::manifoldMinus(const Transformation &T) const {
 
 Vec6 Transformation::manifoldMinusAndJacobian(const Transformation &T, Mat6 &J_left, Mat6 &J_right) const {
     // logmap(T1 * inv(T2))
-    Mat6 J_inv, J_l_compose, J_r_compose, J_logm;
-    Transformation T2inv = T.inverseAndJacobian(J_inv);
-    Transformation diff = this->composeAndJacobian(T2inv, J_l_compose, J_r_compose);
+    Mat6 J_logm;
+    Transformation T2inv = T.inverse();
+    Transformation diff = (*this) * T2inv;
     auto manifold_difference = diff.logMap();
 
     J_logm = SE3LeftJacobian(manifold_difference, this->TOL).inverse();
 
-    J_left = J_logm * J_l_compose;
-    J_right = J_logm * J_r_compose * J_inv;
+    Mat6 J_comp_inv;
+    auto R1R2t = this->matrix.block<3,3>(0,0) * T.matrix.block<3,3>(0,0).transpose();
+    auto t1 = this->matrix.block<3,1>(0,3);
+    auto t2 = T.matrix.block<3,1>(0,3);
+    J_comp_inv.block<3,3>(0,0) = -R1R2t;
+    J_comp_inv.block<3,3>(3,3) = -R1R2t;
+    J_comp_inv.block<3,3>(3,0) = -skewSymmetric3(t1) * R1R2t - this->matrix.block<3,3>(0,0) * skewSymmetric3(T2inv.matrix.block<3,1>(0,3)) * T.matrix.block<3,3>(0,0).transpose();
+    J_comp_inv.block<3,3>(0,3).setZero();
 
-    return this->manifoldMinus(T);
+    J_left = J_logm;
+    J_right = J_logm * J_comp_inv;
+
+    return manifold_difference;
 }
 
 Transformation Transformation::composeAndJacobian(const Transformation &T_right, Mat6 &J_left, Mat6 &J_right) const {

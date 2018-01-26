@@ -23,23 +23,25 @@ void ConstantVelocityPrior::calculateTransitionMatrix() {
 void ConstantVelocityPrior::calculateLinInvCovariance(Mat12 &covariance, const double &t1, const double &t2) {
     double dT = t2 - t1;
     dT = 1.0 / dT;
+    double dT2 = dT * dT;
     covariance.block<6,6>(6,6) = 4.0 * dT * this->inv_Qc;
-    dT *= dT;
-    covariance.block<6,6>(0,6) = -6.0 * dT * this->inv_Qc;
+
+    covariance.block<6,6>(0,6) = -6.0 * dT2 * this->inv_Qc;
     covariance.block<6,6>(6,0) = covariance.block<6,6>(0,6);
-    dT *= dT;
-    covariance.block<6,6>(0,0) = 12.0 * dT * this->inv_Qc;
+
+    covariance.block<6,6>(0,0) = 12.0 * dT2 * dT * this->inv_Qc;
 }
 
 void ConstantVelocityPrior::calculateLinCovariance(Mat12 &covariance, const double &t1, const double &t2) {
     double dT = t2 - t1;
+    double dT2 = dT * dT;
 
     covariance.block<6,6>(6,6) = dT * this->Qc;
-    dT *= dT;
-    covariance.block<6,6>(0,6) = 0.5 * dT * this->Qc;
+
+    covariance.block<6,6>(0,6) = 0.5 * dT2 * this->Qc;
     covariance.block<6,6>(6,0) = covariance.block<6,6>(0,6);
-    dT *= dT;
-    covariance.block<6,6>(0,0) = 0.333333333333333333 * dT * this->Qc;
+
+    covariance.block<6,6>(0,0) = 0.333333333333333333 * dT2 * dT * this->Qc;
 }
 
 void ConstantVelocityPrior::calculateLinInvCovariance() {

@@ -24,19 +24,14 @@ class SE3PointToPlaneGP : public ceres::SizedCostFunction<1, 12, 12, 6, 6> {
     // Jacobian of the residual wrt the transformed point
     Eigen::Matrix<double, 1, 3> Jr_P;
 
-    // Prior Transforms
     mutable Transformation T_current;
-    const Transformation T_prior;
-    const Transformation &T_k_inverse_prior;
-    const Transformation &T_kp1_inverse_prior;
-    // Prior Velocities
-    const Vec6 &vel_k_prior;
-    const Vec6 &vel_kp1_prior;
+    // Interpolation factors
+    const Eigen::Matrix<double, 6, 12> hat;
 
-    // Jacobian of Interpolated transform wrt Tk
-    const Eigen::Matrix<double, 6, 12> JT_Tk;
-    // Jacobian of Interpolated transform wrt Tk+1
-    const Eigen::Matrix<double, 6, 12> JT_Kp1;
+    const Eigen::Matrix<double, 6, 12> candle;
+
+    // Interpolation Jacobians
+    mutable Eigen::Matrix<double, 6, 6> JT_Ti, JT_Tip1, JT_Wi, JT_Wip1;
 
     // Jacobian of the transformed point wrt the interpolated transform
     mutable Eigen::Matrix<double, 3, 6> JP_T;
@@ -55,11 +50,6 @@ class SE3PointToPlaneGP : public ceres::SizedCostFunction<1, 12, 12, 6, 6> {
                     const double *const pA,
                     const double *const pB,
                     const double *const pC,
-                    const Transformation &prior,
-                    const Transformation &T_k_inverse_prior,
-                    const Transformation &T_kp1_inverse_prior,
-                    const Vec6 &vel_k_prior,
-                    const Vec6 &vel_kp1_prior,
                     const Eigen::Matrix<double, 6, 12> &JT_Tk,
                     const Eigen::Matrix<double, 6, 12> &JT_Tkp1,
                     const Mat3 &covZ,

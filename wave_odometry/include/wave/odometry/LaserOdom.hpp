@@ -125,8 +125,6 @@ class LaserOdom {
 
     std::vector<Trajectory> cur_trajectory, prev_trajectory;
 
-    std::vector<Trajectory> trajectory_prior;
-
     void rollover(TimeType stamp);
     bool match();
     void registerOutputFunction(std::function<void(const TimeType *const,
@@ -170,12 +168,7 @@ class LaserOdom {
     void undistort();
 
     // ceres optimizer stuff
-    const Transformation identity_transform;
     std::vector<std::pair<const double *, const double *>> covariance_blocks;
-    /// Given the previous scan's solution generate priors for the next scan
-    void generateInitialPrior();
-    /// Given one optimization, regenerate priors with updated velocities.
-    void updatePrior();
 
     LaserOdomParams param;
     bool initialized = false;
@@ -191,7 +184,7 @@ class LaserOdom {
                                  std::vector<size_t> *index);
 
     PCLPointXYZIT applyIMU(const PCLPointXYZIT &pt);
-    void transformToStart(const double *const pt, const uint16_t tick, double *output, Transformation &prior, uint32_t &k, uint32_t &kp1, double &tau);
+    void transformToStart(const double *const pt, const uint16_t tick, double *output, uint32_t &k, uint32_t &kp1, double &tau);
     void transformToStart(const double *const pt, const uint16_t tick, double *output);
     void transformToEnd(const double *const pt, const uint16_t tick, double *output);
     void resetTrajectory();

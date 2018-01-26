@@ -81,8 +81,8 @@ class Transformation {
                                                const Transformation &T_kp1,
                                                const Vec6 &twist_k,
                                                const Vec6 &twist_kp1,
-                                               const Eigen::Matrix<double, 12, 12> &hat,
-                                               const Eigen::Matrix<double, 12, 12> &candle);
+                                               const Eigen::Matrix<double, 6, 12> &hat,
+                                               const Eigen::Matrix<double, 6, 12> &candle);
 
     /**
      * Returns an interpolated tranform at time t where t is between t_k and t_kp1.
@@ -99,8 +99,8 @@ class Transformation {
                                                   const Transformation &T_kp1,
                                                   const Vec6 &twist_k,
                                                   const Vec6 &twist_kp1,
-                                                  const Eigen::Matrix<double, 12, 12> &hat,
-                                                  const Eigen::Matrix<double, 12, 12> &candle,
+                                                  const Eigen::Matrix<double, 6, 12> &hat,
+                                                  const Eigen::Matrix<double, 6, 12> &candle,
                                                   Mat6 &J_Tk,
                                                   Mat6 &J_Tkp1,
                                                   Mat6 &J_twist_k,

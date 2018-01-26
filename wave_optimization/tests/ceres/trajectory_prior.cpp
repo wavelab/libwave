@@ -87,18 +87,13 @@ TEST(trajectory_prior, binary_factor) {
     Mat6 Qc = Mat6::Identity();
     wave_kinematics::ConstantVelocityPrior::Mat12 transition, Q, weight;
 
-    wave_kinematics::ConstantVelocityPrior cv_model(tk, tkp1, &tau, prior_vel, Qc);
+    wave_kinematics::ConstantVelocityPrior cv_model(tk, tkp1, &tau, Qc);
     cv_model.calculateTransitionMatrix(transition, tk, tkp1);
     cv_model.calculateLinCovariance(Q, tk, tkp1);
 
     weight = Q.inverse().sqrt();
 
-    ceres::CostFunction *bin_cost_function = new ConstantVelocityPrior(weight,
-                                                                       prior_initial,
-                                                                       prior_next,
-                                                                       prior_vel,
-                                                                       prior_vel,
-                                                                       transition);
+    ceres::CostFunction *bin_cost_function = new ConstantVelocityPrior(weight, tkp1);
 
     init_twist.setZero();
     initial.setIdentity();

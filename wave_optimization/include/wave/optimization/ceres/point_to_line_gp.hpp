@@ -31,19 +31,14 @@ class SE3PointToLineGP : public ceres::SizedCostFunction<2, 12, 12, 6, 6> {
     Eigen::Matrix<double, 3, 3> Jres_P;
 
     mutable Transformation T_current;
-    // Prior Transforms
-    const Transformation T_prior;
-    const Transformation &T_k_inverse_prior;
-    const Transformation &T_kp1_inverse_prior;
-    // Prior velocities. Required for interpolation
-    const Vec6 &vel_k_prior;
-    const Vec6 &vel_kp1_prior;
 
-    // Jacobian of Interpolated transform wrt Tk and velk
-    const Eigen::Matrix<double, 6, 12> JT_Tk;
-    // Jacobian of Interpolated transform wrt Tk+1 and velk+1
-    const Eigen::Matrix<double, 6, 12> JT_Kp1;
+    // Interpolation factors
+    const Eigen::Matrix<double, 6, 12> hat;
 
+    const Eigen::Matrix<double, 6, 12> candle;
+
+    // Interpolation Jacobians
+    mutable Eigen::Matrix<double, 6, 6> JT_Ti, JT_Tip1, JT_Wi, JT_Wip1;
     // Jacobian of the Transformed point wrt the transformation
     mutable Eigen::Matrix<double, 3, 6> JP_T;
     // Complete Jacobian will null row
@@ -69,13 +64,8 @@ class SE3PointToLineGP : public ceres::SizedCostFunction<2, 12, 12, 6, 6> {
     SE3PointToLineGP(const double *const p,
                    const double *const pA,
                    const double *const pB,
-                   const Transformation &prior,
-                   const Transformation &T_k_inverse_prior,
-                   const Transformation &T_kp1_inverse_prior,
-                   const Vec6 &vel_k_prior,
-                   const Vec6 &vel_kp1_prior,
-                   const Eigen::Matrix<double, 6, 12> &JT_Tk,
-                   const Eigen::Matrix<double, 6, 12> &JT_Tkp1,
+                   const Eigen::Matrix<double, 6, 12> &hat,
+                   const Eigen::Matrix<double, 6, 12> &candle,
                    const Mat3 &CovZ,
                    bool calculate_weight);
 

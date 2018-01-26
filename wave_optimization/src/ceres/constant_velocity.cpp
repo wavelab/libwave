@@ -13,31 +13,38 @@ bool ConstantVelocityPrior::Evaluate(double const *const *parameters, double *re
 
     Eigen::Map<Eigen::Matrix<double, 12, 1>> res_map(residuals);
 
-    Vec6 man_minus = cur_transform.manifoldMinus(prev_transform);
+    Mat6 J_left, J_right;
+    Vec6 man_minus = cur_transform.manifoldMinusAndJacobian(prev_transform, J_left, J_right);
     res_map.block<6,1>(0,0) = man_minus - this->delta_t * prev_vel;
-    auto J_logmap = Transformation::SE3LeftJacobian(man_minus, 0.1).inverse();
-    res_map.block<6,1>(6,0) = J_logmap * cur_vel - prev_vel;
+
+    res_map.block<6,1>(6,0) = J_left * cur_vel - prev_vel;
 
     res_map = this->weight * res_map;
     Eigen::Map<Eigen::Matrix<double, 12, 1>>(residuals, 12, 1) = res_map;
 
     if (jacobians) {
-        /// Going to approximate the derivative of the logmap as identity under the assumption that the
-        /// difference between the operating point and the prior is small
+        Mat6 skew = Transformation::skewSymmetric6(cur_vel);
         if (jacobians[0]) {
-            this->J12.block<12,6>(0,0) = -this->weight.block<12,6>(0,0);
+            this->Jr_Ti.block<6,6>(0,0) = J_right;
+            this->Jr_Ti.block<6,6>(6,0) = 0.5 * skew * J_right;
+            this->Jr_Ti.block<12, 6>(0,0) = this->weight * this->Jr_Ti.block<12, 6>(0,0);
 
-            Eigen::Map<Eigen::Matrix<double, 12, 12, Eigen::RowMajor>>(jacobians[0], 12, 12) = this->J12;
+            Eigen::Map<Eigen::Matrix<double, 12, 12, Eigen::RowMajor>>(jacobians[0], 12, 12) = this->Jr_Ti;
         }
         if (jacobians[1]) {
-            this->J12.block<12,6>(0,0) = this->weight.block<12,6>(0,0);
+            this->Jr_Tip1.block<6,6>(0,0) = J_left;
+            this->Jr_Tip1.block<6,6>(6,0) = 0.5 * skew * J_left;
+            this->Jr_Tip1.block<12, 6>(0,0) = this->weight * this->Jr_Tip1.block<12, 6>(0,0);
 
-            Eigen::Map<Eigen::Matrix<double, 12, 12, Eigen::RowMajor>>(jacobians[1], 12, 12) = this->J12;
+            Eigen::Map<Eigen::Matrix<double, 12, 12, Eigen::RowMajor>>(jacobians[1], 12, 12) = this->Jr_Tip1;
         }
         if (jacobians[2]) {
             Eigen::Map<Eigen::Matrix<double, 12, 6, Eigen::RowMajor>>(jacobians[2], 12, 6) = this->Jr_wi;
         }
         if (jacobians[3]) {
+            this->Jr_wip1.block<6,6>(6,0) = this->Jr_Tip1.block<6,6>(0,0);
+            this->Jr_wip1.block<12, 6>(0,0) = this->weight * this->Jr_wip1.block<12, 6>(0,0);
+
             Eigen::Map<Eigen::Matrix<double, 12, 6, Eigen::RowMajor>>(jacobians[3], 12, 6) = this->Jr_wip1;
         }
     }

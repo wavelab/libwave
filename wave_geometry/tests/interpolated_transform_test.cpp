@@ -55,7 +55,7 @@ TEST_F(TransformationTestFixture, testInterpolation) {
 
     Vec6 increment;
 
-    Transformation::interpolateAndJacobians(
+    auto Tint = Transformation::interpolateAndJacobians(
       this->transform_expected, T_kp1, vel_k, vel_kp1, hat, candle, J_T_k_an, J_T_kp1_an, J_vel_k_an, J_vel_kp1_an);
 
     TInterpolatedJTLeftFunctor J_Tleft_functor(this->transform_expected, T_kp1, vel_k, vel_kp1, hat, candle);
@@ -79,16 +79,6 @@ TEST_F(TransformationTestFixture, testInterpolation) {
     std::cout << J_T_kp1_an << std::endl;
     std::cout << "Tkp1 numerical: " << std::endl;
     std::cout << J_T_kp1_num << std::endl;
-
-    std::cout << "Vk analytical: " << std::endl;
-    std::cout << J_vel_k_an << std::endl;
-    std::cout << "Vk numerical: " << std::endl;
-    std::cout << J_vel_k_num << std::endl;
-
-    std::cout << "Vkp1 analytical: " << std::endl;
-    std::cout << J_vel_kp1_an << std::endl;
-    std::cout << "Vkp1 numerical: " << std::endl;
-    std::cout << J_vel_kp1_num << std::endl;
 
     wave::MatX errmat = J_T_k_an - J_T_k_num;
     EXPECT_LE(errmat.norm(), this->comparison_threshold);

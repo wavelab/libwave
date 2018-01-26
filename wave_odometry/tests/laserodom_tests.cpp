@@ -141,7 +141,7 @@ TEST(OdomTest, StraightLineGarage) {
     params.opt_iters = 25;
     params.min_residuals = 30;
     params.visualize = true;
-    params.num_trajectory_states = 5;
+    params.num_trajectory_states = 2;
 
     params.sensor_params.rings = 32;
     float ang = -0.5352924815866609;
@@ -158,7 +158,7 @@ TEST(OdomTest, StraightLineGarage) {
     params.output_trajectory = true;
 //    params.output_correspondences = true;
     params.check_gradients = false;
-    params.Qc = 10 * Eigen::Matrix<double, 6, 6>::Identity();
+    params.Qc = 10000 * Eigen::Matrix<double, 6, 6>::Identity();
 
     LaserOdom odom(params);
     std::vector<PointXYZIR> vec;
