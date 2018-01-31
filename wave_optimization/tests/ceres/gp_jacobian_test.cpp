@@ -40,8 +40,9 @@ TEST(point_to_line, jacobian) {
     double zero = 0;
     double tau = 0.34;
     Mat6 Qc = Mat6::Identity();
+    Mat6 inv_Qc = Qc.inverse();
 
-    wave_kinematics::ConstantVelocityPrior motion_prior(zero, delta_T, &tau, Qc);
+    wave_kinematics::ConstantVelocityPrior motion_prior(zero, delta_T, &tau, Qc, inv_Qc);
 
     Eigen::Matrix<double, 12, 12> hat, candle;
 
@@ -173,8 +174,9 @@ TEST(point_to_plane, jacobian) {
     double zero = 0;
     double tau = 0.34;
     Mat6 Qc = Mat6::Identity();
+    Mat6 inv_Qc = Qc.inverse();
 
-    wave_kinematics::ConstantVelocityPrior motion_prior(zero, delta_T, &tau, Qc);
+    wave_kinematics::ConstantVelocityPrior motion_prior(zero, delta_T, &tau, Qc, inv_Qc);
 
     Eigen::Matrix<double, 12, 12> hat, candle;
 

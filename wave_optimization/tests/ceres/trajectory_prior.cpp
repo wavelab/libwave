@@ -86,9 +86,10 @@ TEST(trajectory_prior, binary_factor) {
     double tau = 0;
 
     Mat6 Qc = Mat6::Identity();
+    Mat6 inv_Qc = Qc.inverse();
     wave_kinematics::ConstantVelocityPrior::Mat12 transition, Q, weight;
 
-    wave_kinematics::ConstantVelocityPrior cv_model(tk, tkp1, &tau, Qc);
+    wave_kinematics::ConstantVelocityPrior cv_model(tk, tkp1, &tau, Qc, inv_Qc);
     cv_model.calculateTransitionMatrix(transition, tk, tkp1);
     cv_model.calculateLinCovariance(Q, tk, tkp1);
 

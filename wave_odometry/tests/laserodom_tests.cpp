@@ -48,7 +48,14 @@ void LoadParameters(const std::string &path, LaserOdomParams &params) {
     parser.addParam("max_correspondence_dist", &(params.max_correspondence_dist));
     parser.addParam("max_residual_val", &(params.max_residual_val));
     parser.addParam("min_residuals", &(params.min_residuals));
-//    parser.addParam("")
+    parser.addParam("local_map_range", &(params.local_map_range));
+    parser.addParam("scan_period", &(params.scan_period));
+    parser.addParam("max_ticks", &(params.max_ticks));
+    parser.addParam("occlusion_tol", &(params.occlusion_tol));
+    parser.addParam("occlusion_tol_2", &(params.occlusion_tol_2));
+    parser.addParam("parallel_tol", &(params.parallel_tol));
+    parser.addParam("edge_tol", &(params.edge_tol));
+//    parser.addParam("fla")
 }
 
 }
@@ -157,7 +164,6 @@ TEST(OdomTest, StraightLineGarage) {
 //    params.only_extract_features = true;
     params.output_trajectory = true;
 //    params.output_correspondences = true;
-    params.check_gradients = false;
     params.Qc = 100 * Eigen::Matrix<double, 6, 6>::Identity();
     params.treat_lines_as_planes = true;
 

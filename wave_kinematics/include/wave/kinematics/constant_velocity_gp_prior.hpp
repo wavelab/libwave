@@ -12,14 +12,14 @@ struct ConstantVelocityPrior {
     using Mat12 = Eigen::Matrix<double, 12, 12>;
 
     ConstantVelocityPrior() = delete;
-    ConstantVelocityPrior(const double &tk, const double &tkp1, const double* tau, const wave::Mat6& Qc);
+    ConstantVelocityPrior(const double &tk, const double &tkp1, const double* tau, const wave::Mat6& Qc, const wave::Mat6& inv_Qc);
 
     const double &tk;
     const double &tkp1;
     const double *tau;
     const wave::Mat6 &Qc;
+    const wave::Mat6 &inv_Qc;
 
-    wave::Mat6 inv_Qc;
     Mat12 t_mat, inv_covar;
 
     /// Function to generate transition matrix

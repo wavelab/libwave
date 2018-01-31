@@ -62,12 +62,10 @@ bool AnalyticalPointToPointInterpolated::Evaluate(double const *const *parameter
     // r = T*P2 - P1;
     // parameters in order:
     // R11 R21 R31 R12 R22 R32 R13 R23 R33 X Y Z
-    Eigen::Map<const Eigen::Matrix<double, 3, 4>> t_mat(parameters[0], 3, 4);
+    auto t_ptr = std::make_shared<Eigen::Map<const Eigen::Matrix<double, 3, 4>>>(parameters[0], 3, 4);
+    Transformation<Eigen::Map<const Eigen::Matrix<double, 3, 4>>> transform(t_ptr);
 
-    std::shared_ptr<decltype(t_mat)> t_ptr(&t_mat);
-    Transformation<decltype(t_mat)> transform(t_ptr);
-
-    Transformation<Eigen::Matrix<double, 3, 4>> interpolated;
+    Transformation<> interpolated;
     interpolated.setFromExpMap(*(this->alpha) * transform.logMap());
 
     const Vec3 point1 = Eigen::Map<const Vec3>(this->P1, 3, 1);

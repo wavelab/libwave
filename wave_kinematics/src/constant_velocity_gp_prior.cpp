@@ -3,10 +3,8 @@
 namespace wave_kinematics {
 
 ConstantVelocityPrior::ConstantVelocityPrior(const double &tk, const double &tkp1, const double *tau,
-                                             const wave::Mat6 &Qc) :
-                                            tk(tk), tkp1(tkp1), tau(tau), Qc(Qc) {
-    this->inv_Qc = this->Qc.llt().solve(wave::Mat6::Identity());
-}
+                                             const wave::Mat6 &Qc, const wave::Mat6 &inv_Qc) :
+                                            tk(tk), tkp1(tkp1), tau(tau), Qc(Qc), inv_Qc(inv_Qc) {}
 
 void ConstantVelocityPrior::calculateTransitionMatrix(Mat12 &transition, const double &t1, const double &t2) {
     transition.block<6,6>(6,6).setIdentity();

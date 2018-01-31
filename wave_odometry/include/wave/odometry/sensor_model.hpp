@@ -19,7 +19,7 @@ struct RangeSensorParams {
     * Noise should be in linear, angular, angular units
      * on range, elevation, azimuth in that order
     */
-    Eigen::Matrix3f sigma_spherical;
+    Eigen::Matrix3f sigma_spherical = Eigen::Matrix3f::Identity();
 };
 
 /**

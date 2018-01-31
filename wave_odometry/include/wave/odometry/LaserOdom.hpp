@@ -59,6 +59,8 @@ struct LaserOdomParams {
 
     /// The covariance matrix for noise on velocity
     Mat6 Qc = Mat6::Identity();
+    /// inverse stored to save repeated steps
+    Mat6 inv_Qc = Mat6::Identity();
     // Optimizer parameters
     // How many states per revolution to optimize over
     // There must be at minimum two.
@@ -97,7 +99,6 @@ struct LaserOdomParams {
     // one degree. Beam spacing is 1.33deg, so this should be sufficient
     double azimuth_tol = 0.0174532925199433;    // Minimum azimuth difference across correspondences
     uint16_t TTL = 1;             // Maximum life of feature in local map with no correspondences
-    double iso_var = 0.005;       // Variance to use if weighing is set.
 
     // Setting flags
     bool visualize = false;               // Whether to run a visualization for debugging
@@ -105,7 +106,6 @@ struct LaserOdomParams {
     bool output_correspondences = false;  // Whether to output correpondences for debugging/plotting
     bool only_extract_features = false;   // If set, no transforms are calculated
     bool use_weighting = false;           // If set, pre-whiten residuals
-    bool check_gradients = false;         // If set, use Ceres gradient checker on each jacobians
     /**
      * If set instead of matching edge points to lines, match edge points to a plane
      * defined by the original line points and the origin
@@ -128,7 +128,8 @@ class LaserOdom {
         Vec6 twist;
     };
 
-    std::vector<Trajectory> cur_trajectory, prev_trajectory;
+    std::vector<Trajectory> cur_trajectory;
+    Vec6 previous_twist;
 
     void rollover(TimeType stamp);
     bool match();
@@ -175,7 +176,6 @@ class LaserOdom {
     LaserOdomParams param;
     bool initialized = false;
     int prv_tick = std::numeric_limits<int>::max();
-    std::vector<double> scale_lookup;
 
     void computeScores();
     void prefilter();

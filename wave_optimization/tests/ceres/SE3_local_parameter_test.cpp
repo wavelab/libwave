@@ -10,7 +10,7 @@ TEST(SE3Param, MinimalPointSet) {
     Vec6 transformation_twist_parameters;
     transformation_twist_parameters << 0.068924613882066, 0.213225926957886, 0.288748939228676, 0.965590777183138,
       1.960945901104432, 3.037052911306709;
-    Transformation exact_transform;
+    Transformation<> exact_transform;
     exact_transform.setFromExpMap(transformation_twist_parameters);
 
     const int size = 3;
@@ -38,7 +38,7 @@ TEST(SE3Param, MinimalPointSet) {
     ceres::Solver::Summary summary;
     ceres::Solve(options, &problem, &summary);
 
-    Transformation solved_transform;
+    Transformation<> solved_transform;
     Mat4 sol_matrix;
 
     sol_matrix << transform[0], transform[3], transform[6], transform[9],  //
@@ -57,7 +57,7 @@ TEST(SE3Param, MinimalSetAlpha3) {
 //            1.960945901104432, 3.037052911306709;
     transformation_twist_parameters << 0, 0, 0.0278, 3.6,
             0, 0.1;
-    Transformation exact_transform, partial;
+    Transformation<> exact_transform, partial;
     exact_transform.setFromExpMap(transformation_twist_parameters);
     partial.setFromExpMap(alpha * transformation_twist_parameters);
 
@@ -87,7 +87,7 @@ TEST(SE3Param, MinimalSetAlpha3) {
     ceres::Solver::Summary summary;
     ceres::Solve(options, &problem, &summary);
 
-    Transformation solved_transform;
+    Transformation<> solved_transform;
     Mat4 sol_matrix;
 
     sol_matrix << transform[0], transform[3], transform[6], transform[9],  //
@@ -103,7 +103,7 @@ TEST(InterpolateParam, MinimalPointSetAlpha1) {
     Vec6 transformation_twist_parameters;
     transformation_twist_parameters << 0.068924613882066, 0.213225926957886, 0.288748939228676, 0.965590777183138,
             1.960945901104432, 3.037052911306709;
-    Transformation exact_transform;
+    Transformation<> exact_transform;
     exact_transform.setFromExpMap(transformation_twist_parameters);
 
     const int size = 3;
@@ -132,7 +132,7 @@ TEST(InterpolateParam, MinimalPointSetAlpha1) {
     ceres::Solver::Summary summary;
     ceres::Solve(options, &problem, &summary);
 
-    Transformation solved_transform;
+    Transformation<> solved_transform;
     Mat4 sol_matrix;
 
     sol_matrix << transform[0], transform[3], transform[6], transform[9],  //
@@ -149,7 +149,7 @@ TEST(InterpolateParam, MinimalSetAlpha3) {
     double alpha = 0.3;
     transformation_twist_parameters << 0.068924613882066, 0.213225926957886, 0.288748939228676, 0.965590777183138,
             1.960945901104432, 3.037052911306709;
-    Transformation exact_transform, partial;
+    Transformation<> exact_transform, partial;
     exact_transform.setFromExpMap(transformation_twist_parameters);
     partial.setFromExpMap(alpha * transformation_twist_parameters);
 
@@ -178,8 +178,9 @@ TEST(InterpolateParam, MinimalSetAlpha3) {
     ceres::Solver::Options options;
     ceres::Solver::Summary summary;
     ceres::Solve(options, &problem, &summary);
+    std::cout << summary.FullReport() << std::endl;
 
-    Transformation solved_transform;
+    Transformation<> solved_transform;
     Mat4 sol_matrix;
 
     sol_matrix << transform[0], transform[3], transform[6], transform[9],  //

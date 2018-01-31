@@ -51,10 +51,11 @@ TEST_F(TransformationTestFixture, testInterpolation) {
     T_kp1.manifoldPlus(tkp1 * vel_k);
 
     Mat6 Qc = Mat6::Identity();
+    Mat6 inv_Qc = Qc.inverse();
 
     Eigen::Matrix<double, 12, 12> hat, candle;
 
-    wave_kinematics::ConstantVelocityPrior prior(tk, tkp1, &tau, Qc);
+    wave_kinematics::ConstantVelocityPrior prior(tk, tkp1, &tau, Qc, inv_Qc);
 
     prior.calculateStuff(hat, candle);
 
