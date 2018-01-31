@@ -7,9 +7,9 @@ void ConstantAccelerationCovariance::evaluateGamma(const double &deltaT, Mat6 &g
     Vec6 scaled = deltaT * this->w;
     Mat6 scaled_adjoint;
     scaled_adjoint.setZero();
-    scaled_adjoint.block<3, 3>(0, 0) = Transformation::skewSymmetric3(scaled.block<3, 1>(0, 0));
-    scaled_adjoint.block<3, 3>(3, 3) = Transformation::skewSymmetric3(scaled.block<3, 1>(0, 0));
-    scaled_adjoint.block<3, 3>(3, 0) = Transformation::skewSymmetric3(scaled.block<3, 1>(3, 0));
+    scaled_adjoint.block<3, 3>(0, 0) = Transformation<>::skewSymmetric3(scaled.block<3, 1>(0, 0));
+    scaled_adjoint.block<3, 3>(3, 3) = Transformation<>::skewSymmetric3(scaled.block<3, 1>(0, 0));
+    scaled_adjoint.block<3, 3>(3, 0) = Transformation<>::skewSymmetric3(scaled.block<3, 1>(3, 0));
 
     double theta = scaled.block<3, 1>(0, 0).norm();
     if (theta < 1e-6) {

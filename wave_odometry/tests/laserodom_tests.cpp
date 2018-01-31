@@ -129,7 +129,7 @@ TEST(OdomTest, StraightLineGarage) {
     // odom setup
     LaserOdomParams params;
     params.TTL = 4;
-    params.n_flat = 0;
+    params.n_flat = 40;
     params.n_edge = 20;
     params.n_int_edge = 0;
     params.edge_tol = 2;
@@ -158,7 +158,7 @@ TEST(OdomTest, StraightLineGarage) {
     params.output_trajectory = true;
 //    params.output_correspondences = true;
     params.check_gradients = false;
-    params.Qc = 10000 * Eigen::Matrix<double, 6, 6>::Identity();
+    params.Qc = 100 * Eigen::Matrix<double, 6, 6>::Identity();
     params.treat_lines_as_planes = true;
 
     LaserOdom odom(params);
@@ -192,79 +192,6 @@ TEST(OdomTest, StraightLineGarage) {
             vec.emplace_back(recovered);
         }
 //        std::this_thread::sleep_for(std::chrono::seconds(5));
-    }
-}
-
-void dummyoutput(const TimeType *const stmap,
-                 const Transformation *const transform,
-                 const pcl::PointCloud<pcl::PointXYZI> *const cld) {
-    Vec6 twist = transform->logMap();
-    LOG_INFO("Got output!");
-    LOG_INFO("%f", twist(0));
-    LOG_INFO("%f", twist(1));
-    LOG_INFO("%f", twist(2));
-    LOG_INFO("%f", twist(3));
-    LOG_INFO("%f", twist(4));
-    LOG_INFO("%f", twist(5));
-    LOG_INFO("Cloud size: %lu", cld->size());
-}
-
-// Output function test
-TEST(OdomTest, OutputTest) {
-    // Load entire sequence into memory
-    std::vector<pcl::PointCloud<PointXYZIR>> clds;
-    std::vector<pcl::PointCloud<PointXYZIR>::Ptr> cldptr;
-    pcl::PCLPointCloud2 temp;
-    pcl::PointCloud<PointXYZIR> temp2;
-    for (int i = 0; i < 10; i++) {
-        pcl::io::loadPCDFile(TEST_SEQUENCE_DIR + std::to_string(i) + ".pcd", temp);
-        pcl::fromPCLPointCloud2(temp, temp2);
-        clds.push_back(temp2);
-        pcl::PointCloud<PointXYZIR>::Ptr ptr(new pcl::PointCloud<PointXYZIR>);
-        *ptr = clds.at(i);
-        cldptr.push_back(ptr);
-    }
-
-    // odom setup
-    LaserOdomParams params;
-    params.n_flat = 50;
-    params.n_edge = 40;
-    params.max_correspondence_dist = 0.4;
-    params.robust_param = 0.2;
-    params.opt_iters = 5;
-    params.visualize = true;
-    LaserOdom odom(params);
-    std::vector<PointXYZIR> vec;
-    uint16_t prev_enc = 0;
-
-    odom.registerOutputFunction(dummyoutput);
-
-    // Loop through pointclouds and send points grouped by encoder angle odom
-    for (int i = 0; i < 10; i++) {
-        for (PointXYZIR pt : clds.at(i)) {
-            PointXYZIR recovered;
-            // unpackage intensity and encoder
-            uint8_t *src = static_cast<uint8_t *>(static_cast<void *>(&(pt.intensity)));
-            uint16_t encoder = *(static_cast<uint16_t *>(static_cast<void *>(src)));
-            uint8_t intensity = *(static_cast<uint8_t *>(static_cast<void *>(src + 2)));
-
-            // copy remaining fields
-            recovered.x = pt.x;
-            recovered.y = pt.y;
-            recovered.z = pt.z;
-            recovered.ring = pt.ring;
-            recovered.intensity = intensity;
-            if (encoder != prev_enc) {
-                if (vec.size() > 0) {
-                    std::chrono::microseconds dur(clds.at(i).header.stamp);
-                    TimeType stamp(dur);
-                    odom.addPoints(vec, prev_enc, stamp);
-                    vec.clear();
-                }
-                prev_enc = encoder;
-            }
-            vec.emplace_back(recovered);
-        }
     }
 }
 

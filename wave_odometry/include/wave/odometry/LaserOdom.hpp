@@ -124,7 +124,7 @@ class LaserOdom {
     // The transform is T_start_end
     struct Trajectory {
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-        Transformation pose;
+        Transformation<> pose;
         Vec6 twist;
     };
 
@@ -132,9 +132,6 @@ class LaserOdom {
 
     void rollover(TimeType stamp);
     bool match();
-    void registerOutputFunction(std::function<void(const TimeType *const,
-                                                   const Transformation *const,
-                                                   const pcl::PointCloud<pcl::PointXYZI> *const)> output_function);
     void registerOutputFunction(std::function<void()> output_function);
 
     // Shared memory
@@ -143,7 +140,7 @@ class LaserOdom {
     std::vector<pcl::PointCloud<pcl::PointXYZ>> map_features;    // map_edges, map_flats;
     std::vector<std::vector<std::vector<double>>> output_corrs;
     TimeType undistorted_stamp;
-    Transformation undistort_transform;
+    Transformation<> undistort_transform;
     double covar[144];  // use lift jacobians to reduce covariance coming out of ceres
 
     void updateParams(const LaserOdomParams);
