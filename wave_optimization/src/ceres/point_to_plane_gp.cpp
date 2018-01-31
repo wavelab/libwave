@@ -13,8 +13,6 @@ SE3PointToPlaneGP::SE3PointToPlaneGP(const double *const p,
     : pt(p), ptA(pA), ptB(pB), ptC(pC), hat(hat), candle(candle) {
     this->JP_T.setZero();
     this->JP_T.block<3, 3>(0, 3).setIdentity();
-    this->Jr_Tk.block<1, 6>(0, 6).setZero();
-    this->Jr_Tkp1.block<1, 6>(0, 6).setZero();
 
     this->calculateJr_P(this->Jr_P);
 
@@ -73,12 +71,14 @@ bool SE3PointToPlaneGP::Evaluate(double const *const *parameters, double *residu
 
         this->Jr_T = this->Jr_P * this->JP_T;
         if (jacobians[0]) {
-            this->Jr_Tk.block<1, 6>(0, 0) = this->weight * this->Jr_T * this->JT_Ti;
-            Eigen::Map<Eigen::Matrix<double, 1, 12, Eigen::RowMajor>>(jacobians[0], 1, 12) = this->Jr_Tk;
+            Eigen::Map<Eigen::Matrix<double, 1, 12, Eigen::RowMajor>> Jr_Tk(jacobians[0], 1, 12);
+            Jr_Tk.setZero();
+            Jr_Tk.block<1, 6>(0, 0) = this->weight * this->Jr_T * this->JT_Ti;
         }
         if (jacobians[1]) {
-            this->Jr_Tkp1.block<1, 6>(0, 0) = this->weight * this->Jr_T * this->JT_Tip1;
-            Eigen::Map<Eigen::Matrix<double, 1, 12, Eigen::RowMajor>>(jacobians[1], 1, 12) = this->Jr_Tkp1;
+            Eigen::Map<Eigen::Matrix<double, 1, 12, Eigen::RowMajor>> Jr_Tkp1(jacobians[1], 1, 12);
+            Jr_Tkp1.setZero();
+            Jr_Tkp1.block<1, 6>(0, 0) = this->weight * this->Jr_T * this->JT_Tip1;
         }
         if (jacobians[2]) {
             Eigen::Map<Eigen::Matrix<double, 1, 6, Eigen::RowMajor>> jac_map(jacobians[2], 1, 6);

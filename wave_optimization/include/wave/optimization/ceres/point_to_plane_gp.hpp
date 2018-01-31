@@ -38,10 +38,6 @@ class SE3PointToPlaneGP : public ceres::SizedCostFunction<1, 12, 12, 6, 6> {
     // Jacobian of residual wrt the interpolated transform
     mutable Eigen::Matrix<double, 1, 6> Jr_T;
 
-    // Complete Jacobians
-    mutable Eigen::Matrix<double, 1, 12> Jr_Tk;
-    mutable Eigen::Matrix<double, 1, 12> Jr_Tkp1;
-
  public:
     double weight;
 

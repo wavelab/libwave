@@ -21,36 +21,34 @@ bool ConstantVelocityPrior::Evaluate(double const *const *parameters, double *re
     res_map.block<6,1>(6,0) = J_left * cur_vel - prev_vel;
 
     res_map = this->weight * res_map;
-    Eigen::Map<Eigen::Matrix<double, 12, 1>>(residuals, 12, 1) = res_map;
 
     if (jacobians) {
         Mat6 skew = Transformation<void>::skewSymmetric6(cur_vel);
         if (jacobians[0]) {
-            this->Jr_Ti.block<6,6>(0,0) = J_right;
-            this->Jr_Ti.block<6,6>(6,0) = 0.5 * skew * J_right;
-            this->Jr_Ti.block<12, 6>(0,0) = this->weight * this->Jr_Ti.block<12, 6>(0,0);
-
             Eigen::Map<Eigen::Matrix<double, 12, 12, Eigen::RowMajor>> jac_map(jacobians[0], 12, 12);
-            jac_map = this->Jr_Ti;
+            jac_map.setZero();
+            jac_map.block<6,6>(0,0) = J_right;
+            jac_map.block<6,6>(6,0) = 0.5 * skew * J_right;
+            jac_map.block<12, 6>(0,0) = this->weight * jac_map.block<12, 6>(0,0);
         }
         if (jacobians[1]) {
-            this->Jr_Tip1.block<6,6>(0,0) = J_left;
-            this->Jr_Tip1.block<6,6>(6,0) = 0.5 * skew * J_left;
-            this->Jr_Tip1.block<12, 6>(0,0) = this->weight * this->Jr_Tip1.block<12, 6>(0,0);
-
             Eigen::Map<Eigen::Matrix<double, 12, 12, Eigen::RowMajor>> jac_map(jacobians[1], 12, 12);
-            jac_map = this->Jr_Tip1;
+            jac_map.setZero();
+            jac_map.block<6,6>(0,0) = J_left;
+            jac_map.block<6,6>(6,0) = 0.5 * skew * J_left;
+            jac_map.block<12, 6>(0,0) = this->weight * jac_map.block<12, 6>(0,0);
         }
         if (jacobians[2]) {
             Eigen::Map<Eigen::Matrix<double, 12, 6, Eigen::RowMajor>> jac_map(jacobians[2], 12, 6);
-            jac_map = this->Jr_wi;
+            jac_map.block<6, 6>(0,0) = - this->delta_t * Mat6::Identity();
+            jac_map.block<6, 6>(6,0) = - Mat6::Identity();
+            jac_map = this->weight * jac_map;
         }
         if (jacobians[3]) {
-            this->Jr_wip1.block<6,6>(6,0) = this->Jr_Tip1.block<6,6>(0,0);
-            this->Jr_wip1.block<12, 6>(0,0) = this->weight * this->Jr_wip1.block<12, 6>(0,0);
-
             Eigen::Map<Eigen::Matrix<double, 12, 6, Eigen::RowMajor>> jac_map(jacobians[3], 12, 6);
-            jac_map = this->Jr_wip1;
+            jac_map.block<6,6>(6,0) = J_left;
+            jac_map.block<6,6>(0,0).setZero();
+            jac_map = this->weight * jac_map;
         }
     }
     return true;

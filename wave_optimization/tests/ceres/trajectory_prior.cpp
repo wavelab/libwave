@@ -66,12 +66,10 @@ TEST(trajectory_prior, binary_factor) {
     // Need to provide prior for binary factor
     prior_next.setFromExpMap(delta_T * prior_vel);
 
-    // now invert the pose priors ahead of time to save a bit of computation during residual evaluation
-    prior_initial.invert();
-    prior_next.invert();
+    auto prior_initial_inv = prior_initial.inverse();
 
     ceres::CostFunction *cost_function =
-      new TrajectoryPrior(10000*Eigen::Matrix<double, 12, 12>::Identity(), prior_initial, prior_vel);
+      new TrajectoryPrior(10000*Eigen::Matrix<double, 12, 12>::Identity(), prior_initial_inv, prior_vel);
 
     ceres::LocalParameterization *se3_param = new NullSE3Parameterization;
 
@@ -94,7 +92,7 @@ TEST(trajectory_prior, binary_factor) {
     cv_model.calculateTransitionMatrix(transition, tk, tkp1);
     cv_model.calculateLinCovariance(Q, tk, tkp1);
 
-    weight = Q.inverse().sqrt();
+    weight = 100*Q.inverse().sqrt();
 
     ceres::CostFunction *bin_cost_function = new ConstantVelocityPrior(weight, tkp1);
 
@@ -115,10 +113,10 @@ TEST(trajectory_prior, binary_factor) {
     ceres::Solve(options, &problem, &summary);
     std::cout << summary.FullReport();
 
-    auto init_diff = (initial * prior_initial).logMap();
-    auto next_diff = (next * prior_next).logMap();
-    auto init_vel_diff = init_twist - prior_vel;
-    auto next_vel_diff = next_twist - prior_vel;
+    auto init_diff = initial.manifoldMinus(prior_initial);
+    auto next_diff = next.manifoldMinus(prior_next);
+    Vec6 init_vel_diff = init_twist - prior_vel;
+    Vec6 next_vel_diff = next_twist - prior_vel;
 
     EXPECT_NEAR(init_diff.norm(), 0, 1e-6);
     EXPECT_NEAR(next_diff.norm(), 0, 1e-6);
