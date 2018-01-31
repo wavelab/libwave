@@ -19,21 +19,24 @@ TEST(trajectory_prior, unary_factor) {
     Vec6 twist, prior_twist;
     twist << 0.1, -0.4, 0.3, 1, 10, -5;
     prior_twist << -0.3, 0.2, 0.5, -3, 2, -8;
-    Transformation prior, initial;
+    Transformation<> prior, initial;
     prior.setFromExpMap(twist);
 
+    auto inv_prior = prior.inverse();
+
     ceres::CostFunction *cost_function =
-      new TrajectoryPrior(Eigen::Matrix<double, 12, 12>::Identity(), prior.inverse(), prior_twist);
+      new TrajectoryPrior(Eigen::Matrix<double, 12, 12>::Identity(), inv_prior, prior_twist);
 
     ceres::LocalParameterization *se3_param = new NullSE3Parameterization;
 
     ceres::Problem problem;
-    problem.AddParameterBlock(initial.getInternalMatrix().data(), 12, se3_param);
+    problem.AddParameterBlock(initial.getInternalMatrix().derived().data(), 12, se3_param);
     problem.AddParameterBlock(twist.data(), 6);
 
-    problem.AddResidualBlock(cost_function, nullptr, initial.getInternalMatrix().data(), twist.data());
+    problem.AddResidualBlock(cost_function, nullptr, initial.getInternalMatrix().derived().data(), twist.data());
 
     ceres::Solver::Options options;
+    options.parameter_tolerance = 1e-10;
     ceres::Solver::Summary summary;
     ceres::Solve(options, &problem, &summary);
     std::cout << summary.FullReport();
@@ -44,20 +47,20 @@ TEST(trajectory_prior, unary_factor) {
 }
 
 /**
- * Test that a trajectory prior works well with multiple states
+ * Test the constant velocity constraint
  * optimization problem will be initialized a little ways from the solution,
  * and it will converge back
  */
 TEST(trajectory_prior, binary_factor) {
     const double delta_T = 0.1;
     Vec6 init_twist_prior, next_twist_prior, init_twist, next_twist;
-    init_twist_prior << 0.1, -0.4, 0.3, 1, 10, -5;
+    init_twist_prior << 0.01, -0.04, 0.03, 1, 10, -5;
 
     /// Need to constrain the initial state with a prior.
     /// In this case Identity to treat it as the origin.
     Vec6 prior_vel;
     prior_vel = init_twist_prior / delta_T;
-    Transformation prior_initial, prior_next, initial, next;
+    Transformation<> prior_initial, prior_next, initial, next;
     prior_initial.setIdentity();
 
     // Need to provide prior for binary factor
@@ -73,12 +76,12 @@ TEST(trajectory_prior, binary_factor) {
     ceres::LocalParameterization *se3_param = new NullSE3Parameterization;
 
     ceres::Problem problem;
-    problem.AddParameterBlock(initial.getInternalMatrix().data(), 12, se3_param);
+    problem.AddParameterBlock(initial.getInternalMatrix().derived().data(), 12, se3_param);
     problem.AddParameterBlock(init_twist.data(), 6);
-    problem.AddParameterBlock(next.getInternalMatrix().data(), 12, se3_param);
+    problem.AddParameterBlock(next.getInternalMatrix().derived().data(), 12, se3_param);
     problem.AddParameterBlock(next_twist.data(), 6);
 
-    problem.AddResidualBlock(cost_function, nullptr, initial.getInternalMatrix().data(), init_twist.data());
+    problem.AddResidualBlock(cost_function, nullptr, initial.getInternalMatrix().derived().data(), init_twist.data());
 
     double tk = 0;
     double tkp1 = 0.1;
@@ -102,8 +105,8 @@ TEST(trajectory_prior, binary_factor) {
 
     problem.AddResidualBlock(bin_cost_function,
                              nullptr,
-                             initial.getInternalMatrix().data(),
-                             next.getInternalMatrix().data(),
+                             initial.getInternalMatrix().derived().data(),
+                             next.getInternalMatrix().derived().data(),
                              init_twist.data(),
                              next_twist.data());
 

@@ -1,6 +1,7 @@
 #ifndef WAVE_TRANSFORMATION_HPP
 #define WAVE_TRANSFORMATION_HPP
 
+#include <memory>
 #include <Eigen/Core>
 #include "unsupported/Eigen/MatrixFunctions"
 
@@ -8,9 +9,10 @@
 
 namespace wave {
 
+template <typename Derived = Eigen::Matrix<double, 3, 4>>
 class Transformation {
- private:
-    Eigen::Matrix<double, 3, 4> matrix;
+ public:
+    std::shared_ptr<Eigen::MatrixBase<Derived>> matrix;
 
     double TOL = 1e-5;
 
@@ -34,9 +36,7 @@ class Transformation {
      * Create a transformation object using reference
      * @param ref
      */
-    explicit Transformation(Eigen::Matrix<double, 3, 4> &ref) : matrix(ref) {}
-
-    explicit Transformation(const Eigen::Matrix<double, 3, 4> &ref) : matrix(ref) {}
+    explicit Transformation(std::shared_ptr<Eigen::MatrixBase<Derived>> ref);
 
     /** Sets from Euler angles.
      *
@@ -77,7 +77,7 @@ class Transformation {
      */
     Transformation &normalizeMaybe(double tolerance);
 
-    static Transformation interpolate(const Transformation &T_k,
+    static Transformation<Eigen::Matrix<double, 3, 4>> interpolate(const Transformation &T_k,
                                                const Transformation &T_kp1,
                                                const Vec6 &twist_k,
                                                const Vec6 &twist_kp1,
@@ -95,17 +95,7 @@ class Transformation {
      * @param candle: second interpolation factor
      * @return Transformation at time t
      */
-
-    static Eigen::Matrix<double, 12, 1> localDiff(const Transformation &T_k,
-                                                   const Transformation &T_kp1,
-                                                   const Vec6 &twist_k,
-                                                   const Vec6 &twist_kp1,
-                                                   Eigen::Matrix<double, 12, 6> &J_Tk,
-                                                   Eigen::Matrix<double, 12, 6> &J_Tkp1,
-                                                   Eigen::Matrix<double, 12, 6> &J_twist_k,
-                                                   Eigen::Matrix<double, 12, 6> &J_twist_kp1);
-
-    static Transformation interpolateAndJacobians(const Transformation &T_k,
+    static Transformation<Eigen::Matrix<double, 3, 4>> interpolateAndJacobians(const Transformation &T_k,
                                                   const Transformation &T_kp1,
                                                   const Vec6 &twist_k,
                                                   const Vec6 &twist_kp1,
@@ -199,7 +189,7 @@ class Transformation {
      * Returns the "lift" Jacobian for use with Ceres solver
      * @return
      */
-    void J_lift(Eigen::Matrix<double, 12, 6> &retval);
+    void J_lift(Eigen::Matrix<double, 12, 6> &retval) const;
 
     /** transforms the input vector by this transformation.
      *
@@ -238,7 +228,7 @@ class Transformation {
      * Return the inverse of the transformation matrix, while preserving original
      * @return the inverse of the transformation object;
      */
-    Transformation inverse() const;
+    Transformation<Eigen::Matrix<double, 3, 4>> inverse() const;
 
     /** Checks if the input transformation is sufficiently close to this transformation
      *
@@ -309,7 +299,8 @@ class Transformation {
      * @f$ T_{right} @f$, which is also the input transformation.
      * @return The resulting composition @f$ T_{out} @f$.
      */
-    Transformation composeAndJacobian(const Transformation &T_right, Mat6 &J_left, Mat6 &J_right) const;
+    template<typename Other>
+    Transformation<Eigen::Matrix<double, 3, 4>> composeAndJacobian(const Transformation<Other> &T_right, Mat6 &J_left, Mat6 &J_right) const;
 
     /** Compute the inverse of **this** transformation and computes the Jacobian
      * of the inverse mapping wrt **this** transformation.
@@ -318,7 +309,6 @@ class Transformation {
      * @return The inverse of **this** transformation.
      */
     Transformation inverseAndJacobian(Mat6 &J_transformation) const;
-
 
     /** @return the corresponding 3x3 rotation matrix */
     Mat3 getRotationMatrix() const;
@@ -330,16 +320,24 @@ class Transformation {
     Mat4 getMatrix() const;
 
     /** @return a reference to the internal matrix object **/
-    Eigen::Matrix<double, 3, 4> &getInternalMatrix() {
-        return this->matrix;
+    Eigen::MatrixBase<Derived> &getInternalMatrix() {
+        return *(this->matrix);
     };
 
     /** Implements transformation composition. */
-    Transformation operator*(const Transformation &T) const;
+    template<typename Other>
+    Transformation<Eigen::Matrix<double, 3, 4>> operator*(const Transformation<Other> &T) const;
 
     /** Overload operator for manifold - */
     Vec6 operator-(const Transformation &T) const;
+
+    /** Create deep copy function */
+    template<typename Other>
+    Transformation<Derived> &deepCopy(const Transformation<Other> &T);
+
 };
 }
+
+#include "wave/geometry/impl/transformation_impl.hpp"
 
 #endif  // WAVE_TRANSFORMATION_HPP

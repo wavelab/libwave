@@ -65,7 +65,7 @@ TEST(local_jacobians, fake_lift_jacobian) {
     Vec6 transformation_twist_parameters;
     transformation_twist_parameters << 0.068924613882066, 0.213225926957886, 0.288748939228676, 0.965590777183138,
             1.960945901104432, 3.037052911306709;
-    Transformation exact_transform;
+    Transformation<Eigen::Matrix<double, 3, 4>> exact_transform;
     exact_transform.setFromExpMap(transformation_twist_parameters);
 
     const int size = 3;
@@ -94,7 +94,7 @@ TEST(local_jacobians, fake_lift_jacobian) {
     ceres::Solve(options, &problem, &summary);
     std::cout << summary.FullReport();
 
-    Transformation solved_transform;
+    Transformation<Eigen::Matrix<double, 3, 4>> solved_transform;
     Mat4 sol_matrix;
 
     sol_matrix << transform[0], transform[3], transform[6], transform[9],  //
@@ -114,7 +114,7 @@ TEST(local_jacobians, gradient_checker) {
     Vec6 transformation_twist_parameters;
     transformation_twist_parameters << 0.068924613882066, 0.213225926957886, 0.288748939228676, 0.965590777183138,
             1.960945901104432, 3.037052911306709;
-    Transformation exact_transform;
+    Transformation<Eigen::Matrix<double, 3, 4>> exact_transform;
     exact_transform.setFromExpMap(transformation_twist_parameters);
 
     Vec3 point;
@@ -130,7 +130,7 @@ TEST(local_jacobians, gradient_checker) {
 
     const double **parameters;
     parameters = new const double *[1];
-    parameters[0] = exact_transform.getInternalMatrix().data();
+    parameters[0] = exact_transform.getInternalMatrix().derived().data();
 
     ceres::NumericDiffOptions ndiff_options;
     ceres::GradientChecker g_check(cost_function, &local_param_vec, ndiff_options);

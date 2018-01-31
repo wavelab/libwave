@@ -6,8 +6,7 @@ WAVE_ADD_MODULE(${PROJECT_NAME}
     Eigen3::Eigen
     Kindr::kindr
     SOURCES
-    src/rotation.cpp
-    src/transformation.cpp)
+    src/rotation.cpp)
 
 # Unit tests
 IF(BUILD_TESTING)

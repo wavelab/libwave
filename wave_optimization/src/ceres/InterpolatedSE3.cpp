@@ -25,7 +25,7 @@ bool InterpolatedSE3::Plus(const double *x, const double *delta, double *x_plus_
             x[2], x[5], x[8], x[11],
             0,    0,    0,     1;
 
-    Transformation transform;
+    Transformation<Eigen::Matrix<double, 3, 4>> transform;
     transform.setFromMatrix(T);
     transform.manifoldPlus(delta_vec);
     auto R = transform.getRotationMatrix();
@@ -63,7 +63,7 @@ bool InterpolatedSE3::ComputeJacobian(const double *x, double *jacobian) const {
             x[2], x[5], x[8], x[11],
             0,    0,    0,     1;
 
-    Transformation transform;
+    Transformation<Eigen::Matrix<double, 3, 4>> transform;
     transform.setFromMatrix(T);
     Vec6 epsilon = transform.logMap();
 
@@ -82,7 +82,7 @@ bool InterpolatedSE3::ComputeJacobian(const double *x, double *jacobian) const {
              x[10], -x[9],      0, 0, 0, 1; //
 
     Mat6 J_interpolated;
-    Transformation::Jinterpolated(epsilon, *(this->alpha), J_interpolated);
+    Transformation<Eigen::Matrix<double, 3, 4>>::Jinterpolated(epsilon, *(this->alpha), J_interpolated);
 
     Eigen::Map<Eigen::Matrix<double, 12, 6, Eigen::RowMajor>>(jacobian, 12, 6) = J_lift * J_interpolated;
 

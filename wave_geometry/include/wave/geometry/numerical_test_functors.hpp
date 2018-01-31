@@ -146,12 +146,14 @@ class ManifoldMinusAndJacobianJRightFunctor {
     }
 };
 
+namespace {
+    using T_Type = Transformation<Eigen::Matrix<double, 3, 4>>;
+}
 // Transformation functors
 class TransformAndJacobianJpointFunctor {
  public:
-    Transformation T;
-    Vec3 P;
-    TransformAndJacobianJpointFunctor(const Transformation &input_transformation) {
+    T_Type T;
+    TransformAndJacobianJpointFunctor(const T_Type &input_transformation) {
         this->T = input_transformation;
     }
 
@@ -164,16 +166,17 @@ class TransformAndJacobianJpointFunctor {
 
 class TransformAndJacobianJparamFunctor {
  public:
-    Transformation T;
+    T_Type T;
     Vec3 P;
-    TransformAndJacobianJparamFunctor(const Transformation &input_transformation, const Vec3 &input_point) {
-        this->T = input_transformation;
+    TransformAndJacobianJparamFunctor(const T_Type &input_transformation, const Vec3 &input_point) {
+        this->T.deepCopy(input_transformation);
         this->P = input_point;
     }
 
     Vec3 operator()(const Vec6 &wvec) {
-        Transformation Tp = this->T;
-        Tp = Tp.manifoldPlus(wvec);
+        T_Type Tp;
+        Tp.deepCopy(this->T);
+        Tp.manifoldPlus(wvec);
         Vec3 output_point = Tp.transform(this->P);
         return output_point;
     }
@@ -181,96 +184,102 @@ class TransformAndJacobianJparamFunctor {
 
 class TComposeAndJacobianJLeftFunctor {
  public:
-    Transformation R_left;
-    Transformation R_right;
-    TComposeAndJacobianJLeftFunctor(const Transformation &R_left, const Transformation &R_right) {
-        this->R_left = R_left;
-        this->R_right = R_right;
+    T_Type R_left;
+    T_Type R_right;
+    TComposeAndJacobianJLeftFunctor(const T_Type &R_left, const T_Type &R_right) {
+        this->R_left.deepCopy(R_left);
+        this->R_right.deepCopy(R_right);
     }
 
-    Transformation operator()(const Vec6 &perturbation) {
+    T_Type operator()(const Vec6 &perturbation) {
         Mat6 J;
-        Transformation R_perturbed = this->R_left;
-        R_perturbed = R_perturbed.manifoldPlus(perturbation);
+        T_Type R_perturbed;
+        R_perturbed.deepCopy(this->R_left);
+        R_perturbed.manifoldPlus(perturbation);
         return R_perturbed.composeAndJacobian(R_right, J, J);
     }
 };
 
 class TComposeAndJacobianJRightFunctor {
  public:
-    Transformation R_left;
-    Transformation R_right;
-    TComposeAndJacobianJRightFunctor(const Transformation &R_left, const Transformation &R_right) {
-        this->R_left = R_left;
-        this->R_right = R_right;
+    T_Type R_left;
+    T_Type R_right;
+    TComposeAndJacobianJRightFunctor(const T_Type &R_left, const T_Type &R_right) {
+        this->R_left.deepCopy(R_left);
+        this->R_right.deepCopy(R_right);
     }
 
-    Transformation operator()(const Vec6 &perturbation) {
+    T_Type operator()(const Vec6 &perturbation) {
         Mat6 J;
-        Transformation R_perturbed = this->R_right;
-        R_perturbed = R_perturbed.manifoldPlus(perturbation);
+        T_Type R_perturbed;
+        R_perturbed.deepCopy(this->R_right);
+        R_perturbed.manifoldPlus(perturbation);
         return R_left.composeAndJacobian(R_perturbed, J, J);
     }
 };
 
 class TInverseAndJacobianFunctor {
  public:
-    Transformation R;
-    TInverseAndJacobianFunctor(const Transformation &R) {
+    T_Type R;
+    TInverseAndJacobianFunctor(const T_Type &R) {
         this->R = R;
     }
 
-    Transformation operator()(const Vec6 &perturbation) {
-        Transformation R_perturbed = this->R;
-        R_perturbed = R_perturbed.manifoldPlus(perturbation);
+    T_Type operator()(const Vec6 &perturbation) {
+        T_Type R_perturbed;
+        R_perturbed.deepCopy(this->R);
+        R_perturbed.manifoldPlus(perturbation);
         return R_perturbed.inverse();
     }
 };
 
 class TLogMapAndJacobianFunctor {
  public:
-    Transformation R;
-    TLogMapAndJacobianFunctor(const Transformation &R) {
+    T_Type R;
+    TLogMapAndJacobianFunctor(const T_Type &R) {
         this->R = R;
     }
 
     Vec6 operator()(const Vec6 &perturbation) {
         Mat6 J;
-        Transformation R_perturbed = this->R;
-        R_perturbed = R_perturbed.manifoldPlus(perturbation);
+        T_Type R_perturbed;
+        R_perturbed.deepCopy(this->R);
+        R_perturbed.manifoldPlus(perturbation);
         return R_perturbed.logMap();
     }
 };
 
 class TManifoldMinusAndJacobianJLeftFunctor {
  public:
-    Transformation R_left;
-    Transformation R_right;
-    TManifoldMinusAndJacobianJLeftFunctor(const Transformation &R_left, const Transformation &R_right) {
-        this->R_left = R_left;
-        this->R_right = R_right;
+    T_Type R_left;
+    T_Type R_right;
+    TManifoldMinusAndJacobianJLeftFunctor(const T_Type &R_left, const T_Type &R_right) {
+        this->R_left.deepCopy(R_left);
+        this->R_right.deepCopy(R_right);
     }
 
     Vec6 operator()(const Vec6 &perturbation) {
         Mat6 J;
-        Transformation R_perturbed = this->R_left;
-        R_perturbed = R_perturbed.manifoldPlus(perturbation);
+        T_Type R_perturbed;
+        R_perturbed.deepCopy(this->R_left);
+        R_perturbed.manifoldPlus(perturbation);
         return R_perturbed.manifoldMinus(this->R_right);
     }
 };
 
 class TManifoldMinusAndJacobianJRightFunctor {
  public:
-    Transformation R_left;
-    Transformation R_right;
-    TManifoldMinusAndJacobianJRightFunctor(const Transformation &R_left, const Transformation &R_right) {
-        this->R_left = R_left;
-        this->R_right = R_right;
+    T_Type R_left;
+    T_Type R_right;
+    TManifoldMinusAndJacobianJRightFunctor(const T_Type &R_left, const T_Type &R_right) {
+        this->R_left.deepCopy(R_left);
+        this->R_right.deepCopy(R_right);
     }
 
     Vec6 operator()(const Vec6 &perturbation) {
         Mat6 J;
-        Transformation R_perturbed = this->R_right;
+        T_Type R_perturbed;
+        R_perturbed.deepCopy(this->R_right);
         R_perturbed = R_perturbed.manifoldPlus(perturbation);
         return this->R_left.manifoldMinus(R_perturbed);
     }
@@ -279,29 +288,30 @@ class TManifoldMinusAndJacobianJRightFunctor {
 class TInterpolatedJTLeftFunctor {
  public:
     using Mat12 = Eigen::Matrix<double, 12, 12>;
-    Transformation T_k;
-    Transformation T_kp1;
+    T_Type T_k;
+    T_Type T_kp1;
     Vec6 vel_k;
     Vec6 vel_kp1;
 
     Eigen::Matrix<double, 6, 12> hat, candle;
-
-    Transformation T_t;
-    TInterpolatedJTLeftFunctor(const Transformation &T_k,
-                               const Transformation &T_kp1,
+    
+    TInterpolatedJTLeftFunctor(const T_Type &T_k,
+                               const T_Type &T_kp1,
                                const Vec6 &vel_k,
                                const Vec6 &vel_kp1,
                                const Eigen::Matrix<double, 6, 12> &hat,
                                const Eigen::Matrix<double, 6, 12> &candle)
-        : T_k(T_k), T_kp1(T_kp1), vel_k(vel_k), vel_kp1(vel_kp1), hat(hat), candle(candle) {
-        T_t = Transformation::interpolate(this->T_k, this->T_kp1, this->vel_k, this->vel_kp1, this->hat, this->candle);
+        : vel_k(vel_k), vel_kp1(vel_kp1), hat(hat), candle(candle) {
+        this->T_k.deepCopy(T_k);
+        this->T_kp1.deepCopy(T_kp1);
     }
 
-    Transformation operator()(const Vec6 &perturbation) {
-        Transformation T_k_perturb = this->T_k;
+    T_Type operator()(const Vec6 &perturbation) {
+        T_Type T_k_perturb;
+        T_k_perturb.deepCopy(this->T_k);
         T_k_perturb.manifoldPlus(perturbation);
-        Transformation T_int;
-        T_int = Transformation::interpolate(T_k_perturb, this->T_kp1, this->vel_k, this->vel_kp1, this->hat, this->candle);
+        T_Type T_int;
+        T_int = T_Type::interpolate(T_k_perturb, this->T_kp1, this->vel_k, this->vel_kp1, this->hat, this->candle);
         return T_int;
     }
 };
@@ -309,29 +319,30 @@ class TInterpolatedJTLeftFunctor {
 class TInterpolatedJTRightFunctor {
  public:
     using Mat12 = Eigen::Matrix<double, 12, 12>;
-    Transformation T_k;
-    Transformation T_kp1;
+    T_Type T_k;
+    T_Type T_kp1;
     Vec6 vel_k;
     Vec6 vel_kp1;
 
     Eigen::Matrix<double, 6, 12> hat, candle;
-
-    Transformation T_t;
-    TInterpolatedJTRightFunctor(const Transformation &T_k,
-                               const Transformation &T_kp1,
+    
+    TInterpolatedJTRightFunctor(const T_Type &T_k,
+                               const T_Type &T_kp1,
                                const Vec6 &vel_k,
                                const Vec6 &vel_kp1,
                                const Eigen::Matrix<double, 6, 12> &hat,
                                const Eigen::Matrix<double, 6, 12> &candle)
-            : T_k(T_k), T_kp1(T_kp1), vel_k(vel_k), vel_kp1(vel_kp1), hat(hat), candle(candle) {
-        T_t = Transformation::interpolate(this->T_k, this->T_kp1, this->vel_k, this->vel_kp1, this->hat, this->candle);
+            : vel_k(vel_k), vel_kp1(vel_kp1), hat(hat), candle(candle) {
+        this->T_k = T_k;
+        this->T_kp1 = T_kp1;
     }
 
-    Transformation operator()(const Vec6 &perturbation) {
-        Transformation T_kp1_perturb = this->T_kp1;
+    T_Type operator()(const Vec6 &perturbation) {
+        T_Type T_kp1_perturb;
+        T_kp1_perturb.deepCopy(this->T_kp1);
         T_kp1_perturb.manifoldPlus(perturbation);
-        Transformation T_int;
-        T_int = Transformation::interpolate(this->T_k, T_kp1_perturb, this->vel_k, this->vel_kp1, this->hat, this->candle);
+        T_Type T_int;
+        T_int = T_Type::interpolate(this->T_k, T_kp1_perturb, this->vel_k, this->vel_kp1, this->hat, this->candle);
         return T_int;
     }
 };
@@ -339,28 +350,28 @@ class TInterpolatedJTRightFunctor {
 class TInterpolatedJVLeftFunctor {
  public:
     using Mat12 = Eigen::Matrix<double, 12, 12>;
-    Transformation T_k;
-    Transformation T_kp1;
+    T_Type T_k;
+    T_Type T_kp1;
     Vec6 vel_k;
     Vec6 vel_kp1;
 
     Eigen::Matrix<double, 6, 12> hat, candle;
-
-    Transformation T_t;
-    TInterpolatedJVLeftFunctor(const Transformation &T_k,
-                                const Transformation &T_kp1,
+    
+    TInterpolatedJVLeftFunctor(const T_Type &T_k,
+                                const T_Type &T_kp1,
                                 const Vec6 &vel_k,
                                 const Vec6 &vel_kp1,
                                 const Eigen::Matrix<double, 6, 12> &hat,
                                 const Eigen::Matrix<double, 6, 12> &candle)
-            : T_k(T_k), T_kp1(T_kp1), vel_k(vel_k), vel_kp1(vel_kp1), hat(hat), candle(candle) {
-        T_t = Transformation::interpolate(this->T_k, this->T_kp1, this->vel_k, this->vel_kp1, this->hat, this->candle);
+            : vel_k(vel_k), vel_kp1(vel_kp1), hat(hat), candle(candle) {
+        this->T_k = T_k;
+        this->T_kp1 = T_kp1;
     }
 
-    Transformation operator()(const Vec6 &perturbation) {
+    T_Type operator()(const Vec6 &perturbation) {
         Vec6 vel_k_perturb = this->vel_k + perturbation;
-        Transformation T_int;
-        T_int = Transformation::interpolate(this->T_k, this->T_kp1, vel_k_perturb, this->vel_kp1, this->hat, this->candle);
+        T_Type T_int;
+        T_int = T_Type::interpolate(this->T_k, this->T_kp1, vel_k_perturb, this->vel_kp1, this->hat, this->candle);
         return T_int;
     }
 };
@@ -368,28 +379,28 @@ class TInterpolatedJVLeftFunctor {
 class TInterpolatedJVRightFunctor {
  public:
     using Mat12 = Eigen::Matrix<double, 12, 12>;
-    Transformation T_k;
-    Transformation T_kp1;
+    T_Type T_k;
+    T_Type T_kp1;
     Vec6 vel_k;
     Vec6 vel_kp1;
 
     Eigen::Matrix<double, 6, 12> hat, candle;
-
-    Transformation T_t;
-    TInterpolatedJVRightFunctor(const Transformation &T_k,
-                               const Transformation &T_kp1,
+    
+    TInterpolatedJVRightFunctor(const T_Type &T_k,
+                               const T_Type &T_kp1,
                                const Vec6 &vel_k,
                                const Vec6 &vel_kp1,
                                const Eigen::Matrix<double, 6, 12> &hat,
                                const Eigen::Matrix<double, 6, 12> &candle)
-            : T_k(T_k), T_kp1(T_kp1), vel_k(vel_k), vel_kp1(vel_kp1), hat(hat), candle(candle) {
-        T_t = Transformation::interpolate(this->T_k, this->T_kp1, this->vel_k, this->vel_kp1, this->hat, this->candle);
+            : vel_k(vel_k), vel_kp1(vel_kp1), hat(hat), candle(candle) {
+        this->T_k = T_k;
+        this->T_kp1 = T_kp1;
     }
 
-    Transformation operator()(const Vec6 &perturbation) {
+    T_Type operator()(const Vec6 &perturbation) {
         Vec6 vel_kp1_perturb = this->vel_kp1 + perturbation;
-        Transformation T_int;
-        T_int = Transformation::interpolate(this->T_k, this->T_kp1, this->vel_k, vel_kp1_perturb, this->hat, this->candle);
+        T_Type T_int;
+        T_int = T_Type::interpolate(this->T_k, this->T_kp1, this->vel_k, vel_kp1_perturb, this->hat, this->candle);
         return T_int;
     }
 };

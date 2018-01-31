@@ -14,7 +14,7 @@ Eigen::Matrix<double, 12, 12> calculateCVIntegrand(const wave::Mat6 &Qc,
                                                    const double &delta_T,
                                                    const wave::Vec6 &velocity) {
     Eigen::Matrix<double, 12, 12> retval;
-    auto jacobian = wave::Transformation::SE3LeftJacobian(delta_T * velocity, 1e-4);
+    auto jacobian = wave::Transformation<void>::SE3LeftJacobian(delta_T * velocity, 1e-4);
     retval.block<6, 6>(0, 0) = delta_T * delta_T * jacobian * Qc * jacobian.transpose();
     retval.block<6, 6>(6, 0) = delta_T * jacobian.transpose();
     retval.block<6, 6>(0, 6) = delta_T * jacobian;
@@ -26,8 +26,8 @@ void calculateTransitionMatrix(const double &delta_T,
                                const wave::Vec6 &velocity,
                                Eigen::Matrix<double, 12, 12> &transition_matrix) {
     transition_matrix.setIdentity();
-    transition_matrix.block<6, 6>(0, 0) = wave::Transformation::expMapAdjoint(delta_T * velocity, 1e-4);
-    transition_matrix.block<6, 6>(0, 6) = delta_T * wave::Transformation::SE3LeftJacobian(delta_T * velocity, 1e-4);
+    transition_matrix.block<6, 6>(0, 0) = wave::Transformation<void>::expMapAdjoint(delta_T * velocity, 1e-4);
+    transition_matrix.block<6, 6>(0, 6) = delta_T * wave::Transformation<void>::SE3LeftJacobian(delta_T * velocity, 1e-4);
 }
 
 Eigen::Matrix<double, 12, 12> integrateCovariance(const wave::Mat6 &Qc,
@@ -60,7 +60,7 @@ namespace wave {
  * this test only checks against values from Matlab implementation
  */
 TEST(ConstantVelocity, Jacobians) {
-    Transformation start, end;
+    Transformation<Eigen::Matrix<double, 3, 4>> start, end;
     Mat4 t_matrix;
     t_matrix << 0.936293363584199, -0.275095847318244, 0.218350663146334, 1, 0.289629477625516, 0.956425085849232,
       -0.036957013524625, 2, -0.198669330795061, 0.097843395007256, 0.975170327201816, 3, 0, 0, 0, 1;
@@ -87,8 +87,8 @@ TEST(ConstantVelocity, Jacobians) {
 
     const double **parameters;
     parameters = new const double *[4];
-    parameters[0] = start.getInternalMatrix().data();
-    parameters[1] = end.getInternalMatrix().data();
+    parameters[0] = start.getInternalMatrix().derived().data();
+    parameters[1] = end.getInternalMatrix().derived().data();
     parameters[2] = start_vel.data();
     parameters[3] = end_vel.data();
 

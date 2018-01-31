@@ -633,6 +633,8 @@ bool LaserOdom::findCorrespondingPoints(const Vec3 &query, const uint32_t &f_idx
 }
 
 bool LaserOdom::match() {
+    double zero_pt[3] = {0};
+
     ceres::Problem problem;
 
     std::vector<size_t> ret_indices;
@@ -707,22 +709,28 @@ bool LaserOdom::match() {
                     std::vector<double> residuals;
                     switch (this->feature_definitions.at(i).residual) {
                         case PointToLine:
-                            cost_function =
-                              new SE3PointToLineGP(this->feature_points.at(i).at(j).at(pt_cntr).pt,
-                                                   this->prv_feature_points.at(i).points.at(ret_indices.at(0)).data(),
-                                                   this->prv_feature_points.at(i).points.at(ret_indices.at(1)).data(),
-                                                   hat.block<6, 12>(0, 0),
-                                                   candle.block<6, 12>(0, 0),
-                                                   covZ.cast<double>(),
-                                                   this->param.use_weighting);
-                            //                            cost_function = new SE3PointToLine(
-                            //                              this->feature_points.at(i).at(j).at(pt_cntr).pt,
-                            //                              this->prv_feature_points.at(i).points.at(ret_indices.at(0)).data(),
-                            //                              this->prv_feature_points.at(i).points.at(ret_indices.at(1)).data(),
-                            //                              &(this->scale_lookup.at(this->feature_points.at(i).at(j).at(pt_cntr).tick)),
-                            //                              covZ.cast<double>(),
-                            //                              this->param.use_weighting);
-                            residuals.resize(2);
+                            if (this->param.treat_lines_as_planes) {
+                                cost_function =
+                                        new SE3PointToPlaneGP(this->feature_points.at(i).at(j).at(pt_cntr).pt,
+                                                              this->prv_feature_points.at(i).points.at(ret_indices.at(0)).data(),
+                                                              this->prv_feature_points.at(i).points.at(ret_indices.at(1)).data(),
+                                                              zero_pt,
+                                                              hat.block<6, 12>(0, 0),
+                                                              candle.block<6, 12>(0, 0),
+                                                              covZ.cast<double>(),
+                                                              this->param.use_weighting);
+                                residuals.resize(1);
+                            } else {
+                                cost_function =
+                                        new SE3PointToLineGP(this->feature_points.at(i).at(j).at(pt_cntr).pt,
+                                                             this->prv_feature_points.at(i).points.at(ret_indices.at(0)).data(),
+                                                             this->prv_feature_points.at(i).points.at(ret_indices.at(1)).data(),
+                                                             hat.block<6, 12>(0, 0),
+                                                             candle.block<6, 12>(0, 0),
+                                                             covZ.cast<double>(),
+                                                             this->param.use_weighting);
+                                residuals.resize(2);
+                            }
                             break;
                         case PointToPlane:
                             cost_function =
@@ -734,14 +742,6 @@ bool LaserOdom::match() {
                                                     candle.block<6, 12>(0, 0),
                                                     covZ.cast<double>(),
                                                     this->param.use_weighting);
-                            //                            cost_function = new SE3PointToPlane(
-                            //                              this->feature_points.at(i).at(j).at(pt_cntr).pt,
-                            //                              this->prv_feature_points.at(i).points.at(ret_indices.at(0)).data(),
-                            //                              this->prv_feature_points.at(i).points.at(ret_indices.at(1)).data(),
-                            //                              this->prv_feature_points.at(i).points.at(ret_indices.at(2)).data(),
-                            //                              &(this->scale_lookup.at(this->feature_points.at(i).at(j).at(pt_cntr).tick)),
-                            //                              covZ.cast<double>(),
-                            //                              this->param.use_weighting);
                             residuals.resize(1);
                             break;
                         default: continue;

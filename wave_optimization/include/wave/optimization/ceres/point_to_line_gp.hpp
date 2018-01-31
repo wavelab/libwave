@@ -30,7 +30,7 @@ class SE3PointToLineGP : public ceres::SizedCostFunction<2, 12, 12, 6, 6> {
     // This is the Jacobian of the cost function wrt an the transformed point
     Eigen::Matrix<double, 3, 3> Jres_P;
 
-    mutable Transformation T_current;
+    mutable Transformation<Eigen::Matrix<double, 3, 4>> T_current;
 
     // Interpolation factors
     const Eigen::Matrix<double, 6, 12> hat;
@@ -44,8 +44,8 @@ class SE3PointToLineGP : public ceres::SizedCostFunction<2, 12, 12, 6, 6> {
     // Complete Jacobian will null row
     mutable Eigen::Matrix<double, 3, 6> Jr_T;
     // Reduced Jacobian
-    mutable Eigen::Matrix<double, 2, 12> Jr_Tk;
-    mutable Eigen::Matrix<double, 2, 12> Jr_Tkp1;
+//    mutable Eigen::Matrix<double, 2, 12> Jr_Tk;
+//    mutable Eigen::Matrix<double, 2, 12> Jr_Tkp1;
 
     /**
      * This is used to rotate the residual into a frame where one of the unit vectors is

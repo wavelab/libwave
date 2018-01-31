@@ -26,7 +26,7 @@ bool SE3Parameterization::Plus(const double *x, const double *delta, double *x_p
          x[2], x[5], x[8], x[11],
             0,    0,    0,     1;
 
-    Transformation transform;
+    Transformation<Eigen::Matrix<double, 3, 4>> transform;
     transform.setFromMatrix(T);
     transform.manifoldPlus(delta_vec);
     auto R = transform.getRotationMatrix();

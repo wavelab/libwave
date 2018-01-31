@@ -129,7 +129,7 @@ TEST(OdomTest, StraightLineGarage) {
     // odom setup
     LaserOdomParams params;
     params.TTL = 4;
-    params.n_flat = 40;
+    params.n_flat = 0;
     params.n_edge = 20;
     params.n_int_edge = 0;
     params.edge_tol = 2;
@@ -159,6 +159,7 @@ TEST(OdomTest, StraightLineGarage) {
 //    params.output_correspondences = true;
     params.check_gradients = false;
     params.Qc = 10000 * Eigen::Matrix<double, 6, 6>::Identity();
+    params.treat_lines_as_planes = true;
 
     LaserOdom odom(params);
     std::vector<PointXYZIR> vec;

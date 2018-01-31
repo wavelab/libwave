@@ -29,7 +29,7 @@ TEST(transform_prior, unit_weights) {
     jacobian[0] = new double[72];
 
     double residual[6] = {0};
-    Transformation prior_val;
+    Transformation<> prior_val;
 
     ceres::CostFunction* cost_function = new TransformPrior(Mat6::Identity(), prior_val);
     cost_function->Evaluate(trans, residual, jacobian);
@@ -66,7 +66,7 @@ TEST(transform_prior, weighted_information) {
     jacobian[0] = new double[72];
 
     double residual[6] = {0};
-    Transformation prior_val;
+    Transformation<> prior_val;
 
     Mat6 covar;
     covar << 0.049608482448035, 0.000039527111973, -0.000079054223946, -0.000002281574415, 0.014183675367405, -0.026870388557460,

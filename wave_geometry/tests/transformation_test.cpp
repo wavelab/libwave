@@ -10,9 +10,15 @@
 
 namespace wave {
 
+namespace {
+
+using T_Type = Transformation<Eigen::Matrix<double, 3, 4>>;
+
+}
+
 class TransformationTestFixture : public ::testing::Test {
  public:
-    Transformation transform_expected;
+    T_Type transform_expected;
     Vec6 transformation_twist_parameters;
     double comparison_threshold = 1e-5;
 
@@ -29,19 +35,19 @@ class TransformationTestFixture : public ::testing::Test {
 
 // Test that fromEulerXYZ returns the correct matrix.
 TEST_F(TransformationTestFixture, testFromEulerXYZ) {
-    Transformation transformation(Vec3(0.1, 0.2, 0.3), Vec3(1, 2, 3));
+    T_Type transformation(Vec3(0.1, 0.2, 0.3), Vec3(1, 2, 3));
 
     ASSERT_TRUE(this->transform_expected.isNear(transformation, this->comparison_threshold));
 
     // Test non-finite input arguments
     Vec3 ip_nan(std::numeric_limits<double>::quiet_NaN(), 0, 0);
-    ASSERT_THROW(Transformation t_nan(ip_nan, Vec3(1, 2, 3)), std::invalid_argument);
+    ASSERT_THROW(T_Type t_nan(ip_nan, Vec3(1, 2, 3)), std::invalid_argument);
     Vec3 ip_inf(std::numeric_limits<double>::infinity(), 0, 0);
-    ASSERT_THROW(Transformation t_inf(ip_inf, Vec3(1, 2, 3)), std::invalid_argument);
+    ASSERT_THROW(T_Type t_inf(ip_inf, Vec3(1, 2, 3)), std::invalid_argument);
 }
 
 TEST_F(TransformationTestFixture, testFromExpMap) {
-    Transformation transform;
+    T_Type transform;
     transform.setFromExpMap(this->transformation_twist_parameters);
 
     ASSERT_TRUE(this->transform_expected.isNear(transform, this->comparison_threshold));
@@ -61,23 +67,23 @@ TEST_F(TransformationTestFixture, testLogMap) {
 
 // Test to ensure default constructor produces identity.
 TEST_F(TransformationTestFixture, testDefaultConstructor) {
-    Transformation R;
+    T_Type R;
     Mat4 eye;
     // Use Eigen's identity.
     eye.setIdentity();
-    Transformation Q;
+    T_Type Q;
     Q.setFromMatrix(eye);
     ASSERT_TRUE(R.isNear(Q, this->comparison_threshold));
 }
 
 TEST_F(TransformationTestFixture, testSetIdentity) {
-    Transformation transform;
+    T_Type transform;
     transform.setFromExpMap(this->transformation_twist_parameters);
     transform.setIdentity();
     Mat4 eye;
     // Use Eigen's identity.
     eye.setIdentity();
-    Transformation Q;
+    T_Type Q;
     Q.setFromMatrix(eye);
     ASSERT_TRUE(transform.isNear(Q, this->comparison_threshold));
 }
@@ -85,17 +91,17 @@ TEST_F(TransformationTestFixture, testSetIdentity) {
 TEST_F(TransformationTestFixture, testCompose) {
     Vec6 T2_twist;
     T2_twist << -0.1, -0.2, -0.3, 2, 1, 2;
-    Transformation T2;
+    T_Type T2;
     T2.setFromExpMap(T2_twist);
 
     Vec6 T3_twist;
     T3_twist << -0.033491978759741, 0.008765073464665, -0.007426741800595, 3.011657415278366, 3.184233419918160,
       4.863413030607249;
 
-    Transformation T3;
+    T_Type T3;
     T3.setFromExpMap(T3_twist);
 
-    Transformation composed = this->transform_expected * T2;
+    T_Type composed = this->transform_expected * T2;
     ASSERT_TRUE(T3.isNear(composed, this->comparison_threshold));
 }
 
@@ -104,7 +110,7 @@ TEST_F(TransformationTestFixture, testInverse) {
     T_inv_twist << -0.068924613882065, -0.213225926957886, -0.288748939228676, -0.965590777183138, -1.960945901104432,
       -3.037052911306709;
 
-    Transformation T_inv;
+    T_Type T_inv;
     T_inv.setFromExpMap(T_inv_twist);
 
     this->transform_expected.invert();
@@ -132,7 +138,7 @@ TEST_F(TransformationTestFixture, testInverseTransform) {
 TEST_F(TransformationTestFixture, testManifoldPlus) {
     Vec6 T2_twist;
     T2_twist << -0.1, -0.2, -0.3, 2, 1, 2;
-    Transformation T2;
+    T_Type T2;
     T2.setFromExpMap(T2_twist);
 
     // expm(t1) * T2
@@ -142,7 +148,7 @@ TEST_F(TransformationTestFixture, testManifoldPlus) {
     Vec6 T3_twist;
     T3_twist << -0.033491978759741, 0.008765073464665, -0.007426741800595, 3.011657415278366, 3.184233419918160,
       4.863413030607249;
-    Transformation T3;
+    T_Type T3;
     T3.setFromExpMap(T3_twist);
 
     ASSERT_TRUE(T2.isNear(T3, this->comparison_threshold));
@@ -152,12 +158,12 @@ TEST_F(TransformationTestFixture, testManifoldMinus) {
     Vec6 T3_twist;
     T3_twist << -0.033491978759741, 0.008765073464665, -0.007426741800595, 3.011657415278366, 3.184233419918160,
       4.863413030607249;
-    Transformation T3;
+    T_Type T3;
     T3.setFromExpMap(T3_twist);
 
     Vec6 T2_twist;
     T2_twist << -0.1, -0.2, -0.3, 2, 1, 2;
-    Transformation T2;
+    T_Type T2;
     T2.setFromExpMap(T2_twist);
 
     Vec6 params = T3.manifoldMinus(T2);
@@ -192,16 +198,16 @@ TEST_F(TransformationTestFixture, testComposeAndJacobian) {
     Vec6 T3_twist;
     T3_twist << -0.033491978759741, 0.008765073464665, -0.007426741800595, 3.011657415278366, 3.184233419918160,
       4.863413030607249;
-    Transformation T3;
+    T_Type T3;
     T3.setFromExpMap(T3_twist);
 
     Vec6 T2_twist;
     T2_twist << -0.1, -0.2, -0.3, 2, 1, 2;
-    Transformation T2;
+    T_Type T2;
     T2.setFromExpMap(T2_twist);
 
     Mat6 J_left_analytical, J_right_analytical;
-    Transformation composed = this->transform_expected.composeAndJacobian(T2, J_left_analytical, J_right_analytical);
+    T_Type composed = this->transform_expected.composeAndJacobian(T2, J_left_analytical, J_right_analytical);
     ASSERT_TRUE(composed.isNear(T3, this->comparison_threshold));
 
     Mat6 J_left_numerical, J_right_numerical;
@@ -228,11 +234,11 @@ TEST_F(TransformationTestFixture, testInverseAndJacoban) {
     T_inv_twist << -0.068924613882065, -0.213225926957886, -0.288748939228676, -0.965590777183138, -1.960945901104432,
       -3.037052911306709;
 
-    Transformation T_inv;
+    T_Type T_inv;
     T_inv.setFromExpMap(T_inv_twist);
 
     Mat6 J_analytical;
-    Transformation T1inv = this->transform_expected.inverseAndJacobian(J_analytical);
+    T_Type T1inv = this->transform_expected.inverseAndJacobian(J_analytical);
     ASSERT_TRUE(T1inv.isNear(T_inv, this->comparison_threshold));
 
     Mat6 J_numerical;
@@ -248,7 +254,7 @@ TEST_F(TransformationTestFixture, testInverseAndJacoban) {
 TEST_F(TransformationTestFixture, testLogMapAndJacobian) {
     Mat6 J_analytical;
     Vec6 log_params = this->transform_expected.logMap();
-    J_analytical = Transformation::SE3LeftJacobian(log_params, this->comparison_threshold);
+    J_analytical = T_Type::SE3LeftJacobian(log_params, this->comparison_threshold);
     J_analytical = J_analytical.inverse();
     ASSERT_LE((log_params - this->transformation_twist_parameters).norm(), this->comparison_threshold);
 
@@ -266,12 +272,12 @@ TEST_F(TransformationTestFixture, testManifoldMinusAndJacobian) {
     Vec6 T3_twist;
     T3_twist << -0.033491978759741, 0.008765073464665, -0.007426741800595, 3.011657415278366, 3.184233419918160,
       4.863413030607249;
-    Transformation T3;
+    T_Type T3;
     T3.setFromExpMap(T3_twist);
 
     Vec6 T2_twist;
     T2_twist << -0.1, -0.2, -0.3, 2, 1, 2;
-    Transformation T2;
+    T_Type T2;
     T2.setFromExpMap(T2_twist);
 
     // T3 - T2 = T1 (transform_expected)

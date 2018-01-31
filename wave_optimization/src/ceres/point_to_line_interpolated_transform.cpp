@@ -50,7 +50,7 @@ SE3PointToLine::SE3PointToLine(const double *const p, const double *const pA, co
     auto v = unitdiff.cross(unitz);
     auto s = v.norm();
     auto c = unitz.dot(unitdiff);
-    auto skew = Transformation::skewSymmetric3(v);
+    auto skew = Transformation<void>::skewSymmetric3(v);
     this->rotation = Eigen::Matrix3d::Identity() + skew + skew*skew*((1-c)/(s*s));
 
     this->Jres_T = this->rotation * Jres_P * JP_T;
@@ -64,16 +64,13 @@ SE3PointToLine::SE3PointToLine(const double *const p, const double *const pA, co
 }
 
 bool SE3PointToLine::Evaluate(double const *const *parameters, double *residuals, double **jacobians) const {
-    Mat4 transform_matrix = Mat4::Identity();
-    transform_matrix << parameters[0][0], parameters[0][3], parameters[0][6], parameters[0][9], parameters[0][1],
-      parameters[0][4], parameters[0][7], parameters[0][10], parameters[0][2], parameters[0][5], parameters[0][8],
-      parameters[0][11], 0, 0, 0, 1;
-    Transformation transform;
-    transform.setFromMatrix(transform_matrix);
-    Transformation interpolated;
+    auto tk_ptr = std::make_shared<Eigen::Map<const Eigen::Matrix<double, 3, 4>>>(parameters[0], 3, 4);
+    Transformation<Eigen::Map<const Eigen::Matrix<double, 3, 4>>> Tk(tk_ptr);
+
+    Transformation<Eigen::Matrix<double, 3, 4>> interpolated;
 
     Eigen::Map<const Vec3> PT(pt, 3, 1);
-    auto twist = transform.logMap();
+    auto twist = Tk.logMap();
     interpolated.setFromExpMap(*(this->scale) * twist);
     Vec3 POINT = interpolated.transform(PT);
     double point[3];
@@ -99,9 +96,9 @@ bool SE3PointToLine::Evaluate(double const *const *parameters, double *residuals
     if (jacobians != NULL) {
         // Have to apply the "lift" jacobian to the Interpolation Jacobian because
         // of Ceres local parameterization
-        Transformation::Jinterpolated(twist, *(this->scale), this->J_int);
+        Transformation<void>::Jinterpolated(twist, *(this->scale), this->J_int);
         interpolated.J_lift(this->J_lift);
-        transform.J_lift(this->J_lift_full);
+        Tk.J_lift(this->J_lift_full);
 
         this->J_lift_full_pinv = (this->J_lift_full.transpose() * this->J_lift_full).inverse() * this->J_lift_full.transpose();
 

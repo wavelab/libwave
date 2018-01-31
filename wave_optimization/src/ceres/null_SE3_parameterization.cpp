@@ -19,13 +19,16 @@ namespace wave {
 
 bool NullSE3Parameterization::Plus(const double *x, const double *delta, double *x_plus_delta) const {
     Eigen::Map<const Vec6> delta_vec(delta);
-    Eigen::Map<const Eigen::Matrix<double, 3, 4>> x_mat(x);
 
-    Transformation transform(x_mat);
+    auto x_ptr = std::make_shared<Eigen::Map<const Eigen::Matrix<double, 3, 4>>>(x, 3, 4);
+    Transformation<Eigen::Map<const Eigen::Matrix<double, 3, 4>>> start(x_ptr);
+
+    auto xpd_ptr = std::make_shared<Eigen::Map<Eigen::Matrix<double, 3, 4>>>(x_plus_delta, 3, 4);
+    Transformation<Eigen::Map<Eigen::Matrix<double, 3, 4>>> transform(xpd_ptr);
+
+    transform.deepCopy(start);
     transform.manifoldPlus(delta_vec);
     transform.normalizeMaybe(1e-5);
-
-    Eigen::Map<Eigen::Matrix<double, 3, 4>>(x_plus_delta, 3, 4) = transform.getInternalMatrix();
 
     return true;
 }

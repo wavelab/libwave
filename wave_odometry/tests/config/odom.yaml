@@ -45,9 +45,10 @@ TTL: 1             #  Maximum life of feature in local map with no correspondenc
 iso_var: 0.005       #  Variance to use if weighing is set.
 
 #  Setting flags
-bool visualize: false               #  Whether to run a visualization for debugging
-bool output_trajectory: false       #  Whether to output solutions for debugging/plotting
-bool output_correspondences: false  #  Whether to output correpondences for debugging/plotting
-bool only_extract_features: false   #  If set, no transforms are calculated
-bool use_weighting: false           #  If set, pre-whiten residuals
-bool check_gradients: false         #  If set, use Ceres gradient checker on each jacobians
+visualize: false               #  Whether to run a visualization for debugging
+output_trajectory: false       #  Whether to output solutions for debugging/plotting
+output_correspondences: false  #  Whether to output correpondences for debugging/plotting
+only_extract_features: false   #  If set, no transforms are calculated
+use_weighting: false           #  If set, pre-whiten residuals
+check_gradients: false         #  If set, use Ceres gradient checker on each jacobians
+treat_lines_as_planes: false   #  If set, use point to plane cost function exclusively

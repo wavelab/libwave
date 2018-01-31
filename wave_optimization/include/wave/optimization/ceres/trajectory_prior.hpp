@@ -14,7 +14,7 @@ class TrajectoryPrior : public ceres::SizedCostFunction<12, 12, 6> {
  private:
     using Mat12 = Eigen::Matrix<double, 12, 12>;
     using Vec12 = Eigen::Matrix<double, 12, 1>;
-    const Transformation &inv_prior;
+    const Transformation<> &inv_prior;
     const Vec6 &twist_prior;
     /// Set to be the square root of the inverse covariance
     const Mat12 weight_matrix;
@@ -25,27 +25,22 @@ class TrajectoryPrior : public ceres::SizedCostFunction<12, 12, 6> {
  public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     virtual ~TrajectoryPrior() {}
-    TrajectoryPrior(Mat12 weight_matrix, const Transformation &inv_prior, const Vec6 &twist_prior)
+    TrajectoryPrior(Mat12 weight_matrix, const Transformation<> &inv_prior, const Vec6 &twist_prior)
         : inv_prior(inv_prior), twist_prior(twist_prior), weight_matrix(weight_matrix) {
         this->J_T.setZero();
     }
 
     virtual bool Evaluate(double const *const *parameters, double *residuals, double **jacobians) const {
-        Eigen::Map<const Eigen::Matrix<double, 3, 4>> map(parameters[0]);
+        auto tk_ptr = std::make_shared<Eigen::Map<const Eigen::Matrix<double, 3, 4>>>(parameters[0], 3, 4);
+        Transformation<Eigen::Map<const Eigen::Matrix<double, 3, 4>>> transform(tk_ptr);
+
         Eigen::Map<const Vec6> twist_map(parameters[1]);
-        Transformation transform;
-        transform.getInternalMatrix() = map;
         auto diff = transform * this->inv_prior;
-        Vec12 residual;
+        Eigen::Map<Eigen::Matrix<double, 12, 1>> residual(residuals, 12, 1);
         residual.block<6, 1>(0, 0) = diff.logMap();
         residual.block<6, 1>(6, 0) = twist_map - this->twist_prior;
         if (jacobians) {
             if (jacobians[0]) {
-//                this->J_T.block<12, 6>(0, 0) =
-//                  this->weight_matrix.block<12, 6>(0, 0) *
-//                  Transformation::SE3LeftJacobian(residual.block<6, 1>(0, 0), 1e-4).inverse();
-//                Eigen::Map<Eigen::Matrix<double, 12, 12, Eigen::RowMajor>>(jacobians[0], 12, 12) = this->J_T;
-
                 this->J_T.block<12, 6>(0, 0) =
                   this->weight_matrix.block<12, 6>(0, 0);
                 Eigen::Map<Eigen::Matrix<double, 12, 12, Eigen::RowMajor>>(jacobians[0], 12, 12) = this->J_T;
@@ -56,7 +51,6 @@ class TrajectoryPrior : public ceres::SizedCostFunction<12, 12, 6> {
             }
         }
         residual = this->weight_matrix * residual;
-        Eigen::Map<Eigen::Matrix<double, 12, 1>>(residuals, 12, 1) = residual;
 
         return true;
     }

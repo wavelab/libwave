@@ -106,6 +106,11 @@ struct LaserOdomParams {
     bool only_extract_features = false;   // If set, no transforms are calculated
     bool use_weighting = false;           // If set, pre-whiten residuals
     bool check_gradients = false;         // If set, use Ceres gradient checker on each jacobians
+    /**
+     * If set instead of matching edge points to lines, match edge points to a plane
+     * defined by the original line points and the origin
+     */
+    bool treat_lines_as_planes = false;
 };
 
 class LaserOdom {
