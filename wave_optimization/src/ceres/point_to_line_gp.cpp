@@ -73,17 +73,17 @@ bool SE3PointToLineGP::Evaluate(double const *const *parameters, double *residua
     auto tk_ptr = std::make_shared<Eigen::Map<const Eigen::Matrix<double, 3, 4>>>(parameters[0], 3, 4);
     auto tkp1_ptr = std::make_shared<Eigen::Map<const Eigen::Matrix<double, 3, 4>>>(parameters[1], 3, 4);
 
-    Transformation<Eigen::Map<const Eigen::Matrix<double, 3, 4>>> Tk(tk_ptr);
-    Transformation<Eigen::Map<const Eigen::Matrix<double, 3, 4>>> Tkp1(tkp1_ptr);
+    Transformation<Eigen::Map<const Eigen::Matrix<double, 3, 4>>, true> Tk(tk_ptr);
+    Transformation<Eigen::Map<const Eigen::Matrix<double, 3, 4>>, true> Tkp1(tkp1_ptr);
 
     Eigen::Map<const Vec6> vel_k(parameters[2], 6, 1);
     Eigen::Map<const Vec6> vel_kp1(parameters[3], 6, 1);
 
     if (jacobians) {
-        this->T_current = Transformation<Eigen::Map<const Eigen::Matrix<double, 3, 4>>>::interpolateAndJacobians(Tk, Tkp1, vel_k, vel_kp1, this->hat, this->candle,
+        this->T_current = Transformation<Eigen::Map<const Eigen::Matrix<double, 3, 4>>, true>::interpolateAndJacobians(Tk, Tkp1, vel_k, vel_kp1, this->hat, this->candle,
             this->JT_Ti, this->JT_Tip1, this->JT_Wi, this->JT_Wip1);
     } else {
-        this->T_current = Transformation<Eigen::Map<const Eigen::Matrix<double, 3, 4>>>::interpolate(Tk, Tkp1, vel_k, vel_kp1, this->hat, this->candle);
+        this->T_current = Transformation<Eigen::Map<const Eigen::Matrix<double, 3, 4>>, true>::interpolate(Tk, Tkp1, vel_k, vel_kp1, this->hat, this->candle);
     }
 
     Eigen::Map<const Vec3> PT(this->pt, 3, 1);

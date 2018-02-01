@@ -114,6 +114,7 @@ struct LaserOdomParams {
 };
 
 class LaserOdom {
+    using T_Type = Transformation<Eigen::Matrix<double, 3, 4>, true>;
  public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     LaserOdom(const LaserOdomParams params);
@@ -124,7 +125,7 @@ class LaserOdom {
     // The transform is T_start_end
     struct Trajectory {
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-        Transformation<> pose;
+        T_Type pose;
         Vec6 twist;
     };
 

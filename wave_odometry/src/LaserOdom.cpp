@@ -784,6 +784,8 @@ bool LaserOdom::match() {
     covar_options.sparse_linear_algebra_library_type = ceres::SparseLinearAlgebraLibraryType::SUITE_SPARSE;
     covar_options.algorithm_type = ceres::CovarianceAlgorithmType::SPARSE_QR;
 
+//    problem.SetParameterBlockConstant(this->cur_trajectory.at(0).pose.getInternalMatrix().derived().data());
+
     if (problem.NumResidualBlocks() < this->param.min_residuals) {
         LOG_ERROR("Less than expected residuals, resetting");
         LOG_ERROR("%d residuals, threshold is %d", problem.NumResidualBlocks(), this->param.min_residuals);
@@ -793,7 +795,7 @@ bool LaserOdom::match() {
     } else if (!this->param.only_extract_features) {
         ceres::Solver::Summary summary;
         ceres::Solve(options, &problem, &summary);
-        LOG_INFO("%s", summary.FullReport().c_str());
+//        LOG_INFO("%s", summary.FullReport().c_str());
         //        ceres::Covariance covariance(covar_options);
         //        covariance.Compute(this->covariance_blocks, &problem);
         //        covariance.GetCovarianceBlock(

@@ -9,7 +9,7 @@
 
 namespace wave {
 
-template <typename Derived = Eigen::Matrix<double, 3, 4>>
+template <typename Derived = Eigen::Matrix<double, 3, 4>, bool approximate = false>
 class Transformation {
  public:
     std::shared_ptr<Eigen::MatrixBase<Derived>> matrix;
@@ -77,7 +77,8 @@ class Transformation {
      */
     Transformation &normalizeMaybe(double tolerance);
 
-    static Transformation<Eigen::Matrix<double, 3, 4>> interpolate(const Transformation &T_k,
+    template<bool approx = approximate>
+    static Transformation<Eigen::Matrix<double, 3, 4>, approx> interpolate(const Transformation &T_k,
                                                const Transformation &T_kp1,
                                                const Vec6 &twist_k,
                                                const Vec6 &twist_kp1,
@@ -95,7 +96,8 @@ class Transformation {
      * @param candle: second interpolation factor
      * @return Transformation at time t
      */
-    static Transformation<Eigen::Matrix<double, 3, 4>> interpolateAndJacobians(const Transformation &T_k,
+    template<bool approx = approximate>
+    static Transformation<Eigen::Matrix<double, 3, 4>, approx> interpolateAndJacobians(const Transformation &T_k,
                                                   const Transformation &T_kp1,
                                                   const Vec6 &twist_k,
                                                   const Vec6 &twist_kp1,
@@ -228,7 +230,8 @@ class Transformation {
      * Return the inverse of the transformation matrix, while preserving original
      * @return the inverse of the transformation object;
      */
-    Transformation<Eigen::Matrix<double, 3, 4>> inverse() const;
+    template<bool approx = false>
+    Transformation<Eigen::Matrix<double, 3, 4>, approx> inverse() const;
 
     /** Checks if the input transformation is sufficiently close to this transformation
      *
@@ -299,8 +302,8 @@ class Transformation {
      * @f$ T_{right} @f$, which is also the input transformation.
      * @return The resulting composition @f$ T_{out} @f$.
      */
-    template<typename Other>
-    Transformation<Eigen::Matrix<double, 3, 4>> composeAndJacobian(const Transformation<Other> &T_right, Mat6 &J_left, Mat6 &J_right) const;
+    template<typename Other, bool approx = approximate>
+    Transformation<Eigen::Matrix<double, 3, 4>, approx> composeAndJacobian(const Transformation<Other, approximate> &T_right, Mat6 &J_left, Mat6 &J_right) const;
 
     /** Compute the inverse of **this** transformation and computes the Jacobian
      * of the inverse mapping wrt **this** transformation.
@@ -325,15 +328,15 @@ class Transformation {
     };
 
     /** Implements transformation composition. */
-    template<typename Other>
-    Transformation<Eigen::Matrix<double, 3, 4>> operator*(const Transformation<Other> &T) const;
+    template<typename Other, bool OtherApprox>
+    Transformation<Eigen::Matrix<double, 3, 4>, approximate> operator*(const Transformation<Other, OtherApprox> &T) const;
 
     /** Overload operator for manifold - */
     Vec6 operator-(const Transformation &T) const;
 
     /** Create deep copy function */
-    template<typename Other>
-    Transformation<Derived> &deepCopy(const Transformation<Other> &T);
+    template<typename Other, bool OtherApprox>
+    Transformation &deepCopy(const Transformation<Other, OtherApprox> &T);
 
 };
 }

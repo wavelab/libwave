@@ -147,7 +147,7 @@ class ManifoldMinusAndJacobianJRightFunctor {
 };
 
 namespace {
-    using T_Type = Transformation<Eigen::Matrix<double, 3, 4>>;
+    using T_Type = Transformation<Eigen::Matrix<double, 3, 4>, false>;
 }
 // Transformation functors
 class TransformAndJacobianJpointFunctor {
@@ -311,7 +311,7 @@ class TInterpolatedJTLeftFunctor {
         T_k_perturb.deepCopy(this->T_k);
         T_k_perturb.manifoldPlus(perturbation);
         T_Type T_int;
-        T_int = T_Type::interpolate(T_k_perturb, this->T_kp1, this->vel_k, this->vel_kp1, this->hat, this->candle);
+        T_int = T_Type::interpolate<>(T_k_perturb, this->T_kp1, this->vel_k, this->vel_kp1, this->hat, this->candle);
         return T_int;
     }
 };
