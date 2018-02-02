@@ -143,11 +143,11 @@ TEST(OdomTest, StraightLineGarage) {
     params.flat_tol = 0.05;
     params.int_flat_tol = 0.05;
     params.int_edge_tol = 5;
-    params.max_correspondence_dist = 0.05;
+    params.max_correspondence_dist = 0.2;
     params.robust_param = 1;
     params.opt_iters = 10;
     params.min_residuals = 30;
-    params.visualize = true;
+    params.visualize = false;
     params.num_trajectory_states = 3;
 
     params.sensor_params.rings = 32;

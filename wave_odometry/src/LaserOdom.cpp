@@ -155,13 +155,13 @@ void LaserOdom::transformToStart(
   const double *const pt, const uint16_t tick, double *output, uint32_t &k, uint32_t &kp1, double &tau) {
     this->getTransformIndices(tick, k, kp1, tau);
 
-    Transformation<> transform;
+    T_Type transform;
 
     Eigen::Matrix<double, 12, 12> hat, candle;
     this->cv_vector.at(k).tau = &tau;
     this->cv_vector.at(k).calculateStuff(hat, candle);
 
-    transform = Transformation<>::interpolate(this->cur_trajectory.at(k).pose,
+    transform = transform.interpolate(this->cur_trajectory.at(k).pose,
                                               this->cur_trajectory.at(kp1).pose,
                                               this->cur_trajectory.at(k).twist,
                                               this->cur_trajectory.at(kp1).twist,
@@ -182,7 +182,8 @@ void LaserOdom::transformToStart(const double *const pt, const uint16_t tick, do
     this->cv_vector.at(k).tau = &tau;
     this->cv_vector.at(k).calculateStuff(hat, candle);
 
-    Transformation<> transform = Transformation<>::interpolate(this->cur_trajectory.at(k).pose,
+    T_Type transform;
+    transform = transform.interpolate(this->cur_trajectory.at(k).pose,
                                                                this->cur_trajectory.at(kp1).pose,
                                                                this->cur_trajectory.at(k).twist,
                                                                this->cur_trajectory.at(kp1).twist,
@@ -203,7 +204,8 @@ void LaserOdom::transformToEnd(const double *const pt, const uint16_t tick, doub
     this->cv_vector.at(k).tau = &tau;
     this->cv_vector.at(k).calculateStuff(hat, candle);
 
-    Transformation<> transform = Transformation<>::interpolate(this->cur_trajectory.at(k).pose,
+    T_Type transform;
+    transform = transform.interpolate(this->cur_trajectory.at(k).pose,
                                                                this->cur_trajectory.at(kp1).pose,
                                                                this->cur_trajectory.at(k).twist,
                                                                this->cur_trajectory.at(kp1).twist,
@@ -360,7 +362,7 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
         this->generateFeatures();          // generate features on the current scan
         if (this->initialized) {           // there is a set of previous features from
                                            // last scan
-            Transformation<> last_transform;
+            T_Type last_transform;
             auto &ref = this->cur_trajectory.back().pose;
 
             for (int i = 0; i < this->param.opt_iters; i++) {
