@@ -100,11 +100,8 @@ Eigen::Affine3d PoseWithCovariance::getTransformMatrix() const {
     return T_m;
 }
 
-PoseWithCovariance composePose(
-    PoseWithCovariance &p1,
-    PoseWithCovariance &p2) {
-
-    PoseWithCovariance r; // store all the results
+PoseWithCovariance composePose(PoseWithCovariance &p1, PoseWithCovariance &p2) {
+    PoseWithCovariance r;  // store all the results
 
     // Use Eigen Transform to transform poses
     // This is the same as implementing Equation (5.5)
@@ -165,7 +162,7 @@ Vector4 normalizeQuat(const Vector4 q) {
     double norm_coeff;
     double qr = q(0), qx = q(1), qy = q(2), qz = q(3);
 
-    norm_coeff = 1 / sqrt(qr*qr + qx*qx + qy*qy + qz*qz);
+    norm_coeff = 1 / sqrt(qr * qr + qx * qx + qy * qy + qz * qz);
     norm_q = norm_coeff * q;
     return norm_q;
 }
@@ -201,14 +198,14 @@ Vector3 quatToYPR(const Vector4 &q) {
 Vector4 yprToQuat(const Vector3 &ypr) {
     Vector4 q;
     double qr, qx, qy, qz;
-    double half_y = ypr(0)/2, half_p = ypr(1)/2, half_r = ypr(2)/2;
+    double half_y = ypr(0) / 2, half_p = ypr(1) / 2, half_r = ypr(2) / 2;
     double cy = cos(half_y), cp = cos(half_p), cr = cos(half_r),
-            sy = sin(half_y), sp = sin(half_p), sr = sin(half_r);
+           sy = sin(half_y), sp = sin(half_p), sr = sin(half_r);
 
-    qr = cr*cp*cy + sr*sp*sy;
-    qx = sr*cp*cy - cr*sp*sy;
-    qy = cr*sp*cy + sr*cp*sy;
-    qz = cr*cp*sy - sr*sp*cy;
+    qr = cr * cp * cy + sr * sp * sy;
+    qx = sr * cp * cy - cr * sp * sy;
+    qy = cr * sp * cy + sr * cp * sy;
+    qz = cr * cp * sy - sr * sp * cy;
 
     q << qr, qx, qy, qz;
 
@@ -218,12 +215,12 @@ Vector4 yprToQuat(const Vector3 &ypr) {
 Matrix3x3 yprToRotMatrix(const Vector3 &ypr) {
     double y = ypr(0), p = ypr(1), r = ypr(2);
     Matrix3x3 rotMatrix;
-    double cy = cos(y), cp = cos(p), cr = cos(r),
-           sy = sin(y), sp = sin(p), sr = sin(r);
+    double cy = cos(y), cp = cos(p), cr = cos(r), sy = sin(y), sp = sin(p),
+           sr = sin(r);
 
-    rotMatrix << cy*cp, cy*sp*sr - sy*cr, cy*sp*cr + sy*sr,
-                 sy*cp, sy*sp*sr + cy*cr, sy*sp*cr - cy*sr,
-                   -sp,            cp*sr,            cp*cr;
+    rotMatrix << cy * cp, cy * sp * sr - sy * cr, cy * sp * cr + sy * sr,
+      sy * cp, sy * sp * sr + cy * cr, sy * sp * cr - cy * sr, -sp, cp * sr,
+      cp * cr;
 
     return rotMatrix;
 }
@@ -231,21 +228,19 @@ Matrix3x3 yprToRotMatrix(const Vector3 &ypr) {
 Vector3 rotMatrixToYPR(const Matrix3x3 &p) {
     Vector3 ypr;
     double yaw, pitch, roll;
-    double p11 = p(0, 0), p12 = p(0, 1), p13 = p(0, 2),
-           p21 = p(1, 0), p22 = p(1, 1), p23 = p(1, 2),
-           p31 = p(2, 0), p32 = p(2, 1), p33 = p(2, 2);
+    double p11 = p(0, 0), p12 = p(0, 1), p13 = p(0, 2), p21 = p(1, 0),
+           p22 = p(1, 1), p23 = p(1, 2), p31 = p(2, 0), p32 = p(2, 1),
+           p33 = p(2, 2);
 
-    pitch = atan2(-p31, sqrt(p11*p11 + p21*p21));
+    pitch = atan2(-p31, sqrt(p11 * p11 + p21 * p21));
 
-    if (fabs(pitch + M_PI * 1.0/2) < 1e-6) {
+    if (fabs(pitch + M_PI * 1.0 / 2) < 1e-6) {
         yaw = atan2(-p23, -p13);
         roll = 0;
-    }
-    else if (fabs(pitch - M_PI * 1.0/2) < 1e-6) {
+    } else if (fabs(pitch - M_PI * 1.0 / 2) < 1e-6) {
         yaw = atan2(p23, p13);
         roll = 0;
-    }
-    else {
+    } else {
         yaw = atan2(p21, p11);
         roll = atan2(p32, p33);
     }

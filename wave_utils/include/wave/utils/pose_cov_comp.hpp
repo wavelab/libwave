@@ -78,8 +78,7 @@ struct PoseWithCovariance {
 /*
  * Pose composition based on [1]
  */
-PoseWithCovariance composePose(PoseWithCovariance &p1,
-                               PoseWithCovariance &p);
+PoseWithCovariance composePose(PoseWithCovariance &p1, PoseWithCovariance &p);
 
 /*
  * Normalizes Quaternion where qr^2 + qx^2 + qy^2 + qz^2 = 1
