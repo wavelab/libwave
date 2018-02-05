@@ -247,6 +247,10 @@ Vector3 rotMatrixToYPR(const Matrix3x3 &p) {
 
     ypr << yaw, pitch, roll;
 
+    // To avoid warnings
+    (void) p12;
+    (void) p22;
+
     return ypr;
 }
 
@@ -441,6 +445,9 @@ Matrix3x3 jacobian_p7_Point_Composition_wrt_a(const Vector7 &p,
     // clang-format on
 
     m *= 2;
+
+    // To avoid warnings
+    (void) a;
 
     return m;
 }
