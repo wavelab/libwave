@@ -21,8 +21,27 @@ addons:
       - libopencv-dev
       - libceres-dev
       - libkindr-dev
-      - libgeographiclib-dev
       - clang-format-3.8
+
+install:
+- |-
+  # GeographicLib dependency
+  mkdir -p "$HOME/deps"
+  pushd "$HOME/deps"
+  GEOGRAPHICLIB_ROOT="$PWD/GeographicLib-1.49"
+  if [ -d ${GEOGRAPHICLIB_ROOT} ]; then
+    echo "using GeographicLib from Travis cache"
+  else
+    wget -nc 'https://sourceforge.net/projects/geographiclib/files/distrib/GeographicLib-1.49.tar.gz'
+    tar xzf GeographicLib-1.49.tar.gz
+    pushd ${GEOGRAPHICLIB_ROOT}
+    ./configure
+    make
+    sudo make install
+    popd
+  fi
+  popd
+- |-
 
 before_script:
   - export CXX=g++-5 CC=gcc-5  # override travis defaults
