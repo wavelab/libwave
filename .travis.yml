@@ -32,14 +32,9 @@ install:
   if [ -d ${GEOGRAPHICLIB_ROOT} ]; then
     echo "using GeographicLib from Travis cache"
   else
-    wget -nc 'https://sourceforge.net/projects/geographiclib/files/distrib/GeographicLib-1.49.tar.gz'
-    tar xzf GeographicLib-1.49.tar.gz
-    pushd ${GEOGRAPHICLIB_ROOT}
-    ./configure
-    make
-    popd
+    wget -nc 'http://archive.ubuntu.com/ubuntu/pool/universe/g/geographiclib/libgeographic-dev_1.49-2_amd64.deb'
+    sudo dpkg -i libgeographic-dev_1.49-2_amd64.deb
   fi
-  export CMAKE_GEOGRAPHICLIB_FLAGS="-DGeographicLib_INCLUDE_DIR=${GEOGRAPHICLIB_ROOT}/include -DGeographicLib_LIBRARY_RELEASE=${GEOGRAPHICLIB_ROOT}/src/.libs/libGeographic.so"
   popd
 - |-
 
