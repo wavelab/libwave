@@ -11,6 +11,7 @@ addons:
     sources:
       - ubuntu-toolchain-r-test
       - sourceline: 'ppa:lkoppel/robotics'
+      - sourceline: 'ppa:ubuntugis/ppa'
     packages:
       - g++-5
       - libboost-dev
