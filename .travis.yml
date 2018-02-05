@@ -35,14 +35,14 @@ install:
     wget -nc 'https://sourceforge.net/projects/geographiclib/files/distrib/GeographicLib-1.49.tar.gz'
     tar xzf GeographicLib-1.49.tar.gz
     pushd ${GEOGRAPHICLIB_ROOT}
-    ./configure
+    mkdir build
+    pushd build
+    cmake ${GEOGRAPHICLIB_ROOT}
     make
+    sudo make install
+    popd
     popd
   fi
-  export CMAKE_GEOGRAPHICLIB_FLAGS="
-    -DGeographicLib_INCLUDE_DIR=${GEOGRAPHICLIB_ROOT}/include
-    -DGeographicLib_LIBRARY_RELEASE=${GEOGRAPHICLIB_ROOT}/src/.libs/libGeographic.so
-    -DGeographicLib_DIR=${GEOGRAPHICLIB_ROOT}/cmake"
   popd
 - |-
 
