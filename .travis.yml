@@ -37,9 +37,9 @@ install:
     pushd ${GEOGRAPHICLIB_ROOT}
     ./configure
     make
-    sudo make install
     popd
   fi
+  export CMAKE_GEOGRAPHICLIB_FLAGS="-DGeographicLib_INCLUDE_DIR=${GEOGRAPHICLIB_ROOT}/include -DGeographicLib_LIBRARY_RELEASE=${GEOGRAPHICLIB_ROOT}/src/.libs/libGeographic.so"
   popd
 - |-
 
