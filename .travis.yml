@@ -11,7 +11,7 @@ addons:
     sources:
       - ubuntu-toolchain-r-test
       - sourceline: 'ppa:lkoppel/robotics'
-      - sourceline: 'ppa:ubuntugis/ppa'
+      - "sourceline": "deb http://us.archive.ubuntu.com/ubuntu/ universe"
     packages:
       - g++-5
       - libboost-dev
@@ -21,7 +21,6 @@ addons:
       - libopencv-dev
       - libceres-dev
       - libkindr-dev
-      - libgeographic-dev
       - clang-format-3.8
 
 before_script:
