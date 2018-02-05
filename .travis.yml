@@ -21,7 +21,7 @@ addons:
       - libopencv-dev
       - libceres-dev
       - libkindr-dev
-      - libgeographic-dev
+      - libgeographiclib-dev
       - clang-format-3.8
 
 before_script:
