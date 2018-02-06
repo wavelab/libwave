@@ -97,7 +97,6 @@ PoseWithCovariance composePose(PoseWithCovariance &p1, PoseWithCovariance &p);
 Vector4 normalizeQuat(const Vector4 q);
 
 /** Converts Quaternion to Yaw Pitch Roll angles.
- *
  *  Note v(0) is yaw, v(1) is pitch, v(2) is roll
  *  Equation(2.9) and Equation(2.10)
  *

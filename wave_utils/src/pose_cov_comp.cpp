@@ -170,7 +170,7 @@ Vector4 normalizeQuat(const Vector4 q) {
 Vector3 quatToYPR(const Vector4 &q) {
     Vector3 v;
     double qr = q(0), qx = q(1), qy = q(2), qz = q(3);
-    double delta = qr * qy - qx * qz; // discriminant of normalized quaternion
+    double delta = qr * qy - qx * qz;  // discriminant of normalized quaternion
     double roll, pitch, yaw;
 
     // Check for special cases when abs(delta) =~ 0.5 (Equation (2.10))
