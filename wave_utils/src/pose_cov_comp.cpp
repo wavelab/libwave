@@ -27,7 +27,7 @@
  ******************************************************************************
  * ############################################################################
  *
- * File: ref_ekf.cpp
+ * File: pose_cov_comp.cpp
  * Desc: File containing the impl. for pose composition with uncertainty
  * Auth: Chunshang Li and Jordan Hu
  *
@@ -170,9 +170,10 @@ Vector4 normalizeQuat(const Vector4 q) {
 Vector3 quatToYPR(const Vector4 &q) {
     Vector3 v;
     double qr = q(0), qx = q(1), qy = q(2), qz = q(3);
-    double delta = qr * qy - qx * qz;
+    double delta = qr * qy - qx * qz; // discriminant of normalized quaternion
     double roll, pitch, yaw;
 
+    // Check for special cases when abs(delta) =~ 0.5 (Equation (2.10))
     if (fabs(delta - 0.5) < 1e-6) {
         yaw = -2 * atan2(qx, qr);
         pitch = M_PI / 2;

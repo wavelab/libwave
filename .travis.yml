@@ -24,24 +24,18 @@ addons:
 
 install:
 - |-
-  # GeographicLib dependency
   mkdir -p "$HOME/deps"
+  # GeographicLib dependency
   pushd "$HOME/deps"
   GEOGRAPHICLIB_ROOT="$PWD/GeographicLib-1.49"
-  if [ -d ${GEOGRAPHICLIB_ROOT} ]; then
-    echo "using GeographicLib from Travis cache"
-  else
-    wget -nc 'https://sourceforge.net/projects/geographiclib/files/distrib/GeographicLib-1.49.tar.gz'
-    tar xzf GeographicLib-1.49.tar.gz
-    pushd ${GEOGRAPHICLIB_ROOT}
-    mkdir build
-    pushd build
-    cmake ${GEOGRAPHICLIB_ROOT}
-    make
-    sudo make install
-    popd
-    popd
-  fi
+  wget -nc 'https://sourceforge.net/projects/geographiclib/files/distrib/GeographicLib-1.49.tar.gz'
+  tar xzf GeographicLib-1.49.tar.gz
+  mkdir -p "${GEOGRAPHICLIB_ROOT}/build"
+  pushd ${GEOGRAPHICLIB_ROOT}/build
+  cmake ${GEOGRAPHICLIB_ROOT}
+  make
+  sudo make install
+  popd
   popd
 - |-
 

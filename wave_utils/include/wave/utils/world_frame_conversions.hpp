@@ -34,8 +34,8 @@
  * ############################################################################
 */
 
-#ifndef WAVE_SPATIAL_UTILS_WORLD_FRAME_CONVERSIONS_HPP
-#define WAVE_SPATIAL_UTILS_WORLD_FRAME_CONVERSIONS_HPP
+#ifndef WAVE_UTILS_WORLD_FRAME_CONVERSIONS_HPP
+#define WAVE_UTILS_WORLD_FRAME_CONVERSIONS_HPP
 
 #include <cmath>
 #include <GeographicLib/Geocentric.hpp>

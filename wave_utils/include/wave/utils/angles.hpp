@@ -35,8 +35,8 @@
  * ############################################################################
 */
 
-#ifndef WAVE_SPATIAL_UTILS_ANGLES_HPP
-#define WAVE_SPATIAL_UTILS_ANGLES_HPP
+#ifndef WAVE_UTILS_ANGLES_HPP
+#define WAVE_UTILS_ANGLES_HPP
 
 #include <cmath>
 
