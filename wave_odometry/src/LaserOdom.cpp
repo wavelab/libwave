@@ -1,6 +1,5 @@
 #include <ceres/gradient_checker.h>
 #include "wave/odometry/LaserOdom.hpp"
-#include "wave/odometry/weighting_functions.hpp"
 
 namespace wave {
 
@@ -477,7 +476,7 @@ PCLPointXYZIT LaserOdom::applyIMU(const PCLPointXYZIT &p) {
 void LaserOdom::rollover(TimeType stamp) {
     this->prv_time = this->cur_time;
     this->cur_time = stamp;
-    // this->resetIMU(stamp);
+
     this->buildTrees();
     for (unlong i = 0; i < this->param.n_ring; i++) {
         for (uint32_t j = 0; j < this->N_SIGNALS; j++) {
@@ -486,6 +485,11 @@ void LaserOdom::rollover(TimeType stamp) {
         this->cur_scan.at(i).clear();
     }
     if (!this->initialized) {
+        // This check is to avoid initializing against a partial scan.
+        if(!this->full_revolution) {
+            this->full_revolution = true;
+            return;
+        }
         size_t feature_count = 0;
         for (uint32_t i = 0; i < this->N_FEATURES; i++) {
             feature_count += this->prv_feature_points.at(i).points.size();
@@ -496,9 +500,12 @@ void LaserOdom::rollover(TimeType stamp) {
     }
     this->previous_twist = this->cur_trajectory.back().twist;
     this->cur_trajectory.front().pose.setIdentity();
+    this->cur_trajectory.front().twist = this->previous_twist;
     for (uint32_t i = 1; i < this->param.num_trajectory_states; i++) {
-        this->cur_trajectory.at(i).pose.deepCopy(this->cur_trajectory.at(i - 1).pose.manifoldPlus(
-          (this->param.scan_period / (this->param.num_trajectory_states - 1)) * this->previous_twist));
+        this->cur_trajectory.at(i).pose.deepCopy(this->cur_trajectory.at(i - 1).pose);
+        this->cur_trajectory.at(i).pose.manifoldPlus(
+          (this->param.scan_period / (this->param.num_trajectory_states - 1)) * this->previous_twist);
+        this->cur_trajectory.at(i).twist = this->previous_twist;
     }
 }
 
@@ -518,12 +525,13 @@ void LaserOdom::buildTrees() {
                 // Check if feature is within range of map
                 if (l2length(transformed_pt.data(), 3) < this->param.local_map_range) {
                     memcpy(this->prv_feature_points.at(i).points.at(j).data(), transformed_pt.data(), 24);
-                    if (this->feature_association.at(i).at(j).second == AssociationStatus::CORRESPONDED) {
-                        this->feature_association.at(i).at(j).second = AssociationStatus::UNCORRESPONDED;
-                        this->feature_association.at(i).at(j).first = this->param.TTL;
-                    } else {
-                        --(this->feature_association.at(i).at(j).first);
-                    }
+//                    if (this->feature_association.at(i).at(j).second == AssociationStatus::CORRESPONDED) {
+//                        this->feature_association.at(i).at(j).second = AssociationStatus::UNCORRESPONDED;
+//                        this->feature_association.at(i).at(j).first = this->param.TTL;
+//                    } else {
+//                        --(this->feature_association.at(i).at(j).first);
+//                    }
+                    --(this->feature_association.at(i).at(j).first);
                     continue;
                 }
             }
@@ -615,6 +623,12 @@ bool LaserOdom::findCorrespondingPoints(const Vec3 &query, const uint32_t &f_idx
 
 bool LaserOdom::match() {
     double zero_pt[3] = {0};
+    Eigen::Matrix<double, Eigen::Dynamic, 24, Eigen::RowMajor> system_jacobian;
+    Eigen::Matrix<double, 2, 24> current_jacobian;
+    uint32_t rows = 0;
+    if (this->param.output_eigenvalues) {
+        system_jacobian.conservativeResize(10000, 24);
+    }
 
     ceres::Problem problem;
 
@@ -666,6 +680,15 @@ bool LaserOdom::match() {
 
     uint32_t k, kp1;
     double tau;
+
+    double **jacobian;
+    if (this->param.output_eigenvalues) {
+        jacobian = new double *[4];
+        jacobian[0] = new double[24];
+        jacobian[1] = new double[24];
+        jacobian[2] = new double[12];
+        jacobian[3] = new double[12];
+    }
 
     for (uint16_t i = 0; i < this->N_FEATURES; i++) {
         for (uint16_t j = 0; j < this->param.n_ring; j++) {
@@ -733,24 +756,41 @@ bool LaserOdom::match() {
                     parameters[2] = this->cur_trajectory.at(k).twist.data();
                     parameters[3] = this->cur_trajectory.at(kp1).twist.data();
 
-                    if (!cost_function->Evaluate(parameters, residuals.data(), nullptr)) {
+                    if (!cost_function->Evaluate(parameters, residuals.data(), jacobian)) {
                         LOG_ERROR("Cost function did not evaluate");
                         delete cost_function;
                         continue;
                     }
+                    if (this->param.output_eigenvalues) {
+                        if (this->feature_definitions.at(i).residual == ResidualType::PointToLine) {
+                            Eigen::Map<Eigen::Matrix<double, 2, 12, Eigen::RowMajor>> JTk(jacobian[0]);
+                            current_jacobian.block<2,6>(0,0) = JTk.block<2,6>(0,0);
+                            Eigen::Map<Eigen::Matrix<double, 2, 12, Eigen::RowMajor>> JTkp1(jacobian[1]);
+                            current_jacobian.block<2,6>(0,6) = JTkp1.block<2,6>(0,0);
+                            Eigen::Map<Eigen::Matrix<double, 2, 6, Eigen::RowMajor>> JW(jacobian[2]);
+                            current_jacobian.block<2,6>(0,12) = JW;
+                            Eigen::Map<Eigen::Matrix<double, 2, 6, Eigen::RowMajor>> JWp1(jacobian[3]);
+                            current_jacobian.block<2,6>(0,18) = JWp1;
+                            system_jacobian.block<2,24>(rows, 0) = current_jacobian;
+                            rows += 2;
+                        } else {
+                            Eigen::Map<Eigen::Matrix<double, 1, 12, Eigen::RowMajor>> JTk(jacobian[0]);
+                            current_jacobian.block<1,6>(0,0) = JTk.block<1,6>(0,0);
+                            Eigen::Map<Eigen::Matrix<double, 1, 12, Eigen::RowMajor>> JTkp1(jacobian[1]);
+                            current_jacobian.block<1,6>(0,6) = JTkp1.block<1,6>(0,0);
+                            Eigen::Map<Eigen::Matrix<double, 1, 6, Eigen::RowMajor>> JW(jacobian[2]);
+                            current_jacobian.block<1,6>(0,12) = JW;
+                            Eigen::Map<Eigen::Matrix<double, 1, 6, Eigen::RowMajor>> JWp1(jacobian[3]);
+                            current_jacobian.block<1,6>(0,18) = JWp1;
+                            system_jacobian.block<1,24>(rows, 0) = current_jacobian.block<1,24>(0,0);
+                            rows += 1;
+                        }
+                    }
+
                     if (norm(residuals) > this->param.max_residual_val) {
                         delete cost_function;
                         continue;
                     }
-                    //                    if (this->param.check_gradients) {
-                    //                        ceres::NumericDiffOptions ndiff_options;
-                    //                        ceres::GradientChecker g_check(cost_function, &local_param_vec,
-                    //                        ndiff_options);
-                    //                        ceres::GradientChecker::ProbeResults g_results;
-                    //                        if (!g_check.Probe(parameters, 1, &g_results)) {
-                    //                            LOG_ERROR("%s", g_results.error_log.c_str());
-                    //                        }
-                    //                    }
                     std::vector<uint64_t> corr_list;
                     corr_list.emplace_back(pt_cntr);
                     for (uint32_t k = 0; k < ret_indices.size(); k++) {
@@ -770,6 +810,15 @@ bool LaserOdom::match() {
         }
     }
 
+    if (this->param.output_eigenvalues) {
+        system_jacobian.conservativeResize(rows, 24);
+        Eigen::MatrixXd AtA = system_jacobian.transpose() * system_jacobian;
+
+        Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigs(AtA);
+        std::cout << eigs.eigenvalues() << std::endl;
+        std::cout << eigs.eigenvectors() << std::endl;
+    }
+
     ceres::Solver::Options options;  // ceres problem destructor apparently destructs quite a bit, so need to
                                      // instantiate
     // options struct every time :(
@@ -786,7 +835,9 @@ bool LaserOdom::match() {
     covar_options.sparse_linear_algebra_library_type = ceres::SparseLinearAlgebraLibraryType::SUITE_SPARSE;
     covar_options.algorithm_type = ceres::CovarianceAlgorithmType::SPARSE_QR;
 
-//    problem.SetParameterBlockConstant(this->cur_trajectory.at(0).pose.getInternalMatrix().derived().data());
+    if (this->param.lock_first) {
+        problem.SetParameterBlockConstant(this->cur_trajectory.at(0).pose.getInternalMatrix().derived().data());
+    }
 
     if (problem.NumResidualBlocks() < this->param.min_residuals) {
         LOG_ERROR("Less than expected residuals, resetting");

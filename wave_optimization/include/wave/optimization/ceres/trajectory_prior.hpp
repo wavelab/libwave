@@ -27,6 +27,15 @@ class TrajectoryPrior : public ceres::SizedCostFunction<12, 12, 6> {
     virtual ~TrajectoryPrior() {}
     TrajectoryPrior(Mat12 weight_matrix, const Transformation<> &inv_prior, const Vec6 &twist_prior)
         : inv_prior(inv_prior), twist_prior(twist_prior), weight_matrix(weight_matrix) {
+        if (!inv_prior.matrix->allFinite()) {
+            throw std::invalid_argument("Inverse Prior not finite");
+        }
+        if (!twist_prior.allFinite()) {
+            throw std::invalid_argument("Twist Prior not finite");
+        }
+        if (!weight_matrix.allFinite()) {
+            throw std::invalid_argument("Trajectory Prior weight matrix not finite");
+        }
         this->J_T.setZero();
     }
 

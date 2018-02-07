@@ -42,6 +42,7 @@
 #include "wave/optimization/ceres/trajectory_prior.hpp"
 #include "wave/optimization/ceres/constant_velocity.hpp"
 #include "wave/optimization/ceres/bisquare_loss.hpp"
+#include "wave/optimization/ceres/quartic_loss.hpp"
 #include "wave/utils/math.hpp"
 
 #include <ceres/ceres.h>
@@ -106,6 +107,8 @@ struct LaserOdomParams {
     bool output_correspondences = false;  // Whether to output correpondences for debugging/plotting
     bool only_extract_features = false;   // If set, no transforms are calculated
     bool use_weighting = false;           // If set, pre-whiten residuals
+    bool lock_first = true;               // If set, assume starting position is identity
+    bool output_eigenvalues = false;      // If set, output the eigenvalues of AtA
     /**
      * If set instead of matching edge points to lines, match edge points to a plane
      * defined by the original line points and the origin
@@ -175,7 +178,7 @@ class LaserOdom {
     std::vector<std::pair<const double *, const double *>> covariance_blocks;
 
     LaserOdomParams param;
-    bool initialized = false;
+    bool initialized = false, full_revolution = false;
     int prv_tick = std::numeric_limits<int>::max();
 
     void computeScores();

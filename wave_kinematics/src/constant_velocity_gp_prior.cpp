@@ -4,7 +4,7 @@ namespace wave_kinematics {
 
 ConstantVelocityPrior::ConstantVelocityPrior(const double &tk, const double &tkp1, const double *tau,
                                              const wave::Mat6 &Qc, const wave::Mat6 &inv_Qc) :
-                                            tk(tk), tkp1(tkp1), tau(tau), Qc(Qc), inv_Qc(inv_Qc) {}
+                                            tk(tk), tkp1(tkp1), dT(tkp1 - tk), tau(tau), Qc(Qc), inv_Qc(inv_Qc) {}
 
 void ConstantVelocityPrior::calculateTransitionMatrix(Mat12 &transition, const double &t1, const double &t2) {
     transition.block<6,6>(6,6).setIdentity();
@@ -47,21 +47,34 @@ void ConstantVelocityPrior::calculateLinInvCovariance() {
 }
 
 void ConstantVelocityPrior::calculateCandle(Mat12 &candle) {
-    this->calculateLinInvCovariance();
+    double t1 = *(this->tau) - this->tk;
+    double t2 = this->tkp1 - *(this->tau);
+    double invt = 1.0 / (this->dT);
 
-    Mat12 covar, tran_kp1_tau;
-    this->calculateTransitionMatrix(tran_kp1_tau, *(this->tau), this->tkp1);
-    this->calculateLinCovariance(covar, this->tk, *(this->tau));
-    candle = covar * tran_kp1_tau.transpose() * this->inv_covar;
+    candle.block<6,6>(0,0).noalias() = (t1*t1*(4*t1 - 3*this->dT + 6*t2)) * invt * invt * invt * Mat6::Identity();
+    candle.block<6,6>(6,0).noalias() = (6*t1*(t1 - this->dT + 2*t2))* invt * invt * invt * Mat6::Identity();
+    candle.block<6,6>(0,6).noalias() = -(t1*t1*(2*t1 - 2*this->dT + 3*t2)) * invt * invt * Mat6::Identity();
+    candle.block<6,6>(6,6).noalias() = -(t1*(3*t1 - 4*this->dT + 6*t2))* invt * invt * Mat6::Identity();
+}
+
+void ConstantVelocityPrior::calculateHat(Mat12 &hat) {
+    double t1 = *(this->tau) - this->tk;
+    double t2 = this->tkp1 - *(this->tau);
+    double invt = 1.0 / (this->dT);
+
+    hat.block<6,6>(0,0).noalias() = (1 - ((t1*t1*(4*t1 - 3*this->dT + 6*t2)) * invt * invt * invt)) * Mat6::Identity();
+    hat.block<6,6>(6,0).noalias() = -(6*t1*(t1 - this->dT + 2*t2))* invt * invt * invt * Mat6::Identity();
+    hat.block<6,6>(0,6).noalias() = (t1*(this->dT * this->dT + this->dT*t1 - 2*t1*t1 - 3*t2*t1)) * invt * invt * Mat6::Identity();
+    hat.block<6,6>(6,6).noalias() = (this->dT * this->dT + 2*this->dT*t1 - 3*t1*t1*t1 - 6*t2*t1)* invt * invt * Mat6::Identity();
 }
 
 void ConstantVelocityPrior::calculateStuff(Mat12 &hat, Mat12 &candle) {
-    Mat12 trans_tau_k;
     this->calculateCandle(candle);
-    this->calculateTransitionMatrix(trans_tau_k, this->tk, *(this->tau));
-    this->calculateTransitionMatrix();
 
-    hat = trans_tau_k - candle * this->t_mat;
+    hat.block<6,6>(0,0).noalias() = Mat6::Identity() - candle.block<6,6>(0,0);
+    hat.block<6,6>(6,0).noalias() = - candle.block<6,6>(6,0);
+    hat.block<6,6>(0,6).noalias() = (*(this->tau) - this->tk) * Mat6::Identity() - this->dT * candle.block<6,6>(0,0) - candle.block<6,6>(0,6);
+    hat.block<6,6>(6,6).noalias() = Mat6::Identity() - this->dT * candle.block<6,6>(6,0) - candle.block<6,6>(6,6);
 }
 
 }
