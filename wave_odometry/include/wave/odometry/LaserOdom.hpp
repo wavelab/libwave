@@ -44,6 +44,7 @@
 #include "wave/optimization/ceres/bisquare_loss.hpp"
 #include "wave/optimization/ceres/quartic_loss.hpp"
 #include "wave/utils/math.hpp"
+#include "wave/utils/data.hpp"
 
 #include <ceres/ceres.h>
 #include <ceres/normal_prior.h>
@@ -108,7 +109,7 @@ struct LaserOdomParams {
     bool only_extract_features = false;   // If set, no transforms are calculated
     bool use_weighting = false;           // If set, pre-whiten residuals
     bool lock_first = true;               // If set, assume starting position is identity
-    bool output_eigenvalues = false;      // If set, output the eigenvalues of AtA
+    bool plot_stuff = false;              // If set, plot things for debugging
     /**
      * If set instead of matching edge points to lines, match edge points to a plane
      * defined by the original line points and the origin
@@ -120,9 +121,9 @@ class LaserOdom {
     using T_Type = Transformation<Eigen::Matrix<double, 3, 4>, true>;
  public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    LaserOdom(const LaserOdomParams params);
+    explicit LaserOdom(const LaserOdomParams params);
     ~LaserOdom();
-    void addPoints(const std::vector<PointXYZIR> &pts, const int tick, TimeType stamp);
+    void addPoints(const std::vector<PointXYZIR> &pts, int tick, TimeType stamp);
     std::vector<std::vector<std::vector<PointXYZIT>>> feature_points;  // edges, flats;
     std::vector<FeatureKDTree<double>> prv_feature_points;             // prv_edges, prv_flats;
     // The transform is T_start_end
@@ -132,7 +133,7 @@ class LaserOdom {
         Vec6 twist;
     };
 
-    std::vector<Trajectory> cur_trajectory;
+    std::vector<Trajectory, Eigen::aligned_allocator<Trajectory>> cur_trajectory;
     Vec6 previous_twist;
 
     void rollover(TimeType stamp);
@@ -146,6 +147,7 @@ class LaserOdom {
     std::vector<std::vector<std::vector<double>>> output_corrs;
     TimeType undistorted_stamp;
     Transformation<> undistort_transform;
+    Vec6 undistort_velocity;
     double covar[144];  // use lift jacobians to reduce covariance coming out of ceres
 
     void updateParams(const LaserOdomParams);

@@ -166,6 +166,7 @@ TEST(OdomTest, StraightLineGarage) {
 //    params.output_correspondences = true;
     params.Qc = 100 * Eigen::Matrix<double, 6, 6>::Identity();
     params.treat_lines_as_planes = false;
+    params.plot_stuff = true;
 
     LaserOdom odom(params);
     std::vector<PointXYZIR> vec;

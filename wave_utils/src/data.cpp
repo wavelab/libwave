@@ -97,6 +97,7 @@ int csv2mat(std::string file_path, bool header, MatX &data) {
 }
 
 int mat2csv(std::string file_path, MatX data) {
+    Eigen::IOFormat format(Eigen::FullPrecision, Eigen::DontAlignCols, ", ", "\n");
     std::ofstream outfile(file_path);
 
     // open file
@@ -105,17 +106,8 @@ int mat2csv(std::string file_path, MatX data) {
         return -1;
     }
 
-    // save matrix
-    for (int i = 0; i < data.rows(); i++) {
-        for (int j = 0; j < data.cols(); j++) {
-            outfile << data(i, j);
-
-            if ((j + 1) != data.cols()) {
-                outfile << ",";
-            }
-        }
-        outfile << "\n";
-    }
+    //save matrix
+    outfile << data.format(format);
 
     // close file
     outfile.close();

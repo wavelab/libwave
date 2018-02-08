@@ -7,8 +7,7 @@ SET(WAVE_PACKAGE_VERSION 0.1.0)
 # Compiler settings for all targets
 SET(CMAKE_CXX_STANDARD 11)
 SET(CMAKE_POSITION_INDEPENDENT_CODE ON)
-ADD_COMPILE_OPTIONS(-Wall -Wextra -Wno-strict-overflow -Ofast)
-#ADD_COMPILE_OPTIONS(-Wall -Wextra -Wno-strict-overflow)
+ADD_COMPILE_OPTIONS(-Wall -Wextra -Wno-strict-overflow)
 
 # Default to Release build type, otherwise some modules will be slow
 IF(NOT CMAKE_BUILD_TYPE)
@@ -17,6 +16,9 @@ IF(NOT CMAKE_BUILD_TYPE)
    SET(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
    SET_PROPERTY(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS
        "None" "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
+   IF(CMAKE_BUILD_TYPE MATCHES Release OR CMAKE_BUILD_TYPE MATCHES RelWithDebInfo)
+       ADD_COMPILE_OPTIONS(-Ofast)
+   ENDIF()
 ENDIF()
 
 # CMake modules
@@ -48,7 +50,7 @@ FIND_PACKAGE(OpenCV 3.2.0)
 FIND_PACKAGE(yaml-cpp REQUIRED)
 FIND_PACKAGE(Ceres 1.13)
 FIND_PACKAGE(GTSAM)
-
+FIND_PACKAGE(PythonLibs 2.7 REQUIRED)
 # Where dependencies do not provide IMPORTED targets, define them
 INCLUDE(cmake/ImportEigen3.cmake)
 INCLUDE(cmake/ImportBoost.cmake)
