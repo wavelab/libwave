@@ -143,8 +143,9 @@ TEST(OdomTest, StraightLineGarage) {
     params.flat_tol = 0.05;
     params.int_flat_tol = 0.05;
     params.int_edge_tol = 5;
-    params.max_correspondence_dist = 0.2;
-    params.robust_param = 1;
+    params.max_correspondence_dist = 1;
+    params.robust_param = 0.2;
+    params.max_residual_val = 0.2;
     params.opt_iters = 10;
     params.min_residuals = 30;
     params.visualize = true;
@@ -164,7 +165,7 @@ TEST(OdomTest, StraightLineGarage) {
 //    params.only_extract_features = true;
     params.output_trajectory = true;
 //    params.output_correspondences = true;
-    params.Qc = 100 * Eigen::Matrix<double, 6, 6>::Identity();
+    params.Qc = 10000 * Eigen::Matrix<double, 6, 6>::Identity();
     params.treat_lines_as_planes = false;
     params.plot_stuff = true;
 

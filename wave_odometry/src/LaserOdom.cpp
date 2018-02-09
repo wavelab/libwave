@@ -693,7 +693,7 @@ bool LaserOdom::match() {
                 parameters[2] = this->cur_trajectory.at(i).twist.data();
                 parameters[3] = this->cur_trajectory.at(i + 1).twist.data();
                 residuals.resize(12);
-                prior_cost->Evaluate(parameters, residuals.data(), jacobian);
+                motion_cost->Evaluate(parameters, residuals.data(), jacobian);
                 Eigen::Map<Eigen::Matrix<double, 12, 12, Eigen::RowMajor>> JTk(jacobian[0]);
                 motion_jacobian.block<12, 6>(12*(i+1),12*i) = JTk.block<12,6>(0,0);
                 Eigen::Map<Eigen::Matrix<double, 12, 6, Eigen::RowMajor>> JTW(jacobian[2]);
@@ -871,7 +871,7 @@ bool LaserOdom::match() {
         plotMat(AtA2);
         e_vals = eigs.eigenvalues();
 
-        Eigen::MatrixXd Vf = eigs.eigenvectors().transpose();
+        Eigen::MatrixXd Vf = eigs2.eigenvectors().transpose();
         long cnt = 0;
         while(e_vals(cnt) < 10.0) {
             cnt++;
@@ -879,11 +879,11 @@ bool LaserOdom::match() {
                 break;
         }
 
-        Eigen::MatrixXd Vp = Vf;
-        Vp.block(cnt, 0, Vf.rows() - cnt, Vf.cols()).setZero();
-        Eigen::MatrixXd proj_mat = Vf.inverse() * Vp;
+        Eigen::MatrixXd Vu = Vf;
+        Vu.block(0, 0, cnt, Vu.cols()).setZero();
+        Eigen::MatrixXd proj_mat = Vf.inverse() * Vu;
 
-        plotMat(Vp);
+        plotMat(Vu);
         plotMat(Vf);
         plotMat(proj_mat);
 
