@@ -13,6 +13,7 @@ WAVE_ADD_MODULE(${PROJECT_NAME} DEPENDS
     src/ceres/ceres_examples.cpp
     src/ceres/SE3Parameterization.cpp
     src/ceres/null_SE3_parameterization.cpp
+    src/ceres/null_SE3_parameterization_remap.cpp
     src/ceres/point_to_line_gp.cpp
     src/ceres/point_to_plane_gp.cpp
     src/ceres/InterpolatedSE3.cpp

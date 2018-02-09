@@ -37,6 +37,8 @@
 #include "wave/odometry/integrals.hpp"
 #include "wave/odometry/sensor_model.hpp"
 #include "wave/optimization/ceres/null_SE3_parameterization.hpp"
+#include "wave/optimization/ceres/null_SE3_parameterization_remap.hpp"
+#include "wave/optimization/ceres/solution_remapping_parameterization.hpp"
 #include "wave/optimization/ceres/point_to_line_gp.hpp"
 #include "wave/optimization/ceres/point_to_plane_gp.hpp"
 #include "wave/optimization/ceres/trajectory_prior.hpp"
@@ -102,6 +104,8 @@ struct LaserOdomParams {
     double azimuth_tol = 0.0174532925199433;    // Minimum azimuth difference across correspondences
     uint16_t TTL = 1;             // Maximum life of feature in local map with no correspondences
 
+    double min_eigen = 100.0;
+
     // Setting flags
     bool visualize = false;               // Whether to run a visualization for debugging
     bool output_trajectory = false;       // Whether to output solutions for debugging/plotting
@@ -110,6 +114,7 @@ struct LaserOdomParams {
     bool use_weighting = false;           // If set, pre-whiten residuals
     bool lock_first = true;               // If set, assume starting position is identity
     bool plot_stuff = false;              // If set, plot things for debugging
+    bool solution_remapping = false;      // If set, use solution remapping
     /**
      * If set instead of matching edge points to lines, match edge points to a plane
      * defined by the original line points and the origin

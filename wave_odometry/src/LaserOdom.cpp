@@ -634,7 +634,7 @@ bool LaserOdom::match() {
     parameters = new const double *[4];
     std::vector<double> residuals;
     double **jacobian;
-    if (this->param.plot_stuff) {
+    if (this->param.solution_remapping) {
         system_jacobian.conservativeResize(10000, 12*this->param.num_trajectory_states);
         system_jacobian.setZero();
         motion_jacobian.conservativeResize(12*this->param.num_trajectory_states, 12*this->param.num_trajectory_states);
@@ -647,8 +647,6 @@ bool LaserOdom::match() {
     }
 
     ceres::Problem problem;
-    ceres::LocalParameterization *se3_param = new NullSE3Parameterization;
-    std::vector<const ceres::LocalParameterization *> local_param_vec;
 
     // Add motion residuals
     // The prior for the pose is identity, the prior for twist is the twist at the end of the previous
@@ -659,7 +657,7 @@ bool LaserOdom::match() {
     ceres::CostFunction *prior_cost =
       new TrajectoryPrior(this->cv_vector.at(0).inv_covar.sqrt(), identity, this->previous_twist);
 
-    if(this->param.plot_stuff) {
+    if(this->param.solution_remapping) {
         parameters[0] = this->cur_trajectory.at(0).pose.getInternalMatrix().derived().data();
         parameters[1] = this->cur_trajectory.at(0).twist.data();
         residuals.resize(12);
@@ -677,17 +675,13 @@ bool LaserOdom::match() {
                              this->cur_trajectory.at(0).twist.data());
 
     for (uint32_t i = 0; i < this->param.num_trajectory_states; i++) {
-        local_param_vec.emplace_back(se3_param);
-        problem.AddParameterBlock(this->cur_trajectory.at(i).pose.getInternalMatrix().derived().data(), 12, se3_param);
-        problem.AddParameterBlock(this->cur_trajectory.at(i).twist.data(), 6);
-
         if (i + 1 < this->param.num_trajectory_states) {
             this->cv_vector.at(i).calculateLinInvCovariance();
 
             ceres::CostFunction *motion_cost = new ConstantVelocityPrior(
               this->cv_vector.at(i).inv_covar.sqrt(), this->cv_vector.at(i).tkp1 - this->cv_vector.at(i).tk);
 
-            if(this->param.plot_stuff) {
+            if(this->param.solution_remapping) {
                 parameters[0] = this->cur_trajectory.at(i).pose.getInternalMatrix().derived().data();
                 parameters[1] = this->cur_trajectory.at(i + 1).pose.getInternalMatrix().derived().data();
                 parameters[2] = this->cur_trajectory.at(i).twist.data();
@@ -795,7 +789,13 @@ bool LaserOdom::match() {
                         delete cost_function;
                         continue;
                     }
-                    if (this->param.plot_stuff) {
+
+                    if (norm(residuals) > this->param.max_residual_val) {
+                        delete cost_function;
+                        continue;
+                    }
+
+                    if (this->param.solution_remapping) {
                         if (this->feature_definitions.at(i).residual == ResidualType::PointToLine) {
 
                             Eigen::Map<Eigen::Matrix<double, 2, 12, Eigen::RowMajor>> JTk(jacobian[0]);
@@ -825,11 +825,6 @@ bool LaserOdom::match() {
                             rows += 1;
                         }
                     }
-
-                    if (norm(residuals) > this->param.max_residual_val) {
-                        delete cost_function;
-                        continue;
-                    }
                     std::vector<uint64_t> corr_list;
                     corr_list.emplace_back(pt_cntr);
                     for (uint32_t k = 0; k < ret_indices.size(); k++) {
@@ -849,33 +844,20 @@ bool LaserOdom::match() {
         }
     }
 
-    if (this->param.plot_stuff) {
-        system_jacobian.conservativeResize(rows, this->param.num_trajectory_states * 12);
-        Eigen::MatrixXd AtA = system_jacobian.transpose() * system_jacobian;
 
-        Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigs(AtA);
-        Eigen::MatrixXd eigenvectors = eigs.eigenvectors();
-        plotVec(eigs.eigenvalues(), true);
-        plotMat(eigenvectors);
-        plotMat(AtA);
 
+    if (this->param.solution_remapping) {
         system_jacobian.conservativeResize(rows + motion_jacobian.rows(), this->param.num_trajectory_states * 12);
         system_jacobian.block(rows, 0, motion_jacobian.rows(), motion_jacobian.cols()) = motion_jacobian;
 
-        Eigen::MatrixXd AtA2 = system_jacobian.transpose() * system_jacobian;
-        Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigs2(AtA2);
-        Eigen::VectorXd e_vals = eigs2.eigenvalues();
-        plotVec(e_vals, true);
-        eigenvectors = eigs2.eigenvectors();
-        plotMat(eigenvectors);
-        plotMat(AtA2);
-        e_vals = eigs.eigenvalues();
+        Eigen::MatrixXd AtA = system_jacobian.transpose() * system_jacobian;
+        Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigs(AtA);
 
-        Eigen::MatrixXd Vf = eigs2.eigenvectors().transpose();
+        Eigen::MatrixXd Vf = eigs.eigenvectors().transpose();
         long cnt = 0;
-        while(e_vals(cnt) < 10.0) {
+        while(eigs.eigenvalues()(cnt) < this->param.min_eigen) {
             cnt++;
-            if (cnt > e_vals.rows())
+            if (cnt == Vf.rows())
                 break;
         }
 
@@ -883,15 +865,35 @@ bool LaserOdom::match() {
         Vu.block(0, 0, cnt, Vu.cols()).setZero();
         Eigen::MatrixXd proj_mat = Vf.inverse() * Vu;
 
-        plotMat(Vu);
-        plotMat(Vf);
-        plotMat(proj_mat);
+        if(this->param.plot_stuff) {
+            plotMat(Vu);
+            plotMat(Vf);
+            plotMat(proj_mat);
+        }
 
         delete[] jacobian[3];
         delete[] jacobian[2];
         delete[] jacobian[1];
         delete[] jacobian[0];
         delete[] jacobian;
+
+        for(uint32_t i = 0; i < this->param.num_trajectory_states; i++) {
+            ceres::LocalParameterization *se3_param = new NullSE3ParameterizationRemap(proj_mat.block<6,6>(i*12, i*12));
+            ceres::LocalParameterization *twist_param = new RemapParameterization<6>(proj_mat.block<6,6>(i*12 + 6, i*12 + 6));
+
+            auto &tra = this->cur_trajectory.at(i);
+            problem.AddParameterBlock(tra.pose.getInternalMatrix().derived().data(), 12, se3_param);
+            problem.AddParameterBlock(tra.twist.data(), 6, twist_param);
+        }
+    } else {
+        //set regular parameterization
+        for(uint32_t i = 0; i < this->param.num_trajectory_states; i++) {
+            ceres::LocalParameterization *se3_param = new NullSE3Parameterization();
+            auto &tra = this->cur_trajectory.at(i);
+            problem.AddParameterBlock(tra.pose.getInternalMatrix().derived().data(), 12, se3_param);
+            problem.AddParameterBlock(tra.twist.data(), 6);
+        }
+
     }
 
     ceres::Solver::Options options;  // ceres problem destructor apparently destructs quite a bit, so need to
@@ -923,7 +925,7 @@ bool LaserOdom::match() {
     } else if (!this->param.only_extract_features) {
         ceres::Solver::Summary summary;
         ceres::Solve(options, &problem, &summary);
-//        LOG_INFO("%s", summary.FullReport().c_str());
+        LOG_INFO("%s", summary.FullReport().c_str());
         //        ceres::Covariance covariance(covar_options);
         //        covariance.Compute(this->covariance_blocks, &problem);
         //        covariance.GetCovarianceBlock(
