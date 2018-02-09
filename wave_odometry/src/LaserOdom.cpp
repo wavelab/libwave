@@ -640,10 +640,10 @@ bool LaserOdom::match() {
         motion_jacobian.conservativeResize(12*this->param.num_trajectory_states, 12*this->param.num_trajectory_states);
         motion_jacobian.setZero();
         jacobian = new double *[4];
-        jacobian[0] = new double[24];
-        jacobian[1] = new double[24];
-        jacobian[2] = new double[12];
-        jacobian[3] = new double[12];
+        jacobian[0] = new double[144];
+        jacobian[1] = new double[144];
+        jacobian[2] = new double[144];
+        jacobian[3] = new double[144];
     }
 
     ceres::Problem problem;
@@ -693,7 +693,6 @@ bool LaserOdom::match() {
                 parameters[2] = this->cur_trajectory.at(i).twist.data();
                 parameters[3] = this->cur_trajectory.at(i + 1).twist.data();
                 residuals.resize(12);
-                motion_jacobian.setZero();
                 prior_cost->Evaluate(parameters, residuals.data(), jacobian);
                 Eigen::Map<Eigen::Matrix<double, 12, 12, Eigen::RowMajor>> JTk(jacobian[0]);
                 motion_jacobian.block<12, 6>(12*(i+1),12*i) = JTk.block<12,6>(0,0);
@@ -852,12 +851,12 @@ bool LaserOdom::match() {
 
     if (this->param.plot_stuff) {
         system_jacobian.conservativeResize(rows, this->param.num_trajectory_states * 12);
-        mat2csv("mat.dat", system_jacobian);
         Eigen::MatrixXd AtA = system_jacobian.transpose() * system_jacobian;
 
         Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigs(AtA);
+        Eigen::MatrixXd eigenvectors = eigs.eigenvectors();
         plotVec(eigs.eigenvalues(), true);
-        plotMat(system_jacobian);
+        plotMat(eigenvectors);
         plotMat(AtA);
 
         system_jacobian.conservativeResize(rows + motion_jacobian.rows(), this->param.num_trajectory_states * 12);
@@ -865,10 +864,33 @@ bool LaserOdom::match() {
 
         Eigen::MatrixXd AtA2 = system_jacobian.transpose() * system_jacobian;
         Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigs2(AtA2);
-        plotMat(system_jacobian);
-        plotMat(AtA);
-        plotVec(eigs2.eigenvalues(), true);
+        Eigen::VectorXd e_vals = eigs2.eigenvalues();
+        plotVec(e_vals, true);
+        eigenvectors = eigs2.eigenvectors();
+        plotMat(eigenvectors);
+        plotMat(AtA2);
+        e_vals = eigs.eigenvalues();
 
+        Eigen::MatrixXd Vf = eigs.eigenvectors().transpose();
+        long cnt = 0;
+        while(e_vals(cnt) < 10.0) {
+            cnt++;
+            if (cnt > e_vals.rows())
+                break;
+        }
+
+        Eigen::MatrixXd Vp = Vf;
+        Vp.block(cnt, 0, Vf.rows() - cnt, Vf.cols()).setZero();
+        Eigen::MatrixXd proj_mat = Vf.inverse() * Vp;
+
+        plotMat(Vp);
+        plotMat(Vf);
+        plotMat(proj_mat);
+
+        delete[] jacobian[3];
+        delete[] jacobian[2];
+        delete[] jacobian[1];
+        delete[] jacobian[0];
         delete[] jacobian;
     }
 

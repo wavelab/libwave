@@ -126,14 +126,9 @@ class LaserOdom {
     void addPoints(const std::vector<PointXYZIR> &pts, int tick, TimeType stamp);
     std::vector<std::vector<std::vector<PointXYZIT>>> feature_points;  // edges, flats;
     std::vector<FeatureKDTree<double>> prv_feature_points;             // prv_edges, prv_flats;
-    // The transform is T_start_end
-    struct Trajectory {
-        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-        T_Type pose;
-        Vec6 twist;
-    };
-
-    std::vector<Trajectory, Eigen::aligned_allocator<Trajectory>> cur_trajectory;
+    
+    std::vector<T_Type, Eigen::aligned_allocator<T_Type>> cur_trajectory;
+    Vec6 cur_twist
     Vec6 previous_twist;
 
     void rollover(TimeType stamp);

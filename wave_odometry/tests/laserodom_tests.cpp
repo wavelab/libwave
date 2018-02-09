@@ -148,7 +148,7 @@ TEST(OdomTest, StraightLineGarage) {
     params.opt_iters = 10;
     params.min_residuals = 30;
     params.visualize = true;
-    params.num_trajectory_states = 3;
+    params.num_trajectory_states = 2;
 
     params.sensor_params.rings = 32;
     float ang = -0.5352924815866609;

@@ -28,7 +28,8 @@ IF(BUILD_TESTING)
     WAVE_ADD_TEST(${PROJECT_NAME}_tests
                  #tests/ceres/ba_test.cpp
                  tests/ceres/ceres_examples_test.cpp
-                 tests/ceres/SE3_local_parameter_test.cpp)
+                 tests/ceres/SE3_local_parameter_test.cpp
+                 tests/ceres/solution_remapping_test.cpp)
 
     TARGET_LINK_LIBRARIES(${PROJECT_NAME}_tests ${PROJECT_NAME})
 
