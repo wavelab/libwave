@@ -102,7 +102,7 @@ bool SE3PointToLineGP::Evaluate(double const *const *parameters, double *residua
 
     reduced = this->weight_matrix * (this->rotation * (point - pt_Tl)).block<2, 1>(0, 0);
 
-    if (jacobians != NULL) {
+    if (jacobians != nullptr) {
         this->JP_T(0,1) = point(2);
         this->JP_T(0,2) = -point(1);
         this->JP_T(1,0) = -point(2);

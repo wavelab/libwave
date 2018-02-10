@@ -380,11 +380,11 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
                 }
             }
 
-//            for (uint32_t j = 0; j < this->param.num_trajectory_states; j++) {
-//                std::cout << this->cur_trajectory.at(j).pose.getInternalMatrix().format(*(this->CSVFormat)) << std::endl
-//                          << std::endl;
-//                std::cout << this->cur_trajectory.at(j).twist.format(*(this->CSVFormat)) << std::endl << std::endl;
-//            }
+            for (uint32_t j = 0; j < this->param.num_trajectory_states; j++) {
+                std::cout << this->cur_trajectory.at(j).pose.getInternalMatrix().format(*(this->CSVFormat)) << std::endl
+                          << std::endl;
+                std::cout << this->cur_trajectory.at(j).twist.format(*(this->CSVFormat)) << std::endl << std::endl;
+            }
 
             if (this->param.output_trajectory) {
                 this->file << this->cur_trajectory.back().pose.getInternalMatrix().format(*(this->CSVFormat))
@@ -425,7 +425,7 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
         p.tick = (uint16_t) tick;
         this->cur_scan.at(pt.ring).push_back(this->applyIMU(p));
         this->signals[0].at(pt.ring).push_back(std::sqrt(l2sqrd(p)));
-        this->signals[1].at(pt.ring).push_back((double) p.intensity);
+        this->signals[1].at(pt.ring).push_back((double) (p.intensity > this->param.min_intensity ? p.intensity : this->param.min_intensity));
     }
 
     this->prv_tick = tick;
@@ -626,6 +626,7 @@ bool LaserOdom::findCorrespondingPoints(const Vec3 &query, const uint32_t &f_idx
 bool LaserOdom::match() {
     double zero_pt[3] = {0};
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> system_jacobian, motion_jacobian;
+    Eigen::SparseMatrix<double> mid_hes(10000, 10000);
     Eigen::Matrix<double, 2, 24> current_jacobian;
     uint32_t rows = 0;
 
@@ -635,6 +636,7 @@ bool LaserOdom::match() {
     std::vector<double> residuals;
     double **jacobian;
     if (this->param.solution_remapping) {
+        mid_hes.reserve(10000);
         system_jacobian.conservativeResize(10000, 12*this->param.num_trajectory_states);
         system_jacobian.setZero();
         motion_jacobian.conservativeResize(12*this->param.num_trajectory_states, 12*this->param.num_trajectory_states);
@@ -651,62 +653,63 @@ bool LaserOdom::match() {
     // Add motion residuals
     // The prior for the pose is identity, the prior for twist is the twist at the end of the previous
     // trajectory
-    this->cv_vector.at(0).calculateLinInvCovariance();
-
     Transformation<> identity;
-    ceres::CostFunction *prior_cost =
-      new TrajectoryPrior(this->cv_vector.at(0).inv_covar.sqrt(), identity, this->previous_twist);
+    if (this->param.motion_prior) {
+        this->cv_vector.at(0).calculateLinInvCovariance();
 
-    if(this->param.solution_remapping) {
-        parameters[0] = this->cur_trajectory.at(0).pose.getInternalMatrix().derived().data();
-        parameters[1] = this->cur_trajectory.at(0).twist.data();
-        residuals.resize(12);
-        prior_cost->Evaluate(parameters, residuals.data(), jacobian);
-        motion_jacobian.block<12, 6>(0,0) = Eigen::Map<Eigen::Matrix<double, 12, 12, Eigen::RowMajor>>(jacobian[0]).block<12,6>(0,0);
-        motion_jacobian.block<12, 6>(0,6) = Eigen::Map<Eigen::Matrix<double, 12, 6, Eigen::RowMajor>>(jacobian[1]);
-        if(!motion_jacobian.allFinite()) {
-            throw std::out_of_range("motion_jacobian has naa");
-        }
-    }
+        ceres::CostFunction *prior_cost =
+                new TrajectoryPrior(this->cv_vector.at(0).inv_covar.sqrt(), identity, this->previous_twist);
 
-    problem.AddResidualBlock(prior_cost,
-                             nullptr,
-                             this->cur_trajectory.at(0).pose.getInternalMatrix().derived().data(),
-                             this->cur_trajectory.at(0).twist.data());
-
-    for (uint32_t i = 0; i < this->param.num_trajectory_states; i++) {
-        if (i + 1 < this->param.num_trajectory_states) {
-            this->cv_vector.at(i).calculateLinInvCovariance();
-
-            ceres::CostFunction *motion_cost = new ConstantVelocityPrior(
-              this->cv_vector.at(i).inv_covar.sqrt(), this->cv_vector.at(i).tkp1 - this->cv_vector.at(i).tk);
-
-            if(this->param.solution_remapping) {
-                parameters[0] = this->cur_trajectory.at(i).pose.getInternalMatrix().derived().data();
-                parameters[1] = this->cur_trajectory.at(i + 1).pose.getInternalMatrix().derived().data();
-                parameters[2] = this->cur_trajectory.at(i).twist.data();
-                parameters[3] = this->cur_trajectory.at(i + 1).twist.data();
-                residuals.resize(12);
-                motion_cost->Evaluate(parameters, residuals.data(), jacobian);
-                Eigen::Map<Eigen::Matrix<double, 12, 12, Eigen::RowMajor>> JTk(jacobian[0]);
-                motion_jacobian.block<12, 6>(12*(i+1),12*i) = JTk.block<12,6>(0,0);
-                Eigen::Map<Eigen::Matrix<double, 12, 6, Eigen::RowMajor>> JTW(jacobian[2]);
-                motion_jacobian.block<12, 6>(12*(i+1),12*i + 6) = JTW;
-                Eigen::Map<Eigen::Matrix<double, 12, 12, Eigen::RowMajor>> JTkp1(jacobian[1]);
-                motion_jacobian.block<12, 6>(12*(i+1),12*(i+1)) = JTkp1.block<12,6>(0,0);
-                Eigen::Map<Eigen::Matrix<double, 12, 6, Eigen::RowMajor>> JTWp1(jacobian[3]);
-                motion_jacobian.block<12, 6>(12*(i+1),12*(i+1) + 6) = JTWp1;
-                if(!motion_jacobian.allFinite()) {
-                    throw std::out_of_range("motion_jacobian has naa");
-                }
+        if(this->param.solution_remapping) {
+            parameters[0] = this->cur_trajectory.at(0).pose.getInternalMatrix().derived().data();
+            parameters[1] = this->cur_trajectory.at(0).twist.data();
+            residuals.resize(12);
+            prior_cost->Evaluate(parameters, residuals.data(), jacobian);
+            motion_jacobian.block<12, 6>(0,0) = Eigen::Map<Eigen::Matrix<double, 12, 12, Eigen::RowMajor>>(jacobian[0]).block<12,6>(0,0);
+            motion_jacobian.block<12, 6>(0,6) = Eigen::Map<Eigen::Matrix<double, 12, 6, Eigen::RowMajor>>(jacobian[1]);
+            if(!motion_jacobian.allFinite()) {
+                throw std::out_of_range("motion_jacobian has naa");
             }
+        }
+        problem.AddResidualBlock(prior_cost,
+                                 nullptr,
+                                 this->cur_trajectory.at(0).pose.getInternalMatrix().derived().data(),
+                                 this->cur_trajectory.at(0).twist.data());
 
-            problem.AddResidualBlock(motion_cost,
-                                     nullptr,
-                                     this->cur_trajectory.at(i).pose.getInternalMatrix().derived().data(),
-                                     this->cur_trajectory.at(i + 1).pose.getInternalMatrix().derived().data(),
-                                     this->cur_trajectory.at(i).twist.data(),
-                                     this->cur_trajectory.at(i + 1).twist.data());
+        for (uint32_t i = 0; i < this->param.num_trajectory_states; i++) {
+            if (i + 1 < this->param.num_trajectory_states) {
+                this->cv_vector.at(i).calculateLinInvCovariance();
+
+                ceres::CostFunction *motion_cost = new ConstantVelocityPrior(
+                        this->cv_vector.at(i).inv_covar.sqrt(), this->cv_vector.at(i).tkp1 - this->cv_vector.at(i).tk);
+
+                if(this->param.solution_remapping) {
+                    parameters[0] = this->cur_trajectory.at(i).pose.getInternalMatrix().derived().data();
+                    parameters[1] = this->cur_trajectory.at(i + 1).pose.getInternalMatrix().derived().data();
+                    parameters[2] = this->cur_trajectory.at(i).twist.data();
+                    parameters[3] = this->cur_trajectory.at(i + 1).twist.data();
+                    residuals.resize(12);
+                    motion_cost->Evaluate(parameters, residuals.data(), jacobian);
+                    Eigen::Map<Eigen::Matrix<double, 12, 12, Eigen::RowMajor>> JTk(jacobian[0]);
+                    motion_jacobian.block<12, 6>(12*(i+1),12*i) = JTk.block<12,6>(0,0);
+                    Eigen::Map<Eigen::Matrix<double, 12, 6, Eigen::RowMajor>> JTW(jacobian[2]);
+                    motion_jacobian.block<12, 6>(12*(i+1),12*i + 6) = JTW;
+                    Eigen::Map<Eigen::Matrix<double, 12, 12, Eigen::RowMajor>> JTkp1(jacobian[1]);
+                    motion_jacobian.block<12, 6>(12*(i+1),12*(i+1)) = JTkp1.block<12,6>(0,0);
+                    Eigen::Map<Eigen::Matrix<double, 12, 6, Eigen::RowMajor>> JTWp1(jacobian[3]);
+                    motion_jacobian.block<12, 6>(12*(i+1),12*(i+1) + 6) = JTWp1;
+                    if(!motion_jacobian.allFinite()) {
+                        throw std::out_of_range("motion_jacobian has naa");
+                    }
+                }
+
+                problem.AddResidualBlock(motion_cost,
+                                         nullptr,
+                                         this->cur_trajectory.at(i).pose.getInternalMatrix().derived().data(),
+                                         this->cur_trajectory.at(i + 1).pose.getInternalMatrix().derived().data(),
+                                         this->cur_trajectory.at(i).twist.data(),
+                                         this->cur_trajectory.at(i + 1).twist.data());
+            }
         }
     }
 
@@ -784,7 +787,7 @@ bool LaserOdom::match() {
                     parameters[2] = this->cur_trajectory.at(k).twist.data();
                     parameters[3] = this->cur_trajectory.at(kp1).twist.data();
 
-                    if (!cost_function->Evaluate(parameters, residuals.data(), jacobian)) {
+                    if (!cost_function->Evaluate(parameters, residuals.data(), this->param.solution_remapping ? jacobian : nullptr)) {
                         LOG_ERROR("Cost function did not evaluate");
                         delete cost_function;
                         continue;
@@ -795,7 +798,9 @@ bool LaserOdom::match() {
                         continue;
                     }
 
+                    ceres::LossFunction *p_LossFunction = new BisquareLoss(this->param.robust_param);
                     if (this->param.solution_remapping) {
+                        std::vector<double> p(3);
                         if (this->feature_definitions.at(i).residual == ResidualType::PointToLine) {
 
                             Eigen::Map<Eigen::Matrix<double, 2, 12, Eigen::RowMajor>> JTk(jacobian[0]);
@@ -806,6 +811,15 @@ bool LaserOdom::match() {
                             current_jacobian.block<2,6>(0,12) = JTkp1.block<2,6>(0,0);
                             Eigen::Map<Eigen::Matrix<double, 2, 6, Eigen::RowMajor>> JWp1(jacobian[3]);
                             current_jacobian.block<2,6>(0,18) = JWp1;
+                            p_LossFunction->Evaluate(l2length(residuals.data(), 2), p.data());
+
+                            Eigen::Map<Eigen::Matrix<double, 2, 1>> res_vec(residuals.data());
+                            Eigen::MatrixXd mid = p.at(1) * Eigen::Matrix<double, 2, 2>::Identity() + 2.0*p.at(2)*res_vec * res_vec.transpose();
+
+                            mid_hes.insert(rows, rows) = mid(0,0);
+                            mid_hes.insert(rows + 1, rows) = mid(1,0);
+                            mid_hes.insert(rows, rows + 1) = mid(0,1);
+                            mid_hes.insert(rows + 1, rows + 1) = mid(1,1);
 
                             system_jacobian.block<2, 24>(rows, 12*k) = current_jacobian;
                             rows += 2;
@@ -821,18 +835,23 @@ bool LaserOdom::match() {
 
                             Eigen::Map<Eigen::Matrix<double, 1, 6, Eigen::RowMajor>> JWp1(jacobian[3]);
                             current_jacobian.block<1,6>(0,18) = JWp1;
+
+                            p_LossFunction->Evaluate(residuals.at(0) * residuals.at(0), p.data());
+
+                            mid_hes.insert(rows, rows) = p.at(1) + 2.0 * p.at(2) * residuals.at(0) * residuals.at(0);
+
                             system_jacobian.block<1,24>(rows, 12*k) = current_jacobian.block<1,24>(0,0);
                             rows += 1;
                         }
                     }
                     std::vector<uint64_t> corr_list;
                     corr_list.emplace_back(pt_cntr);
-                    for (uint32_t k = 0; k < ret_indices.size(); k++) {
-                        corr_list.emplace_back(ret_indices.at(k));
-                        this->feature_association.at(i).at(ret_indices.at(k)).second = AssociationStatus::CORRESPONDED;
+                    for (auto index : ret_indices) {
+                        corr_list.emplace_back(index);
+                        this->feature_association.at(i).at(index).second = AssociationStatus::CORRESPONDED;
                     }
                     this->feature_corrs.at(i).at(j).emplace_back(corr_list);
-                    ceres::LossFunction *p_LossFunction = new BisquareLoss(this->param.robust_param);
+
                     problem.AddResidualBlock(cost_function,
                                              p_LossFunction,
                                              this->cur_trajectory.at(k).pose.getInternalMatrix().derived().data(),
@@ -847,10 +866,19 @@ bool LaserOdom::match() {
 
 
     if (this->param.solution_remapping) {
-        system_jacobian.conservativeResize(rows + motion_jacobian.rows(), this->param.num_trajectory_states * 12);
-        system_jacobian.block(rows, 0, motion_jacobian.rows(), motion_jacobian.cols()) = motion_jacobian;
+        Eigen::MatrixXd AtA;
+        if (this->param.motion_prior) {
+            system_jacobian.conservativeResize(rows + motion_jacobian.rows(), this->param.num_trajectory_states * 12);
+            system_jacobian.block(rows, 0, motion_jacobian.rows(), motion_jacobian.cols()) = motion_jacobian;
+            for (uint32_t j = 0; j < motion_jacobian.rows(); j++) {
+                mid_hes.insert(rows + j, rows + j) = 1.0;
+            }
+            AtA = system_jacobian.transpose() * mid_hes.block(0,0,rows + motion_jacobian.rows(), rows + motion_jacobian.rows()) * system_jacobian;
+        } else {
+            system_jacobian.conservativeResize(rows, this->param.num_trajectory_states * 12);
+            AtA = system_jacobian.transpose() * mid_hes.block(0,0,rows, rows) * system_jacobian;
+        }
 
-        Eigen::MatrixXd AtA = system_jacobian.transpose() * system_jacobian;
         Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigs(AtA);
 
         Eigen::MatrixXd Vf = eigs.eigenvectors().transpose();
@@ -866,8 +894,7 @@ bool LaserOdom::match() {
         Eigen::MatrixXd proj_mat = Vf.inverse() * Vu;
 
         if(this->param.plot_stuff) {
-            plotMat(Vu);
-            plotMat(Vf);
+            plotVec(eigs.eigenvalues(), true);
             plotMat(proj_mat);
         }
 
@@ -925,7 +952,7 @@ bool LaserOdom::match() {
     } else if (!this->param.only_extract_features) {
         ceres::Solver::Summary summary;
         ceres::Solve(options, &problem, &summary);
-        LOG_INFO("%s", summary.FullReport().c_str());
+        //LOG_INFO("%s", summary.FullReport().c_str());
         //        ceres::Covariance covariance(covar_options);
         //        covariance.Compute(this->covariance_blocks, &problem);
         //        covariance.GetCovarianceBlock(

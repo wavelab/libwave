@@ -23,6 +23,7 @@
 #include <pcl/point_cloud.h>
 
 #include <Eigen/Core>
+#include <Eigen/Sparse>
 #include <Eigen/Eigenvalues>
 #include <unsupported/Eigen/CXX11/Tensor>
 
@@ -87,6 +88,7 @@ struct LaserOdomParams {
     RangeSensorParams sensor_params;
 
     // Feature extraction parameters
+    float min_intensity = 100.0;
     float occlusion_tol = 0.1;    // Radians
     float occlusion_tol_2 = 0.1;  // m^2. Distance between points to initiate occlusion check
     float parallel_tol = 0.002;   // ditto
@@ -115,6 +117,7 @@ struct LaserOdomParams {
     bool lock_first = true;               // If set, assume starting position is identity
     bool plot_stuff = false;              // If set, plot things for debugging
     bool solution_remapping = false;      // If set, use solution remapping
+    bool motion_prior = true;
     /**
      * If set instead of matching edge points to lines, match edge points to a plane
      * defined by the original line points and the origin

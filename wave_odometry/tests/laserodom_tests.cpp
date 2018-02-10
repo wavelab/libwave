@@ -135,7 +135,7 @@ TEST(OdomTest, StraightLineGarage) {
     LOG_INFO("Finished loading clouds");
     // odom setup
     LaserOdomParams params;
-    params.TTL = 4;
+    params.TTL = 10;
     params.n_flat = 40;
     params.n_edge = 20;
     params.n_int_edge = 0;
@@ -146,9 +146,9 @@ TEST(OdomTest, StraightLineGarage) {
     params.max_correspondence_dist = 1;
     params.robust_param = 0.2;
     params.max_residual_val = 0.2;
-    params.opt_iters = 10;
+    params.opt_iters = 50;
     params.min_residuals = 30;
-    params.visualize = true;
+    params.visualize = false;
     params.num_trajectory_states = 2;
 
     params.sensor_params.rings = 32;
@@ -165,10 +165,12 @@ TEST(OdomTest, StraightLineGarage) {
 //    params.only_extract_features = true;
     params.output_trajectory = true;
 //    params.output_correspondences = true;
-    params.Qc = 10000 * Eigen::Matrix<double, 6, 6>::Identity();
+    params.Qc = 1000000 * Eigen::Matrix<double, 6, 6>::Identity();
     params.treat_lines_as_planes = false;
-    params.solution_remapping = true;
-    params.plot_stuff = false;
+    params.min_eigen = 5000;
+    params.solution_remapping = false;
+    params.plot_stuff = true;
+    params.motion_prior = true;
 
     LaserOdom odom(params);
     std::vector<PointXYZIR> vec;
