@@ -160,7 +160,6 @@ void Transformation<Derived, approximate>::Jinterpolated(const Vec6 &twist, cons
     Transformation<Derived>::Adjoint(twist, adjoint);
 
     retval.noalias() = alpha * Mat6::Identity() + A * adjoint + B * adjoint * adjoint + C * adjoint * adjoint * adjoint;
-    return;
 }
 
 template <typename Derived, bool approximate>
@@ -188,7 +187,6 @@ void Transformation<Derived, approximate>::Adjoint(const Vec6 &twist, Mat6 &retv
     retval(5, 0) = -twist(4);
     retval(5, 1) = twist(3);
 
-    return;
 }
 
 template <typename Derived, bool approximate>

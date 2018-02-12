@@ -23,7 +23,7 @@ TEST(point_to_line, jacobian) {
     const double **params;
     params = new const double *[4];
 
-    Transformation<Eigen::Matrix<double, 3, 4>> T_k, T_kp1;
+    Transformation<Eigen::Matrix<double, 3, 4>, false> T_k, T_kp1;
     Vec6 vel_k, vel_kp1;
 
     params[0] = T_k.getInternalMatrix().derived().data();
@@ -136,13 +136,13 @@ TEST(point_to_line, jacobian) {
     an_jacs.at(3) = an_jac_4;
 
     for (uint32_t i = 0; i < 4; i++) {
-        auto diff = (num_jacs.at(i) - an_jacs.at(i)).norm();
-        if (diff > 1e-5) {
-            std::cout << "Failed on index " << i << std::endl
+        double err = (num_jacs.at(i) - an_jacs.at(i)).norm();
+        if (err > 1e-10) {
+            std::cout << "Index " << i << " with error = " << err << std::endl
                      << "Numerical: " << std::endl << num_jacs.at(i) << std::endl
                      << "Analytical:" << std::endl << an_jacs.at(i) << std::endl << std::endl;
         }
-        EXPECT_NEAR(diff, 0.0, 1e-5);
+        EXPECT_NEAR(err, 0.0, 1e-6);
     }
 }
 
@@ -157,7 +157,7 @@ TEST(point_to_plane, jacobian) {
     const double **params;
     params = new const double *[4];
 
-    Transformation<Eigen::Matrix<double, 3, 4>> T_k, T_kp1;
+    Transformation<Eigen::Matrix<double, 3, 4>, false> T_k, T_kp1;
     Vec6 vel_k, vel_kp1;
 
     params[0] = T_k.getInternalMatrix().derived().data();
@@ -270,13 +270,13 @@ TEST(point_to_plane, jacobian) {
     an_jacs.at(3) = an_jac_4;
 
     for (uint32_t i = 0; i < 4; i++) {
-        auto diff = (num_jacs.at(i) - an_jacs.at(i)).norm();
-        if (diff > 1e-5) {
+        double err = (num_jacs.at(i) - an_jacs.at(i)).norm();
+        if (err > 1e-6) {
             std::cout << "Failed on index " << i << std::endl
                       << "Numerical: " << std::endl << num_jacs.at(i) << std::endl
                       << "Analytical:" << std::endl << an_jacs.at(i) << std::endl << std::endl;
         }
-        EXPECT_NEAR(diff, 0.0, 1e-5);
+        EXPECT_NEAR(err, 0.0, 1e-6);
     }
 }
 
