@@ -626,6 +626,42 @@ bool LaserOdom::findCorrespondingPoints(const Vec3 &query, const uint32_t &f_idx
     return false;
 }
 
+bool LaserOdom::outOfBounds(const Vec3 &query, const uint32_t &f_idx, const std::vector<size_t> &index) {
+    Eigen::Map<const Vec3> pA(this->prv_feature_points.at(f_idx).points.at(index.at(0)).data());
+    Eigen::Map<const Vec3> pB(this->prv_feature_points.at(f_idx).points.at(index.at(1)).data());
+    if(this->feature_definitions.at(f_idx).residual == PointToPlane) {
+        Eigen::Map<const Vec3> pC(this->prv_feature_points.at(f_idx).points.at(index.at(2)).data());
+
+        Vec3 v0 = pC - pA;
+        Vec3 v1 = pB - pA;
+        Vec3 v2 = query - pA;
+
+        double dot00 = v0.dot(v0);
+        double dot01 = v0.dot(v1);
+        double dot02 = v0.dot(v2);
+        double dot11 = v1.dot(v1);
+        double dot12 = v1.dot(v2);
+
+        double invDenom = 1.0 / (dot00 * dot11 - dot01 * dot01);
+        double u = (dot11 * dot02 - dot01 * dot12) * invDenom;
+        double v = (dot00 * dot12 - dot01 * dot02) * invDenom;
+
+        if ((u < 0.0) || (v < 0.0) || (u + v > 1.0)) {
+            return true;
+        }
+    } else {
+        Vec3 AB = pB - pA;
+        Vec3 Aq = query - pA;
+
+        double eta = Aq.dot(AB);
+
+        if (eta < 0 || eta > AB.dot(AB)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 bool LaserOdom::match() {
     double zero_pt[3] = {0};
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> system_jacobian, motion_jacobian;
@@ -742,6 +778,9 @@ bool LaserOdom::match() {
                 Eigen::Matrix3f covZ;
                 this->range_sensor->getEuclideanCovariance(query.data(), j, covZ);
                 if (this->findCorrespondingPoints(query, i, &ret_indices)) {
+                    if (this->param.no_extrapolation && this->outOfBounds(query, i, ret_indices)) {
+                        break;
+                    }
                     this->cv_vector.at(k).tau = &tau;
                     this->cv_vector.at(k).calculateStuff(hat, candle);
                     ceres::CostFunction *cost_function;
@@ -976,17 +1015,24 @@ void LaserOdom::resetTrajectory() {
 
 /*
  * Alright, so first sort the filtered scores for each signal
- * Then go through each feature definition and pick out features
+ * Then go through each feature definition and pick out features,
+ * distributing features over angular bins
  */
 void LaserOdom::generateFeatures() {
     this->computeScores();
     this->prefilter();
 
+    std::vector<unlong> cnt_in_bins;
+    cnt_in_bins.resize(this->param.angular_bins);
     for (unlong j = 0; j < this->param.n_ring; j++) {
         for (uint32_t i = 0; i < this->N_FEATURES; i++) {
             auto &def = this->feature_definitions.at(i);
             auto &pol = def.criteria.at(0).sel_pol;
             auto &filt_scores = this->filtered_scores.at(i).at(j);
+
+            unlong max_bin = *(def.n_limit) / this->param.angular_bins;
+            std::fill(cnt_in_bins.begin(), cnt_in_bins.end(), 0);
+
             if (pol == SelectionPolicy::HIGH_NEG || pol == SelectionPolicy::NEAR_ZERO) {
                 std::sort(filt_scores.begin(),
                           filt_scores.end(),
@@ -1001,19 +1047,19 @@ void LaserOdom::generateFeatures() {
                           });
             }
             this->feature_points.at(i).at(j).clear();
-            int f_cnt = 0;
-            for (auto iter = filt_scores.begin(); iter != filt_scores.end(); iter++) {
-                if (f_cnt >= *(def.n_limit)) {
+            for (auto score : filt_scores) {
+                unlong bin = (this->cur_scan.at(j).at(score.first).tick * this->param.angular_bins) / this->param.max_ticks;
+                if (cnt_in_bins.at(bin) >= max_bin) {
                     break;
                 }
-                if (this->valid_pts.at(i).at(j).at(iter->first)) {
-                    this->feature_points.at(i).at(j).emplace_back(this->cur_scan.at(j).at(iter->first).x,
-                                                                  this->cur_scan.at(j).at(iter->first).y,
-                                                                  this->cur_scan.at(j).at(iter->first).z,
-                                                                  this->cur_scan.at(j).at(iter->first).intensity,
-                                                                  this->cur_scan.at(j).at(iter->first).tick);
-                    this->flagNearbyPoints(i, j, iter->first);
-                    f_cnt++;
+                if (this->valid_pts.at(i).at(j).at(score.first)) {
+                    this->feature_points.at(i).at(j).emplace_back(this->cur_scan.at(j).at(score.first).x,
+                                                                  this->cur_scan.at(j).at(score.first).y,
+                                                                  this->cur_scan.at(j).at(score.first).z,
+                                                                  this->cur_scan.at(j).at(score.first).intensity,
+                                                                  this->cur_scan.at(j).at(score.first).tick);
+                    this->flagNearbyPoints(i, j, score.first);
+                    cnt_in_bins.at(bin)++;
                 }
             }
         }

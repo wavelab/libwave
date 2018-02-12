@@ -74,11 +74,11 @@ struct LaserOdomParams {
     int opt_iters = 25;     // How many times to refind correspondences
     float diff_tol = 1e-6;  // If the transform from one iteration to the next changes less than this,
     // skip the next iterations
-    float robust_param = 0.2;  // Hyper-parameter for bisquare (Tukey) loss function
+    float robust_param = 0.2;             // Hyper-parameter for bisquare (Tukey) loss function
     float max_correspondence_dist = 0.4;  // correspondences greater than this are discarded
     double max_residual_val = 0.1;        // Residuals with an initial error greater than this are not used.
-    int min_residuals = 30;          // Problem will be reset if the number of residuals is less than this
-    double local_map_range = 10000;  // Maximum range of features to keep. square metres
+    int min_residuals = 30;               // Problem will be reset if the number of residuals is less than this
+    double local_map_range = 10000;       // Maximum range of features to keep. square metres
 
     // Sensor parameters
     float scan_period = 0.1;  // Seconds
@@ -88,14 +88,15 @@ struct LaserOdomParams {
     RangeSensorParams sensor_params;
 
     // Feature extraction parameters
+    unlong angular_bins = 12;
     float min_intensity = 100.0;
     float occlusion_tol = 0.1;    // Radians
     float occlusion_tol_2 = 0.1;  // m^2. Distance between points to initiate occlusion check
     float parallel_tol = 0.002;   // ditto
-    double edge_tol = 0.1;         // Edge features must have score higher than this
-    double flat_tol = 0.1;         // Plane features must have score lower than this
-    double int_edge_tol = 2;       // Intensity edge features must have score greater than this
-    double int_flat_tol = 0.1;     // Intensity edges must have range score lower than this
+    double edge_tol = 0.1;        // Edge features must have score higher than this
+    double flat_tol = 0.1;        // Plane features must have score lower than this
+    double int_edge_tol = 2;      // Intensity edge features must have score greater than this
+    double int_flat_tol = 0.1;    // Intensity edges must have range score lower than this
     int n_edge = 40;              // How many edge features to pick out per ring
     int n_flat = 100;             // How many plane features to pick out per ring
     int n_int_edge = 0;           // How many intensity edges to pick out per ring
@@ -103,8 +104,8 @@ struct LaserOdomParams {
     unlong key_radius = 5;        // minimum number of points between keypoints on the same laser ring
     float map_density = 0.01;     // Minimum l2squared spacing of features kept for odometry
     // one degree. Beam spacing is 1.33deg, so this should be sufficient
-    double azimuth_tol = 0.0174532925199433;    // Minimum azimuth difference across correspondences
-    uint16_t TTL = 1;             // Maximum life of feature in local map with no correspondences
+    double azimuth_tol = 0.0174532925199433;  // Minimum azimuth difference across correspondences
+    uint16_t TTL = 1;                         // Maximum life of feature in local map with no correspondences
 
     double min_eigen = 100.0;
 
@@ -117,16 +118,18 @@ struct LaserOdomParams {
     bool lock_first = true;               // If set, assume starting position is identity
     bool plot_stuff = false;              // If set, plot things for debugging
     bool solution_remapping = false;      // If set, use solution remapping
-    bool motion_prior = true;
-    /**
-     * If set instead of matching edge points to lines, match edge points to a plane
-     * defined by the original line points and the origin
-     */
+    bool motion_prior = true;             // If set, use a constant velocity prior
+    bool no_extrapolation = false;  // If set, discard any point match whose correspondences do not bound the point
+                                    /**
+                                     * If set instead of matching edge points to lines, match edge points to a plane
+                                     * defined by the original line points and the origin
+                                     */
     bool treat_lines_as_planes = false;
 };
 
 class LaserOdom {
     using T_Type = Transformation<Eigen::Matrix<double, 3, 4>, true>;
+
  public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     explicit LaserOdom(const LaserOdomParams params);
@@ -195,12 +198,12 @@ class LaserOdom {
     void prefilter();
     void generateFeatures();
     void buildTrees();
-    bool findCorrespondingPoints(const Vec3 &query,
-                                 const uint32_t &f_idx,
-                                 std::vector<size_t> *index);
+    bool findCorrespondingPoints(const Vec3 &query, const uint32_t &f_idx, std::vector<size_t> *index);
+    bool outOfBounds(const Vec3 &query, const uint32_t &f_idx, const std::vector<size_t> &index);
 
     PCLPointXYZIT applyIMU(const PCLPointXYZIT &pt);
-    void transformToStart(const double *const pt, const uint16_t tick, double *output, uint32_t &k, uint32_t &kp1, double &tau);
+    void transformToStart(
+      const double *const pt, const uint16_t tick, double *output, uint32_t &k, uint32_t &kp1, double &tau);
     void transformToStart(const double *const pt, const uint16_t tick, double *output);
     void transformToEnd(const double *const pt, const uint16_t tick, double *output);
     void resetTrajectory();
@@ -253,7 +256,7 @@ class LaserOdom {
     struct Criteria {
         Kernel kernel;
         SelectionPolicy sel_pol;
-        double* threshold;
+        double *threshold;
     };
 
     struct FeatureDefinition {
@@ -262,7 +265,7 @@ class LaserOdom {
         std::vector<Criteria> criteria;
         // Type of residual to use with this feature type
         ResidualType residual;
-        int* n_limit;
+        int *n_limit;
     };
     std::vector<FeatureDefinition> feature_definitions;
 
