@@ -117,7 +117,7 @@ TEST(OdomTest, StraightLineGarage) {
     pcl::PCLPointCloud2 temp;
     pcl::PointCloud<PointXYZIR> temp2;
     LOG_INFO("Starting to load clouds");
-    boost::filesystem::path p(TEST_SEQUENCE_DIR);
+    boost::filesystem::path p("/home/ben/rosbags/last_ditch_bags/pcd");
     std::vector<boost::filesystem::path> v;
     std::copy(boost::filesystem::directory_iterator(p), boost::filesystem::directory_iterator(), std::back_inserter(v));
     std::sort(v.begin(), v.end());
@@ -148,7 +148,7 @@ TEST(OdomTest, StraightLineGarage) {
     params.max_residual_val = 0.2;
     params.opt_iters = 50;
     params.min_residuals = 30;
-    params.visualize = false;
+    params.visualize = true;
     params.num_trajectory_states = 2;
 
     params.sensor_params.rings = 32;
@@ -169,7 +169,7 @@ TEST(OdomTest, StraightLineGarage) {
     params.treat_lines_as_planes = false;
     params.min_eigen = 5000;
     params.solution_remapping = false;
-    params.plot_stuff = true;
+    params.plot_stuff = false;
     params.motion_prior = true;
 
     LaserOdom odom(params);
@@ -181,16 +181,18 @@ TEST(OdomTest, StraightLineGarage) {
         for (PointXYZIR pt : clds.at(i)) {
             PointXYZIR recovered;
             // unpackage intensity and encoder
-            uint8_t *src = static_cast<uint8_t *>(static_cast<void *>(&(pt.intensity)));
-            uint16_t encoder = *(static_cast<uint16_t *>(static_cast<void *>(src)));
-            uint8_t intensity = *(static_cast<uint8_t *>(static_cast<void *>(src + 2)));
+            auto ang = (std::atan2(pt.y, pt.x) * -1.0);
+            // need to convert to 0 to 2pi
+            ang < 0 ? ang = ang + 2.0*M_PI : ang;
+
+            uint16_t encoder = (uint16_t) ((ang / (2.0*M_PI)) * 36000.0);
 
             // copy remaining fields
             recovered.x = pt.x;
             recovered.y = pt.y;
             recovered.z = pt.z;
             recovered.ring = pt.ring;
-            recovered.intensity = intensity;
+            recovered.intensity = pt.intensity;
             if (encoder != prev_enc) {
                 if (vec.size() > 0) {
                     std::chrono::microseconds dur(clds.at(i).header.stamp);

@@ -122,7 +122,13 @@ Transformation<Eigen::Matrix<double, 3, 4>, approx> Transformation<Derived, appr
         Jexp = Transformation<Derived>::SE3LeftJacobian(increment, 1e-4);
     };
 
-    auto bsfactor = skewSymmetric6(0.5*twist_kp1);
+    Mat6 bsfactor;
+    bsfactor << (eps(1)*twist_kp1(1))*0.08333333333333333333 + (eps(2)*twist_kp1(2))*0.08333333333333333333, (eps(0)*twist_kp1(1))*0.08333333333333333333 - twist_kp1(2)*0.5 - (eps(1)*twist_kp1(0))*0.1666666666666666666666, twist_kp1(1)*0.5 + (eps(0)*twist_kp1(2))*0.08333333333333333333 - (eps(2)*twist_kp1(0))*0.1666666666666666666666, 0, 0, 0,
+    twist_kp1(2)*0.5 - (eps(0)*twist_kp1(1))*0.1666666666666666666666 + (eps(1)*twist_kp1(0))*0.08333333333333333333,                                (eps(0)*twist_kp1(0))*0.08333333333333333333 + (eps(2)*twist_kp1(2))*0.08333333333333333333,                          (eps(1)*twist_kp1(2))*0.08333333333333333333 - twist_kp1(0)*0.5 - (eps(2)*twist_kp1(1))*0.1666666666666666666666,                             0,                             0,                             0,
+    (eps(2)*twist_kp1(0))*0.08333333333333333333 - (eps(0)*twist_kp1(2))*0.1666666666666666666666 - twist_kp1(1)*0.5,                          twist_kp1(0)*0.5 - (eps(1)*twist_kp1(2))*0.1666666666666666666666 + (eps(2)*twist_kp1(1))*0.08333333333333333333,                                (eps(0)*twist_kp1(0))*0.08333333333333333333 + (eps(1)*twist_kp1(1))*0.08333333333333333333,                             0,                             0,                             0,
+    (eps(1)*twist_kp1(4))*0.08333333333333333333 + (eps(4)*twist_kp1(1))*0.08333333333333333333 + (eps(2)*twist_kp1(5))*0.08333333333333333333 + (eps(5)*twist_kp1(2))*0.08333333333333333333, (eps(0)*twist_kp1(4))*0.08333333333333333333 - twist_kp1(5)*0.5 - (eps(1)*twist_kp1(3))*0.1666666666666666666666 + (eps(3)*twist_kp1(1))*0.08333333333333333333 - (eps(4)*twist_kp1(0))*0.1666666666666666666666, twist_kp1(4)*0.5 + (eps(0)*twist_kp1(5))*0.08333333333333333333 - (eps(2)*twist_kp1(3))*0.1666666666666666666666 + (eps(3)*twist_kp1(2))*0.08333333333333333333 - (eps(5)*twist_kp1(0))*0.1666666666666666666666,       (eps(1)*twist_kp1(1))*0.08333333333333333333 + (eps(2)*twist_kp1(2))*0.08333333333333333333, (eps(0)*twist_kp1(1))*0.08333333333333333333 - twist_kp1(2)*0.5 - (eps(1)*twist_kp1(0))*0.1666666666666666666666, twist_kp1(1)*0.5 + (eps(0)*twist_kp1(2))*0.08333333333333333333 - (eps(2)*twist_kp1(0))*0.1666666666666666666666,
+    twist_kp1(5)*0.5 - (eps(0)*twist_kp1(4))*0.1666666666666666666666 + (eps(1)*twist_kp1(3))*0.08333333333333333333 - (eps(3)*twist_kp1(1))*0.1666666666666666666666 + (eps(4)*twist_kp1(0))*0.08333333333333333333,      (eps(0)*twist_kp1(3))*0.08333333333333333333 + (eps(3)*twist_kp1(0))*0.08333333333333333333 + (eps(2)*twist_kp1(5))*0.08333333333333333333 + (eps(5)*twist_kp1(2))*0.08333333333333333333, (eps(1)*twist_kp1(5))*0.08333333333333333333 - twist_kp1(3)*0.5 - (eps(2)*twist_kp1(4))*0.1666666666666666666666 + (eps(4)*twist_kp1(2))*0.08333333333333333333 - (eps(5)*twist_kp1(1))*0.1666666666666666666666, twist_kp1(2)*0.5 - (eps(0)*twist_kp1(1))*0.1666666666666666666666 + (eps(1)*twist_kp1(0))*0.08333333333333333333,       (eps(0)*twist_kp1(0))*0.08333333333333333333 + (eps(2)*twist_kp1(2))*0.08333333333333333333, (eps(1)*twist_kp1(2))*0.08333333333333333333 - twist_kp1(0)*0.5 - (eps(2)*twist_kp1(1))*0.1666666666666666666666,
+    (eps(2)*twist_kp1(3))*0.08333333333333333333 - (eps(0)*twist_kp1(5))*0.1666666666666666666666 - twist_kp1(4)*0.5 - (eps(3)*twist_kp1(2))*0.1666666666666666666666 + (eps(5)*twist_kp1(0))*0.08333333333333333333, twist_kp1(3)*0.5 - (eps(1)*twist_kp1(5))*0.1666666666666666666666 + (eps(2)*twist_kp1(4))*0.08333333333333333333 - (eps(4)*twist_kp1(2))*0.1666666666666666666666 + (eps(5)*twist_kp1(1))*0.08333333333333333333,      (eps(0)*twist_kp1(3))*0.08333333333333333333 + (eps(3)*twist_kp1(0))*0.08333333333333333333 + (eps(1)*twist_kp1(4))*0.08333333333333333333 + (eps(4)*twist_kp1(1))*0.08333333333333333333, (eps(2)*twist_kp1(0))*0.08333333333333333333 - (eps(0)*twist_kp1(2))*0.1666666666666666666666 - twist_kp1(1)*0.5, twist_kp1(0)*0.5 - (eps(1)*twist_kp1(2))*0.1666666666666666666666 + (eps(2)*twist_kp1(1))*0.08333333333333333333,       (eps(0)*twist_kp1(0))*0.08333333333333333333 + (eps(1)*twist_kp1(1))*0.08333333333333333333;
 
     J_Tk = Jexp * (candle.block<6,6>(0,0) * J_right + candle.block<6,6>(0,6) * bsfactor * J_right) + J_comp_right;
     J_Tkp1 = Jexp * (candle.block<6,6>(0,0) * J_left + candle.block<6,6>(0,6) * bsfactor * J_left);
@@ -237,28 +243,37 @@ Transformation<Derived, approximate> &Transformation<Derived, approximate>::setF
 
 template <typename Derived, bool approximate>
 Mat4 Transformation<Derived, approximate>::expMap(const Vec6 &W, double TOL) {
-    Mat3 wx = skewSymmetric3(W.block<3, 1>(0, 0));
-    double wn = W.block<3, 1>(0, 0).norm();
-
-    double A, B, C;
-    if (wn > TOL) {
-        A = std::sin(wn) / wn;
-        B = (1.0 - std::cos(wn)) / (wn * wn);
-        C = (1.0 - A) / (wn * wn);
-    } else {
-        // Use taylor expansion
-        A = 1.0 - 0.16666666666666667 * (wn * wn) + 8.33333333333333333e-3 * (wn * wn * wn * wn);
-        B = 0.5 - 4.166666666666666667e-2 * (wn * wn) + 1.38888888888888888889e-3 * (wn * wn * wn * wn);
-        C = 0.16666666666666667 - 8.33333333333333333e-3 * (wn * wn) + 1.984126984126984e-04 * (wn * wn * wn * wn);
-    }
-    Mat3 V;
-    V = Mat3::Identity() + B * wx + C * wx * wx;
-
     Mat4 retval;
     retval.setIdentity();
+    if (approximate) {
+        retval(0,1) = -W(2);
+        retval(1,0) = W(2);
+        retval(0,2) = W(1);
+        retval(2,0) = -W(1);
+        retval(1,2) = -W(0);
+        retval(2,1) = W(0);
+        retval.block<3, 1>(0, 3).noalias() = W.block<3, 1>(3, 0);
+    } else {
+        Mat3 wx = skewSymmetric3(W.block<3, 1>(0, 0));
+        double wn = W.block<3, 1>(0, 0).norm();
 
-    retval.block(0, 0, 3, 3).noalias() = Mat3::Identity() + A * wx + B * wx * wx;
-    retval.block<3, 1>(0, 3).noalias() = V * W.block<3, 1>(3, 0);
+        double A, B, C;
+        if (wn > TOL) {
+            A = std::sin(wn) / wn;
+            B = (1.0 - std::cos(wn)) / (wn * wn);
+            C = (1.0 - A) / (wn * wn);
+        } else {
+            // Use taylor expansion
+            A = 1.0 - 0.16666666666666667 * (wn * wn) + 8.33333333333333333e-3 * (wn * wn * wn * wn);
+            B = 0.5 - 4.166666666666666667e-2 * (wn * wn) + 1.38888888888888888889e-3 * (wn * wn * wn * wn);
+            C = 0.16666666666666667 - 8.33333333333333333e-3 * (wn * wn) + 1.984126984126984e-04 * (wn * wn * wn * wn);
+        }
+        Mat3 V;
+        V = Mat3::Identity() + B * wx + C * wx * wx;
+
+        retval.block(0, 0, 3, 3).noalias() = Mat3::Identity() + A * wx + B * wx * wx;
+        retval.block<3, 1>(0, 3).noalias() = V * W.block<3, 1>(3, 0);
+    }
 
     return retval;
 }
@@ -360,34 +375,43 @@ Mat6 Transformation<Derived, approximate>::SE3ApproxInvLeftJacobian(const Vec6 &
 
 template <typename Derived, bool approximate>
 Vec6 Transformation<Derived, approximate>::logMap(double tolerance) const {
-    Mat3 R = this->matrix->block(0, 0, 3, 3);
-    double wn;
-    // Need to pander to ceres gradient checker a bit here
-    if ((R.trace() - 1.0) / 2.0 > 1.0) {
-        wn = 0;
-    } else {
-        wn = std::acos((R.trace() - 1.0) / 2.0);
-    }
-    double A, B;
-    Mat3 skew, Vinv;
-    if (wn > tolerance) {
-        A = wn / (2 * std::sin(wn));
-        B = (1 - std::cos(wn)) / (wn * wn);
-        skew = A * (R - R.transpose());
-        Vinv = Mat3::Identity() - 0.5 * skew + (1 / (wn * wn)) * (1 - (1 / (4 * A * B))) * skew * skew;
-    } else {
-        // Third order taylor expansion
-        A = 0.5 + wn * wn / 12.0 + wn*wn*wn*wn*(7.0/720.0);
-        B = 0.5 - wn * wn / 24.0 + wn*wn*wn*wn*(7.0/720.0);
-        skew = A * (R - R.transpose());
-        Vinv = Mat3::Identity() - 0.5 * skew;
-    }
     Vec6 retval;
-    retval(0) = skew(2, 1);
-    retval(1) = skew(0, 2);
-    retval(2) = skew(1, 0);
 
-    retval.block(3, 0, 3, 1) = Vinv * this->matrix->block(0, 3, 3, 1);
+    if (approximate) {
+        retval(0) = this->matrix->coeff(2,1);
+        retval(1) = this->matrix->coeff(0,2);
+        retval(2) = this->matrix->coeff(1,0);
+        retval.block(3, 0, 3, 1) = this->matrix->block(0, 3, 3, 1);
+    } else {
+        Mat3 R = this->matrix->block(0, 0, 3, 3);
+        double wn;
+        // Need to pander to ceres gradient checker a bit here
+        if ((R.trace() - 1.0) / 2.0 > 1.0) {
+            wn = 0;
+        } else {
+            wn = std::acos((R.trace() - 1.0) / 2.0);
+        }
+        double A, B;
+        Mat3 skew, Vinv;
+        if (wn > tolerance) {
+            A = wn / (2 * std::sin(wn));
+            B = (1 - std::cos(wn)) / (wn * wn);
+            skew = A * (R - R.transpose());
+            Vinv = Mat3::Identity() - 0.5 * skew + (1 / (wn * wn)) * (1 - (1 / (4 * A * B))) * skew * skew;
+        } else {
+            // Third order taylor expansion
+            A = 0.5 + wn * wn / 12.0 + wn*wn*wn*wn*(7.0/720.0);
+            B = 0.5 - wn * wn / 24.0 + wn*wn*wn*wn*(7.0/720.0);
+            skew = A * (R - R.transpose());
+            Vinv = Mat3::Identity() - 0.5 * skew;
+        }
+
+        retval(0) = skew(2, 1);
+        retval(1) = skew(0, 2);
+        retval(2) = skew(1, 0);
+
+        retval.block(3, 0, 3, 1) = Vinv * this->matrix->block(0, 3, 3, 1);
+    }
 
     return retval;
 }

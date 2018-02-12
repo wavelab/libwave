@@ -12,12 +12,12 @@
 namespace wave {
 
 namespace {
-using T_Type = Transformation<Eigen::Matrix<double, 3, 4>>;
+using t_Type = Transformation<Eigen::Matrix<double, 3, 4>, false>;
 }
 
 class TransformationTestFixture : public ::testing::Test {
  public:
-    T_Type transform_expected;
+    t_Type transform_expected;
     Vec6 transformation_twist_parameters;
     double comparison_threshold = 1e-5;
 
@@ -34,16 +34,16 @@ class TransformationTestFixture : public ::testing::Test {
 
 
 TEST_F(TransformationTestFixture, testInterpolation) {
-    T_Type T_k, T_kp1;
+    t_Type T_k, T_kp1;
 
     Vec6 vel_k, vel_kp1;
     // Jacobian approximations rely on small rotation
-    vel_k << 0.0, -0.0, 0.0, 5, 1, -1;
+    vel_k << 0.0, -0.0, 0.3, 5, 1, -1;
     vel_kp1 = vel_k;
 
     double tk = 0;
-    double tkp1 = 0.5;
-    double tau = 0.34;
+    double tkp1 = 0.1;
+    double tau = 0.034;
 
     T_k.setIdentity();
     T_kp1.setIdentity();
@@ -65,47 +65,51 @@ TEST_F(TransformationTestFixture, testInterpolation) {
 
     Vec6 increment;
 
-    auto Tint = T_Type::interpolateAndJacobians(
+    auto Tint = t_Type::interpolateAndJacobians(
       T_k, T_kp1, vel_k, vel_kp1, hat.block<6,12>(0,0), candle.block<6,12>(0,0), J_T_k_an, J_T_kp1_an, J_vel_k_an, J_vel_kp1_an);
 
-    TInterpolatedJTLeftFunctor J_Tleft_functor(T_k, T_kp1, vel_k, vel_kp1, hat.block<6,12>(0,0), candle.block<6,12>(0,0));
+    TInterpolatedJTLeftFunctor<t_Type> J_Tleft_functor(T_k, T_kp1, vel_k, vel_kp1, hat.block<6,12>(0,0), candle.block<6,12>(0,0));
     numerical_jacobian(J_Tleft_functor, perturbation_vec, J_T_k_num);
     perturbation_vec = Vec6::Zero();
 
-    TInterpolatedJTRightFunctor J_Tright_functor(T_k, T_kp1, vel_k, vel_kp1, hat.block<6,12>(0,0), candle.block<6,12>(0,0));
+    TInterpolatedJTRightFunctor<t_Type> J_Tright_functor(T_k, T_kp1, vel_k, vel_kp1, hat.block<6,12>(0,0), candle.block<6,12>(0,0));
     numerical_jacobian(J_Tright_functor, perturbation_vec, J_T_kp1_num);
     perturbation_vec = Vec6::Zero();
 
-    TInterpolatedJVLeftFunctor J_Vleft_functor(T_k, T_kp1, vel_k, vel_kp1, hat.block<6,12>(0,0), candle.block<6,12>(0,0));
+    TInterpolatedJVLeftFunctor<t_Type> J_Vleft_functor(T_k, T_kp1, vel_k, vel_kp1, hat.block<6,12>(0,0), candle.block<6,12>(0,0));
     numerical_jacobian(J_Vleft_functor, perturbation_vec, J_vel_k_num);
     perturbation_vec = Vec6::Zero();
 
-    TInterpolatedJVRightFunctor J_Vright_functor(T_k, T_kp1, vel_k, vel_kp1, hat.block<6,12>(0,0), candle.block<6,12>(0,0));
+    TInterpolatedJVRightFunctor<t_Type> J_Vright_functor(T_k, T_kp1, vel_k, vel_kp1, hat.block<6,12>(0,0), candle.block<6,12>(0,0));
     numerical_jacobian(J_Vright_functor, perturbation_vec, J_vel_kp1_num);
 
     wave::MatX errmat = J_T_k_an - J_T_k_num;
-    if(errmat.norm() > this->comparison_threshold) {
-        std::cout << J_T_k_an << std::endl;
+    double err = errmat.norm();
+    if(err > this->comparison_threshold) {
+        std::cout << "\n" << J_T_k_an << std::endl << std::endl;
         std::cout << J_T_k_num << std::endl;
         EXPECT_TRUE(false);
     }
 
     errmat = J_T_kp1_an - J_T_kp1_num;
-    if(errmat.norm() > this->comparison_threshold) {
-        std::cout << J_T_kp1_an << std::endl;
+    err = errmat.norm();
+    if(err > this->comparison_threshold) {
+        std::cout << J_T_kp1_an << std::endl << "\n";
         std::cout << J_T_kp1_num << std::endl;
         EXPECT_TRUE(false);
     }
 
     errmat = J_vel_k_an - J_vel_k_num;
-    if(errmat.norm() > this->comparison_threshold) {
+    err = errmat.norm();
+    if(err > this->comparison_threshold) {
         std::cout << J_vel_k_an << std::endl;
         std::cout << J_vel_k_num << std::endl;
         EXPECT_TRUE(false);
     }
 
     errmat = J_vel_kp1_an - J_vel_kp1_num;
-    if(errmat.norm() > this->comparison_threshold) {
+    err = errmat.norm();
+    if(err > this->comparison_threshold) {
         std::cout << J_vel_kp1_an << std::endl;
         std::cout << J_vel_kp1_num << std::endl;
         EXPECT_TRUE(false);

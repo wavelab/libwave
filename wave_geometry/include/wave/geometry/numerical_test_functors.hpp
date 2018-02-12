@@ -285,18 +285,19 @@ class TManifoldMinusAndJacobianJRightFunctor {
     }
 };
 
+template<typename T>
 class TInterpolatedJTLeftFunctor {
  public:
     using Mat12 = Eigen::Matrix<double, 12, 12>;
-    T_Type T_k;
-    T_Type T_kp1;
+    T T_k;
+    T T_kp1;
     Vec6 vel_k;
     Vec6 vel_kp1;
 
     Eigen::Matrix<double, 6, 12> hat, candle;
     
-    TInterpolatedJTLeftFunctor(const T_Type &T_k,
-                               const T_Type &T_kp1,
+    TInterpolatedJTLeftFunctor(const T &T_k,
+                               const T &T_kp1,
                                const Vec6 &vel_k,
                                const Vec6 &vel_kp1,
                                const Eigen::Matrix<double, 6, 12> &hat,
@@ -306,28 +307,29 @@ class TInterpolatedJTLeftFunctor {
         this->T_kp1.deepCopy(T_kp1);
     }
 
-    T_Type operator()(const Vec6 &perturbation) {
-        T_Type T_k_perturb;
+    T operator()(const Vec6 &perturbation) {
+        T T_k_perturb;
         T_k_perturb.deepCopy(this->T_k);
         T_k_perturb.manifoldPlus(perturbation);
-        T_Type T_int;
-        T_int = T_Type::interpolate<>(T_k_perturb, this->T_kp1, this->vel_k, this->vel_kp1, this->hat, this->candle);
+        T T_int;
+        T_int = T::interpolate(T_k_perturb, this->T_kp1, this->vel_k, this->vel_kp1, this->hat, this->candle);
         return T_int;
     }
 };
 
+template<typename T>
 class TInterpolatedJTRightFunctor {
  public:
     using Mat12 = Eigen::Matrix<double, 12, 12>;
-    T_Type T_k;
-    T_Type T_kp1;
+    T T_k;
+    T T_kp1;
     Vec6 vel_k;
     Vec6 vel_kp1;
 
     Eigen::Matrix<double, 6, 12> hat, candle;
     
-    TInterpolatedJTRightFunctor(const T_Type &T_k,
-                               const T_Type &T_kp1,
+    TInterpolatedJTRightFunctor(const T &T_k,
+                               const T &T_kp1,
                                const Vec6 &vel_k,
                                const Vec6 &vel_kp1,
                                const Eigen::Matrix<double, 6, 12> &hat,
@@ -337,28 +339,29 @@ class TInterpolatedJTRightFunctor {
         this->T_kp1 = T_kp1;
     }
 
-    T_Type operator()(const Vec6 &perturbation) {
-        T_Type T_kp1_perturb;
+    T operator()(const Vec6 &perturbation) {
+        T T_kp1_perturb;
         T_kp1_perturb.deepCopy(this->T_kp1);
         T_kp1_perturb.manifoldPlus(perturbation);
-        T_Type T_int;
-        T_int = T_Type::interpolate(this->T_k, T_kp1_perturb, this->vel_k, this->vel_kp1, this->hat, this->candle);
+        T T_int;
+        T_int = T::interpolate(this->T_k, T_kp1_perturb, this->vel_k, this->vel_kp1, this->hat, this->candle);
         return T_int;
     }
 };
 
+template<typename T>
 class TInterpolatedJVLeftFunctor {
  public:
     using Mat12 = Eigen::Matrix<double, 12, 12>;
-    T_Type T_k;
-    T_Type T_kp1;
+    T T_k;
+    T T_kp1;
     Vec6 vel_k;
     Vec6 vel_kp1;
 
     Eigen::Matrix<double, 6, 12> hat, candle;
     
-    TInterpolatedJVLeftFunctor(const T_Type &T_k,
-                                const T_Type &T_kp1,
+    TInterpolatedJVLeftFunctor(const T &T_k,
+                                const T &T_kp1,
                                 const Vec6 &vel_k,
                                 const Vec6 &vel_kp1,
                                 const Eigen::Matrix<double, 6, 12> &hat,
@@ -368,26 +371,27 @@ class TInterpolatedJVLeftFunctor {
         this->T_kp1 = T_kp1;
     }
 
-    T_Type operator()(const Vec6 &perturbation) {
+    T operator()(const Vec6 &perturbation) {
         Vec6 vel_k_perturb = this->vel_k + perturbation;
-        T_Type T_int;
-        T_int = T_Type::interpolate(this->T_k, this->T_kp1, vel_k_perturb, this->vel_kp1, this->hat, this->candle);
+        T T_int;
+        T_int = T::interpolate(this->T_k, this->T_kp1, vel_k_perturb, this->vel_kp1, this->hat, this->candle);
         return T_int;
     }
 };
 
+template<typename T>
 class TInterpolatedJVRightFunctor {
  public:
     using Mat12 = Eigen::Matrix<double, 12, 12>;
-    T_Type T_k;
-    T_Type T_kp1;
+    T T_k;
+    T T_kp1;
     Vec6 vel_k;
     Vec6 vel_kp1;
 
     Eigen::Matrix<double, 6, 12> hat, candle;
     
-    TInterpolatedJVRightFunctor(const T_Type &T_k,
-                               const T_Type &T_kp1,
+    TInterpolatedJVRightFunctor(const T &T_k,
+                               const T &T_kp1,
                                const Vec6 &vel_k,
                                const Vec6 &vel_kp1,
                                const Eigen::Matrix<double, 6, 12> &hat,
@@ -397,10 +401,10 @@ class TInterpolatedJVRightFunctor {
         this->T_kp1 = T_kp1;
     }
 
-    T_Type operator()(const Vec6 &perturbation) {
+    T operator()(const Vec6 &perturbation) {
         Vec6 vel_kp1_perturb = this->vel_kp1 + perturbation;
-        T_Type T_int;
-        T_int = T_Type::interpolate(this->T_k, this->T_kp1, this->vel_k, vel_kp1_perturb, this->hat, this->candle);
+        T T_int;
+        T_int = T::interpolate(this->T_k, this->T_kp1, this->vel_k, vel_kp1_perturb, this->hat, this->candle);
         return T_int;
     }
 };
