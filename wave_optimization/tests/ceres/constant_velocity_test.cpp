@@ -57,7 +57,7 @@ namespace wave {
 
 /**
  * Due to hack to workaround Ceres local parameterization for speedup
- * this test only checks against values from Matlab implementation
+ * the built-in gradient checker can't be used
  */
 TEST(ConstantVelocity, Jacobians) {
     Transformation<Eigen::Matrix<double, 3, 4>> start, end;
@@ -68,10 +68,10 @@ TEST(ConstantVelocity, Jacobians) {
     start.setFromMatrix(t_matrix);
     end.setFromMatrix(t_matrix);
 
-    const double delta_T = 1;
+    const double delta_T = 0.1;
     Vec6 start_vel, end_vel;
 
-    start_vel << 0, 0, 0, 1, 0.2, -0.1;
+    start_vel << -0, 0, 0.3, 20, 5, -0.1;
     end_vel = start_vel;
 
     end.manifoldPlus(delta_T * start_vel);
@@ -104,47 +104,82 @@ TEST(ConstantVelocity, Jacobians) {
 
     cost_function->Evaluate(parameters, residuals, jacobians);
 
-    Eigen::Map<Eigen::Matrix<double, 12, 12, Eigen::RowMajor>> Jr_Ti(jacobians[0]);
-    Eigen::Map<Eigen::Matrix<double, 12, 12, Eigen::RowMajor>> Jr_Tip1(jacobians[1]);
-    Eigen::Map<Eigen::Matrix<double, 12, 6, Eigen::RowMajor>> Jr_Wi(jacobians[2]);
-    Eigen::Map<Eigen::Matrix<double, 12, 6, Eigen::RowMajor>> Jr_Wip1(jacobians[3]);
-
-    /// Known values
-    Eigen::Matrix<double, 12, 6> Jr_Ti_known, Jr_Tip1_known, Jr_Wi_known, Jr_Wip1_known;
-    Jr_Ti_known << -1, -2.77555756156289e-16, 2.46330733588707e-16, 0, 0, 0, -2.77555756156289e-16, -0.999999999999999,
-      -2.91433543964104e-16, 0, 0, 0, 2.46330733588707e-16, -2.91433543964104e-16, -1, 0, 0, 0, 1.37737043992558e-15,
-      -0.050000000000001, -0.100000000000001, -1, -2.77555756156289e-16, 2.46330733588707e-16, 0.0499999999999992,
-      -1.17961196366423e-16, 0.500000000000001, -2.77555756156289e-16, -0.999999999999999, -2.91433543964104e-16,
-      0.0999999999999996, -0.499999999999998, -9.5062846483529e-16, 2.46330733588707e-16, -2.91433543964104e-16, -1, 0,
-      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1.07552855510562e-17, -0.05, -0.1, 0, 0, 0, 0.0499999999999999,
-      1.59594559789866e-16, 0.5, 0, 0, 0, 0.0999999999999998, -0.5, -1.70349845340922e-16, 0, 0, 0;
-
-    Jr_Tip1_known << 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, -0.0500000000000003, -0.1, 1, 0, 0,
-      0.0500000000000003, 0, 0.5, 0, 1, 0, 0.1, -0.5, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-      0, 0.05, 0.1, 0, 0, 0, -0.05, 0, -0.5, 0, 0, 0, -0.1, 0.5, 0, 0, 0, 0;
-
-    Jr_Wi_known << -1, -0, -0, -0, -0, -0, -0, -1, -0, -0, -0, -0, -0, -0, -1, -0, -0, -0, -0, -0, -0, -1, -0, -0, -0,
-      -0, -0, -0, -1, -0, -0, -0, -0, -0, -0, -1, -1, -0, -0, -0, -0, -0, -0, -1, -0, -0, -0, -0, -0, -0, -1, -0, -0,
-      -0, -0, -0, -0, -1, -0, -0, -0, -0, -0, -0, -1, -0, -0, -0, -0, -0, -0, -1;
-
-    Jr_Wip1_known << 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-      0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, -0.0500000000000003, -0.1, 1, 0, 0,
-      0.0500000000000003, 0, 0.5, 0, 1, 0, 0.1, -0.5, 0, 0, 0, 1;
-
     Eigen::Matrix<double, 12, 1> residual_vec;
     residual_vec = Eigen::Map<Eigen::Matrix<double, 12, 1>>(residuals);
 
     EXPECT_NEAR(residual_vec.norm(), 0, 1e-6);
 
-    Eigen::Matrix<double, 12, 6> errmat;
+    Eigen::Map<Eigen::Matrix<double, 12, 12, Eigen::RowMajor>> Jr_Ti(jacobians[0]);
+    Eigen::Map<Eigen::Matrix<double, 12, 12, Eigen::RowMajor>> Jr_Tip1(jacobians[1]);
+    Eigen::Map<Eigen::Matrix<double, 12, 6, Eigen::RowMajor>> Jr_Wi(jacobians[2]);
+    Eigen::Map<Eigen::Matrix<double, 12, 6, Eigen::RowMajor>> Jr_Wip1(jacobians[3]);
 
-    errmat = Jr_Ti.block<12,6>(0,0) - Jr_Ti_known;
-    EXPECT_NEAR(errmat.norm(), 0, 1e-6);
-    errmat = Jr_Tip1.block<12,6>(0,0) - Jr_Tip1_known;
-    EXPECT_NEAR(errmat.norm(), 0, 1e-6);
-    errmat = Jr_Wi - Jr_Wi_known;
-    EXPECT_NEAR(errmat.norm(), 0, 1e-6);
-    errmat = Jr_Wip1 - Jr_Wip1_known;
-    EXPECT_NEAR(errmat.norm(), 0, 1e-6);
+    const double step_size = 1.4901e-07;
+    const double inv_step = 1.0 / step_size;
+    Vec6 delta;
+    delta.setZero();
+
+    Transformation<> Tk_perturbed, Tkp1_perturbed;
+    Vec6 vel_k_perturbed, vel_kp1_perturbed;
+
+    Tk_perturbed.deepCopy(start);
+    Tkp1_perturbed.deepCopy(end);
+    vel_k_perturbed = start_vel;
+    vel_kp1_perturbed = end_vel;
+
+    parameters[0] = Tk_perturbed.getInternalMatrix().derived().data();
+    parameters[1] = Tkp1_perturbed.getInternalMatrix().derived().data();
+    parameters[2] = vel_k_perturbed.data();
+    parameters[3] = vel_kp1_perturbed.data();
+
+    Eigen::Matrix<double, 12, 1> diff, result;
+
+    std::vector<Eigen::Matrix<double, 12, 6>> an_jacs, num_jacs;
+    num_jacs.resize(4);
+    an_jacs.resize(4);
+    an_jacs.at(0) = Jr_Ti.block<12,6>(0,0);
+    an_jacs.at(1) = Jr_Tip1.block<12,6>(0,0);
+    an_jacs.at(2) = Jr_Wi;
+    an_jacs.at(3) = Jr_Wip1;
+
+    for (uint32_t i = 0; i < 6; i++) {
+        delta(i) = step_size;
+        // First parameter
+        Tk_perturbed.manifoldPlus(delta);
+        cost_function->Evaluate(parameters, result.data(), nullptr);
+        diff = result - residual_vec;
+        num_jacs.at(0).block<12,1>(0,i) = inv_step * diff;
+        Tk_perturbed.deepCopy(start);
+        // Second parameter
+        Tkp1_perturbed.manifoldPlus(delta);
+        cost_function->Evaluate(parameters, result.data(), nullptr);
+        diff = result - residual_vec;
+        num_jacs.at(1).block<12,1>(0,i) = inv_step * diff;
+        Tkp1_perturbed.deepCopy(end);
+        // Third parameter
+        vel_k_perturbed = vel_k_perturbed + delta;
+        cost_function->Evaluate(parameters, result.data(), nullptr);
+        diff = result - residual_vec;
+        num_jacs.at(2).block<12,1>(0,i) = inv_step * diff;
+        vel_k_perturbed = start_vel;
+        // Fourth parameter
+        vel_kp1_perturbed = vel_kp1_perturbed + delta;
+        cost_function->Evaluate(parameters, result.data(), nullptr);
+        diff = result - residual_vec;
+        num_jacs.at(3).block<12,1>(0,i) = inv_step * diff;
+        vel_kp1_perturbed = end_vel;
+
+        delta.setZero();
+    }
+
+    for (uint32_t i = 0; i < 4; i++) {
+        double err = (num_jacs.at(i) - an_jacs.at(i)).norm();
+        EXPECT_NEAR(err, 0.0, 1e-6);
+        if (err > 1e-6) {
+            std::cout << "Failed on index " << i << std::endl
+                      << "Numerical: " << std::endl << num_jacs.at(i) << std::endl
+                      << "Analytical:" << std::endl << an_jacs.at(i) << std::endl << std::endl;
+        }
+    }
 }
 }

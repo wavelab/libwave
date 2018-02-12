@@ -14,7 +14,8 @@ Transformation<Derived, approximate>::Transformation() {
 }
 
 template <typename Derived, bool approximate>
-Transformation<Derived, approximate>::Transformation(std::shared_ptr<Eigen::MatrixBase<Derived>> ref) : matrix(std::move(ref)) {}
+Transformation<Derived, approximate>::Transformation(std::shared_ptr<Eigen::MatrixBase<Derived>> ref)
+    : matrix(std::move(ref)) {}
 
 template <typename Derived, bool approximate>
 Transformation<Derived, approximate> &Transformation<Derived, approximate>::setIdentity() {
@@ -30,7 +31,8 @@ Transformation<Derived, approximate>::Transformation(const Vec3 &eulers, const V
 }
 
 template <typename Derived, bool approximate>
-Transformation<Derived, approximate> &Transformation<Derived, approximate>::setFromEulerXYZ(const Vec3 &eulers, const Vec3 &translation) {
+Transformation<Derived, approximate> &Transformation<Derived, approximate>::setFromEulerXYZ(const Vec3 &eulers,
+                                                                                            const Vec3 &translation) {
     checkMatrixFinite(eulers);
     checkMatrixFinite(translation);
 
@@ -71,19 +73,20 @@ Mat6 Transformation<Derived, approximate>::skewSymmetric6(const Vec6 &W) {
 
 template <typename Derived, bool approximate>
 template <bool approx>
-Transformation<Eigen::Matrix<double, 3, 4>, approx> Transformation<Derived, approximate>::interpolate(const Transformation &T_k,
-                                           const Transformation &T_kp1,
-                                           const Vec6 &twist_k,
-                                           const Vec6 &twist_kp1,
-                                           const Eigen::Matrix<double, 6, 12> &hat,
-                                           const Eigen::Matrix<double, 6, 12> &candle) {
+Transformation<Eigen::Matrix<double, 3, 4>, approx> Transformation<Derived, approximate>::interpolate(
+  const Transformation &T_k,
+  const Transformation &T_kp1,
+  const Vec6 &twist_k,
+  const Vec6 &twist_kp1,
+  const Eigen::Matrix<double, 6, 12> &hat,
+  const Eigen::Matrix<double, 6, 12> &candle) {
     Transformation<Eigen::Matrix<double, 3, 4>, approx> retval;
     Mat6 J_left, J_right;
     auto eps = T_kp1.manifoldMinusAndJacobian(T_k, J_left, J_right);
 
     retval.deepCopy(T_k);
-    Vec6 increment = hat.block<6, 6>(0, 6) * twist_k + candle.block<6, 6>(0, 0) * eps +
-                     candle.block<6, 6>(0, 6) * J_left * twist_kp1;
+    Vec6 increment =
+      hat.block<6, 6>(0, 6) * twist_k + candle.block<6, 6>(0, 0) * eps + candle.block<6, 6>(0, 6) * J_left * twist_kp1;
 
     retval.manifoldPlus(increment);
     return retval;
@@ -91,23 +94,24 @@ Transformation<Eigen::Matrix<double, 3, 4>, approx> Transformation<Derived, appr
 
 template <typename Derived, bool approximate>
 template <bool approx>
-Transformation<Eigen::Matrix<double, 3, 4>, approx> Transformation<Derived, approximate>::interpolateAndJacobians(const Transformation &T_k,
-                                                       const Transformation &T_kp1,
-                                                       const Vec6 &twist_k,
-                                                       const Vec6 &twist_kp1,
-                                                       const Eigen::Matrix<double, 6, 12> &hat,
-                                                       const Eigen::Matrix<double, 6, 12> &candle,
-                                                       Mat6 &J_Tk,
-                                                       Mat6 &J_Tkp1,
-                                                       Mat6 &J_twist_k,
-                                                       Mat6 &J_twist_kp1) {
+Transformation<Eigen::Matrix<double, 3, 4>, approx> Transformation<Derived, approximate>::interpolateAndJacobians(
+  const Transformation &T_k,
+  const Transformation &T_kp1,
+  const Vec6 &twist_k,
+  const Vec6 &twist_kp1,
+  const Eigen::Matrix<double, 6, 12> &hat,
+  const Eigen::Matrix<double, 6, 12> &candle,
+  Mat6 &J_Tk,
+  Mat6 &J_Tkp1,
+  Mat6 &J_twist_k,
+  Mat6 &J_twist_kp1) {
     Transformation<Eigen::Matrix<double, 3, 4>, approx> retval;
     Mat6 J_left, J_right;
     auto eps = T_kp1.manifoldMinusAndJacobian(T_k, J_left, J_right);
 
     retval.setFromMatrix(T_k.getMatrix());
-    Vec6 increment = hat.block<6, 6>(0, 6) * twist_k + candle.block<6, 6>(0, 0) * eps +
-                candle.block<6, 6>(0, 6) * J_left * twist_kp1;
+    Vec6 increment =
+      hat.block<6, 6>(0, 6) * twist_k + candle.block<6, 6>(0, 0) * eps + candle.block<6, 6>(0, 6) * J_left * twist_kp1;
     Transformation<Eigen::Matrix<double, 3, 4>, approx> T_inc;
     T_inc.setFromExpMap(increment);
     Mat6 J_comp_left, J_comp_right;
@@ -123,15 +127,63 @@ Transformation<Eigen::Matrix<double, 3, 4>, approx> Transformation<Derived, appr
     };
 
     Mat6 bsfactor;
-    bsfactor << (eps(1)*twist_kp1(1))*0.08333333333333333333 + (eps(2)*twist_kp1(2))*0.08333333333333333333, (eps(0)*twist_kp1(1))*0.08333333333333333333 - twist_kp1(2)*0.5 - (eps(1)*twist_kp1(0))*0.1666666666666666666666, twist_kp1(1)*0.5 + (eps(0)*twist_kp1(2))*0.08333333333333333333 - (eps(2)*twist_kp1(0))*0.1666666666666666666666, 0, 0, 0,
-    twist_kp1(2)*0.5 - (eps(0)*twist_kp1(1))*0.1666666666666666666666 + (eps(1)*twist_kp1(0))*0.08333333333333333333,                                (eps(0)*twist_kp1(0))*0.08333333333333333333 + (eps(2)*twist_kp1(2))*0.08333333333333333333,                          (eps(1)*twist_kp1(2))*0.08333333333333333333 - twist_kp1(0)*0.5 - (eps(2)*twist_kp1(1))*0.1666666666666666666666,                             0,                             0,                             0,
-    (eps(2)*twist_kp1(0))*0.08333333333333333333 - (eps(0)*twist_kp1(2))*0.1666666666666666666666 - twist_kp1(1)*0.5,                          twist_kp1(0)*0.5 - (eps(1)*twist_kp1(2))*0.1666666666666666666666 + (eps(2)*twist_kp1(1))*0.08333333333333333333,                                (eps(0)*twist_kp1(0))*0.08333333333333333333 + (eps(1)*twist_kp1(1))*0.08333333333333333333,                             0,                             0,                             0,
-    (eps(1)*twist_kp1(4))*0.08333333333333333333 + (eps(4)*twist_kp1(1))*0.08333333333333333333 + (eps(2)*twist_kp1(5))*0.08333333333333333333 + (eps(5)*twist_kp1(2))*0.08333333333333333333, (eps(0)*twist_kp1(4))*0.08333333333333333333 - twist_kp1(5)*0.5 - (eps(1)*twist_kp1(3))*0.1666666666666666666666 + (eps(3)*twist_kp1(1))*0.08333333333333333333 - (eps(4)*twist_kp1(0))*0.1666666666666666666666, twist_kp1(4)*0.5 + (eps(0)*twist_kp1(5))*0.08333333333333333333 - (eps(2)*twist_kp1(3))*0.1666666666666666666666 + (eps(3)*twist_kp1(2))*0.08333333333333333333 - (eps(5)*twist_kp1(0))*0.1666666666666666666666,       (eps(1)*twist_kp1(1))*0.08333333333333333333 + (eps(2)*twist_kp1(2))*0.08333333333333333333, (eps(0)*twist_kp1(1))*0.08333333333333333333 - twist_kp1(2)*0.5 - (eps(1)*twist_kp1(0))*0.1666666666666666666666, twist_kp1(1)*0.5 + (eps(0)*twist_kp1(2))*0.08333333333333333333 - (eps(2)*twist_kp1(0))*0.1666666666666666666666,
-    twist_kp1(5)*0.5 - (eps(0)*twist_kp1(4))*0.1666666666666666666666 + (eps(1)*twist_kp1(3))*0.08333333333333333333 - (eps(3)*twist_kp1(1))*0.1666666666666666666666 + (eps(4)*twist_kp1(0))*0.08333333333333333333,      (eps(0)*twist_kp1(3))*0.08333333333333333333 + (eps(3)*twist_kp1(0))*0.08333333333333333333 + (eps(2)*twist_kp1(5))*0.08333333333333333333 + (eps(5)*twist_kp1(2))*0.08333333333333333333, (eps(1)*twist_kp1(5))*0.08333333333333333333 - twist_kp1(3)*0.5 - (eps(2)*twist_kp1(4))*0.1666666666666666666666 + (eps(4)*twist_kp1(2))*0.08333333333333333333 - (eps(5)*twist_kp1(1))*0.1666666666666666666666, twist_kp1(2)*0.5 - (eps(0)*twist_kp1(1))*0.1666666666666666666666 + (eps(1)*twist_kp1(0))*0.08333333333333333333,       (eps(0)*twist_kp1(0))*0.08333333333333333333 + (eps(2)*twist_kp1(2))*0.08333333333333333333, (eps(1)*twist_kp1(2))*0.08333333333333333333 - twist_kp1(0)*0.5 - (eps(2)*twist_kp1(1))*0.1666666666666666666666,
-    (eps(2)*twist_kp1(3))*0.08333333333333333333 - (eps(0)*twist_kp1(5))*0.1666666666666666666666 - twist_kp1(4)*0.5 - (eps(3)*twist_kp1(2))*0.1666666666666666666666 + (eps(5)*twist_kp1(0))*0.08333333333333333333, twist_kp1(3)*0.5 - (eps(1)*twist_kp1(5))*0.1666666666666666666666 + (eps(2)*twist_kp1(4))*0.08333333333333333333 - (eps(4)*twist_kp1(2))*0.1666666666666666666666 + (eps(5)*twist_kp1(1))*0.08333333333333333333,      (eps(0)*twist_kp1(3))*0.08333333333333333333 + (eps(3)*twist_kp1(0))*0.08333333333333333333 + (eps(1)*twist_kp1(4))*0.08333333333333333333 + (eps(4)*twist_kp1(1))*0.08333333333333333333, (eps(2)*twist_kp1(0))*0.08333333333333333333 - (eps(0)*twist_kp1(2))*0.1666666666666666666666 - twist_kp1(1)*0.5, twist_kp1(0)*0.5 - (eps(1)*twist_kp1(2))*0.1666666666666666666666 + (eps(2)*twist_kp1(1))*0.08333333333333333333,       (eps(0)*twist_kp1(0))*0.08333333333333333333 + (eps(1)*twist_kp1(1))*0.08333333333333333333;
+    bsfactor << (eps(1) * twist_kp1(1)) * 0.08333333333333333333 + (eps(2) * twist_kp1(2)) * 0.08333333333333333333,
+      (eps(0) * twist_kp1(1)) * 0.08333333333333333333 - twist_kp1(2) * 0.5 -
+        (eps(1) * twist_kp1(0)) * 0.1666666666666666666666,
+      twist_kp1(1) * 0.5 + (eps(0) * twist_kp1(2)) * 0.08333333333333333333 -
+        (eps(2) * twist_kp1(0)) * 0.1666666666666666666666,
+      0, 0, 0, twist_kp1(2) * 0.5 - (eps(0) * twist_kp1(1)) * 0.1666666666666666666666 +
+                 (eps(1) * twist_kp1(0)) * 0.08333333333333333333,
+      (eps(0) * twist_kp1(0)) * 0.08333333333333333333 + (eps(2) * twist_kp1(2)) * 0.08333333333333333333,
+      (eps(1) * twist_kp1(2)) * 0.08333333333333333333 - twist_kp1(0) * 0.5 -
+        (eps(2) * twist_kp1(1)) * 0.1666666666666666666666,
+      0, 0, 0, (eps(2) * twist_kp1(0)) * 0.08333333333333333333 - (eps(0) * twist_kp1(2)) * 0.1666666666666666666666 -
+                 twist_kp1(1) * 0.5,
+      twist_kp1(0) * 0.5 - (eps(1) * twist_kp1(2)) * 0.1666666666666666666666 +
+        (eps(2) * twist_kp1(1)) * 0.08333333333333333333,
+      (eps(0) * twist_kp1(0)) * 0.08333333333333333333 + (eps(1) * twist_kp1(1)) * 0.08333333333333333333, 0, 0, 0,
+      (eps(1) * twist_kp1(4)) * 0.08333333333333333333 + (eps(4) * twist_kp1(1)) * 0.08333333333333333333 +
+        (eps(2) * twist_kp1(5)) * 0.08333333333333333333 + (eps(5) * twist_kp1(2)) * 0.08333333333333333333,
+      (eps(0) * twist_kp1(4)) * 0.08333333333333333333 - twist_kp1(5) * 0.5 -
+        (eps(1) * twist_kp1(3)) * 0.1666666666666666666666 + (eps(3) * twist_kp1(1)) * 0.08333333333333333333 -
+        (eps(4) * twist_kp1(0)) * 0.1666666666666666666666,
+      twist_kp1(4) * 0.5 + (eps(0) * twist_kp1(5)) * 0.08333333333333333333 -
+        (eps(2) * twist_kp1(3)) * 0.1666666666666666666666 + (eps(3) * twist_kp1(2)) * 0.08333333333333333333 -
+        (eps(5) * twist_kp1(0)) * 0.1666666666666666666666,
+      (eps(1) * twist_kp1(1)) * 0.08333333333333333333 + (eps(2) * twist_kp1(2)) * 0.08333333333333333333,
+      (eps(0) * twist_kp1(1)) * 0.08333333333333333333 - twist_kp1(2) * 0.5 -
+        (eps(1) * twist_kp1(0)) * 0.1666666666666666666666,
+      twist_kp1(1) * 0.5 + (eps(0) * twist_kp1(2)) * 0.08333333333333333333 -
+        (eps(2) * twist_kp1(0)) * 0.1666666666666666666666,
+      twist_kp1(5) * 0.5 - (eps(0) * twist_kp1(4)) * 0.1666666666666666666666 +
+        (eps(1) * twist_kp1(3)) * 0.08333333333333333333 - (eps(3) * twist_kp1(1)) * 0.1666666666666666666666 +
+        (eps(4) * twist_kp1(0)) * 0.08333333333333333333,
+      (eps(0) * twist_kp1(3)) * 0.08333333333333333333 + (eps(3) * twist_kp1(0)) * 0.08333333333333333333 +
+        (eps(2) * twist_kp1(5)) * 0.08333333333333333333 + (eps(5) * twist_kp1(2)) * 0.08333333333333333333,
+      (eps(1) * twist_kp1(5)) * 0.08333333333333333333 - twist_kp1(3) * 0.5 -
+        (eps(2) * twist_kp1(4)) * 0.1666666666666666666666 + (eps(4) * twist_kp1(2)) * 0.08333333333333333333 -
+        (eps(5) * twist_kp1(1)) * 0.1666666666666666666666,
+      twist_kp1(2) * 0.5 - (eps(0) * twist_kp1(1)) * 0.1666666666666666666666 +
+        (eps(1) * twist_kp1(0)) * 0.08333333333333333333,
+      (eps(0) * twist_kp1(0)) * 0.08333333333333333333 + (eps(2) * twist_kp1(2)) * 0.08333333333333333333,
+      (eps(1) * twist_kp1(2)) * 0.08333333333333333333 - twist_kp1(0) * 0.5 -
+        (eps(2) * twist_kp1(1)) * 0.1666666666666666666666,
+      (eps(2) * twist_kp1(3)) * 0.08333333333333333333 - (eps(0) * twist_kp1(5)) * 0.1666666666666666666666 -
+        twist_kp1(4) * 0.5 - (eps(3) * twist_kp1(2)) * 0.1666666666666666666666 +
+        (eps(5) * twist_kp1(0)) * 0.08333333333333333333,
+      twist_kp1(3) * 0.5 - (eps(1) * twist_kp1(5)) * 0.1666666666666666666666 +
+        (eps(2) * twist_kp1(4)) * 0.08333333333333333333 - (eps(4) * twist_kp1(2)) * 0.1666666666666666666666 +
+        (eps(5) * twist_kp1(1)) * 0.08333333333333333333,
+      (eps(0) * twist_kp1(3)) * 0.08333333333333333333 + (eps(3) * twist_kp1(0)) * 0.08333333333333333333 +
+        (eps(1) * twist_kp1(4)) * 0.08333333333333333333 + (eps(4) * twist_kp1(1)) * 0.08333333333333333333,
+      (eps(2) * twist_kp1(0)) * 0.08333333333333333333 - (eps(0) * twist_kp1(2)) * 0.1666666666666666666666 -
+        twist_kp1(1) * 0.5,
+      twist_kp1(0) * 0.5 - (eps(1) * twist_kp1(2)) * 0.1666666666666666666666 +
+        (eps(2) * twist_kp1(1)) * 0.08333333333333333333,
+      (eps(0) * twist_kp1(0)) * 0.08333333333333333333 + (eps(1) * twist_kp1(1)) * 0.08333333333333333333;
 
-    J_Tk = Jexp * (candle.block<6,6>(0,0) * J_right + candle.block<6,6>(0,6) * bsfactor * J_right) + J_comp_right;
-    J_Tkp1 = Jexp * (candle.block<6,6>(0,0) * J_left + candle.block<6,6>(0,6) * bsfactor * J_left);
+    J_Tk = Jexp * (candle.block<6, 6>(0, 0) * J_right + candle.block<6, 6>(0, 6) * bsfactor * J_right) + J_comp_right;
+    J_Tkp1 = Jexp * (candle.block<6, 6>(0, 0) * J_left + candle.block<6, 6>(0, 6) * bsfactor * J_left);
     J_twist_k = Jexp * hat.block<6, 6>(0, 6);
     J_twist_kp1 = Jexp * candle.block<6, 6>(0, 6) * J_left;
 
@@ -186,7 +238,6 @@ void Transformation<Derived, approximate>::Adjoint(const Vec6 &twist, Mat6 &retv
     retval(4, 2) = -twist(3);
     retval(5, 0) = -twist(4);
     retval(5, 1) = twist(3);
-
 }
 
 template <typename Derived, bool approximate>
@@ -244,12 +295,12 @@ Mat4 Transformation<Derived, approximate>::expMap(const Vec6 &W, double TOL) {
     Mat4 retval;
     retval.setIdentity();
     if (approximate) {
-        retval(0,1) = -W(2);
-        retval(1,0) = W(2);
-        retval(0,2) = W(1);
-        retval(2,0) = -W(1);
-        retval(1,2) = -W(0);
-        retval(2,1) = W(0);
+        retval(0, 1) = -W(2);
+        retval(1, 0) = W(2);
+        retval(0, 2) = W(1);
+        retval(2, 0) = -W(1);
+        retval(1, 2) = -W(0);
+        retval(2, 1) = W(0);
         retval.block<3, 1>(0, 3).noalias() = W.block<3, 1>(3, 0);
     } else {
         Mat3 wx = skewSymmetric3(W.block<3, 1>(0, 0));
@@ -376,9 +427,9 @@ Vec6 Transformation<Derived, approximate>::logMap(double tolerance) const {
     Vec6 retval;
 
     if (approximate) {
-        retval(0) = this->matrix->coeff(2,1);
-        retval(1) = this->matrix->coeff(0,2);
-        retval(2) = this->matrix->coeff(1,0);
+        retval(0) = this->matrix->coeff(2, 1);
+        retval(1) = this->matrix->coeff(0, 2);
+        retval(2) = this->matrix->coeff(1, 0);
         retval.block(3, 0, 3, 1) = this->matrix->block(0, 3, 3, 1);
     } else {
         Mat3 R = this->matrix->block(0, 0, 3, 3);
@@ -398,8 +449,8 @@ Vec6 Transformation<Derived, approximate>::logMap(double tolerance) const {
             Vinv = Mat3::Identity() - 0.5 * skew + (1 / (wn * wn)) * (1 - (1 / (4 * A * B))) * skew * skew;
         } else {
             // Third order taylor expansion
-            A = 0.5 + wn * wn / 12.0 + wn*wn*wn*wn*(7.0/720.0);
-            B = 0.5 - wn * wn / 24.0 + wn*wn*wn*wn*(7.0/720.0);
+            A = 0.5 + wn * wn / 12.0 + wn * wn * wn * wn * (7.0 / 720.0);
+            B = 0.5 - wn * wn / 24.0 + wn * wn * wn * wn * (7.0 / 720.0);
             skew = A * (R - R.transpose());
             Vinv = Mat3::Identity() - 0.5 * skew;
         }
@@ -426,8 +477,8 @@ Vec3 Transformation<Derived, approximate>::transform(const Vec3 &input_vector) c
 
 template <typename Derived, bool approximate>
 Vec3 Transformation<Derived, approximate>::transformAndJacobian(const Vec3 &input_vector,
-                                          Mat3 &Jpoint,
-                                          Eigen::Matrix<double, 3, 6> &Jparam) const {
+                                                                Mat3 &Jpoint,
+                                                                Eigen::Matrix<double, 3, 6> &Jparam) const {
     Vec3 retval = this->transform(input_vector);
 
     Jpoint = this->matrix->block(0, 0, 3, 3);
@@ -481,8 +532,8 @@ template <typename Derived, bool approximate>
 Transformation<Derived, approximate> &Transformation<Derived, approximate>::manifoldPlus(const Vec6 &omega) {
     Mat4 incremental = expMap(omega, this->TOL);
 
-    this->matrix->block(0, 3,3,1) =
-      incremental.block(0, 0, 3, 3) * this->matrix->block(0, 3,3,1) + incremental.block(0, 3,3,1);
+    this->matrix->block(0, 3, 3, 1) =
+      incremental.block(0, 0, 3, 3) * this->matrix->block(0, 3, 3, 1) + incremental.block(0, 3, 3, 1);
     this->matrix->block(0, 0, 3, 3) = incremental.block(0, 0, 3, 3) * this->matrix->block(0, 0, 3, 3);
 
     return *this;
@@ -495,7 +546,9 @@ Vec6 Transformation<Derived, approximate>::manifoldMinus(const Transformation &T
 }
 
 template <typename Derived, bool approximate>
-Vec6 Transformation<Derived, approximate>::manifoldMinusAndJacobian(const Transformation &T, Mat6 &J_left, Mat6 &J_right) const {
+Vec6 Transformation<Derived, approximate>::manifoldMinusAndJacobian(const Transformation &T,
+                                                                    Mat6 &J_left,
+                                                                    Mat6 &J_right) const {
     // logmap(T1 * inv(T2))
     Mat6 J_logm;
     Transformation<Eigen::Matrix<double, 3, 4>, approximate> T2inv;
@@ -504,7 +557,7 @@ Vec6 Transformation<Derived, approximate>::manifoldMinusAndJacobian(const Transf
     diff = (*this) * T2inv;
     auto manifold_difference = diff.logMap();
 
-    //todo: Change to constexpr if when switch to C++17
+    // todo: Change to constexpr if when switch to C++17
     if (approximate) {
         J_logm = Transformation<>::SE3ApproxInvLeftJacobian(manifold_difference);
     } else {
@@ -513,13 +566,15 @@ Vec6 Transformation<Derived, approximate>::manifoldMinusAndJacobian(const Transf
 
 
     Mat6 J_comp_inv;
-    auto R1R2t = this->matrix->block(0,0,3,3) * T.matrix->block(0,0,3,3).transpose();
-    auto t1 = this->matrix->block(0,3,3,1);
+    auto R1R2t = this->matrix->block(0, 0, 3, 3) * T.matrix->block(0, 0, 3, 3).transpose();
+    auto t1 = this->matrix->block(0, 3, 3, 1);
 
-    J_comp_inv.block(0,0,3,3) = -R1R2t;
-    J_comp_inv.block(3,3,3,3) = -R1R2t;
-    J_comp_inv.block(3,0,3,3) = -skewSymmetric3(t1) * R1R2t - this->matrix->block(0,0,3,3) * skewSymmetric3(T2inv.matrix->block(0,3,3,1)) * T.matrix->block(0,0,3,3).transpose();
-    J_comp_inv.block(0,3,3,3).setZero();
+    J_comp_inv.block(0, 0, 3, 3) = -R1R2t;
+    J_comp_inv.block(3, 3, 3, 3) = -R1R2t;
+    J_comp_inv.block(3, 0, 3, 3) = -skewSymmetric3(t1) * R1R2t -
+                                   this->matrix->block(0, 0, 3, 3) * skewSymmetric3(T2inv.matrix->block(0, 3, 3, 1)) *
+                                     T.matrix->block(0, 0, 3, 3).transpose();
+    J_comp_inv.block(0, 3, 3, 3).setZero();
 
     J_left = J_logm;
     J_right = J_logm * J_comp_inv;
@@ -529,7 +584,8 @@ Vec6 Transformation<Derived, approximate>::manifoldMinusAndJacobian(const Transf
 
 template <typename Derived, bool approximate>
 template <typename Other, bool approx>
-Transformation<Eigen::Matrix<double, 3, 4>, approx> Transformation<Derived, approximate>::composeAndJacobian(const Transformation<Other, approximate> &T_right, Mat6 &J_left, Mat6 &J_right) const {
+Transformation<Eigen::Matrix<double, 3, 4>, approx> Transformation<Derived, approximate>::composeAndJacobian(
+  const Transformation<Other, approximate> &T_right, Mat6 &J_left, Mat6 &J_right) const {
     J_left.setIdentity();
     J_right.setZero();
 
@@ -555,7 +611,8 @@ Transformation<Derived, approximate> &Transformation<Derived, approximate>::norm
 }
 
 template <typename Derived, bool approximate>
-Transformation<Derived, approximate> Transformation<Derived, approximate>::inverseAndJacobian(Mat6 &J_transformation) const {
+Transformation<Derived, approximate> Transformation<Derived, approximate>::inverseAndJacobian(
+  Mat6 &J_transformation) const {
     Transformation retval = this->inverse();
     auto R = retval.getRotationMatrix();
 
@@ -586,11 +643,12 @@ Mat4 Transformation<Derived, approximate>::getMatrix() const {
 
 template <typename Derived, bool approximate>
 template <typename Other, bool OtherApprox>
-Transformation<Eigen::Matrix<double, 3, 4>, approximate> Transformation<Derived, approximate>::operator*(const Transformation<Other, OtherApprox> &T) const {
+Transformation<Eigen::Matrix<double, 3, 4>, approximate> Transformation<Derived, approximate>::operator*(
+  const Transformation<Other, OtherApprox> &T) const {
     Transformation<Eigen::Matrix<double, 3, 4>, approximate> composed;
     composed.matrix->block(0, 0, 3, 3).noalias() = this->matrix->block(0, 0, 3, 3) * T.getRotationMatrix();
-    composed.matrix->block(0, 3,3,1).noalias() =
-      this->matrix->block(0, 0, 3, 3) * T.getTranslation() + this->matrix->block(0, 3,3,1);
+    composed.matrix->block(0, 3, 3, 1).noalias() =
+      this->matrix->block(0, 0, 3, 3) * T.getTranslation() + this->matrix->block(0, 3, 3, 1);
 
     return composed;
 }
@@ -602,7 +660,8 @@ Vec6 Transformation<Derived, approximate>::operator-(const Transformation &T) co
 
 template <typename Derived, bool approximate>
 template <typename Other, bool OtherApprox>
-Transformation<Derived, approximate> &Transformation<Derived, approximate>::deepCopy(const Transformation<Other, OtherApprox> &T) {
+Transformation<Derived, approximate> &Transformation<Derived, approximate>::deepCopy(
+  const Transformation<Other, OtherApprox> &T) {
     *(this->matrix) = *(T.matrix);
 
     return *this;

@@ -17,25 +17,81 @@ bool ConstantVelocityPrior::Evaluate(double const *const *parameters, double *re
     Eigen::Map<Eigen::Matrix<double, 12, 1>> res_map(residuals);
 
     Mat6 J_left, J_right;
-    res_map.block<6,1>(0,0) = Tkp1.manifoldMinusAndJacobian(Tk, J_left, J_right) - this->delta_t * prev_vel;
+    Vec6 man_diff = Tkp1.manifoldMinusAndJacobian(Tk, J_left, J_right);
+    
+    res_map.block<6,1>(0,0) = man_diff - this->delta_t * prev_vel;
     res_map.block<6,1>(6,0) = J_left * cur_vel - prev_vel;
 
     res_map = this->weight * res_map;
 
     if (jacobians) {
-        Mat6 skew = Transformation<void>::skewSymmetric6(cur_vel);
+        Mat6 skew;
+        skew << (man_diff(1) * cur_vel(1)) * 0.08333333333333333333 + (man_diff(2) * cur_vel(2)) * 0.08333333333333333333,
+                (man_diff(0) * cur_vel(1)) * 0.08333333333333333333 - cur_vel(2) * 0.5 -
+                (man_diff(1) * cur_vel(0)) * 0.1666666666666666666666,
+                cur_vel(1) * 0.5 + (man_diff(0) * cur_vel(2)) * 0.08333333333333333333 -
+                (man_diff(2) * cur_vel(0)) * 0.1666666666666666666666,
+                0, 0, 0, cur_vel(2) * 0.5 - (man_diff(0) * cur_vel(1)) * 0.1666666666666666666666 +
+                         (man_diff(1) * cur_vel(0)) * 0.08333333333333333333,
+                (man_diff(0) * cur_vel(0)) * 0.08333333333333333333 + (man_diff(2) * cur_vel(2)) * 0.08333333333333333333,
+                (man_diff(1) * cur_vel(2)) * 0.08333333333333333333 - cur_vel(0) * 0.5 -
+                (man_diff(2) * cur_vel(1)) * 0.1666666666666666666666,
+                0, 0, 0, (man_diff(2) * cur_vel(0)) * 0.08333333333333333333 - (man_diff(0) * cur_vel(2)) * 0.1666666666666666666666 -
+                         cur_vel(1) * 0.5,
+                cur_vel(0) * 0.5 - (man_diff(1) * cur_vel(2)) * 0.1666666666666666666666 +
+                (man_diff(2) * cur_vel(1)) * 0.08333333333333333333,
+                (man_diff(0) * cur_vel(0)) * 0.08333333333333333333 + (man_diff(1) * cur_vel(1)) * 0.08333333333333333333, 0, 0, 0,
+                (man_diff(1) * cur_vel(4)) * 0.08333333333333333333 + (man_diff(4) * cur_vel(1)) * 0.08333333333333333333 +
+                (man_diff(2) * cur_vel(5)) * 0.08333333333333333333 + (man_diff(5) * cur_vel(2)) * 0.08333333333333333333,
+                (man_diff(0) * cur_vel(4)) * 0.08333333333333333333 - cur_vel(5) * 0.5 -
+                (man_diff(1) * cur_vel(3)) * 0.1666666666666666666666 + (man_diff(3) * cur_vel(1)) * 0.08333333333333333333 -
+                (man_diff(4) * cur_vel(0)) * 0.1666666666666666666666,
+                cur_vel(4) * 0.5 + (man_diff(0) * cur_vel(5)) * 0.08333333333333333333 -
+                (man_diff(2) * cur_vel(3)) * 0.1666666666666666666666 + (man_diff(3) * cur_vel(2)) * 0.08333333333333333333 -
+                (man_diff(5) * cur_vel(0)) * 0.1666666666666666666666,
+                (man_diff(1) * cur_vel(1)) * 0.08333333333333333333 + (man_diff(2) * cur_vel(2)) * 0.08333333333333333333,
+                (man_diff(0) * cur_vel(1)) * 0.08333333333333333333 - cur_vel(2) * 0.5 -
+                (man_diff(1) * cur_vel(0)) * 0.1666666666666666666666,
+                cur_vel(1) * 0.5 + (man_diff(0) * cur_vel(2)) * 0.08333333333333333333 -
+                (man_diff(2) * cur_vel(0)) * 0.1666666666666666666666,
+                cur_vel(5) * 0.5 - (man_diff(0) * cur_vel(4)) * 0.1666666666666666666666 +
+                (man_diff(1) * cur_vel(3)) * 0.08333333333333333333 - (man_diff(3) * cur_vel(1)) * 0.1666666666666666666666 +
+                (man_diff(4) * cur_vel(0)) * 0.08333333333333333333,
+                (man_diff(0) * cur_vel(3)) * 0.08333333333333333333 + (man_diff(3) * cur_vel(0)) * 0.08333333333333333333 +
+                (man_diff(2) * cur_vel(5)) * 0.08333333333333333333 + (man_diff(5) * cur_vel(2)) * 0.08333333333333333333,
+                (man_diff(1) * cur_vel(5)) * 0.08333333333333333333 - cur_vel(3) * 0.5 -
+                (man_diff(2) * cur_vel(4)) * 0.1666666666666666666666 + (man_diff(4) * cur_vel(2)) * 0.08333333333333333333 -
+                (man_diff(5) * cur_vel(1)) * 0.1666666666666666666666,
+                cur_vel(2) * 0.5 - (man_diff(0) * cur_vel(1)) * 0.1666666666666666666666 +
+                (man_diff(1) * cur_vel(0)) * 0.08333333333333333333,
+                (man_diff(0) * cur_vel(0)) * 0.08333333333333333333 + (man_diff(2) * cur_vel(2)) * 0.08333333333333333333,
+                (man_diff(1) * cur_vel(2)) * 0.08333333333333333333 - cur_vel(0) * 0.5 -
+                (man_diff(2) * cur_vel(1)) * 0.1666666666666666666666,
+                (man_diff(2) * cur_vel(3)) * 0.08333333333333333333 - (man_diff(0) * cur_vel(5)) * 0.1666666666666666666666 -
+                cur_vel(4) * 0.5 - (man_diff(3) * cur_vel(2)) * 0.1666666666666666666666 +
+                (man_diff(5) * cur_vel(0)) * 0.08333333333333333333,
+                cur_vel(3) * 0.5 - (man_diff(1) * cur_vel(5)) * 0.1666666666666666666666 +
+                (man_diff(2) * cur_vel(4)) * 0.08333333333333333333 - (man_diff(4) * cur_vel(2)) * 0.1666666666666666666666 +
+                (man_diff(5) * cur_vel(1)) * 0.08333333333333333333,
+                (man_diff(0) * cur_vel(3)) * 0.08333333333333333333 + (man_diff(3) * cur_vel(0)) * 0.08333333333333333333 +
+                (man_diff(1) * cur_vel(4)) * 0.08333333333333333333 + (man_diff(4) * cur_vel(1)) * 0.08333333333333333333,
+                (man_diff(2) * cur_vel(0)) * 0.08333333333333333333 - (man_diff(0) * cur_vel(2)) * 0.1666666666666666666666 -
+                cur_vel(1) * 0.5,
+                cur_vel(0) * 0.5 - (man_diff(1) * cur_vel(2)) * 0.1666666666666666666666 +
+                (man_diff(2) * cur_vel(1)) * 0.08333333333333333333,
+                (man_diff(0) * cur_vel(0)) * 0.08333333333333333333 + (man_diff(1) * cur_vel(1)) * 0.08333333333333333333;
         if (jacobians[0]) {
             Eigen::Map<Eigen::Matrix<double, 12, 12, Eigen::RowMajor>> jac_map(jacobians[0], 12, 12);
             jac_map.setZero();
             jac_map.block<6,6>(0,0) = J_right;
-            jac_map.block<6,6>(6,0) = 0.5 * skew * J_right;
+            jac_map.block<6,6>(6,0) = skew * J_right;
             jac_map.block<12, 6>(0,0) = this->weight * jac_map.block<12, 6>(0,0);
         }
         if (jacobians[1]) {
             Eigen::Map<Eigen::Matrix<double, 12, 12, Eigen::RowMajor>> jac_map(jacobians[1], 12, 12);
             jac_map.setZero();
             jac_map.block<6,6>(0,0) = J_left;
-            jac_map.block<6,6>(6,0) = 0.5 * skew * J_left;
+            jac_map.block<6,6>(6,0) = skew * J_left;
             jac_map.block<12, 6>(0,0) = this->weight * jac_map.block<12, 6>(0,0);
         }
         if (jacobians[2]) {
