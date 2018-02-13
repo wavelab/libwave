@@ -102,12 +102,14 @@ struct LaserOdomParams {
     int n_int_edge = 0;           // How many intensity edges to pick out per ring
     unlong knn = 5;               // 1/2 nearest neighbours for computing curvature
     unlong key_radius = 5;        // minimum number of points between keypoints on the same laser ring
-    float map_density = 0.01;     // Minimum l2squared spacing of features kept for odometry
+    float edge_map_density = 0.01;     // Minimum l2squared spacing of features kept for odometry
+    float flat_map_density = 0.25;
     // one degree. Beam spacing is 1.33deg, so this should be sufficient
     double azimuth_tol = 0.0174532925199433;  // Minimum azimuth difference across correspondences
     uint16_t TTL = 1;                         // Maximum life of feature in local map with no correspondences
 
     double min_eigen = 100.0;
+    double max_extrapolation = 0.0;       // Increasing this number from 0 will allow a bit of extrapolation
 
     // Setting flags
     bool visualize = false;               // Whether to run a visualization for debugging
@@ -141,10 +143,11 @@ class LaserOdom {
     struct Trajectory {
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         T_Type pose;
-        Vec6 twist;
+//        Vec6 twist;
     };
 
     std::vector<Trajectory, Eigen::aligned_allocator<Trajectory>> cur_trajectory;
+    Vec6 current_twist;
     Vec6 previous_twist;
 
     void rollover(TimeType stamp);
