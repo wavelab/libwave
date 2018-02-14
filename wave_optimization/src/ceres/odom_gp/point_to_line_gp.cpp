@@ -1,4 +1,4 @@
-#include "wave/optimization/ceres/point_to_line_gp.hpp"
+#include "wave/optimization/ceres/odom_gp/point_to_line_gp.hpp"
 #include <Eigen/QR>
 
 namespace wave {

@@ -2,8 +2,8 @@
 #include <Eigen/Core>
 #include <unsupported/Eigen/MatrixFunctions>
 
-#include "wave/optimization/ceres/point_to_plane_gp.hpp"
-#include "wave/optimization/ceres/point_to_line_gp.hpp"
+#include "wave/optimization/ceres/odom_gp/point_to_plane_gp.hpp"
+#include "wave/optimization/ceres/odom_gp/point_to_line_gp.hpp"
 #include "wave/wave_test.hpp"
 #include "wave/utils/math.hpp"
 #include "wave/geometry/transformation.hpp"

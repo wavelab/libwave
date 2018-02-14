@@ -2,8 +2,8 @@
 
 #include "wave/wave_test.hpp"
 #include "wave/geometry/transformation.hpp"
-#include "wave/optimization/ceres/point_to_line_interpolated_transform.hpp"
-#include "wave/optimization/ceres/SE3Parameterization.hpp"
+#include "wave/optimization/ceres/odom_linear/point_to_line_interpolated_transform.hpp"
+#include "wave/optimization/ceres/local_params/SE3Parameterization.hpp"
 
 namespace wave {
 

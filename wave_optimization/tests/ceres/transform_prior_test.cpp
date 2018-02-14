@@ -4,7 +4,7 @@
 #include "wave/wave_test.hpp"
 #include "wave/geometry/transformation.hpp"
 #include "wave/optimization/ceres/transform_prior.hpp"
-#include "wave/optimization/ceres/SE3Parameterization.hpp"
+#include "wave/optimization/ceres/local_params/SE3Parameterization.hpp"
 
 namespace wave {
 

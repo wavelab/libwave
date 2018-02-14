@@ -6,8 +6,8 @@
 #include "wave/geometry/transformation.hpp"
 #include "wave/kinematics/constant_velocity_gp_prior.hpp"
 #include "wave/optimization/ceres/trajectory_prior.hpp"
-#include "wave/optimization/ceres/constant_velocity.hpp"
-#include "wave/optimization/ceres/null_SE3_parameterization.hpp"
+#include "wave/optimization/ceres/odom_gp/constant_velocity.hpp"
+#include "wave/optimization/ceres/local_params/null_SE3_parameterization.hpp"
 
 namespace wave {
 

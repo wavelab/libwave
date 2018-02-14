@@ -120,7 +120,8 @@ TEST_F(TransformationTestFixture, testInverse) {
 TEST_F(TransformationTestFixture, testTransform) {
     Vec3 v1(1, 1, 1);
     Vec3 v1_transformed(1.879548179412289, 3.209097549950123, 3.874344391414011);
-    Vec3 v1_test = this->transform_expected.transform(v1);
+    Vec3 v1_test;
+    this->transform_expected.transform(v1, v1_test);
     Vec3 err = v1_test - v1_transformed;
 
     ASSERT_LE(err.norm(), this->comparison_threshold);

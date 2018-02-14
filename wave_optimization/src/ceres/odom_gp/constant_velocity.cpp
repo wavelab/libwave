@@ -1,5 +1,5 @@
 #include <exception>
-#include "wave/optimization/ceres/constant_velocity.hpp"
+#include "wave/optimization/ceres/odom_gp/constant_velocity.hpp"
 
 namespace wave {
 

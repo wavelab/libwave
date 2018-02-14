@@ -3,7 +3,7 @@
 
 #include "wave/wave_test.hpp"
 #include "wave/geometry/transformation.hpp"
-#include "wave/optimization/ceres/solution_remapping_parameterization.hpp"
+#include "wave/optimization/ceres/local_params/solution_remapping_parameterization.hpp"
 
 namespace wave {
 

@@ -2,7 +2,7 @@
 #define WAVE_POINT_TO_POINT_RESIDUAL_HPP
 
 #include <ceres/ceres.h>
-#include "wave/optimization/ceres/SE3Parameterization.hpp"
+#include "wave/optimization/ceres/local_params/SE3Parameterization.hpp"
 
 namespace wave {
 

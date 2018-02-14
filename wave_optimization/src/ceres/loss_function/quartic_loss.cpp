@@ -1,4 +1,4 @@
-#include "wave/optimization/ceres/quartic_loss.hpp"
+#include "wave/optimization/ceres/loss_function/quartic_loss.hpp"
 
 namespace wave {
 

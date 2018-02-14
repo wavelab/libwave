@@ -470,16 +470,25 @@ Vec6 Transformation<Derived, approximate>::logMap(const Transformation &T) {
     return T.logMap();
 }
 
-template <typename Derived, bool approximate>
+template<typename Derived, bool approximate>
 Vec3 Transformation<Derived, approximate>::transform(const Vec3 &input_vector) const {
-    return this->matrix->block(0, 0, 3, 3) * input_vector + this->matrix->block(0, 3, 3, 1);
+    Vec3 retval;
+    this->transform(input_vector, retval);
+    return retval;
+}
+
+template <typename Derived, bool approximate>
+template<typename IP_T, typename OP_T>
+void Transformation<Derived, approximate>::transform(const Eigen::MatrixBase<IP_T> &ip_vec, Eigen::MatrixBase<OP_T> &op_vec) const {
+    op_vec = this->matrix->block(0, 0, 3, 3) * ip_vec + this->matrix->block(0, 3, 3, 1);
 }
 
 template <typename Derived, bool approximate>
 Vec3 Transformation<Derived, approximate>::transformAndJacobian(const Vec3 &input_vector,
                                                                 Mat3 &Jpoint,
                                                                 Eigen::Matrix<double, 3, 6> &Jparam) const {
-    Vec3 retval = this->transform(input_vector);
+    Vec3 retval;
+    this->transform(input_vector, retval);
 
     Jpoint = this->matrix->block(0, 0, 3, 3);
 
@@ -495,8 +504,17 @@ Vec3 Transformation<Derived, approximate>::transformAndJacobian(const Vec3 &inpu
 
 template <typename Derived, bool approximate>
 Vec3 Transformation<Derived, approximate>::inverseTransform(const Vec3 &input_vector) const {
-    return this->matrix->block(0, 0, 3, 3).transpose() * input_vector -
-           this->matrix->block(0, 0, 3, 3).transpose() * this->matrix->block(0, 3, 3, 1);
+    Vec3 retval;
+    this->inverseTransform(input_vector, retval);
+    return retval;
+}
+
+template <typename Derived, bool approximate>
+template <typename IP_T, typename OP_T>
+void Transformation<Derived, approximate>::inverseTransform(const Eigen::MatrixBase<IP_T> &ip_vec,
+                                                            Eigen::MatrixBase<OP_T> &op_vec) const {
+    op_vec = this->matrix->block(0, 0, 3, 3).transpose() * ip_vec -
+             this->matrix->block(0, 0, 3, 3).transpose() * this->matrix->block(0, 3, 3, 1);
 }
 
 template <typename Derived, bool approximate>

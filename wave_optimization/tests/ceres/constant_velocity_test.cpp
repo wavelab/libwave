@@ -5,8 +5,8 @@
 #include "wave/wave_test.hpp"
 #include "wave/utils/math.hpp"
 #include "wave/geometry/transformation.hpp"
-#include "wave/optimization/ceres/constant_velocity.hpp"
-#include "wave/optimization/ceres/SE3Parameterization.hpp"
+#include "wave/optimization/ceres/odom_gp/constant_velocity.hpp"
+#include "wave/optimization/ceres/local_params/SE3Parameterization.hpp"
 
 namespace {
 /// Helper functions

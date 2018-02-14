@@ -158,7 +158,8 @@ class TransformAndJacobianJpointFunctor {
     }
 
     Vec3 operator()(const Vec3 &input_point) {
-        Vec3 output_point = this->T.transform(input_point);
+        Vec3 output_point;
+        this->T.transform(input_point, output_point);
         return output_point;
     }
 };
@@ -177,7 +178,8 @@ class TransformAndJacobianJparamFunctor {
         T_Type Tp;
         Tp.deepCopy(this->T);
         Tp.manifoldPlus(wvec);
-        Vec3 output_point = Tp.transform(this->P);
+        Vec3 output_point;
+        Tp.transform(this->P, output_point);
         return output_point;
     }
 };

@@ -1,4 +1,4 @@
-#include "wave/optimization/ceres/bisquare_loss.hpp"
+#include "wave/optimization/ceres/loss_function/bisquare_loss.hpp"
 
 namespace wave {
 

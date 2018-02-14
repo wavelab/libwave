@@ -37,15 +37,15 @@
 #include "wave/odometry/kernels.hpp"
 #include "wave/odometry/integrals.hpp"
 #include "wave/odometry/sensor_model.hpp"
-#include "wave/optimization/ceres/null_SE3_parameterization.hpp"
-#include "wave/optimization/ceres/null_SE3_parameterization_remap.hpp"
-#include "wave/optimization/ceres/solution_remapping_parameterization.hpp"
-#include "wave/optimization/ceres/point_to_line_gp.hpp"
-#include "wave/optimization/ceres/point_to_plane_gp.hpp"
+#include "wave/optimization/ceres/local_params/null_SE3_parameterization.hpp"
+#include "wave/optimization/ceres/local_params/null_SE3_parameterization_remap.hpp"
+#include "wave/optimization/ceres/local_params/solution_remapping_parameterization.hpp"
+#include "wave/optimization/ceres/odom_gp_reduced/point_to_line_gp.hpp"
+#include "wave/optimization/ceres/odom_gp_reduced/point_to_plane_gp.hpp"
+#include "wave/optimization/ceres/odom_gp_reduced/constant_velocity.hpp"
 #include "wave/optimization/ceres/trajectory_prior.hpp"
-#include "wave/optimization/ceres/constant_velocity.hpp"
-#include "wave/optimization/ceres/bisquare_loss.hpp"
-#include "wave/optimization/ceres/quartic_loss.hpp"
+#include "wave/optimization/ceres/loss_function/bisquare_loss.hpp"
+#include "wave/optimization/ceres/loss_function/quartic_loss.hpp"
 #include "wave/utils/math.hpp"
 #include "wave/utils/data.hpp"
 
@@ -72,6 +72,7 @@ struct LaserOdomParams {
     uint32_t num_trajectory_states = 5;
 
     int opt_iters = 25;     // How many times to refind correspondences
+    int max_inner_iters = 10;  // How many iterations of ceres to run with each set of correspondences
     float diff_tol = 1e-6;  // If the transform from one iteration to the next changes less than this,
     // skip the next iterations
     float robust_param = 0.2;             // Hyper-parameter for bisquare (Tukey) loss function

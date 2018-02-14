@@ -1,4 +1,4 @@
-#include "wave/optimization/ceres/point_to_plane_interpolated_transform.hpp"
+#include "wave/optimization/ceres/odom_linear/point_to_plane_interpolated_transform.hpp"
 
 namespace wave {
 

@@ -203,6 +203,9 @@ class Transformation {
      */
     Vec3 transform(const Vec3 &input_vector) const;
 
+    template<typename IP_T, typename OP_T>
+    void transform(const Eigen::MatrixBase<IP_T> &ip_vec, Eigen::MatrixBase<OP_T> &op_vec) const;
+
     /** Rotates the input vector and calculate Jacobians.
      *
      * @param[in] input_vector The vector to be rotated
@@ -222,6 +225,9 @@ class Transformation {
      * where @f$p_i@f$ is the input vector.
      */
     Vec3 inverseTransform(const Vec3 &input_vector) const;
+
+    template<typename IP_T, typename OP_T>
+    void inverseTransform(const Eigen::MatrixBase<IP_T>& ip_vec, Eigen::MatrixBase<OP_T>& op_vec) const;
 
     /** Invert the transformation in place. */
     Transformation &invert();

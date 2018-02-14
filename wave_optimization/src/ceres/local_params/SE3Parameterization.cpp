@@ -1,6 +1,6 @@
 // for matrix square root
 #include <unsupported/Eigen/MatrixFunctions>
-#include "wave/optimization/ceres/SE3Parameterization.hpp"
+#include "wave/optimization/ceres/local_params/SE3Parameterization.hpp"
 #include "wave/geometry/transformation.hpp"
 
 namespace wave {

@@ -1,8 +1,8 @@
-#include "wave/optimization/ceres/point_to_plane_gp.hpp"
+#include "wave/optimization/ceres/odom_gp_reduced/point_to_plane_gp.hpp"
 
 namespace wave {
 
-SE3PointToPlaneGP::SE3PointToPlaneGP(const double *const p,
+SE3PointToPlaneGPRed::SE3PointToPlaneGPRed(const double *const p,
                                      const double *const pA,
                                      const double *const pB,
                                      const double *const pC,
@@ -31,7 +31,7 @@ SE3PointToPlaneGP::SE3PointToPlaneGP(const double *const p,
     this->inv_den = 1.0 / ceres::sqrt(cBA_BC[0] * cBA_BC[0] + cBA_BC[1] * cBA_BC[1] + cBA_BC[2] * cBA_BC[2]);
 }
 
-bool SE3PointToPlaneGP::Evaluate(double const *const *parameters, double *residuals, double **jacobians) const {
+bool SE3PointToPlaneGPRed::Evaluate(double const *const *parameters, double *residuals, double **jacobians) const {
     auto tk_ptr = std::make_shared<Eigen::Map<const Eigen::Matrix<double, 3, 4>>>(parameters[0], 3, 4);
     auto tkp1_ptr = std::make_shared<Eigen::Map<const Eigen::Matrix<double, 3, 4>>>(parameters[1], 3, 4);
 
@@ -39,15 +39,14 @@ bool SE3PointToPlaneGP::Evaluate(double const *const *parameters, double *residu
     Transformation<Eigen::Map<const Eigen::Matrix<double, 3, 4>>, false> Tkp1(tkp1_ptr);
 
     Eigen::Map<const Vec6> vel_k(parameters[2], 6, 1);
-    Eigen::Map<const Vec6> vel_kp1(parameters[3], 6, 1);
 
     if (jacobians) {
         this->T_current =
           Transformation<Eigen::Map<const Eigen::Matrix<double, 3, 4>>, false>::interpolateAndJacobians<>(
-            Tk, Tkp1, vel_k, vel_kp1, this->hat, this->candle, this->JT_Ti, this->JT_Tip1, this->JT_Wi, this->JT_Wip1);
+            Tk, Tkp1, vel_k, vel_k, this->hat, this->candle, this->JT_Ti, this->JT_Tip1, this->JT_Wi, this->JT_Wip1);
     } else {
         this->T_current =
-          Transformation<Eigen::Map<const Eigen::Matrix<double, 3, 4>>, false>::interpolate<>(Tk, Tkp1, vel_k, vel_kp1, this->hat, this->candle);
+          Transformation<Eigen::Map<const Eigen::Matrix<double, 3, 4>>, false>::interpolate<>(Tk, Tkp1, vel_k, vel_k, this->hat, this->candle);
     }
 
     Eigen::Map<const Vec3> PT(this->pt, 3, 1);
@@ -68,7 +67,6 @@ bool SE3PointToPlaneGP::Evaluate(double const *const *parameters, double *residu
         this->JP_T(2, 0) = point(1);
         this->JP_T(2, 1) = -point(0);
 
-
         this->Jr_T = this->Jr_P * this->JP_T;
         if (jacobians[0]) {
             Eigen::Map<Eigen::Matrix<double, 1, 12, Eigen::RowMajor>> Jr_Tk(jacobians[0], 1, 12);
@@ -82,11 +80,7 @@ bool SE3PointToPlaneGP::Evaluate(double const *const *parameters, double *residu
         }
         if (jacobians[2]) {
             Eigen::Map<Eigen::Matrix<double, 1, 6, Eigen::RowMajor>> jac_map(jacobians[2], 1, 6);
-            jac_map = this->weight * this->Jr_T * this->JT_Wi;
-        }
-        if (jacobians[3]) {
-            Eigen::Map<Eigen::Matrix<double, 1, 6, Eigen::RowMajor>> jac_map(jacobians[3], 1, 6);
-            jac_map = this->weight * this->Jr_T * this->JT_Wip1;
+            jac_map = this->weight * this->Jr_T * (this->JT_Wi + this->JT_Wip1);
         }
     }
 
@@ -94,7 +88,7 @@ bool SE3PointToPlaneGP::Evaluate(double const *const *parameters, double *residu
 }
 
 /// Jacobian of the residual wrt the transformed point
-void SE3PointToPlaneGP::calculateJr_P(Eigen::Matrix<double, 1, 3> &Jr_P) const {
+void SE3PointToPlaneGPRed::calculateJr_P(Eigen::Matrix<double, 1, 3> &Jr_P) const {
     const double &XA1 = this->ptA[0], &XA2 = this->ptA[1], &XA3 = this->ptA[2], &XB1 = this->ptB[0],
                  &XB2 = this->ptB[1], &XB3 = this->ptB[2], &XC1 = this->ptC[0], &XC2 = this->ptC[1],
                  &XC3 = this->ptC[2];

@@ -5,8 +5,8 @@
  * !!! WARNING !!! use only with "null" SE3 local parameterization
  */
 
-#ifndef WAVE_POINT_TO_LINE_GP_HPP
-#define WAVE_POINT_TO_LINE_GP_HPP
+#ifndef WAVE_POINT_TO_LINE_GP_REDUCED_HPP
+#define WAVE_POINT_TO_LINE_GP_REDUCED_HPP
 
 #include <unsupported/Eigen/MatrixFunctions>
 #include <ceres/ceres.h>
@@ -15,7 +15,10 @@
 
 namespace wave {
 
-class SE3PointToLineGP : public ceres::SizedCostFunction<2, 12, 12, 6, 6> {
+/**
+ * Parameter ordering is Tk, Tkp1, and W in that order
+ */
+class SE3PointToLineGPRed : public ceres::SizedCostFunction<2, 12, 12, 6> {
  public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
  private:
@@ -43,9 +46,6 @@ class SE3PointToLineGP : public ceres::SizedCostFunction<2, 12, 12, 6, 6> {
     mutable Eigen::Matrix<double, 3, 6> JP_T;
     // Complete Jacobian will null row
     mutable Eigen::Matrix<double, 3, 6> Jr_T;
-    // Reduced Jacobian
-//    mutable Eigen::Matrix<double, 2, 12> Jr_Tk;
-//    mutable Eigen::Matrix<double, 2, 12> Jr_Tkp1;
 
     /**
      * This is used to rotate the residual into a frame where one of the unit vectors is
@@ -59,9 +59,9 @@ class SE3PointToLineGP : public ceres::SizedCostFunction<2, 12, 12, 6, 6> {
  public:
     Mat2 weight_matrix;
 
-    virtual ~SE3PointToLineGP() {}
+    virtual ~SE3PointToLineGPRed() {}
 
-    SE3PointToLineGP(const double *const p,
+    SE3PointToLineGPRed(const double *const p,
                    const double *const pA,
                    const double *const pB,
                    const Eigen::Matrix<double, 6, 12> &hat,
@@ -73,4 +73,4 @@ class SE3PointToLineGP : public ceres::SizedCostFunction<2, 12, 12, 6, 6> {
 };
 }
 
-#endif //WAVE_POINT_TO_LINE_GP_HPP
+#endif //WAVE_POINT_TO_LINE_GP_REDUCED_HPP
