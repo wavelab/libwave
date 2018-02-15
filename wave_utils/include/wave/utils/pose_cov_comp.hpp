@@ -86,63 +86,6 @@ struct PoseWithCovariance {
  */
 PoseWithCovariance composePose(PoseWithCovariance &p1, PoseWithCovariance &p);
 
-/** Normalizes the given Quaternion.
- *  Uses the equation qr^2 + qx^2 + qy^2 + qz^2 = 1.
- *  Equation(1.6)
- *
- *  @param q quaternion vector
- *
- *  @return normalized quaternion
- */
-Vector4 normalizeQuat(const Vector4 q);
-
-/** Converts Quaternion to Yaw Pitch Roll angles.
- *  Note v(0) is yaw, v(1) is pitch, v(2) is roll
- *  Equation(2.9) and Equation(2.10)
- *
- *  @param q quaternion vector
- *
- *  @return yaw pitch roll angles in rad
- */
-Vector3 quatToYPR(const Vector4 &q);
-
-/** Converts Yaw Pitch Roll angles to Quaternion.
- *  Equation(2.3), Equation(2.4), Equation(2.5), Equation(2.6)
- *
- *  @param ypr yaw pitch roll angles in rad
- *
- *  @return quaternion vector
- */
-Vector4 yprToQuat(const Vector3 &ypr);
-
-/** Converts Yaw Pitch Roll angles to Rotation Matrix.
- *  Equation(2.18)
- *
- *  @param ypr yaw pitch roll angles in rad
- *
- *  @return rotation matrix
- */
-Matrix3x3 yprToRotMatrix(const Vector3 &ypr);
-
-/** Converts Rotation Matrix to Yaw Pitch Roll angles.
- *  Equation(2.20), Equation(2.21), Equation(2.22), and Equation(2.23)
- *
- *  @param p rotation matrix
- *
- *  @return yaw pitch roll angles in rad
- */
-Vector3 rotMatrixToYPR(const Matrix3x3 &p);
-
-/** Converts Rotation Matrix to Quaternion. According to [1], fastest way to
- *  convert from Rotation Matrix to Quat is to convert
- *  Quaternion -> Euler Angles -> Rotation Matrix
- *
- *  @param p rotation matrix
- *
- *  @return: Quaternion vector
- */
-Vector4 rotMatrixToQuat(const Matrix3x3 &p);
-
 /** The Jacobian of quaternion normalization function. Quaternion in the form of
  *  [qr, qx, qt, qz]
  *  Equation (1.7)
@@ -218,6 +161,68 @@ Matrix7x7 jacobian_p7_p7_Composition_wrt_p2(const Vector7 &p1,
  *  @return p6 to p7 wrt p Jacobian
  */
 Matrix7x6 jacobian_p6_to_p7_wrt_p(const Vector6 &p);
+}
+
+namespace wave {
+namespace pose_comp {
+
+/** Normalizes the given Quaternion.
+ *  Uses the equation qr^2 + qx^2 + qy^2 + qz^2 = 1.
+ *  Equation(1.6)
+ *
+ *  @param q quaternion vector
+ *
+ *  @return normalized quaternion
+ */
+Vector4 normalizeQuat(const Vector4 q);
+
+/** Converts Quaternion to Yaw Pitch Roll angles.
+ *  Note v(0) is yaw, v(1) is pitch, v(2) is roll
+ *  Equation(2.9) and Equation(2.10)
+ *
+ *  @param q quaternion vector
+ *
+ *  @return yaw pitch roll angles in rad
+ */
+Vector3 quatToYPR(const Vector4 &q);
+
+/** Converts Yaw Pitch Roll angles to Quaternion.
+ *  Equation(2.3), Equation(2.4), Equation(2.5), Equation(2.6)
+ *
+ *  @param ypr yaw pitch roll angles in rad
+ *
+ *  @return quaternion vector
+ */
+Vector4 yprToQuat(const Vector3 &ypr);
+
+/** Converts Yaw Pitch Roll angles to Rotation Matrix.
+ *  Equation(2.18)
+ *
+ *  @param ypr yaw pitch roll angles in rad
+ *
+ *  @return rotation matrix
+ */
+Matrix3x3 yprToRotMatrix(const Vector3 &ypr);
+
+/** Converts Rotation Matrix to Yaw Pitch Roll angles.
+ *  Equation(2.20), Equation(2.21), Equation(2.22), and Equation(2.23)
+ *
+ *  @param p rotation matrix
+ *
+ *  @return yaw pitch roll angles in rad
+ */
+Vector3 rotMatrixToYPR(const Matrix3x3 &p);
+
+/** Converts Rotation Matrix to Quaternion. According to [1], fastest way to
+ *  convert from Rotation Matrix to Quat is to convert
+ *  Quaternion -> Euler Angles -> Rotation Matrix
+ *
+ *  @param p rotation matrix
+ *
+ *  @return: Quaternion vector
+ */
+Vector4 rotMatrixToQuat(const Matrix3x3 &p);
+}
 }
 
 #endif

@@ -52,7 +52,7 @@ PoseWithCovariance::PoseWithCovariance(Vector6 &p, Matrix6x6 &cov) {
     ypr << p[5], p[4], p[3];
 
     this->position = p.block<3, 1>(0, 0);
-    this->rotation_matrix = yprToRotMatrix(ypr);
+    this->rotation_matrix = pose_comp::yprToRotMatrix(ypr);
     this->covariance = cov;
 }
 
@@ -70,14 +70,14 @@ Vector3 PoseWithCovariance::getPosition() const {
 }
 
 Vector3 PoseWithCovariance::getYPR() const {
-    Vector3 ypr = rotMatrixToYPR(this->rotation_matrix);
+    Vector3 ypr = pose_comp::rotMatrixToYPR(this->rotation_matrix);
     return ypr;
 }
 
 Vector4 PoseWithCovariance::getQuaternion() const {
-    Vector4 q = rotMatrixToQuat(this->rotation_matrix);
+    Vector4 q = pose_comp::rotMatrixToQuat(this->rotation_matrix);
 
-    q = normalizeQuat(q);
+    q = pose_comp::normalizeQuat(q);
 
     return q;
 }
@@ -130,8 +130,8 @@ PoseWithCovariance composePose(PoseWithCovariance &p1, PoseWithCovariance &p2) {
     p17 = p1.getPoseQuaternion();
     p27 = p2.getPoseQuaternion();
 
-    p16 << p1.getPosition(), quatToYPR(p17.block<4, 1>(3, 0));
-    p26 << p2.getPosition(), quatToYPR(p27.block<4, 1>(3, 0));
+    p16 << p1.getPosition(), pose_comp::quatToYPR(p17.block<4, 1>(3, 0));
+    p26 << p2.getPosition(), pose_comp::quatToYPR(p27.block<4, 1>(3, 0));
 
     // Equation (5.3)
     Matrix6x7 jacobian_p7_to_p6 = jacobian_p7_to_p6_wrt_p(pR7);
@@ -155,114 +155,6 @@ PoseWithCovariance composePose(PoseWithCovariance &p1, PoseWithCovariance &p2) {
     r.covariance = final_cov;
 
     return r;
-}
-
-Vector4 normalizeQuat(const Vector4 q) {
-    Vector4 norm_q;
-    double norm_coeff;
-    double qr = q(0), qx = q(1), qy = q(2), qz = q(3);
-
-    norm_coeff = 1 / sqrt(qr * qr + qx * qx + qy * qy + qz * qz);
-    norm_q = norm_coeff * q;
-    return norm_q;
-}
-
-Vector3 quatToYPR(const Vector4 &q) {
-    Vector3 v;
-    double qr = q(0), qx = q(1), qy = q(2), qz = q(3);
-    double delta = qr * qy - qx * qz;  // discriminant of normalized quaternion
-    double roll, pitch, yaw;
-
-    // Check for special cases when abs(delta) =~ 0.5 (Equation (2.10))
-    if (fabs(delta - 0.5) < 1e-6) {
-        yaw = -2 * atan2(qx, qr);
-        pitch = M_PI / 2;
-        roll = 0;
-
-    } else if (fabs(delta + 0.5) < 1e-6) {
-        yaw = 2 * atan2(qx, qr);
-        pitch = -M_PI / 2;
-        roll = 0;
-    } else {
-        yaw = atan2(2 * (qr * qz + qx * qy), (1 - 2 * (qy * qy + qz * qz)));
-        pitch = asin(2 * delta);
-        roll = atan2(2 * (qr * qx + qy * qz), (1 - 2 * (qx * qx + qy * qy)));
-    }
-
-    v(0) = yaw;
-    v(1) = pitch;
-    v(2) = roll;
-
-    return v;
-}
-
-Vector4 yprToQuat(const Vector3 &ypr) {
-    Vector4 q;
-    double qr, qx, qy, qz;
-    double half_y = ypr(0) / 2, half_p = ypr(1) / 2, half_r = ypr(2) / 2;
-    double cy = cos(half_y), cp = cos(half_p), cr = cos(half_r),
-           sy = sin(half_y), sp = sin(half_p), sr = sin(half_r);
-
-    qr = cr * cp * cy + sr * sp * sy;
-    qx = sr * cp * cy - cr * sp * sy;
-    qy = cr * sp * cy + sr * cp * sy;
-    qz = cr * cp * sy - sr * sp * cy;
-
-    q << qr, qx, qy, qz;
-
-    return q;
-}
-
-Matrix3x3 yprToRotMatrix(const Vector3 &ypr) {
-    double y = ypr(0), p = ypr(1), r = ypr(2);
-    Matrix3x3 rotMatrix;
-    double cy = cos(y), cp = cos(p), cr = cos(r), sy = sin(y), sp = sin(p),
-           sr = sin(r);
-
-    rotMatrix << cy * cp, cy * sp * sr - sy * cr, cy * sp * cr + sy * sr,
-      sy * cp, sy * sp * sr + cy * cr, sy * sp * cr - cy * sr, -sp, cp * sr,
-      cp * cr;
-
-    return rotMatrix;
-}
-
-Vector3 rotMatrixToYPR(const Matrix3x3 &p) {
-    Vector3 ypr;
-    double yaw, pitch, roll;
-    double p11 = p(0, 0), p12 = p(0, 1), p13 = p(0, 2), p21 = p(1, 0),
-           p22 = p(1, 1), p23 = p(1, 2), p31 = p(2, 0), p32 = p(2, 1),
-           p33 = p(2, 2);
-
-    pitch = atan2(-p31, sqrt(p11 * p11 + p21 * p21));
-
-    if (fabs(pitch + M_PI * 1.0 / 2) < 1e-6) {
-        yaw = atan2(-p23, -p13);
-        roll = 0;
-    } else if (fabs(pitch - M_PI * 1.0 / 2) < 1e-6) {
-        yaw = atan2(p23, p13);
-        roll = 0;
-    } else {
-        yaw = atan2(p21, p11);
-        roll = atan2(p32, p33);
-    }
-
-    ypr << yaw, pitch, roll;
-
-    // To avoid warnings
-    (void) p12;
-    (void) p22;
-
-    return ypr;
-}
-
-Vector4 rotMatrixToQuat(const Matrix3x3 &p) {
-    Vector4 q;
-    Vector3 ypr;
-
-    ypr = rotMatrixToYPR(p);
-    q = yprToQuat(ypr);
-
-    return q;
 }
 
 /// the jacobian of quaternion normalization function
@@ -511,5 +403,117 @@ Matrix7x6 jacobian_p6_to_p7_wrt_p(const Vector6 &p) {
     // clang-format on
 
     return m;
+}
+}
+
+namespace wave {
+namespace pose_comp {
+Vector4 normalizeQuat(const Vector4 q) {
+    Vector4 norm_q;
+    double norm_coeff;
+    double qr = q(0), qx = q(1), qy = q(2), qz = q(3);
+
+    norm_coeff = 1 / sqrt(qr * qr + qx * qx + qy * qy + qz * qz);
+    norm_q = norm_coeff * q;
+    return norm_q;
+}
+
+Vector3 quatToYPR(const Vector4 &q) {
+    Vector3 v;
+    double qr = q(0), qx = q(1), qy = q(2), qz = q(3);
+    double delta = qr * qy - qx * qz;  // discriminant of normalized quaternion
+    double roll, pitch, yaw;
+
+    // Check for special cases when abs(delta) =~ 0.5 (Equation (2.10))
+    if (fabs(delta - 0.5) < 1e-6) {
+        yaw = -2 * atan2(qx, qr);
+        pitch = M_PI / 2;
+        roll = 0;
+
+    } else if (fabs(delta + 0.5) < 1e-6) {
+        yaw = 2 * atan2(qx, qr);
+        pitch = -M_PI / 2;
+        roll = 0;
+    } else {
+        yaw = atan2(2 * (qr * qz + qx * qy), (1 - 2 * (qy * qy + qz * qz)));
+        pitch = asin(2 * delta);
+        roll = atan2(2 * (qr * qx + qy * qz), (1 - 2 * (qx * qx + qy * qy)));
+    }
+
+    v(0) = yaw;
+    v(1) = pitch;
+    v(2) = roll;
+
+    return v;
+}
+
+Vector4 yprToQuat(const Vector3 &ypr) {
+    Vector4 q;
+    double qr, qx, qy, qz;
+    double half_y = ypr(0) / 2, half_p = ypr(1) / 2, half_r = ypr(2) / 2;
+    double cy = cos(half_y), cp = cos(half_p), cr = cos(half_r),
+           sy = sin(half_y), sp = sin(half_p), sr = sin(half_r);
+
+    qr = cr * cp * cy + sr * sp * sy;
+    qx = sr * cp * cy - cr * sp * sy;
+    qy = cr * sp * cy + sr * cp * sy;
+    qz = cr * cp * sy - sr * sp * cy;
+
+    q << qr, qx, qy, qz;
+
+    return q;
+}
+
+Matrix3x3 yprToRotMatrix(const Vector3 &ypr) {
+    double y = ypr(0), p = ypr(1), r = ypr(2);
+    Matrix3x3 rotMatrix;
+    double cy = cos(y), cp = cos(p), cr = cos(r), sy = sin(y), sp = sin(p),
+           sr = sin(r);
+
+    rotMatrix << cy * cp, cy * sp * sr - sy * cr, cy * sp * cr + sy * sr,
+      sy * cp, sy * sp * sr + cy * cr, sy * sp * cr - cy * sr, -sp, cp * sr,
+      cp * cr;
+
+    return rotMatrix;
+}
+
+Vector3 rotMatrixToYPR(const Matrix3x3 &p) {
+    Vector3 ypr;
+    double yaw, pitch, roll;
+    double p11 = p(0, 0), p12 = p(0, 1), p13 = p(0, 2), p21 = p(1, 0),
+           p22 = p(1, 1), p23 = p(1, 2), p31 = p(2, 0), p32 = p(2, 1),
+           p33 = p(2, 2);
+
+    pitch = atan2(-p31, sqrt(p11 * p11 + p21 * p21));
+
+    if (fabs(pitch + M_PI * 1.0 / 2) < 1e-6) {
+        yaw = atan2(-p23, -p13);
+        roll = 0;
+    } else if (fabs(pitch - M_PI * 1.0 / 2) < 1e-6) {
+        yaw = atan2(p23, p13);
+        roll = 0;
+    } else {
+        yaw = atan2(p21, p11);
+        roll = atan2(p32, p33);
+    }
+
+    ypr << yaw, pitch, roll;
+
+    // To avoid warnings
+    (void) p12;
+    (void) p22;
+
+    return ypr;
+}
+
+Vector4 rotMatrixToQuat(const Matrix3x3 &p) {
+    Vector4 q;
+    Vector3 ypr;
+
+    ypr = rotMatrixToYPR(p);
+    q = yprToQuat(ypr);
+
+    return q;
+}
 }
 }

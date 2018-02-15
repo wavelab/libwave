@@ -51,19 +51,19 @@ TEST(PoseCovComp, normalizeQuat_test) {
     double mag_norm_q;
 
     q << 1, 0, 0, 0;
-    norm_q = normalizeQuat(q);
+    norm_q = pose_comp::normalizeQuat(q);
     mag_norm_q = sqrt(norm_q(0) * norm_q(0) + norm_q(1) * norm_q(1) +
                       norm_q(2) * norm_q(2) + norm_q(3) * norm_q(3));
     ASSERT_TRUE(fabs(mag_norm_q - 1) < 1e-6);
 
     q << 1, 0, 1, 0;
-    norm_q = normalizeQuat(q);
+    norm_q = pose_comp::normalizeQuat(q);
     mag_norm_q = sqrt(norm_q(0) * norm_q(0) + norm_q(1) * norm_q(1) +
                       norm_q(2) * norm_q(2) + norm_q(3) * norm_q(3));
     ASSERT_TRUE(fabs(mag_norm_q - 1) < 1e-6);
 
     q << 1, 3, 4, 3;
-    norm_q = normalizeQuat(q);
+    norm_q = pose_comp::normalizeQuat(q);
     mag_norm_q = sqrt(norm_q(0) * norm_q(0) + norm_q(1) * norm_q(1) +
                       norm_q(2) * norm_q(2) + norm_q(3) * norm_q(3));
     ASSERT_TRUE(fabs(mag_norm_q - 1) < 1e-6);
@@ -75,17 +75,17 @@ TEST(PoseCovComp, QuatToRPY_test) {
     Vector3 r;
 
     q << 1, 0, 0, 0;
-    r = quatToYPR(q);
+    r = pose_comp::quatToYPR(q);
     ASSERT_TRUE(r.isApprox(Vector3({0, 0, 0})));
 
     q << 0.182574185835055, 0.365148371670111, 0.547722557505166,
       0.730296743340221;
-    r = quatToYPR(q);
+    r = pose_comp::quatToYPR(q);
     ASSERT_TRUE(r.isApprox(
       Vector3({2.356194490192345, -0.339836909454122, 1.428899272190733})));
 
     q << 0.5, 0.5, 0.5, 0.5;
-    r = quatToYPR(q);
+    r = pose_comp::quatToYPR(q);
     ASSERT_TRUE(r.isApprox(Vector3({1.570796326794897, 0, 1.570796326794897})));
 }
 
@@ -95,18 +95,18 @@ TEST(PoseCovComp, yprToRotMatrix_test) {
     Matrix3x3 rot_matrix, rot_matrix_expected;
 
     ypr << 0, M_PI * 1.0 / 2, 0;
-    rot_matrix = yprToRotMatrix(ypr);
+    rot_matrix = pose_comp::yprToRotMatrix(ypr);
     rot_matrix_expected << 0, 0, 1, 0, 1, 0, -1, 0, 0;
     ASSERT_TRUE(rot_matrix.isApprox(rot_matrix_expected, 1e-4));
 
     ypr << 0.78544, 0.1, 0;
-    rot_matrix = yprToRotMatrix(ypr);
+    rot_matrix = pose_comp::yprToRotMatrix(ypr);
     rot_matrix_expected << 0.7035, -0.7071, 0.0706, 0.7036, 0.7071, 0.0706,
       -0.0998, 0, 0.9950;
     ASSERT_TRUE(rot_matrix.isApprox(rot_matrix_expected, 1e-4));
 
     ypr << M_PI * 1.0 / 3, 1, -2;
-    rot_matrix = yprToRotMatrix(ypr);
+    rot_matrix = pose_comp::yprToRotMatrix(ypr);
     rot_matrix_expected << 0.2702, -0.0222, -0.9626, 0.4679, -0.8707, 0.1514,
       -0.8415, -0.4913, -0.2248;
     ASSERT_TRUE(rot_matrix.isApprox(rot_matrix_expected, 1e-4));
@@ -118,19 +118,19 @@ TEST(PoseCovComp, rotMatrixToYPR_test) {
     Vector3 ypr, ypr_expected;
 
     rot_matrix << 0, 0, 1, 0, 1, 0, -1, 0, 0;
-    ypr = rotMatrixToYPR(rot_matrix);
+    ypr = pose_comp::rotMatrixToYPR(rot_matrix);
     ypr_expected << 0, M_PI * 1.0 / 2, 0;
     ASSERT_TRUE(ypr.isApprox(ypr_expected, 1e-4));
 
     rot_matrix << 0.7035, -0.7071, 0.0706, 0.7036, 0.7071, 0.0706, -0.0998, 0,
       0.9950;
-    ypr = rotMatrixToYPR(rot_matrix);
+    ypr = pose_comp::rotMatrixToYPR(rot_matrix);
     ypr_expected << 0.78544, 0.1, 0;
     ASSERT_TRUE(ypr.isApprox(ypr_expected, 1e-4));
 
     rot_matrix << 0.2702, -0.0222, -0.9626, 0.4679, -0.8707, 0.1514, -0.8415,
       -0.4913, -0.2248;
-    ypr = rotMatrixToYPR(rot_matrix);
+    ypr = pose_comp::rotMatrixToYPR(rot_matrix);
     ypr_expected << M_PI * 1.0 / 3, 1, -2;
     ASSERT_TRUE(ypr.isApprox(ypr_expected, 1e-4));
 }
@@ -143,13 +143,13 @@ TEST(PoseCovComp, rotMatrixToYPR_degenerate_test) {
 
     rot_matrix << 0.0000, -0.8415, 0.5403, 0.0000, 0.5403, 0.8415, -1.0000, 0,
       0.0000;
-    ypr = rotMatrixToYPR(rot_matrix);
+    ypr = pose_comp::rotMatrixToYPR(rot_matrix);
     ypr_expected << 1, M_PI * 1.0 / 2, 0;
     ASSERT_TRUE(ypr.isApprox(ypr_expected, 1e-4));
 
     rot_matrix << 0.0000, -0.8415, -0.5403, 0.0000, 0.5403, -0.8415, 1.0000, 0,
       0.0000;
-    ypr = rotMatrixToYPR(rot_matrix);
+    ypr = pose_comp::rotMatrixToYPR(rot_matrix);
     ypr_expected << 1, -M_PI * 1.0 / 2, 0;
     ASSERT_TRUE(ypr.isApprox(ypr_expected, 1e-4));
 }
@@ -160,17 +160,17 @@ TEST(PoseCovComp, yprToQuat_test) {
     Vector4 q, q_expected;
 
     ypr << 0, M_PI * 1.0 / 2, 0;
-    q = yprToQuat(ypr);
+    q = pose_comp::yprToQuat(ypr);
     q_expected << 0.7071, 0, 0.7071, 0;
     ASSERT_TRUE(q.isApprox(q_expected, 1e-4));
 
     ypr << 0.78544, 0.1, 0;
-    q = yprToQuat(ypr);
+    q = pose_comp::yprToQuat(ypr);
     q_expected << 0.9227, -0.0191, 0.0462, 0.3822;
     ASSERT_TRUE(q.isApprox(q_expected, 1e-4));
 
     ypr << M_PI * 1.0 / 3, 1, -2;
-    q = yprToQuat(ypr);
+    q = pose_comp::yprToQuat(ypr);
     q_expected << 0.2089, -0.7690, -0.1449, 0.5865;
     ASSERT_TRUE(q.isApprox(q_expected, 1e-4));
 }
@@ -181,19 +181,19 @@ TEST(PoseCovComp, rotMatrixToQuat_test) {
     Vector4 q, q_expected;
 
     rot_matrix << 0, 0, 1, 0, 1, 0, -1, 0, 0;
-    q = rotMatrixToQuat(rot_matrix);
+    q = pose_comp::rotMatrixToQuat(rot_matrix);
     q_expected << 0.7071, 0, 0.7071, 0;
     ASSERT_TRUE(q.isApprox(q_expected, 1e-4));
 
     rot_matrix << 0.7035, -0.7071, 0.0706, 0.7036, 0.7071, 0.0706, -0.0998, 0,
       0.9950;
-    q = rotMatrixToQuat(rot_matrix);
+    q = pose_comp::rotMatrixToQuat(rot_matrix);
     q_expected << 0.9227, -0.0191, 0.0462, 0.3822;
     ASSERT_TRUE(q.isApprox(q_expected, 1e-4));
 
     rot_matrix << 0.2702, -0.0222, -0.9626, 0.4679, -0.8707, 0.1514, -0.8415,
       -0.4913, -0.22484;
-    q = rotMatrixToQuat(rot_matrix);
+    q = pose_comp::rotMatrixToQuat(rot_matrix);
     q_expected << 0.2089, -0.7690, -0.1449, 0.5865;
     ASSERT_TRUE(q.isApprox(q_expected, 1e-4));
 }
