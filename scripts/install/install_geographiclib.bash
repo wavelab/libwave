@@ -8,6 +8,16 @@ main()
     install_geographiclib
 }
 
+make_with_progress()
+{
+    if [ -z "$CONTINUOUS_INTEGRATION" ]; then
+        local awk_arg="-W interactive"
+    fi
+    # Run make, printing a character for every 10 lines
+    make "$@" | awk ${awk_arg} 'NR%5==1 { printf ".", $0}'
+    echo "done"
+}
+
 install_geographiclib()
 {
     GEOGRAPHICLIB_VERSION="1.49"
