@@ -163,6 +163,11 @@ Matrix7x7 jacobian_p7_p7_Composition_wrt_p2(const Vector7 &p1,
 Matrix7x6 jacobian_p6_to_p7_wrt_p(const Vector6 &p);
 }
 
+/** NOTE: wave_geometry/ has a similar implementation of the following functions
+ *  but these are made to match the methods proposed in [1]. These functions
+ *  should ONLY be used for pose composition based on [1].
+ *
+ */
 namespace wave {
 namespace pose_comp {
 
