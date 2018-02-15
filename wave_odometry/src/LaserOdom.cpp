@@ -391,6 +391,9 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
                         break;
                     }
                 }
+                if(this->param.moving_prior) {
+                    this->previous_twist = this->current_twist;
+                }
             }
 
             for (uint32_t j = 0; j < this->param.num_trajectory_states; j++) {
@@ -538,19 +541,19 @@ void LaserOdom::buildTrees() {
             if (this->feature_association.at(i).at(j).first > 0) {
                 Vec3 transformed_pt;
                 Eigen::Map<const Vec3> Vecpt(this->prv_feature_points.at(i).points.at(j).data(), 3, 1);
-                this->cur_trajectory.front().pose.transform(Vecpt, transformed_pt);
-                this->cur_trajectory.back().pose.inverseTransform(transformed_pt, transformed_pt);
+//                this->cur_trajectory.front().pose.transform(Vecpt, transformed_pt);
+                this->cur_trajectory.back().pose.inverseTransform(Vecpt, transformed_pt);
                 // Check if feature is within range of map
                 if (l2length(transformed_pt.data(), 3) < this->param.local_map_range) {
                     memcpy(this->prv_feature_points.at(i).points.at(j).data(), transformed_pt.data(), 24);
-                    //                    if (this->feature_association.at(i).at(j).second ==
-                    //                    AssociationStatus::CORRESPONDED) {
-                    //                        this->feature_association.at(i).at(j).second =
-                    //                        AssociationStatus::UNCORRESPONDED;
-                    //                        this->feature_association.at(i).at(j).first = this->param.TTL;
-                    //                    } else {
-                    //                        --(this->feature_association.at(i).at(j).first);
-                    //                    }
+                    if (this->feature_association.at(i).at(j).second ==
+                    AssociationStatus::CORRESPONDED) {
+                        this->feature_association.at(i).at(j).second =
+                        AssociationStatus::UNCORRESPONDED;
+                        this->feature_association.at(i).at(j).first = this->param.TTL;
+                    } else {
+                        --(this->feature_association.at(i).at(j).first);
+                    }
                     --(this->feature_association.at(i).at(j).first);
                     continue;
                 }

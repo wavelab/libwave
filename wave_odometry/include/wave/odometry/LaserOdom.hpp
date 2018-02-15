@@ -128,6 +128,7 @@ struct LaserOdomParams {
                                      * defined by the original line points and the origin
                                      */
     bool treat_lines_as_planes = false;
+    bool moving_prior = false;  // If set, update the velocity prior after each outer iteration
 };
 
 class LaserOdom {
