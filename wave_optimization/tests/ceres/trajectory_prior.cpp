@@ -25,7 +25,7 @@ TEST(trajectory_prior, unary_factor) {
     auto inv_prior = prior.inverse();
 
     ceres::CostFunction *cost_function =
-      new TrajectoryPrior(Eigen::Matrix<double, 12, 12>::Identity(), inv_prior, prior_twist);
+      new TrajectoryPrior<Transformation<>>(Eigen::Matrix<double, 12, 12>::Identity(), inv_prior, prior_twist);
 
     ceres::LocalParameterization *se3_param = new NullSE3Parameterization;
 
@@ -69,7 +69,7 @@ TEST(trajectory_prior, binary_factor) {
     auto prior_initial_inv = prior_initial.inverse();
 
     ceres::CostFunction *cost_function =
-      new TrajectoryPrior(10000*Eigen::Matrix<double, 12, 12>::Identity(), prior_initial_inv, prior_vel);
+      new TrajectoryPrior<Transformation<>>(10000*Eigen::Matrix<double, 12, 12>::Identity(), prior_initial_inv, prior_vel);
 
     ceres::LocalParameterization *se3_param = new NullSE3Parameterization;
 

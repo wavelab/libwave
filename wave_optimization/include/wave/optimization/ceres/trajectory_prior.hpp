@@ -10,11 +10,12 @@
  */
 namespace wave {
 
+template<typename T_TYPE>
 class TrajectoryPrior : public ceres::SizedCostFunction<12, 12, 6> {
  private:
     using Mat12 = Eigen::Matrix<double, 12, 12>;
     using Vec12 = Eigen::Matrix<double, 12, 1>;
-    const Transformation<> &inv_prior;
+    const T_TYPE &inv_prior;
     const Vec6 &twist_prior;
     /// Set to be the square root of the inverse covariance
     const Mat12 weight_matrix;
@@ -25,7 +26,7 @@ class TrajectoryPrior : public ceres::SizedCostFunction<12, 12, 6> {
  public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     virtual ~TrajectoryPrior() {}
-    TrajectoryPrior(Mat12 weight_matrix, const Transformation<> &inv_prior, const Vec6 &twist_prior)
+    TrajectoryPrior(Mat12 weight_matrix, const T_TYPE &inv_prior, const Vec6 &twist_prior)
         : inv_prior(inv_prior), twist_prior(twist_prior), weight_matrix(weight_matrix) {
         if (!inv_prior.matrix->allFinite()) {
             throw std::invalid_argument("Inverse Prior not finite");
@@ -50,13 +51,13 @@ class TrajectoryPrior : public ceres::SizedCostFunction<12, 12, 6> {
         residual.block<6, 1>(6, 0) = twist_map - this->twist_prior;
         if (jacobians) {
             if (jacobians[0]) {
-                this->J_T.block<12, 6>(0, 0) =
-                  this->weight_matrix.block<12, 6>(0, 0);
+                this->J_T.template block<12, 6>(0, 0) =
+                  this->weight_matrix.template block<12, 6>(0, 0);
                 Eigen::Map<Eigen::Matrix<double, 12, 12, Eigen::RowMajor>>(jacobians[0], 12, 12) = this->J_T;
             }
             if (jacobians[1]) {
                 Eigen::Map<Eigen::Matrix<double, 12, 6, Eigen::RowMajor>>(jacobians[1], 12, 6) =
-                  this->weight_matrix.block<12, 6>(0, 6);
+                  this->weight_matrix.template block<12, 6>(0, 6);
             }
         }
         residual = this->weight_matrix * residual;

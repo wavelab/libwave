@@ -156,36 +156,28 @@ void LaserOdom::flagNearbyPoints(const unlong f_idx, const unlong ring, const un
     }
 }
 
-void LaserOdom::transformToStart(
-  const double *const pt, const uint16_t tick, double *output, uint32_t &k, uint32_t &kp1, double &tau) {
+void LaserOdom::TransformToMap(
+        const double *const pt, const uint16_t tick, double *output, uint32_t &k, uint32_t &kp1, double &tau) {
     this->getTransformIndices(tick, k, kp1, tau);
-
-    T_Type transform;
 
     Eigen::Matrix<double, 12, 12> hat, candle;
     this->cv_vector.at(k).tau = &tau;
     this->cv_vector.at(k).calculateStuff(hat, candle);
 
-//    transform = transform.interpolate(this->cur_trajectory.at(k).pose,
-//                                      this->cur_trajectory.at(kp1).pose,
-//                                      this->cur_trajectory.at(k).twist,
-//                                      this->cur_trajectory.at(kp1).twist,
-//                                      hat.block<6, 12>(0, 0),
-//                                      candle.block<6, 12>(0, 0));
-
-    transform = transform.interpolate(this->cur_trajectory.at(k).pose,
+    T_TYPE T_MAP_LIDAR_i;
+    T_MAP_LIDAR_i = T_MAP_LIDAR_i.interpolate(this->cur_trajectory.at(k).pose,
                                       this->cur_trajectory.at(kp1).pose,
                                       this->current_twist,
                                       this->current_twist,
                                       hat.block<6, 12>(0, 0),
                                       candle.block<6, 12>(0, 0));
 
-    Eigen::Map<const Vec3> Vecpt(pt, 3, 1);
-    Eigen::Map<Vec3> op_map(output, 3, 1);
-    transform.transform(Vecpt, op_map);
+    Eigen::Map<const Vec3> LIDAR_i_P(pt, 3, 1);
+    Eigen::Map<Vec3> MAP_P(output, 3, 1);
+    T_MAP_LIDAR_i.transform(LIDAR_i_P, MAP_P);
 }
 
-void LaserOdom::transformToStart(const double *const pt, const uint16_t tick, double *output) {
+void LaserOdom::transformToMap(const double *const pt, const uint16_t tick, double *output) {
     uint32_t k, kp1;
     double tau;
     this->getTransformIndices(tick, k, kp1, tau);
@@ -194,20 +186,20 @@ void LaserOdom::transformToStart(const double *const pt, const uint16_t tick, do
     this->cv_vector.at(k).tau = &tau;
     this->cv_vector.at(k).calculateStuff(hat, candle);
 
-    T_Type transform;
-    transform = transform.interpolate(this->cur_trajectory.at(k).pose,
+    T_TYPE T_MAP_LIDAR_i;
+    T_MAP_LIDAR_i = T_MAP_LIDAR_i.interpolate(this->cur_trajectory.at(k).pose,
                                       this->cur_trajectory.at(kp1).pose,
                                       this->current_twist,
                                       this->current_twist,
                                       hat.block<6, 12>(0, 0),
                                       candle.block<6, 12>(0, 0));
 
-    Eigen::Map<const Vec3> Vecpt(pt, 3, 1);
-    Eigen::Map<Vec3> op_map(output, 3, 1);
-    transform.transform(Vecpt, op_map);
+    Eigen::Map<const Vec3> LIDAR_i_P(pt, 3, 1);
+    Eigen::Map<Vec3> MAP_P(output, 3, 1);
+    T_MAP_LIDAR_i.transform(LIDAR_i_P, MAP_P);
 }
 
-void LaserOdom::transformToEnd(const double *const pt, const uint16_t tick, double *output) {
+void LaserOdom::transformToCurLidar(const double *const pt, const uint16_t tick, double *output) {
     uint32_t k, kp1;
     double tau;
     this->getTransformIndices(tick, k, kp1, tau);
@@ -216,17 +208,22 @@ void LaserOdom::transformToEnd(const double *const pt, const uint16_t tick, doub
     this->cv_vector.at(k).tau = &tau;
     this->cv_vector.at(k).calculateStuff(hat, candle);
 
-    T_Type transform;
-    transform = transform.interpolate(this->cur_trajectory.at(k).pose,
+    T_TYPE T_MAP_LIDAR_i;
+    T_MAP_LIDAR_i = T_MAP_LIDAR_i.interpolate(this->cur_trajectory.at(k).pose,
                                       this->cur_trajectory.at(kp1).pose,
                                       this->current_twist,
                                       this->current_twist,
                                       hat.block<6, 12>(0, 0),
                                       candle.block<6, 12>(0, 0));
 
-    Eigen::Map<const Vec3> Vecpt(pt, 3, 1);
-    Eigen::Map<Vec3> op_map(output, 3, 1);
-    transform.inverseTransform(Vecpt, op_map);
+    Eigen::Map<const Vec3> LIDAR_I_P(pt, 3, 1);
+    Eigen::Map<Vec3> LIDAR_END_P(output, 3, 1);
+
+    auto &T_MAP_LIDAR_END = this->cur_trajectory.back().pose;
+
+    (T_MAP_LIDAR_END.inverse() * T_MAP_LIDAR_i).transform(LIDAR_I_P, LIDAR_END_P);
+
+//    transform.inverseTransform(Vecpt, op_map);
 }
 
 float LaserOdom::l2sqrd(const PCLPointXYZIT &p1, const PCLPointXYZIT &p2) {
@@ -294,6 +291,9 @@ void LaserOdom::spinOutput() {
     }
 }
 
+/**
+ * This function should transform all points of interest to the frame of the lidar at the end of the last scan
+ */
 void LaserOdom::undistort() {
     this->undistorted_cld.clear();
     for (uint32_t i = 0; i < this->N_FEATURES; i++) {
@@ -306,7 +306,7 @@ void LaserOdom::undistort() {
         for (PCLPointXYZIT pt : this->cur_scan.at(r_idx)) {
             double point[3] = {pt.x, pt.y, pt.z};
             double u_pt[3];
-            this->transformToStart(point, pt.tick, u_pt);
+            this->transformToCurLidar(point, pt.tick, u_pt);
             pcl::PointXYZI op_pt;
             op_pt.x = (float) u_pt[0];
             op_pt.y = (float) u_pt[1];
@@ -320,7 +320,7 @@ void LaserOdom::undistort() {
                                    feature_points.at(j).at(r_idx).at(i).pt[1],
                                    feature_points.at(j).at(r_idx).at(i).pt[2]};
                 double u_pt[3];
-                this->transformToStart(point, feature_points.at(j).at(r_idx).at(i).tick, u_pt);
+                this->transformToCurLidar(point, feature_points.at(j).at(r_idx).at(i).tick, u_pt);
                 pcl::PointXYZ op_pt;
                 op_pt.x = (float) u_pt[0];
                 op_pt.y = (float) u_pt[1];
@@ -331,9 +331,9 @@ void LaserOdom::undistort() {
             for (uint32_t c_idx = 0; c_idx < this->feature_corrs.at(j).at(r_idx).size(); c_idx++) {
                 auto &corr_list = this->feature_corrs.at(j).at(r_idx).at(c_idx);
                 std::vector<double> undis(3 * (corr_list.size() + 1));
-                this->transformToStart(&(this->feature_points.at(j).at(r_idx).at(corr_list.at(0)).pt[0]),
-                                       this->feature_points.at(j).at(r_idx).at(corr_list.at(0)).tick,
-                                       &(undis[undis.size() - 3]));
+                this->transformToCurLidar(&(this->feature_points.at(j).at(r_idx).at(corr_list.at(0)).pt[0]),
+                                          this->feature_points.at(j).at(r_idx).at(corr_list.at(0)).tick,
+                                          &(undis[undis.size() - 3]));
                 memcpy(undis.data(), this->feature_points.at(j).at(r_idx).at(corr_list.at(0)).pt, 24);
                 for (uint32_t k = 1; k < corr_list.size(); k++) {
                     memcpy(undis.data() + 3 * k, this->prv_feature_points.at(j).points.at(corr_list.at(k)).data(), 24);
@@ -362,9 +362,20 @@ void LaserOdom::undistort() {
     for (uint32_t j = 0; j < this->N_FEATURES; j++) {
         for (size_t i = 0; i < this->prv_feature_points.at(j).points.size(); i++) {
             // stupid friggin pcl and its floats
-            this->map_features.at(j).points.at(i).x = (float) this->prv_feature_points.at(j).points.at(i).at(0);
-            this->map_features.at(j).points.at(i).y = (float) this->prv_feature_points.at(j).points.at(i).at(1);
-            this->map_features.at(j).points.at(i).z = (float) this->prv_feature_points.at(j).points.at(i).at(2);
+
+            // Need point in current lidar frame
+            Eigen::Map<Eigen::Vector3f> map_feature(this->map_features.at(j).points.at(i).data);
+
+            // Point is in map frame
+            Eigen::Map<Eigen::Vector3d> prv_feature_point(this->prv_feature_points.at(j).points.at(i).data());
+            Eigen::Vector3d map_feature_d = map_feature.cast<double>();
+
+            this->cur_trajectory.back().pose.inverseTransform(prv_feature_point, map_feature_d);
+            map_feature = map_feature_d.cast<float>();
+
+//            this->map_features.at(j).points.at(i).x = (float) this->prv_feature_points.at(j).points.at(i).at(0);
+//            this->map_features.at(j).points.at(i).y = (float) this->prv_feature_points.at(j).points.at(i).at(1);
+//            this->map_features.at(j).points.at(i).z = (float) this->prv_feature_points.at(j).points.at(i).at(2);
         }
     }
 }
@@ -374,7 +385,7 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
         this->generateFeatures();          // generate features on the current scan
         if (this->initialized) {           // there is a set of previous features from
                                            // last scan
-            T_Type last_transform;
+            T_TYPE last_transform;
             auto &ref = this->cur_trajectory.back().pose;
 
             for (int i = 0; i < this->param.opt_iters; i++) {
@@ -391,9 +402,9 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
                         break;
                     }
                 }
-                if(this->param.moving_prior) {
-                    this->previous_twist = this->current_twist;
-                }
+//                if(this->param.moving_prior) {
+//                    this->previous_twist = this->current_twist;
+//                }
             }
 
             for (uint32_t j = 0; j < this->param.num_trajectory_states; j++) {
@@ -417,9 +428,10 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
                         LOG_ERROR("Overwriting previous output");
                     }
                     this->undistorted_stamp = this->prv_time;
-                    memcpy(this->undistort_transform.getInternalMatrix().derived().data(),
-                           this->cur_trajectory.back().pose.getInternalMatrix().derived().data(),
-                           96);
+                    this->undistort_transform = this->cur_trajectory.front().pose.inverse() * this->cur_trajectory.back().pose;
+//                    memcpy(this->undistort_transform.getInternalMatrix().derived().data(),
+//                           this->cur_trajectory.back().pose.getInternalMatrix().derived().data(),
+//                           96);
                     memcpy(this->undistort_velocity.data(), this->current_twist.data(), 48);
 
                     this->undistort();
@@ -472,7 +484,7 @@ void LaserOdom::updateViz() {
         for (uint32_t j = 0; j < this->param.n_ring; j++) {
             for (auto pt : this->feature_points.at(i).at(j)) {
                 double T_pt[3];
-                this->transformToStart(pt.pt, pt.tick, T_pt);
+                this->transformToMap(pt.pt, pt.tick, T_pt);
                 pcl::PointXYZI point;
                 point.x = T_pt[0];
                 point.y = T_pt[1];
@@ -520,7 +532,9 @@ void LaserOdom::rollover(TimeType stamp) {
         }
     }
     this->previous_twist = this->current_twist;
-    this->cur_trajectory.front().pose.setIdentity();
+    this->inv_prior_pose.deepCopy(this->cur_trajectory.back().pose.inverse());
+//    this->cur_trajectory.front().pose.setIdentity();
+    this->cur_trajectory.front().pose.deepCopy(this->cur_trajectory.back().pose);
 
     for (uint32_t i = 1; i < this->param.num_trajectory_states; i++) {
         this->cur_trajectory.at(i).pose.deepCopy(this->cur_trajectory.at(i - 1).pose);
@@ -535,17 +549,17 @@ void LaserOdom::buildTrees() {
     nanoflann::KNNResultSet<double> resultSet(1);
     resultSet.init(&ret_index, &out_dist_sqr);
 
-    // First step is to transform still active map features into the next frame
+    // First step is to check if any existing map features have expired
     for (uint32_t i = 0; i < this->N_FEATURES; i++) {
         for (uint32_t j = 0; j < this->prv_feature_points.at(i).points.size(); j++) {
             if (this->feature_association.at(i).at(j).first > 0) {
-                Vec3 transformed_pt;
+//                Vec3 transformed_pt;
                 Eigen::Map<const Vec3> Vecpt(this->prv_feature_points.at(i).points.at(j).data(), 3, 1);
 //                this->cur_trajectory.front().pose.transform(Vecpt, transformed_pt);
-                this->cur_trajectory.back().pose.inverseTransform(Vecpt, transformed_pt);
+//                this->cur_trajectory.back().pose.inverseTransform(Vecpt, transformed_pt);
                 // Check if feature is within range of map
-                if (l2length(transformed_pt.data(), 3) < this->param.local_map_range) {
-                    memcpy(this->prv_feature_points.at(i).points.at(j).data(), transformed_pt.data(), 24);
+                if (l2length(Vecpt.data(), 3) < this->param.local_map_range) {
+//                    memcpy(this->prv_feature_points.at(i).points.at(j).data(), Vecpt.data(), 24);
                     if (this->feature_association.at(i).at(j).second ==
                     AssociationStatus::CORRESPONDED) {
                         this->feature_association.at(i).at(j).second =
@@ -573,7 +587,8 @@ void LaserOdom::buildTrees() {
         for (uint16_t j = 0; j < this->param.n_ring; j++) {
             for (PointXYZIT pt : this->feature_points.at(i).at(j)) {
                 double transformed_pt[3] = {0};
-                this->transformToEnd(pt.pt, pt.tick, transformed_pt);
+//                this->transformToCurLidar(pt.pt, pt.tick, transformed_pt);
+                this->transformToMap(pt.pt, pt.tick, transformed_pt);
 
                 resultSet.init(&ret_index, &out_dist_sqr);
 
@@ -586,7 +601,7 @@ void LaserOdom::buildTrees() {
                     map_density = this->param.flat_map_density;
                 }
                 if (out_dist_sqr > map_density) {
-                    this->feature_association.at(i).push_back(
+                    this->feature_association.at(i).emplace_back(
                       std::make_pair(this->param.TTL, AssociationStatus::UNCORRESPONDED));
                     this->prv_feature_points.at(i).points.push_back(
                       std::array<double, 3>{transformed_pt[0], transformed_pt[1], transformed_pt[2]});
@@ -594,7 +609,7 @@ void LaserOdom::buildTrees() {
             }
         }
         // rebuild kdtree index
-        if (this->prv_feature_points.at(i).points.size() > 0) {
+        if (!this->prv_feature_points.at(i).points.empty()) {
             this->feature_idx.at(i)->buildIndex();
         }
         LOG_INFO("There are %lu feature type %u in the local map", this->prv_feature_points.at(i).points.size(), i);
@@ -716,14 +731,14 @@ bool LaserOdom::match() {
     ceres::Problem problem;
 
     // Add motion residuals
-    // The prior for the pose is identity, the prior for twist is the twist at the end of the previous
+    // The prior for the pose at the end of the previous trajectory, the prior for twist is the twist at the end of the previous
     // trajectory
-    Transformation<> identity;
+//    Transformation<> identity;
     if (this->param.motion_prior) {
         this->cv_vector.at(0).calculateLinInvCovariance();
 
         ceres::CostFunction *prior_cost =
-          new TrajectoryPrior(this->cv_vector.at(0).inv_covar.sqrt(), identity, this->previous_twist);
+          new TrajectoryPrior<T_TYPE>(this->cv_vector.at(0).inv_covar.sqrt(), this->inv_prior_pose, this->previous_twist);
 
         if (this->param.solution_remapping) {
             parameters[0] = this->cur_trajectory.at(0).pose.getInternalMatrix().derived().data();
@@ -792,12 +807,12 @@ bool LaserOdom::match() {
             this->feature_corrs.at(i).at(j).clear();
             for (uint64_t pt_cntr = 0; pt_cntr < this->feature_points.at(i).at(j).size(); pt_cntr++) {
                 double transformed[3];
-                this->transformToStart(this->feature_points.at(i).at(j).at(pt_cntr).pt,
-                                       this->feature_points.at(i).at(j).at(pt_cntr).tick,
-                                       transformed,
-                                       k,
-                                       kp1,
-                                       tau);
+                this->TransformToMap(this->feature_points.at(i).at(j).at(pt_cntr).pt,
+                                     this->feature_points.at(i).at(j).at(pt_cntr).tick,
+                                     transformed,
+                                     k,
+                                     kp1,
+                                     tau);
                 Eigen::Map<const Vec3> query(transformed, 3, 1);
                 ret_indices.clear();
                 out_dist_sqr.clear();
@@ -999,7 +1014,7 @@ bool LaserOdom::match() {
     } else if (!this->param.only_extract_features) {
         ceres::Solver::Summary summary;
         ceres::Solve(options, &problem, &summary);
-        LOG_INFO("%s", summary.FullReport().c_str());
+//        LOG_INFO("%s", summary.FullReport().c_str());
         ceres::Covariance covariance(covar_options);
         covariance.Compute(this->covariance_blocks, &problem);
         covariance.GetCovarianceBlock(

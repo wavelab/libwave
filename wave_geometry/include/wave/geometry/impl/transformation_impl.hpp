@@ -9,8 +9,8 @@ namespace wave {
 template <typename Derived, bool approximate>
 Transformation<Derived, approximate>::Transformation() {
     this->matrix = std::make_shared<Derived>();
-    this->matrix->block(0, 0, 3, 3).setIdentity();
-    this->matrix->block(0, 3, 3, 1).setZero();
+    this->matrix->template block<3,3>(0, 0).setIdentity();
+    this->matrix->template block<3, 1>(0, 3).setZero();
 }
 
 template <typename Derived, bool approximate>
@@ -19,8 +19,8 @@ Transformation<Derived, approximate>::Transformation(std::shared_ptr<Eigen::Matr
 
 template <typename Derived, bool approximate>
 Transformation<Derived, approximate> &Transformation<Derived, approximate>::setIdentity() {
-    this->matrix->block(0, 0, 3, 3).setIdentity();
-    this->matrix->block(0, 3, 3, 1).setZero();
+    this->matrix->template block<3, 3>(0, 0).setIdentity();
+    this->matrix->template block<3, 1>(0, 3).setZero();
     return *this;
 }
 
@@ -40,8 +40,8 @@ Transformation<Derived, approximate> &Transformation<Derived, approximate>::setF
     rotation_matrix = Eigen::AngleAxisd(eulers[2], Vec3::UnitZ()) * Eigen::AngleAxisd(eulers[1], Vec3::UnitY()) *
                       Eigen::AngleAxisd(eulers[0], Vec3::UnitX());
 
-    this->matrix->block(0, 0, 3, 3) = rotation_matrix;
-    this->matrix->block(0, 3, 3, 1) = translation;
+    this->matrix->template block<3, 3>(0, 0) = rotation_matrix;
+    this->matrix->template block<3, 1>(0, 3) = translation;
 
     return *this;
 }
@@ -65,7 +65,7 @@ Mat3 Transformation<Derived, approximate>::skewSymmetric3(const Vec3 &V) {
 template <typename Derived, bool approximate>
 Mat6 Transformation<Derived, approximate>::skewSymmetric6(const Vec6 &W) {
     Mat6 retval = Mat6::Zero();
-    retval.block(0, 0, 3, 3) = skewSymmetric3(W.block<3, 1>(0, 0));
+    retval.template block<3, 3>(0, 0) = skewSymmetric3(W.block<3, 1>(0, 0));
     retval.block<3, 3>(3, 3) = skewSymmetric3(W.block<3, 1>(0, 0));
     retval.block<3, 3>(3, 0) = skewSymmetric3(W.block<3, 1>(3, 0));
     return retval;
@@ -193,9 +193,9 @@ Transformation<Eigen::Matrix<double, 3, 4>, approx> Transformation<Derived, appr
 template <typename Derived, bool approximate>
 Mat6 Transformation<Derived, approximate>::adjointRep() const {
     Mat6 retval;
-    retval.block(0, 0, 3, 3) = this->matrix->block(0, 0, 3, 3);
-    retval.block<3, 3>(3, 3) = this->matrix->block(0, 0, 3, 3);
-    retval.block<3, 3>(3, 0) = skewSymmetric3(this->matrix->block<3, 1>(0, 3)) * this->matrix->block(0, 0, 3, 3);
+    retval.template block<3, 3>(0, 0) = this->matrix->template block<3, 3>(0, 0);
+    retval.block<3, 3>(3, 3) = this->matrix->template block<3, 3>(0, 0);
+    retval.block<3, 3>(3, 0) = skewSymmetric3(this->matrix->block<3, 1>(0, 3)) * this->matrix->template block<3, 3>(0, 0);
     return retval;
 }
 
@@ -320,7 +320,7 @@ Mat4 Transformation<Derived, approximate>::expMap(const Vec6 &W, double TOL) {
         Mat3 V;
         V = Mat3::Identity() + B * wx + C * wx * wx;
 
-        retval.block(0, 0, 3, 3).noalias() = Mat3::Identity() + A * wx + B * wx * wx;
+        retval.template block<3, 3>(0, 0).noalias() = Mat3::Identity() + A * wx + B * wx * wx;
         retval.block<3, 1>(0, 3).noalias() = V * W.block<3, 1>(3, 0);
     }
 
@@ -360,7 +360,7 @@ Mat6 Transformation<Derived, approximate>::SE3LeftJacobian(const Vec6 &W, double
     adj.setZero();
 
     // This is applying the adjoint operator to the se(3) vector: se(3) -> adj(se(3))
-    adj.block(0, 0, 3, 3) = wx;
+    adj.template block<3, 3>(0, 0) = wx;
     adj.block<3, 3>(3, 3) = wx;
     adj.block<3, 3>(3, 0) = Transformation<Derived>::skewSymmetric3(W.block<3, 1>(3, 0));
 
@@ -388,7 +388,7 @@ Mat6 Transformation<Derived, approximate>::SE3ApproxLeftJacobian(const Vec6 &W) 
     adj.setZero();
 
     // This is applying the adjoint operator to the se(3) vector: se(3) -> adj(se(3))
-    adj.block(0, 0, 3, 3) = wx;
+    adj.template block<3, 3>(0, 0) = wx;
     adj.block<3, 3>(3, 3) = wx;
     adj.block<3, 3>(3, 0) = skewSymmetric3(W.block<3, 1>(3, 0));
 
@@ -413,7 +413,7 @@ Mat6 Transformation<Derived, approximate>::SE3ApproxInvLeftJacobian(const Vec6 &
     adj.setZero();
 
     // This is applying the adjoint operator to the se(3) vector: se(3) -> adj(se(3))
-    adj.block(0, 0, 3, 3) = wx;
+    adj.template block<3, 3>(0, 0) = wx;
     adj.block<3, 3>(3, 3) = wx;
     adj.block<3, 3>(3, 0) = skewSymmetric3(W.block<3, 1>(3, 0));
 
@@ -430,9 +430,9 @@ Vec6 Transformation<Derived, approximate>::logMap(double tolerance) const {
         retval(0) = this->matrix->coeff(2, 1);
         retval(1) = this->matrix->coeff(0, 2);
         retval(2) = this->matrix->coeff(1, 0);
-        retval.block(3, 0, 3, 1) = this->matrix->block(0, 3, 3, 1);
+        retval.template block<3, 1>(3, 0) = this->matrix->template block<3, 1>(0, 3);
     } else {
-        Mat3 R = this->matrix->block(0, 0, 3, 3);
+        Mat3 R = this->matrix->template block<3, 3>(0, 0);
         double wn;
         // Need to pander to ceres gradient checker a bit here
         if ((R.trace() - 1.0) / 2.0 > 1.0) {
@@ -459,7 +459,7 @@ Vec6 Transformation<Derived, approximate>::logMap(double tolerance) const {
         retval(1) = skew(0, 2);
         retval(2) = skew(1, 0);
 
-        retval.block(3, 0, 3, 1) = Vinv * this->matrix->block(0, 3, 3, 1);
+        retval.template block<3, 1>(3, 0) = Vinv * this->matrix->template block<3, 1>(0, 3);
     }
 
     return retval;
@@ -480,7 +480,7 @@ Vec3 Transformation<Derived, approximate>::transform(const Vec3 &input_vector) c
 template <typename Derived, bool approximate>
 template<typename IP_T, typename OP_T>
 void Transformation<Derived, approximate>::transform(const Eigen::MatrixBase<IP_T> &ip_vec, Eigen::MatrixBase<OP_T> &op_vec) const {
-    op_vec = this->matrix->block(0, 0, 3, 3) * ip_vec + this->matrix->block(0, 3, 3, 1);
+    op_vec = this->matrix->template block<3, 3>(0, 0) * ip_vec + this->matrix->template block<3, 1>(0, 3);
 }
 
 template <typename Derived, bool approximate>
@@ -490,11 +490,11 @@ Vec3 Transformation<Derived, approximate>::transformAndJacobian(const Vec3 &inpu
     Vec3 retval;
     this->transform(input_vector, retval);
 
-    Jpoint = this->matrix->block(0, 0, 3, 3);
+    Jpoint = this->matrix->template block<3, 3>(0, 0);
 
     Eigen::Matrix<double, 3, 6> Tpdonut;
     Tpdonut.setZero();
-    Tpdonut.block(0, 0, 3, 3) = -skewSymmetric3(retval);
+    Tpdonut.template block<3, 3>(0, 0) = -skewSymmetric3(retval);
     Tpdonut.block<3, 3>(0, 3) = Mat3::Identity();
 
     Jparam.noalias() = Tpdonut;
@@ -513,14 +513,14 @@ template <typename Derived, bool approximate>
 template <typename IP_T, typename OP_T>
 void Transformation<Derived, approximate>::inverseTransform(const Eigen::MatrixBase<IP_T> &ip_vec,
                                                             Eigen::MatrixBase<OP_T> &op_vec) const {
-    op_vec = this->matrix->block(0, 0, 3, 3).transpose() * ip_vec -
-             this->matrix->block(0, 0, 3, 3).transpose() * this->matrix->block(0, 3, 3, 1);
+    op_vec = this->matrix->template block<3, 3>(0, 0).transpose() * ip_vec -
+             this->matrix->template block<3, 3>(0, 0).transpose() * this->matrix->template block<3, 1>(0, 3);
 }
 
 template <typename Derived, bool approximate>
 Transformation<Derived, approximate> &Transformation<Derived, approximate>::invert() {
-    this->matrix->block(0, 0, 3, 3).transposeInPlace();
-    this->matrix->block(0, 3, 3, 1) = -this->matrix->block(0, 0, 3, 3) * this->matrix->block(0, 3, 3, 1);
+    this->matrix->template block<3, 3>(0, 0).transposeInPlace();
+    this->matrix->template block<3, 1>(0, 3) = -this->matrix->template block<3, 3>(0, 0) * this->matrix->template block<3, 1>(0, 3);
 
     return *this;
 }
@@ -550,9 +550,9 @@ template <typename Derived, bool approximate>
 Transformation<Derived, approximate> &Transformation<Derived, approximate>::manifoldPlus(const Vec6 &omega) {
     Mat4 incremental = expMap(omega, this->TOL);
 
-    this->matrix->block(0, 3, 3, 1) =
-      incremental.block(0, 0, 3, 3) * this->matrix->block(0, 3, 3, 1) + incremental.block(0, 3, 3, 1);
-    this->matrix->block(0, 0, 3, 3) = incremental.block(0, 0, 3, 3) * this->matrix->block(0, 0, 3, 3);
+    this->matrix->template block<3, 1>(0, 3) =
+      incremental.template block<3, 3>(0, 0) * this->matrix->template block<3, 1>(0, 3) + incremental.template block<3, 1>(0, 3);
+    this->matrix->template block<3, 3>(0, 0) = incremental.template block<3, 3>(0, 0) * this->matrix->template block<3, 3>(0, 0);
 
     return *this;
 }
@@ -584,14 +584,14 @@ Vec6 Transformation<Derived, approximate>::manifoldMinusAndJacobian(const Transf
 
 
     Mat6 J_comp_inv;
-    auto R1R2t = this->matrix->block(0, 0, 3, 3) * T.matrix->block(0, 0, 3, 3).transpose();
-    auto t1 = this->matrix->block(0, 3, 3, 1);
+    auto R1R2t = this->matrix->template block<3, 3>(0, 0) * T.matrix->template block<3, 3>(0, 0).transpose();
+    auto t1 = this->matrix->template block<3, 1>(0, 3);
 
-    J_comp_inv.block(0, 0, 3, 3) = -R1R2t;
+    J_comp_inv.template block<3, 3>(0, 0) = -R1R2t;
     J_comp_inv.block(3, 3, 3, 3) = -R1R2t;
     J_comp_inv.block(3, 0, 3, 3) = -skewSymmetric3(t1) * R1R2t -
-                                   this->matrix->block(0, 0, 3, 3) * skewSymmetric3(T2inv.matrix->block(0, 3, 3, 1)) *
-                                     T.matrix->block(0, 0, 3, 3).transpose();
+                                   this->matrix->template block<3, 3>(0, 0) * skewSymmetric3(T2inv.matrix->template block<3, 1>(0, 3)) *
+                                     T.matrix->template block<3, 3>(0, 0).transpose();
     J_comp_inv.block(0, 3, 3, 3).setZero();
 
     J_left = J_logm;
@@ -607,9 +607,9 @@ Transformation<Eigen::Matrix<double, 3, 4>, approx> Transformation<Derived, appr
     J_left.setIdentity();
     J_right.setZero();
 
-    J_right.block(0, 0, 3, 3) = this->matrix->block(0, 0, 3, 3);
-    J_right.block<3, 3>(3, 3) = this->matrix->block(0, 0, 3, 3);
-    J_right.block<3, 3>(3, 0) = skewSymmetric3(this->matrix->block(0, 3, 3, 1)) * this->matrix->block(0, 0, 3, 3);
+    J_right.template block<3, 3>(0, 0) = this->matrix->template block<3, 3>(0, 0);
+    J_right.block<3, 3>(3, 3) = this->matrix->template block<3, 3>(0, 0);
+    J_right.block<3, 3>(3, 0) = skewSymmetric3(this->matrix->template block<3, 1>(0, 3)) * this->matrix->template block<3, 3>(0, 0);
 
     return (*this) * T_right;
 }
@@ -618,11 +618,11 @@ template <typename Derived, bool approximate>
 Transformation<Derived, approximate> &Transformation<Derived, approximate>::normalizeMaybe(double tolerance) {
     // Check if R has strayed too far outside SO(3)
     // and if so normalize
-    if ((this->matrix->block(0, 0, 3, 3).determinant() - 1) > tolerance) {
-        Mat3 R = this->matrix->block(0, 0, 3, 3);
+    if ((this->matrix->template block<3, 3>(0, 0).determinant() - 1) > tolerance) {
+        Mat3 R = this->matrix->template block<3, 3>(0, 0);
         Mat3 temp = R * R.transpose();
         temp = temp.sqrt().inverse();
-        this->matrix->block(0, 0, 3, 3) = temp * R;
+        this->matrix->template block<3, 3>(0, 0) = temp * R;
     }
 
     return *this;
@@ -635,7 +635,7 @@ Transformation<Derived, approximate> Transformation<Derived, approximate>::inver
     auto R = retval.getRotationMatrix();
 
     J_transformation.setZero();
-    J_transformation.block(0, 0, 3, 3) = -R;
+    J_transformation.template block<3, 3>(0, 0) = -R;
     J_transformation.block<3, 3>(3, 3) = -R;
     J_transformation.block<3, 3>(3, 0) = -skewSymmetric3(retval.getTranslation()) * R;
 
@@ -644,12 +644,12 @@ Transformation<Derived, approximate> Transformation<Derived, approximate>::inver
 
 template <typename Derived, bool approximate>
 Mat3 Transformation<Derived, approximate>::getRotationMatrix() const {
-    return this->matrix->block(0, 0, 3, 3);
+    return this->matrix->template block<3, 3>(0, 0);
 }
 
 template <typename Derived, bool approximate>
 Vec3 Transformation<Derived, approximate>::getTranslation() const {
-    return this->matrix->block(0, 3, 3, 1);
+    return this->matrix->template block<3, 1>(0, 3);
 }
 
 template <typename Derived, bool approximate>
@@ -664,9 +664,9 @@ template <typename Other, bool OtherApprox>
 Transformation<Eigen::Matrix<double, 3, 4>, approximate> Transformation<Derived, approximate>::operator*(
   const Transformation<Other, OtherApprox> &T) const {
     Transformation<Eigen::Matrix<double, 3, 4>, approximate> composed;
-    composed.matrix->block(0, 0, 3, 3).noalias() = this->matrix->block(0, 0, 3, 3) * T.getRotationMatrix();
-    composed.matrix->block(0, 3, 3, 1).noalias() =
-      this->matrix->block(0, 0, 3, 3) * T.getTranslation() + this->matrix->block(0, 3, 3, 1);
+    composed.matrix->template block<3, 3>(0, 0).noalias() = this->matrix->template block<3, 3>(0, 0) * T.getRotationMatrix();
+    composed.matrix->template block<3, 1>(0, 3).noalias() =
+      this->matrix->template block<3, 3>(0, 0) * T.getTranslation() + this->matrix->template block<3, 1>(0, 3);
 
     return composed;
 }

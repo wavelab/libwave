@@ -132,7 +132,7 @@ struct LaserOdomParams {
 };
 
 class LaserOdom {
-    using T_Type = Transformation<Eigen::Matrix<double, 3, 4>, true>;
+    using T_TYPE = Transformation<Eigen::Matrix<double, 3, 4>, true>;
 
  public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -144,11 +144,12 @@ class LaserOdom {
 
     struct Trajectory {
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-        T_Type pose;
+        T_TYPE pose;
 //        Vec6 twist;
     };
 
     std::vector<Trajectory, Eigen::aligned_allocator<Trajectory>> cur_trajectory;
+    T_TYPE inv_prior_pose;
     Vec6 current_twist;
     Vec6 previous_twist;
 
@@ -207,10 +208,10 @@ class LaserOdom {
     bool outOfBounds(const Vec3 &query, const uint32_t &f_idx, const std::vector<size_t> &index);
 
     PCLPointXYZIT applyIMU(const PCLPointXYZIT &pt);
-    void transformToStart(
-      const double *const pt, const uint16_t tick, double *output, uint32_t &k, uint32_t &kp1, double &tau);
-    void transformToStart(const double *const pt, const uint16_t tick, double *output);
-    void transformToEnd(const double *const pt, const uint16_t tick, double *output);
+    void TransformToMap(
+            const double *const pt, const uint16_t tick, double *output, uint32_t &k, uint32_t &kp1, double &tau);
+    void transformToMap(const double *const pt, const uint16_t tick, double *output);
+    void transformToCurLidar(const double *const pt, const uint16_t tick, double *output);
     void resetTrajectory();
 
     // Lidar Sensor Model
