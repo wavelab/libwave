@@ -47,7 +47,7 @@ FIND_PACKAGE(OpenCV 3.2.0)
 FIND_PACKAGE(yaml-cpp REQUIRED)
 FIND_PACKAGE(Ceres 1.12)
 FIND_PACKAGE(GTSAM)
-FIND_PACKAGE(GeographicLib 1.49 REQUIRED)
+FIND_PACKAGE(GeographicLib 1.49)
 
 # Where dependencies do not provide IMPORTED targets, define them
 INCLUDE(cmake/ImportEigen3.cmake)
@@ -105,6 +105,7 @@ ADD_SUBDIRECTORY(wave_matching)
 ADD_SUBDIRECTORY(wave_vision)
 ADD_SUBDIRECTORY(wave_optimization)
 ADD_SUBDIRECTORY(wave_gtsam)
+ADD_SUBDIRECTORY(wave_geography)
 
 # Documentation
 SET(WAVE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})

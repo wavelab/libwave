@@ -34,8 +34,8 @@
  * ############################################################################
 */
 
-#ifndef WAVE_UTILS_WORLD_FRAME_CONVERSIONS_HPP
-#define WAVE_UTILS_WORLD_FRAME_CONVERSIONS_HPP
+#ifndef WAVE_GEOGRAPHY_WORLD_FRAME_CONVERSIONS_HPP
+#define WAVE_GEOGRAPHY_WORLD_FRAME_CONVERSIONS_HPP
 
 #include <cmath>
 #include <GeographicLib/Geocentric.hpp>
@@ -130,4 +130,4 @@ void llhPointFromENU(const double point_enu[3],
                      bool datum_is_llh = true);
 
 }  // namespace wave
-#endif  // WAVE_UTILS_WORLD_FRAME_CONVERSIONS_HPP
+#endif  // WAVE_GEOGRAPHY_WORLD_FRAME_CONVERSIONS_HPP

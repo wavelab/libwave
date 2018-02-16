@@ -4,7 +4,6 @@ WAVE_ADD_MODULE(${PROJECT_NAME}
     DEPENDS
     Eigen3::Eigen
     yaml-cpp
-    GeographicLib
     SOURCES
     src/config.cpp
     src/data.cpp
@@ -12,8 +11,7 @@ WAVE_ADD_MODULE(${PROJECT_NAME}
     src/math.cpp
     src/time.cpp
     src/angles.cpp
-    src/pose_cov_comp.cpp
-    src/world_frame_conversions.cpp)
+    src/pose_cov_comp.cpp)
 
 # Unit tests
 IF(BUILD_TESTING)
@@ -25,9 +23,6 @@ IF(BUILD_TESTING)
         tests/utils/time_test.cpp
         tests/utils/test_wave_spatial_utils.cpp
         tests/utils/test_angles.cpp
-        tests/utils/test_ecef_llh_point_conversions.cpp
-        tests/utils/test_ecef_enu_transforms.cpp
-        tests/utils/test_enu_llh_point_conversions.cpp
         tests/utils/test_pose_cov_comp.cpp)
 
     TARGET_LINK_LIBRARIES(${PROJECT_NAME}_tests ${PROJECT_NAME})

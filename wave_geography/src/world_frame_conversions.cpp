@@ -35,7 +35,7 @@
 */
 
 #include <Eigen/Core>
-#include "wave/utils/world_frame_conversions.hpp"
+#include "wave/geography/world_frame_conversions.hpp"
 
 namespace wave {
 
