@@ -40,8 +40,6 @@
 
 #include <cmath>
 
-const auto PI = M_PI;
-
 namespace wave {
 
 /** Wraps input angle to the interval [-PI, PI).
@@ -58,5 +56,5 @@ double wrapToPi(double angle);
  */
 double wrapToTwoPi(double angle);
 
-}  // namespace wave_spatial_utils
-#endif  // WAVE_SPATIAL_UTILS_ANGLES_HPP
+}  // namespace wave
+#endif  // WAVE_UTILS_ANGLES_HPP

@@ -35,7 +35,6 @@
  */
 
 #include "wave/utils/pose_cov_comp.hpp"
-#include <Eigen/Core>
 #include <Eigen/Dense>
 
 namespace wave {
@@ -74,19 +73,21 @@ Vector3 PoseWithCovariance::getYPR() const {
     return ypr;
 }
 
-Vector4 PoseWithCovariance::getQuaternion() const {
-    Vector4 q = pose_comp::rotMatrixToQuat(this->rotation_matrix);
+Eigen::Quaterniond PoseWithCovariance::getQuaternion() const {
+    Eigen::Quaterniond q = pose_comp::rotMatrixToQuat(this->rotation_matrix);
 
-    q = pose_comp::normalizeQuat(q);
+    q.normalize();
 
     return q;
 }
 
 Vector7 PoseWithCovariance::getPoseQuaternion() const {
     Vector7 pose;
-    Vector4 q = this->getQuaternion();
+    Eigen::Quaterniond q = this->getQuaternion();
+    Vector4 q_coeffs;
 
-    pose << this->position, q;
+    q_coeffs << q.coeffs().w(), q.coeffs().x(), q.coeffs().y(), q.coeffs().z();
+    pose << this->position, q_coeffs;
 
     return pose;
 }
@@ -130,8 +131,8 @@ PoseWithCovariance composePose(PoseWithCovariance &p1, PoseWithCovariance &p2) {
     p17 = p1.getPoseQuaternion();
     p27 = p2.getPoseQuaternion();
 
-    p16 << p1.getPosition(), pose_comp::quatToYPR(p17.block<4, 1>(3, 0));
-    p26 << p2.getPosition(), pose_comp::quatToYPR(p27.block<4, 1>(3, 0));
+    p16 << p1.getPosition(), pose_comp::quatToYPR(p1.getQuaternion());
+    p26 << p2.getPosition(), pose_comp::quatToYPR(p2.getQuaternion());
 
     // Equation (5.3)
     Matrix6x7 jacobian_p7_to_p6 = jacobian_p7_to_p6_wrt_p(pR7);
@@ -404,23 +405,15 @@ Matrix7x6 jacobian_p6_to_p7_wrt_p(const Vector6 &p) {
 
     return m;
 }
-}
+}  // namespace wave
 
 namespace wave {
 namespace pose_comp {
-Vector4 normalizeQuat(const Vector4 q) {
-    Vector4 norm_q;
-    double norm_coeff;
-    double qr = q(0), qx = q(1), qy = q(2), qz = q(3);
 
-    norm_coeff = 1 / sqrt(qr * qr + qx * qx + qy * qy + qz * qz);
-    norm_q = norm_coeff * q;
-    return norm_q;
-}
-
-Vector3 quatToYPR(const Vector4 &q) {
+Vector3 quatToYPR(const Eigen::Quaterniond &q) {
     Vector3 v;
-    double qr = q(0), qx = q(1), qy = q(2), qz = q(3);
+    double qr = q.coeffs().w(), qx = q.coeffs().x(), qy = q.coeffs().y(),
+           qz = q.coeffs().z();
     double delta = qr * qy - qx * qz;  // discriminant of normalized quaternion
     double roll, pitch, yaw;
 
@@ -447,8 +440,8 @@ Vector3 quatToYPR(const Vector4 &q) {
     return v;
 }
 
-Vector4 yprToQuat(const Vector3 &ypr) {
-    Vector4 q;
+Eigen::Quaterniond yprToQuat(const Vector3 &ypr) {
+    Eigen::Quaterniond q;
     double qr, qx, qy, qz;
     double half_y = ypr(0) / 2, half_p = ypr(1) / 2, half_r = ypr(2) / 2;
     double cy = cos(half_y), cp = cos(half_p), cr = cos(half_r),
@@ -459,7 +452,7 @@ Vector4 yprToQuat(const Vector3 &ypr) {
     qy = cr * sp * cy + sr * cp * sy;
     qz = cr * cp * sy - sr * sp * cy;
 
-    q << qr, qx, qy, qz;
+    q.coeffs() << qx, qy, qz, qr;
 
     return q;
 }
@@ -506,8 +499,8 @@ Vector3 rotMatrixToYPR(const Matrix3x3 &p) {
     return ypr;
 }
 
-Vector4 rotMatrixToQuat(const Matrix3x3 &p) {
-    Vector4 q;
+Eigen::Quaterniond rotMatrixToQuat(const Matrix3x3 &p) {
+    Eigen::Quaterniond q;
     Vector3 ypr;
 
     ypr = rotMatrixToYPR(p);
@@ -515,5 +508,5 @@ Vector4 rotMatrixToQuat(const Matrix3x3 &p) {
 
     return q;
 }
-}
-}
+}  // namespace pose_comp
+}  // namespace wave

@@ -268,4 +268,4 @@ TEST_F(ECEFtoENUTest, IdentityPoint) {
     checkResult(datum_llh, R_ENU_ECEF_result);
 }
 
-}  // namespace wave_spatial_utils
+}  // namespace wave

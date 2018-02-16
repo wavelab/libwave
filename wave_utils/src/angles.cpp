@@ -40,18 +40,18 @@
 namespace wave {
 
 double wrapToPi(double angle) {
-    double wrapped_angle = wrapToTwoPi(angle + PI) - PI;
+    double wrapped_angle = wrapToTwoPi(angle + M_PI) - M_PI;
     return wrapped_angle;
 }
 
 double wrapToTwoPi(double angle) {
-    double wrapped_angle = fmod(angle, 2 * PI);
+    double wrapped_angle = fmod(angle, 2 * M_PI);
 
     if (wrapped_angle < 0) {
-        wrapped_angle += 2 * PI;
+        wrapped_angle += 2 * M_PI;
     }
 
     return wrapped_angle;
 }
 
-}  // namespace wave_spatial_utils
+}  // namespace wave

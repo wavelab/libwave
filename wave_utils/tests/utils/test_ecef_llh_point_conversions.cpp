@@ -95,4 +95,4 @@ TEST(ecefAndLLHPointConversionTest, grandCanyonTest) {
     ASSERT_NEAR(point_llh[2], point_llh_results[2], 1.0);
 }
 
-}  // namespace wave_spatial_utils
+}  // namespace wave

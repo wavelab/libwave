@@ -371,4 +371,4 @@ TEST_F(enuAndLLHPointConversionTest, LatAt0LongUnder180Neg) {
     checkResults(datum_llh, 10000.0);
 }
 
-}  // namespace wave_spatial_utils
+}  // namespace wave

@@ -42,7 +42,6 @@
 #ifndef WAVE_UTILS_POSE_COV_COMP_HPP_
 #define WAVE_UTILS_POSE_COV_COMP_HPP_
 
-#include <Eigen/Core>
 #include <Eigen/Dense>
 
 namespace wave {
@@ -70,7 +69,7 @@ struct PoseWithCovariance {
     PoseWithCovariance(Vector3 &p, Matrix3x3 &r, Matrix6x6 &q);
     Vector3 getPosition() const;
     Vector3 getYPR() const;
-    Vector4 getQuaternion() const;
+    Eigen::Quaterniond getQuaternion() const;
     Vector7 getPoseQuaternion() const;
     Eigen::Affine3d getTransformMatrix() const;
 };
@@ -161,25 +160,16 @@ Matrix7x7 jacobian_p7_p7_Composition_wrt_p2(const Vector7 &p1,
  *  @return p6 to p7 wrt p Jacobian
  */
 Matrix7x6 jacobian_p6_to_p7_wrt_p(const Vector6 &p);
-}
+}  // namespace wave
+
+namespace wave {
 
 /** NOTE: wave_geometry/ has a similar implementation of the following functions
  *  but these are made to match the methods proposed in [1]. These functions
  *  should ONLY be used for pose composition based on [1].
  *
  */
-namespace wave {
 namespace pose_comp {
-
-/** Normalizes the given Quaternion.
- *  Uses the equation qr^2 + qx^2 + qy^2 + qz^2 = 1.
- *  Equation(1.6)
- *
- *  @param q quaternion vector
- *
- *  @return normalized quaternion
- */
-Vector4 normalizeQuat(const Vector4 q);
 
 /** Converts Quaternion to Yaw Pitch Roll angles.
  *  Note v(0) is yaw, v(1) is pitch, v(2) is roll
@@ -189,7 +179,7 @@ Vector4 normalizeQuat(const Vector4 q);
  *
  *  @return yaw pitch roll angles in rad
  */
-Vector3 quatToYPR(const Vector4 &q);
+Vector3 quatToYPR(const Eigen::Quaterniond &q);
 
 /** Converts Yaw Pitch Roll angles to Quaternion.
  *  Equation(2.3), Equation(2.4), Equation(2.5), Equation(2.6)
@@ -198,7 +188,7 @@ Vector3 quatToYPR(const Vector4 &q);
  *
  *  @return quaternion vector
  */
-Vector4 yprToQuat(const Vector3 &ypr);
+Eigen::Quaterniond yprToQuat(const Vector3 &ypr);
 
 /** Converts Yaw Pitch Roll angles to Rotation Matrix.
  *  Equation(2.18)
@@ -226,8 +216,8 @@ Vector3 rotMatrixToYPR(const Matrix3x3 &p);
  *
  *  @return: Quaternion vector
  */
-Vector4 rotMatrixToQuat(const Matrix3x3 &p);
-}
-}
+Eigen::Quaterniond rotMatrixToQuat(const Matrix3x3 &p);
+}  // namespace pose_comp
+}  // namespace wave
 
-#endif
+#endif  // WAVE_UTILS_POSE_COV_COMP_HPP_

@@ -203,4 +203,4 @@ void llhPointFromENU(const double point_enu[3],
                      point_llh[2]);
 }
 
-}  // namespace wave_spatial_utils
+}  // namespace wave

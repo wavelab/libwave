@@ -129,5 +129,5 @@ void llhPointFromENU(const double point_enu[3],
                      double point_llh[3],
                      bool datum_is_llh = true);
 
-}  // namespace wave_spatial_utils
-#endif  // WAVE_SPATIAL_UTILS_WORLD_FRAME_CONVERSIONS_HPP
+}  // namespace wave
+#endif  // WAVE_UTILS_WORLD_FRAME_CONVERSIONS_HPP

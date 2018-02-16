@@ -38,53 +38,29 @@
 #include <gtest/gtest.h>
 #include <Eigen/Eigenvalues>
 
-using namespace wave;
+namespace wave {
 
 bool CheckPose(PoseWithCovariance expected, PoseWithCovariance actual) {
     return (actual.position.isApprox(expected.position, 1e-10),
             actual.rotation_matrix.isApprox(expected.rotation_matrix, 1e-10));
 }
 
-/// Tests if the normal of the generated Quaternion is 1
-TEST(PoseCovComp, normalizeQuat_test) {
-    Vector4 q, norm_q;
-    double mag_norm_q;
-
-    q << 1, 0, 0, 0;
-    norm_q = pose_comp::normalizeQuat(q);
-    mag_norm_q = sqrt(norm_q(0) * norm_q(0) + norm_q(1) * norm_q(1) +
-                      norm_q(2) * norm_q(2) + norm_q(3) * norm_q(3));
-    ASSERT_TRUE(fabs(mag_norm_q - 1) < 1e-6);
-
-    q << 1, 0, 1, 0;
-    norm_q = pose_comp::normalizeQuat(q);
-    mag_norm_q = sqrt(norm_q(0) * norm_q(0) + norm_q(1) * norm_q(1) +
-                      norm_q(2) * norm_q(2) + norm_q(3) * norm_q(3));
-    ASSERT_TRUE(fabs(mag_norm_q - 1) < 1e-6);
-
-    q << 1, 3, 4, 3;
-    norm_q = pose_comp::normalizeQuat(q);
-    mag_norm_q = sqrt(norm_q(0) * norm_q(0) + norm_q(1) * norm_q(1) +
-                      norm_q(2) * norm_q(2) + norm_q(3) * norm_q(3));
-    ASSERT_TRUE(fabs(mag_norm_q - 1) < 1e-6);
-}
-
 /// Test against MATLAB output of quat2angle
 TEST(PoseCovComp, QuatToRPY_test) {
-    Vector4 q;
+    Eigen::Quaterniond q;
     Vector3 r;
 
-    q << 1, 0, 0, 0;
+    q.coeffs() << 0, 0, 0, 1;
     r = pose_comp::quatToYPR(q);
     ASSERT_TRUE(r.isApprox(Vector3({0, 0, 0})));
 
-    q << 0.182574185835055, 0.365148371670111, 0.547722557505166,
-      0.730296743340221;
+    q.coeffs() << 0.365148371670111, 0.547722557505166, 0.730296743340221,
+      0.182574185835055;
     r = pose_comp::quatToYPR(q);
     ASSERT_TRUE(r.isApprox(
       Vector3({2.356194490192345, -0.339836909454122, 1.428899272190733})));
 
-    q << 0.5, 0.5, 0.5, 0.5;
+    q.coeffs() << 0.5, 0.5, 0.5, 0.5;
     r = pose_comp::quatToYPR(q);
     ASSERT_TRUE(r.isApprox(Vector3({1.570796326794897, 0, 1.570796326794897})));
 }
@@ -157,44 +133,44 @@ TEST(PoseCovComp, rotMatrixToYPR_degenerate_test) {
 /// Test against MATLAB eul2quat
 TEST(PoseCovComp, yprToQuat_test) {
     Vector3 ypr;
-    Vector4 q, q_expected;
+    Eigen::Quaterniond q, q_expected;
 
     ypr << 0, M_PI * 1.0 / 2, 0;
     q = pose_comp::yprToQuat(ypr);
-    q_expected << 0.7071, 0, 0.7071, 0;
+    q_expected.coeffs() << 0, 0.7071, 0, 0.7071;
     ASSERT_TRUE(q.isApprox(q_expected, 1e-4));
 
     ypr << 0.78544, 0.1, 0;
     q = pose_comp::yprToQuat(ypr);
-    q_expected << 0.9227, -0.0191, 0.0462, 0.3822;
+    q_expected.coeffs() << -0.0191, 0.0462, 0.3822, 0.9227;
     ASSERT_TRUE(q.isApprox(q_expected, 1e-4));
 
     ypr << M_PI * 1.0 / 3, 1, -2;
     q = pose_comp::yprToQuat(ypr);
-    q_expected << 0.2089, -0.7690, -0.1449, 0.5865;
+    q_expected.coeffs() << -0.7690, -0.1449, 0.5865, 0.2089;
     ASSERT_TRUE(q.isApprox(q_expected, 1e-4));
 }
 
 /// Test against MATLAB rotm2quat
 TEST(PoseCovComp, rotMatrixToQuat_test) {
     Matrix3x3 rot_matrix;
-    Vector4 q, q_expected;
+    Eigen::Quaterniond q, q_expected;
 
     rot_matrix << 0, 0, 1, 0, 1, 0, -1, 0, 0;
     q = pose_comp::rotMatrixToQuat(rot_matrix);
-    q_expected << 0.7071, 0, 0.7071, 0;
+    q_expected.coeffs() << 0, 0.7071, 0, 0.7071;
     ASSERT_TRUE(q.isApprox(q_expected, 1e-4));
 
     rot_matrix << 0.7035, -0.7071, 0.0706, 0.7036, 0.7071, 0.0706, -0.0998, 0,
       0.9950;
     q = pose_comp::rotMatrixToQuat(rot_matrix);
-    q_expected << 0.9227, -0.0191, 0.0462, 0.3822;
+    q_expected.coeffs() << -0.0191, 0.0462, 0.3822, 0.9227;
     ASSERT_TRUE(q.isApprox(q_expected, 1e-4));
 
     rot_matrix << 0.2702, -0.0222, -0.9626, 0.4679, -0.8707, 0.1514, -0.8415,
       -0.4913, -0.22484;
     q = pose_comp::rotMatrixToQuat(rot_matrix);
-    q_expected << 0.2089, -0.7690, -0.1449, 0.5865;
+    q_expected.coeffs() << -0.7690, -0.1449, 0.5865, 0.2089;
     ASSERT_TRUE(q.isApprox(q_expected, 1e-4));
 }
 
@@ -550,3 +526,4 @@ TEST(PoseCovComp, covariance_test_D) {
     Matrix6x6 covar(r1.covariance);
     EXPECT_TRUE(covar.isApprox(m_exp, 1e-6));
 }
+}  // namespace wave
