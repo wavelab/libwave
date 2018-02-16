@@ -331,10 +331,13 @@ void LaserOdom::undistort() {
             for (uint32_t c_idx = 0; c_idx < this->feature_corrs.at(j).at(r_idx).size(); c_idx++) {
                 auto &corr_list = this->feature_corrs.at(j).at(r_idx).at(c_idx);
                 std::vector<double> undis(3 * (corr_list.size() + 1));
+
                 this->transformToCurLidar(&(this->feature_points.at(j).at(r_idx).at(corr_list.at(0)).pt[0]),
                                           this->feature_points.at(j).at(r_idx).at(corr_list.at(0)).tick,
                                           &(undis[undis.size() - 3]));
+
                 memcpy(undis.data(), this->feature_points.at(j).at(r_idx).at(corr_list.at(0)).pt, 24);
+
                 for (uint32_t k = 1; k < corr_list.size(); k++) {
                     memcpy(undis.data() + 3 * k, this->prv_feature_points.at(j).points.at(corr_list.at(k)).data(), 24);
                 }
