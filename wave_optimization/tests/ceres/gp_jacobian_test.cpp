@@ -271,11 +271,9 @@ TEST(point_to_plane, jacobian) {
 
     for (uint32_t i = 0; i < 4; i++) {
         double err = (num_jacs.at(i) - an_jacs.at(i)).norm();
-        if (err > 1e-6) {
-            std::cout << "Failed on index " << i << std::endl
-                      << "Numerical: " << std::endl << num_jacs.at(i) << std::endl
-                      << "Analytical:" << std::endl << an_jacs.at(i) << std::endl << std::endl;
-        }
+        std::cout << "Index " << i << " has error: " << err << std::endl
+                  << "Numerical: " << std::endl << num_jacs.at(i) << std::endl
+                  << "Analytical:" << std::endl << an_jacs.at(i) << std::endl << std::endl;
         EXPECT_NEAR(err, 0.0, 1e-6);
     }
 }

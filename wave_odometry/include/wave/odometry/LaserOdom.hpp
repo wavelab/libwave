@@ -75,6 +75,8 @@ struct LaserOdomParams {
     int max_inner_iters = 10;  // How many iterations of ceres to run with each set of correspondences
     float diff_tol = 1e-6;  // If the transform from one iteration to the next changes less than this,
     // skip the next iterations
+    int solver_threads = 0;               // How many threads ceres should use. 0 or less results in using the
+                                          // number of logical threads on the machine
     float robust_param = 0.2;             // Hyper-parameter for bisquare (Tukey) loss function
     float max_correspondence_dist = 0.4;  // correspondences greater than this are discarded
     double max_residual_val = 0.1;        // Residuals with an initial error greater than this are not used.

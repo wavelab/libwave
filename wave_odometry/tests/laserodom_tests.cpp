@@ -117,12 +117,13 @@ TEST(OdomTest, StraightLineGarage) {
     pcl::PCLPointCloud2 temp;
     pcl::PointCloud<PointXYZIR> temp2;
     LOG_INFO("Starting to load clouds");
-    boost::filesystem::path p("/home/ben/rosbags/last_ditch_bags/pcd");
+    boost::filesystem::path p("/home/bapskiko/rosbags/last_ditch_bags/pcd");
     std::vector<boost::filesystem::path> v;
     std::copy(boost::filesystem::directory_iterator(p), boost::filesystem::directory_iterator(), std::back_inserter(v));
     std::sort(v.begin(), v.end());
     int length = 0;
     for (auto iter = v.begin(); iter != v.end(); ++iter) {
+        std::cout << "Loading cloud " << length << std::endl;
         pcl::io::loadPCDFile(iter->string(), temp);
         pcl::fromPCLPointCloud2(temp, temp2);
         clds.push_back(temp2);
@@ -148,8 +149,9 @@ TEST(OdomTest, StraightLineGarage) {
     params.max_residual_val = 0.2;
     params.opt_iters = 50;
     params.min_residuals = 30;
-    params.visualize = true;
+    params.visualize = false;
     params.num_trajectory_states = 2;
+    params.solver_threads = 4;
 
     params.sensor_params.rings = 32;
     float ang = -0.5352924815866609;
@@ -179,6 +181,7 @@ TEST(OdomTest, StraightLineGarage) {
 
     // Loop through pointclouds and send points grouped by encoder angle odom
     for (int i = 0; i < length; i++) {
+        std::cout << "Processing cloud " << i << " of " << length << "\n";
         for (PointXYZIR pt : clds.at(i)) {
             PointXYZIR recovered;
             // unpackage intensity and encoder

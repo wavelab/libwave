@@ -410,11 +410,11 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
 //                }
             }
 
-            for (uint32_t j = 0; j < this->param.num_trajectory_states; j++) {
-                std::cout << this->cur_trajectory.at(j).pose.getInternalMatrix() << std::endl
-                          << std::endl;
-            }
-            std::cout << this->current_twist << std::endl << std::endl;
+//            for (uint32_t j = 0; j < this->param.num_trajectory_states; j++) {
+//                std::cout << this->cur_trajectory.at(j).pose.getInternalMatrix() << std::endl
+//                          << std::endl;
+//            }
+//            std::cout << this->current_twist << std::endl << std::endl;
 
             if (this->param.output_trajectory) {
                 this->file << this->cur_trajectory.back().pose.getInternalMatrix().format(*(this->CSVFormat))
@@ -615,7 +615,7 @@ void LaserOdom::buildTrees() {
         if (!this->prv_feature_points.at(i).points.empty()) {
             this->feature_idx.at(i)->buildIndex();
         }
-        LOG_INFO("There are %lu feature type %u in the local map", this->prv_feature_points.at(i).points.size(), i);
+//        LOG_INFO("There are %lu feature type %u in the local map", this->prv_feature_points.at(i).points.size(), i);
     }
 }
 
@@ -993,8 +993,14 @@ bool LaserOdom::match() {
     options.linear_solver_type = ceres::DENSE_QR;
     options.max_num_iterations = this->param.max_inner_iters;
 
-    options.num_threads = std::thread::hardware_concurrency();
-    options.num_linear_solver_threads = std::thread::hardware_concurrency();
+    if (this->param.solver_threads < 1) {
+        options.num_threads = std::thread::hardware_concurrency();
+        options.num_linear_solver_threads = std::thread::hardware_concurrency();
+    } else {
+        options.num_threads = this->param.solver_threads;
+        options.num_linear_solver_threads = this->param.solver_threads;
+    }
+
     options.max_num_consecutive_invalid_steps = 2;
 
     options.logging_type = ceres::LoggingType::PER_MINIMIZER_ITERATION;
@@ -1013,6 +1019,7 @@ bool LaserOdom::match() {
         LOG_ERROR("%d residuals, threshold is %d", problem.NumResidualBlocks(), this->param.min_residuals);
         this->resetTrajectory();
         this->initialized = false;
+        delete []parameters;
         return false;
     } else if (!this->param.only_extract_features) {
         ceres::Solver::Summary summary;
@@ -1025,6 +1032,7 @@ bool LaserOdom::match() {
           this->cur_trajectory.back().pose.getInternalMatrix().derived().data(),
           this->covar);
     }
+    delete []parameters;
     return true;
 }
 

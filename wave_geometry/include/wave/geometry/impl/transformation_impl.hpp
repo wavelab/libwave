@@ -294,18 +294,15 @@ template <typename Derived, bool approximate>
 Mat4 Transformation<Derived, approximate>::expMap(const Vec6 &W, double TOL) {
     Mat4 retval;
     retval.setIdentity();
-    if (approximate) {
-        retval(0, 1) = -W(2);
-        retval(1, 0) = W(2);
-        retval(0, 2) = W(1);
-        retval(2, 0) = -W(1);
-        retval(1, 2) = -W(0);
-        retval(2, 1) = W(0);
-        retval.block<3, 1>(0, 3).noalias() = W.block<3, 1>(3, 0);
-    } else {
-        Mat3 wx = skewSymmetric3(W.block<3, 1>(0, 0));
-        double wn = W.block<3, 1>(0, 0).norm();
 
+    Mat3 wx = skewSymmetric3(W.block<3, 1>(0, 0));
+    double wn = W.block<3, 1>(0, 0).norm();
+
+    if (approximate) {
+        // 2nd order taylor expansion
+        retval.template block<3, 3>(0, 0).noalias() = Mat3::Identity() + (1.0 - 0.16666666666666667 * (wn * wn)) * wx + 0.5 * wx * wx;
+        retval.template block<3, 1>(0, 3).noalias() = (Mat3::Identity() + 0.5 * wx + 0.16666666666666667 * wx * wx) * W.block<3, 1>(3, 0);
+    } else {
         double A, B, C;
         if (wn > TOL) {
             A = std::sin(wn) / wn;
@@ -317,11 +314,8 @@ Mat4 Transformation<Derived, approximate>::expMap(const Vec6 &W, double TOL) {
             B = 0.5 - 4.166666666666666667e-2 * (wn * wn) + 1.38888888888888888889e-3 * (wn * wn * wn * wn);
             C = 0.16666666666666667 - 8.33333333333333333e-3 * (wn * wn) + 1.984126984126984e-04 * (wn * wn * wn * wn);
         }
-        Mat3 V;
-        V = Mat3::Identity() + B * wx + C * wx * wx;
-
         retval.template block<3, 3>(0, 0).noalias() = Mat3::Identity() + A * wx + B * wx * wx;
-        retval.block<3, 1>(0, 3).noalias() = V * W.block<3, 1>(3, 0);
+        retval.block<3, 1>(0, 3).noalias() = (Mat3::Identity() + B * wx + C * wx * wx) * W.block<3, 1>(3, 0);
     }
 
     return retval;
@@ -392,14 +386,14 @@ Mat6 Transformation<Derived, approximate>::SE3ApproxLeftJacobian(const Vec6 &W) 
     adj.block<3, 3>(3, 3) = wx;
     adj.block<3, 3>(3, 0) = skewSymmetric3(W.block<3, 1>(3, 0));
 
-    double A;
+    //double A;
     // Fourth order terms are shown should you ever want to used them.
-    A = 0.5;  // - wn*wn*wn*wn/720;
-    // B = 1 / 6;  // - wn*wn*wn*wn/5040;
+    //A = 0.5;  // - wn*wn*wn*wn/720;
+    //B = 1 / 6;  // - wn*wn*wn*wn/5040;
     // C = 1/24 - wn*wn/360 + wn*wn*wn*wn/13440;
     // D = 1/120 -wn*wn/2520 + wn*wn*wn*wn/120960;
 
-    retval.noalias() = Mat6::Identity() + A * adj;  // + B * adj * adj;  // + C*adj*adj*adj + D*adj*adj*adj*adj;
+    retval.noalias() = Mat6::Identity() + 0.5 * adj + 0.1666666666666666666666 * adj * adj;  // + C*adj*adj*adj + D*adj*adj*adj*adj;
 
     return retval;
 }
@@ -426,32 +420,35 @@ template <typename Derived, bool approximate>
 Vec6 Transformation<Derived, approximate>::logMap(double tolerance) const {
     Vec6 retval;
 
-    if (approximate) {
-        retval(0) = this->matrix->coeff(2, 1);
-        retval(1) = this->matrix->coeff(0, 2);
-        retval(2) = this->matrix->coeff(1, 0);
-        retval.template block<3, 1>(3, 0) = this->matrix->template block<3, 1>(0, 3);
+    double wn;
+    // Need to pander to ceres gradient checker a bit here
+    if ((this->matrix->template block<3, 3>(0, 0).trace() - 1.0) / 2.0 > 1.0) {
+        wn = 0;
     } else {
-        Mat3 R = this->matrix->template block<3, 3>(0, 0);
-        double wn;
-        // Need to pander to ceres gradient checker a bit here
-        if ((R.trace() - 1.0) / 2.0 > 1.0) {
-            wn = 0;
-        } else {
-            wn = std::acos((R.trace() - 1.0) / 2.0);
-        }
+        wn = std::acos((this->matrix->template block<3, 3>(0, 0).trace() - 1.0) / 2.0);
+    }
+
+    if (approximate) {
+        // 2nd order taylor expansion
+        Mat3 skew = (0.5 + wn * wn * 0.083333333333333) * (this->matrix->template block<3, 3>(0, 0) - this->matrix->template block<3, 3>(0, 0).transpose());
+        retval(0) = skew(2, 1);
+        retval(1) = skew(0, 2);
+        retval(2) = skew(1, 0);
+
+        retval.template block<3, 1>(3, 0) = (Mat3::Identity() - 0.5 * skew) * this->matrix->template block<3, 1>(0, 3);
+    } else {
         double A, B;
         Mat3 skew, Vinv;
         if (wn > tolerance) {
             A = wn / (2 * std::sin(wn));
             B = (1 - std::cos(wn)) / (wn * wn);
-            skew = A * (R - R.transpose());
+            skew = A * (this->matrix->template block<3, 3>(0, 0) - this->matrix->template block<3, 3>(0, 0).transpose());
             Vinv = Mat3::Identity() - 0.5 * skew + (1 / (wn * wn)) * (1 - (1 / (4 * A * B))) * skew * skew;
         } else {
             // Third order taylor expansion
             A = 0.5 + wn * wn / 12.0 + wn * wn * wn * wn * (7.0 / 720.0);
             B = 0.5 - wn * wn / 24.0 + wn * wn * wn * wn * (7.0 / 720.0);
-            skew = A * (R - R.transpose());
+            skew = A * (this->matrix->template block<3, 3>(0, 0) - this->matrix->template block<3, 3>(0, 0).transpose());
             Vinv = Mat3::Identity() - 0.5 * skew;
         }
 
@@ -558,9 +555,9 @@ Transformation<Derived, approximate> &Transformation<Derived, approximate>::mani
 }
 
 template <typename Derived, bool approximate>
-Vec6 Transformation<Derived, approximate>::manifoldMinus(const Transformation &T) const {
-    Transformation delta = (*this) * T.inverse();
-    return delta.logMap();
+template<typename Other>
+Vec6 Transformation<Derived, approximate>::manifoldMinus(const Other &T) const {
+    return ((*this) * T.inverse()).logMap();
 }
 
 template <typename Derived, bool approximate>
@@ -664,9 +661,9 @@ template <typename Other, bool OtherApprox>
 Transformation<Eigen::Matrix<double, 3, 4>, approximate> Transformation<Derived, approximate>::operator*(
   const Transformation<Other, OtherApprox> &T) const {
     Transformation<Eigen::Matrix<double, 3, 4>, approximate> composed;
-    composed.matrix->template block<3, 3>(0, 0).noalias() = this->matrix->template block<3, 3>(0, 0) * T.getRotationMatrix();
+    composed.matrix->template block<3, 3>(0, 0).noalias() = this->matrix->template block<3, 3>(0, 0) * T.matrix->template block<3,3>(0,0);
     composed.matrix->template block<3, 1>(0, 3).noalias() =
-      this->matrix->template block<3, 3>(0, 0) * T.getTranslation() + this->matrix->template block<3, 1>(0, 3);
+      this->matrix->template block<3, 3>(0, 0) * T.matrix->template block<3,1>(0,3) + this->matrix->template block<3, 1>(0, 3);
 
     return composed;
 }

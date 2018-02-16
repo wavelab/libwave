@@ -22,6 +22,8 @@ class SE3PointToLineGPRed : public ceres::SizedCostFunction<2, 12, 12, 6> {
  public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
  private:
+    using T_TYPE = Transformation<Eigen::Matrix<double, 3, 4>, true>;
+
     const double *const pt;
     const double *const ptA;
     const double *const ptB;
@@ -33,7 +35,7 @@ class SE3PointToLineGPRed : public ceres::SizedCostFunction<2, 12, 12, 6> {
     // This is the Jacobian of the cost function wrt an the transformed point
     Eigen::Matrix<double, 3, 3> Jres_P;
 
-    mutable Transformation<Eigen::Matrix<double, 3, 4>, false> T_current;
+    mutable T_TYPE T_current;
 
     // Interpolation factors
     const Eigen::Matrix<double, 6, 12> hat;

@@ -280,7 +280,8 @@ class Transformation {
      * @f]
      * where @f$ T_t @f$ corresponds to the rotation of **this** object.
      */
-    Vec6 manifoldMinus(const Transformation &R) const;
+    template<typename Other>
+    Vec6 manifoldMinus(const Other &R) const;
 
     /** Same as manifoldMinus, except also computes the Jacobians with respect
      * to the left and right arguments of manifoldMinus.  For manifold minus,

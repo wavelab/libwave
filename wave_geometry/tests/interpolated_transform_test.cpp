@@ -12,7 +12,7 @@
 namespace wave {
 
 namespace {
-using t_Type = Transformation<Eigen::Matrix<double, 3, 4>, false>;
+using t_Type = Transformation<Eigen::Matrix<double, 3, 4>, true>;
 }
 
 class TransformationTestFixture : public ::testing::Test {
@@ -68,6 +68,23 @@ TEST_F(TransformationTestFixture, testInterpolation) {
     auto Tint = t_Type::interpolateAndJacobians(
       T_k, T_kp1, vel_k, vel_kp1, hat.block<6,12>(0,0), candle.block<6,12>(0,0), J_T_k_an, J_T_kp1_an, J_vel_k_an, J_vel_kp1_an);
 
+    auto Tint_nojac = t_Type::interpolate(T_k, T_kp1, vel_k, vel_kp1, hat.block<6,12>(0,0), candle.block<6,12>(0,0));
+
+    auto diff1 = Tint.manifoldMinus(Tint_nojac);
+
+    Transformation<Eigen::Matrix<double, 3, 4>, false> T_k_full, T_kp1_full;
+    T_k_full.deepCopy(T_k);
+    T_kp1_full.deepCopy(T_kp1);
+
+    auto Tint_full = Transformation<Eigen::Matrix<double, 3, 4>, false>::interpolateAndJacobians(
+            T_k_full, T_kp1_full, vel_k, vel_kp1, hat.block<6,12>(0,0), candle.block<6,12>(0,0), J_T_k_an, J_T_kp1_an, J_vel_k_an, J_vel_kp1_an);
+
+    auto Tint_full_nojac = Transformation<Eigen::Matrix<double, 3, 4>, false>::interpolate(T_k_full, T_kp1_full, vel_k, vel_kp1, hat.block<6,12>(0,0), candle.block<6,12>(0,0));
+
+    Vec6 diff2 = Tint_full.manifoldMinus(Tint_full_nojac);
+
+    Vec6 diff = Tint_full.manifoldMinus(Tint);
+
     TInterpolatedJTLeftFunctor<t_Type> J_Tleft_functor(T_k, T_kp1, vel_k, vel_kp1, hat.block<6,12>(0,0), candle.block<6,12>(0,0));
     numerical_jacobian(J_Tleft_functor, perturbation_vec, J_T_k_num);
     perturbation_vec = Vec6::Zero();
@@ -85,22 +102,25 @@ TEST_F(TransformationTestFixture, testInterpolation) {
 
     wave::MatX errmat = J_T_k_an - J_T_k_num;
     double err = errmat.norm();
+    std::cout << "For Tk, error is " << err << "\n";
+    std::cout << "\n" << J_T_k_an << std::endl << std::endl;
+    std::cout << J_T_k_num << std::endl;
     if(err > this->comparison_threshold) {
-        std::cout << "\n" << J_T_k_an << std::endl << std::endl;
-        std::cout << J_T_k_num << std::endl;
         EXPECT_TRUE(false);
     }
 
     errmat = J_T_kp1_an - J_T_kp1_num;
     err = errmat.norm();
+    std::cout << "For Tkp1, error is " << err << "\n";
+    std::cout << J_T_kp1_an << std::endl << "\n";
+    std::cout << J_T_kp1_num << std::endl;
     if(err > this->comparison_threshold) {
-        std::cout << J_T_kp1_an << std::endl << "\n";
-        std::cout << J_T_kp1_num << std::endl;
         EXPECT_TRUE(false);
     }
 
     errmat = J_vel_k_an - J_vel_k_num;
     err = errmat.norm();
+    std::cout << "For velk, error is " << err << "\n";
     if(err > this->comparison_threshold) {
         std::cout << J_vel_k_an << std::endl;
         std::cout << J_vel_k_num << std::endl;
@@ -109,6 +129,7 @@ TEST_F(TransformationTestFixture, testInterpolation) {
 
     errmat = J_vel_kp1_an - J_vel_kp1_num;
     err = errmat.norm();
+    std::cout << "For velkp1, error is " << err << "\n";
     if(err > this->comparison_threshold) {
         std::cout << J_vel_kp1_an << std::endl;
         std::cout << J_vel_kp1_num << std::endl;
