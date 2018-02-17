@@ -149,7 +149,7 @@ TEST(OdomTest, StraightLineGarage) {
     params.max_residual_val = 0.2;
     params.opt_iters = 50;
     params.min_residuals = 30;
-    params.visualize = false;
+    params.visualize = true;
     params.num_trajectory_states = 2;
     params.solver_threads = 4;
 
@@ -180,6 +180,7 @@ TEST(OdomTest, StraightLineGarage) {
     uint16_t prev_enc = 0;
 
     // Loop through pointclouds and send points grouped by encoder angle odom
+    auto start = std::chrono::steady_clock::now();
     for (int i = 0; i < length; i++) {
         std::cout << "Processing cloud " << i << " of " << length << "\n";
         for (PointXYZIR pt : clds.at(i)) {
@@ -210,6 +211,10 @@ TEST(OdomTest, StraightLineGarage) {
         }
 //        std::this_thread::sleep_for(std::chrono::seconds(5));
     }
+    auto end = std::chrono::steady_clock::now();
+    std::cout << "It took "
+              << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count()
+              << "ms.\n";
 }
 
 // This is less of a test and more something that can be

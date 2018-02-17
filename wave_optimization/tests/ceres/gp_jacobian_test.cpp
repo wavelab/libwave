@@ -32,7 +32,7 @@ TEST(point_to_line, jacobian) {
     params[3] = vel_kp1.data();
 
     T_k.setIdentity();
-    vel_k << 0, 0, 0, 5, 1, -1;
+    vel_k << 0.1, -0.1, 0.2, 5, 1, -1;
     vel_kp1 = vel_k;
     T_kp1.deepCopy(T_k);
     T_kp1.manifoldPlus(delta_T * vel_k);
@@ -67,7 +67,7 @@ TEST(point_to_line, jacobian) {
     cost_function->Evaluate(params, op_result.data(), jacobian);
 
     double const step_size = 1e-9;
-    Transformation<Eigen::Matrix<double, 3, 4>> Tk_perturbed, Tkp1_perturbed;
+    Transformation<Eigen::Matrix<double, 3, 4>, false> Tk_perturbed, Tkp1_perturbed;
     Vec6 vel_k_perturbed, vel_kp1_perturbed;
 
     Tk_perturbed.deepCopy(T_k);

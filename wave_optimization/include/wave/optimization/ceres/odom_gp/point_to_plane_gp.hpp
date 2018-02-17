@@ -24,7 +24,7 @@ class SE3PointToPlaneGP : public ceres::SizedCostFunction<1, 12, 12, 6, 6> {
     // Jacobian of the residual wrt the transformed point
     Eigen::Matrix<double, 1, 3> Jr_P;
 
-    mutable Transformation<Eigen::Matrix<double, 3, 4>, false> T_current;
+    mutable Transformation<Eigen::Matrix<double, 3, 4>, true> T_current;
     // Interpolation factors
     const Eigen::Matrix<double, 6, 12> hat;
 

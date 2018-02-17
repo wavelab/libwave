@@ -172,6 +172,9 @@ class LaserOdom {
     void updateParams(const LaserOdomParams);
     LaserOdomParams getParams();
 
+    MatX system_eigenvectors;
+    VecX system_eigenvalues;
+
     const uint32_t N_SIGNALS = 2;
     const uint32_t N_SCORES = 3;
     const uint32_t N_FEATURES = 5;

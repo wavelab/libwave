@@ -332,14 +332,18 @@ void LaserOdom::undistort() {
                 auto &corr_list = this->feature_corrs.at(j).at(r_idx).at(c_idx);
                 std::vector<double> undis(3 * (corr_list.size() + 1));
 
+                //putting the undistorted point into the end of the vector
                 this->transformToCurLidar(&(this->feature_points.at(j).at(r_idx).at(corr_list.at(0)).pt[0]),
                                           this->feature_points.at(j).at(r_idx).at(corr_list.at(0)).tick,
                                           &(undis[undis.size() - 3]));
 
+                //putting uncorrection point into vector
                 memcpy(undis.data(), this->feature_points.at(j).at(r_idx).at(corr_list.at(0)).pt, 24);
 
                 for (uint32_t k = 1; k < corr_list.size(); k++) {
-                    memcpy(undis.data() + 3 * k, this->prv_feature_points.at(j).points.at(corr_list.at(k)).data(), 24);
+                    Eigen::Map<const Vec3> map_point(this->prv_feature_points.at(j).points.at(corr_list.at(k)).data());
+                    Eigen::Map<Vec3> transformed_map_point(undis.data() + 3 * k);
+                    this->cur_trajectory.back().pose.inverseTransform(map_point, transformed_map_point);
                 }
 
                 this->output_corrs.at(j).emplace_back(std::vector<double>(undis.begin(), undis.end()));
@@ -405,9 +409,6 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
                         break;
                     }
                 }
-//                if(this->param.moving_prior) {
-//                    this->previous_twist = this->current_twist;
-//                }
             }
 
 //            for (uint32_t j = 0; j < this->param.num_trajectory_states; j++) {
@@ -828,10 +829,13 @@ bool LaserOdom::match() {
                     this->cv_vector.at(k).tau = &tau;
                     this->cv_vector.at(k).calculateStuff(hat, candle);
                     ceres::CostFunction *cost_function;
+                    SE3PointToLineGPRed *pTl_cost_function;
+                    SE3PointToPlaneGPRed *pTPl_cost_function;
+                    double rescale;
                     switch (this->feature_definitions.at(i).residual) {
                         case PointToLine:
                             if (this->param.treat_lines_as_planes) {
-                                cost_function = new SE3PointToPlaneGPRed(
+                                pTPl_cost_function = new SE3PointToPlaneGPRed(
                                   this->feature_points.at(i).at(j).at(pt_cntr).pt,
                                   this->prv_feature_points.at(i).points.at(ret_indices.at(0)).data(),
                                   this->prv_feature_points.at(i).points.at(ret_indices.at(1)).data(),
@@ -841,8 +845,10 @@ bool LaserOdom::match() {
                                   covZ.cast<double>(),
                                   this->param.use_weighting);
                                 residuals.resize(1);
+                                rescale = pTPl_cost_function->weight;
+                                cost_function = pTPl_cost_function;
                             } else {
-                                cost_function = new SE3PointToLineGPRed(
+                                pTl_cost_function = new SE3PointToLineGPRed(
                                   this->feature_points.at(i).at(j).at(pt_cntr).pt,
                                   this->prv_feature_points.at(i).points.at(ret_indices.at(0)).data(),
                                   this->prv_feature_points.at(i).points.at(ret_indices.at(1)).data(),
@@ -851,10 +857,12 @@ bool LaserOdom::match() {
                                   covZ.cast<double>(),
                                   this->param.use_weighting);
                                 residuals.resize(2);
+                                rescale = pTl_cost_function->weight_matrix.trace();
+                                cost_function = pTl_cost_function;
                             }
                             break;
                         case PointToPlane:
-                            cost_function =
+                            pTPl_cost_function =
                               new SE3PointToPlaneGPRed(this->feature_points.at(i).at(j).at(pt_cntr).pt,
                                                     this->prv_feature_points.at(i).points.at(ret_indices.at(0)).data(),
                                                     this->prv_feature_points.at(i).points.at(ret_indices.at(1)).data(),
@@ -864,6 +872,8 @@ bool LaserOdom::match() {
                                                     covZ.cast<double>(),
                                                     this->param.use_weighting);
                             residuals.resize(1);
+                            rescale = pTPl_cost_function->weight;
+                            cost_function = pTPl_cost_function;
                             break;
                         default: continue;
                     }
@@ -878,13 +888,14 @@ bool LaserOdom::match() {
                         delete cost_function;
                         continue;
                     }
+                    rescale *= rescale;
 
-                    if (norm(residuals) > this->param.max_residual_val) {
+                    if (norm(residuals) > rescale * this->param.max_residual_val) {
                         delete cost_function;
                         continue;
                     }
 
-                    ceres::LossFunction *p_LossFunction = new BisquareLoss(this->param.robust_param);
+                    ceres::LossFunction *p_LossFunction = new BisquareLoss(rescale * this->param.robust_param);
                     if (this->param.solution_remapping) {
                         std::vector<double> p(3);
                         if (this->feature_definitions.at(i).residual == ResidualType::PointToLine) {
@@ -944,17 +955,19 @@ bool LaserOdom::match() {
 
         Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigs(AtA);
 
-        Eigen::MatrixXd Vf = eigs.eigenvectors().transpose();
+        this->system_eigenvectors = eigs.eigenvectors().transpose();
+        this->system_eigenvalues = eigs.eigenvalues();
+
         long cnt = 0;
         while (eigs.eigenvalues()(cnt) < this->param.min_eigen) {
             cnt++;
-            if (cnt == Vf.rows())
+            if (cnt == this->system_eigenvectors.rows())
                 break;
         }
 
-        Eigen::MatrixXd Vu = Vf;
+        Eigen::MatrixXd Vu = this->system_eigenvectors;
         Vu.block(0, 0, cnt, Vu.cols()).setZero();
-        Eigen::MatrixXd proj_mat = Vf.inverse() * Vu;
+        Eigen::MatrixXd proj_mat = this->system_eigenvectors.inverse() * Vu;
 
         if (this->param.plot_stuff) {
             plotVec(eigs.eigenvalues(), true);
@@ -1113,8 +1126,8 @@ void LaserOdom::computeScores() {
             }
             Eigen::Tensor<double, 1> inputmap((int) this->signals.at(s_idx).at(i).size());
             memcpy(inputmap.data(), this->signals.at(s_idx).at(i).data(), 8 * this->signals.at(s_idx).at(i).size());
-            // Eigen::TensorMap<double, 1> inputmap(this->signals.at(j).at(i).data(),
-            // (int)this->signals.at(j).at(i).size());
+//            Eigen::array<long int, 1> tensorRange = {{this->signals.at(j).at(i).size()}};
+//            Eigen::TensorMap<Eigen::Tensor<double, 1>> inputmap(this->signals.at(j).at(i).data(), tensorRange);
             if (inputmap.size() + 1 > kernels.at(j)->size()) {
                 this->scores.at(j).at(i).resize(inputmap.size() - kernels.at(j)->size() + 1);
                 Eigen::Tensor<double, 1> outputmap((int) inputmap.size() - kernels.at(j)->size() + 1);
@@ -1190,7 +1203,7 @@ bool high_neg_score(double score, double threshold) {
     return score < -threshold;
 }
 
-bool null_score(double score, double threshold) {
+bool null_score(double, double) {
     return false;
 }
 
