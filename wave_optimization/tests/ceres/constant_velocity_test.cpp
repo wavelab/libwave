@@ -6,6 +6,7 @@
 #include "wave/utils/math.hpp"
 #include "wave/geometry/transformation.hpp"
 #include "wave/optimization/ceres/odom_gp/constant_velocity.hpp"
+#include "wave/optimization/ceres/odom_gp_coupled_states/constant_velocity.hpp"
 #include "wave/optimization/ceres/local_params/SE3Parameterization.hpp"
 
 namespace {
@@ -182,4 +183,117 @@ TEST(ConstantVelocity, Jacobians) {
         }
     }
 }
+
+TEST(ConstantVelocity, CoupledStates) {
+    // Ceres needs a contiguous memory block for a single parameter. So supply one.
+    double memblock[30];
+    Eigen::Map<Vec6> vel(memblock);
+    auto tk_ptr = std::make_shared<Eigen::Map<Eigen::Matrix<double, 3, 4>>>(memblock + 6, 3, 4);
+    auto tkp1_ptr = std::make_shared<Eigen::Map<Eigen::Matrix<double, 3, 4>>>(memblock + 18, 3, 4);
+    Transformation<Eigen::Map<Eigen::Matrix<double, 3, 4>>> Tk(tk_ptr);
+    Transformation<Eigen::Map<Eigen::Matrix<double, 3, 4>>> Tkp1(tkp1_ptr);
+
+    Mat4 t_matrix;
+    t_matrix << 0.936293363584199, -0.275095847318244, 0.218350663146334, 1, 0.289629477625516, 0.956425085849232,
+            -0.036957013524625, 2, -0.198669330795061, 0.097843395007256, 0.975170327201816, 3, 0, 0, 0, 1;
+
+    Tk.setFromMatrix(t_matrix);
+    Tkp1.setFromMatrix(t_matrix);
+
+    const double delta_T = 0.1;
+
+    vel << -0, 0, 0.3, 20, 5, -0.1;
+
+    Tkp1.manifoldPlus(delta_T * vel);
+
+    Eigen::Matrix<double, 6, 6> weight;
+
+    weight.setIdentity();
+
+    ceres::CostFunction *cost_function = new ConstantVelocityPriorCoupled<30>(weight, delta_T, 0);
+
+    const double **parameters;
+    parameters = new const double *[4];
+    parameters[0] = memblock;
+
+    double *residuals;
+    residuals = new double[6];
+
+    double **jacobians;
+    jacobians = new double *[1];
+    jacobians[0] = new double[180];  // 6 residuals * 30 dimension state
+
+    cost_function->Evaluate(parameters, residuals, jacobians);
+
+    Eigen::Matrix<double, 6, 1> residual_vec;
+    residual_vec = Eigen::Map<Eigen::Matrix<double, 6, 1>>(residuals);
+
+    EXPECT_NEAR(residual_vec.norm(), 0, 1e-6);
+
+    Eigen::Map<Eigen::Matrix<double, 6, 30, Eigen::RowMajor>> J_total(jacobians[0]);
+
+    const double step_size = 1.4901e-07;
+    const double inv_step = 1.0 / step_size;
+    Vec6 delta;
+    delta.setZero();
+
+    double memblock_perturb[30];
+
+    Eigen::Map<Vec6> vel_perturbed(memblock_perturb);
+    auto tk_ptr_perturb = std::make_shared<Eigen::Map<Eigen::Matrix<double, 3, 4>>>(memblock_perturb + 6, 3, 4);
+    auto tkp1_ptr_perturb = std::make_shared<Eigen::Map<Eigen::Matrix<double, 3, 4>>>(memblock_perturb + 18, 3, 4);
+    Transformation<Eigen::Map<Eigen::Matrix<double, 3, 4>>> Tk_perturbed(tk_ptr_perturb);
+    Transformation<Eigen::Map<Eigen::Matrix<double, 3, 4>>> Tkp1_perturbed(tkp1_ptr_perturb);
+
+    Tk_perturbed.deepCopy(Tk);
+    Tkp1_perturbed.deepCopy(Tkp1);
+    vel_perturbed = vel;
+
+    Eigen::Matrix<double, 6, 1> diff, result;
+
+    std::vector<Eigen::Matrix<double, 6, 6>> an_jacs, num_jacs;
+    num_jacs.resize(3);
+    an_jacs.resize(3);
+    an_jacs.at(0) = J_total.block<6,6>(0,0);
+    an_jacs.at(1) = J_total.block<6,6>(0,6);
+    an_jacs.at(2) = J_total.block<6,6>(0,18);
+
+    parameters[0] = memblock_perturb;
+    for (uint32_t i = 0; i < 6; i++) {
+        delta(i) = step_size;
+        // First parameter
+        vel_perturbed = vel_perturbed + delta;
+        cost_function->Evaluate(parameters, result.data(), nullptr);
+        diff = result - residual_vec;
+        num_jacs.at(0).block<6,1>(0,i) = inv_step * diff;
+        vel_perturbed = vel;
+
+        // Second parameter
+        Tk_perturbed.manifoldPlus(delta);
+        cost_function->Evaluate(parameters, result.data(), nullptr);
+        diff = result - residual_vec;
+        num_jacs.at(1).block<6,1>(0,i) = inv_step * diff;
+        Tk_perturbed.deepCopy(Tk);
+
+        // Third parameter
+        Tkp1_perturbed.manifoldPlus(delta);
+        cost_function->Evaluate(parameters, result.data(), nullptr);
+        diff = result - residual_vec;
+        num_jacs.at(2).block<6,1>(0,i) = inv_step * diff;
+        Tkp1_perturbed.deepCopy(Tkp1);
+
+        delta.setZero();
+    }
+
+    for (uint32_t i = 0; i < 3; i++) {
+        double err = (num_jacs.at(i) - an_jacs.at(i)).norm();
+        EXPECT_NEAR(err, 0.0, 1e-6);
+        if (err > 1e-6) {
+            std::cout << "Failed on index " << i << std::endl
+                      << "Numerical: " << std::endl << num_jacs.at(i) << std::endl
+                      << "Analytical:" << std::endl << an_jacs.at(i) << std::endl << std::endl;
+        }
+    }
+}
+
 }

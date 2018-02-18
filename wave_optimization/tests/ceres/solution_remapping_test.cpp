@@ -4,6 +4,7 @@
 #include "wave/wave_test.hpp"
 #include "wave/geometry/transformation.hpp"
 #include "wave/optimization/ceres/local_params/solution_remapping_parameterization.hpp"
+#include "wave/optimization/ceres/local_params/trajectory_remap.hpp"
 
 namespace wave {
 
@@ -28,6 +29,46 @@ TEST(subset, sixdof) {
     const double **params;
     params = new const double *;
     params[0] = prob_vec.data();
+    EXPECT_TRUE(g_check.Probe(params, 1e-8, &g_results));
+}
+
+/**
+ * Test is done around identity so that SE3 jacobian is identity
+ */
+TEST(trajectory, thirtydof) {
+    double memblock[30];
+    const double **params;
+    params = new const double *;
+    params[0] = memblock;
+
+    Eigen::Map<Vec6> vel(memblock);
+    auto tk_ptr = std::make_shared<Eigen::Map<Eigen::Matrix<double, 3, 4>>>(memblock + 6, 3, 4);
+    auto tkp1_ptr = std::make_shared<Eigen::Map<Eigen::Matrix<double, 3, 4>>>(memblock + 18, 3, 4);
+    Transformation<Eigen::Map<Eigen::Matrix<double, 3, 4>>> Tk(tk_ptr);
+    Transformation<Eigen::Map<Eigen::Matrix<double, 3, 4>>> Tkp1(tkp1_ptr);
+
+    vel.setZero();
+    Tk.setIdentity();
+    Tkp1.setIdentity();
+
+    Eigen::Matrix<double, 18, 18> projection_mat;
+    projection_mat.setRandom();
+
+    ceres::LocalParameterization *remap_param = new TrajectoryParamRemap<30>(projection_mat);
+    std::vector<const ceres::LocalParameterization*> local_param_vec;
+    local_param_vec.emplace_back(remap_param);
+
+    Eigen::Matrix<double, 30, 30> eye;
+    eye.setIdentity();
+    Eigen::Matrix<double, 30, 1> zero;
+    zero.setZero();
+
+    ceres::CostFunction *cost_function = new ceres::NormalPrior(eye, zero);
+
+    ceres::NumericDiffOptions ndiff_options;
+    ceres::GradientChecker g_check(cost_function, &local_param_vec, ndiff_options);
+    ceres::GradientChecker::ProbeResults g_results;
+
     EXPECT_TRUE(g_check.Probe(params, 1e-8, &g_results));
 }
 
