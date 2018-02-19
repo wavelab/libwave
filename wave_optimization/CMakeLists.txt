@@ -46,7 +46,7 @@ IF(BUILD_TESTING)
 
     WAVE_ADD_TEST(geometry_residual_tests
             tests/ceres/transform_prior_test.cpp
-            tests/ceres/trajectory_prior.cpp
+            tests/ceres/trajectory_prior_coupled.cpp
             tests/ceres/constant_velocity_test.cpp
             tests/ceres/ceres_local_jacobian_test.cpp)
 

@@ -77,9 +77,9 @@ class Transformation {
      */
     Transformation &normalizeMaybe(double tolerance);
 
-    template<bool approx = approximate>
-    static Transformation<Eigen::Matrix<double, 3, 4>, approx> interpolate(const Transformation &T_k,
-                                               const Transformation &T_kp1,
+    template<bool approx = approximate, typename T_OTHER>
+    static Transformation<Eigen::Matrix<double, 3, 4>, approx> interpolate(const T_OTHER &T_k,
+                                               const T_OTHER &T_kp1,
                                                const Vec6 &twist_k,
                                                const Vec6 &twist_kp1,
                                                const Eigen::Matrix<double, 6, 12> &hat,
@@ -96,9 +96,9 @@ class Transformation {
      * @param candle: second interpolation factor
      * @return Transformation at time t
      */
-    template<bool approx = approximate>
-    static Transformation<Eigen::Matrix<double, 3, 4>, approx> interpolateAndJacobians(const Transformation &T_k,
-                                                  const Transformation &T_kp1,
+    template<bool approx = approximate, typename T_OTHER>
+    static Transformation<Eigen::Matrix<double, 3, 4>, approx> interpolateAndJacobians(const T_OTHER &T_k,
+                                                  const T_OTHER &T_kp1,
                                                   const Vec6 &twist_k,
                                                   const Vec6 &twist_kp1,
                                                   const Eigen::Matrix<double, 6, 12> &hat,
@@ -253,7 +253,8 @@ class Transformation {
      * @return true if @f$ ||w_d|| \leq \epsilon @f$,
      * where @f$ \epsilon @f$ is the precision given by `comparison_threshold`.
      */
-    bool isNear(const Transformation &other, double comparison_threshold) const;
+    template<typename T_OTHER>
+    bool isNear(const T_OTHER &other, double comparison_threshold) const;
 
     /** Calculates the result of the manifold-plus operation @f$ \boxplus @f$.
      *

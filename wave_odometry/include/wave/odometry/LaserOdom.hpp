@@ -37,15 +37,20 @@
 #include "wave/odometry/kernels.hpp"
 #include "wave/odometry/integrals.hpp"
 #include "wave/odometry/sensor_model.hpp"
-#include "wave/optimization/ceres/local_params/null_SE3_parameterization.hpp"
-#include "wave/optimization/ceres/local_params/null_SE3_parameterization_remap.hpp"
-#include "wave/optimization/ceres/local_params/solution_remapping_parameterization.hpp"
-#include "wave/optimization/ceres/odom_gp_reduced/point_to_line_gp.hpp"
-#include "wave/optimization/ceres/odom_gp_reduced/point_to_plane_gp.hpp"
-#include "wave/optimization/ceres/odom_gp_reduced/constant_velocity.hpp"
-#include "wave/optimization/ceres/trajectory_prior.hpp"
+//#include "wave/optimization/ceres/local_params/null_SE3_parameterization.hpp"
+//#include "wave/optimization/ceres/local_params/null_SE3_parameterization_remap.hpp"
+//#include "wave/optimization/ceres/local_params/solution_remapping_parameterization.hpp"
+//#include "wave/optimization/ceres/odom_gp_reduced/point_to_line_gp.hpp"
+//#include "wave/optimization/ceres/odom_gp_reduced/point_to_plane_gp.hpp"
+//#include "wave/optimization/ceres/odom_gp_reduced/constant_velocity.hpp"
+#include "wave/optimization/ceres/local_params/trajectory_remap.hpp"
+#include "wave/optimization/ceres/odom_gp_coupled_states/point_to_line_gp.hpp"
+#include "wave/optimization/ceres/odom_gp_coupled_states/point_to_plane_gp.hpp"
+#include "wave/optimization/ceres/odom_gp_coupled_states/constant_velocity.hpp"
+#include "wave/optimization/ceres/odom_gp_coupled_states/trajectory_prior_coupled.hpp"
+//#include "wave/optimization/ceres/trajectory_prior.hpp"
 #include "wave/optimization/ceres/loss_function/bisquare_loss.hpp"
-#include "wave/optimization/ceres/loss_function/quartic_loss.hpp"
+//#include "wave/optimization/ceres/loss_function/quartic_loss.hpp"
 #include "wave/utils/math.hpp"
 #include "wave/utils/data.hpp"
 
@@ -59,6 +64,8 @@ namespace wave {
 using unlong = unsigned long;
 using TimeType = std::chrono::steady_clock::time_point;
 
+static const int ODOM_DIM = 30;
+
 struct LaserOdomParams {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
@@ -68,8 +75,8 @@ struct LaserOdomParams {
     Mat6 inv_Qc = Mat6::Identity();
     // Optimizer parameters
     // How many states per revolution to optimize over
-    // There must be at minimum two.
-    uint32_t num_trajectory_states = 5;
+    //todo template Odom class on the number of states
+    static const uint32_t num_trajectory_states = 2;
 
     int opt_iters = 25;     // How many times to refind correspondences
     int max_inner_iters = 10;  // How many iterations of ceres to run with each set of correspondences
@@ -134,25 +141,20 @@ struct LaserOdomParams {
 };
 
 class LaserOdom {
+    using TM_TYPE = Transformation<Eigen::Map<Eigen::Matrix<double, 3, 4>>, true>;
     using T_TYPE = Transformation<Eigen::Matrix<double, 3, 4>, true>;
 
  public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    explicit LaserOdom(const LaserOdomParams params);
+    explicit LaserOdom(LaserOdomParams params);
     ~LaserOdom();
     void addPoints(const std::vector<PointXYZIR> &pts, int tick, TimeType stamp);
     std::vector<std::vector<std::vector<PointXYZIT>>> feature_points;  // edges, flats;
     std::vector<FeatureKDTree<double>> prv_feature_points;             // prv_edges, prv_flats;
 
-    struct Trajectory {
-        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-        T_TYPE pose;
-//        Vec6 twist;
-    };
-
-    std::vector<Trajectory, Eigen::aligned_allocator<Trajectory>> cur_trajectory;
+    std::vector<TM_TYPE, Eigen::aligned_allocator<TM_TYPE>> cur_trajectory;
     T_TYPE inv_prior_pose;
-    Vec6 current_twist;
+    Eigen::Map<Vec6> current_twist;
     Vec6 previous_twist;
 
     void rollover(TimeType stamp);
@@ -165,9 +167,9 @@ class LaserOdom {
     std::vector<pcl::PointCloud<pcl::PointXYZ>> map_features;    // map_edges, map_flats;
     std::vector<std::vector<std::vector<double>>> output_corrs;
     TimeType undistorted_stamp;
-    Transformation<> undistort_transform;
+    T_TYPE undistort_transform;
     Vec6 undistort_velocity;
-    double covar[144];  // use lift jacobians to reduce covariance coming out of ceres
+    double covar[ODOM_DIM * ODOM_DIM];  // use lift jacobians to reduce covariance coming out of ceres
 
     void updateParams(const LaserOdomParams);
     LaserOdomParams getParams();
@@ -180,6 +182,10 @@ class LaserOdom {
     const uint32_t N_FEATURES = 5;
 
  private:
+    // block of memory for optimization states
+    // todo make this dynamic
+    double memblock[ODOM_DIM];
+
     // Visualizer elements, not allocated unless used
     PointCloudDisplay *display;
     pcl::PointCloud<pcl::PointXYZI>::Ptr prev_viz, cur_viz;

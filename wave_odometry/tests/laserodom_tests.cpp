@@ -41,7 +41,7 @@ class OdomTestFile : public testing::Test {
 
 void LoadParameters(const std::string &path, LaserOdomParams &params) {
     wave::ConfigParser parser;
-    parser.addParam("num_trajectory_states", &(params.num_trajectory_states));
+//    parser.addParam("num_trajectory_states", &(params.num_trajectory_states));
     parser.addParam("opt_iters", &(params.opt_iters));
     parser.addParam("diff_tol", &(params.diff_tol));
     parser.addParam("robust_param", &(params.robust_param));
@@ -149,8 +149,8 @@ TEST(OdomTest, StraightLineGarage) {
     params.max_residual_val = 0.2;
     params.opt_iters = 50;
     params.min_residuals = 30;
-    params.visualize = true;
-    params.num_trajectory_states = 2;
+    params.visualize = false;
+
     params.solver_threads = 4;
 
     params.sensor_params.rings = 32;
@@ -171,7 +171,7 @@ TEST(OdomTest, StraightLineGarage) {
     params.treat_lines_as_planes = false;
     params.min_eigen = 5000;
     params.solution_remapping = false;
-    params.plot_stuff = false;
+    params.plot_stuff = true;
     params.motion_prior = true;
     params.no_extrapolation = true;
 

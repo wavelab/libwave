@@ -15,9 +15,6 @@
 
 namespace wave {
 
-/**
- * Parameter ordering is Tk, Tkp1, and W in that order
- */
 template<int DIM>
 class SE3PointToLineGPCoupled : public ceres::SizedCostFunction<2, DIM> {
  public:

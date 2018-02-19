@@ -72,10 +72,10 @@ Mat6 Transformation<Derived, approximate>::skewSymmetric6(const Vec6 &W) {
 }
 
 template <typename Derived, bool approximate>
-template <bool approx>
+template <bool approx, typename T_OTHER>
 Transformation<Eigen::Matrix<double, 3, 4>, approx> Transformation<Derived, approximate>::interpolate(
-  const Transformation &T_k,
-  const Transformation &T_kp1,
+  const T_OTHER &T_k,
+  const T_OTHER &T_kp1,
   const Vec6 &twist_k,
   const Vec6 &twist_kp1,
   const Eigen::Matrix<double, 6, 12> &hat,
@@ -93,10 +93,10 @@ Transformation<Eigen::Matrix<double, 3, 4>, approx> Transformation<Derived, appr
 }
 
 template <typename Derived, bool approximate>
-template <bool approx>
+template <bool approx, typename T_OTHER>
 Transformation<Eigen::Matrix<double, 3, 4>, approx> Transformation<Derived, approximate>::interpolateAndJacobians(
-  const Transformation &T_k,
-  const Transformation &T_kp1,
+  const T_OTHER &T_k,
+  const T_OTHER &T_kp1,
   const Vec6 &twist_k,
   const Vec6 &twist_kp1,
   const Eigen::Matrix<double, 6, 12> &hat,
@@ -546,7 +546,8 @@ Transformation<Eigen::Matrix<double, 3, 4>, approx> Transformation<Derived, appr
 }
 
 template <typename Derived, bool approximate>
-bool Transformation<Derived, approximate>::isNear(const Transformation &other, double comparison_threshold) const {
+template <typename T_OTHER>
+bool Transformation<Derived, approximate>::isNear(const T_OTHER &other, double comparison_threshold) const {
     Vec6 diff = this->manifoldMinus(other);
     if (diff.norm() > comparison_threshold) {
         return false;
