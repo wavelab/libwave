@@ -149,7 +149,7 @@ TEST(OdomTest, StraightLineGarage) {
     params.max_residual_val = 0.2;
     params.opt_iters = 50;
     params.min_residuals = 30;
-    params.visualize = true;
+    params.visualize = false;
     params.num_trajectory_states = 2;
     params.solver_threads = 4;
 
@@ -165,12 +165,12 @@ TEST(OdomTest, StraightLineGarage) {
     params.sensor_params.sigma_spherical = variance;
     params.use_weighting = false;
 //    params.only_extract_features = true;
-    params.output_trajectory = false;
+    params.output_trajectory = true;
 //    params.output_correspondences = true;
     params.Qc = 100 * Eigen::Matrix<double, 6, 6>::Identity();
     params.treat_lines_as_planes = false;
-    params.min_eigen = 5000;
-    params.solution_remapping = false;
+    params.min_eigen = 100;
+    params.solution_remapping = true;
     params.plot_stuff = false;
     params.motion_prior = true;
     params.no_extrapolation = true;

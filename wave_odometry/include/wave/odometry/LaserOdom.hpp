@@ -72,7 +72,7 @@ struct LaserOdomParams {
     uint32_t num_trajectory_states = 5;
 
     int opt_iters = 25;     // How many times to refind correspondences
-    int max_inner_iters = 10;  // How many iterations of ceres to run with each set of correspondences
+    int max_inner_iters = 100;  // How many iterations of ceres to run with each set of correspondences
     float diff_tol = 1e-6;  // If the transform from one iteration to the next changes less than this,
     // skip the next iterations
     int solver_threads = 0;               // How many threads ceres should use. 0 or less results in using the
@@ -147,23 +147,28 @@ class LaserOdom {
     struct Trajectory {
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         T_TYPE pose;
-//        Vec6 twist;
     };
 
     std::vector<Trajectory, Eigen::aligned_allocator<Trajectory>> cur_trajectory;
-    T_TYPE inv_prior_pose;
     Vec6 current_twist;
+
+    std::vector<Trajectory, Eigen::aligned_allocator<Trajectory>> prev_trajectory;
     Vec6 previous_twist;
+
+    T_TYPE inv_prior_pose;
+    Vec6 prior_twist;
 
     void rollover(TimeType stamp);
     bool match();
     void registerOutputFunction(std::function<void()> output_function);
 
     // Shared memory
+    std::mutex output_mutex;
     pcl::PointCloud<pcl::PointXYZI> undistorted_cld;
     std::vector<pcl::PointCloud<pcl::PointXYZ>> undis_features;  // undis_edges, undis_flats;
     std::vector<pcl::PointCloud<pcl::PointXYZ>> map_features;    // map_edges, map_flats;
     std::vector<std::vector<std::vector<double>>> output_corrs;
+    std::vector<double> output_eigen;
     TimeType undistorted_stamp;
     Transformation<> undistort_transform;
     Vec6 undistort_velocity;
@@ -171,9 +176,6 @@ class LaserOdom {
 
     void updateParams(const LaserOdomParams);
     LaserOdomParams getParams();
-
-    MatX system_eigenvectors;
-    VecX system_eigenvalues;
 
     const uint32_t N_SIGNALS = 2;
     const uint32_t N_SCORES = 3;
@@ -191,7 +193,6 @@ class LaserOdom {
     // Flow control
     std::atomic_bool continue_output;
     bool fresh_output = false;
-    std::mutex output_mutex;
     std::condition_variable output_condition;
     std::unique_ptr<std::thread> output_thread;
     void spinOutput();
@@ -200,6 +201,9 @@ class LaserOdom {
 
     // ceres optimizer stuff
     std::vector<std::pair<const double *, const double *>> covariance_blocks;
+    MatX proj_mat;
+    MatX system_eigenvectors;
+    VecX system_eigenvalues;
 
     LaserOdomParams param;
     bool initialized = false, full_revolution = false;
@@ -218,6 +222,8 @@ class LaserOdom {
     void transformToMap(const double *const pt, const uint16_t tick, double *output);
     void transformToCurLidar(const double *const pt, const uint16_t tick, double *output);
     void resetTrajectory();
+    void copyTrajectory();
+    void applyRemap();
 
     // Lidar Sensor Model
     std::shared_ptr<RangeSensor> range_sensor;
