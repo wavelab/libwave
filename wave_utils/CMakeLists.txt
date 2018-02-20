@@ -21,7 +21,6 @@ IF(BUILD_TESTING)
         tests/utils/file_test.cpp
         tests/utils/math_test.cpp
         tests/utils/time_test.cpp
-        tests/utils/test_wave_spatial_utils.cpp
         tests/utils/test_angles.cpp
         tests/utils/test_pose_cov_comp.cpp)
 
