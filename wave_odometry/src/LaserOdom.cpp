@@ -43,7 +43,7 @@ LaserOdom::LaserOdom(const LaserOdomParams params) : param(params) {
     flat.emplace_back(Criteria{Kernel::LOAM, SelectionPolicy::NEAR_ZERO, &(param.flat_tol)});
     edge_int_high.emplace_back(Criteria{Kernel::FOG, SelectionPolicy::HIGH_POS, &(param.int_edge_tol)});
     edge_int_high.emplace_back(Criteria{Kernel::LOAM, SelectionPolicy::NEAR_ZERO, &(param.int_flat_tol)});
-    edge_int_low.emplace_back(Criteria{Kernel::FOG, SelectionPolicy::HIGH_POS, &(param.int_edge_tol)});
+    edge_int_low.emplace_back(Criteria{Kernel::FOG, SelectionPolicy::HIGH_NEG, &(param.int_edge_tol)});
     edge_int_low.emplace_back(Criteria{Kernel::LOAM, SelectionPolicy::NEAR_ZERO, &(param.int_flat_tol)});
 
     this->feature_definitions.emplace_back(FeatureDefinition{edge_high, ResidualType::PointToLine, &(param.n_edge)});
@@ -422,6 +422,21 @@ void LaserOdom::applyRemap() {
     this->current_twist = this->previous_twist + mapped_diff.block<6,1>(6*(this->param.num_trajectory_states - offset),0);
 }
 
+// For annoying clamping function
+namespace {
+
+inline double clampToRange(const float& ip, const float& min, const float& max) {
+    if (ip > max) {
+        return (double) max;
+    }
+    if (ip < min) {
+        return (double) min;
+    }
+    return (double) ip;
+}
+
+}
+
 void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, TimeType stamp) {
     if ((tick - this->prv_tick) < -200) {  // tolerate minor nonlinearity error
         this->generateFeatures();          // generate features on the current scan
@@ -487,8 +502,7 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
         if (range > 3.0) {
             this->cur_scan.at(pt.ring).push_back(this->applyIMU(p));
             this->signals[0].at(pt.ring).push_back((double) range);
-            this->signals[1].at(pt.ring).push_back(
-              (double) (p.intensity > this->param.min_intensity ? p.intensity : this->param.min_intensity));
+            this->signals[1].at(pt.ring).push_back(clampToRange(p.intensity, this->param.min_intensity, this->param.max_intensity));
         }
     }
 
@@ -1124,9 +1138,9 @@ void LaserOdom::generateFeatures() {
             this->feature_points.at(i).at(j).clear();
             for (auto score : filt_scores) {
                 unlong bin =
-                  (this->cur_scan.at(j).at(score.first).tick * this->param.angular_bins) / this->param.max_ticks;
+                  ((float) this->cur_scan.at(j).at(score.first).tick / (float) this->param.max_ticks) * this->param.angular_bins;
                 if (cnt_in_bins.at(bin) >= max_bin) {
-                    break;
+                    continue;
                 }
                 if (this->valid_pts.at(i).at(j).at(score.first)) {
                     this->feature_points.at(i).at(j).emplace_back(this->cur_scan.at(j).at(score.first).x,
@@ -1145,7 +1159,26 @@ void LaserOdom::generateFeatures() {
 void LaserOdom::computeScores() {
     Eigen::array<ptrdiff_t, 1> dims({0});
     for (unlong i = 0; i < this->param.n_ring; i++) {
-        // todo(ben) TensorMaps seem broken. Research further at some point
+        // calculate moving sample variance on each signal
+        for (ulong j = 0; j < this->N_SIGNALS; j++) {
+            Eigen::TensorMap<Eigen::Tensor<const double, 1>> inputmap(this->signals.at(j).at(i).data(), this->signals.at(j).at(i).size());
+            Eigen::Tensor<double, 1> sum_kernel(this->param.variance_window);
+            sum_kernel.setConstant(1.0);
+            // Check if there is enough data to calculate variance
+            if(inputmap.size() + 1 > sum_kernel.size()) {
+                this->variance.at(j).at(i).resize(inputmap.size() + 1 - sum_kernel.size());
+                Eigen::TensorMap<Eigen::Tensor<double, 1>> outputmap(this->variance.at(j).at(i).data(), this->variance.at(j).at(i).size());
+                auto &N = this->param.variance_window;
+                Eigen::Tensor<double, 1> Ninv(1);
+                Ninv.setConstant(1.0 / (double) N);
+                Eigen::Tensor<double, 1> Nm1inv(1);
+                Nm1inv.setConstant(1.0 / (double) (N - 1));
+
+                // so called computational formula for sample variance
+                outputmap = (inputmap.square().convolve(sum_kernel, dims) - inputmap.convolve(sum_kernel, dims).square().convolve(Ninv, dims)).convolve(Nm1inv,dims);
+            }
+        }
+
         for (ulong j = 0; j < this->N_SCORES; j++) {
             // todo(ben) Include signal to score explicitly in feature definitions and get
             // rid of this hack.
@@ -1155,17 +1188,12 @@ void LaserOdom::computeScores() {
             } else {
                 s_idx = 1;
             }
-            Eigen::Tensor<double, 1> inputmap((int) this->signals.at(s_idx).at(i).size());
-            memcpy(inputmap.data(), this->signals.at(s_idx).at(i).data(), 8 * this->signals.at(s_idx).at(i).size());
-//            Eigen::array<long int, 1> tensorRange = {{this->signals.at(j).at(i).size()}};
-//            Eigen::TensorMap<Eigen::Tensor<double, 1>> inputmap(this->signals.at(j).at(i).data(), tensorRange);
+
+            Eigen::TensorMap<Eigen::Tensor<const double, 1>> inputmap(this->signals.at(s_idx).at(i).data(), this->signals.at(s_idx).at(i).size());
             if (inputmap.size() + 1 > kernels.at(j)->size()) {
                 this->scores.at(j).at(i).resize(inputmap.size() - kernels.at(j)->size() + 1);
-                Eigen::Tensor<double, 1> outputmap((int) inputmap.size() - kernels.at(j)->size() + 1);
-                // Eigen::TensorMap<double, 1> outputmap(this->scores.at(j).at(i).data(),
-                // this->scores.at(j).at(i).size());
+                Eigen::TensorMap<Eigen::Tensor<double, 1>> outputmap(this->scores.at(j).at(i).data(), this->scores.at(j).at(i).size());
                 outputmap = inputmap.convolve(*(this->kernels.at(j)), dims);
-                memcpy(this->scores.at(j).at(i).data(), outputmap.data(), 8 * outputmap.size());
             }
         }
     }
@@ -1239,6 +1267,11 @@ bool null_score(double, double) {
 }
 
 void LaserOdom::buildFilteredScore(const std::vector<bool> &valid, const uint32_t &f_idx, const uint32_t &ring) {
+    unlong var_offset = 0;
+    if (this->param.limit_rng_var) {
+        var_offset = (this->param.variance_window - 1)/2;
+    }
+
     this->filtered_scores.at(f_idx).at(ring).clear();
     this->valid_pts.at(f_idx).at(ring).clear();
     auto &def = this->feature_definitions.at(f_idx);
@@ -1276,12 +1309,21 @@ void LaserOdom::buildFilteredScore(const std::vector<bool> &valid, const uint32_
             bool still_good = true;
             for (uint32_t l = 0; l < def.criteria.size(); l++) {
                 // todo(ben) Each score should have a different offset. But for now the offset between kernels is the
-                // same
-                // so it doesn't matter yet
+                // same so it doesn't matter yet
                 if (!(compfuns.at(l))(this->scores.at(k_idx.at(l)).at(ring).at(j - k_offsets.at(l)),
                                       *(def.criteria.at(l).threshold))) {
                     still_good = false;
                     break;
+                }
+            }
+            if (this->param.limit_rng_var) {
+                if (this->variance.at(0).at(ring).at(j - var_offset) > this->param.variance_limit_rng) {
+                    continue;
+                }
+            }
+            if (this->param.limit_int_var) {
+                if (this->variance.at(1).at(ring).at(j - var_offset) > this->param.variance_limit_int) {
+                    continue;
                 }
             }
             if (still_good) {

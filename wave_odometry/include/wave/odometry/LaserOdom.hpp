@@ -91,8 +91,15 @@ struct LaserOdomParams {
     RangeSensorParams sensor_params;
 
     // Feature extraction parameters
+    unlong variance_window = 9;
+    bool limit_rng_var = false;
+    bool limit_int_var = false;
+    double variance_limit_rng = 1;
+    double variance_limit_int = 1;
+
     unlong angular_bins = 12;
-    float min_intensity = 100.0;
+    float min_intensity = 10.0;
+    float max_intensity = 50.0;
     float occlusion_tol = 0.1;    // Radians
     float occlusion_tol_2 = 0.1;  // m^2. Distance between points to initiate occlusion check
     float parallel_tol = 0.002;   // ditto
@@ -178,7 +185,7 @@ class LaserOdom {
     LaserOdomParams getParams();
 
     const uint32_t N_SIGNALS = 2;
-    const uint32_t N_SCORES = 3;
+    const uint32_t N_SCORES = 5;
     const uint32_t N_FEATURES = 5;
 
  private:
@@ -268,7 +275,8 @@ class LaserOdom {
     // Eventually connect to yamls to be able to change
     // kernels & policies very quickly
     enum SelectionPolicy { HIGH_POS, HIGH_NEG, NEAR_ZERO };
-    enum Kernel { LOAM, LOG, FOG };
+    //todo: Rename Kernel, not just a kernel anymore
+    enum Kernel { LOAM, LOG, FOG, RNG_VAR, INT_VAR };
     enum ResidualType { PointToLine, PointToPlane };
     struct Criteria {
         Kernel kernel;
