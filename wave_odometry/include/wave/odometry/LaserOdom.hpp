@@ -91,7 +91,7 @@ struct LaserOdomParams {
     RangeSensorParams sensor_params;
 
     // Feature extraction parameters
-    unlong variance_window = 9;
+    unlong variance_window = 11;
     bool limit_rng_var = false;
     bool limit_int_var = false;
     double variance_limit_rng = 1;

@@ -34,17 +34,28 @@ LaserOdom::LaserOdom(const LaserOdomParams params) : param(params) {
     this->kernels.at(2) = std::make_shared<Eigen::Tensor<double, 1>>(9);
     memcpy(this->kernels.at(2)->data(), FoG_kernel, 72);
 
+    this->kernels.at(3) = std::make_shared<Eigen::Tensor<double, 1>>(11);
+    this->kernels.at(3)->setConstant(1.0);
+    this->kernels.at(4) = std::make_shared<Eigen::Tensor<double, 1>>(11);
+    this->kernels.at(5)->setConstant(1.0);
+
     this->range_sensor = std::make_shared<RangeSensor>(param.sensor_params);
 
     // Define features
     std::vector<Criteria> edge_high, edge_low, flat, edge_int_high, edge_int_low;
     edge_high.emplace_back(Criteria{Kernel::LOAM, SelectionPolicy::HIGH_POS, &(param.edge_tol)});
+
     edge_low.emplace_back(Criteria{Kernel::LOAM, SelectionPolicy::HIGH_NEG, &(param.edge_tol)});
+
     flat.emplace_back(Criteria{Kernel::LOAM, SelectionPolicy::NEAR_ZERO, &(param.flat_tol)});
+
     edge_int_high.emplace_back(Criteria{Kernel::FOG, SelectionPolicy::HIGH_POS, &(param.int_edge_tol)});
     edge_int_high.emplace_back(Criteria{Kernel::LOAM, SelectionPolicy::NEAR_ZERO, &(param.int_flat_tol)});
+    edge_int_high.emplace_back(Criteria{Kernel::RNG_VAR, SelectionPolicy::NEAR_ZERO, &(param.variance_limit_rng)});
+
     edge_int_low.emplace_back(Criteria{Kernel::FOG, SelectionPolicy::HIGH_NEG, &(param.int_edge_tol)});
     edge_int_low.emplace_back(Criteria{Kernel::LOAM, SelectionPolicy::NEAR_ZERO, &(param.int_flat_tol)});
+    edge_int_low.emplace_back(Criteria{Kernel::RNG_VAR, SelectionPolicy::NEAR_ZERO, &(param.variance_limit_rng)});
 
     this->feature_definitions.emplace_back(FeatureDefinition{edge_high, ResidualType::PointToLine, &(param.n_edge)});
     this->feature_definitions.emplace_back(FeatureDefinition{edge_low, ResidualType::PointToLine, &(param.n_edge)});
@@ -1158,42 +1169,40 @@ void LaserOdom::generateFeatures() {
 
 void LaserOdom::computeScores() {
     Eigen::array<ptrdiff_t, 1> dims({0});
+    Eigen::Tensor<double, 1> sum_kernel(this->param.variance_window);
+    sum_kernel.setConstant(1.0);
+
     for (unlong i = 0; i < this->param.n_ring; i++) {
-        // calculate moving sample variance on each signal
-        for (ulong j = 0; j < this->N_SIGNALS; j++) {
-            Eigen::TensorMap<Eigen::Tensor<const double, 1>> inputmap(this->signals.at(j).at(i).data(), this->signals.at(j).at(i).size());
-            Eigen::Tensor<double, 1> sum_kernel(this->param.variance_window);
-            sum_kernel.setConstant(1.0);
-            // Check if there is enough data to calculate variance
-            if(inputmap.size() + 1 > sum_kernel.size()) {
-                this->variance.at(j).at(i).resize(inputmap.size() + 1 - sum_kernel.size());
-                Eigen::TensorMap<Eigen::Tensor<double, 1>> outputmap(this->variance.at(j).at(i).data(), this->variance.at(j).at(i).size());
-                auto &N = this->param.variance_window;
-                Eigen::Tensor<double, 1> Ninv(1);
-                Ninv.setConstant(1.0 / (double) N);
-                Eigen::Tensor<double, 1> Nm1inv(1);
-                Nm1inv.setConstant(1.0 / (double) (N - 1));
-
-                // so called computational formula for sample variance
-                outputmap = (inputmap.square().convolve(sum_kernel, dims) - inputmap.convolve(sum_kernel, dims).square().convolve(Ninv, dims)).convolve(Nm1inv,dims);
-            }
-        }
-
         for (ulong j = 0; j < this->N_SCORES; j++) {
-            // todo(ben) Include signal to score explicitly in feature definitions and get
-            // rid of this hack.
+            // todo(ben) Include signal to score explicitly in feature definitions and get rid of this hack.
             ulong s_idx = 0;
-            if (j < 1) {
+            if (j < 1 || j == 3) {
                 s_idx = 0;
             } else {
                 s_idx = 1;
             }
-
+            //todo have flexibility for different kernel sizes
             Eigen::TensorMap<Eigen::Tensor<const double, 1>> inputmap(this->signals.at(s_idx).at(i).data(), this->signals.at(s_idx).at(i).size());
             if (inputmap.size() + 1 > kernels.at(j)->size()) {
-                this->scores.at(j).at(i).resize(inputmap.size() - kernels.at(j)->size() + 1);
-                Eigen::TensorMap<Eigen::Tensor<double, 1>> outputmap(this->scores.at(j).at(i).data(), this->scores.at(j).at(i).size());
-                outputmap = inputmap.convolve(*(this->kernels.at(j)), dims);
+                //check if simple convolution
+                if (j < 3) {
+                    this->scores.at(j).at(i).resize(inputmap.size() - kernels.at(j)->size() + 1);
+                    Eigen::TensorMap<Eigen::Tensor<double, 1>> outputmap(this->scores.at(j).at(i).data(), this->scores.at(j).at(i).size());
+                    outputmap = inputmap.convolve(*(this->kernels.at(j)), dims);
+
+                //or if sample variance
+                } else {
+                    this->scores.at(j).at(i).resize(inputmap.size() - sum_kernel.size() + 1);
+                    Eigen::TensorMap<Eigen::Tensor<double, 1>> outputmap(this->scores.at(j).at(i).data(), this->scores.at(j).at(i).size());
+                    auto &N = this->param.variance_window;
+                    Eigen::Tensor<double, 1> Ninv(1);
+                    Ninv.setConstant(1.0 / (double) N);
+                    Eigen::Tensor<double, 1> Nm1inv(1);
+                    Nm1inv.setConstant(1.0 / (double) (N - 1));
+
+                    // so called computational formula for sample variance
+                    outputmap = (inputmap.square().convolve(sum_kernel, dims) - inputmap.convolve(sum_kernel, dims).square().convolve(Ninv, dims)).convolve(Nm1inv,dims);
+                }
             }
         }
     }
@@ -1267,11 +1276,6 @@ bool null_score(double, double) {
 }
 
 void LaserOdom::buildFilteredScore(const std::vector<bool> &valid, const uint32_t &f_idx, const uint32_t &ring) {
-    unlong var_offset = 0;
-    if (this->param.limit_rng_var) {
-        var_offset = (this->param.variance_window - 1)/2;
-    }
-
     this->filtered_scores.at(f_idx).at(ring).clear();
     this->valid_pts.at(f_idx).at(ring).clear();
     auto &def = this->feature_definitions.at(f_idx);
@@ -1293,8 +1297,11 @@ void LaserOdom::buildFilteredScore(const std::vector<bool> &valid, const uint32_
             case Kernel::LOAM: k_idx.at(i) = 0; break;
             case Kernel::LOG: k_idx.at(i) = 1; break;
             case Kernel::FOG: k_idx.at(i) = 2; break;
-            default: k_idx.at(i) = 0;
+            case Kernel::RNG_VAR: k_idx.at(i) = 3; break;
+            case Kernel::INT_VAR: k_idx.at(i) = 4; break;
+            default: throw std::out_of_range("Unrecognized Kernel!");
         }
+        //todo use the difference between input and score to figure this out instead?
         k_offsets.emplace_back((this->kernels.at(k_idx.at(i))->size() - 1) / 2);
         if (offset < (this->kernels.at(k_idx.at(i))->size() - 1) / 2) {
             offset = (this->kernels.at(k_idx.at(i))->size() - 1) / 2;
@@ -1306,27 +1313,15 @@ void LaserOdom::buildFilteredScore(const std::vector<bool> &valid, const uint32_
 
     for (uint64_t j = offset; j + offset < valid.size(); j++) {
         if (valid.at(j)) {
-            bool still_good = true;
+            bool meets_criteria = true;
             for (uint32_t l = 0; l < def.criteria.size(); l++) {
-                // todo(ben) Each score should have a different offset. But for now the offset between kernels is the
-                // same so it doesn't matter yet
                 if (!(compfuns.at(l))(this->scores.at(k_idx.at(l)).at(ring).at(j - k_offsets.at(l)),
                                       *(def.criteria.at(l).threshold))) {
-                    still_good = false;
+                    meets_criteria = false;
                     break;
                 }
             }
-            if (this->param.limit_rng_var) {
-                if (this->variance.at(0).at(ring).at(j - var_offset) > this->param.variance_limit_rng) {
-                    continue;
-                }
-            }
-            if (this->param.limit_int_var) {
-                if (this->variance.at(1).at(ring).at(j - var_offset) > this->param.variance_limit_int) {
-                    continue;
-                }
-            }
-            if (still_good) {
+            if (meets_criteria) {
                 this->filtered_scores[f_idx].at(ring).emplace_back(j,
                                                                    this->scores[k_idx.at(0)].at(ring).at(j - offset));
             }
