@@ -117,7 +117,7 @@ TEST(OdomTest, StraightLineGarage) {
     pcl::PCLPointCloud2 temp;
     pcl::PointCloud<PointXYZIR> temp2;
     LOG_INFO("Starting to load clouds");
-    boost::filesystem::path p("/home/ben/rosbags/last_ditch_bags/pcd");
+    boost::filesystem::path p("/home/bapskiko/rosbags/last_ditch_bags/pcd");
     std::vector<boost::filesystem::path> v;
     std::copy(boost::filesystem::directory_iterator(p), boost::filesystem::directory_iterator(), std::back_inserter(v));
     std::sort(v.begin(), v.end());
@@ -150,7 +150,8 @@ TEST(OdomTest, StraightLineGarage) {
     params.opt_iters = 50;
     params.min_residuals = 30;
     params.visualize = false;
-    params.num_trajectory_states = 2;
+    params.n_window = 1;
+    params.num_trajectory_states = 3;
     params.solver_threads = 4;
 
     params.sensor_params.rings = 32;
@@ -168,11 +169,12 @@ TEST(OdomTest, StraightLineGarage) {
     params.output_trajectory = true;
 //    params.output_correspondences = true;
     params.Qc = 100 * Eigen::Matrix<double, 6, 6>::Identity();
+    params.inv_Qc = params.Qc.inverse();
     params.treat_lines_as_planes = false;
     params.min_eigen = 100;
     params.solution_remapping = true;
-    params.plot_stuff = false;
-    params.motion_prior = true;
+    params.plot_stuff = true;
+    params.motion_prior = false;
     params.no_extrapolation = true;
 
     LaserOdom odom(params);
