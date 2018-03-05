@@ -13,6 +13,20 @@ void Tracker<TDetector, TDescriptor, TMatcher>::detectAndCompute(
 }
 
 template <typename TDetector, typename TDescriptor, typename TMatcher>
+void Tracker<TDetector, TDescriptor, TMatcher>::purgeContainer(const int img) {
+    // Get the time for this image.
+    auto time = this->img_times.at(img);
+
+    // Get all IDs at this time
+    auto landmarks = this->landmarks.getLandmarkIDsInWindow(time, time);
+
+    // Delete all landmarks in the container at this time.
+    for (const auto &l : landmarks) {
+        this->landmarks.erase(time, this->sensor_id, l);
+    }
+}
+
+template <typename TDetector, typename TDescriptor, typename TMatcher>
 std::map<int, size_t>
 Tracker<TDetector, TDescriptor, TMatcher>::registerKeypoints(
   const std::vector<cv::KeyPoint> &curr_kp,
@@ -20,14 +34,12 @@ Tracker<TDetector, TDescriptor, TMatcher>::registerKeypoints(
     // Maps current keypoint indices to IDs
     std::map<int, size_t> curr_ids;
 
-    // TODO will need way to specify camera sensor ID.
-    int sensor_id = 0;
-
     for (const auto &m : matches) {
         // Check to see if ID has already been assigned to keypoint
         if (this->prev_ids.count(m.queryIdx)) {
             // If so, assign that ID to current map.
-            curr_ids[m.trainIdx] = this->prev_ids.at(m.queryIdx);
+            auto id = this->prev_ids.at(m.queryIdx);
+            curr_ids[m.trainIdx] = id;
 
             // Extract value of keypoint.
             Vec2 landmark = convertKeypoint(curr_kp.at(m.trainIdx));
@@ -36,13 +48,14 @@ Tracker<TDetector, TDescriptor, TMatcher>::registerKeypoints(
 
             // Emplace LandmarkMeasurement into LandmarkMeasurementContainer
             this->landmarks.emplace(this->img_times.at(img_count),
-                                    sensor_id,
+                                    this->sensor_id,
                                     curr_ids.at(m.trainIdx),
                                     img_count,
                                     landmark);
         } else {
             // Else, assign new ID
-            this->prev_ids[m.queryIdx] = this->generateFeatureID();
+            auto id = this->generateFeatureID();
+            this->prev_ids[m.queryIdx] = id;
             curr_ids[m.trainIdx] = this->prev_ids.at(m.queryIdx);
 
             // Since keypoint was not a match before, need to add previous and
@@ -60,18 +73,33 @@ Tracker<TDetector, TDescriptor, TMatcher>::registerKeypoints(
 
             // Add previous and current landmarks to container
             this->landmarks.emplace(prev_time,
-                                    sensor_id,
+                                    this->sensor_id,
                                     this->prev_ids.at(m.queryIdx),
                                     prev_img,
                                     prev_landmark);
 
             this->landmarks.emplace(curr_time,
-                                    sensor_id,
+                                    this->sensor_id,
                                     curr_ids.at(m.trainIdx),
                                     curr_img,
                                     curr_landmark);
         }
     }
+
+    // If in online mode - sliding window
+    if (this->window_size > 0) {
+        auto img_to_clear = (int) this->img_times.size() - this->window_size;
+
+        if (img_to_clear > 0) {
+            this->cleared_img_threshold = img_to_clear;
+
+            // Need to remove all info at this particular image. Due to zero
+            // indexing, subtract one for the requested image.
+            this->purgeContainer(img_to_clear - 1);
+        }
+    }
+
+    this->lmc_size = this->landmarks.size();
 
     return curr_ids;
 }
@@ -79,17 +107,19 @@ Tracker<TDetector, TDescriptor, TMatcher>::registerKeypoints(
 // Public Functions
 template <typename TDetector, typename TDescriptor, typename TMatcher>
 std::vector<FeatureTrack> Tracker<TDetector, TDescriptor, TMatcher>::getTracks(
-  const size_t &img_num) const {
+  const size_t img_num) const {
     std::vector<FeatureTrack> feature_tracks;
 
-    // TODO add in ability to choose different camera.
-    int sensor_id = 0;
-
     // Determine how many images have been added
-    auto img_count = this->img_times.size() - 1;
+    size_t img_count = this->img_times.size() - 1;
 
     if (img_num > img_count) {
         throw std::out_of_range("Image requested is in the future!");
+    } else if (this->window_size > 0 && img_num < this->cleared_img_threshold) {
+        // for non-zero window_size, the measurement container is periodically
+        // cleaned out. Therefore can only access images still with info.
+        throw std::out_of_range(
+          "Image requested is outside of maintained window!");
     } else if (img_num > 0) {
         // Find the time for this image
         std::chrono::steady_clock::time_point img_time =
@@ -106,7 +136,7 @@ std::vector<FeatureTrack> Tracker<TDetector, TDescriptor, TMatcher>::getTracks(
               (this->img_times.begin())->second;
 
             FeatureTrack tracks = this->landmarks.getTrackInWindow(
-              sensor_id, l, start_time, img_time);
+              this->sensor_id, l, start_time, img_time);
 
             // Emplace new feature track back into vector
             feature_tracks.emplace_back(tracks);
@@ -163,7 +193,7 @@ Tracker<TDetector, TDescriptor, TMatcher>::offlineTracker(
 
     std::chrono::steady_clock clock;
 
-    int num_images = 0;
+    size_t num_images = 0;
 
     if (!image_sequence.empty()) {
         for (auto img_it = image_sequence.begin();
@@ -188,11 +218,8 @@ Tracker<TDetector, TDescriptor, TMatcher>::offlineTracker(
 
 template <typename TDetector, typename TDescriptor, typename TMatcher>
 cv::Mat Tracker<TDetector, TDescriptor, TMatcher>::drawTracks(
-  const size_t &img_num, const cv::Mat &image) const {
+  const std::vector<FeatureTrack> &feature_tracks, const cv::Mat &image) const {
     cv::Mat out_img = image;
-
-    // Get the tracks for this image
-    std::vector<FeatureTrack> feature_tracks = this->getTracks(img_num);
 
     // Define colour for arrows
     cv::Scalar colour(0, 255, 255);  // yellow
@@ -205,7 +232,7 @@ cv::Mat Tracker<TDetector, TDescriptor, TMatcher>::drawTracks(
             cv::Point2f curr = convertKeypoint(ft[i].value);
 
             // Draw arrowed line until end of feature track is reached
-            cv::arrowedLine(out_img, prev, curr, colour);
+            cv::arrowedLine(out_img, prev, curr, colour, 2);
         }
     }
 

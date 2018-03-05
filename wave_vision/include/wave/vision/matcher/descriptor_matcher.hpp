@@ -25,32 +25,6 @@ namespace wave {
  *  http://docs.opencv.org/trunk/db/d39/classcv_1_1DescriptorMatcher.html
  */
 class DescriptorMatcher {
- protected:
-    virtual ~DescriptorMatcher() = default;
-
-    /** Filter matches using a heuristic based method.
-     *
-     *  If the distance between matches is less than the defined heuristic, it
-     *  is rejected.
-     *
-     *  @param matches the unfiltered matches computed from two images.
-     *
-     *  @return the matches with outliers removed.
-     */
-    virtual std::vector<cv::DMatch> filterMatches(
-      const std::vector<cv::DMatch> &matches) const = 0;
-
-    /** Overloaded method, which takes in a vector of a vector of matches. This
-     *  is designed to be used with the knnMatchDescriptors method, and uses the
-     *  ratio test to filter the matches.
-     *
-     *  @param matches the unfiltered matches computed from two images.
-     *
-     *  @return the filtered matches.
-     */
-    virtual std::vector<cv::DMatch> filterMatches(
-      const std::vector<std::vector<cv::DMatch>> &matches) const = 0;
-
  public:
     /** Remove outliers between matches by using epipolar constraints. Outlier
      *  rejection methods are specified within the respective MatcherParams
@@ -89,7 +63,47 @@ class DescriptorMatcher {
       cv::Mat &descriptors_2,
       const std::vector<cv::KeyPoint> &keypoints_1,
       const std::vector<cv::KeyPoint> &keypoints_2,
-      cv::InputArray mask) const = 0;
+      cv::InputArray mask) = 0;
+
+ public:
+    /** The number of matches prior to any filtering or outlier removal. */
+    size_t num_raw_matches = 0u;
+
+    /** The number of matches after being filtered by the distance/ratio test.
+     *  This is the input to the outlierRejection method.
+     */
+    size_t num_filtered_matches = 0u;
+
+    /** The size of matches remaining after outlier removal via RANSAC or a
+     *  similar method.
+     */
+    size_t num_good_matches = 0u;
+
+ protected:
+    virtual ~DescriptorMatcher() = default;
+
+    /** Filter matches using a heuristic based method.
+     *
+     *  If the distance between matches is less than the defined heuristic, it
+     *  is rejected.
+     *
+     *  @param matches the unfiltered matches computed from two images.
+     *
+     *  @return the matches with outliers removed.
+     */
+    virtual std::vector<cv::DMatch> filterMatches(
+      const std::vector<cv::DMatch> &matches) const = 0;
+
+    /** Overloaded method, which takes in a vector of a vector of matches. This
+     *  is designed to be used with the knnMatchDescriptors method, and uses the
+     *  ratio test to filter the matches.
+     *
+     *  @param matches the unfiltered matches computed from two images.
+     *
+     *  @return the filtered matches.
+     */
+    virtual std::vector<cv::DMatch> filterMatches(
+      const std::vector<std::vector<cv::DMatch>> &matches) const = 0;
 };
 }  // namespace wave
 

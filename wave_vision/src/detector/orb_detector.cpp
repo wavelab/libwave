@@ -119,6 +119,9 @@ std::vector<cv::KeyPoint> ORBDetector::detectFeatures(const cv::Mat &image) {
     // Detect features in image and return keypoints.
     this->orb_detector->detect(image, keypoints);
 
+    // Store num detected keypoints for diagnostics
+    this->num_keypoints_detected = keypoints.size();
+
     return keypoints;
 }
 }  // namespace wave

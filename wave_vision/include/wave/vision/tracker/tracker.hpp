@@ -39,8 +39,18 @@ class Tracker {
      * @param descriptor descriptor object (BRISK, ORB, etc...)
      * @param matcher matcher object (BruteForceMatcher, FLANN)
      */
-    Tracker(TDetector detector, TDescriptor descriptor, TMatcher matcher)
-        : detector(detector), descriptor(descriptor), matcher(matcher) {}
+    Tracker(TDetector detector,
+            TDescriptor descriptor,
+            TMatcher matcher,
+            int window_size = 0)
+        : detector(detector),
+          descriptor(descriptor),
+          matcher(matcher),
+          window_size(window_size) {
+        if (this->window_size < 0) {
+            throw std::invalid_argument("window_size cannot be negative!");
+        }
+    }
 
     ~Tracker() = default;
 
@@ -50,7 +60,7 @@ class Tracker {
      * @return tracks corresponding to all detected landmarks in the image, from
      * the start of time to the given image.
      */
-    std::vector<FeatureTrack> getTracks(const size_t &img_num) const;
+    std::vector<FeatureTrack> getTracks(const size_t img_num) const;
 
     /** Track features within an image (presumably the next in a sequence).
      *
@@ -66,7 +76,8 @@ class Tracker {
      * @param image the image to draw the tracks on
      * @return the image with the tracks illustrated as arrows.
      */
-    cv::Mat drawTracks(const size_t &img_num, const cv::Mat &image) const;
+    cv::Mat drawTracks(const std::vector<FeatureTrack> &feature_tracks,
+                       const cv::Mat &image) const;
 
     /** Offline feature tracking, using list of images already loaded.
      *
@@ -76,7 +87,46 @@ class Tracker {
     std::vector<std::vector<FeatureTrack>> offlineTracker(
       const std::vector<cv::Mat> &image_sequence);
 
+    /** The templated FeatureDetector */
+    TDetector detector;
+
+    /** The templated DescriptorExtractor */
+    TDescriptor descriptor;
+
+    /** The templated DescriptorMatcher */
+    TMatcher matcher;
+
+    /** The size of the LandmarkMeasurementContainer */
+    size_t lmc_size = 0;
+
  private:
+    /** For online, sliding window tracker operation. Maintains memory by
+     *  clearing out values from the measurement container that are outside of
+     *  this time window.
+     *
+     *  If set to zero (default), all measurements are kept for offline use.
+     */
+    size_t window_size;
+
+    /** If in sliding window mode, this represents the highest image number that
+     *  can be requested to extract tracks from.
+     */
+    size_t cleared_img_threshold = 0;
+
+    // Keypoints and descriptors from the previous timestep
+    std::vector<cv::KeyPoint> prev_kp;
+    cv::Mat prev_desc;
+
+    // Correspondence maps
+    std::map<int, size_t> prev_ids;
+    std::map<size_t, std::chrono::steady_clock::time_point> img_times;
+
+    // Measurement container variables
+    LandmarkMeasurementContainer<LandmarkMeasurement<int>> landmarks;
+
+    // The sensor ID. TODO: Expand this for use with multiple cams.
+    int sensor_id = 0;
+
     /** Generate a new ID for each newly detected feature.
      *
      * @return the assigned ID.
@@ -109,6 +159,13 @@ class Tracker {
         this->img_times[img_count] = current_time;
     }
 
+    /** Cleans out the LandmarkMeasurementContainer for images outside the
+     *  requested window_size.
+     *
+     *  @param img the image to remove landmark information for.
+     */
+    void purgeContainer(const int img);
+
     /** Registers the latest matched keypoints with IDs. Assigns a new ID if one
      * has not already been provided.
      *
@@ -119,26 +176,6 @@ class Tracker {
     std::map<int, size_t> registerKeypoints(
       const std::vector<cv::KeyPoint> &curr_kp,
       const std::vector<cv::DMatch> &matches);
-
-    /** The templated FeatureDetector */
-    TDetector detector;
-
-    /** The templated DescriptorExtractor */
-    TDescriptor descriptor;
-
-    /** The templated DescriptorMatcher */
-    TMatcher matcher;
-
-    // Keypoints and descriptors from the previous timestep
-    std::vector<cv::KeyPoint> prev_kp;
-    cv::Mat prev_desc;
-
-    // Correspondence maps
-    std::map<int, size_t> prev_ids;
-    std::map<size_t, std::chrono::steady_clock::time_point> img_times;
-
-    // Measurement container variables
-    LandmarkMeasurementContainer<LandmarkMeasurement<int>> landmarks;
 };
 
 /** @} group vision */

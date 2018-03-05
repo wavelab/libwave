@@ -27,16 +27,16 @@ namespace wave {
  *  http://docs.opencv.org/trunk/db/d95/classcv_1_1ORB.html#adc371099dc902a9674bd98936e79739c
  */
 struct ORBDescriptorParams {
-    ORBDescriptorParams() {}
+    ORBDescriptorParams() = default;
 
-    ORBDescriptorParams(int tuple_size, int patch_size)
+    ORBDescriptorParams(const int tuple_size, const int patch_size)
         : tuple_size(tuple_size), patch_size(patch_size) {}
 
     /** Constructor using parameters extracted from a configuration file.
      *
      *  @param config_path the path to the location of the configuration file.
      */
-    ORBDescriptorParams(const std::string &config_path);
+    explicit ORBDescriptorParams(const std::string &config_path);
 
     /** The number of points that compose the ORB descriptor. A value of 2
      *  constructs the descriptor by comparing the brightnesses of a random pair
