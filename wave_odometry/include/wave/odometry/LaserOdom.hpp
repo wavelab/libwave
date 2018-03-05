@@ -69,9 +69,9 @@ struct LaserOdomParams {
     // Optimizer parameters
     // How many states per revolution to optimize over
     // There must be at minimum two.
-    uint32_t num_trajectory_states = 5;
+    uint32_t num_trajectory_states = 3;
     // How many scans to optimize over, must be at least 1, obviously
-    uint32_t n_window = 2;
+    uint32_t n_window = 1;
 
     int opt_iters = 25;     // How many times to refind correspondences
     int max_inner_iters = 100;  // How many iterations of ceres to run with each set of correspondences
