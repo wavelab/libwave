@@ -5,7 +5,7 @@ WAVE_ADD_MODULE(${PROJECT_NAME} DEPENDS
     wave::utils
     wave::kinematics
     wave::geometry
-    #wave::vision
+    wave::vision
     Eigen3::Eigen
     ceres
     SOURCES
