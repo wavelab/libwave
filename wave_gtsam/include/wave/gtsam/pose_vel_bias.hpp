@@ -151,8 +151,8 @@ struct traits<wave::PoseVelBias> {
             J3.resize(3, 3);
         }
         retval.pose = traits<Pose3>::Expmap(v.block<6, 1>(0, 0), J1);
-        retval.vel = traits<VelType>::Logmap(v.block<6, 1>(6, 0), J2);
-        retval.bias = traits<BiasType>::Logmap(v.block<3, 1>(12, 0), J3);
+        retval.vel = traits<VelType>::Expmap(v.block<6, 1>(6, 0), J2);
+        retval.bias = traits<BiasType>::Expmap(v.block<3, 1>(12, 0), J3);
         if (Hv) {
             Hv->block<6, 6>(0, 0).noalias() = J1;
             Hv->block<6, 6>(6, 6).noalias() = J2;
