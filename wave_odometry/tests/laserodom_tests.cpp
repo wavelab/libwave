@@ -152,7 +152,7 @@ TEST(OdomTest, StraightLineGarage) {
     params.visualize = false;
     params.n_window = 1;
     params.num_trajectory_states = 3;
-    params.solver_threads = 4;
+    params.solver_threads = 8;
 
     params.sensor_params.rings = 32;
     float ang = -0.5352924815866609;
@@ -173,7 +173,7 @@ TEST(OdomTest, StraightLineGarage) {
     params.treat_lines_as_planes = false;
     params.min_eigen = 100;
     params.solution_remapping = true;
-    params.plot_stuff = true;
+    params.plot_stuff = false;
     params.motion_prior = false;
     params.no_extrapolation = true;
 

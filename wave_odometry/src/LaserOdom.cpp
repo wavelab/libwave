@@ -20,8 +20,8 @@ double norm(const std::vector<double> &vec) {
 }
 
 LaserOdom::LaserOdom(const LaserOdomParams params) : param(params) {
-    google::InitGoogleLogging("laser_odometry");
-    google::SetLogDestination(google::INFO, "/tmp");
+//    google::InitGoogleLogging("laser_odometry");
+//    google::SetLogDestination(google::INFO, "/home/bapskiko/glogs");
     this->CSVFormat = new Eigen::IOFormat(Eigen::FullPrecision, Eigen::DontAlignCols, ", ", ", ");
 
     auto n_ring = static_cast<size_t>(param.n_ring);
@@ -999,7 +999,7 @@ bool LaserOdom::match() {
     }
 
     ceres::Covariance::Options covar_options;
-    covar_options.num_threads = std::thread::hardware_concurrency();
+    covar_options.num_threads = this->param.solver_threads;
     covar_options.sparse_linear_algebra_library_type = ceres::SparseLinearAlgebraLibraryType::SUITE_SPARSE;
     covar_options.algorithm_type = ceres::CovarianceAlgorithmType::SPARSE_QR;
 
@@ -1021,14 +1021,14 @@ bool LaserOdom::match() {
         if (this->param.plot_stuff) {
             LOG_INFO("%s", summary.FullReport().c_str());
         }
-        ceres::Covariance covariance(covar_options);
-        if (!covariance.Compute(this->param_blocks, &problem)) {
-            LOG_ERROR("covariance did not compute");
-        }
-        covariance.GetCovarianceMatrixInTangentSpace(this->param_blocks, this->covar.data());
-        if (this->param.solution_remapping) {
-            this->applyRemap();
-        }
+//        ceres::Covariance covariance(covar_options);
+//        if (!covariance.Compute(this->param_blocks, &problem)) {
+//            LOG_ERROR("covariance did not compute");
+//        }
+//        covariance.GetCovarianceMatrixInTangentSpace(this->param_blocks, this->covar.data());
+//        if (this->param.solution_remapping) {
+//            this->applyRemap();
+//        }
     }
     delete[] parameters;
     return true;
