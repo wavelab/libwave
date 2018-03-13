@@ -1,3 +1,7 @@
+#define EIGEN_DONT_VECTORIZE
+#define EIGEN_DISABLE_UNALIGNED_ARRAY_ASSERT
+#define EIGEN_INTERNAL_DEBUGGING
+
 #include <iostream>
 #include <random>
 
@@ -12,12 +16,13 @@ namespace wave {
 
 namespace {
 
-using T_Type = Transformation<Eigen::Matrix<double, 3, 4>>;
+using T_Type = Transformation<TransformStorage, false>;
 
 }
 
 class TransformationTestFixture : public ::testing::Test {
  public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     T_Type transform_expected;
     Vec6 transformation_twist_parameters;
     double comparison_threshold = 1e-5;
@@ -32,6 +37,11 @@ class TransformationTestFixture : public ::testing::Test {
         this->transform_expected.setFromMatrix(transform_matrix);
     }
 };
+
+TEST(TransformationTest, Destructor) {
+    T_Type transform;
+//    transform.~T_Type();
+}
 
 // Test that fromEulerXYZ returns the correct matrix.
 TEST_F(TransformationTestFixture, testFromEulerXYZ) {
@@ -255,7 +265,7 @@ TEST_F(TransformationTestFixture, testInverseAndJacoban) {
 TEST_F(TransformationTestFixture, testLogMapAndJacobian) {
     Mat6 J_analytical;
     Vec6 log_params = this->transform_expected.logMap();
-    J_analytical = T_Type::SE3LeftJacobian(log_params, this->comparison_threshold);
+    J_analytical = T_Type::SE3LeftJacobian(log_params);
     J_analytical = J_analytical.inverse();
     ASSERT_LE((log_params - this->transformation_twist_parameters).norm(), this->comparison_threshold);
 

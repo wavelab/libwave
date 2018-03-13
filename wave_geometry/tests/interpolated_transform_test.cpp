@@ -12,10 +12,11 @@
 namespace wave {
 
 namespace {
-using t_Type = Transformation<Eigen::Matrix<double, 3, 4>, true>;
+using t_Type = Transformation<TransformStorage, true>;
+using T_Type = Transformation<TransformStorage, false>;
 }
 
-class TransformationTestFixture : public ::testing::Test {
+class TransformationInterpolationTestFixture : public ::testing::Test {
  public:
     t_Type transform_expected;
     Vec6 transformation_twist_parameters;
@@ -33,7 +34,7 @@ class TransformationTestFixture : public ::testing::Test {
 };
 
 
-TEST_F(TransformationTestFixture, testInterpolation) {
+TEST_F(TransformationInterpolationTestFixture, testInterpolation) {
     t_Type T_k, T_kp1;
 
     Vec6 vel_k, vel_kp1;
@@ -65,25 +66,28 @@ TEST_F(TransformationTestFixture, testInterpolation) {
 
     Vec6 increment;
 
-    auto Tint = t_Type::interpolateAndJacobians(
-      T_k, T_kp1, vel_k, vel_kp1, hat.block<6,12>(0,0), candle.block<6,12>(0,0), J_T_k_an, J_T_kp1_an, J_vel_k_an, J_vel_kp1_an);
+    t_Type Tint;
 
-    auto Tint_nojac = t_Type::interpolate(T_k, T_kp1, vel_k, vel_kp1, hat.block<6,12>(0,0), candle.block<6,12>(0,0));
+    t_Type::interpolateAndJacobians(
+      T_k, T_kp1, vel_k, vel_kp1, hat.block<6,12>(0,0), candle.block<6,12>(0,0), Tint, J_T_k_an, J_T_kp1_an, J_vel_k_an, J_vel_kp1_an);
 
-    auto diff1 = Tint.manifoldMinus(Tint_nojac);
+    t_Type Tint_nojac;
+    t_Type::interpolate(T_k, T_kp1, vel_k, vel_kp1, hat.block<6,12>(0,0), candle.block<6,12>(0,0), Tint_nojac);
 
-    Transformation<Eigen::Matrix<double, 3, 4>, false> T_k_full, T_kp1_full;
-    T_k_full.deepCopy(T_k);
-    T_kp1_full.deepCopy(T_kp1);
 
-    auto Tint_full = Transformation<Eigen::Matrix<double, 3, 4>, false>::interpolateAndJacobians(
-            T_k_full, T_kp1_full, vel_k, vel_kp1, hat.block<6,12>(0,0), candle.block<6,12>(0,0), J_T_k_an, J_T_kp1_an, J_vel_k_an, J_vel_kp1_an);
+    Transformation<TransformStorage, false> T_k_full, T_kp1_full;
+//    T_k_full.deepCopy(T_k);
+//    T_kp1_full.deepCopy(T_kp1);
 
-    auto Tint_full_nojac = Transformation<Eigen::Matrix<double, 3, 4>, false>::interpolate(T_k_full, T_kp1_full, vel_k, vel_kp1, hat.block<6,12>(0,0), candle.block<6,12>(0,0));
+    T_k_full = T_k;
+    T_kp1_full = T_kp1;
 
-    Vec6 diff2 = Tint_full.manifoldMinus(Tint_full_nojac);
+    T_Type Tint_full, Tint_full_nojac;
 
-    Vec6 diff = Tint_full.manifoldMinus(Tint);
+    T_Type::interpolateAndJacobians(
+            T_k_full, T_kp1_full, vel_k, vel_kp1, hat.block<6,12>(0,0), candle.block<6,12>(0,0), Tint_full, J_T_k_an, J_T_kp1_an, J_vel_k_an, J_vel_kp1_an);
+
+    T_Type::interpolate(T_k_full, T_kp1_full, vel_k, vel_kp1, hat.block<6,12>(0,0), candle.block<6,12>(0,0), Tint_full_nojac);
 
     TInterpolatedJTLeftFunctor<t_Type> J_Tleft_functor(T_k, T_kp1, vel_k, vel_kp1, hat.block<6,12>(0,0), candle.block<6,12>(0,0));
     numerical_jacobian(J_Tleft_functor, perturbation_vec, J_T_k_num);

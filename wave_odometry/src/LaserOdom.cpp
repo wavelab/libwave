@@ -174,12 +174,13 @@ void LaserOdom::transformToMap(
     this->cv_vector.at(k).calculateStuff(hat, candle);
 
     T_TYPE T_MAP_LIDAR_i;
-    T_MAP_LIDAR_i = T_MAP_LIDAR_i.interpolate(this->cur_trajectory.at(k).pose,
+    T_MAP_LIDAR_i.interpolate(this->cur_trajectory.at(k).pose,
                                               this->cur_trajectory.at(kp1).pose,
                                               this->cur_trajectory.at(k).vel,
                                               this->cur_trajectory.at(kp1).vel,
                                               hat.block<6, 12>(0, 0),
-                                              candle.block<6, 12>(0, 0));
+                                              candle.block<6, 12>(0, 0),
+                                              T_MAP_LIDAR_i);
 
     Eigen::Map<const Vec3> LIDAR_i_P(pt, 3, 1);
     Eigen::Map<Vec3> MAP_P(output, 3, 1);
@@ -189,23 +190,8 @@ void LaserOdom::transformToMap(
 void LaserOdom::transformToMap(const double *const pt, const uint32_t tick, double *output) {
     uint32_t k, kp1;
     double tau;
-    this->getTransformIndices(tick, k, kp1, tau);
 
-    Eigen::Matrix<double, 12, 12> hat, candle;
-    this->cv_vector.at(k).tau = &tau;
-    this->cv_vector.at(k).calculateStuff(hat, candle);
-
-    T_TYPE T_MAP_LIDAR_i;
-    T_MAP_LIDAR_i = T_MAP_LIDAR_i.interpolate(this->cur_trajectory.at(k).pose,
-                                              this->cur_trajectory.at(kp1).pose,
-                                              this->cur_trajectory.at(k).vel,
-                                              this->cur_trajectory.at(kp1).vel,
-                                              hat.block<6, 12>(0, 0),
-                                              candle.block<6, 12>(0, 0));
-
-    Eigen::Map<const Vec3> LIDAR_i_P(pt, 3, 1);
-    Eigen::Map<Vec3> MAP_P(output, 3, 1);
-    T_MAP_LIDAR_i.transform(LIDAR_i_P, MAP_P);
+    this->transformToMap(pt, tick, output, k, kp1, tau);
 }
 
 void LaserOdom::transformToCurLidar(const double *const pt, const uint32_t tick, double *output) {
@@ -218,12 +204,13 @@ void LaserOdom::transformToCurLidar(const double *const pt, const uint32_t tick,
     this->cv_vector.at(k).calculateStuff(hat, candle);
 
     T_TYPE T_MAP_LIDAR_i;
-    T_MAP_LIDAR_i = T_MAP_LIDAR_i.interpolate(this->cur_trajectory.at(k).pose,
+    T_MAP_LIDAR_i.interpolate(this->cur_trajectory.at(k).pose,
                                               this->cur_trajectory.at(kp1).pose,
                                               this->cur_trajectory.at(k).vel,
                                               this->cur_trajectory.at(kp1).vel,
                                               hat.block<6, 12>(0, 0),
-                                              candle.block<6, 12>(0, 0));
+                                              candle.block<6, 12>(0, 0),
+                                              T_MAP_LIDAR_i);
 
     Eigen::Map<const Vec3> LIDAR_I_P(pt, 3, 1);
     Eigen::Map<Vec3> LIDAR_END_P(output, 3, 1);

@@ -42,12 +42,20 @@ bool SE3PointToPlaneGP::Evaluate(double const *const *parameters, double *residu
     Eigen::Map<const Vec6> vel_kp1(parameters[3], 6, 1);
 
     if (jacobians) {
-        this->T_current =
-          Transformation<Eigen::Map<const Eigen::Matrix<double, 3, 4>>, true>::interpolateAndJacobians<>(
-            Tk, Tkp1, vel_k, vel_kp1, this->hat, this->candle, this->JT_Ti, this->JT_Tip1, this->JT_Wi, this->JT_Wip1);
+        Transformation<Eigen::Map<const Eigen::Matrix<double, 3, 4>>, true>::interpolateAndJacobians<>(Tk,
+                                                                                                       Tkp1,
+                                                                                                       vel_k,
+                                                                                                       vel_kp1,
+                                                                                                       this->hat,
+                                                                                                       this->candle,
+                                                                                                       this->T_current,
+                                                                                                       this->JT_Ti,
+                                                                                                       this->JT_Tip1,
+                                                                                                       this->JT_Wi,
+                                                                                                       this->JT_Wip1);
     } else {
-        this->T_current =
-          Transformation<Eigen::Map<const Eigen::Matrix<double, 3, 4>>, true>::interpolate<>(Tk, Tkp1, vel_k, vel_kp1, this->hat, this->candle);
+        Transformation<Eigen::Map<const Eigen::Matrix<double, 3, 4>>, true>::interpolate<>(
+          Tk, Tkp1, vel_k, vel_kp1, this->hat, this->candle, this->T_current);
     }
 
     Eigen::Map<const Vec3> PT(this->pt, 3, 1);
