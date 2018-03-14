@@ -30,10 +30,10 @@ TEST(trajectory_prior, unary_factor) {
     ceres::LocalParameterization *se3_param = new NullSE3Parameterization;
 
     ceres::Problem problem;
-    problem.AddParameterBlock(initial.getInternalMatrix().derived().data(), 12, se3_param);
+    problem.AddParameterBlock(initial.storage.data(), 12, se3_param);
     problem.AddParameterBlock(twist.data(), 6);
 
-    problem.AddResidualBlock(cost_function, nullptr, initial.getInternalMatrix().derived().data(), twist.data());
+    problem.AddResidualBlock(cost_function, nullptr, initial.storage.data(), twist.data());
 
     ceres::Solver::Options options;
     options.parameter_tolerance = 1e-10;
@@ -74,12 +74,12 @@ TEST(trajectory_prior, binary_factor) {
     ceres::LocalParameterization *se3_param = new NullSE3Parameterization;
 
     ceres::Problem problem;
-    problem.AddParameterBlock(initial.getInternalMatrix().derived().data(), 12, se3_param);
+    problem.AddParameterBlock(initial.storage.data(), 12, se3_param);
     problem.AddParameterBlock(init_twist.data(), 6);
-    problem.AddParameterBlock(next.getInternalMatrix().derived().data(), 12, se3_param);
+    problem.AddParameterBlock(next.storage.data(), 12, se3_param);
     problem.AddParameterBlock(next_twist.data(), 6);
 
-    problem.AddResidualBlock(cost_function, nullptr, initial.getInternalMatrix().derived().data(), init_twist.data());
+    problem.AddResidualBlock(cost_function, nullptr, initial.storage.data(), init_twist.data());
 
     double tk = 0;
     double tkp1 = 0.1;
@@ -104,8 +104,8 @@ TEST(trajectory_prior, binary_factor) {
 
     problem.AddResidualBlock(bin_cost_function,
                              nullptr,
-                             initial.getInternalMatrix().derived().data(),
-                             next.getInternalMatrix().derived().data(),
+                             initial.storage.data(),
+                             next.storage.data(),
                              init_twist.data(),
                              next_twist.data());
 

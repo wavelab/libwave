@@ -217,7 +217,7 @@ void LaserOdom::transformToCurLidar(const double *const pt, const uint32_t tick,
 
     auto &T_MAP_LIDAR_END = this->cur_trajectory.back().pose;
 
-    (T_MAP_LIDAR_END.inverse() * T_MAP_LIDAR_i).transform(LIDAR_I_P, LIDAR_END_P);
+    (T_MAP_LIDAR_END.transformInverse() * T_MAP_LIDAR_i).transform(LIDAR_I_P, LIDAR_END_P);
 
     //    transform.inverseTransform(Vecpt, op_map);
 }
@@ -379,7 +379,7 @@ void LaserOdom::undistort() {
 
 void LaserOdom::copyTrajectory() {
     for (uint32_t i = 0; i < this->param.num_trajectory_states; i++) {
-        this->prev_trajectory.at(i).pose.matrix->derived() = this->cur_trajectory.at(i).pose.matrix->derived();
+        this->prev_trajectory.at(i).pose = this->cur_trajectory.at(i).pose;
         this->prev_trajectory.at(i).vel = this->cur_trajectory.at(i).vel;
     }
     this->previous_twist = this->current_twist;
@@ -437,8 +437,8 @@ void LaserOdom::applyRemap() {
     }
 
     for (uint32_t i = 0; i + offset < this->param.num_trajectory_states; i++) {
-        this->cur_trajectory.at(i + offset).pose.matrix->derived() =
-          this->prev_trajectory.at(i + offset).pose.matrix->derived();
+        this->cur_trajectory.at(i + offset).pose =
+          this->prev_trajectory.at(i + offset).pose;
         this->cur_trajectory.at(i + offset).pose.manifoldPlus(mapped_diff.block<6, 1>(12 * i, 0));
 
         this->cur_trajectory.at(i + offset).vel = this->cur_trajectory.at(i + offset).vel +
@@ -481,8 +481,8 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
 
             for (int i = 0; i < this->param.opt_iters; i++) {
                 if (i > 0) {
-                    memcpy(last_transform.getInternalMatrix().derived().data(),
-                           ref.getInternalMatrix().derived().data(),
+                    memcpy(last_transform.storage.data(),
+                           ref.storage.data(),
                            96);
                 }
                 if (!this->match()) {
@@ -496,7 +496,7 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
             }
 
             if (this->param.output_trajectory) {
-                this->file << this->cur_trajectory.back().pose.getInternalMatrix().format(*(this->CSVFormat))
+                this->file << this->cur_trajectory.back().pose.storage.format(*(this->CSVFormat))
                            << std::endl;
             }
             if (this->param.visualize) {
@@ -510,7 +510,7 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
                         LOG_ERROR("Overwriting previous output");
                     }
                     this->undistorted_stamp = this->prv_time;
-                    this->undistort_transform.deepCopy(this->cur_trajectory.back().pose);
+                    this->undistort_transform = this->cur_trajectory.back().pose;
                     memcpy(this->undistort_velocity.data(), this->cur_trajectory.back().vel.data(), 48);
 
                     this->undistort();
@@ -609,12 +609,12 @@ void LaserOdom::rollover(TimeType stamp) {
         }
     }
     this->prior_twist = this->cur_trajectory.back().vel;
-    this->inv_prior_pose.deepCopy(this->cur_trajectory.back().pose.inverse());
-    //    this->cur_trajectory.front().pose.setIdentity();
-    this->cur_trajectory.front().pose.deepCopy(this->cur_trajectory.back().pose);
+    this->cur_trajectory.back().pose.transformInverse(this->inv_prior_pose);
+
+    this->cur_trajectory.front().pose = this->cur_trajectory.back().pose;
 
     for (uint32_t i = 1; i < this->param.num_trajectory_states; i++) {
-        this->cur_trajectory.at(i).pose.deepCopy(this->cur_trajectory.at(i - 1).pose);
+        this->cur_trajectory.at(i).pose = this->cur_trajectory.at(i - 1).pose;
         this->cur_trajectory.at(i).pose.manifoldPlus(
           (this->param.scan_period / (this->param.num_trajectory_states - 1)) * this->cur_trajectory.back().vel);
     }
@@ -808,7 +808,7 @@ bool LaserOdom::match() {
 
         problem.AddResidualBlock(prior_cost,
                                  nullptr,
-                                 this->cur_trajectory.at(0).pose.getInternalMatrix().derived().data(),
+                                 this->cur_trajectory.at(0).pose.storage.data(),
                                  this->cur_trajectory.at(0).vel.data());
     }
 
@@ -822,8 +822,8 @@ bool LaserOdom::match() {
 
             problem.AddResidualBlock(motion_cost,
                                      nullptr,
-                                     this->cur_trajectory.at(i).pose.getInternalMatrix().derived().data(),
-                                     this->cur_trajectory.at(i + 1).pose.getInternalMatrix().derived().data(),
+                                     this->cur_trajectory.at(i).pose.storage.data(),
+                                     this->cur_trajectory.at(i + 1).pose.storage.data(),
                                      this->cur_trajectory.at(i).vel.data(),
                                      this->cur_trajectory.at(i + 1).vel.data());
         }
@@ -910,8 +910,8 @@ bool LaserOdom::match() {
                         default: continue;
                     }
 
-                    parameters[0] = this->cur_trajectory.at(k).pose.getInternalMatrix().derived().data();
-                    parameters[1] = this->cur_trajectory.at(kp1).pose.getInternalMatrix().derived().data();
+                    parameters[0] = this->cur_trajectory.at(k).pose.storage.data();
+                    parameters[1] = this->cur_trajectory.at(kp1).pose.storage.data();
                     parameters[2] = this->cur_trajectory.at(k).vel.data();
                     parameters[3] = this->cur_trajectory.at(kp1).vel.data();
 
@@ -938,8 +938,8 @@ bool LaserOdom::match() {
 
                     problem.AddResidualBlock(cost_function,
                                              p_LossFunction,
-                                             this->cur_trajectory.at(k).pose.getInternalMatrix().derived().data(),
-                                             this->cur_trajectory.at(kp1).pose.getInternalMatrix().derived().data(),
+                                             this->cur_trajectory.at(k).pose.storage.data(),
+                                             this->cur_trajectory.at(kp1).pose.storage.data(),
                                              this->cur_trajectory.at(k).vel.data(),
                                              this->cur_trajectory.at(kp1).vel.data());
                 }
@@ -957,15 +957,15 @@ bool LaserOdom::match() {
     for (uint32_t i = 0; i < this->param.num_trajectory_states; i++) {
         ceres::LocalParameterization *se3_param = new NullSE3Parameterization();
         auto &tra = this->cur_trajectory.at(i);
-        problem.AddParameterBlock(tra.pose.getInternalMatrix().derived().data(), 12, se3_param);
+        problem.AddParameterBlock(tra.pose.storage.data(), 12, se3_param);
         problem.AddParameterBlock(tra.vel.data(), 6);
         if(this->param.lock_first) {
             if (i != 0) {
-                this->param_blocks.at((i-1)*2) = tra.pose.getInternalMatrix().derived().data();
+                this->param_blocks.at((i-1)*2) = tra.pose.storage.data();
                 this->param_blocks.at((i-1)*2 + 1) = tra.vel.data();
             }
         } else {
-            this->param_blocks.at(i*2) = tra.pose.getInternalMatrix().derived().data();
+            this->param_blocks.at(i*2) = tra.pose.storage.data();
             this->param_blocks.at(i*2 + 1) = tra.vel.data();
         }
     }
@@ -991,7 +991,7 @@ bool LaserOdom::match() {
     covar_options.algorithm_type = ceres::CovarianceAlgorithmType::SPARSE_QR;
 
     if (this->param.lock_first) {
-        problem.SetParameterBlockConstant(this->cur_trajectory.at(0).pose.getInternalMatrix().derived().data());
+        problem.SetParameterBlockConstant(this->cur_trajectory.at(0).pose.storage.data());
         problem.SetParameterBlockConstant(this->cur_trajectory.at(0).vel.data());
     }
 

@@ -88,8 +88,8 @@ TEST(ConstantVelocity, Jacobians) {
 
     const double **parameters;
     parameters = new const double *[4];
-    parameters[0] = start.getInternalMatrix().derived().data();
-    parameters[1] = end.getInternalMatrix().derived().data();
+    parameters[0] = start.storage.data();
+    parameters[1] = end.storage.data();
     parameters[2] = start_vel.data();
     parameters[3] = end_vel.data();
 
@@ -128,8 +128,8 @@ TEST(ConstantVelocity, Jacobians) {
     vel_k_perturbed = start_vel;
     vel_kp1_perturbed = end_vel;
 
-    parameters[0] = Tk_perturbed.getInternalMatrix().derived().data();
-    parameters[1] = Tkp1_perturbed.getInternalMatrix().derived().data();
+    parameters[0] = Tk_perturbed.storage.data();
+    parameters[1] = Tkp1_perturbed.storage.data();
     parameters[2] = vel_k_perturbed.data();
     parameters[3] = vel_kp1_perturbed.data();
 

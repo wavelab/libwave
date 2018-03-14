@@ -147,7 +147,7 @@ class ManifoldMinusAndJacobianJRightFunctor {
 };
 
 namespace {
-    using T_Type = Transformation<TransformStorage, false>;
+    using T_Type = Transformation<Mat34, false>;
 }
 // Transformation functors
 class TransformAndJacobianJpointFunctor {
@@ -240,7 +240,9 @@ class TInverseAndJacobianFunctor {
 //        R_perturbed.deepCopy(this->R);
         R_perturbed = this->R;
         R_perturbed.manifoldPlus(perturbation);
-        return R_perturbed.transformInverse();
+        T_Type retval;
+        R_perturbed.transformInverse(retval);
+        return retval;
     }
 };
 

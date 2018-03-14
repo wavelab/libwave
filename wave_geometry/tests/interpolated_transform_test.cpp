@@ -12,8 +12,8 @@
 namespace wave {
 
 namespace {
-using t_Type = Transformation<TransformStorage, true>;
-using T_Type = Transformation<TransformStorage, false>;
+using t_Type = Transformation<Mat34, true>;
+using T_Type = Transformation<Mat34, false>;
 }
 
 class TransformationInterpolationTestFixture : public ::testing::Test {
@@ -75,7 +75,7 @@ TEST_F(TransformationInterpolationTestFixture, testInterpolation) {
     t_Type::interpolate(T_k, T_kp1, vel_k, vel_kp1, hat.block<6,12>(0,0), candle.block<6,12>(0,0), Tint_nojac);
 
 
-    Transformation<TransformStorage, false> T_k_full, T_kp1_full;
+    Transformation<Mat34, false> T_k_full, T_kp1_full;
 //    T_k_full.deepCopy(T_k);
 //    T_kp1_full.deepCopy(T_kp1);
 

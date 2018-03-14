@@ -1,7 +1,3 @@
-#define EIGEN_DONT_VECTORIZE
-#define EIGEN_DISABLE_UNALIGNED_ARRAY_ASSERT
-#define EIGEN_INTERNAL_DEBUGGING
-
 #include <iostream>
 #include <random>
 
@@ -16,7 +12,7 @@ namespace wave {
 
 namespace {
 
-using T_Type = Transformation<TransformStorage, false>;
+using T_Type = Transformation<Mat34, false>;
 
 }
 
@@ -25,7 +21,7 @@ class TransformationTestFixture : public ::testing::Test {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     T_Type transform_expected;
     Vec6 transformation_twist_parameters;
-    double comparison_threshold = 1e-5;
+    double comparison_threshold = 1e-6;
 
     void SetUp() {
         Mat4 transform_matrix;
@@ -120,11 +116,11 @@ TEST_F(TransformationTestFixture, testInverse) {
     T_inv_twist << -0.068924613882065, -0.213225926957886, -0.288748939228676, -0.965590777183138, -1.960945901104432,
       -3.037052911306709;
 
-    T_Type T_inv;
+    T_Type T_inv, T_expect;
     T_inv.setFromExpMap(T_inv_twist);
 
-    this->transform_expected.invert();
-    ASSERT_TRUE(this->transform_expected.isNear(T_inv, this->comparison_threshold));
+    this->transform_expected.transformInverse(T_expect);
+    ASSERT_TRUE(T_expect.isNear(T_inv, this->comparison_threshold));
 }
 
 TEST_F(TransformationTestFixture, testTransform) {
@@ -186,10 +182,11 @@ TEST_F(TransformationTestFixture, testManifoldMinus) {
 // Jacobian testing
 TEST_F(TransformationTestFixture, testTransformAndJacobian) {
     Vec3 v(1, 1, 1);
+    Vec3 dead_end;
     Eigen::Matrix<double, 3, 6> Jparam_analytical, Jparam_numerical;
     Mat3 Jpoint_analytical, Jpoint_numerical;
     // get analytical jacobians
-    this->transform_expected.transformAndJacobian(v, Jpoint_analytical, Jparam_analytical);
+    this->transform_expected.transformAndJacobian(v, dead_end, Jpoint_analytical, Jparam_analytical);
 
     TransformAndJacobianJpointFunctor Jpoint_functor(this->transform_expected);
     numerical_jacobian(Jpoint_functor, v, Jpoint_numerical);
@@ -311,4 +308,18 @@ TEST_F(TransformationTestFixture, testManifoldMinusAndJacobian) {
     errmat = J_right_analytical - J_right_numerical;
     ASSERT_LE(errmat.norm(), this->comparison_threshold);
 }
+
+TEST_F(TransformationTestFixture, MappingArrays) {
+    Mat34 memblock;
+    Eigen::Map<Mat34> mapped(memblock.data());
+    Transformation<Eigen::Map<Mat34>, true> inter(mapped);
+
+    inter.setIdentity();
+
+    const double permanent[12] = {0};
+
+    Eigen::Map<const Mat34> pmap(permanent);
+    Transformation<Eigen::Map<const Mat34>, true> ptra(pmap);
+}
+
 }

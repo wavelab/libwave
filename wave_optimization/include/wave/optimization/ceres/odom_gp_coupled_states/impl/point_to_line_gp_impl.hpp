@@ -5,21 +5,16 @@
 
 namespace wave {
 
-template<int DIM>
+template <int DIM>
 SE3PointToLineGPCoupled<DIM>::SE3PointToLineGPCoupled(const double *const p,
-                                         const double *const pA,
-                                         const double *const pB,
-                                         const Eigen::Matrix<double, 6, 12> &hat,
-                                         const Eigen::Matrix<double, 6, 12> &candle,
-                                       const int &idx_k,
-                                         const Mat3 &CovZ,
-                                         bool calculate_weight)
-        : idx_k(idx_k),
-          pt(p),
-          ptA(pA),
-          ptB(pB),
-          hat(hat),
-          candle(candle) {
+                                                      const double *const pA,
+                                                      const double *const pB,
+                                                      const Eigen::Matrix<double, 6, 12> &hat,
+                                                      const Eigen::Matrix<double, 6, 12> &candle,
+                                                      const int &idx_k,
+                                                      const Mat3 &CovZ,
+                                                      bool calculate_weight)
+    : idx_k(idx_k), pt(p), ptA(pA), ptB(pB), hat(hat), candle(candle) {
     this->JP_T.setZero();
     this->JP_T.template block<3, 3>(0, 3).setIdentity();
 
@@ -62,7 +57,8 @@ SE3PointToLineGPCoupled<DIM>::SE3PointToLineGPCoupled(const double *const p,
     auto v = unitdiff.cross(unitz);
     auto s = v.norm();
     auto c = unitz.dot(unitdiff);
-    auto skew = Transformation<void>::skewSymmetric3(v);
+    Mat3 skew;
+    Transformation<>::skewSymmetric3(v, skew);
     this->rotation = Eigen::Matrix3d::Identity() + skew + skew * skew * ((1 - c) / (s * s));
 
     this->Jres_P = this->rotation * this->Jres_P;
@@ -75,24 +71,32 @@ SE3PointToLineGPCoupled<DIM>::SE3PointToLineGPCoupled(const double *const p,
     }
 }
 
-template<int DIM>
-bool SE3PointToLineGPCoupled<DIM>::Evaluate(double const *const *parameters, double *residuals, double **jacobians) const {
+template <int DIM>
+bool SE3PointToLineGPCoupled<DIM>::Evaluate(double const *const *parameters,
+                                            double *residuals,
+                                            double **jacobians) const {
     Eigen::Map<const Vec6> vel_k(parameters[0], 6, 1);
-    auto tk_ptr = std::make_shared<Eigen::Map<const Eigen::Matrix<double, 3, 4>>>(parameters[0] + 6 + 12*this->idx_k, 3, 4);
-    auto tkp1_ptr = std::make_shared<Eigen::Map<const Eigen::Matrix<double, 3, 4>>>(parameters[0] + 6 + 12*(this->idx_k + 1), 3, 4);
 
-    Transformation<Eigen::Map<const Eigen::Matrix<double, 3, 4>>, true> Tk(tk_ptr);
-    Transformation<Eigen::Map<const Eigen::Matrix<double, 3, 4>>, true> Tkp1(tkp1_ptr);
+    Eigen::Map<const Mat34> tk_map(parameters[0] + 6 + 12 * this->idx_k, 3, 4);
+    Eigen::Map<const Mat34> tkp1_map(parameters[1] + 6 + 12 * (this->idx_k + 1), 3, 4);
+    Transformation<Eigen::Map<const Mat34>, true> Tk(tk_map);
+    Transformation<Eigen::Map<const Mat34>, true> Tkp1(tkp1_map);
 
     if (jacobians) {
-        this->T_current = Transformation<Eigen::Map<const Eigen::Matrix<double, 3, 4>>, true>::interpolateAndJacobians(
-                Tk, Tkp1, vel_k, vel_k, this->hat, this->candle,
-                this->JT_Ti, this->JT_Tip1, this->JT_Wi, this->JT_Wip1);
+        Transformation<Eigen::Map<const Eigen::Matrix<double, 3, 4>>, true>::interpolateAndJacobians(Tk,
+                                                                                                     Tkp1,
+                                                                                                     vel_k,
+                                                                                                     vel_k,
+                                                                                                     this->hat,
+                                                                                                     this->candle,
+                                                                                                     this->T_current,
+                                                                                                     this->JT_Ti,
+                                                                                                     this->JT_Tip1,
+                                                                                                     this->JT_Wi,
+                                                                                                     this->JT_Wip1);
     } else {
-        this->T_current = Transformation<Eigen::Map<const Eigen::Matrix<double, 3, 4>>, true>::interpolate(Tk, Tkp1,
-                                                                                                           vel_k, vel_k,
-                                                                                                           this->hat,
-                                                                                                           this->candle);
+        Transformation<Eigen::Map<const Eigen::Matrix<double, 3, 4>>, true>::interpolate(
+          Tk, Tkp1, vel_k, vel_k, this->hat, this->candle, this->T_current);
     }
 
     Eigen::Map<const Vec3> PT(this->pt, 3, 1);
@@ -126,15 +130,17 @@ bool SE3PointToLineGPCoupled<DIM>::Evaluate(double const *const *parameters, dou
             Eigen::Map<Eigen::Matrix<double, 2, DIM, Eigen::RowMajor>> jac_map(jacobians[0], 2, DIM);
             jac_map.setZero();
 
-            jac_map.template block<2, 6>(0,0) = this->weight_matrix * this->Jr_T.template block<2, 6>(0, 0) * (this->JT_Wi + this->JT_Wip1);
-            jac_map.template block<2, 6>(0,6 + 12*this->idx_k) = this->weight_matrix * this->Jr_T.template block<2, 6>(0, 0) * this->JT_Ti;
-            jac_map.template block<2, 6>(0,6 + 12*(1 + this->idx_k)) = this->weight_matrix * this->Jr_T.template block<2, 6>(0, 0) * this->JT_Tip1;
+            jac_map.template block<2, 6>(0, 0) =
+              this->weight_matrix * this->Jr_T.template block<2, 6>(0, 0) * (this->JT_Wi + this->JT_Wip1);
+            jac_map.template block<2, 6>(0, 6 + 12 * this->idx_k) =
+              this->weight_matrix * this->Jr_T.template block<2, 6>(0, 0) * this->JT_Ti;
+            jac_map.template block<2, 6>(0, 6 + 12 * (1 + this->idx_k)) =
+              this->weight_matrix * this->Jr_T.template block<2, 6>(0, 0) * this->JT_Tip1;
         }
     }
 
     return true;
 }
-
 }
 
-#endif //WAVE_POINT_TO_LINE_GP_COUPLED_IMPL_HPP
+#endif  // WAVE_POINT_TO_LINE_GP_COUPLED_IMPL_HPP

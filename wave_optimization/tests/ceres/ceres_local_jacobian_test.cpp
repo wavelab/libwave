@@ -130,7 +130,7 @@ TEST(local_jacobians, gradient_checker) {
 
     const double **parameters;
     parameters = new const double *[1];
-    parameters[0] = exact_transform.getInternalMatrix().derived().data();
+    parameters[0] = exact_transform.storage.data();
 
     ceres::NumericDiffOptions ndiff_options;
     ceres::GradientChecker g_check(cost_function, &local_param_vec, ndiff_options);

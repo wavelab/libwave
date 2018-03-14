@@ -9,74 +9,75 @@
 
 namespace wave {
 
-/**
- * Inheriting from MatrixBase kind of a PITA, so going to define a couple storage classes
- */
+///**
+// * Inheriting from MatrixBase kind of a PITA, so going to define a couple storage classes
+// */
+//
+// class TransformStorage : public Mat34 {
+// public:
+//    TransformStorage() : Mat34() {}
+//
+//    template <typename Derived>
+//    explicit TransformStorage(const Eigen::MatrixBase<Derived> &other) : Mat34(other) {}
+//
+//    TransformStorage(const TransformStorage& other) : Mat34(other) {}
+//
+//    TransformStorage& operator= (const TransformStorage& other) {
+//        this->Mat34::operator=(other);
+//        return *this;
+//    }
+//
+//    TransformStorage& operator=(TransformStorage&& other) noexcept {
+//        this->Mat34::operator=(other);
+//        return *this;
+//    }
+//
+//    TransformStorage& operator= (const Mat34& other) {
+//        this->Mat34::operator=(other);
+//        return *this;
+//    }
+//
+//    TransformStorage& operator=(Mat34&& other) noexcept {
+//        this->Mat34::operator=(other);
+//        return *this;
+//    }
+//};
+//
+// class TransformRef : public Eigen::Map<Mat34> {
+// public:
+//    TransformRef() = delete;
+//
+//    explicit TransformRef(double *data_ptr) : Eigen::Map<Mat34>(data_ptr) {}
+//
+//    using Eigen::Map<Mat34>::operator=;
+//};
 
-class TransformStorage : public Eigen::Matrix<double, 3, 4> {
- public:
-    TransformStorage() : Eigen::Matrix<double, 3, 4>() {}
-
-    template <typename Derived>
-    explicit TransformStorage(const Eigen::MatrixBase<Derived> &other) : Eigen::Matrix<double, 3, 4>(other) {}
-
-    TransformStorage(const TransformStorage& other) : Eigen::Matrix<double, 3, 4>(other) {}
-
-    TransformStorage& operator= (const TransformStorage& other) {
-        this->Eigen::Matrix<double, 3, 4>::operator=(other);
-        return *this;
-    }
-
-    TransformStorage& operator=(TransformStorage&& other) noexcept {
-        this->Eigen::Matrix<double, 3, 4>::operator=(other);
-        return *this;
-    }
-
-    TransformStorage& operator= (const Eigen::Matrix<double, 3, 4>& other) {
-        this->Eigen::Matrix<double, 3, 4>::operator=(other);
-        return *this;
-    }
-
-    TransformStorage& operator=(Eigen::Matrix<double, 3, 4>&& other) noexcept {
-        this->Eigen::Matrix<double, 3, 4>::operator=(other);
-        return *this;
-    }
-};
-
-/// Needs to be templated because can have maps to const or non-const types
-template <typename Derived>
-class TransformRef : public Eigen::MapBase<Derived> {
- public:
-    TransformRef() = delete;
-
-    explicit TransformRef(const Eigen::MapBase<Derived> &map) : Eigen::MapBase<Derived>(map) {}
-
-    using Eigen::MapBase<Derived>::operator=;
-};
-
-template <typename T_str = TransformStorage, bool approximate = false>
+template <typename T_str = Mat34, bool approximate = false>
 class Transformation {
  public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     static constexpr const double tol = 1.0e-5;
     T_str storage;
+
  public:
-    Transformation() : storage(T_str()) {
+    Transformation() {
         this->setIdentity();
     }
 
     Transformation(Transformation const &other) : storage(other.storage) {}
 
+    Transformation(const T_str &storage) : storage(storage) {}
+
     Transformation(T_str &&storage) noexcept : storage(std::move(storage)) {}
 
-    template<typename Other, bool OtherApprox>
-    Transformation& operator=(const Transformation<Other, OtherApprox> &other) {
+    template <typename Other, bool OtherApprox>
+    Transformation &operator=(const Transformation<Other, OtherApprox> &other) {
         this->storage = other.storage;
         return *this;
     }
 
-    template<typename Other, bool OtherApprox>
-    Transformation& operator=(Transformation<Other, OtherApprox> && other) noexcept {
+    template <typename Other, bool OtherApprox>
+    Transformation &operator=(Transformation<Other, OtherApprox> &&other) noexcept {
         this->storage = std::move(other.storage);
         return *this;
     }
@@ -115,7 +116,7 @@ class Transformation {
      * transformation object. Parameters are rotation, then translation
      * @return a reference to `*this`
      */
-    template<typename VType>
+    template <typename VType>
     Transformation &setFromExpMap(const Eigen::MatrixBase<VType> &se3_vector);
 
     /** Sets from a Transformation matrix.
@@ -133,14 +134,14 @@ class Transformation {
      */
     Transformation &normalizeMaybe(double tolerance);
 
-    template<typename Other, bool O_approx>
-    static void interpolate(const Transformation &T_k,
-                           const Transformation &T_kp1,
-                           const Vec6 &twist_k,
-                           const Vec6 &twist_kp1,
-                           const Eigen::Matrix<double, 6, 12> &hat,
-                           const Eigen::Matrix<double, 6, 12> &candle,
-                           Transformation<Other, O_approx> &T_int);
+    template <typename InType, typename Other, bool InApprox, bool O_approx>
+    static void interpolate(const Transformation<InType, InApprox> &T_k,
+                            const Transformation<InType, InApprox> &T_kp1,
+                            const Vec6 &twist_k,
+                            const Vec6 &twist_kp1,
+                            const Eigen::Matrix<double, 6, 12> &hat,
+                            const Eigen::Matrix<double, 6, 12> &candle,
+                            Transformation<Other, O_approx> &T_int);
 
     /**
      * Returns an interpolated tranform at time t where t is between t_k and t_kp1.
@@ -153,18 +154,18 @@ class Transformation {
      * @param candle: second interpolation factor
      * @return Transformation at time t
      */
-    template<typename Other, bool O_approx>
-    static void interpolateAndJacobians(const Transformation &T_k,
-                                      const Transformation &T_kp1,
-                                      const Vec6 &twist_k,
-                                      const Vec6 &twist_kp1,
-                                      const Eigen::Matrix<double, 6, 12> &hat,
-                                      const Eigen::Matrix<double, 6, 12> &candle,
-                                      Transformation<Other, O_approx> &Tint,
-                                      Mat6 &J_Tk,
-                                      Mat6 &J_Tkp1,
-                                      Mat6 &J_twist_k,
-                                      Mat6 &J_twist_kp1);
+    template <typename InType, typename Other, bool InApprox, bool O_approx>
+    static void interpolateAndJacobians(const Transformation<InType, InApprox> &T_k,
+                                        const Transformation<InType, InApprox> &T_kp1,
+                                        const Vec6 &twist_k,
+                                        const Vec6 &twist_kp1,
+                                        const Eigen::Matrix<double, 6, 12> &hat,
+                                        const Eigen::Matrix<double, 6, 12> &candle,
+                                        Transformation<Other, O_approx> &Tint,
+                                        Mat6 &J_Tk,
+                                        Mat6 &J_Tkp1,
+                                        Mat6 &J_twist_k,
+                                        Mat6 &J_twist_kp1);
 
     /** Returns the se3 Lie algebra parameters for this rotation.
      * @return the vector @f$ w @f$ given by
@@ -185,7 +186,7 @@ class Transformation {
      * @param[in]TOL Tolerance to switch between exact and taylor approximation (avoids singularity at zero)
      * @f$ W @f$.
      */
-    template<typename VType, typename MType>
+    template <typename VType, typename MType>
     static void expMap(const Eigen::MatrixBase<VType> &W, Eigen::MatrixBase<MType> &retval);
 
     /**
@@ -231,9 +232,17 @@ class Transformation {
      * @param V vector
      * @return V^
      */
-    static Mat3 skewSymmetric3(const Vec3 &V);
+    template <typename Derived, typename OtherDerived>
+    static void skewSymmetric3(const Eigen::MatrixBase<Derived> &V, Eigen::MatrixBase<OtherDerived> &retval);
 
-    static Mat6 skewSymmetric6(const Vec6 &W);
+    template <typename Derived, typename OtherDerived>
+    static void skewSymmetric3(const Eigen::MatrixBase<Derived> &V, Eigen::MatrixBase<OtherDerived> &&retval);
+
+    template <typename Derived>
+    static Mat3 skewSymmetric3(const Eigen::MatrixBase<Derived> &V);
+
+    template <typename Derived, typename OtherDerived>
+    static void skewSymmetric6(const Eigen::MatrixBase<Derived> &W, Eigen::MatrixBase<OtherDerived> &retval);
 
     /**
      * Returns the approximate Jacobian of an interpolated transform wrt to
@@ -262,7 +271,7 @@ class Transformation {
      */
     Vec3 transform(const Vec3 &input_vector) const;
 
-    template<typename IP_T, typename OP_T>
+    template <typename IP_T, typename OP_T>
     void transform(const Eigen::MatrixBase<IP_T> &ip_vec, Eigen::MatrixBase<OP_T> &op_vec) const;
 
     /** Rotates the input vector and calculate Jacobians.
@@ -274,7 +283,11 @@ class Transformation {
      * rotation
      * @return the rotated vector as given by `rotate()`.
      */
-    Vec3 transformAndJacobian(const Vec3 &input_vector, Mat3 &Jpoint, Eigen::Matrix<double, 3, 6> &Jparam) const;
+    template <typename IP_T, typename OP_T, typename M_T1, typename M_T2>
+    void transformAndJacobian(const Eigen::MatrixBase<IP_T> &input_vector,
+                              Eigen::MatrixBase<OP_T> &output_vector,
+                              Eigen::MatrixBase<M_T1> &Jpoint,
+                              Eigen::MatrixBase<M_T2> &Jparam) const;
 
     /** transforms the input vector by the inverse of this transformation.
      *
@@ -285,8 +298,8 @@ class Transformation {
      */
     Vec3 inverseTransform(const Vec3 &input_vector) const;
 
-    template<typename IP_T, typename OP_T>
-    void inverseTransform(const Eigen::MatrixBase<IP_T>& ip_vec, Eigen::MatrixBase<OP_T>& op_vec) const;
+    template <typename IP_T, typename OP_T>
+    void inverseTransform(const Eigen::MatrixBase<IP_T> &ip_vec, Eigen::MatrixBase<OP_T> &op_vec) const;
 
     /** Invert the transformation in place. */
     Transformation &invert();
@@ -295,8 +308,10 @@ class Transformation {
      * Return the inverse of the transformation matrix, while preserving original
      * @return the inverse of the transformation object;
      */
-    template<bool approx = false>
-    Transformation transformInverse() const;
+    template <typename T_OUT, bool approx>
+    void transformInverse(Transformation<T_OUT, approx> &T_inv) const;
+
+    Transformation<Mat34, true> transformInverse() const;
 
     /** Checks if the input transformation is sufficiently close to this transformation
      *
@@ -326,7 +341,7 @@ class Transformation {
      * T \boxplus \omega = exp(\omega)T
      * @f]
      */
-    template<typename VType>
+    template <typename VType>
     Transformation &manifoldPlus(const Eigen::MatrixBase<VType> &omega);
 
     /** Calculates the result of the manifold-minus operation @f$ \boxminus @f$.
@@ -340,7 +355,7 @@ class Transformation {
      * @f]
      * where @f$ T_t @f$ corresponds to the rotation of **this** object.
      */
-    template<typename Other, bool OtherApprox>
+    template <typename Other, bool OtherApprox>
     Vec6 manifoldMinus(const Transformation<Other, OtherApprox> &R) const;
 
     /** Same as manifoldMinus, except also computes the Jacobians with respect
@@ -356,6 +371,9 @@ class Transformation {
      */
     Vec6 manifoldMinusAndJacobian(const Transformation &T, Mat6 &J_left, Mat6 &J_right) const;
 
+    template <typename Other, typename OutT>
+    void compose(const Other &T_Right, OutT &T_out) const;
+
     /** Composes two transformations and computes the Jacobians wrt the left
      * and right transformations:
      * @f$ T_{out} = T_{left}*T_{right} @f$  Note that **this** transformation
@@ -369,8 +387,10 @@ class Transformation {
      * @f$ T_{right} @f$, which is also the input transformation.
      * @return The resulting composition @f$ T_{out} @f$.
      */
-    template<typename Other, bool approx = approximate>
-    Transformation<T_str, approximate> composeAndJacobian(const Transformation<Other, approx> &T_right, Mat6 &J_left, Mat6 &J_right) const;
+    template <typename Other, bool approx = approximate>
+    Transformation<T_str, approximate> composeAndJacobian(const Transformation<Other, approx> &T_right,
+                                                          Mat6 &J_left,
+                                                          Mat6 &J_right) const;
 
     /** Compute the inverse of **this** transformation and computes the Jacobian
      * of the inverse mapping wrt **this** transformation.
@@ -389,22 +409,12 @@ class Transformation {
     /** @return the 4x4 transformation matrix */
     Mat4 getMatrix() const;
 
-    /** @return a reference to the internal matrix object **/
-    T_str &getInternalMatrix() {
-        return this->storage.data();
-    };
-
     /** Implements transformation composition. */
-    template<typename Other, bool OtherApprox>
-    Transformation operator*(const Transformation<Other, OtherApprox> &T) const;
+    template <typename Other, bool OtherApprox>
+    Transformation<Mat34, approximate> operator*(const Transformation<Other, OtherApprox> &T) const;
 
     /** Overload operator for manifold - */
     Vec6 operator-(const Transformation &T) const;
-
-    /** Create deep copy function */
-//    template<typename Other, bool OtherApprox>
-//    Transformation &deepCopy(const Transformation<Other, OtherApprox> &T);
-
 };
 }
 

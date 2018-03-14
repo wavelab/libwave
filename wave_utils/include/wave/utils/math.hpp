@@ -38,6 +38,8 @@ typedef Eigen::Matrix<double, 5, 5> Mat5;
 typedef Eigen::Matrix<double, 6, 6> Mat6;
 typedef Eigen::MatrixXd MatX;
 
+typedef Eigen::Matrix<double, 3, 4> Mat34;
+
 typedef Eigen::Affine3d Affine3;
 
 typedef Eigen::Quaterniond Quaternion;

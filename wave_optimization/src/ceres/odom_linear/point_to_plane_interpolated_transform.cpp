@@ -29,8 +29,8 @@ SE3PointToPlane::SE3PointToPlane(const double *const p,
 }
 
 bool SE3PointToPlane::Evaluate(double const *const *parameters, double *residuals, double **jacobians) const {
-    auto tk_ptr = std::make_shared<Eigen::Map<const Eigen::Matrix<double, 3, 4>>>(parameters[0], 3, 4);
-    Transformation<Eigen::Map<const Eigen::Matrix<double, 3, 4>>> Tk(tk_ptr);
+    Eigen::Map<const Mat34> Tmap(parameters[0], 3, 4);
+    Transformation<Eigen::Map<const Mat34>> Tk(Tmap);
 
     Transformation<Eigen::Matrix<double, 3, 4>> interpolated;
 
