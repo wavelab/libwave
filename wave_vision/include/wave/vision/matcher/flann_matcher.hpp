@@ -23,8 +23,8 @@ namespace wave {
 namespace FLANN {
 /** There are several methods available in OpenCV to perform matching using
  *  FLANN. Currently, only the KDTree, KMeans, and Composite algorithms have
- *  been implemented. TODO: Add the remaining algorithms (Autotuned,
- *  Heirarchical Clustering, etc.).
+ *  been implemented.
+ *  TODO: Add the remaining algorithms (Autotuned,Heirarchical Clustering, etc)
  *
  *  KDTree: The default method. This uses parallel kd-trees to separate
  *  keypoint descriptors, and  can then search the tree in order to determine
@@ -48,18 +48,18 @@ namespace FLANN {
  *  [LSH]: http://www.cs.princeton.edu/cass/papers/mplsh_vldb07.pdf
  */
 enum { KDTree = 1, KMeans = 2, Composite = 3, LSH = 4 };
-}
+}  // namespace FLANN
 
 struct FLANNMatcherParams {
-    FLANNMatcherParams() {}
+    FLANNMatcherParams() = default;
 
     /** Constructor with user selected values. Only to be used if the user
      *  desires the ratio test as the first pass to filter outliers.
      */
-    FLANNMatcherParams(int flann_method,
-                       double ratio_threshold,
-                       bool auto_remove_outliers,
-                       int fm_method)
+    FLANNMatcherParams(const int flann_method,
+                       const double ratio_threshold,
+                       const bool auto_remove_outliers,
+                       const int fm_method)
         : flann_method(flann_method),
           use_knn(true),
           ratio_threshold(ratio_threshold),
@@ -69,10 +69,10 @@ struct FLANNMatcherParams {
     /** Overloaded method. Only to be used if the user desires the distance
      *  threshold test as the first pass to filter outliers.
      */
-    FLANNMatcherParams(int flann_method,
-                       int distance_threshold,
-                       bool auto_remove_outliers,
-                       int fm_method)
+    FLANNMatcherParams(const int flann_method,
+                       const int distance_threshold,
+                       const bool auto_remove_outliers,
+                       const int fm_method)
         : flann_method(flann_method),
           use_knn(false),
           distance_threshold(distance_threshold),
@@ -83,7 +83,7 @@ struct FLANNMatcherParams {
      *
      *  @param config_path the path to the location of the configuration file.
      */
-    FLANNMatcherParams(const std::string &config_path);
+    explicit FLANNMatcherParams(const std::string &config_path);
 
     /** The FLANN method to use (described in the FLANN namespace). As a note,
      *  currently selecting a method will set up the FLANN matcher with
@@ -231,7 +231,7 @@ class FLANNMatcher : public DescriptorMatcher {
       cv::Mat &descriptors_2,
       const std::vector<cv::KeyPoint> &keypoints_1,
       const std::vector<cv::KeyPoint> &keypoints_2,
-      cv::InputArray mask = cv::noArray()) const override;
+      cv::InputArray mask = cv::noArray()) override;
 
  private:
     /** The pointer to the wrapped cv::FlannBasedMatcher object */

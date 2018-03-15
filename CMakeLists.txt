@@ -51,6 +51,8 @@ FIND_PACKAGE(yaml-cpp REQUIRED)
 FIND_PACKAGE(Ceres 1.13)
 FIND_PACKAGE(GTSAM)
 FIND_PACKAGE(PythonLibs 2.7 REQUIRED)
+FIND_PACKAGE(GeographicLib 1.49)
+
 # Where dependencies do not provide IMPORTED targets, define them
 INCLUDE(cmake/ImportEigen3.cmake)
 INCLUDE(cmake/ImportBoost.cmake)
@@ -104,10 +106,11 @@ ADD_SUBDIRECTORY(wave_benchmark)
 ADD_SUBDIRECTORY(wave_controls)
 ADD_SUBDIRECTORY(wave_kinematics)
 ADD_SUBDIRECTORY(wave_matching)
-ADD_SUBDIRECTORY(wave_vision)
+#ADD_SUBDIRECTORY(wave_vision)
 ADD_SUBDIRECTORY(wave_optimization)
 ADD_SUBDIRECTORY(wave_odometry)
 ADD_SUBDIRECTORY(wave_gtsam)
+ADD_SUBDIRECTORY(wave_geography)
 
 # Documentation
 SET(WAVE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})

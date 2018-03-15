@@ -4,17 +4,13 @@
 namespace wave {
 
 SE3PointToLineGPRed::SE3PointToLineGPRed(const double *const p,
-                                   const double *const pA,
-                                   const double *const pB,
-                                   const Eigen::Matrix<double, 6, 12> &hat,
-                                   const Eigen::Matrix<double, 6, 12> &candle,
-                                   const Mat3 &CovZ,
-                                   bool calculate_weight)
-    : pt(p),
-      ptA(pA),
-      ptB(pB),
-      hat(hat),
-      candle(candle) {
+                                         const double *const pA,
+                                         const double *const pB,
+                                         const Eigen::Matrix<double, 6, 12> &hat,
+                                         const Eigen::Matrix<double, 6, 12> &candle,
+                                         const Mat3 &CovZ,
+                                         bool calculate_weight)
+    : pt(p), ptA(pA), ptB(pB), hat(hat), candle(candle) {
     this->JP_T.setZero();
     this->JP_T.block<3, 3>(0, 3).setIdentity();
 
@@ -56,7 +52,8 @@ SE3PointToLineGPRed::SE3PointToLineGPRed(const double *const p,
     auto v = unitdiff.cross(unitz);
     auto s = v.norm();
     auto c = unitz.dot(unitdiff);
-    auto skew = Transformation<void>::skewSymmetric3(v);
+    Mat3 skew;
+    Transformation<>::skewSymmetric3(v, skew);
     this->rotation = Eigen::Matrix3d::Identity() + skew + skew * skew * ((1 - c) / (s * s));
 
     this->Jres_P = this->rotation * this->Jres_P;
@@ -70,19 +67,30 @@ SE3PointToLineGPRed::SE3PointToLineGPRed(const double *const p,
 }
 
 bool SE3PointToLineGPRed::Evaluate(double const *const *parameters, double *residuals, double **jacobians) const {
-    auto tk_ptr = std::make_shared<Eigen::Map<const Eigen::Matrix<double, 3, 4>>>(parameters[0], 3, 4);
-    auto tkp1_ptr = std::make_shared<Eigen::Map<const Eigen::Matrix<double, 3, 4>>>(parameters[1], 3, 4);
+    Eigen::Map<const Mat34> tk_map(parameters[0], 3, 4);
+    Eigen::Map<const Mat34> tkp1_map(parameters[1], 3, 4);
 
-    Transformation<Eigen::Map<const Eigen::Matrix<double, 3, 4>>, true> Tk(tk_ptr);
-    Transformation<Eigen::Map<const Eigen::Matrix<double, 3, 4>>, true> Tkp1(tkp1_ptr);
+    Transformation<Eigen::Map<const Mat34>, true> Tk(tk_map);
+    Transformation<Eigen::Map<const Mat34>, true> Tkp1(tkp1_map);
 
     Eigen::Map<const Vec6> vel_k(parameters[2], 6, 1);
 
     if (jacobians) {
-        this->T_current = Transformation<Eigen::Map<const Eigen::Matrix<double, 3, 4>>, true>::interpolateAndJacobians(Tk, Tkp1, vel_k, vel_k, this->hat, this->candle,
-            this->JT_Ti, this->JT_Tip1, this->JT_Wi, this->JT_Wip1);
+        Transformation<Eigen::Map<const Eigen::Matrix<double, 3, 4>>, true>::interpolateAndJacobians(
+          Tk,
+          Tkp1,
+          vel_k,
+          vel_k,
+          this->hat,
+          this->candle,
+          this->T_current,
+          this->JT_Ti,
+          this->JT_Tip1,
+          this->JT_Wi,
+          this->JT_Wip1);
     } else {
-        this->T_current = Transformation<Eigen::Map<const Eigen::Matrix<double, 3, 4>>, true>::interpolate(Tk, Tkp1, vel_k, vel_k, this->hat, this->candle);
+        Transformation<Eigen::Map<const Eigen::Matrix<double, 3, 4>>, true>::interpolate(
+          Tk, Tkp1, vel_k, vel_k, this->hat, this->candle, this->T_current);
     }
 
     Eigen::Map<const Vec3> PT(this->pt, 3, 1);
@@ -102,29 +110,29 @@ bool SE3PointToLineGPRed::Evaluate(double const *const *parameters, double *resi
     reduced = this->weight_matrix * (this->rotation * (point - pt_Tl)).block<2, 1>(0, 0);
 
     if (jacobians != nullptr) {
-        this->JP_T(0,1) = point(2);
-        this->JP_T(0,2) = -point(1);
-        this->JP_T(1,0) = -point(2);
-        this->JP_T(1,2) = point(0);
-        this->JP_T(2,0) = point(1);
-        this->JP_T(2,1) = -point(0);
+        this->JP_T(0, 1) = point(2);
+        this->JP_T(0, 2) = -point(1);
+        this->JP_T(1, 0) = -point(2);
+        this->JP_T(1, 2) = point(0);
+        this->JP_T(2, 0) = point(1);
+        this->JP_T(2, 1) = -point(0);
 
         // Jres_P already has rotation incorporated during construction
         this->Jr_T = this->Jres_P * this->JP_T;
 
         if (jacobians[0]) {
             Eigen::Map<Eigen::Matrix<double, 2, 12, Eigen::RowMajor>> Jr_Tk(jacobians[0], 2, 12);
-            Jr_Tk.block<2,6>(0,0) = this->weight_matrix * this->Jr_T.block<2,6>(0,0) * this->JT_Ti;
+            Jr_Tk.block<2, 6>(0, 0) = this->weight_matrix * this->Jr_T.block<2, 6>(0, 0) * this->JT_Ti;
             Jr_Tk.block<2, 6>(0, 6).setZero();
         }
         if (jacobians[1]) {
             Eigen::Map<Eigen::Matrix<double, 2, 12, Eigen::RowMajor>> Jr_Tkp1(jacobians[1], 2, 12);
-            Jr_Tkp1.block<2,6>(0,0) = this->weight_matrix * this->Jr_T.block<2,6>(0,0) * this->JT_Tip1;
+            Jr_Tkp1.block<2, 6>(0, 0) = this->weight_matrix * this->Jr_T.block<2, 6>(0, 0) * this->JT_Tip1;
             Jr_Tkp1.block<2, 6>(0, 6).setZero();
         }
         if (jacobians[2]) {
             Eigen::Map<Eigen::Matrix<double, 2, 6, Eigen::RowMajor>> jac_map(jacobians[2], 2, 6);
-            jac_map = this->weight_matrix * this->Jr_T.block<2,6>(0,0) * (this->JT_Wi + this->JT_Wip1);
+            jac_map = this->weight_matrix * this->Jr_T.block<2, 6>(0, 0) * (this->JT_Wi + this->JT_Wip1);
         }
     }
 

@@ -20,8 +20,8 @@ double norm(const std::vector<double> &vec) {
 }
 
 LaserOdom::LaserOdom(const LaserOdomParams params) : param(params) {
-    google::InitGoogleLogging("laser_odometry");
-    google::SetLogDestination(google::INFO, "/tmp");
+//    google::InitGoogleLogging("laser_odometry");
+//    google::SetLogDestination(google::INFO, "/home/bapskiko/glogs");
     this->CSVFormat = new Eigen::IOFormat(Eigen::FullPrecision, Eigen::DontAlignCols, ", ", ", ");
 
     auto n_ring = static_cast<size_t>(param.n_ring);
@@ -37,7 +37,7 @@ LaserOdom::LaserOdom(const LaserOdomParams params) : param(params) {
     this->kernels.at(3) = std::make_shared<Eigen::Tensor<double, 1>>(11);
     this->kernels.at(3)->setConstant(1.0);
     this->kernels.at(4) = std::make_shared<Eigen::Tensor<double, 1>>(11);
-    this->kernels.at(5)->setConstant(1.0);
+    this->kernels.at(4)->setConstant(1.0);
 
     this->range_sensor = std::make_shared<RangeSensor>(param.sensor_params);
 
@@ -108,7 +108,9 @@ LaserOdom::LaserOdom(const LaserOdomParams params) : param(params) {
         Trajectory unit;
         Trajectory unit2;
         unit2.pose.setIdentity();
+        unit2.vel.setZero();
         unit.pose.setIdentity();
+        unit.vel.setZero();
         this->current_twist.setZero();
         this->prior_twist.setZero();
         this->cur_trajectory.emplace_back(unit);
@@ -122,7 +124,6 @@ LaserOdom::LaserOdom(const LaserOdomParams params) : param(params) {
                                          this->param.inv_Qc);
         }
     }
-
     this->sqrtinfo.setIdentity();
 
     if (params.visualize) {
@@ -138,23 +139,15 @@ LaserOdom::LaserOdom(const LaserOdomParams params) : param(params) {
         this->file.open(std::to_string(timestamp) + "laser_odom_traj.txt");
     }
 
-    this->covariance_blocks.emplace_back(
-      std::make_pair(this->cur_trajectory.back().pose.getInternalMatrix().derived().data(),
-                     this->cur_trajectory.back().pose.getInternalMatrix().derived().data()));
-    this->covariance_blocks.emplace_back(std::make_pair(
-      this->cur_trajectory.back().pose.getInternalMatrix().derived().data(), this->current_twist.data()));
-    this->covariance_blocks.emplace_back(
-      std::make_pair(this->current_twist.data(), this->current_twist.data()));
-
-    this->output_eigen.resize(6*(1 + this->param.num_trajectory_states));
+    this->output_eigen.resize(6 * (1 + this->param.num_trajectory_states));
 }
 
 /// tau is the time of the point
 void LaserOdom::getTransformIndices(const uint32_t &tick, uint32_t &start, uint32_t &end, double &tau) {
     // This will round down to provide first transform index
-    start = ((tick * (param.num_trajectory_states - 1)) / param.max_ticks);
+    start = ((tick * (param.num_trajectory_states - 1)) / (param.max_ticks * this->param.n_window));
     end = start + 1;
-    tau = (tick * this->param.scan_period) / (this->param.max_ticks);
+    tau = (tick * this->param.scan_period) / (this->param.max_ticks * this->param.n_window);
 }
 
 void LaserOdom::flagNearbyPoints(const unlong f_idx, const unlong ring, const unlong p_idx) {
@@ -172,8 +165,8 @@ void LaserOdom::flagNearbyPoints(const unlong f_idx, const unlong ring, const un
     }
 }
 
-void LaserOdom::TransformToMap(
-        const double *const pt, const uint16_t tick, double *output, uint32_t &k, uint32_t &kp1, double &tau) {
+void LaserOdom::transformToMap(
+        const double *const pt, const uint32_t tick, double *output, uint32_t &k, uint32_t &kp1, double &tau) {
     this->getTransformIndices(tick, k, kp1, tau);
 
     Eigen::Matrix<double, 12, 12> hat, candle;
@@ -181,19 +174,27 @@ void LaserOdom::TransformToMap(
     this->cv_vector.at(k).calculateStuff(hat, candle);
 
     T_TYPE T_MAP_LIDAR_i;
-    T_MAP_LIDAR_i = T_MAP_LIDAR_i.interpolate(this->cur_trajectory.at(k).pose,
-                                      this->cur_trajectory.at(kp1).pose,
-                                      this->current_twist,
-                                      this->current_twist,
-                                      hat.block<6, 12>(0, 0),
-                                      candle.block<6, 12>(0, 0));
+    T_MAP_LIDAR_i.interpolate(this->cur_trajectory.at(k).pose,
+                                              this->cur_trajectory.at(kp1).pose,
+                                              this->cur_trajectory.at(k).vel,
+                                              this->cur_trajectory.at(kp1).vel,
+                                              hat.block<6, 12>(0, 0),
+                                              candle.block<6, 12>(0, 0),
+                                              T_MAP_LIDAR_i);
 
     Eigen::Map<const Vec3> LIDAR_i_P(pt, 3, 1);
     Eigen::Map<Vec3> MAP_P(output, 3, 1);
     T_MAP_LIDAR_i.transform(LIDAR_i_P, MAP_P);
 }
 
-void LaserOdom::transformToMap(const double *const pt, const uint16_t tick, double *output) {
+void LaserOdom::transformToMap(const double *const pt, const uint32_t tick, double *output) {
+    uint32_t k, kp1;
+    double tau;
+
+    this->transformToMap(pt, tick, output, k, kp1, tau);
+}
+
+void LaserOdom::transformToCurLidar(const double *const pt, const uint32_t tick, double *output) {
     uint32_t k, kp1;
     double tau;
     this->getTransformIndices(tick, k, kp1, tau);
@@ -203,43 +204,22 @@ void LaserOdom::transformToMap(const double *const pt, const uint16_t tick, doub
     this->cv_vector.at(k).calculateStuff(hat, candle);
 
     T_TYPE T_MAP_LIDAR_i;
-    T_MAP_LIDAR_i = T_MAP_LIDAR_i.interpolate(this->cur_trajectory.at(k).pose,
-                                      this->cur_trajectory.at(kp1).pose,
-                                      this->current_twist,
-                                      this->current_twist,
-                                      hat.block<6, 12>(0, 0),
-                                      candle.block<6, 12>(0, 0));
-
-    Eigen::Map<const Vec3> LIDAR_i_P(pt, 3, 1);
-    Eigen::Map<Vec3> MAP_P(output, 3, 1);
-    T_MAP_LIDAR_i.transform(LIDAR_i_P, MAP_P);
-}
-
-void LaserOdom::transformToCurLidar(const double *const pt, const uint16_t tick, double *output) {
-    uint32_t k, kp1;
-    double tau;
-    this->getTransformIndices(tick, k, kp1, tau);
-
-    Eigen::Matrix<double, 12, 12> hat, candle;
-    this->cv_vector.at(k).tau = &tau;
-    this->cv_vector.at(k).calculateStuff(hat, candle);
-
-    T_TYPE T_MAP_LIDAR_i;
-    T_MAP_LIDAR_i = T_MAP_LIDAR_i.interpolate(this->cur_trajectory.at(k).pose,
-                                      this->cur_trajectory.at(kp1).pose,
-                                      this->current_twist,
-                                      this->current_twist,
-                                      hat.block<6, 12>(0, 0),
-                                      candle.block<6, 12>(0, 0));
+    T_MAP_LIDAR_i.interpolate(this->cur_trajectory.at(k).pose,
+                                              this->cur_trajectory.at(kp1).pose,
+                                              this->cur_trajectory.at(k).vel,
+                                              this->cur_trajectory.at(kp1).vel,
+                                              hat.block<6, 12>(0, 0),
+                                              candle.block<6, 12>(0, 0),
+                                              T_MAP_LIDAR_i);
 
     Eigen::Map<const Vec3> LIDAR_I_P(pt, 3, 1);
     Eigen::Map<Vec3> LIDAR_END_P(output, 3, 1);
 
     auto &T_MAP_LIDAR_END = this->cur_trajectory.back().pose;
 
-    (T_MAP_LIDAR_END.inverse() * T_MAP_LIDAR_i).transform(LIDAR_I_P, LIDAR_END_P);
+    (T_MAP_LIDAR_END.transformInverse() * T_MAP_LIDAR_i).transform(LIDAR_I_P, LIDAR_END_P);
 
-//    transform.inverseTransform(Vecpt, op_map);
+    //    transform.inverseTransform(Vecpt, op_map);
 }
 
 float LaserOdom::l2sqrd(const PCLPointXYZIT &p1, const PCLPointXYZIT &p2) {
@@ -348,12 +328,12 @@ void LaserOdom::undistort() {
                 auto &corr_list = this->feature_corrs.at(j).at(r_idx).at(c_idx);
                 std::vector<double> undis(3 * (corr_list.size() + 1));
 
-                //putting the undistorted point into the end of the vector
+                // putting the undistorted point into the end of the vector
                 this->transformToCurLidar(&(this->feature_points.at(j).at(r_idx).at(corr_list.at(0)).pt[0]),
                                           this->feature_points.at(j).at(r_idx).at(corr_list.at(0)).tick,
                                           &(undis[undis.size() - 3]));
 
-                //putting uncorrection point into vector
+                // putting uncorrection point into vector
                 memcpy(undis.data(), this->feature_points.at(j).at(r_idx).at(corr_list.at(0)).pt, 24);
 
                 for (uint32_t k = 1; k < corr_list.size(); k++) {
@@ -398,8 +378,9 @@ void LaserOdom::undistort() {
 }
 
 void LaserOdom::copyTrajectory() {
-    for(uint32_t i = 0; i < this->param.num_trajectory_states; i++) {
-        this->prev_trajectory.at(i).pose.matrix->derived() = this->cur_trajectory.at(i).pose.matrix->derived();
+    for (uint32_t i = 0; i < this->param.num_trajectory_states; i++) {
+        this->prev_trajectory.at(i).pose = this->cur_trajectory.at(i).pose;
+        this->prev_trajectory.at(i).vel = this->cur_trajectory.at(i).vel;
     }
     this->previous_twist = this->current_twist;
 }
@@ -411,32 +392,67 @@ void LaserOdom::applyRemap() {
     VecX cur_diff;
     uint32_t offset = 0;
     if (this->param.lock_first) {
-        cur_diff.resize(this->param.num_trajectory_states * 6, 1);
-        cur_diff.block<6,1>((this->param.num_trajectory_states-1) * 6,0) = this->current_twist - this->previous_twist;
+        cur_diff.resize((this->param.num_trajectory_states - 1) * 12, 1);
         offset = 1;
     } else {
-        cur_diff.resize(this->param.num_trajectory_states * 6 + 6, 1);
-        cur_diff.block<6,1>(this->param.num_trajectory_states * 6,0) = this->current_twist - this->previous_twist;
+        cur_diff.resize(this->param.num_trajectory_states * 12, 1);
     }
 
-    for(uint32_t i =0; i + offset< this->param.num_trajectory_states; i++) {
-        cur_diff.block<6,1>(6*i, 0) = this->cur_trajectory.at(i+offset).pose.manifoldMinus(
-                this->prev_trajectory.at(i+offset).pose);
+    for (uint32_t i = 0; i + offset < this->param.num_trajectory_states; i++) {
+        cur_diff.block<6, 1>(12 * i, 0) =
+          this->cur_trajectory.at(i + offset).pose.manifoldMinus(this->prev_trajectory.at(i + offset).pose);
+        cur_diff.block<6, 1>(12 * i + 6, 0) =
+          this->cur_trajectory.at(i + offset).vel - this->prev_trajectory.at(i + offset).vel;
     }
-    VecX mapped_diff = this->proj_mat * cur_diff;
 
-    for(uint32_t i=0; i + offset< this->param.num_trajectory_states; i++) {
-        this->cur_trajectory.at(i + offset).pose.matrix->derived() =
-                this->prev_trajectory.at(i + offset).pose.matrix->derived();
-        this->cur_trajectory.at(i + offset).pose.manifoldPlus(mapped_diff.block<6,1>(6*i, 0));
+    if (this->param.plot_stuff) {
+        plotMat(this->covar);
+        MatX info = this->covar.inverse();
+        plotMat(info);
+        Eigen::SelfAdjointEigenSolver<MatX> eigs(info);
+        plotVec(eigs.eigenvalues(), true);
+        plotMat(eigs.eigenvectors());
     }
-    this->current_twist = this->previous_twist + mapped_diff.block<6,1>(6*(this->param.num_trajectory_states - offset),0);
+
+    MatX AtA = this->covar.inverse();
+
+    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigs(AtA);
+
+    long cnt = 0;
+    while (eigs.eigenvalues()(cnt) < this->param.min_eigen) {
+        cnt++;
+        if (cnt == eigs.eigenvectors().rows())
+            break;
+    }
+
+    Eigen::MatrixXd Vu = eigs.eigenvectors().transpose();
+    Vu.block(0, 0, cnt, Vu.cols()).setZero();
+    MatX proj_mat = eigs.eigenvectors().transpose().inverse() * Vu;
+
+    VecX mapped_diff = proj_mat * cur_diff;
+
+    if(this->param.plot_stuff) {
+        plotVec(cur_diff, true);
+        plotVec(mapped_diff, true);
+    }
+
+    for (uint32_t i = 0; i + offset < this->param.num_trajectory_states; i++) {
+        this->cur_trajectory.at(i + offset).pose =
+          this->prev_trajectory.at(i + offset).pose;
+        this->cur_trajectory.at(i + offset).pose.manifoldPlus(mapped_diff.block<6, 1>(12 * i, 0));
+
+        this->cur_trajectory.at(i + offset).vel = this->cur_trajectory.at(i + offset).vel +
+                                                  mapped_diff.block<6,1>(12 * i + 6, 0);
+    }
+
+    // set previous to current trajector to update operating point
+    this->copyTrajectory();
 }
 
 // For annoying clamping function
 namespace {
 
-inline double clampToRange(const float& ip, const float& min, const float& max) {
+inline double clampToRange(const float ip, const float min, const float max) {
     if (ip > max) {
         return (double) max;
     }
@@ -445,11 +461,18 @@ inline double clampToRange(const float& ip, const float& min, const float& max) 
     }
     return (double) ip;
 }
-
 }
 
 void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, TimeType stamp) {
-    if ((tick - this->prv_tick) < -200) {  // tolerate minor nonlinearity error
+    static uint32_t n_scan_in_batch = 0;
+    bool trigger = false;
+    if (tick - this->prv_tick < -200) {
+        n_scan_in_batch = (n_scan_in_batch + 1)%this->param.n_window;
+        if (n_scan_in_batch == 0) {
+            trigger = true;
+        }
+    }
+    if (trigger) {  // tolerate minor nonlinearity error
         this->generateFeatures();          // generate features on the current scan
         if (this->initialized) {           // there is a set of previous features from
                                            // last scan
@@ -458,15 +481,12 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
 
             for (int i = 0; i < this->param.opt_iters; i++) {
                 if (i > 0) {
-                    memcpy(last_transform.getInternalMatrix().derived().data(),
-                           ref.getInternalMatrix().derived().data(),
+                    memcpy(last_transform.storage.data(),
+                           ref.storage.data(),
                            96);
                 }
                 if (!this->match()) {
                     return;
-                }
-                if (this->param.solution_remapping) {
-                    this->applyRemap();
                 }
                 if (i > 0) {
                     if (ref.isNear(last_transform, this->param.diff_tol)) {
@@ -476,7 +496,7 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
             }
 
             if (this->param.output_trajectory) {
-                this->file << this->cur_trajectory.back().pose.getInternalMatrix().format(*(this->CSVFormat))
+                this->file << this->cur_trajectory.back().pose.storage.format(*(this->CSVFormat))
                            << std::endl;
             }
             if (this->param.visualize) {
@@ -490,8 +510,8 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
                         LOG_ERROR("Overwriting previous output");
                     }
                     this->undistorted_stamp = this->prv_time;
-                    this->undistort_transform.deepCopy(this->cur_trajectory.back().pose);
-                    memcpy(this->undistort_velocity.data(), this->current_twist.data(), 48);
+                    this->undistort_transform = this->cur_trajectory.back().pose;
+                    memcpy(this->undistort_velocity.data(), this->cur_trajectory.back().vel.data(), 48);
 
                     this->undistort();
                     this->fresh_output = true;
@@ -508,13 +528,12 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
         p.y = pt.y;
         p.z = pt.z;
         p.intensity = pt.intensity;
-        p.tick = (uint16_t) tick;
+        p.tick = tick + n_scan_in_batch * this->param.max_ticks;
         float range = std::sqrt(l2sqrd(p));
-        if (range > 3.0) {
-            this->cur_scan.at(pt.ring).push_back(this->applyIMU(p));
-            this->signals[0].at(pt.ring).push_back((double) range);
-            this->signals[1].at(pt.ring).push_back(clampToRange(p.intensity, this->param.min_intensity, this->param.max_intensity));
-        }
+        this->cur_scan.at(pt.ring).push_back(this->applyIMU(p));
+        this->signals[0].at(pt.ring).push_back((double) range);
+        this->signals[1].at(pt.ring).push_back(
+          clampToRange(p.intensity, this->param.min_intensity, this->param.max_intensity));
     }
 
     this->prv_tick = tick;
@@ -589,15 +608,15 @@ void LaserOdom::rollover(TimeType stamp) {
             this->initialized = true;
         }
     }
-    this->prior_twist = this->current_twist;
-    this->inv_prior_pose.deepCopy(this->cur_trajectory.back().pose.inverse());
-//    this->cur_trajectory.front().pose.setIdentity();
-    this->cur_trajectory.front().pose.deepCopy(this->cur_trajectory.back().pose);
+    this->prior_twist = this->cur_trajectory.back().vel;
+    this->cur_trajectory.back().pose.transformInverse(this->inv_prior_pose);
+
+    this->cur_trajectory.front().pose = this->cur_trajectory.back().pose;
 
     for (uint32_t i = 1; i < this->param.num_trajectory_states; i++) {
-        this->cur_trajectory.at(i).pose.deepCopy(this->cur_trajectory.at(i - 1).pose);
+        this->cur_trajectory.at(i).pose = this->cur_trajectory.at(i - 1).pose;
         this->cur_trajectory.at(i).pose.manifoldPlus(
-          (this->param.scan_period / (this->param.num_trajectory_states - 1)) * this->prior_twist);
+          (this->param.scan_period / (this->param.num_trajectory_states - 1)) * this->cur_trajectory.back().vel);
     }
     // Now previous trajectory will hold the "motion generated" trajectory
     this->copyTrajectory();
@@ -613,17 +632,15 @@ void LaserOdom::buildTrees() {
     for (uint32_t i = 0; i < this->N_FEATURES; i++) {
         for (uint32_t j = 0; j < this->prv_feature_points.at(i).points.size(); j++) {
             if (this->feature_association.at(i).at(j).first > 0) {
-//                Vec3 transformed_pt;
+                //                Vec3 transformed_pt;
                 Eigen::Map<const Vec3> Vecpt(this->prv_feature_points.at(i).points.at(j).data(), 3, 1);
-//                this->cur_trajectory.front().pose.transform(Vecpt, transformed_pt);
-//                this->cur_trajectory.back().pose.inverseTransform(Vecpt, transformed_pt);
+                //                this->cur_trajectory.front().pose.transform(Vecpt, transformed_pt);
+                //                this->cur_trajectory.back().pose.inverseTransform(Vecpt, transformed_pt);
                 // Check if feature is within range of map
                 if (l2length(Vecpt.data(), 3) < this->param.local_map_range) {
-//                    memcpy(this->prv_feature_points.at(i).points.at(j).data(), Vecpt.data(), 24);
-                    if (this->feature_association.at(i).at(j).second ==
-                    AssociationStatus::CORRESPONDED) {
-                        this->feature_association.at(i).at(j).second =
-                        AssociationStatus::UNCORRESPONDED;
+                    //                    memcpy(this->prv_feature_points.at(i).points.at(j).data(), Vecpt.data(), 24);
+                    if (this->feature_association.at(i).at(j).second == AssociationStatus::CORRESPONDED) {
+                        this->feature_association.at(i).at(j).second = AssociationStatus::UNCORRESPONDED;
                         this->feature_association.at(i).at(j).first = this->param.TTL;
                     } else {
                         --(this->feature_association.at(i).at(j).first);
@@ -647,7 +664,7 @@ void LaserOdom::buildTrees() {
         for (uint16_t j = 0; j < this->param.n_ring; j++) {
             for (PointXYZIT pt : this->feature_points.at(i).at(j)) {
                 double transformed_pt[3] = {0};
-//                this->transformToCurLidar(pt.pt, pt.tick, transformed_pt);
+                //                this->transformToCurLidar(pt.pt, pt.tick, transformed_pt);
                 this->transformToMap(pt.pt, pt.tick, transformed_pt);
 
                 resultSet.init(&ret_index, &out_dist_sqr);
@@ -672,7 +689,8 @@ void LaserOdom::buildTrees() {
         if (!this->prv_feature_points.at(i).points.empty()) {
             this->feature_idx.at(i)->buildIndex();
         }
-//        LOG_INFO("There are %lu feature type %u in the local map", this->prv_feature_points.at(i).points.size(), i);
+        //        LOG_INFO("There are %lu feature type %u in the local map",
+        //        this->prv_feature_points.at(i).points.size(), i);
     }
 }
 
@@ -730,7 +748,7 @@ bool LaserOdom::outOfBounds(const Vec3 &query, const uint32_t &f_idx, const std:
     Eigen::Map<const Vec3> pA(this->prv_feature_points.at(f_idx).points.at(index.at(0)).data());
     Eigen::Map<const Vec3> pB(this->prv_feature_points.at(f_idx).points.at(index.at(1)).data());
     if (this->feature_definitions.at(f_idx).residual == PointToPlane) {
-        //todo(ben) Get rid of following line
+        // todo(ben) Get rid of following line
         return false;
 
         Eigen::Map<const Vec3> pC(this->prv_feature_points.at(f_idx).points.at(index.at(2)).data());
@@ -768,88 +786,46 @@ bool LaserOdom::outOfBounds(const Vec3 &query, const uint32_t &f_idx, const std:
 
 bool LaserOdom::match() {
     double zero_pt[3] = {0};
-    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> system_jacobian, motion_jacobian;
-    Eigen::Matrix<double, 2, 12> current_jacobian;
-    uint32_t rows = 0;
 
     // set up pointer for evaluating residuals
     const double **parameters;
     parameters = new const double *[4];
     std::vector<double> residuals;
-    double **jacobian;
-    if (this->param.solution_remapping) {
-        system_jacobian.conservativeResize(10000, 6 + 6 * this->param.num_trajectory_states);
-        system_jacobian.setZero();
-        motion_jacobian.conservativeResize(6 + 6 * this->param.num_trajectory_states,
-                                           6 + 6 * this->param.num_trajectory_states);
-        motion_jacobian.setZero();
-        jacobian = new double *[3];
-        jacobian[0] = new double[144];
-        jacobian[1] = new double[144];
-        jacobian[2] = new double[144];
-    }
+
     ceres::Problem problem;
 
     // Add motion residuals
-    // The prior for the pose at the end of the previous trajectory, the prior for twist is the twist at the end of the previous
+    // The prior for the pose at the end of the previous trajectory, the prior for twist is the twist at the end of the
+    // previous
     // trajectory
-//    Transformation<> identity;
+    //    Transformation<> identity;
     if (this->param.motion_prior) {
         this->cv_vector.at(0).calculateLinInvCovariance();
 
         ceres::CostFunction *prior_cost =
-          new TrajectoryPrior<T_TYPE>(this->cv_vector.at(0).inv_covar.sqrt(), this->inv_prior_pose, this->prior_twist);
+                new TrajectoryPrior<T_TYPE>(this->cv_vector.at(0).inv_covar.sqrt(), this->inv_prior_pose,
+                                            this->prior_twist);
 
-        if (this->param.solution_remapping) {
-            parameters[0] = this->cur_trajectory.at(0).pose.getInternalMatrix().derived().data();
-            parameters[1] = this->current_twist.data();
-            residuals.resize(12);
-            prior_cost->Evaluate(parameters, residuals.data(), jacobian);
-            motion_jacobian.block<12, 6>(0, 6*this->param.num_trajectory_states) =
-              Eigen::Map<Eigen::Matrix<double, 12, 6, Eigen::RowMajor>>(jacobian[1]);
-            motion_jacobian.block<12, 6>(0, 0) = Eigen::Map<Eigen::Matrix<double, 12, 12, Eigen::RowMajor>>(jacobian[0]).block<12, 6>(0, 0);
-            if (!motion_jacobian.allFinite()) {
-                throw std::out_of_range("motion_jacobian has naa");
-            }
-        }
         problem.AddResidualBlock(prior_cost,
                                  nullptr,
-                                 this->cur_trajectory.at(0).pose.getInternalMatrix().derived().data(),
-                                 this->current_twist.data());
+                                 this->cur_trajectory.at(0).pose.storage.data(),
+                                 this->cur_trajectory.at(0).vel.data());
+    }
 
-        for (uint32_t i = 0; i < this->param.num_trajectory_states; i++) {
-            if (i + 1 < this->param.num_trajectory_states) {
-                this->cv_vector.at(i).calculateLinInvCovariance();
+    for (uint32_t i = 0; i < this->param.num_trajectory_states; i++) {
+        if (i + 1 < this->param.num_trajectory_states) {
+            this->cv_vector.at(i).calculateLinInvCovariance();
 
-                ceres::CostFunction *motion_cost = new ConstantVelocityPriorRed(
-                  this->cv_vector.at(i).inv_covar.sqrt().block(0,0,6,6), this->cv_vector.at(i).tkp1 - this->cv_vector.at(i).tk);
+            ceres::CostFunction *motion_cost =
+              new ConstantVelocityPrior(this->cv_vector.at(i).inv_covar.sqrt(),
+                                           this->cv_vector.at(i).tkp1 - this->cv_vector.at(i).tk);
 
-                if (this->param.solution_remapping) {
-                    parameters[0] = this->cur_trajectory.at(i).pose.getInternalMatrix().derived().data();
-                    parameters[1] = this->cur_trajectory.at(i + 1).pose.getInternalMatrix().derived().data();
-                    parameters[2] = this->current_twist.data();
-                    residuals.resize(12);
-                    motion_cost->Evaluate(parameters, residuals.data(), jacobian);
-                    Eigen::Map<Eigen::Matrix<double, 6, 12, Eigen::RowMajor>> JTk(jacobian[0]);
-                    Eigen::Map<Eigen::Matrix<double, 6, 12, Eigen::RowMajor>> JTkp1(jacobian[1]);
-                    Eigen::Map<Eigen::Matrix<double, 6, 6, Eigen::RowMajor>> JTW1(jacobian[2]);
-
-                    motion_jacobian.block<6, 6>(12 + 6*i, 6*this->param.num_trajectory_states) = JTW1;
-
-                    motion_jacobian.block<6, 6>(12 + 6*i, 6 * i) = JTk.block<6, 6>(0, 0);
-                    motion_jacobian.block<6, 6>(12 + 6*i, 6 * (i + 1)) = JTkp1.block<6, 6>(0, 0);
-
-                    if (!motion_jacobian.allFinite()) {
-                        throw std::out_of_range("motion_jacobian has naa");
-                    }
-                }
-
-                problem.AddResidualBlock(motion_cost,
-                                         nullptr,
-                                         this->cur_trajectory.at(i).pose.getInternalMatrix().derived().data(),
-                                         this->cur_trajectory.at(i + 1).pose.getInternalMatrix().derived().data(),
-                                         this->current_twist.data());
-            }
+            problem.AddResidualBlock(motion_cost,
+                                     nullptr,
+                                     this->cur_trajectory.at(i).pose.storage.data(),
+                                     this->cur_trajectory.at(i + 1).pose.storage.data(),
+                                     this->cur_trajectory.at(i).vel.data(),
+                                     this->cur_trajectory.at(i + 1).vel.data());
         }
     }
 
@@ -867,7 +843,7 @@ bool LaserOdom::match() {
             this->feature_corrs.at(i).at(j).clear();
             for (uint64_t pt_cntr = 0; pt_cntr < this->feature_points.at(i).at(j).size(); pt_cntr++) {
                 double transformed[3];
-                this->TransformToMap(this->feature_points.at(i).at(j).at(pt_cntr).pt,
+                this->transformToMap(this->feature_points.at(i).at(j).at(pt_cntr).pt,
                                      this->feature_points.at(i).at(j).at(pt_cntr).tick,
                                      transformed,
                                      k,
@@ -885,13 +861,13 @@ bool LaserOdom::match() {
                     this->cv_vector.at(k).tau = &tau;
                     this->cv_vector.at(k).calculateStuff(hat, candle);
                     ceres::CostFunction *cost_function;
-                    SE3PointToLineGPRed *pTl_cost_function;
-                    SE3PointToPlaneGPRed *pTPl_cost_function;
+                    SE3PointToLineGP *pTl_cost_function;
+                    SE3PointToPlaneGP *pTPl_cost_function;
                     double rescale;
                     switch (this->feature_definitions.at(i).residual) {
                         case PointToLine:
                             if (this->param.treat_lines_as_planes) {
-                                pTPl_cost_function = new SE3PointToPlaneGPRed(
+                                pTPl_cost_function = new SE3PointToPlaneGP(
                                   this->feature_points.at(i).at(j).at(pt_cntr).pt,
                                   this->prv_feature_points.at(i).points.at(ret_indices.at(0)).data(),
                                   this->prv_feature_points.at(i).points.at(ret_indices.at(1)).data(),
@@ -904,7 +880,7 @@ bool LaserOdom::match() {
                                 rescale = pTPl_cost_function->weight;
                                 cost_function = pTPl_cost_function;
                             } else {
-                                pTl_cost_function = new SE3PointToLineGPRed(
+                                pTl_cost_function = new SE3PointToLineGP(
                                   this->feature_points.at(i).at(j).at(pt_cntr).pt,
                                   this->prv_feature_points.at(i).points.at(ret_indices.at(0)).data(),
                                   this->prv_feature_points.at(i).points.at(ret_indices.at(1)).data(),
@@ -918,15 +894,15 @@ bool LaserOdom::match() {
                             }
                             break;
                         case PointToPlane:
-                            pTPl_cost_function =
-                              new SE3PointToPlaneGPRed(this->feature_points.at(i).at(j).at(pt_cntr).pt,
-                                                    this->prv_feature_points.at(i).points.at(ret_indices.at(0)).data(),
-                                                    this->prv_feature_points.at(i).points.at(ret_indices.at(1)).data(),
-                                                    this->prv_feature_points.at(i).points.at(ret_indices.at(2)).data(),
-                                                    hat.block<6, 12>(0, 0),
-                                                    candle.block<6, 12>(0, 0),
-                                                    covZ.cast<double>(),
-                                                    this->param.use_weighting);
+                            pTPl_cost_function = new SE3PointToPlaneGP(
+                              this->feature_points.at(i).at(j).at(pt_cntr).pt,
+                              this->prv_feature_points.at(i).points.at(ret_indices.at(0)).data(),
+                              this->prv_feature_points.at(i).points.at(ret_indices.at(1)).data(),
+                              this->prv_feature_points.at(i).points.at(ret_indices.at(2)).data(),
+                              hat.block<6, 12>(0, 0),
+                              candle.block<6, 12>(0, 0),
+                              covZ.cast<double>(),
+                              this->param.use_weighting);
                             residuals.resize(1);
                             rescale = pTPl_cost_function->weight;
                             cost_function = pTPl_cost_function;
@@ -934,12 +910,12 @@ bool LaserOdom::match() {
                         default: continue;
                     }
 
-                    parameters[0] = this->cur_trajectory.at(k).pose.getInternalMatrix().derived().data();
-                    parameters[1] = this->cur_trajectory.at(kp1).pose.getInternalMatrix().derived().data();
-                    parameters[2] = this->current_twist.data();
+                    parameters[0] = this->cur_trajectory.at(k).pose.storage.data();
+                    parameters[1] = this->cur_trajectory.at(kp1).pose.storage.data();
+                    parameters[2] = this->cur_trajectory.at(k).vel.data();
+                    parameters[3] = this->cur_trajectory.at(kp1).vel.data();
 
-                    if (!cost_function->Evaluate(
-                          parameters, residuals.data(), this->param.solution_remapping ? jacobian : nullptr)) {
+                    if (!cost_function->Evaluate(parameters, residuals.data(), nullptr)) {
                         LOG_ERROR("Cost function did not evaluate");
                         delete cost_function;
                         continue;
@@ -952,33 +928,6 @@ bool LaserOdom::match() {
                     }
 
                     ceres::LossFunction *p_LossFunction = new BisquareLoss(rescale * this->param.robust_param);
-                    if (this->param.solution_remapping) {
-                        std::vector<double> p(3);
-                        if (this->feature_definitions.at(i).residual == ResidualType::PointToLine) {
-                            Eigen::Map<Eigen::Matrix<double, 2, 12, Eigen::RowMajor>> JTk(jacobian[0]);
-                            Eigen::Map<Eigen::Matrix<double, 2, 12, Eigen::RowMajor>> JTkp1(jacobian[1]);
-                            Eigen::Map<Eigen::Matrix<double, 2, 6, Eigen::RowMajor>> JW1(jacobian[2]);
-
-                            current_jacobian.block<2, 6>(0, 0) = JTk.block<2, 6>(0, 0);
-                            current_jacobian.block<2, 6>(0, 6) = JTkp1.block<2, 6>(0, 0);
-
-                            system_jacobian.block<2, 6>(rows, 6 * this->param.num_trajectory_states) = JW1;
-                            system_jacobian.block<2, 12>(rows, 6 * k) = current_jacobian;
-                            rows += 2;
-                        } else {
-                            Eigen::Map<Eigen::Matrix<double, 1, 12, Eigen::RowMajor>> JTk(jacobian[0]);
-                            Eigen::Map<Eigen::Matrix<double, 1, 12, Eigen::RowMajor>> JTkp1(jacobian[1]);
-                            Eigen::Map<Eigen::Matrix<double, 1, 6, Eigen::RowMajor>> JW1(jacobian[2]);
-
-                            current_jacobian.block<1, 6>(0, 0) = JTk.block<1, 6>(0, 0);
-                            current_jacobian.block<1, 6>(0, 6) = JTkp1.block<1, 6>(0, 0);
-
-                            system_jacobian.block<1, 6>(rows, 6 * this->param.num_trajectory_states) = JW1;
-                            system_jacobian.block<1, 12>(rows, 6 * k) = current_jacobian.block<1,12>(0,0);
-
-                            rows += 1;
-                        }
-                    }
                     std::vector<uint64_t> corr_list;
                     corr_list.emplace_back(pt_cntr);
                     for (auto index : ret_indices) {
@@ -989,75 +938,44 @@ bool LaserOdom::match() {
 
                     problem.AddResidualBlock(cost_function,
                                              p_LossFunction,
-                                             this->cur_trajectory.at(k).pose.getInternalMatrix().derived().data(),
-                                             this->cur_trajectory.at(kp1).pose.getInternalMatrix().derived().data(),
-                                             this->current_twist.data());
+                                             this->cur_trajectory.at(k).pose.storage.data(),
+                                             this->cur_trajectory.at(kp1).pose.storage.data(),
+                                             this->cur_trajectory.at(k).vel.data(),
+                                             this->cur_trajectory.at(kp1).vel.data());
                 }
             }
         }
     }
 
-
-    if (this->param.solution_remapping) {
-        Eigen::MatrixXd AtA;
-        if (this->param.motion_prior) {
-            system_jacobian.conservativeResize(rows + motion_jacobian.rows(), 6 + 6 * this->param.num_trajectory_states);
-            system_jacobian.block(rows, 0, motion_jacobian.rows(), motion_jacobian.cols()) = motion_jacobian;
-            rows = system_jacobian.rows();
-
-        } else {
-            system_jacobian.conservativeResize(rows, 6 + 6 * this->param.num_trajectory_states);
-        }
-
-        if (this->param.lock_first) {
-            // exclude the first pose from the system hessian
-            AtA = system_jacobian.block(0,6, rows, 6 * this->param.num_trajectory_states).transpose() *
-                    system_jacobian.block(0,6, rows, 6 * this->param.num_trajectory_states);
-        } else {
-            AtA = system_jacobian.transpose() * system_jacobian;
-        }
-
-        Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigs(AtA);
-
-        this->system_eigenvectors = eigs.eigenvectors().transpose();
-        this->system_eigenvalues = eigs.eigenvalues();
-
-        std::cerr << this->system_eigenvalues;
-
-        long cnt = 0;
-        while (eigs.eigenvalues()(cnt) < this->param.min_eigen) {
-            cnt++;
-            if (cnt == this->system_eigenvectors.rows())
-                break;
-        }
-
-        Eigen::MatrixXd Vu = this->system_eigenvectors;
-        Vu.block(0, 0, cnt, Vu.cols()).setZero();
-        this->proj_mat = this->system_eigenvectors.inverse() * Vu;
-
-        if (this->param.plot_stuff) {
-            plotVec(eigs.eigenvalues(), true);
-            plotMat(this->proj_mat);
-        }
-
-        delete[] jacobian[2];
-        delete[] jacobian[1];
-        delete[] jacobian[0];
-        delete[] jacobian;
+    if (this->param.lock_first) {
+        this->param_blocks.resize(2*(this->param.num_trajectory_states - 1));
+        this->covar.resize(12 * (this->param.num_trajectory_states - 1), 12 * (this->param.num_trajectory_states - 1));
+    } else {
+        this->param_blocks.resize(2*this->param.num_trajectory_states);
+        this->covar.resize(12 * this->param.num_trajectory_states, 12 * this->param.num_trajectory_states);
     }
-
     for (uint32_t i = 0; i < this->param.num_trajectory_states; i++) {
         ceres::LocalParameterization *se3_param = new NullSE3Parameterization();
         auto &tra = this->cur_trajectory.at(i);
-        problem.AddParameterBlock(tra.pose.getInternalMatrix().derived().data(), 12, se3_param);
+        problem.AddParameterBlock(tra.pose.storage.data(), 12, se3_param);
+        problem.AddParameterBlock(tra.vel.data(), 6);
+        if(this->param.lock_first) {
+            if (i != 0) {
+                this->param_blocks.at((i-1)*2) = tra.pose.storage.data();
+                this->param_blocks.at((i-1)*2 + 1) = tra.vel.data();
+            }
+        } else {
+            this->param_blocks.at(i*2) = tra.pose.storage.data();
+            this->param_blocks.at(i*2 + 1) = tra.vel.data();
+        }
     }
-    problem.AddParameterBlock(this->current_twist.data(), 6);
 
     ceres::Solver::Options options;  // ceres problem destructor apparently destructs quite a bit, so need to
-                                     // instantiate
-    // options struct every time :(
+                                     // instantiate options struct every time :(
     options.linear_solver_type = ceres::DENSE_QR;
     options.max_num_iterations = this->param.max_inner_iters;
+    options.max_num_consecutive_invalid_steps = 2;
+    options.logging_type = ceres::LoggingType::SILENT;
 
     if (this->param.solver_threads < 1) {
         options.num_threads = std::thread::hardware_concurrency();
@@ -1067,17 +985,14 @@ bool LaserOdom::match() {
         options.num_linear_solver_threads = this->param.solver_threads;
     }
 
-    options.max_num_consecutive_invalid_steps = 2;
-
-    options.logging_type = ceres::LoggingType::SILENT;
-
     ceres::Covariance::Options covar_options;
-    covar_options.num_threads = std::thread::hardware_concurrency();
+    covar_options.num_threads = this->param.solver_threads;
     covar_options.sparse_linear_algebra_library_type = ceres::SparseLinearAlgebraLibraryType::SUITE_SPARSE;
     covar_options.algorithm_type = ceres::CovarianceAlgorithmType::SPARSE_QR;
 
     if (this->param.lock_first) {
-        problem.SetParameterBlockConstant(this->cur_trajectory.at(0).pose.getInternalMatrix().derived().data());
+        problem.SetParameterBlockConstant(this->cur_trajectory.at(0).pose.storage.data());
+        problem.SetParameterBlockConstant(this->cur_trajectory.at(0).vel.data());
     }
 
     if (problem.NumResidualBlocks() < this->param.min_residuals) {
@@ -1085,7 +1000,7 @@ bool LaserOdom::match() {
         LOG_ERROR("%d residuals, threshold is %d", problem.NumResidualBlocks(), this->param.min_residuals);
         this->resetTrajectory();
         this->initialized = false;
-        delete []parameters;
+        delete[] parameters;
         return false;
     } else if (!this->param.only_extract_features) {
         ceres::Solver::Summary summary;
@@ -1093,21 +1008,23 @@ bool LaserOdom::match() {
         if (this->param.plot_stuff) {
             LOG_INFO("%s", summary.FullReport().c_str());
         }
-
-        ceres::Covariance covariance(covar_options);
-        covariance.Compute(this->covariance_blocks, &problem);
-        covariance.GetCovarianceBlock(
-          this->cur_trajectory.back().pose.getInternalMatrix().derived().data(),
-          this->cur_trajectory.back().pose.getInternalMatrix().derived().data(),
-          this->covar);
+//        ceres::Covariance covariance(covar_options);
+//        if (!covariance.Compute(this->param_blocks, &problem)) {
+//            LOG_ERROR("covariance did not compute");
+//        }
+//        covariance.GetCovarianceMatrixInTangentSpace(this->param_blocks, this->covar.data());
+//        if (this->param.solution_remapping) {
+//            this->applyRemap();
+//        }
     }
-    delete []parameters;
+    delete[] parameters;
     return true;
 }
 
 void LaserOdom::resetTrajectory() {
-    for (uint32_t i = 0; i < this->cur_trajectory.size(); i++) {
-        this->cur_trajectory.at(i).pose.setIdentity();
+    for (auto tra : this->cur_trajectory) {
+        tra.pose.setIdentity();
+        tra.vel.setZero();
     }
     this->prior_twist.setZero();
     this->current_twist.setZero();
@@ -1148,8 +1065,8 @@ void LaserOdom::generateFeatures() {
             }
             this->feature_points.at(i).at(j).clear();
             for (auto score : filt_scores) {
-                unlong bin =
-                  ((float) this->cur_scan.at(j).at(score.first).tick / (float) this->param.max_ticks) * this->param.angular_bins;
+                unlong bin = ((float) this->cur_scan.at(j).at(score.first).tick / ((float) this->param.max_ticks * this->param.n_window)) *
+                             this->param.angular_bins;
                 if (cnt_in_bins.at(bin) >= max_bin) {
                     continue;
                 }
@@ -1181,19 +1098,18 @@ void LaserOdom::computeScores() {
             } else {
                 s_idx = 1;
             }
-            //todo have flexibility for different kernel sizes
-            Eigen::TensorMap<Eigen::Tensor<const double, 1>> inputmap(this->signals.at(s_idx).at(i).data(), this->signals.at(s_idx).at(i).size());
+            // todo have flexibility for different kernel sizes
+            Eigen::TensorMap<Eigen::Tensor<const double, 1>> inputmap(this->signals.at(s_idx).at(i).data(),
+                                                                      this->signals.at(s_idx).at(i).size());
             if (inputmap.size() + 1 > kernels.at(j)->size()) {
-                //check if simple convolution
+                // check if simple convolution
+                this->scores.at(j).at(i).resize(inputmap.size() - kernels.at(j)->size() + 1);
+                Eigen::TensorMap<Eigen::Tensor<double, 1>> outputmap(this->scores.at(j).at(i).data(),
+                                                                     this->scores.at(j).at(i).size());
                 if (j < 3) {
-                    this->scores.at(j).at(i).resize(inputmap.size() - kernels.at(j)->size() + 1);
-                    Eigen::TensorMap<Eigen::Tensor<double, 1>> outputmap(this->scores.at(j).at(i).data(), this->scores.at(j).at(i).size());
                     outputmap = inputmap.convolve(*(this->kernels.at(j)), dims);
-
-                //or if sample variance
+                    // or if sample variance
                 } else {
-                    this->scores.at(j).at(i).resize(inputmap.size() - sum_kernel.size() + 1);
-                    Eigen::TensorMap<Eigen::Tensor<double, 1>> outputmap(this->scores.at(j).at(i).data(), this->scores.at(j).at(i).size());
                     auto &N = this->param.variance_window;
                     Eigen::Tensor<double, 1> Ninv(1);
                     Ninv.setConstant(1.0 / (double) N);
@@ -1201,7 +1117,9 @@ void LaserOdom::computeScores() {
                     Nm1inv.setConstant(1.0 / (double) (N - 1));
 
                     // so called computational formula for sample variance
-                    outputmap = (inputmap.square().convolve(sum_kernel, dims) - inputmap.convolve(sum_kernel, dims).square().convolve(Ninv, dims)).convolve(Nm1inv,dims);
+                    outputmap = (inputmap.square().convolve(sum_kernel, dims) -
+                                 inputmap.convolve(sum_kernel, dims).square().convolve(Ninv, dims))
+                                  .convolve(Nm1inv, dims);
                 }
             }
         }
@@ -1216,19 +1134,27 @@ void LaserOdom::prefilter() {
         std::vector<bool> valid(this->signals[0].at(i).size(), true);
         // Now loop through the points in this ring and set valid_idx accordingly
         for (unlong j = 1; j + 1 < this->cur_scan.at(i).size(); j++) {
-            auto delforward = this->l2sqrd(this->cur_scan.at(i).at(j), this->cur_scan.at(i).at(j + 1));
-            auto delback = this->l2sqrd(this->cur_scan.at(i).at(j), this->cur_scan.at(i).at(j - 1));
+            auto &rng_cur = this->signals[0].at(i).at(j);
+            auto &rng_nxt = this->signals[0].at(i).at(j + 1);
+
             // First section excludes any points who's score is likely caused
             // by occlusion
-            if (delforward > this->param.occlusion_tol_2) {
-                double &d1 = this->signals[0].at(i).at(j);
-                double &d2 = this->signals[0].at(i).at(j + 1);
-                auto unit1 = this->scale(this->cur_scan.at(i).at(j), 1.0 / d1);
-                auto unit2 = this->scale(this->cur_scan.at(i).at(j + 1), 1.0 / d2);
-                auto diff = std::sqrt(this->l2sqrd(unit1, unit2));
-                if (diff < this->param.occlusion_tol) {
+            //            if (delforward > this->param.occlusion_tol_2) {
+            if (std::abs(rng_cur - rng_nxt) > this->param.occlusion_tol_2) {
+                //                double &d1 = this->signals[0].at(i).at(j);
+                //                double &d2 = this->signals[0].at(i).at(j + 1);
+                //                auto unit1 = this->scale(this->cur_scan.at(i).at(j), 1.0 / d1);
+                //                auto unit2 = this->scale(this->cur_scan.at(i).at(j + 1), 1.0 / d2);
+                //                auto diff = std::sqrt(this->l2sqrd(unit1, unit2));
+                double angular_diff =
+                  ((double) (this->cur_scan.at(i).at(j + 1).tick) - (double) this->cur_scan.at(i).at(j).tick) /
+                  (double) this->param.max_ticks;
+                if (angular_diff < 0) {
+                    throw std::out_of_range("input scan clouds are not in order");
+                }
+                if (angular_diff < this->param.occlusion_tol) {
                     // todo(ben) replace magic 5 with something
-                    if (d1 > d2) {
+                    if (rng_cur > rng_nxt) {
                         for (unlong l = 0; l <= 5; l++) {
                             if (j >= l) {
                                 valid.at(j - l) = false;
@@ -1245,7 +1171,10 @@ void LaserOdom::prefilter() {
             }
             // This section excludes any points whose nearby surface is
             // near to parallel to the laser beam
-            auto dis = this->l2sqrd(this->cur_scan.at(i).at(j));
+            auto delforward = this->l2sqrd(this->cur_scan.at(i).at(j), this->cur_scan.at(i).at(j + 1));
+            auto delback = this->l2sqrd(this->cur_scan.at(i).at(j), this->cur_scan.at(i).at(j - 1));
+//            auto dis = this->l2sqrd(this->cur_scan.at(i).at(j));
+            double dis = this->signals.at(0).at(i).at(j) * this->signals.at(0).at(i).at(j);
             if ((delforward > (this->param.parallel_tol) * dis) && (delback > (this->param.parallel_tol * dis))) {
                 valid.at(j) = false;
             }
@@ -1301,7 +1230,7 @@ void LaserOdom::buildFilteredScore(const std::vector<bool> &valid, const uint32_
             case Kernel::INT_VAR: k_idx.at(i) = 4; break;
             default: throw std::out_of_range("Unrecognized Kernel!");
         }
-        //todo use the difference between input and score to figure this out instead?
+        // todo use the difference between input and score to figure this out instead?
         k_offsets.emplace_back((this->kernels.at(k_idx.at(i))->size() - 1) / 2);
         if (offset < (this->kernels.at(k_idx.at(i))->size() - 1) / 2) {
             offset = (this->kernels.at(k_idx.at(i))->size() - 1) / 2;

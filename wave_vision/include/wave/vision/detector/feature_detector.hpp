@@ -9,6 +9,8 @@
 #include <exception>
 #include <vector>
 
+#include <opencv2/features2d/features2d.hpp>
+
 #include "wave/utils/utils.hpp"
 #include "wave/vision/utils.hpp"
 
@@ -35,6 +37,10 @@ class FeatureDetector {
      *  @return a vector of the detected keypoints.
      */
     virtual std::vector<cv::KeyPoint> detectFeatures(const cv::Mat &image) = 0;
+
+ public:
+    /** The number of keypoints detected. For use with diagnostic tools. */
+    size_t num_keypoints_detected = 0u;
 
  protected:
     virtual ~FeatureDetector() = default;

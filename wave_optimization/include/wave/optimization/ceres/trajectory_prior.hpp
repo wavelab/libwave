@@ -28,7 +28,7 @@ class TrajectoryPrior : public ceres::SizedCostFunction<12, 12, 6> {
     virtual ~TrajectoryPrior() {}
     TrajectoryPrior(Mat12 weight_matrix, const T_TYPE &inv_prior, const Vec6 &twist_prior)
         : inv_prior(inv_prior), twist_prior(twist_prior), weight_matrix(weight_matrix) {
-        if (!inv_prior.matrix->allFinite()) {
+        if (!inv_prior.storage.allFinite()) {
             throw std::invalid_argument("Inverse Prior not finite");
         }
         if (!twist_prior.allFinite()) {
@@ -41,8 +41,8 @@ class TrajectoryPrior : public ceres::SizedCostFunction<12, 12, 6> {
     }
 
     virtual bool Evaluate(double const *const *parameters, double *residuals, double **jacobians) const {
-        auto tk_ptr = std::make_shared<Eigen::Map<const Eigen::Matrix<double, 3, 4>>>(parameters[0], 3, 4);
-        Transformation<Eigen::Map<const Eigen::Matrix<double, 3, 4>>> transform(tk_ptr);
+        Eigen::Map<const Mat34> tk_map(parameters[0], 3, 4);
+        Transformation<Eigen::Map<const Mat34>, true> transform(tk_map);
 
         Eigen::Map<const Vec6> twist_map(parameters[1]);
         auto diff = transform * this->inv_prior;

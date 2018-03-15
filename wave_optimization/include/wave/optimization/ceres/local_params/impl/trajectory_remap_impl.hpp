@@ -27,12 +27,12 @@ bool TrajectoryParamRemap<DIM>::Plus(const double *x, const double *delta, doubl
 
     int n_pose = (DIM - 6)/12;
     for(int i = 0; i < n_pose; i++) {
-        auto x_ptr = std::make_shared<Eigen::Map<const Eigen::Matrix<double, 3, 4>>>(x + 6 + 12*i, 3, 4);
-        auto xpd_ptr = std::make_shared<Eigen::Map<Eigen::Matrix<double, 3, 4>>>(x_plus_delta + 6 + 12*i, 3, 4);
-        Transformation<Eigen::Map<const Eigen::Matrix<double, 3, 4>>, true> T(x_ptr);
-        Transformation<Eigen::Map<Eigen::Matrix<double, 3, 4>>, true> Tpd(xpd_ptr);
+        Eigen::Map<const Mat34> x_map(x + 6 + 12*i, 3, 4);
+        Eigen::Map<Mat34> xpd_map(x_plus_delta + 6 + 12*i, 3, 4);
+        Transformation<Eigen::Map<const Mat34>, true> T(x_map);
+        Transformation<Eigen::Map<Mat34>, true> Tpd(xpd_map);
 
-        Tpd.deepCopy(T);
+        Tpd = T;
         Tpd.manifoldPlus(remap_delta_vec.template block<6,1>(6 + 6*i, 0));
         Tpd.normalizeMaybe(1e-5);
     }

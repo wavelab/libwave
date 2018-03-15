@@ -50,7 +50,8 @@ SE3PointToLine::SE3PointToLine(const double *const p, const double *const pA, co
     auto v = unitdiff.cross(unitz);
     auto s = v.norm();
     auto c = unitz.dot(unitdiff);
-    auto skew = Transformation<void>::skewSymmetric3(v);
+    Mat3 skew;
+    Transformation<>::skewSymmetric3(v, skew);
     this->rotation = Eigen::Matrix3d::Identity() + skew + skew*skew*((1-c)/(s*s));
 
     this->Jres_T = this->rotation * Jres_P * JP_T;
@@ -64,8 +65,8 @@ SE3PointToLine::SE3PointToLine(const double *const p, const double *const pA, co
 }
 
 bool SE3PointToLine::Evaluate(double const *const *parameters, double *residuals, double **jacobians) const {
-    auto tk_ptr = std::make_shared<Eigen::Map<const Eigen::Matrix<double, 3, 4>>>(parameters[0], 3, 4);
-    Transformation<Eigen::Map<const Eigen::Matrix<double, 3, 4>>> Tk(tk_ptr);
+    Eigen::Map<const Mat34> Tmap(parameters[0], 3, 4);
+    Transformation<Eigen::Map<const Mat34>> Tk(Tmap);
 
     Transformation<Eigen::Matrix<double, 3, 4>> interpolated;
 
@@ -96,7 +97,7 @@ bool SE3PointToLine::Evaluate(double const *const *parameters, double *residuals
     if (jacobians != NULL) {
         // Have to apply the "lift" jacobian to the Interpolation Jacobian because
         // of Ceres local parameterization
-        Transformation<void>::Jinterpolated(twist, *(this->scale), this->J_int);
+        Transformation<>::Jinterpolated(twist, *(this->scale), this->J_int);
         interpolated.J_lift(this->J_lift);
         Tk.J_lift(this->J_lift_full);
 

@@ -13,7 +13,7 @@
 struct PCLPointXYZIT {
     PCL_ADD_POINT4D;
     float intensity;
-    uint16_t tick;
+    uint32_t tick;
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 } EIGEN_ALIGN16;
@@ -26,16 +26,16 @@ POINT_CLOUD_REGISTER_POINT_STRUCT(PCLPointXYZIT,
                                      (float, y, y)
                                      (float, z, z)
                                      (float, intensity, intensity)
-                                     (uint16_t, tick, tick))
+                                     (uint32_t, tick, tick))
 
 // clang-format on
 
 struct PointXYZIT {
-    PointXYZIT(double x, double y, double z, float inten, uint16_t ticks)
+    PointXYZIT(double x, double y, double z, float inten, uint32_t ticks)
         : pt{x, y, z}, intensity(inten), tick(ticks) {}
     double pt[3];
     float intensity;
-    uint16_t tick;
+    uint32_t tick;
 };
 
 #endif  // WAVE_POINTXYZIT_HPP

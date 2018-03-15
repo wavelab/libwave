@@ -40,9 +40,9 @@
 #include "wave/optimization/ceres/local_params/null_SE3_parameterization.hpp"
 #include "wave/optimization/ceres/local_params/null_SE3_parameterization_remap.hpp"
 #include "wave/optimization/ceres/local_params/solution_remapping_parameterization.hpp"
-#include "wave/optimization/ceres/odom_gp_reduced/point_to_line_gp.hpp"
-#include "wave/optimization/ceres/odom_gp_reduced/point_to_plane_gp.hpp"
-#include "wave/optimization/ceres/odom_gp_reduced/constant_velocity.hpp"
+#include "wave/optimization/ceres/odom_gp/point_to_line_gp.hpp"
+#include "wave/optimization/ceres/odom_gp/point_to_plane_gp.hpp"
+#include "wave/optimization/ceres/odom_gp/constant_velocity.hpp"
 #include "wave/optimization/ceres/trajectory_prior.hpp"
 #include "wave/optimization/ceres/loss_function/bisquare_loss.hpp"
 #include "wave/optimization/ceres/loss_function/quartic_loss.hpp"
@@ -69,7 +69,9 @@ struct LaserOdomParams {
     // Optimizer parameters
     // How many states per revolution to optimize over
     // There must be at minimum two.
-    uint32_t num_trajectory_states = 5;
+    uint32_t num_trajectory_states = 3;
+    // How many scans to optimize over, must be at least 1, obviously
+    uint32_t n_window = 1;
 
     int opt_iters = 25;     // How many times to refind correspondences
     int max_inner_iters = 100;  // How many iterations of ceres to run with each set of correspondences
@@ -101,7 +103,7 @@ struct LaserOdomParams {
     float min_intensity = 10.0;
     float max_intensity = 50.0;
     float occlusion_tol = 0.1;    // Radians
-    float occlusion_tol_2 = 0.1;  // m^2. Distance between points to initiate occlusion check
+    float occlusion_tol_2 = 1;  // m. Distance between points to initiate occlusion check
     float parallel_tol = 0.002;   // ditto
     double edge_tol = 0.1;        // Edge features must have score higher than this
     double flat_tol = 0.1;        // Plane features must have score lower than this
@@ -148,12 +150,15 @@ class LaserOdom {
     explicit LaserOdom(const LaserOdomParams params);
     ~LaserOdom();
     void addPoints(const std::vector<PointXYZIR> &pts, int tick, TimeType stamp);
+
     std::vector<std::vector<std::vector<PointXYZIT>>> feature_points;  // edges, flats;
-    std::vector<FeatureKDTree<double>> prv_feature_points;             // prv_edges, prv_flats;
+
+    std::vector<FeatureKDTree<double>> prv_feature_points;             // previous features now in map
 
     struct Trajectory {
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         T_TYPE pose;
+        Vec6 vel;
     };
 
     std::vector<Trajectory, Eigen::aligned_allocator<Trajectory>> cur_trajectory;
@@ -179,7 +184,7 @@ class LaserOdom {
     TimeType undistorted_stamp;
     Transformation<> undistort_transform;
     Vec6 undistort_velocity;
-    double covar[144];  // use lift jacobians to reduce covariance coming out of ceres
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> covar;
 
     void updateParams(const LaserOdomParams);
     LaserOdomParams getParams();
@@ -207,10 +212,7 @@ class LaserOdom {
     void undistort();
 
     // ceres optimizer stuff
-    std::vector<std::pair<const double *, const double *>> covariance_blocks;
-    MatX proj_mat;
-    MatX system_eigenvectors;
-    VecX system_eigenvalues;
+    std::vector<const double *> param_blocks;
 
     LaserOdomParams param;
     bool initialized = false, full_revolution = false;
@@ -224,10 +226,10 @@ class LaserOdom {
     bool outOfBounds(const Vec3 &query, const uint32_t &f_idx, const std::vector<size_t> &index);
 
     PCLPointXYZIT applyIMU(const PCLPointXYZIT &pt);
-    void TransformToMap(
-            const double *const pt, const uint16_t tick, double *output, uint32_t &k, uint32_t &kp1, double &tau);
-    void transformToMap(const double *const pt, const uint16_t tick, double *output);
-    void transformToCurLidar(const double *const pt, const uint16_t tick, double *output);
+    void transformToMap(
+            const double *const pt, const uint32_t tick, double *output, uint32_t &k, uint32_t &kp1, double &tau);
+    void transformToMap(const double *const pt, const uint32_t tick, double *output);
+    void transformToCurLidar(const double *const pt, const uint32_t tick, double *output);
     void resetTrajectory();
     void copyTrajectory();
     void applyRemap();
@@ -262,15 +264,17 @@ class LaserOdom {
     std::vector<std::shared_ptr<Eigen::Tensor<double, 1>>> kernels;
     // Container to sort scores with. Each is built depending on feature specification
     std::vector<std::vector<std::vector<std::pair<unlong, double>>>> filtered_scores;
-    void buildFilteredScore(const std::vector<bool> &valid, const uint32_t &f_idx, const uint32_t &ring);
 
-    std::vector<std::shared_ptr<kd_tree_t>> feature_idx;
     // This is container to hold indices of for each feature used in the optimization
     // It is indexed by feature_id, then by ring_id, then by correspondence.
     // It contains a vector of indices, the first is the feature point, the next are the indices of the
     // map or prv feature points it corresponds to
     std::vector<std::vector<std::vector<std::vector<uint64_t>>>> feature_corrs;
     enum AssociationStatus { CORRESPONDED, UNCORRESPONDED };
+    std::vector<std::vector<std::pair<uint64_t, AssociationStatus>>> feature_association;
+
+    void buildFilteredScore(const std::vector<bool> &valid, const uint32_t &f_idx, const uint32_t &ring);
+    std::vector<std::shared_ptr<kd_tree_t>> feature_idx;
 
     // Eventually connect to yamls to be able to change
     // kernels & policies very quickly
@@ -293,8 +297,6 @@ class LaserOdom {
         int *n_limit;
     };
     std::vector<FeatureDefinition> feature_definitions;
-
-    std::vector<std::vector<std::pair<uint64_t, AssociationStatus>>> feature_association;
 };
 
 }  // namespace wave

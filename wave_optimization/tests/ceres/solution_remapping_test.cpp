@@ -42,10 +42,10 @@ TEST(trajectory, thirtydof) {
     params[0] = memblock;
 
     Eigen::Map<Vec6> vel(memblock);
-    auto tk_ptr = std::make_shared<Eigen::Map<Eigen::Matrix<double, 3, 4>>>(memblock + 6, 3, 4);
-    auto tkp1_ptr = std::make_shared<Eigen::Map<Eigen::Matrix<double, 3, 4>>>(memblock + 18, 3, 4);
-    Transformation<Eigen::Map<Eigen::Matrix<double, 3, 4>>> Tk(tk_ptr);
-    Transformation<Eigen::Map<Eigen::Matrix<double, 3, 4>>> Tkp1(tkp1_ptr);
+    Eigen::Map<Mat34> tk_map(memblock + 6, 3, 4);
+    Eigen::Map<Mat34> tkp1_map(memblock + 18, 3, 4);
+    Transformation<Eigen::Map<Mat34>, false> Tk(tk_map);
+    Transformation<Eigen::Map<Mat34>, false> Tkp1(tkp1_map);
 
     vel.setZero();
     Tk.setIdentity();

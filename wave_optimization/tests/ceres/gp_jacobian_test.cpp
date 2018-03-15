@@ -25,18 +25,18 @@ TEST(point_to_line, jacobian) {
     const double **params;
     params = new const double *[4];
 
-    Transformation<Eigen::Matrix<double, 3, 4>, false> T_k, T_kp1;
+    Transformation<Eigen::Matrix<double, 3, 4>, true> T_k, T_kp1;
     Vec6 vel_k, vel_kp1;
 
-    params[0] = T_k.getInternalMatrix().derived().data();
-    params[1] = T_kp1.getInternalMatrix().derived().data();
+    params[0] = T_k.storage.data();
+    params[1] = T_kp1.storage.data();
     params[2] = vel_k.data();
     params[3] = vel_kp1.data();
 
     T_k.setIdentity();
-    vel_k << 0.1, -0.1, 0.2, 5, 1, -1;
+    vel_k << 0.1, -0.1, 0.1, 5, 1, -1;
     vel_kp1 = vel_k;
-    T_kp1.deepCopy(T_k);
+    T_kp1 = T_k;
     T_kp1.manifoldPlus(delta_T * vel_k);
 
     double zero = 0;
@@ -48,13 +48,17 @@ TEST(point_to_line, jacobian) {
 
     Eigen::Matrix<double, 12, 12> hat, candle;
 
+    SE3PointToLineGPObjects objects;
+
     motion_prior.calculateStuff(hat, candle);
+
+    objects.hat = hat.block<6, 12>(0,0);
+    objects.candle = candle.block<6, 12>(0,0);
 
     ceres::CostFunction *cost_function = new SE3PointToLineGP(pt,
                                                               ptA,
                                                               ptB,
-                                                              hat.block<6, 12>(0, 0),
-                                                              candle.block<6, 12>(0, 0),
+                                                              objects,
                                                               Mat3::Identity(),
                                                               true);
     double **jacobian;
@@ -72,13 +76,13 @@ TEST(point_to_line, jacobian) {
     Transformation<Eigen::Matrix<double, 3, 4>, false> Tk_perturbed, Tkp1_perturbed;
     Vec6 vel_k_perturbed, vel_kp1_perturbed;
 
-    Tk_perturbed.deepCopy(T_k);
-    Tkp1_perturbed.deepCopy(T_kp1);
+    Tk_perturbed = T_k;
+    Tkp1_perturbed = T_kp1;
     vel_k_perturbed = vel_k;
     vel_kp1_perturbed = vel_kp1;
 
-    params[0] = Tk_perturbed.getInternalMatrix().derived().data();
-    params[1] = Tkp1_perturbed.getInternalMatrix().derived().data();
+    params[0] = Tk_perturbed.storage.data();
+    params[1] = Tkp1_perturbed.storage.data();
     params[2] = vel_k_perturbed.data();
     params[3] = vel_kp1_perturbed.data();
 
@@ -101,13 +105,13 @@ TEST(point_to_line, jacobian) {
         cost_function->Evaluate(params, result.data(), nullptr);
         diff = result - op_result;
         num_jacs.at(0).block<2,1>(0,i) = inv_step * diff;
-        Tk_perturbed.deepCopy(T_k);
+        Tk_perturbed = (T_k);
         // Second parameter
         Tkp1_perturbed.manifoldPlus(delta);
         cost_function->Evaluate(params, result.data(), nullptr);
         diff = result - op_result;
         num_jacs.at(1).block<2,1>(0,i) = inv_step * diff;
-        Tkp1_perturbed.deepCopy(T_kp1);
+        Tkp1_perturbed = (T_kp1);
         // Third parameter
         vel_k_perturbed = vel_k_perturbed + delta;
         cost_function->Evaluate(params, result.data(), nullptr);
@@ -155,14 +159,15 @@ TEST(point_to_line, trajectory_param) {
     params[0] = memblock;
 
     Eigen::Map<Vec6> vel(memblock);
-    auto tk_ptr = std::make_shared<Eigen::Map<Eigen::Matrix<double, 3, 4>>>(memblock + 6, 3, 4);
-    auto tkp1_ptr = std::make_shared<Eigen::Map<Eigen::Matrix<double, 3, 4>>>(memblock + 18, 3, 4);
-    Transformation<Eigen::Map<Eigen::Matrix<double, 3, 4>>> T_k(tk_ptr);
-    Transformation<Eigen::Map<Eigen::Matrix<double, 3, 4>>> T_kp1(tkp1_ptr);
+
+    Eigen::Map<Mat34> tk_map(memblock + 6, 3, 4);
+    Eigen::Map<Mat34> tkp1_map(memblock + 18, 3, 4);
+    Transformation<Eigen::Map<Mat34>, true> T_k(tk_map);
+    Transformation<Eigen::Map<Mat34>, true> T_kp1(tkp1_map);
 
     T_k.setIdentity();
     vel << 0.1, -0.1, 0.2, 5, 1, -1;
-    T_kp1.deepCopy(T_k);
+    T_kp1 = (T_k);
     const double delta_T = 0.5;
     T_kp1.manifoldPlus(delta_T * vel);
 
@@ -204,13 +209,13 @@ TEST(point_to_line, trajectory_param) {
     double memblock_perturb[30];
 
     Eigen::Map<Vec6> vel_perturbed(memblock_perturb);
-    auto tk_ptr_perturb = std::make_shared<Eigen::Map<Eigen::Matrix<double, 3, 4>>>(memblock_perturb + 6, 3, 4);
-    auto tkp1_ptr_perturb = std::make_shared<Eigen::Map<Eigen::Matrix<double, 3, 4>>>(memblock_perturb + 18, 3, 4);
-    Transformation<Eigen::Map<Eigen::Matrix<double, 3, 4>>> Tk_perturbed(tk_ptr_perturb);
-    Transformation<Eigen::Map<Eigen::Matrix<double, 3, 4>>> Tkp1_perturbed(tkp1_ptr_perturb);
+    Eigen::Map<Mat34> tk_per_map(memblock_perturb + 6, 3, 4);
+    Eigen::Map<Mat34> tkp1_per_map(memblock_perturb + 18, 3, 4);
+    Transformation<Eigen::Map<Mat34>, true> Tk_perturbed(tk_per_map);
+    Transformation<Eigen::Map<Mat34>, true> Tkp1_perturbed(tkp1_per_map);
 
-    Tk_perturbed.deepCopy(T_k);
-    Tkp1_perturbed.deepCopy(T_kp1);
+    Tk_perturbed = (T_k);
+    Tkp1_perturbed = (T_kp1);
     vel_perturbed = vel;
 
     std::vector<Eigen::Matrix<double, 2, 6>> an_jacs, num_jacs;
@@ -241,14 +246,14 @@ TEST(point_to_line, trajectory_param) {
         cost_function->Evaluate(params, result.data(), nullptr);
         diff = result - op_result;
         num_jacs.at(1).block<2,1>(0,i) = inv_step * diff;
-        Tk_perturbed.deepCopy(T_k);
+        Tk_perturbed = (T_k);
 
         // Third parameter
         Tkp1_perturbed.manifoldPlus(delta);
         cost_function->Evaluate(params, result.data(), nullptr);
         diff = result - op_result;
         num_jacs.at(2).block<2,1>(0,i) = inv_step * diff;
-        Tkp1_perturbed.deepCopy(T_kp1);
+        Tkp1_perturbed = (T_kp1);
 
         delta.setZero();
     }
@@ -284,15 +289,15 @@ TEST(point_to_plane, jacobian) {
     Transformation<Eigen::Matrix<double, 3, 4>, false> T_k, T_kp1;
     Vec6 vel_k, vel_kp1;
 
-    params[0] = T_k.getInternalMatrix().derived().data();
-    params[1] = T_kp1.getInternalMatrix().derived().data();
+    params[0] = T_k.storage.data();
+    params[1] = T_kp1.storage.data();
     params[2] = vel_k.data();
     params[3] = vel_kp1.data();
 
     T_k.setIdentity();
     vel_k << 0.1, -0.1, 0.2, 5, 1, -1;
     vel_kp1 = vel_k;
-    T_kp1.deepCopy(T_k);
+    T_kp1 = (T_k);
     T_kp1.manifoldPlus(delta_T * vel_k);
 
     double zero = 0;
@@ -329,13 +334,13 @@ TEST(point_to_plane, jacobian) {
     Transformation<Eigen::Matrix<double, 3, 4>> Tk_perturbed, Tkp1_perturbed;
     Vec6 vel_k_perturbed, vel_kp1_perturbed;
 
-    Tk_perturbed.deepCopy(T_k);
-    Tkp1_perturbed.deepCopy(T_kp1);
+    Tk_perturbed = (T_k);
+    Tkp1_perturbed = (T_kp1);
     vel_k_perturbed = vel_k;
     vel_kp1_perturbed = vel_kp1;
 
-    params[0] = Tk_perturbed.getInternalMatrix().derived().data();
-    params[1] = Tkp1_perturbed.getInternalMatrix().derived().data();
+    params[0] = Tk_perturbed.storage.data();
+    params[1] = Tkp1_perturbed.storage.data();
     params[2] = vel_k_perturbed.data();
     params[3] = vel_kp1_perturbed.data();
 
@@ -357,13 +362,13 @@ TEST(point_to_plane, jacobian) {
         cost_function->Evaluate(params, result.data(), nullptr);
         diff = result - op_result;
         num_jacs.at(0).block<1,1>(0,i) = inv_step * diff;
-        Tk_perturbed.deepCopy(T_k);
+        Tk_perturbed = (T_k);
         // Second parameter
         Tkp1_perturbed.manifoldPlus(delta);
         cost_function->Evaluate(params, result.data(), nullptr);
         diff = result - op_result;
         num_jacs.at(1).block<1,1>(0,i) = inv_step * diff;
-        Tkp1_perturbed.deepCopy(T_kp1);
+        Tkp1_perturbed = (T_kp1);
         // Third parameter
         vel_k_perturbed = vel_k_perturbed + delta;
         cost_function->Evaluate(params, result.data(), nullptr);
@@ -409,14 +414,14 @@ TEST(point_to_plane, trajectory_param) {
     params[0] = memblock;
 
     Eigen::Map<Vec6> vel(memblock);
-    auto tk_ptr = std::make_shared<Eigen::Map<Eigen::Matrix<double, 3, 4>>>(memblock + 6, 3, 4);
-    auto tkp1_ptr = std::make_shared<Eigen::Map<Eigen::Matrix<double, 3, 4>>>(memblock + 18, 3, 4);
-    Transformation<Eigen::Map<Eigen::Matrix<double, 3, 4>>> T_k(tk_ptr);
-    Transformation<Eigen::Map<Eigen::Matrix<double, 3, 4>>> T_kp1(tkp1_ptr);
+    Eigen::Map<Mat34> tk_map(memblock + 6, 3, 4);
+    Eigen::Map<Mat34> tkp1_map(memblock + 18, 3, 4);
+    Transformation<Eigen::Map<Mat34>, true> T_k(tk_map);
+    Transformation<Eigen::Map<Mat34>, true> T_kp1(tkp1_map);
 
     T_k.setIdentity();
     vel << 0.1, -0.1, 0.2, 5, 1, -1;
-    T_kp1.deepCopy(T_k);
+    T_kp1 = (T_k);
     const double delta_T = 0.5;
     T_kp1.manifoldPlus(delta_T * vel);
 
@@ -457,13 +462,13 @@ TEST(point_to_plane, trajectory_param) {
     double memblock_perturb[30];
 
     Eigen::Map<Vec6> vel_perturbed(memblock_perturb);
-    auto tk_ptr_perturb = std::make_shared<Eigen::Map<Eigen::Matrix<double, 3, 4>>>(memblock_perturb + 6, 3, 4);
-    auto tkp1_ptr_perturb = std::make_shared<Eigen::Map<Eigen::Matrix<double, 3, 4>>>(memblock_perturb + 18, 3, 4);
-    Transformation<Eigen::Map<Eigen::Matrix<double, 3, 4>>> Tk_perturbed(tk_ptr_perturb);
-    Transformation<Eigen::Map<Eigen::Matrix<double, 3, 4>>> Tkp1_perturbed(tkp1_ptr_perturb);
+    Eigen::Map<Mat34> tk_per_map(memblock_perturb + 6, 3, 4);
+    Eigen::Map<Mat34> tkp1_per_map(memblock_perturb + 18, 3, 4);
+    Transformation<Eigen::Map<Mat34>, true> Tk_perturbed(tk_per_map);
+    Transformation<Eigen::Map<Mat34>, true> Tkp1_perturbed(tkp1_per_map);
 
-    Tk_perturbed.deepCopy(T_k);
-    Tkp1_perturbed.deepCopy(T_kp1);
+    Tk_perturbed = (T_k);
+    Tkp1_perturbed = (T_kp1);
     vel_perturbed = vel;
 
     std::vector<Eigen::Matrix<double, 1, 6>> an_jacs, num_jacs;
@@ -494,14 +499,14 @@ TEST(point_to_plane, trajectory_param) {
         cost_function->Evaluate(params, &result, nullptr);
         diff = result - op_result;
         num_jacs.at(1).coeffRef(0,i) = inv_step * diff;
-        Tk_perturbed.deepCopy(T_k);
+        Tk_perturbed = (T_k);
 
         // Third parameter
         Tkp1_perturbed.manifoldPlus(delta);
         cost_function->Evaluate(params, &result, nullptr);
         diff = result - op_result;
         num_jacs.at(2).coeffRef(0,i) = inv_step * diff;
-        Tkp1_perturbed.deepCopy(T_kp1);
+        Tkp1_perturbed = (T_kp1);
 
         delta.setZero();
     }

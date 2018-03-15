@@ -6,17 +6,12 @@ namespace wave {
 SE3PointToLineGP::SE3PointToLineGP(const double *const p,
                                    const double *const pA,
                                    const double *const pB,
-                                   const Eigen::Matrix<double, 6, 12> &hat,
-                                   const Eigen::Matrix<double, 6, 12> &candle,
+                                   SE3PointToLineGPObjects &objects,
                                    const Mat3 &CovZ,
                                    bool calculate_weight)
-    : pt(p),
-      ptA(pA),
-      ptB(pB),
-      hat(hat),
-      candle(candle) {
-    this->JP_T.setZero();
-    this->JP_T.block<3, 3>(0, 3).setIdentity();
+    : pt(p), ptA(pA), ptB(pB), objects(objects) {
+    this->objects.JP_T.setZero();
+    this->objects.JP_T.block<3, 3>(0, 3).setIdentity();
 
     this->diff[0] = this->ptB[0] - this->ptA[0];
     this->diff[1] = this->ptB[1] - this->ptA[1];
@@ -28,15 +23,15 @@ SE3PointToLineGP::SE3PointToLineGP(const double *const p,
         throw std::out_of_range("Points defining line are too close!");
     }
 
-    this->Jres_P(0, 0) = 1 - (diff[0] * diff[0] / bottom);
-    this->Jres_P(0, 1) = -(diff[0] * diff[1] / bottom);
-    this->Jres_P(0, 2) = -(diff[0] * diff[2] / bottom);
-    this->Jres_P(1, 0) = -(diff[1] * diff[0] / bottom);
-    this->Jres_P(1, 1) = 1 - (diff[1] * diff[1] / bottom);
-    this->Jres_P(1, 2) = -(diff[1] * diff[2] / bottom);
-    this->Jres_P(2, 0) = -(diff[2] * diff[0] / bottom);
-    this->Jres_P(2, 1) = -(diff[2] * diff[1] / bottom);
-    this->Jres_P(2, 2) = 1 - (diff[2] * diff[2] / bottom);
+    this->objects.Jres_P(0, 0) = 1 - (diff[0] * diff[0] / bottom);
+    this->objects.Jres_P(0, 1) = -(diff[0] * diff[1] / bottom);
+    this->objects.Jres_P(0, 2) = -(diff[0] * diff[2] / bottom);
+    this->objects.Jres_P(1, 0) = -(diff[1] * diff[0] / bottom);
+    this->objects.Jres_P(1, 1) = 1 - (diff[1] * diff[1] / bottom);
+    this->objects.Jres_P(1, 2) = -(diff[1] * diff[2] / bottom);
+    this->objects.Jres_P(2, 0) = -(diff[2] * diff[0] / bottom);
+    this->objects.Jres_P(2, 1) = -(diff[2] * diff[1] / bottom);
+    this->objects.Jres_P(2, 2) = 1 - (diff[2] * diff[2] / bottom);
 
     Eigen::Vector3d unitdiff;
     double invlength = 1.0 / sqrt(this->bottom);
@@ -56,13 +51,13 @@ SE3PointToLineGP::SE3PointToLineGP(const double *const p,
     auto v = unitdiff.cross(unitz);
     auto s = v.norm();
     auto c = unitz.dot(unitdiff);
-    auto skew = Transformation<void>::skewSymmetric3(v);
+    auto skew = Transformation<>::skewSymmetric3(v);
     this->rotation = Eigen::Matrix3d::Identity() + skew + skew * skew * ((1 - c) / (s * s));
 
-    this->Jres_P = this->rotation * this->Jres_P;
+    this->objects.Jres_P = this->rotation * this->objects.Jres_P;
 
     if (calculate_weight) {
-        auto rotated = this->Jres_P * CovZ * this->Jres_P.transpose();
+        auto rotated = this->objects.Jres_P * CovZ * this->objects.Jres_P.transpose();
         this->weight_matrix = rotated.block<2, 2>(0, 0).inverse().sqrt();
     } else {
         this->weight_matrix.setIdentity();
@@ -70,24 +65,34 @@ SE3PointToLineGP::SE3PointToLineGP(const double *const p,
 }
 
 bool SE3PointToLineGP::Evaluate(double const *const *parameters, double *residuals, double **jacobians) const {
-    auto tk_ptr = std::make_shared<Eigen::Map<const Eigen::Matrix<double, 3, 4>>>(parameters[0], 3, 4);
-    auto tkp1_ptr = std::make_shared<Eigen::Map<const Eigen::Matrix<double, 3, 4>>>(parameters[1], 3, 4);
+    Eigen::Map<const Mat34> tk_map(parameters[0], 3, 4);
+    Eigen::Map<const Mat34> tkp1_map(parameters[1], 3, 4);
 
-    Transformation<Eigen::Map<const Eigen::Matrix<double, 3, 4>>, true> Tk(tk_ptr);
-    Transformation<Eigen::Map<const Eigen::Matrix<double, 3, 4>>, true> Tkp1(tkp1_ptr);
+    Transformation<Eigen::Map<const Mat34>, true> Tk(tk_map);
+    Transformation<Eigen::Map<const Mat34>, true> Tkp1(tkp1_map);
 
     Eigen::Map<const Vec6> vel_k(parameters[2], 6, 1);
     Eigen::Map<const Vec6> vel_kp1(parameters[3], 6, 1);
 
     if (jacobians) {
-        this->T_current = Transformation<Eigen::Map<const Eigen::Matrix<double, 3, 4>>, true>::interpolateAndJacobians(Tk, Tkp1, vel_k, vel_kp1, this->hat, this->candle,
-            this->JT_Ti, this->JT_Tip1, this->JT_Wi, this->JT_Wip1);
+        Transformation<Mat34, false>::interpolateAndJacobians(Tk,
+                                                             Tkp1,
+                                                             vel_k,
+                                                             vel_kp1,
+                                                             this->objects.hat,
+                                                             this->objects.candle,
+                                                             this->objects.T_current,
+                                                             this->objects.JT_Ti,
+                                                             this->objects.JT_Tip1,
+                                                             this->objects.JT_Wi,
+                                                             this->objects.JT_Wip1);
     } else {
-        this->T_current = Transformation<Eigen::Map<const Eigen::Matrix<double, 3, 4>>, true>::interpolate(Tk, Tkp1, vel_k, vel_kp1, this->hat, this->candle);
+        Transformation<Mat34, false>::interpolate(
+          Tk, Tkp1, vel_k, vel_kp1, this->objects.hat, this->objects.candle, this->objects.T_current);
     }
 
     Eigen::Map<const Vec3> PT(this->pt, 3, 1);
-    Vec3 point = this->T_current.transform(PT);
+    Vec3 point = this->objects.T_current.transform(PT);
 
     double p_A[3] = {point(0) - this->ptA[0], point(1) - this->ptA[1], point(2) - this->ptA[2]};
 
@@ -103,33 +108,33 @@ bool SE3PointToLineGP::Evaluate(double const *const *parameters, double *residua
     reduced = this->weight_matrix * (this->rotation * (point - pt_Tl)).block<2, 1>(0, 0);
 
     if (jacobians != nullptr) {
-        this->JP_T(0,1) = point(2);
-        this->JP_T(0,2) = -point(1);
-        this->JP_T(1,0) = -point(2);
-        this->JP_T(1,2) = point(0);
-        this->JP_T(2,0) = point(1);
-        this->JP_T(2,1) = -point(0);
+        this->objects.JP_T(0, 1) = point(2);
+        this->objects.JP_T(0, 2) = -point(1);
+        this->objects.JP_T(1, 0) = -point(2);
+        this->objects.JP_T(1, 2) = point(0);
+        this->objects.JP_T(2, 0) = point(1);
+        this->objects.JP_T(2, 1) = -point(0);
 
         // Jres_P already has rotation incorporated during construction
-        this->Jr_T = this->Jres_P * this->JP_T;
+        this->objects.Jr_T = this->objects.Jres_P * this->objects.JP_T;
 
         if (jacobians[0]) {
             Eigen::Map<Eigen::Matrix<double, 2, 12, Eigen::RowMajor>> Jr_Tk(jacobians[0], 2, 12);
-            Jr_Tk.block<2,6>(0,0) = this->weight_matrix * this->Jr_T.block<2,6>(0,0) * this->JT_Ti;
+            Jr_Tk.block<2, 6>(0, 0) = this->weight_matrix * this->objects.Jr_T.block<2, 6>(0, 0) * this->objects.JT_Ti;
             Jr_Tk.block<2, 6>(0, 6).setZero();
         }
         if (jacobians[1]) {
             Eigen::Map<Eigen::Matrix<double, 2, 12, Eigen::RowMajor>> Jr_Tkp1(jacobians[1], 2, 12);
-            Jr_Tkp1.block<2,6>(0,0) = this->weight_matrix * this->Jr_T.block<2,6>(0,0) * this->JT_Tip1;
+            Jr_Tkp1.block<2, 6>(0, 0) = this->weight_matrix * this->objects.Jr_T.block<2, 6>(0, 0) * this->objects.JT_Tip1;
             Jr_Tkp1.block<2, 6>(0, 6).setZero();
         }
         if (jacobians[2]) {
             Eigen::Map<Eigen::Matrix<double, 2, 6, Eigen::RowMajor>> jac_map(jacobians[2], 2, 6);
-            jac_map = this->weight_matrix * this->Jr_T.block<2,6>(0,0) * this->JT_Wi;
+            jac_map = this->weight_matrix * this->objects.Jr_T.block<2, 6>(0, 0) * this->objects.JT_Wi;
         }
         if (jacobians[3]) {
             Eigen::Map<Eigen::Matrix<double, 2, 6, Eigen::RowMajor>> jac_map(jacobians[3], 2, 6);
-            jac_map = this->weight_matrix * this->Jr_T.block<2,6>(0,0) * this->JT_Wip1;
+            jac_map = this->weight_matrix * this->objects.Jr_T.block<2, 6>(0, 0) * this->objects.JT_Wip1;
         }
     }
 

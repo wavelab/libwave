@@ -81,7 +81,7 @@ void plotVec(const Eigen::MatrixBase<Derived> &mat, bool block = false) {
 template<typename Derived>
 int plotMat(const Eigen::MatrixBase<Derived> &mat) {
     mat2csv("/tmp/tmp.mat", mat);
-    PYTHON_SCRIPT("/home/ben/git/libwave/wave_utils/scripts/plot_matrix.py /tmp/tmp.mat");
+    PYTHON_SCRIPT("/home/bapskiko/git/libwave/wave_utils/scripts/plot_matrix.py /tmp/tmp.mat");
     return 0;
 }
 

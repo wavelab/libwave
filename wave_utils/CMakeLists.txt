@@ -9,7 +9,9 @@ WAVE_ADD_MODULE(${PROJECT_NAME}
     src/data.cpp
     src/file.cpp
     src/math.cpp
-    src/time.cpp)
+    src/time.cpp
+    src/angles.cpp
+    src/pose_cov_comp.cpp)
 
 TARGET_LINK_LIBRARIES(wave_utils
         PUBLIC
@@ -22,7 +24,9 @@ IF(BUILD_TESTING)
         tests/utils/data_test.cpp
         tests/utils/file_test.cpp
         tests/utils/math_test.cpp
-        tests/utils/time_test.cpp)
+        tests/utils/time_test.cpp
+        tests/utils/test_angles.cpp
+        tests/utils/test_pose_cov_comp.cpp)
 
     TARGET_LINK_LIBRARIES(${PROJECT_NAME}_tests ${PROJECT_NAME})
 

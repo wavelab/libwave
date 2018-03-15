@@ -9,7 +9,7 @@ WAVE_ADD_MODULE(${PROJECT_NAME} DEPENDS
     Eigen3::Eigen
     ceres
     SOURCES
-    src/ceres/ba.cpp
+    #src/ceres/ba.cpp
     src/ceres/ceres_examples.cpp
         src/ceres/local_params/SE3Parameterization.cpp
         src/ceres/local_params/null_SE3_parameterization.cpp

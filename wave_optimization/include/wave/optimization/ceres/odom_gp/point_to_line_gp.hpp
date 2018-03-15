@@ -15,6 +15,27 @@
 
 namespace wave {
 
+struct SE3PointToLineGPObjects {
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    // Preallocate memory for jacobian calculations to avoid it during residual evaluation
+    // This is the Jacobian of the cost function wrt an the transformed point
+    Eigen::Matrix<double, 3, 3> Jres_P;
+
+    mutable Transformation<Mat34, false> T_current;
+
+    // Interpolation factors
+    Eigen::Matrix<double, 6, 12> hat;
+
+    Eigen::Matrix<double, 6, 12> candle;
+
+    // Interpolation Jacobians
+    mutable Eigen::Matrix<double, 6, 6> JT_Ti, JT_Tip1, JT_Wi, JT_Wip1;
+    // Jacobian of the Transformed point wrt the transformation
+    mutable Eigen::Matrix<double, 3, 6> JP_T;
+    // Complete Jacobian will null row
+    mutable Eigen::Matrix<double, 3, 6> Jr_T;
+};
+
 class SE3PointToLineGP : public ceres::SizedCostFunction<2, 12, 12, 6, 6> {
  public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -26,23 +47,7 @@ class SE3PointToLineGP : public ceres::SizedCostFunction<2, 12, 12, 6, 6> {
     double diff[3];
     double bottom;
 
-    // Preallocate memory for jacobian calculations to avoid it during residual evaluation
-    // This is the Jacobian of the cost function wrt an the transformed point
-    Eigen::Matrix<double, 3, 3> Jres_P;
-
-    mutable Transformation<Eigen::Matrix<double, 3, 4>, true> T_current;
-
-    // Interpolation factors
-    const Eigen::Matrix<double, 6, 12> hat;
-
-    const Eigen::Matrix<double, 6, 12> candle;
-
-    // Interpolation Jacobians
-    mutable Eigen::Matrix<double, 6, 6> JT_Ti, JT_Tip1, JT_Wi, JT_Wip1;
-    // Jacobian of the Transformed point wrt the transformation
-    mutable Eigen::Matrix<double, 3, 6> JP_T;
-    // Complete Jacobian will null row
-    mutable Eigen::Matrix<double, 3, 6> Jr_T;
+    SE3PointToLineGPObjects &objects;
 
     /**
      * This is used to rotate the residual into a frame where one of the unit vectors is
@@ -61,8 +66,7 @@ class SE3PointToLineGP : public ceres::SizedCostFunction<2, 12, 12, 6, 6> {
     SE3PointToLineGP(const double *const p,
                    const double *const pA,
                    const double *const pB,
-                   const Eigen::Matrix<double, 6, 12> &hat,
-                   const Eigen::Matrix<double, 6, 12> &candle,
+                   SE3PointToLineGPObjects &objects,
                    const Mat3 &CovZ,
                    bool calculate_weight);
 
