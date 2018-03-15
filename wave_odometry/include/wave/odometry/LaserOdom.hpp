@@ -143,7 +143,9 @@ struct LaserOdomParams {
 };
 
 class LaserOdom {
-    using T_TYPE = Transformation<Eigen::Matrix<double, 3, 4>, true>;
+    // true uses transform class with some approximations for exp map, etc
+    // false uses full analytical expressions wherever possible
+    using T_TYPE = Transformation<Eigen::Matrix<double, 3, 4>, false>;
 
  public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -177,8 +179,8 @@ class LaserOdom {
     // Shared memory
     std::mutex output_mutex;
     pcl::PointCloud<pcl::PointXYZI> undistorted_cld;
-    std::vector<pcl::PointCloud<pcl::PointXYZ>> undis_features;  // undis_edges, undis_flats;
-    std::vector<pcl::PointCloud<pcl::PointXYZ>> map_features;    // map_edges, map_flats;
+    std::vector<pcl::PointCloud<pcl::PointXYZ>, Eigen::aligned_allocator<pcl::PointCloud<pcl::PointXYZ>>> undis_features;  // undis_edges, undis_flats;
+    std::vector<pcl::PointCloud<pcl::PointXYZ>, Eigen::aligned_allocator<pcl::PointCloud<pcl::PointXYZ>>> map_features;    // map_edges, map_flats;
     std::vector<std::vector<std::vector<double>>> output_corrs;
     std::vector<double> output_eigen;
     TimeType undistorted_stamp;
@@ -213,6 +215,9 @@ class LaserOdom {
 
     // ceres optimizer stuff
     std::vector<const double *> param_blocks;
+    // Preallocated memory for the residuals
+    std::vector<SE3PointToLineGPObjects, Eigen::aligned_allocator<SE3PointToLineGPObjects>> PtLMem;
+    std::vector<SE3PointToPlaneGPObjects, Eigen::aligned_allocator<SE3PointToPlaneGPObjects>> PtPMem;
 
     LaserOdomParams param;
     bool initialized = false, full_revolution = false;
@@ -237,7 +242,7 @@ class LaserOdom {
     // Lidar Sensor Model
     std::shared_ptr<RangeSensor> range_sensor;
     // Motion Model
-    std::vector<wave_kinematics::ConstantVelocityPrior> cv_vector;
+    std::vector<wave_kinematics::ConstantVelocityPrior, Eigen::aligned_allocator<wave_kinematics::ConstantVelocityPrior>> cv_vector;
     std::vector<double> trajectory_stamps;
 
     Mat6 sqrtinfo;
@@ -253,7 +258,7 @@ class LaserOdom {
     // The input, in order of processing
 
     // Input set of points. Grouped by laser
-    std::vector<pcl::PointCloud<PCLPointXYZIT>> cur_scan;
+    std::vector<pcl::PointCloud<PCLPointXYZIT>, Eigen::aligned_allocator<pcl::PointCloud<PCLPointXYZIT>>> cur_scan;
     // The range and intensity signals, grouped by kernel and ring
     std::vector<std::vector<std::vector<double>>> signals;
     // The resulting scores for each signal, grouped by kernel and ring

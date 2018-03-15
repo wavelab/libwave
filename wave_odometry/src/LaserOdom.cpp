@@ -140,6 +140,10 @@ LaserOdom::LaserOdom(const LaserOdomParams params) : param(params) {
     }
 
     this->output_eigen.resize(6 * (1 + this->param.num_trajectory_states));
+
+    // Initial size of pre-allocated memory
+    this->PtLMem.resize(1000);
+    this->PtPMem.resize(3000);
 }
 
 /// tau is the time of the point
@@ -838,6 +842,8 @@ bool LaserOdom::match() {
     std::vector<size_t> ret_indices;
     std::vector<double> out_dist_sqr;
 
+    uint64_t cur_PtL_idx = 0, cur_PtP_idx = 0;
+
     for (uint16_t i = 0; i < this->N_FEATURES; i++) {
         for (uint16_t j = 0; j < this->param.n_ring; j++) {
             this->feature_corrs.at(i).at(j).clear();
@@ -855,37 +861,48 @@ bool LaserOdom::match() {
                 Eigen::Matrix3f covZ;
                 this->range_sensor->getEuclideanCovariance(query.data(), j, covZ);
                 if (this->findCorrespondingPoints(query, i, &ret_indices)) {
+                    //check if there is enough memory for next cost function
+                    if (cur_PtL_idx == this->PtLMem.size()) {
+                        LOG_ERROR("Pre allocated point to line memory block is too small, reseting");
+                        return false;
+                    }
+                    if (cur_PtP_idx == this->PtPMem.size()) {
+                        LOG_ERROR("Pre allocated point to plane memory block is too small, reseting");
+                        return false;
+                    }
                     if (this->param.no_extrapolation && this->outOfBounds(query, i, ret_indices)) {
                         break;
                     }
                     this->cv_vector.at(k).tau = &tau;
                     this->cv_vector.at(k).calculateStuff(hat, candle);
                     ceres::CostFunction *cost_function;
-                    SE3PointToLineGP *pTl_cost_function;
-                    SE3PointToPlaneGP *pTPl_cost_function;
+                    SE3PointToLineGP *pTl_cost_function = nullptr;
+                    SE3PointToPlaneGP *pTPl_cost_function = nullptr;
                     double rescale;
                     switch (this->feature_definitions.at(i).residual) {
                         case PointToLine:
                             if (this->param.treat_lines_as_planes) {
+                                this->PtPMem.at(cur_PtP_idx).hat = hat.block<6,12>(0,0);
+                                this->PtPMem.at(cur_PtP_idx).candle = candle.block<6,12>(0,0);
                                 pTPl_cost_function = new SE3PointToPlaneGP(
                                   this->feature_points.at(i).at(j).at(pt_cntr).pt,
                                   this->prv_feature_points.at(i).points.at(ret_indices.at(0)).data(),
                                   this->prv_feature_points.at(i).points.at(ret_indices.at(1)).data(),
                                   zero_pt,
-                                  hat.block<6, 12>(0, 0),
-                                  candle.block<6, 12>(0, 0),
+                                  this->PtPMem.at(cur_PtP_idx),
                                   covZ.cast<double>(),
                                   this->param.use_weighting);
                                 residuals.resize(1);
                                 rescale = pTPl_cost_function->weight;
                                 cost_function = pTPl_cost_function;
                             } else {
+                                this->PtLMem.at(cur_PtL_idx).hat = hat.block<6,12>(0,0);
+                                this->PtLMem.at(cur_PtL_idx).candle = candle.block<6,12>(0,0);
                                 pTl_cost_function = new SE3PointToLineGP(
                                   this->feature_points.at(i).at(j).at(pt_cntr).pt,
                                   this->prv_feature_points.at(i).points.at(ret_indices.at(0)).data(),
                                   this->prv_feature_points.at(i).points.at(ret_indices.at(1)).data(),
-                                  hat.block<6, 12>(0, 0),
-                                  candle.block<6, 12>(0, 0),
+                                  this->PtLMem.at(cur_PtL_idx),
                                   covZ.cast<double>(),
                                   this->param.use_weighting);
                                 residuals.resize(2);
@@ -894,13 +911,14 @@ bool LaserOdom::match() {
                             }
                             break;
                         case PointToPlane:
+                            this->PtPMem.at(cur_PtP_idx).hat = hat.block<6,12>(0,0);
+                            this->PtPMem.at(cur_PtP_idx).candle = candle.block<6,12>(0,0);
                             pTPl_cost_function = new SE3PointToPlaneGP(
                               this->feature_points.at(i).at(j).at(pt_cntr).pt,
                               this->prv_feature_points.at(i).points.at(ret_indices.at(0)).data(),
                               this->prv_feature_points.at(i).points.at(ret_indices.at(1)).data(),
                               this->prv_feature_points.at(i).points.at(ret_indices.at(2)).data(),
-                              hat.block<6, 12>(0, 0),
-                              candle.block<6, 12>(0, 0),
+                              this->PtPMem.at(cur_PtP_idx),
                               covZ.cast<double>(),
                               this->param.use_weighting);
                             residuals.resize(1);
@@ -942,6 +960,13 @@ bool LaserOdom::match() {
                                              this->cur_trajectory.at(kp1).pose.storage.data(),
                                              this->cur_trajectory.at(k).vel.data(),
                                              this->cur_trajectory.at(kp1).vel.data());
+
+                    if(pTl_cost_function) {
+                        cur_PtL_idx++;
+                    } else if (pTPl_cost_function) {
+                        cur_PtP_idx++;
+                    }
+
                 }
             }
         }

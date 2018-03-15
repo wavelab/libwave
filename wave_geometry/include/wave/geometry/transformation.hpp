@@ -311,7 +311,7 @@ class Transformation {
     template <typename T_OUT, bool approx>
     void transformInverse(Transformation<T_OUT, approx> &T_inv) const;
 
-    Transformation<Mat34, true> transformInverse() const;
+    Transformation<Mat34, approximate> transformInverse() const;
 
     /** Checks if the input transformation is sufficiently close to this transformation
      *

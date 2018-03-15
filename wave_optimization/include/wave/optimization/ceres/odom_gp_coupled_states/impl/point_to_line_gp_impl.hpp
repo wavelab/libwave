@@ -78,7 +78,7 @@ bool SE3PointToLineGPCoupled<DIM>::Evaluate(double const *const *parameters,
     Eigen::Map<const Vec6> vel_k(parameters[0], 6, 1);
 
     Eigen::Map<const Mat34> tk_map(parameters[0] + 6 + 12 * this->idx_k, 3, 4);
-    Eigen::Map<const Mat34> tkp1_map(parameters[1] + 6 + 12 * (this->idx_k + 1), 3, 4);
+    Eigen::Map<const Mat34> tkp1_map(parameters[0] + 6 + 12 * (this->idx_k + 1), 3, 4);
     Transformation<Eigen::Map<const Mat34>, true> Tk(tk_map);
     Transformation<Eigen::Map<const Mat34>, true> Tkp1(tkp1_map);
 

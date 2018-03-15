@@ -25,7 +25,7 @@ TEST(point_to_line, jacobian) {
     const double **params;
     params = new const double *[4];
 
-    Transformation<Eigen::Matrix<double, 3, 4>, true> T_k, T_kp1;
+    Transformation<Eigen::Matrix<double, 3, 4>, false> T_k, T_kp1;
     Vec6 vel_k, vel_kp1;
 
     params[0] = T_k.storage.data();
@@ -194,12 +194,11 @@ TEST(point_to_line, trajectory_param) {
                                                                      0,
                                                               Mat3::Identity(),
                                                               true);
+
+    double jacmem[30];
     double **jacobian;
-    jacobian = new double *[4];
-    jacobian[0] = new double[24];
-    jacobian[1] = new double[24];
-    jacobian[2] = new double[12];
-    jacobian[3] = new double[12];
+    jacobian = new double *[1];
+    *jacobian = &jacmem[0];
 
     Vec2 op_result;
 
@@ -264,8 +263,9 @@ TEST(point_to_line, trajectory_param) {
     an_jacs.at(1) = jac_map.block<2,6>(0,6);
     an_jacs.at(2) = jac_map.block<2,6>(0,18);
 
+    double err = 0.0;
     for (uint32_t i = 0; i < 3; i++) {
-        double err = (num_jacs.at(i) - an_jacs.at(i)).norm();
+        err = (num_jacs.at(i) - an_jacs.at(i)).norm();
         if (err > 1e-10) {
             std::cout << "Index " << i << " with error = " << err << std::endl
                       << "Numerical: " << std::endl << num_jacs.at(i) << std::endl
@@ -311,12 +311,15 @@ TEST(point_to_plane, jacobian) {
 
     motion_prior.calculateStuff(hat, candle);
 
+    SE3PointToPlaneGPObjects objects;
+    objects.hat = hat.block<6, 12>(0,0);
+    objects.candle = candle.block<6, 12>(0,0);
+
     ceres::CostFunction *cost_function = new SE3PointToPlaneGP(pt,
                                                               ptA,
                                                               ptB,
                                                               ptC,
-                                                              hat.block<6, 12>(0, 0),
-                                                              candle.block<6, 12>(0, 0),
+                                                              objects,
                                                               Mat3::Identity(),
                                                               false);
     double **jacobian;

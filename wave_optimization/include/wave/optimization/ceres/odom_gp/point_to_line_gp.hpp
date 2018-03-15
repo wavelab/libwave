@@ -34,6 +34,14 @@ struct SE3PointToLineGPObjects {
     mutable Eigen::Matrix<double, 3, 6> JP_T;
     // Complete Jacobian will null row
     mutable Eigen::Matrix<double, 3, 6> Jr_T;
+
+    /**
+     * This is used to rotate the residual into a frame where one of the unit vectors is
+     * parallel with the line between A and B. This allows for the reduction of dimensionality
+     * from 3 to 2 without much additional Jacobian complexity.
+     */
+
+    Eigen::Matrix3d rotation;
 };
 
 class SE3PointToLineGP : public ceres::SizedCostFunction<2, 12, 12, 6, 6> {
@@ -48,15 +56,6 @@ class SE3PointToLineGP : public ceres::SizedCostFunction<2, 12, 12, 6, 6> {
     double bottom;
 
     SE3PointToLineGPObjects &objects;
-
-    /**
-     * This is used to rotate the residual into a frame where one of the unit vectors is
-     * parallel with the line between A and B. This allows for the reduction of dimensionality
-     * from 3 to 2 without much additional Jacobian complexity.
-     */
-
-    Eigen::Matrix3d rotation;
-
 
  public:
     Mat2 weight_matrix;

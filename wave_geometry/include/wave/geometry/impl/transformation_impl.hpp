@@ -571,7 +571,7 @@ void Transformation<Derived, approximate>::transformInverse(Transformation<T_OUT
 }
 
 template<typename Derived, bool approximate>
-Transformation<Mat34, true> Transformation<Derived, approximate>::transformInverse() const {
+Transformation<Mat34, approximate> Transformation<Derived, approximate>::transformInverse() const {
     Transformation<Mat34, approximate> retval;
     this->transformInverse(retval);
     return retval;

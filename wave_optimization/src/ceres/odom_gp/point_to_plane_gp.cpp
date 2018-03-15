@@ -6,18 +6,17 @@ SE3PointToPlaneGP::SE3PointToPlaneGP(const double *const p,
                                      const double *const pA,
                                      const double *const pB,
                                      const double *const pC,
-                                     const Eigen::Matrix<double, 6, 12> &hat,
-                                     const Eigen::Matrix<double, 6, 12> &candle,
+                                     SE3PointToPlaneGPObjects &objects,
                                      const Mat3 &covZ,
                                      bool use_weighting)
-    : pt(p), ptA(pA), ptB(pB), ptC(pC), hat(hat), candle(candle) {
-    this->JP_T.setZero();
-    this->JP_T.block<3, 3>(0, 3).setIdentity();
+    : pt(p), ptA(pA), ptB(pB), ptC(pC), objects(objects) {
+    this->objects.JP_T.setZero();
+    this->objects.JP_T.block<3, 3>(0, 3).setIdentity();
 
-    this->calculateJr_P(this->Jr_P);
+    this->calculateJr_P(this->objects.Jr_P);
 
     if (use_weighting) {
-        double covR = (Jr_P * covZ * Jr_P.transpose())(0);
+        double covR = (objects.Jr_P * covZ * objects.Jr_P.transpose())(0);
         this->weight = std::sqrt(1.0 / covR);
     } else {
         this->weight = 1;
@@ -35,31 +34,31 @@ bool SE3PointToPlaneGP::Evaluate(double const *const *parameters, double *residu
     Eigen::Map<const Mat34> tk_map(parameters[0], 3, 4);
     Eigen::Map<const Mat34> tkp1_map(parameters[1], 3, 4);
 
-    Transformation<Eigen::Map<const Mat34>, true> Tk(tk_map);
-    Transformation<Eigen::Map<const Mat34>, true> Tkp1(tkp1_map);
+    Transformation<Eigen::Map<const Mat34>, false> Tk(tk_map);
+    Transformation<Eigen::Map<const Mat34>, false> Tkp1(tkp1_map);
 
     Eigen::Map<const Vec6> vel_k(parameters[2], 6, 1);
     Eigen::Map<const Vec6> vel_kp1(parameters[3], 6, 1);
 
     if (jacobians) {
-        Transformation<Mat34, true>::interpolateAndJacobians<>(Tk,
+        Transformation<Mat34, false>::interpolateAndJacobians<>(Tk,
                                                                                                        Tkp1,
                                                                                                        vel_k,
                                                                                                        vel_kp1,
-                                                                                                       this->hat,
-                                                                                                       this->candle,
-                                                                                                       this->T_current,
-                                                                                                       this->JT_Ti,
-                                                                                                       this->JT_Tip1,
-                                                                                                       this->JT_Wi,
-                                                                                                       this->JT_Wip1);
+                                                                                                       this->objects.hat,
+                                                                                                       this->objects.candle,
+                                                                                                       this->objects.T_current,
+                                                                                                       this->objects.JT_Ti,
+                                                                                                       this->objects.JT_Tip1,
+                                                                                                       this->objects.JT_Wi,
+                                                                                                       this->objects.JT_Wip1);
     } else {
-        Transformation<Mat34, true>::interpolate<>(
-          Tk, Tkp1, vel_k, vel_kp1, this->hat, this->candle, this->T_current);
+        Transformation<Mat34, false>::interpolate<>(
+          Tk, Tkp1, vel_k, vel_kp1, this->objects.hat, this->objects.candle, this->objects.T_current);
     }
 
     Eigen::Map<const Vec3> PT(this->pt, 3, 1);
-    Vec3 point = this->T_current.transform(PT);
+    Vec3 point = this->objects.T_current.transform(PT);
 
     // point is the transformed point.
     double d_B[3] = {point(0) - ptB[0], point(1) - ptB[1], point(2) - ptB[2]};
@@ -69,32 +68,32 @@ bool SE3PointToPlaneGP::Evaluate(double const *const *parameters, double *residu
     residuals[0] = this->weight * (num * (this->inv_den));
 
     if (jacobians) {
-        this->JP_T(0, 1) = point(2);
-        this->JP_T(0, 2) = -point(1);
-        this->JP_T(1, 0) = -point(2);
-        this->JP_T(1, 2) = point(0);
-        this->JP_T(2, 0) = point(1);
-        this->JP_T(2, 1) = -point(0);
+        this->objects.JP_T(0, 1) = point(2);
+        this->objects.JP_T(0, 2) = -point(1);
+        this->objects.JP_T(1, 0) = -point(2);
+        this->objects.JP_T(1, 2) = point(0);
+        this->objects.JP_T(2, 0) = point(1);
+        this->objects.JP_T(2, 1) = -point(0);
 
 
-        this->Jr_T = this->Jr_P * this->JP_T;
+        this->objects.Jr_T = this->objects.Jr_P * this->objects.JP_T;
         if (jacobians[0]) {
             Eigen::Map<Eigen::Matrix<double, 1, 12, Eigen::RowMajor>> Jr_Tk(jacobians[0], 1, 12);
             Jr_Tk.setZero();
-            Jr_Tk.block<1, 6>(0, 0) = this->weight * this->Jr_T * this->JT_Ti;
+            Jr_Tk.block<1, 6>(0, 0) = this->weight * this->objects.Jr_T * this->objects.JT_Ti;
         }
         if (jacobians[1]) {
             Eigen::Map<Eigen::Matrix<double, 1, 12, Eigen::RowMajor>> Jr_Tkp1(jacobians[1], 1, 12);
             Jr_Tkp1.setZero();
-            Jr_Tkp1.block<1, 6>(0, 0) = this->weight * this->Jr_T * this->JT_Tip1;
+            Jr_Tkp1.block<1, 6>(0, 0) = this->weight * this->objects.Jr_T * this->objects.JT_Tip1;
         }
         if (jacobians[2]) {
             Eigen::Map<Eigen::Matrix<double, 1, 6, Eigen::RowMajor>> jac_map(jacobians[2], 1, 6);
-            jac_map = this->weight * this->Jr_T * this->JT_Wi;
+            jac_map = this->weight * this->objects.Jr_T * this->objects.JT_Wi;
         }
         if (jacobians[3]) {
             Eigen::Map<Eigen::Matrix<double, 1, 6, Eigen::RowMajor>> jac_map(jacobians[3], 1, 6);
-            jac_map = this->weight * this->Jr_T * this->JT_Wip1;
+            jac_map = this->weight * this->objects.Jr_T * this->objects.JT_Wip1;
         }
     }
 

@@ -9,6 +9,8 @@
 namespace wave_kinematics {
 
 struct ConstantVelocityPrior {
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
     using Mat12 = Eigen::Matrix<double, 12, 12>;
     using Mat6 = Eigen::Matrix<double, 6, 6>;
 

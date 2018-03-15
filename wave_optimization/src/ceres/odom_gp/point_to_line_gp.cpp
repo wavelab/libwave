@@ -52,9 +52,9 @@ SE3PointToLineGP::SE3PointToLineGP(const double *const p,
     auto s = v.norm();
     auto c = unitz.dot(unitdiff);
     auto skew = Transformation<>::skewSymmetric3(v);
-    this->rotation = Eigen::Matrix3d::Identity() + skew + skew * skew * ((1 - c) / (s * s));
+    this->objects.rotation = Eigen::Matrix3d::Identity() + skew + skew * skew * ((1 - c) / (s * s));
 
-    this->objects.Jres_P = this->rotation * this->objects.Jres_P;
+    this->objects.Jres_P = this->objects.rotation * this->objects.Jres_P;
 
     if (calculate_weight) {
         auto rotated = this->objects.Jres_P * CovZ * this->objects.Jres_P.transpose();
@@ -68,8 +68,8 @@ bool SE3PointToLineGP::Evaluate(double const *const *parameters, double *residua
     Eigen::Map<const Mat34> tk_map(parameters[0], 3, 4);
     Eigen::Map<const Mat34> tkp1_map(parameters[1], 3, 4);
 
-    Transformation<Eigen::Map<const Mat34>, true> Tk(tk_map);
-    Transformation<Eigen::Map<const Mat34>, true> Tkp1(tkp1_map);
+    Transformation<Eigen::Map<const Mat34>, false> Tk(tk_map);
+    Transformation<Eigen::Map<const Mat34>, false> Tkp1(tkp1_map);
 
     Eigen::Map<const Vec6> vel_k(parameters[2], 6, 1);
     Eigen::Map<const Vec6> vel_kp1(parameters[3], 6, 1);
@@ -105,7 +105,7 @@ bool SE3PointToLineGP::Evaluate(double const *const *parameters, double *residua
     Eigen::Map<const Vec3> pt_Tl(p_Tl, 3, 1);
     Eigen::Map<Eigen::Vector2d> reduced(residuals, 2, 1);
 
-    reduced = this->weight_matrix * (this->rotation * (point - pt_Tl)).block<2, 1>(0, 0);
+    reduced = this->weight_matrix * (this->objects.rotation * (point - pt_Tl)).block<2, 1>(0, 0);
 
     if (jacobians != nullptr) {
         this->objects.JP_T(0, 1) = point(2);

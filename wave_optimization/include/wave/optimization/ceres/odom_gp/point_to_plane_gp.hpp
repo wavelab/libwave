@@ -8,6 +8,27 @@
 
 namespace wave {
 
+struct SE3PointToPlaneGPObjects {
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    // Preallocate memory for jacobian calculations to avoid it during residual evaluation
+    // Jacobian of the residual wrt the transformed point
+    Eigen::Matrix<double, 1, 3> Jr_P;
+
+    mutable Transformation<Mat34, false> T_current;
+    // Interpolation factors
+    Eigen::Matrix<double, 6, 12> hat;
+
+    Eigen::Matrix<double, 6, 12> candle;
+
+    // Interpolation Jacobians
+    mutable Eigen::Matrix<double, 6, 6> JT_Ti, JT_Tip1, JT_Wi, JT_Wip1;
+
+    // Jacobian of the transformed point wrt the interpolated transform
+    mutable Eigen::Matrix<double, 3, 6> JP_T;
+    // Jacobian of residual wrt the interpolated transform
+    mutable Eigen::Matrix<double, 1, 6> Jr_T;
+};
+
 class SE3PointToPlaneGP : public ceres::SizedCostFunction<1, 12, 12, 6, 6> {
  public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -20,23 +41,7 @@ class SE3PointToPlaneGP : public ceres::SizedCostFunction<1, 12, 12, 6, 6> {
     double cBA_BC[3];
     double inv_den;
 
-    // Preallocate memory for jacobian calculations to avoid it during residual evaluation
-    // Jacobian of the residual wrt the transformed point
-    Eigen::Matrix<double, 1, 3> Jr_P;
-
-    mutable Transformation<Mat34, true> T_current;
-    // Interpolation factors
-    const Eigen::Matrix<double, 6, 12> hat;
-
-    const Eigen::Matrix<double, 6, 12> candle;
-
-    // Interpolation Jacobians
-    mutable Eigen::Matrix<double, 6, 6> JT_Ti, JT_Tip1, JT_Wi, JT_Wip1;
-
-    // Jacobian of the transformed point wrt the interpolated transform
-    mutable Eigen::Matrix<double, 3, 6> JP_T;
-    // Jacobian of residual wrt the interpolated transform
-    mutable Eigen::Matrix<double, 1, 6> Jr_T;
+    SE3PointToPlaneGPObjects &objects;
 
  public:
     double weight;
@@ -46,8 +51,7 @@ class SE3PointToPlaneGP : public ceres::SizedCostFunction<1, 12, 12, 6, 6> {
                     const double *const pA,
                     const double *const pB,
                     const double *const pC,
-                    const Eigen::Matrix<double, 6, 12> &JT_Tk,
-                    const Eigen::Matrix<double, 6, 12> &JT_Tkp1,
+                    SE3PointToPlaneGPObjects &objects,
                     const Mat3 &covZ,
                     bool use_weighting);
 
