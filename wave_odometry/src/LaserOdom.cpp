@@ -13,8 +13,8 @@ double l2length(const double *const vec, uint16_t length) {
 
 double norm(const std::vector<double> &vec) {
     double retval = 0;
-    for (size_t i = 0; i < vec.size(); i++) {
-        retval += vec[i] * vec[i];
+    for (auto elem : vec) {
+        retval += elem*elem;
     }
     return std::sqrt(retval);
 }
