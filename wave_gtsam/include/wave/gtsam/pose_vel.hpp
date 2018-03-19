@@ -87,8 +87,8 @@ struct traits<wave::PoseVel> {
     static wave::PoseVel Retract(const wave::PoseVel &origin,
                                  const TangentVector &v) {
         wave::PoseVel retval;
-        retval.pose = traits<Pose3>::Retract(origin.pose, v.block<6, 1>(0, 0).);
-        retval.vel = traits<VelType>::Retract(origin.vel, v.block<6, 1>(6, 0).);
+        retval.pose = traits<Pose3>::Retract(origin.pose, v.block<6, 1>(0, 0));
+        retval.vel = traits<VelType>::Retract(origin.vel, v.block<6, 1>(6, 0));
         return retval;
     }
 
