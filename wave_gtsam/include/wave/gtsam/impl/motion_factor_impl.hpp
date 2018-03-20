@@ -5,7 +5,8 @@
 
 namespace wave {
 template <>
-gtsam::Vector MotionFactor<wave::PoseVelBias, wave::PoseVelBias>::evaluateError(
+inline gtsam::Vector
+MotionFactor<wave::PoseVelBias, wave::PoseVelBias>::evaluateError(
   const wave::PoseVelBias &m1,
   const wave::PoseVelBias &m2,
   boost::optional<gtsam::Matrix &> H1,
@@ -35,7 +36,7 @@ gtsam::Vector MotionFactor<wave::PoseVelBias, wave::PoseVelBias>::evaluateError(
 }
 
 template <>
-gtsam::Vector MotionFactor<wave::PoseVel, wave::PoseVel>::evaluateError(
+inline gtsam::Vector MotionFactor<wave::PoseVel, wave::PoseVel>::evaluateError(
   const wave::PoseVel &m1,
   const wave::PoseVel &m2,
   boost::optional<gtsam::Matrix &> H1,
