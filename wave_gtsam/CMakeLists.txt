@@ -11,7 +11,6 @@ WAVE_ADD_MODULE(${PROJECT_NAME} DEPENDS
     src/gps_factor_with_bias.cpp
     src/pose_vel.cpp
     src/pose_vel_bias.cpp
-    src/motion_factor.cpp
     src/localizer_state.cpp)
 
 # Unit tests
