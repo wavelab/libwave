@@ -67,30 +67,6 @@ TEST(pose_vel_state, single_prior) {
             gtsam::traits<PoseVel>::Equals(state, result.at<PoseVel>(1)));
 }
 
-TEST(pose_vel_bias_state, example) {
-    uint64_t from, to;
-    double delta_t = 0.1;
-    from = 1;
-    to = 2;
-
-    Eigen::Matrix<double, 15, 15> info;
-    info.setIdentity();
-    auto noise = gtsam::noiseModel::Gaussian::Information(info);
-    MotionFactor<wave::PoseVelBias, wave::PoseVelBias> factor(
-      from, to, delta_t, noise);
-
-    PoseVelBias Start, End;
-    Start.vel << 0, 0, 0.1, 5, 0, 0;
-    End.vel << 0, 0, 0.1, 5, 0, 0;
-
-    End.pose = Start.pose.Retract(delta_t * Start.vel);
-
-    gtsam::Matrix H1, H2;
-    Eigen::Matrix<double, 15, 1> err = factor.evaluateError(Start, End, H1, H2);
-
-    EXPECT_TRUE(err.isZero());
-}
-
 TEST(pose_vel_state, logmap) {
     Eigen::Affine3d T_local_s1;
     T_local_s1.matrix() << 0.936293363584199, -0.275095847318244,
@@ -151,6 +127,30 @@ TEST(pose_vel_state, trivial_problem) {
         EXPECT_TRUE(
                 gtsam::traits<PoseVel>::Equals(states.at(i), res, 1e-3));
     }
+}
+
+TEST(pose_vel_bias_state, example) {
+    uint64_t from, to;
+    double delta_t = 0.1;
+    from = 1;
+    to = 2;
+
+    Eigen::Matrix<double, 15, 15> info;
+    info.setIdentity();
+    auto noise = gtsam::noiseModel::Gaussian::Information(info);
+    MotionFactor<wave::PoseVelBias, wave::PoseVelBias> factor(
+            from, to, delta_t, noise);
+
+    PoseVelBias Start, End;
+    Start.vel << 0, 0, 0.1, 5, 0, 0;
+    End.vel << 0, 0, 0.1, 5, 0, 0;
+
+    End.pose = Start.pose.Retract(delta_t * Start.vel);
+
+    gtsam::Matrix H1, H2;
+    Eigen::Matrix<double, 15, 1> err = factor.evaluateError(Start, End, H1, H2);
+
+    EXPECT_TRUE(err.isZero());
 }
 
 TEST(pose_vel_bias_state, single_prior) {
