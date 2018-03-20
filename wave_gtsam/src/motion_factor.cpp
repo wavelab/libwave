@@ -9,6 +9,9 @@ MotionFactor::MotionFactor(gtsam::Key S1,
     : NoiseModelFactor2<PoseVelBias, PoseVelBias>(model, S1, S2),
       delt(delta_t) {}
 
+MotionFactor::MotionFactor(gtsam::Key S1,
+                           )
+
 gtsam::Vector MotionFactor::evaluateError(
   const wave::PoseVelBias &m1,
   const wave::PoseVelBias &m2,
