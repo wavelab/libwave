@@ -27,7 +27,7 @@
 
 namespace wave {
 
-template <class T1, class T2>
+template <typename T1, typename T2>
 class MotionFactor : public gtsam::NoiseModelFactor2<T1, T2> {
  public:
     MotionFactor(gtsam::Key S1,

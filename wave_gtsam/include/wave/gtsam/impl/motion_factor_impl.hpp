@@ -4,7 +4,7 @@
 #include "wave/gtsam/motion_factor.hpp"
 
 namespace wave {
-template <class T1, class T2>
+template <typename T1, typename T2>
 gtsam::Vector MotionFactor<T1, T2>::evaluateError(
   const T1 &m1,
   const T2 &m2,

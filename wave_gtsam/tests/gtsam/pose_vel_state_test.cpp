@@ -7,6 +7,7 @@
 #include <gtsam/slam/BetweenFactor.h>
 #include "wave/gtsam/motion_factor.hpp"
 #include "wave/gtsam/pose_vel_bias.hpp"
+#include "wave/gtsam/pose_vel.hpp"
 #include "wave/wave_test.hpp"
 
 namespace wave {
@@ -133,5 +134,4 @@ TEST(pose_vel_bias_state, trivial_problem) {
           gtsam::traits<PoseVelBias>::Equals(states.at(i), res, 1e-3));
     }
 }
-
 }  // namespace wave
