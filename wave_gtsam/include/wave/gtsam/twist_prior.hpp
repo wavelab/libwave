@@ -12,7 +12,7 @@ class TwistPrior : public gtsam::NoiseModelFactor1<T> {
 
  public:
     TwistPrior(gtsam::Key key,
-               Eigen::Matrix<double, 6, 1> &m,
+               Eigen::Matrix<double, 6, 1> m,
                const gtsam::SharedNoiseModel &model)
         : gtsam::NoiseModelFactor1<T>::NoiseModelFactor1(model, key),
           prior(m) {}
