@@ -21,7 +21,6 @@ using VelType = Eigen::Matrix<double, 6, 1>;
 
 namespace wave {
 
-// todo: Figure out how to template dimension of bias
 struct PoseVel {
     gtsam::Pose3 pose;
 
@@ -31,6 +30,8 @@ struct PoseVel {
     PoseVel() {
         vel.setZero();
     }
+
+    enum { pose_offset = 0, vel_offset = 6 };
 };
 }
 
