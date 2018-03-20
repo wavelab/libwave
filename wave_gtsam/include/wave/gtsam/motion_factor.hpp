@@ -37,10 +37,16 @@ class MotionFactor : public gtsam::NoiseModelFactor2<T1, T2> {
         : gtsam::NoiseModelFactor2<T1, T2>(model, S1, S2), delt{delta_t} {}
 
     gtsam::Vector evaluateError(
-      const T1 &m1,
-      const T2 &m2,
+      const wave::PoseVelBias &m1,
+      const wave::PoseVelBias &m2,
       boost::optional<gtsam::Matrix &> H1 = boost::none,
-      boost::optional<gtsam::Matrix &> H2 = boost::none) const override;
+      boost::optional<gtsam::Matrix &> H2 = boost::none) const;
+
+    gtsam::Vector evaluateError(
+            const wave::PoseVel &m1,
+            const wave::PoseVel &m2,
+            boost::optional<gtsam::Matrix &> H1 = boost::none,
+            boost::optional<gtsam::Matrix &> H2 = boost::none) const;
 
  private:
     const double delt;
