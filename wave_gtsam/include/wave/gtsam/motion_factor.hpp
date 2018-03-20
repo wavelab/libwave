@@ -13,11 +13,13 @@
  * S2 = S1 + delta_t * S1_velocity
  * S2_velocity = S2_velocity
  *
+ * If used just with PoseVel, the error has dimension 12.
+ *
  * If being used with the PoseVelBias states:
  * S2_bias = S1_bias
  *
  * The error therefore has dimension 15 and is put together in the same order as
- * above
+ * above.
  *
  * The noise model should be used to weight each component of the error as
  * desired.
@@ -25,30 +27,23 @@
 
 namespace wave {
 
-template <typename T>
-class MotionFactor : public gtsam::NoiseModelFactor2<T, T> {
- private:
-    const double delt;
-
+template <class T1, class T2>
+class MotionFactor : public gtsam::NoiseModelFactor2<T1, T2> {
  public:
     MotionFactor(gtsam::Key S1,
                  gtsam::Key S2,
                  double delta_t,
-                 const gtsam::SharedNoiseModel &model);
+                 const gtsam::SharedNoiseModel &model)
+        : gtsam::NoiseModelFactor2<T1, T2>(model, S1, S2), delt{delta_t} {}
 
-    template <>
-    gtsam::Vector evaluateError<wave::PoseVelBias>(
-      const wave::PoseVelBias &m1,
-      const wave::PoseVelBias &m2,
+    gtsam::Vector evaluateError(
+      const T1 &m1,
+      const T2 &m2,
       boost::optional<gtsam::Matrix &> H1 = boost::none,
-      boost::optional<gtsam::Matrix &> H2 = boost::none) const;
+      boost::optional<gtsam::Matrix &> H2 = boost::none) const override;
 
-    template <>
-    gtsam::Vector evaluateError<wave::PoseVel>(
-      const wave::PoseVel &m1,
-      const wave::PoseVel &m2,
-      boost::optional<gtsam::Matrix &> H1 = boost::none,
-      boost::optional<gtsam::Matrix &> H2 = boost::none) const;
+ private:
+    const double delt;
 };
 }
 

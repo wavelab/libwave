@@ -20,7 +20,8 @@ TEST(pose_vel_bias_state, example) {
     Eigen::Matrix<double, 15, 15> info;
     info.setIdentity();
     auto noise = gtsam::noiseModel::Gaussian::Information(info);
-    MotionFactor factor(from, to, delta_t, noise);
+    MotionFactor<wave::PoseVelBias, wave::PoseVelBias> factor(
+      from, to, delta_t, noise);
 
     PoseVelBias Start, End;
     Start.vel << 0, 0, 0.1, 5, 0, 0;
@@ -119,7 +120,8 @@ TEST(pose_vel_bias_state, trivial_problem) {
         states.at(i).pose =
           states.at(i - 1).pose.retract(delta_t * states.at(i - 1).vel);
         states.at(i).vel = states.at(i - 1).vel;
-        graph.add(MotionFactor(i - 1, i, delta_t, model));
+        graph.add(MotionFactor<wave::PoseVelBias, wave::PoseVelBias>(
+          i - 1, i, delta_t, model));
     }
 
     gtsam::LevenbergMarquardtOptimizer optimizer(graph, initial);
