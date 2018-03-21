@@ -45,10 +45,10 @@ TEST(pose_vel_state, single_prior) {
 
     Eigen::Affine3d T_local_s1;
     T_local_s1.matrix() << 0.936293363584199, -0.275095847318244,
-            0.218350663146334, 32.000000000000000, 0.289629477625516,
-            0.956425085849232, -0.036957013524625, 2.000000000000000,
-            -0.198669330795061, 0.097843395007256, 0.975170327201816,
-            3.000000000000000, 0, 0, 0, 1.000000000000000;
+      0.218350663146334, 32.000000000000000, 0.289629477625516,
+      0.956425085849232, -0.036957013524625, 2.000000000000000,
+      -0.198669330795061, 0.097843395007256, 0.975170327201816,
+      3.000000000000000, 0, 0, 0, 1.000000000000000;
 
     gtsam::Pose3 prior_pose(T_local_s1.matrix());
     state.pose = prior_pose;
@@ -63,17 +63,16 @@ TEST(pose_vel_state, single_prior) {
     gtsam::LevenbergMarquardtOptimizer optimizer(graph, initial);
     auto result = optimizer.optimize();
 
-    EXPECT_TRUE(
-            gtsam::traits<PoseVel>::Equals(state, result.at<PoseVel>(1)));
+    EXPECT_TRUE(gtsam::traits<PoseVel>::Equals(state, result.at<PoseVel>(1)));
 }
 
 TEST(pose_vel_state, logmap) {
     Eigen::Affine3d T_local_s1;
     T_local_s1.matrix() << 0.936293363584199, -0.275095847318244,
-            0.218350663146334, 32.000000000000000, 0.289629477625516,
-            0.956425085849232, -0.036957013524625, 2.000000000000000,
-            -0.198669330795061, 0.097843395007256, 0.975170327201816,
-            3.000000000000000, 0, 0, 0, 1.000000000000000;
+      0.218350663146334, 32.000000000000000, 0.289629477625516,
+      0.956425085849232, -0.036957013524625, 2.000000000000000,
+      -0.198669330795061, 0.097843395007256, 0.975170327201816,
+      3.000000000000000, 0, 0, 0, 1.000000000000000;
 
     PoseVel state;
     gtsam::Pose3 prior_pose(T_local_s1.matrix());
@@ -87,8 +86,7 @@ TEST(pose_vel_state, logmap) {
     auto tangent_vel = gtsam::traits<gtsam::Vector6>::Logmap(state.vel, H_vel);
 
     // Actual value
-    auto tangent_combined =
-            gtsam::traits<PoseVel>::Logmap(state, H_combined);
+    auto tangent_combined = gtsam::traits<PoseVel>::Logmap(state, H_combined);
 
     EXPECT_PRED2(VectorsNear, tangent_combined.segment<6>(0), tangent_pose);
     EXPECT_PRED2(VectorsNear, tangent_combined.segment<6>(6), tangent_vel);
@@ -113,10 +111,10 @@ TEST(pose_vel_state, trivial_problem) {
     for (uint16_t i = 1; i < states.size(); i++) {
         initial.insert(i, states.at(i));
         states.at(i).pose =
-                states.at(i - 1).pose.retract(delta_t * states.at(i - 1).vel);
+          states.at(i - 1).pose.retract(delta_t * states.at(i - 1).vel);
         states.at(i).vel = states.at(i - 1).vel;
-        graph.add(MotionFactor<wave::PoseVel, wave::PoseVel>(
-                i - 1, i, delta_t, model));
+        graph.add(
+          MotionFactor<wave::PoseVel, wave::PoseVel>(i - 1, i, delta_t, model));
     }
 
     gtsam::LevenbergMarquardtOptimizer optimizer(graph, initial);
@@ -124,8 +122,7 @@ TEST(pose_vel_state, trivial_problem) {
 
     for (uint64_t i = 0; i < result.size(); i++) {
         PoseVel res = result.at<PoseVel>(i);
-        EXPECT_TRUE(
-                gtsam::traits<PoseVel>::Equals(states.at(i), res, 1e-3));
+        EXPECT_TRUE(gtsam::traits<PoseVel>::Equals(states.at(i), res, 1e-3));
     }
 }
 
@@ -139,7 +136,7 @@ TEST(pose_vel_bias_state, example) {
     info.setIdentity();
     auto noise = gtsam::noiseModel::Gaussian::Information(info);
     MotionFactor<wave::PoseVelBias, wave::PoseVelBias> factor(
-            from, to, delta_t, noise);
+      from, to, delta_t, noise);
 
     PoseVelBias Start, End;
     Start.vel << 0, 0, 0.1, 5, 0, 0;
