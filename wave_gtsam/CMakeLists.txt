@@ -9,8 +9,8 @@ WAVE_ADD_MODULE(${PROJECT_NAME} DEPENDS
     src/hand_eye.cpp
     src/decaying_bias.cpp
     src/gps_factor_with_bias.cpp
-    src/pose_vel_bias.cpp
-    src/motion_factor.cpp)
+    src/pose_vel.cpp
+    src/pose_vel_bias.cpp)
 
 # Unit tests
 IF(BUILD_TESTING)
