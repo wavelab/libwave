@@ -117,7 +117,7 @@ TEST(OdomTest, StraightLineGarage) {
     pcl::PCLPointCloud2 temp;
     pcl::PointCloud<PointXYZIR> temp2;
     LOG_INFO("Starting to load clouds");
-    boost::filesystem::path p("/home/bapskiko/rosbags/last_ditch_bags/pcd");
+    boost::filesystem::path p("/home/ben/rosbags/last_ditch_bags/pcd");
     std::vector<boost::filesystem::path> v;
     std::copy(boost::filesystem::directory_iterator(p), boost::filesystem::directory_iterator(), std::back_inserter(v));
     std::sort(v.begin(), v.end());
@@ -131,9 +131,9 @@ TEST(OdomTest, StraightLineGarage) {
         *ptr = clds.at(length);
         cldptr.push_back(ptr);
         length++;
-        if (length == 5) {
-            break;
-        }
+//        if (length == 5) {
+//            break;
+//        }
     }
 
     LOG_INFO("Finished loading clouds");
@@ -155,7 +155,7 @@ TEST(OdomTest, StraightLineGarage) {
     params.visualize = false;
     params.n_window = 1;
     params.num_trajectory_states = 3;
-    params.solver_threads = 1;
+    params.solver_threads = 4;
 
     params.sensor_params.rings = 32;
     float ang = -0.5352924815866609;

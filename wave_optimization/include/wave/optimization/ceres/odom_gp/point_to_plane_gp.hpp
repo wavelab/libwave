@@ -14,7 +14,7 @@ struct SE3PointToPlaneGPObjects {
     // Jacobian of the residual wrt the transformed point
     Eigen::Matrix<double, 1, 3> Jr_P;
 
-    mutable Transformation<Mat34, false> T_current;
+    mutable Transformation<Mat34, true> T_current;
     // Interpolation factors
     Eigen::Matrix<double, 6, 12> hat;
 

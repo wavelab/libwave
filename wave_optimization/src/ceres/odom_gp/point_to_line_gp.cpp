@@ -68,14 +68,14 @@ bool SE3PointToLineGP::Evaluate(double const *const *parameters, double *residua
     Eigen::Map<const Mat34> tk_map(parameters[0], 3, 4);
     Eigen::Map<const Mat34> tkp1_map(parameters[1], 3, 4);
 
-    Transformation<Eigen::Map<const Mat34>, false> Tk(tk_map);
-    Transformation<Eigen::Map<const Mat34>, false> Tkp1(tkp1_map);
+    Transformation<Eigen::Map<const Mat34>, true> Tk(tk_map);
+    Transformation<Eigen::Map<const Mat34>, true> Tkp1(tkp1_map);
 
     Eigen::Map<const Vec6> vel_k(parameters[2], 6, 1);
     Eigen::Map<const Vec6> vel_kp1(parameters[3], 6, 1);
 
     if (jacobians) {
-        Transformation<Mat34, false>::interpolateAndJacobians(Tk,
+        Transformation<Mat34, true>::interpolateAndJacobians(Tk,
                                                              Tkp1,
                                                              vel_k,
                                                              vel_kp1,
@@ -87,7 +87,7 @@ bool SE3PointToLineGP::Evaluate(double const *const *parameters, double *residua
                                                              this->objects.JT_Wi,
                                                              this->objects.JT_Wip1);
     } else {
-        Transformation<Mat34, false>::interpolate(
+        Transformation<Mat34, true>::interpolate(
           Tk, Tkp1, vel_k, vel_kp1, this->objects.hat, this->objects.candle, this->objects.T_current);
     }
 

@@ -145,7 +145,7 @@ struct LaserOdomParams {
 class LaserOdom {
     // true uses transform class with some approximations for exp map, etc
     // false uses full analytical expressions wherever possible
-    using T_TYPE = Transformation<Eigen::Matrix<double, 3, 4>, false>;
+    using T_TYPE = Transformation<Eigen::Matrix<double, 3, 4>, true>;
 
  public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW

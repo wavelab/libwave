@@ -21,7 +21,7 @@ struct SE3PointToLineGPObjects {
     // This is the Jacobian of the cost function wrt an the transformed point
     Eigen::Matrix<double, 3, 3> Jres_P;
 
-    mutable Transformation<Mat34, false> T_current;
+    mutable Transformation<Mat34, true> T_current;
 
     // Interpolation factors
     Eigen::Matrix<double, 6, 12> hat;
