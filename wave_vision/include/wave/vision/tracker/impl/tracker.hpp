@@ -107,23 +107,23 @@ Tracker<TDetector, TDescriptor, TMatcher>::registerKeypoints(
 // Public Functions
 template <typename TDetector, typename TDescriptor, typename TMatcher>
 std::vector<FeatureTrack> Tracker<TDetector, TDescriptor, TMatcher>::getTracks(
-  const size_t img_num) const {
+  const size_t stamp) const {
     std::vector<FeatureTrack> feature_tracks;
 
     // Determine how many images have been added
     size_t img_count = this->img_times.size() - 1;
 
-    if (img_num > img_count) {
+    if (stamp > img_count) {
         throw std::out_of_range("Image requested is in the future!");
-    } else if (this->window_size > 0 && img_num < this->cleared_img_threshold) {
+    } else if (this->window_size > 0 && stamp < this->cleared_img_threshold) {
         // for non-zero window_size, the measurement container is periodically
         // cleaned out. Therefore can only access images still with info.
         throw std::out_of_range(
           "Image requested is outside of maintained window!");
-    } else if (img_num > 0) {
+    } else if (stamp > 0) {
         // Find the time for this image
         std::chrono::steady_clock::time_point img_time =
-          this->img_times.at(img_num);
+          this->img_times.at(stamp);
 
         // Extract all of the IDs visible at this time
         auto landmark_ids =
@@ -149,9 +149,9 @@ std::vector<FeatureTrack> Tracker<TDetector, TDescriptor, TMatcher>::getTracks(
 template <typename TDetector, typename TDescriptor, typename TMatcher>
 void Tracker<TDetector, TDescriptor, TMatcher>::addImage(
   const cv::Mat &image,
-  const std::chrono::steady_clock::time_point &current_time) {
+  const std::chrono::steady_clock::time_point &stamp) {
     // Register the time this image
-    this->timestampImage(current_time);
+    this->timestampImage(stamp);
 
     // Check if this is the first image being tracked.
     if (this->img_times.size() == 1) {

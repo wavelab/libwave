@@ -108,7 +108,7 @@ class FASTDetector : public FeatureDetector {
      *  @param image the image to detect features in.
      *  @return a vector containing all of the keypoints found within the image.
      */
-    std::vector<cv::KeyPoint> detectFeatures(const cv::Mat &image);
+    std::vector<cv::KeyPoint> detectFeatures(const cv::Mat &image) override;
 
  private:
     /** The pointer to the wrapped cv::FastFeatureDetector object. */

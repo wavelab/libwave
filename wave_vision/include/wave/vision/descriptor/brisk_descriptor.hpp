@@ -106,7 +106,7 @@ class BRISKDescriptor : public DescriptorExtractor {
      *  @return the computed descriptors.
      */
     cv::Mat extractDescriptors(const cv::Mat &image,
-                               std::vector<cv::KeyPoint> &keypoints);
+                               std::vector<cv::KeyPoint> &keypoints) override;
 
  private:
     /** The pointer to the wrapped cv::BRISK object. */

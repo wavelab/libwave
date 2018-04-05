@@ -34,7 +34,7 @@ struct ORBDescriptorParams {
 
     /** Constructor using parameters extracted from a configuration file.
      *
-     *  @param config_path the path to the location of the configuration file.
+     *  @param config_path he path to the location of the configuration file.
      */
     explicit ORBDescriptorParams(const std::string &config_path);
 
@@ -101,7 +101,7 @@ class ORBDescriptor : public DescriptorExtractor {
      *  @return an array containing the computed descriptors.
      */
     cv::Mat extractDescriptors(const cv::Mat &image,
-                               std::vector<cv::KeyPoint> &keypoints);
+                               std::vector<cv::KeyPoint> &keypoints) override;
 
  private:
     /** The pointer to the wrapped cv::ORB object. */

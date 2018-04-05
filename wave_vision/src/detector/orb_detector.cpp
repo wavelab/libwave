@@ -43,7 +43,6 @@ ORBDetector::ORBDetector(const ORBDetectorParams &config) {
 
     // Default parameters that should not be modified, and are not associated
     // with the detector. These values are the defaults recommended by OpenCV.
-    //-------------------------------------------------------------------------
     int first_level = 0;  // As per OpenCV docs, first_level must be zero.
     int tuple_size = 2;
     int patch_size = 31;

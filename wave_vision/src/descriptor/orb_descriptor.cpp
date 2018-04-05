@@ -10,8 +10,7 @@ ORBDescriptorParams::ORBDescriptorParams(const std::string &config_path) {
     int tuple_size;
     int patch_size;
 
-    // Add parameters to parser, to be loaded. If path cannot be found, throw
-    // an exception
+    // Add parameters to be loaded by parser
     parser.addParam("tuple_size", &tuple_size);
     parser.addParam("patch_size", &patch_size);
 
@@ -31,7 +30,6 @@ ORBDescriptor::ORBDescriptor(const ORBDescriptorParams &config) {
 
     // Default parameters that should not be modified, and are not associated
     // with the descriptor. These values are the defaults recommended by OpenCV.
-    //-------------------------------------------------------------------------
     int num_features = 500;
     float scale_factor = 1.2f;
     int num_levels = 8;
