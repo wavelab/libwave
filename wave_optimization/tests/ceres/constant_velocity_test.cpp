@@ -7,6 +7,7 @@
 #include "wave/geometry/transformation.hpp"
 #include "wave/optimization/ceres/odom_gp/constant_velocity.hpp"
 #include "wave/optimization/ceres/odom_gp_coupled_states/constant_velocity.hpp"
+#include "wave/optimization/ceres/odom_gp_twist/constant_velocity.hpp"
 #include "wave/optimization/ceres/local_params/SE3Parameterization.hpp"
 
 namespace {
@@ -15,7 +16,7 @@ Eigen::Matrix<double, 12, 12> calculateCVIntegrand(const wave::Mat6 &Qc,
                                                    const double &delta_T,
                                                    const wave::Vec6 &velocity) {
     Eigen::Matrix<double, 12, 12> retval;
-    auto jacobian = wave::Transformation<void>::SE3LeftJacobian(delta_T * velocity, 1e-4);
+    auto jacobian = wave::Transformation<>::SE3LeftJacobian(delta_T * velocity);
     retval.block<6, 6>(0, 0) = delta_T * delta_T * jacobian * Qc * jacobian.transpose();
     retval.block<6, 6>(6, 0) = delta_T * jacobian.transpose();
     retval.block<6, 6>(0, 6) = delta_T * jacobian;
@@ -27,8 +28,8 @@ void calculateTransitionMatrix(const double &delta_T,
                                const wave::Vec6 &velocity,
                                Eigen::Matrix<double, 12, 12> &transition_matrix) {
     transition_matrix.setIdentity();
-    transition_matrix.block<6, 6>(0, 0) = wave::Transformation<void>::expMapAdjoint(delta_T * velocity, 1e-4);
-    transition_matrix.block<6, 6>(0, 6) = delta_T * wave::Transformation<void>::SE3LeftJacobian(delta_T * velocity, 1e-4);
+    transition_matrix.block<6, 6>(0, 0) = wave::Transformation<>::expMapAdjoint(delta_T * velocity);
+    transition_matrix.block<6, 6>(0, 6) = delta_T * wave::Transformation<>::SE3LeftJacobian(delta_T * velocity);
 }
 
 Eigen::Matrix<double, 12, 12> integrateCovariance(const wave::Mat6 &Qc,
@@ -123,8 +124,8 @@ TEST(ConstantVelocity, Jacobians) {
     Transformation<> Tk_perturbed, Tkp1_perturbed;
     Vec6 vel_k_perturbed, vel_kp1_perturbed;
 
-    Tk_perturbed.deepCopy(start);
-    Tkp1_perturbed.deepCopy(end);
+    Tk_perturbed = (start);
+    Tkp1_perturbed = (end);
     vel_k_perturbed = start_vel;
     vel_kp1_perturbed = end_vel;
 
@@ -138,8 +139,8 @@ TEST(ConstantVelocity, Jacobians) {
     std::vector<Eigen::Matrix<double, 12, 6>> an_jacs, num_jacs;
     num_jacs.resize(4);
     an_jacs.resize(4);
-    an_jacs.at(0) = Jr_Ti.block<12,6>(0,0);
-    an_jacs.at(1) = Jr_Tip1.block<12,6>(0,0);
+    an_jacs.at(0) = Jr_Ti.block<12, 6>(0, 0);
+    an_jacs.at(1) = Jr_Tip1.block<12, 6>(0, 0);
     an_jacs.at(2) = Jr_Wi;
     an_jacs.at(3) = Jr_Wip1;
 
@@ -149,25 +150,25 @@ TEST(ConstantVelocity, Jacobians) {
         Tk_perturbed.manifoldPlus(delta);
         cost_function->Evaluate(parameters, result.data(), nullptr);
         diff = result - residual_vec;
-        num_jacs.at(0).block<12,1>(0,i) = inv_step * diff;
-        Tk_perturbed.deepCopy(start);
+        num_jacs.at(0).block<12, 1>(0, i) = inv_step * diff;
+        Tk_perturbed = (start);
         // Second parameter
         Tkp1_perturbed.manifoldPlus(delta);
         cost_function->Evaluate(parameters, result.data(), nullptr);
         diff = result - residual_vec;
-        num_jacs.at(1).block<12,1>(0,i) = inv_step * diff;
-        Tkp1_perturbed.deepCopy(end);
+        num_jacs.at(1).block<12, 1>(0, i) = inv_step * diff;
+        Tkp1_perturbed = (end);
         // Third parameter
         vel_k_perturbed = vel_k_perturbed + delta;
         cost_function->Evaluate(parameters, result.data(), nullptr);
         diff = result - residual_vec;
-        num_jacs.at(2).block<12,1>(0,i) = inv_step * diff;
+        num_jacs.at(2).block<12, 1>(0, i) = inv_step * diff;
         vel_k_perturbed = start_vel;
         // Fourth parameter
         vel_kp1_perturbed = vel_kp1_perturbed + delta;
         cost_function->Evaluate(parameters, result.data(), nullptr);
         diff = result - residual_vec;
-        num_jacs.at(3).block<12,1>(0,i) = inv_step * diff;
+        num_jacs.at(3).block<12, 1>(0, i) = inv_step * diff;
         vel_kp1_perturbed = end_vel;
 
         delta.setZero();
@@ -178,8 +179,11 @@ TEST(ConstantVelocity, Jacobians) {
         EXPECT_NEAR(err, 0.0, 1e-6);
         if (err > 1e-6) {
             std::cout << "Failed on index " << i << std::endl
-                      << "Numerical: " << std::endl << num_jacs.at(i) << std::endl
-                      << "Analytical:" << std::endl << an_jacs.at(i) << std::endl << std::endl;
+                      << "Numerical: " << std::endl
+                      << num_jacs.at(i) << std::endl
+                      << "Analytical:" << std::endl
+                      << an_jacs.at(i) << std::endl
+                      << std::endl;
         }
     }
 }
@@ -188,14 +192,14 @@ TEST(ConstantVelocity, CoupledStates) {
     // Ceres needs a contiguous memory block for a single parameter. So supply one.
     double memblock[30];
     Eigen::Map<Vec6> vel(memblock);
-    auto tk_ptr = std::make_shared<Eigen::Map<Eigen::Matrix<double, 3, 4>>>(memblock + 6, 3, 4);
-    auto tkp1_ptr = std::make_shared<Eigen::Map<Eigen::Matrix<double, 3, 4>>>(memblock + 18, 3, 4);
-    Transformation<Eigen::Map<Eigen::Matrix<double, 3, 4>>> Tk(tk_ptr);
-    Transformation<Eigen::Map<Eigen::Matrix<double, 3, 4>>> Tkp1(tkp1_ptr);
+    Eigen::Map<Eigen::Matrix<double, 3, 4>> tk_map(memblock + 6, 3, 4);
+    Eigen::Map<Eigen::Matrix<double, 3, 4>> tkp1_map(memblock + 18, 3, 4);
+    Transformation<Eigen::Map<Eigen::Matrix<double, 3, 4>>> Tk(tk_map);
+    Transformation<Eigen::Map<Eigen::Matrix<double, 3, 4>>> Tkp1(tkp1_map);
 
     Mat4 t_matrix;
     t_matrix << 0.936293363584199, -0.275095847318244, 0.218350663146334, 1, 0.289629477625516, 0.956425085849232,
-            -0.036957013524625, 2, -0.198669330795061, 0.097843395007256, 0.975170327201816, 3, 0, 0, 0, 1;
+      -0.036957013524625, 2, -0.198669330795061, 0.097843395007256, 0.975170327201816, 3, 0, 0, 0, 1;
 
     Tk.setFromMatrix(t_matrix);
     Tkp1.setFromMatrix(t_matrix);
@@ -240,13 +244,13 @@ TEST(ConstantVelocity, CoupledStates) {
     double memblock_perturb[30];
 
     Eigen::Map<Vec6> vel_perturbed(memblock_perturb);
-    auto tk_ptr_perturb = std::make_shared<Eigen::Map<Eigen::Matrix<double, 3, 4>>>(memblock_perturb + 6, 3, 4);
-    auto tkp1_ptr_perturb = std::make_shared<Eigen::Map<Eigen::Matrix<double, 3, 4>>>(memblock_perturb + 18, 3, 4);
-    Transformation<Eigen::Map<Eigen::Matrix<double, 3, 4>>> Tk_perturbed(tk_ptr_perturb);
-    Transformation<Eigen::Map<Eigen::Matrix<double, 3, 4>>> Tkp1_perturbed(tkp1_ptr_perturb);
+    Eigen::Map<Eigen::Matrix<double, 3, 4>> tk_map_perturbed(memblock_perturb + 6, 3, 4);
+    Eigen::Map<Eigen::Matrix<double, 3, 4>> tkp1_map_perturbed(memblock_perturb + 18, 3, 4);
+    Transformation<Eigen::Map<Eigen::Matrix<double, 3, 4>>> Tk_perturbed(tk_map_perturbed);
+    Transformation<Eigen::Map<Eigen::Matrix<double, 3, 4>>> Tkp1_perturbed(tkp1_map_perturbed);
 
-    Tk_perturbed.deepCopy(Tk);
-    Tkp1_perturbed.deepCopy(Tkp1);
+    Tk_perturbed = Tk;
+    Tkp1_perturbed = Tkp1;
     vel_perturbed = vel;
 
     Eigen::Matrix<double, 6, 1> diff, result;
@@ -254,9 +258,9 @@ TEST(ConstantVelocity, CoupledStates) {
     std::vector<Eigen::Matrix<double, 6, 6>> an_jacs, num_jacs;
     num_jacs.resize(3);
     an_jacs.resize(3);
-    an_jacs.at(0) = J_total.block<6,6>(0,0);
-    an_jacs.at(1) = J_total.block<6,6>(0,6);
-    an_jacs.at(2) = J_total.block<6,6>(0,18);
+    an_jacs.at(0) = J_total.block<6, 6>(0, 0);
+    an_jacs.at(1) = J_total.block<6, 6>(0, 6);
+    an_jacs.at(2) = J_total.block<6, 6>(0, 18);
 
     parameters[0] = memblock_perturb;
     for (uint32_t i = 0; i < 6; i++) {
@@ -265,22 +269,22 @@ TEST(ConstantVelocity, CoupledStates) {
         vel_perturbed = vel_perturbed + delta;
         cost_function->Evaluate(parameters, result.data(), nullptr);
         diff = result - residual_vec;
-        num_jacs.at(0).block<6,1>(0,i) = inv_step * diff;
+        num_jacs.at(0).block<6, 1>(0, i) = inv_step * diff;
         vel_perturbed = vel;
 
         // Second parameter
         Tk_perturbed.manifoldPlus(delta);
         cost_function->Evaluate(parameters, result.data(), nullptr);
         diff = result - residual_vec;
-        num_jacs.at(1).block<6,1>(0,i) = inv_step * diff;
-        Tk_perturbed.deepCopy(Tk);
+        num_jacs.at(1).block<6, 1>(0, i) = inv_step * diff;
+        Tk_perturbed = Tk;
 
         // Third parameter
         Tkp1_perturbed.manifoldPlus(delta);
         cost_function->Evaluate(parameters, result.data(), nullptr);
         diff = result - residual_vec;
-        num_jacs.at(2).block<6,1>(0,i) = inv_step * diff;
-        Tkp1_perturbed.deepCopy(Tkp1);
+        num_jacs.at(2).block<6, 1>(0, i) = inv_step * diff;
+        Tkp1_perturbed = Tkp1;
 
         delta.setZero();
     }
@@ -290,10 +294,60 @@ TEST(ConstantVelocity, CoupledStates) {
         EXPECT_NEAR(err, 0.0, 1e-6);
         if (err > 1e-6) {
             std::cout << "Failed on index " << i << std::endl
-                      << "Numerical: " << std::endl << num_jacs.at(i) << std::endl
-                      << "Analytical:" << std::endl << an_jacs.at(i) << std::endl << std::endl;
+                      << "Numerical: " << std::endl
+                      << num_jacs.at(i) << std::endl
+                      << "Analytical:" << std::endl
+                      << an_jacs.at(i) << std::endl
+                      << std::endl;
         }
     }
 }
 
+TEST(ConstantVelocity, IncrementalStates) {
+    Transformation<Eigen::Matrix<double, 3, 4>> start, end;
+    Mat4 t_matrix;
+    t_matrix << 0.936293363584199, -0.275095847318244, 0.218350663146334, 1, 0.289629477625516, 0.956425085849232,
+      -0.036957013524625, 2, -0.198669330795061, 0.097843395007256, 0.975170327201816, 3, 0, 0, 0, 1;
+
+    start.setFromMatrix(t_matrix);
+    end.setFromMatrix(t_matrix);
+
+    const double delta_T = 0.1;
+    Vec6 start_vel, end_vel;
+
+    start_vel << -0, 0, 0.3, 20, 5, -0.1;
+    end_vel = start_vel;
+
+    end.manifoldPlus(delta_T * start_vel);
+
+    Eigen::Matrix<double, 12, 1> E_op;
+    E_op.setZero();
+
+    ceres::CostFunction *cost_function =
+      new wave_optimization::ConstantVelocityPrior(Eigen::Matrix<double, 12, 12>::Identity(), E_op, delta_T);
+
+    Vec6 Tk_eps, Tkp1_eps, Vk_eps, Vkp1_eps;
+    Tk_eps.setZero();
+    Tkp1_eps.setZero();
+    Vk_eps.setZero();
+    Vkp1_eps.setZero();
+
+    const double **params;
+    params = new const double *[4];
+    params[0] = Tk_eps.data();
+    params[1] = Tkp1_eps.data();
+    params[2] = Vk_eps.data();
+    params[3] = Vkp1_eps.data();
+
+    ceres::NumericDiffOptions ndiff_options;
+    ceres::GradientChecker g_check(cost_function, nullptr, ndiff_options);
+    ceres::GradientChecker::ProbeResults g_results;
+    EXPECT_TRUE(g_check.Probe(params, 1.1e-6, &g_results));
+    LOG_INFO("Max relative error was %f", g_results.maximum_relative_error);
+
+    for(unsigned int i = 0; i < g_results.jacobians.size(); i++) {
+        std::cout << "Analytic Jacobian: \n" << g_results.jacobians.at(i) << "\n";
+        std::cout << "Numeric Jacobian: \n" << g_results.numeric_jacobians.at(i) << "\n";
+    }
+}
 }

@@ -3,6 +3,8 @@
 #include "wave/wave_test.hpp"
 #include "wave/geometry/transformation.hpp"
 #include "wave/optimization/ceres/odom_linear/point_to_plane_interpolated_transform.hpp"
+#include "wave/kinematics/constant_velocity_gp_prior.hpp"
+#include "wave/optimization/ceres/odom_gp_twist/point_to_plane_gp.hpp"
 #include "wave/optimization/ceres/local_params/SE3Parameterization.hpp"
 
 namespace wave {
@@ -94,6 +96,87 @@ TEST(Residual_test, SE3pointToPlaneAnalyticWeighted) {
     ceres::GradientChecker::ProbeResults g_results;
     EXPECT_TRUE(g_check.Probe(trans, 1e-6, &g_results));
     LOG_INFO("%s", g_results.error_log.c_str());
+}
+
+TEST(Local_Twist_Param_Plane, Jacobians) {
+    double ptA[3] = {1, 1, 0};
+    double ptB[3] = {1, 3, -4};
+    double ptC[3] = {4, -1, 0};
+    double pt[3] = {1, 2, -4};
+
+    const double delta_T = 0.5;
+    const double **params;
+    params = new const double *[4];
+
+    Transformation<Eigen::Matrix<double, 3, 4>, false> T_k, T_kp1;
+    Vec6 epsT_k, epsT_kp1, vel_k, vel_kp1, eps_vel_k, eps_vel_kp1;
+
+    eps_vel_k.setZero();
+    eps_vel_kp1.setZero();
+    epsT_k.setZero();
+    epsT_kp1.setZero();
+
+    epsT_k(3) = 0.2;
+
+    params[0] = epsT_k.data();
+    params[1] = epsT_kp1.data();
+    params[2] = eps_vel_k.data();
+    params[3] = eps_vel_kp1.data();
+
+    T_k.setIdentity();
+    vel_k << 0.1, -0.1, 0.1, 5, 1, -1;
+    vel_kp1 = vel_k;
+    T_kp1 = T_k;
+    T_kp1.manifoldPlus(delta_T * vel_k);
+
+    double zero = 0;
+    double tau = 0.34;
+    Mat6 Qc = Mat6::Identity();
+    Mat6 inv_Qc = Qc.inverse();
+
+    wave_kinematics::ConstantVelocityPrior motion_prior(zero, delta_T, &tau, Qc, inv_Qc);
+    Eigen::Matrix<double, 12, 12> hat, candle;
+
+    motion_prior.calculateStuff(hat, candle);
+    wave_optimization::SE3PointToPlaneGPObjects objects;
+    objects.hat = hat.block<6, 12>(0,0);
+    objects.candle = candle.block<6, 12>(0,0);
+
+    Transformation<Mat34, false> T_interpolated;
+    Transformation<Mat34, false>::interpolate(
+            T_k, T_kp1, vel_k, vel_kp1, objects.hat, objects.candle, T_interpolated);
+
+    Eigen::Map<Vec3> mapped_point(pt, 3, 1);
+    T_interpolated.transform(mapped_point, objects.T0_pt);
+
+    ceres::CostFunction *cost_function = new wave_optimization::SE3PointToPlaneGP(
+            ptA,
+            ptB,
+            ptC,
+            objects,
+            Mat3::Identity(),
+            true);
+    double **jacobian;
+    jacobian = new double *[4];
+    jacobian[0] = new double[6];
+    jacobian[1] = new double[6];
+    jacobian[2] = new double[6];
+    jacobian[3] = new double[6];
+
+    double op_result;
+
+    cost_function->Evaluate(params, &op_result, jacobian);
+
+    ceres::NumericDiffOptions ndiff_options;
+    ceres::GradientChecker g_check(cost_function, nullptr, ndiff_options);
+    ceres::GradientChecker::ProbeResults g_results;
+    EXPECT_TRUE(g_check.Probe(params, 1.1e-6, &g_results));
+    LOG_INFO("Max relative error was %f", g_results.maximum_relative_error);
+
+    for(unsigned int i = 0; i < g_results.jacobians.size(); i++) {
+        std::cout << "Analytic Jacobian: \n" << g_results.jacobians.at(i) << "\n";
+        std::cout << "Numeric Jacobian: \n" << g_results.numeric_jacobians.at(i) << "\n";
+    }
 }
 
 }

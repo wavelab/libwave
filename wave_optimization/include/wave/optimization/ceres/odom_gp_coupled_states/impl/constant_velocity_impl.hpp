@@ -13,8 +13,8 @@ namespace wave {
 template<int DIM>
 bool
 ConstantVelocityPriorCoupled<DIM>::Evaluate(double const *const *parameters, double *residuals, double **jacobians) const {
-    auto tk_ptr = std::make_shared<Eigen::Map<const Eigen::Matrix<double, 3, 4>>>(parameters[0] + 6 + 12*this->idx_k, 3, 4);
-    auto tkp1_ptr = std::make_shared<Eigen::Map<const Eigen::Matrix<double, 3, 4>>>(parameters[0] + 6 + 12*(this->idx_k + 1), 3, 4);
+    Eigen::Map<const Eigen::Matrix<double, 3, 4>> tk_ptr(parameters[0] + 6 + 12*this->idx_k, 3, 4);
+    Eigen::Map<const Eigen::Matrix<double, 3, 4>> tkp1_ptr(parameters[0] + 6 + 12*(this->idx_k + 1), 3, 4);
 
     Transformation<Eigen::Map<const Eigen::Matrix<double, 3, 4>>> Tk(tk_ptr);
     Transformation<Eigen::Map<const Eigen::Matrix<double, 3, 4>>> Tkp1(tkp1_ptr);

@@ -18,6 +18,8 @@ WAVE_ADD_MODULE(${PROJECT_NAME} DEPENDS
     src/ceres/odom_gp/point_to_plane_gp.cpp
     src/ceres/odom_gp/constant_velocity.cpp
     src/ceres/odom_gp_twist/point_to_line_gp.cpp
+    src/ceres/odom_gp_twist/point_to_plane_gp.cpp
+    src/ceres/odom_gp_twist/constant_velocity.cpp
     src/ceres/odom_gp_reduced/point_to_line_gp.cpp
     src/ceres/odom_gp_reduced/point_to_plane_gp.cpp
     src/ceres/odom_gp_reduced/constant_velocity.cpp

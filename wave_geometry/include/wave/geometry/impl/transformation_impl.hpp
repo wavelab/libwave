@@ -89,9 +89,9 @@ void Transformation<Derived, approximate>::skewSymmetric6(const Eigen::MatrixBas
     EIGEN_STATIC_ASSERT_MATRIX_SPECIFIC_SIZE(Eigen::MatrixBase<M_Type>, 6, 6)
     EIGEN_STATIC_ASSERT_VECTOR_SPECIFIC_SIZE(Eigen::MatrixBase<V_Type>, 6)
 
-    skewSymmetric3(W.block<3,1>(0,0), retval.template block<3,3>(0,0));
-    skewSymmetric3(W.block<3,1>(0,0), retval.template block<3,3>(3,3));
-    skewSymmetric3(W.block<3,1>(3,0), retval.template block<3,3>(3,0));
+    skewSymmetric3(W.template block<3,1>(0,0), retval.template block<3,3>(0,0));
+    skewSymmetric3(W.template block<3,1>(0,0), retval.template block<3,3>(3,3));
+    skewSymmetric3(W.template block<3,1>(3,0), retval.template block<3,3>(3,0));
     retval.template block<3,3>(0,3).setZero();
 }
 

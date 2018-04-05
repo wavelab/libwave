@@ -91,7 +91,7 @@ TEST(Residual_test, SE3pointToLineAnalyticWeighted) {
     LOG_INFO("%s", g_results.error_log.c_str());
 }
 
-TEST(Local_Twist_Param, Jacobians) {
+TEST(Local_Twist_Param_Line, Jacobians) {
     double ptA[3] = {1, 1, 0};
     double ptB[3] = {1, 3, -4};
     double pt[3] = {1, 2, -4};

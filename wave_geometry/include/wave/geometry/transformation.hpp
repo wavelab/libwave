@@ -9,49 +9,6 @@
 
 namespace wave {
 
-///**
-// * Inheriting from MatrixBase kind of a PITA, so going to define a couple storage classes
-// */
-//
-// class TransformStorage : public Mat34 {
-// public:
-//    TransformStorage() : Mat34() {}
-//
-//    template <typename Derived>
-//    explicit TransformStorage(const Eigen::MatrixBase<Derived> &other) : Mat34(other) {}
-//
-//    TransformStorage(const TransformStorage& other) : Mat34(other) {}
-//
-//    TransformStorage& operator= (const TransformStorage& other) {
-//        this->Mat34::operator=(other);
-//        return *this;
-//    }
-//
-//    TransformStorage& operator=(TransformStorage&& other) noexcept {
-//        this->Mat34::operator=(other);
-//        return *this;
-//    }
-//
-//    TransformStorage& operator= (const Mat34& other) {
-//        this->Mat34::operator=(other);
-//        return *this;
-//    }
-//
-//    TransformStorage& operator=(Mat34&& other) noexcept {
-//        this->Mat34::operator=(other);
-//        return *this;
-//    }
-//};
-//
-// class TransformRef : public Eigen::Map<Mat34> {
-// public:
-//    TransformRef() = delete;
-//
-//    explicit TransformRef(double *data_ptr) : Eigen::Map<Mat34>(data_ptr) {}
-//
-//    using Eigen::Map<Mat34>::operator=;
-//};
-
 template <typename T_str = Mat34, bool approximate = false>
 class Transformation {
  public:
@@ -67,7 +24,6 @@ class Transformation {
     Transformation(Transformation const &other) : storage(other.storage) {}
 
     Transformation(const T_str &storage) : storage(storage) {}
-
     Transformation(T_str &&storage) noexcept : storage(std::move(storage)) {}
 
     template <typename Other, bool OtherApprox>

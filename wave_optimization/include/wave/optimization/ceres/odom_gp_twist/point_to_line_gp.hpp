@@ -21,7 +21,7 @@ struct SE3PointToLineGPObjects {
     // This is the Jacobian of the cost function wrt an the transformed point
     Eigen::Matrix<double, 3, 3> Jres_P;
 
-    wave::Vec3 T0_pt;  // Constructor must supply this
+    wave::Vec3 T0_pt;
 
     mutable wave::Vec6 T_cur_twist;
     mutable wave::Transformation<wave::Mat34, true> T_current;
@@ -31,12 +31,11 @@ struct SE3PointToLineGPObjects {
 
     Eigen::Matrix<double, 6, 12> candle;
 
-    // Interpolation Jacobians
-    mutable Eigen::Matrix<double, 6, 6> JT_Ti, JT_Tip1, JT_Wi, JT_Wip1;
+    mutable wave::Mat6 Jexp;
     // Jacobian of the Transformed point wrt the transformation
     mutable Eigen::Matrix<double, 3, 6> JP_T;
-    // Complete Jacobian will null row
-    mutable Eigen::Matrix<double, 3, 6> Jr_T;
+    // Complete Jacobian without null row
+    mutable Eigen::Matrix<double, 2, 6> Jr_T;
 
     /**
      * This is used to rotate the residual into a frame where one of the unit vectors is

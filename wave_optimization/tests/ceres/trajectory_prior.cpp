@@ -22,7 +22,7 @@ TEST(trajectory_prior, unary_factor) {
     Transformation<> prior, initial;
     prior.setFromExpMap(twist);
 
-    auto inv_prior = prior.inverse();
+    auto inv_prior = prior.transformInverse();
 
     ceres::CostFunction *cost_function =
       new TrajectoryPrior<Transformation<>>(Eigen::Matrix<double, 12, 12>::Identity(), inv_prior, prior_twist);
@@ -66,7 +66,7 @@ TEST(trajectory_prior, binary_factor) {
     // Need to provide prior for binary factor
     prior_next.setFromExpMap(delta_T * prior_vel);
 
-    auto prior_initial_inv = prior_initial.inverse();
+    auto prior_initial_inv = prior_initial.transformInverse();
 
     ceres::CostFunction *cost_function =
       new TrajectoryPrior<Transformation<>>(10000*Eigen::Matrix<double, 12, 12>::Identity(), prior_initial_inv, prior_vel);
