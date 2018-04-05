@@ -396,7 +396,7 @@ Mat6 Transformation<Derived, approximate>::SE3LeftJacobian(const Vec6 &W) {
         retval.noalias() = Mat6::Identity() + A * adj + B * adj * adj + C * adj * adj * adj + D * adj * adj * adj * adj;
     } else {
         // First order taylor expansion
-        retval.noalias() = Mat6::Identity() + 0.5 * adj;
+        retval.noalias() = Mat6::Identity() + 0.5 * adj; // + 0.1666666666666666666666 * adj * adj;
     }
     return retval;
 }

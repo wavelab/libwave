@@ -11,21 +11,22 @@ WAVE_ADD_MODULE(${PROJECT_NAME} DEPENDS
     SOURCES
     #src/ceres/ba.cpp
     src/ceres/ceres_examples.cpp
-        src/ceres/local_params/SE3Parameterization.cpp
-        src/ceres/local_params/null_SE3_parameterization.cpp
-        src/ceres/local_params/null_SE3_parameterization_remap.cpp
-        src/ceres/odom_gp/point_to_line_gp.cpp
-        src/ceres/odom_gp/point_to_plane_gp.cpp
-        src/ceres/odom_gp/constant_velocity.cpp
-        src/ceres/odom_gp_reduced/point_to_line_gp.cpp
-        src/ceres/odom_gp_reduced/point_to_plane_gp.cpp
-        src/ceres/odom_gp_reduced/constant_velocity.cpp
-        src/ceres/local_params/InterpolatedSE3.cpp
+    src/ceres/local_params/SE3Parameterization.cpp
+    src/ceres/local_params/null_SE3_parameterization.cpp
+    src/ceres/local_params/null_SE3_parameterization_remap.cpp
+    src/ceres/odom_gp/point_to_line_gp.cpp
+    src/ceres/odom_gp/point_to_plane_gp.cpp
+    src/ceres/odom_gp/constant_velocity.cpp
+    src/ceres/odom_gp_twist/point_to_line_gp.cpp
+    src/ceres/odom_gp_reduced/point_to_line_gp.cpp
+    src/ceres/odom_gp_reduced/point_to_plane_gp.cpp
+    src/ceres/odom_gp_reduced/constant_velocity.cpp
+    src/ceres/local_params/InterpolatedSE3.cpp
     src/ceres/point_to_point_residual.cpp
-        src/ceres/loss_function/bisquare_loss.cpp
-        src/ceres/loss_function/quartic_loss.cpp
-        src/ceres/odom_linear/point_to_line_interpolated_transform.cpp
-        src/ceres/odom_linear/point_to_plane_interpolated_transform.cpp)
+    src/ceres/loss_function/bisquare_loss.cpp
+    src/ceres/loss_function/quartic_loss.cpp
+    src/ceres/odom_linear/point_to_line_interpolated_transform.cpp
+    src/ceres/odom_linear/point_to_plane_interpolated_transform.cpp)
 
 # Unit tests
 IF(BUILD_TESTING)
