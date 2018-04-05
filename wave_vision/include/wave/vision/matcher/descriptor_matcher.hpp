@@ -65,19 +65,23 @@ class DescriptorMatcher {
       const std::vector<cv::KeyPoint> &keypoints_2,
       cv::InputArray mask) = 0;
 
- public:
-    /** The number of matches prior to any filtering or outlier removal. */
-    size_t num_raw_matches = 0u;
-
-    /** The number of matches after being filtered by the distance/ratio test.
-     *  This is the input to the outlierRejection method.
+    /** Returns the number of raw, filtered, and good matches from the latest
+     * set of images.
+     *
+     * @param[out] num_raw_matches The number of matches prior to any filtering
+     * or outlier removal.
+     * @param[out] num_filtered_matches The number of matches after being
+     * filtered by the distance/ratio test.
+     * @param[out] num_good_matches The number of matches remaining after
+     * outlier removal via RANSAC or a similar method
      */
-    size_t num_filtered_matches = 0u;
-
-    /** The size of matches remaining after outlier removal via RANSAC or a
-     *  similar method.
-     */
-    size_t num_good_matches = 0u;
+    void getNumMatches(uint64_t &num_raw_matches,
+                       uint64_t &num_filtered_matches,
+                       uint64_t &num_good_matches) {
+        num_raw_matches = this->num_raw_matches;
+        num_filtered_matches = this->num_filtered_matches;
+        num_good_matches = this->num_good_matches;
+    }
 
  protected:
     virtual ~DescriptorMatcher() = default;
@@ -104,6 +108,20 @@ class DescriptorMatcher {
      */
     virtual std::vector<cv::DMatch> filterMatches(
       const std::vector<std::vector<cv::DMatch>> &matches) const = 0;
+
+ protected:
+    /** The number of matches prior to any filtering or outlier removal. */
+    uint64_t num_raw_matches = 0u;
+
+    /** The number of matches after being filtered by the distance/ratio test.
+     *  This is the input to the outlierRejection method.
+     */
+    uint64_t num_filtered_matches = 0u;
+
+    /** The number of matches remaining after outlier removal via RANSAC or a
+     *  similar method.
+     */
+    uint64_t num_good_matches = 0u;
 };
 }  // namespace wave
 
