@@ -63,7 +63,7 @@ struct FLANNMatcherParams {
         : flann_method(flann_method),
           use_knn(true),
           ratio_threshold(ratio_threshold),
-          auto_remove_outliers(auto_remove_outliers),
+          remove_outliers(auto_remove_outliers),
           fm_method(fm_method) {}
 
     /** Overloaded method. Only to be used if the user desires the distance
@@ -76,7 +76,7 @@ struct FLANNMatcherParams {
         : flann_method(flann_method),
           use_knn(false),
           distance_threshold(distance_threshold),
-          auto_remove_outliers(auto_remove_outliers),
+          remove_outliers(auto_remove_outliers),
           fm_method(fm_method) {}
 
     /** Constructor using parameters extracted from a configuration file.
@@ -150,7 +150,7 @@ struct FLANNMatcherParams {
      *
      *  Recommended: True
      */
-    bool auto_remove_outliers = true;
+    bool remove_outliers = true;
 
     /** Method to find the fundamental matrix and remove outliers.
      *

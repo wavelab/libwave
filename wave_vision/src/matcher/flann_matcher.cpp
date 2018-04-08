@@ -11,7 +11,7 @@ FLANNMatcherParams::FLANNMatcherParams(const std::string &config_path) {
     bool use_knn;
     double ratio_threshold;
     int distance_threshold;
-    bool auto_remove_outliers;
+    bool remove_outliers;
     int fm_method;
 
     // Add parameters to parser, to be loaded. If path cannot be found, throw
@@ -20,7 +20,7 @@ FLANNMatcherParams::FLANNMatcherParams(const std::string &config_path) {
     parser.addParam("use_knn", &use_knn);
     parser.addParam("ratio_threshold", &ratio_threshold);
     parser.addParam("distance_threshold", &distance_threshold);
-    parser.addParam("auto_remove_outliers", &auto_remove_outliers);
+    parser.addParam("remove_outliers", &remove_outliers);
     parser.addParam("fm_method", &fm_method);
 
     if (parser.load(config_path) != ConfigStatus::OK) {
@@ -32,7 +32,7 @@ FLANNMatcherParams::FLANNMatcherParams(const std::string &config_path) {
     this->use_knn = use_knn;
     this->ratio_threshold = ratio_threshold;
     this->distance_threshold = distance_threshold;
-    this->auto_remove_outliers = auto_remove_outliers;
+    this->remove_outliers = remove_outliers;
     this->fm_method = fm_method;
 }
 
@@ -229,7 +229,7 @@ std::vector<cv::DMatch> FLANNMatcher::matchDescriptors(
         this->num_filtered_matches = filtered_matches.size();
     }
 
-    if (this->current_config.auto_remove_outliers) {
+    if (this->current_config.remove_outliers) {
         std::vector<cv::DMatch> good_matches =
           this->removeOutliers(filtered_matches, keypoints_1, keypoints_2);
         this->num_good_matches = good_matches.size();

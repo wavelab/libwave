@@ -30,7 +30,7 @@ struct BFMatcherParams {
         : norm_type(norm_type),
           use_knn(true),
           ratio_threshold(ratio_threshold),
-          auto_remove_outliers(auto_remove_outliers),
+          remove_outliers(auto_remove_outliers),
           fm_method(fm_method) {}
 
     /** Overloaded method. Only to be used if the user desires the distance
@@ -43,7 +43,7 @@ struct BFMatcherParams {
         : norm_type(norm_type),
           use_knn(false),
           distance_threshold(distance_threshold),
-          auto_remove_outliers(auto_remove_outliers),
+          remove_outliers(auto_remove_outliers),
           fm_method(fm_method) {}
 
     /** Constructor using parameters extracted from a configuration file.
@@ -116,8 +116,8 @@ struct BFMatcherParams {
      */
     int distance_threshold = 5;
 
-    /** Determines whether to automatically remove outliers using the method
-     *  described in fm_method.
+    /** Determines whether to remove outliers using the method described in
+     * fm_method.
      *
      *  If true, the wave::BruteForceMatcher::matchDescriptors method will
      *  automatically call the wave::BruteForceMatcher::removeOutliers method,
@@ -129,7 +129,7 @@ struct BFMatcherParams {
      *
      *  Recommended: True
      */
-    bool auto_remove_outliers = true;
+    bool remove_outliers = true;
 
     /** Method to find the fundamental matrix and remove outliers.
      *

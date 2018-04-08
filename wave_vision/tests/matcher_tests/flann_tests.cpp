@@ -15,14 +15,14 @@ TEST(FLANNTests, GoodConfig) {
     int flann_method = FLANN::KDTree;
     double ratio_threshold = 0.8;
     int distance_threshold = 5;
-    bool auto_remove_outliers = true;
+    bool remove_outliers = true;
     int fm_method = cv::FM_RANSAC;
 
     EXPECT_NO_THROW(FLANNMatcherParams config2(
-      flann_method, ratio_threshold, auto_remove_outliers, fm_method));
+      flann_method, ratio_threshold, remove_outliers, fm_method));
 
     EXPECT_NO_THROW(FLANNMatcherParams config3(
-      flann_method, distance_threshold, auto_remove_outliers, fm_method));
+      flann_method, distance_threshold, remove_outliers, fm_method));
 
     // From flann.yaml, with good values.
     EXPECT_NO_THROW(FLANNMatcherParams config4(TEST_CONFIG));
@@ -110,8 +110,8 @@ TEST(FLANNTests, ConfigurationTests) {
     ASSERT_EQ(curr_config_1.use_knn, ref_config.use_knn);
     ASSERT_EQ(curr_config_1.ratio_threshold, ref_config.ratio_threshold);
     ASSERT_EQ(curr_config_1.distance_threshold, ref_config.distance_threshold);
-    ASSERT_EQ(curr_config_1.auto_remove_outliers,
-              ref_config.auto_remove_outliers);
+    ASSERT_EQ(curr_config_1.remove_outliers,
+              ref_config.remove_outliers);
     ASSERT_EQ(curr_config_1.fm_method, ref_config.fm_method);
 
     // Confirm default construction
@@ -119,8 +119,8 @@ TEST(FLANNTests, ConfigurationTests) {
     ASSERT_EQ(curr_config_2.use_knn, ref_config.use_knn);
     ASSERT_EQ(curr_config_2.ratio_threshold, ref_config.ratio_threshold);
     ASSERT_EQ(curr_config_2.distance_threshold, ref_config.distance_threshold);
-    ASSERT_EQ(curr_config_2.auto_remove_outliers,
-              ref_config.auto_remove_outliers);
+    ASSERT_EQ(curr_config_2.remove_outliers,
+              ref_config.remove_outliers);
     ASSERT_EQ(curr_config_2.fm_method, ref_config.fm_method);
 
     // Confirm construction with .yaml file
@@ -128,8 +128,8 @@ TEST(FLANNTests, ConfigurationTests) {
     ASSERT_EQ(curr_config_3.use_knn, ref_config.use_knn);
     ASSERT_EQ(curr_config_3.ratio_threshold, ref_config.ratio_threshold);
     ASSERT_EQ(curr_config_3.distance_threshold, ref_config.distance_threshold);
-    ASSERT_EQ(curr_config_3.auto_remove_outliers,
-              ref_config.auto_remove_outliers);
+    ASSERT_EQ(curr_config_3.remove_outliers,
+              ref_config.remove_outliers);
     ASSERT_EQ(curr_config_3.fm_method, ref_config.fm_method);
 }
 }  // namespace wave

@@ -65,7 +65,7 @@ distance_threshold: 5
 #
 # Recommended: True
 #
-auto_remove_outliers: true
+remove_outliers: true
 
 #  Method to find the fundamental matrix and remove outliers.
 #

@@ -11,7 +11,7 @@ BFMatcherParams::BFMatcherParams(const std::string &config_path) {
     bool use_knn;
     double ratio_threshold;
     int distance_threshold;
-    bool auto_remove_outliers;
+    bool remove_outliers;
     int fm_method;
 
     // Add parameters to parser, to be loaded. If path cannot be found, throw
@@ -20,7 +20,7 @@ BFMatcherParams::BFMatcherParams(const std::string &config_path) {
     parser.addParam("use_knn", &use_knn);
     parser.addParam("ratio_threshold", &ratio_threshold);
     parser.addParam("distance_threshold", &distance_threshold);
-    parser.addParam("auto_remove_outliers", &auto_remove_outliers);
+    parser.addParam("remove_outliers", &remove_outliers);
     parser.addParam("fm_method", &fm_method);
 
     if (parser.load(config_path) != ConfigStatus::OK) {
@@ -32,7 +32,7 @@ BFMatcherParams::BFMatcherParams(const std::string &config_path) {
     this->use_knn = use_knn;
     this->ratio_threshold = ratio_threshold;
     this->distance_threshold = distance_threshold;
-    this->auto_remove_outliers = auto_remove_outliers;
+    this->remove_outliers = remove_outliers;
     this->fm_method = fm_method;
 }
 
@@ -128,13 +128,12 @@ std::vector<cv::DMatch> BruteForceMatcher::removeOutliers(
 
     // Take all good keypoints from matches, convert to cv::Point2f
     for (auto &match : matches) {
-        fp1.push_back(keypoints_1.at((size_t) match.queryIdx).pt);
-        fp2.push_back(keypoints_2.at((size_t) match.trainIdx).pt);
+        fp1.push_back(keypoints_1.at(static_cast<size_t>(match.queryIdx)).pt);
+        fp2.push_back(keypoints_2.at(static_cast<size_t>(match.trainIdx)).pt);
     }
 
     // Find fundamental matrix
     std::vector<uchar> mask;
-    cv::Mat fundamental_matrix;
 
     // Maximum distance from a point to an epipolar line in pixels. Any points
     // further are considered outliers. Only used for RANSAC.
@@ -144,7 +143,7 @@ std::vector<cv::DMatch> BruteForceMatcher::removeOutliers(
     // used for RANSAC or LMedS methods.
     double fm_param_2 = 0.99;
 
-    fundamental_matrix = cv::findFundamentalMat(
+    auto fundamental_matrix = cv::findFundamentalMat(
       fp1, fp2, this->current_config.fm_method, fm_param_1, fm_param_2, mask);
 
     // Only retain the inliers matches
@@ -194,7 +193,7 @@ std::vector<cv::DMatch> BruteForceMatcher::matchDescriptors(
     }
 
     // If the user wants outliers to be removed (via RANSAC or similar)
-    if (this->current_config.auto_remove_outliers) {
+    if (this->current_config.remove_outliers) {
         // Remove outliers.
         std::vector<cv::DMatch> good_matches =
           this->removeOutliers(filtered_matches, keypoints_1, keypoints_2);
