@@ -67,8 +67,7 @@ class Tracker {
      * @param image The image to add.
      * @param stamp The time at which the image was captured.
      */
-    void addImage(const cv::Mat &image,
-                  const std::chrono::steady_clock::time_point &stamp);
+    void addImage(const cv::Mat &image, const TimePoint &stamp);
 
     /** Draw tracks for the requested image.
      *
@@ -127,8 +126,7 @@ class Tracker {
      *
      * @param current_time the time at which this image was received
      */
-    void timestampImage(
-      const std::chrono::steady_clock::time_point &current_time) {
+    void timestampImage(const TimePoint &current_time) {
         auto img_count = this->img_times.size();
         this->img_times[img_count] = current_time;
     }
@@ -171,7 +169,7 @@ class Tracker {
 
     // Correspondence maps
     std::map<int, size_t> prev_ids;
-    std::map<size_t, std::chrono::steady_clock::time_point> img_times;
+    std::map<size_t, TimePoint> img_times;
 
     // Measurement container variables
     LandmarkMeasurementContainer<LandmarkMeasurement<int>> landmarks;

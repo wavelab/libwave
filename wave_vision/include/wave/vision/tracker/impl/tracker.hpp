@@ -122,7 +122,7 @@ std::vector<FeatureTrack> Tracker<TDetector, TDescriptor, TMatcher>::getTracks(
           "Image requested is outside of maintained window!");
     } else if (stamp > 0) {
         // Find the time for this image
-        std::chrono::steady_clock::time_point img_time =
+        TimePoint img_time =
           this->img_times.at(stamp);
 
         // Extract all of the IDs visible at this time
@@ -132,7 +132,7 @@ std::vector<FeatureTrack> Tracker<TDetector, TDescriptor, TMatcher>::getTracks(
         // For each ID, get the track.
         for (const auto &l : landmark_ids) {
             // Looking for track from first image.
-            std::chrono::steady_clock::time_point start_time =
+            TimePoint start_time =
               (this->img_times.begin())->second;
 
             FeatureTrack tracks = this->landmarks.getTrackInWindow(
@@ -149,7 +149,7 @@ std::vector<FeatureTrack> Tracker<TDetector, TDescriptor, TMatcher>::getTracks(
 template <typename TDetector, typename TDescriptor, typename TMatcher>
 void Tracker<TDetector, TDescriptor, TMatcher>::addImage(
   const cv::Mat &image,
-  const std::chrono::steady_clock::time_point &stamp) {
+  const TimePoint &stamp) {
     // Register the time this image
     this->timestampImage(stamp);
 
