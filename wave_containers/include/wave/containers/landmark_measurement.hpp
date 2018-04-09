@@ -33,22 +33,22 @@ using TimePoint = std::chrono::steady_clock::time_point;
  * The measurement value is 2D vector, representing the pixel position of the
  * landmark (u, v).
  *
- * @tparam SensorIdType The enum or integral type used to identify camera
+ * @tparam S The enum or integral type used to identify camera
  * sensors.
  */
-template <typename SensorIdType>
+template <typename T, typename S>
 struct LandmarkMeasurement {
     TimePoint time_point;
-    SensorIdType sensor_id;
+    S sensor_id;
     LandmarkId landmark_id;
     ImageNum image;
-    Vec2 value;
+    T value;
 
     LandmarkMeasurement(const TimePoint &t,
-                        const SensorIdType &s,
+                        const S &s,
                         const LandmarkId &id,
                         const ImageNum &img,
-                        const Vec2 &v)
+                        const T &v)
         : time_point{t}, sensor_id{s}, landmark_id{id}, image{img}, value{v} {}
 };
 
