@@ -530,7 +530,8 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
         p.intensity = pt.intensity;
         p.tick = tick + n_scan_in_batch * this->param.max_ticks;
         float range = std::sqrt(l2sqrd(p));
-        this->cur_scan.at(pt.ring).push_back(this->applyIMU(p));
+        //this->cur_scan.at(pt.ring).push_back(this->applyIMU(p));
+        this->cur_scan.at(pt.ring).push_back(p);
         this->signals[0].at(pt.ring).push_back((double) range);
         this->signals[1].at(pt.ring).push_back(
           clampToRange(p.intensity, this->param.min_intensity, this->param.max_intensity));

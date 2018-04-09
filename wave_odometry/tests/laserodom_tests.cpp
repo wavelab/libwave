@@ -152,7 +152,7 @@ TEST(OdomTest, StraightLineGarage) {
     params.max_residual_val = 0.2;
     params.opt_iters = 5;
     params.min_residuals = 30;
-    params.visualize = true;
+    params.visualize = false;
     params.n_window = 1;
     params.num_trajectory_states = 3;
     params.solver_threads = 4;
