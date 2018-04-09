@@ -6,6 +6,24 @@ namespace wave {
 
 const auto TEST_CONFIG = "tests/config/matcher/brute_force.yaml";
 
+TEST(FMParamTests, Config) {
+    EXPECT_NO_THROW(FMParams params0);
+
+    int max_dist0 = 1;
+    int max_dist1 = -1;
+    double confidence0 = 0.99;
+    double confidence1 = -1;
+    double confidence2 = 2;
+
+    EXPECT_NO_THROW(FMParams params1(max_dist0, confidence0));
+    EXPECT_THROW(FMParams params2(max_dist1, confidence0),
+                 std::invalid_argument);
+    EXPECT_THROW(FMParams params3(max_dist0, confidence1),
+                 std::invalid_argument);
+    EXPECT_THROW(FMParams params4(max_dist0, confidence2),
+                 std::invalid_argument);
+}
+
 // Checks that default configuration has no issues
 TEST(BFTests, GoodConfig) {
     // Default
@@ -103,8 +121,7 @@ TEST(BFTests, ConfigurationTests) {
     ASSERT_EQ(curr_config_1.use_knn, ref_config.use_knn);
     ASSERT_EQ(curr_config_1.ratio_threshold, ref_config.ratio_threshold);
     ASSERT_EQ(curr_config_1.distance_threshold, ref_config.distance_threshold);
-    ASSERT_EQ(curr_config_1.remove_outliers,
-              ref_config.remove_outliers);
+    ASSERT_EQ(curr_config_1.remove_outliers, ref_config.remove_outliers);
     ASSERT_EQ(curr_config_1.fm_method, ref_config.fm_method);
 
     // Confirm default construction
@@ -112,8 +129,7 @@ TEST(BFTests, ConfigurationTests) {
     ASSERT_EQ(curr_config_2.use_knn, ref_config.use_knn);
     ASSERT_EQ(curr_config_2.ratio_threshold, ref_config.ratio_threshold);
     ASSERT_EQ(curr_config_2.distance_threshold, ref_config.distance_threshold);
-    ASSERT_EQ(curr_config_2.remove_outliers,
-              ref_config.remove_outliers);
+    ASSERT_EQ(curr_config_2.remove_outliers, ref_config.remove_outliers);
     ASSERT_EQ(curr_config_2.fm_method, ref_config.fm_method);
 
     // Confirm construction with .yaml file
@@ -121,8 +137,7 @@ TEST(BFTests, ConfigurationTests) {
     ASSERT_EQ(curr_config_3.use_knn, ref_config.use_knn);
     ASSERT_EQ(curr_config_3.ratio_threshold, ref_config.ratio_threshold);
     ASSERT_EQ(curr_config_3.distance_threshold, ref_config.distance_threshold);
-    ASSERT_EQ(curr_config_3.remove_outliers,
-              ref_config.remove_outliers);
+    ASSERT_EQ(curr_config_3.remove_outliers, ref_config.remove_outliers);
     ASSERT_EQ(curr_config_3.fm_method, ref_config.fm_method);
 }
 }  // namespace wave

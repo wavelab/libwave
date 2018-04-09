@@ -180,12 +180,13 @@ struct FLANNMatcherParams {
 class FLANNMatcher : public DescriptorMatcher {
  public:
     /** Default constructor. The user can also specify their own struct with
-     *  desired values. If no struct is provided, default values are used.
+     *  desired values. If no structs are provided, default values are used.
      *
      *  @param config contains the desired parameter values.
      */
     explicit FLANNMatcher(
-      const FLANNMatcherParams &config = FLANNMatcherParams{});
+      const FLANNMatcherParams &config = FLANNMatcherParams{},
+      const FMParams &fm_params = FMParams{});
 
     /** Returns the current configuration parameters being used by the
      *  FLANNMatcher
@@ -193,7 +194,7 @@ class FLANNMatcher : public DescriptorMatcher {
      *  @return the current configuration values.
      */
     FLANNMatcherParams getConfiguration() const {
-        return this->current_config;
+        return this->config;
     }
 
     /** Remove outliers between matches using epipolar constraints
@@ -238,7 +239,10 @@ class FLANNMatcher : public DescriptorMatcher {
     cv::Ptr<cv::FlannBasedMatcher> flann_matcher;
 
     /** Current configuration parameters*/
-    FLANNMatcherParams current_config;
+    FLANNMatcherParams config;
+
+    /// Fundmental matrix calculation parameters.
+    FMParams fm_params;
 
     /** Remove outliers between matches. Uses a heuristic based approach as a
      *  first pass to determine good matches.

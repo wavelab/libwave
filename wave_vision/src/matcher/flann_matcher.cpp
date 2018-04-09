@@ -36,7 +36,8 @@ FLANNMatcherParams::FLANNMatcherParams(const std::string &config_path) {
     this->fm_method = fm_method;
 }
 
-FLANNMatcher::FLANNMatcher(const FLANNMatcherParams &config) {
+FLANNMatcher::FLANNMatcher(const FLANNMatcherParams &config,
+                           const FMParams &fm_params) {
     // Check flann_method and create the appropriate parameters struct.
     this->checkConfiguration(config);
 
@@ -75,7 +76,8 @@ FLANNMatcher::FLANNMatcher(const FLANNMatcherParams &config) {
         this->flann_matcher = cv::makePtr<cv::FlannBasedMatcher>(matcher);
     }
 
-    this->current_config = config;
+    this->config = config;
+    this->fm_params = fm_params;
 }
 
 void FLANNMatcher::checkConfiguration(const FLANNMatcherParams &check_config) {
@@ -118,7 +120,7 @@ std::vector<cv::DMatch> FLANNMatcher::filterMatches(
     // distance
     for (auto &match : matches) {
         if (match.distance <=
-            this->current_config.distance_threshold * min_distance) {
+            this->config.distance_threshold * min_distance) {
             filtered_matches.push_back(match);
         }
     }
@@ -134,7 +136,7 @@ std::vector<cv::DMatch> FLANNMatcher::filterMatches(
         // Calculate ratio between two best matches. Accept if less than
         // ratio heuristic
         float ratio = match[0].distance / match[1].distance;
-        if (ratio <= this->current_config.ratio_threshold) {
+        if (ratio <= this->config.ratio_threshold) {
             filtered_matches.push_back(match[0]);
         }
     }
@@ -159,16 +161,13 @@ std::vector<cv::DMatch> FLANNMatcher::removeOutliers(
     std::vector<uchar> mask;
     cv::Mat fundamental_matrix;
 
-    // Maximum distance from a point to an epipolar line in pixels. Any points
-    // further are considered outliers. Only used for RANSAC.
-    double fm_param_1 = 3.0;
 
-    // Desired confidence interval of the estimated fundamental matrix. Only
-    // used for RANSAC or LMedS methods.
-    double fm_param_2 = 0.99;
-
-    fundamental_matrix = cv::findFundamentalMat(
-      fp1, fp2, this->current_config.fm_method, fm_param_1, fm_param_2, mask);
+    fundamental_matrix = cv::findFundamentalMat(fp1,
+                                                fp2,
+                                                this->config.fm_method,
+                                                this->fm_params.max_dist,
+                                                this->fm_params.confidence,
+                                                mask);
 
     // Only retain the inliers matches
     for (size_t i = 0; i < mask.size(); i++) {
@@ -193,17 +192,17 @@ std::vector<cv::DMatch> FLANNMatcher::matchDescriptors(
     // (ex. ORB, BRISK) provide descriptors in the form of CV_8U (unsigned int).
     // To use the other methods, the descriptor must be converted before
     // matching.
-    if (this->current_config.flann_method != FLANN::LSH &&
+    if (this->config.flann_method != FLANN::LSH &&
         descriptors_1.type() != CV_32F) {
         descriptors_1.convertTo(descriptors_1, CV_32F);
     }
 
-    if (this->current_config.flann_method != FLANN::LSH &&
+    if (this->config.flann_method != FLANN::LSH &&
         descriptors_2.type() != CV_32F) {
         descriptors_2.convertTo(descriptors_2, CV_32F);
     }
 
-    if (this->current_config.use_knn) {
+    if (this->config.use_knn) {
         std::vector<std::vector<cv::DMatch>> raw_matches;
 
         // Number of neighbours for the k-nearest neighbour search. Only used
@@ -229,7 +228,7 @@ std::vector<cv::DMatch> FLANNMatcher::matchDescriptors(
         this->num_filtered_matches = filtered_matches.size();
     }
 
-    if (this->current_config.remove_outliers) {
+    if (this->config.remove_outliers) {
         std::vector<cv::DMatch> good_matches =
           this->removeOutliers(filtered_matches, keypoints_1, keypoints_2);
         this->num_good_matches = good_matches.size();

@@ -15,6 +15,47 @@ namespace wave {
 /** @addtogroup vision
  *  @{ */
 
+/** Parameters for calculating the Fundamental Matrix, when removing outliers
+ * from the matches.
+ */
+struct FMParams {
+    /// Default constructor.
+    FMParams() = default;
+
+    /** Overloaded constructor.
+     *
+     * @param max_dist The desired maximum distance from a point to an epipolar
+     * line. Cannot be below 0.
+     * @param confidence The desired confidence interval of the estimated
+     * fundamental matrix. Must be between 0 and 1.
+     * @throw std::invalid_argument if either parameter is out of range.
+     */
+    FMParams(double max_dist, double confidence)
+        : max_dist{max_dist}, confidence{confidence} {
+        if (this->max_dist < 0) {
+            throw std::invalid_argument("max_dist must be greater than 0!");
+        }
+
+        if (this->confidence < 0 || this->confidence > 1) {
+            throw std::invalid_argument("confidence must be between 0 and 1!");
+        }
+    }
+
+    /** Maximum distance from a point to an epipolar line, in pixels. Any points
+     * further are considered outliers. Only used for RANSAC.
+     *
+     * Recommended: 1.0. Cannot be less than 0.
+     */
+    double max_dist = 1.0;
+
+    /** Desired confidence interval of the estimated fundamental matrix. Only
+     * used for RANSAC or LMedS methods.
+     *
+     * Recommended: 0.99. Must be between 0 and 1.
+     */
+    double confidence = 0.99;
+};
+
 /** Representation of a generic descriptor matcher.
  *
  *  Internally, this class, and all derived classes are wrapping various

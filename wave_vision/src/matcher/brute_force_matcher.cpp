@@ -37,7 +37,8 @@ BFMatcherParams::BFMatcherParams(const std::string &config_path) {
 }
 
 // Default constructor. Struct may be default or user defined.
-BruteForceMatcher::BruteForceMatcher(const BFMatcherParams &config) {
+BruteForceMatcher::BruteForceMatcher(const BFMatcherParams &config,
+                                     const FMParams &fm_params) {
     // Ensure parameters are valid
     this->checkConfiguration(config);
 
@@ -49,7 +50,8 @@ BruteForceMatcher::BruteForceMatcher(const BFMatcherParams &config) {
       cv::BFMatcher::create(config.norm_type, cross_check);
 
     // Store configuration parameters within member struct
-    this->current_config = config;
+    this->config = config;
+    this->fm_params = fm_params;
 }
 
 void BruteForceMatcher::checkConfiguration(
@@ -94,8 +96,7 @@ std::vector<cv::DMatch> BruteForceMatcher::filterMatches(
     // Keep any match that is less than the rejection heuristic times minimum
     // distance
     for (auto &match : matches) {
-        if (match.distance <=
-            this->current_config.distance_threshold * min_distance) {
+        if (match.distance <= this->config.distance_threshold * min_distance) {
             filtered_matches.push_back(match);
         }
     }
@@ -111,7 +112,7 @@ std::vector<cv::DMatch> BruteForceMatcher::filterMatches(
         // Calculate ratio between two best matches. Accept if less than
         // ratio heuristic
         float ratio = match[0].distance / match[1].distance;
-        if (ratio <= this->current_config.ratio_threshold) {
+        if (ratio <= this->config.ratio_threshold) {
             filtered_matches.push_back(match[0]);
         }
     }
@@ -124,29 +125,26 @@ std::vector<cv::DMatch> BruteForceMatcher::removeOutliers(
   const std::vector<cv::KeyPoint> &keypoints_1,
   const std::vector<cv::KeyPoint> &keypoints_2) const {
     std::vector<cv::DMatch> good_matches;
-    std::vector<cv::Point2f> fp1, fp2;
+    std::vector<cv::Point2f> pixels1, pixels2;
 
     // Take all good keypoints from matches, convert to cv::Point2f
     for (auto &match : matches) {
-        fp1.push_back(keypoints_1.at(static_cast<size_t>(match.queryIdx)).pt);
-        fp2.push_back(keypoints_2.at(static_cast<size_t>(match.trainIdx)).pt);
+        pixels1.push_back(
+          keypoints_1.at(static_cast<size_t>(match.queryIdx)).pt);
+        pixels2.push_back(
+          keypoints_2.at(static_cast<size_t>(match.trainIdx)).pt);
     }
 
     // Find fundamental matrix
     std::vector<uchar> mask;
+    auto fundamental_matrix = cv::findFundamentalMat(pixels1,
+                                                     pixels2,
+                                                     this->config.fm_method,
+                                                     this->fm_params.max_dist,
+                                                     this->fm_params.confidence,
+                                                     mask);
 
-    // Maximum distance from a point to an epipolar line in pixels. Any points
-    // further are considered outliers. Only used for RANSAC.
-    double fm_param_1 = 3.0;
-
-    // Desired confidence interval of the estimated fundamental matrix. Only
-    // used for RANSAC or LMedS methods.
-    double fm_param_2 = 0.99;
-
-    auto fundamental_matrix = cv::findFundamentalMat(
-      fp1, fp2, this->current_config.fm_method, fm_param_1, fm_param_2, mask);
-
-    // Only retain the inliers matches
+    // Only retain the inlier matches
     for (size_t i = 0; i < mask.size(); i++) {
         if (mask.at(i) != 0) {
             good_matches.push_back(matches.at(i));
@@ -164,7 +162,7 @@ std::vector<cv::DMatch> BruteForceMatcher::matchDescriptors(
   cv::InputArray mask) {
     std::vector<cv::DMatch> filtered_matches;
 
-    if (this->current_config.use_knn) {
+    if (this->config.use_knn) {
         std::vector<std::vector<cv::DMatch>> raw_matches;
 
         // Number of neighbours for the k-nearest neighbour search. Only used
@@ -193,7 +191,7 @@ std::vector<cv::DMatch> BruteForceMatcher::matchDescriptors(
     }
 
     // If the user wants outliers to be removed (via RANSAC or similar)
-    if (this->current_config.remove_outliers) {
+    if (this->config.remove_outliers) {
         // Remove outliers.
         std::vector<cv::DMatch> good_matches =
           this->removeOutliers(filtered_matches, keypoints_1, keypoints_2);

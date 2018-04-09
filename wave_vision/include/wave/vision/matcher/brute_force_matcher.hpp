@@ -25,12 +25,12 @@ struct BFMatcherParams {
      */
     BFMatcherParams(const int norm_type,
                     const double ratio_threshold,
-                    const bool auto_remove_outliers,
+                    const bool remove_outliers,
                     const int fm_method)
         : norm_type(norm_type),
           use_knn(true),
           ratio_threshold(ratio_threshold),
-          remove_outliers(auto_remove_outliers),
+          remove_outliers(remove_outliers),
           fm_method(fm_method) {}
 
     /** Overloaded method. Only to be used if the user desires the distance
@@ -38,12 +38,12 @@ struct BFMatcherParams {
      */
     BFMatcherParams(const int norm_type,
                     const int distance_threshold,
-                    const bool auto_remove_outliers,
+                    const bool remove_outliers,
                     const int fm_method)
         : norm_type(norm_type),
           use_knn(false),
           distance_threshold(distance_threshold),
-          remove_outliers(auto_remove_outliers),
+          remove_outliers(remove_outliers),
           fm_method(fm_method) {}
 
     /** Constructor using parameters extracted from a configuration file.
@@ -155,13 +155,16 @@ struct BFMatcherParams {
  */
 class BruteForceMatcher : public DescriptorMatcher {
  public:
-    /** Default constructor. The user can also specify their own struct with
-     *  desired values. If no struct is provided, default values are used.
+    /** Default constructor. The user can also specify their own structs with
+     *  desired values. If no structs are provided, default values are used.
      *
-     *  @param config contains the desired parameter values.
+     *  @param config The desired configuration for the BFMatcher.
+     *  @param fm_params The desired parameters for finding the Fundamental
+     *  Matrix when performing outlier rejection.
      */
     explicit BruteForceMatcher(
-      const BFMatcherParams &config = BFMatcherParams{});
+      const BFMatcherParams &config = BFMatcherParams{},
+      const FMParams &fm_params = FMParams{});
 
     /** Returns the current configuration parameters being used by the
      *  BruteForceMatcher
@@ -169,7 +172,7 @@ class BruteForceMatcher : public DescriptorMatcher {
      *  @return the current configuration values.
      */
     BFMatcherParams getConfiguration() const {
-        return this->current_config;
+        return this->config;
     }
 
     /** Remove outliers between matches using epipolar constraints
@@ -214,7 +217,10 @@ class BruteForceMatcher : public DescriptorMatcher {
     cv::Ptr<cv::BFMatcher> brute_force_matcher;
 
     /** Current configuration parameters */
-    BFMatcherParams current_config;
+    BFMatcherParams config;
+
+    /// Fundmental matrix calculation parameters
+    FMParams fm_params;
 
     /** Remove outliers between matches. Uses a heuristic based approach as a
      *  first pass to determine good matches.
