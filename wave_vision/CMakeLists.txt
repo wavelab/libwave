@@ -7,6 +7,7 @@ WAVE_ADD_MODULE(${PROJECT_NAME}
     wave::containers
     Eigen3::Eigen
     Boost::filesystem
+    Boost::boost
     opencv_core opencv_features2d opencv_calib3d opencv_imgproc opencv_highgui
     opencv_videoio
     SOURCES

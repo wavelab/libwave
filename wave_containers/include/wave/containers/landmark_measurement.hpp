@@ -16,7 +16,6 @@ namespace wave {
  *
  * @todo: This is a weak typedef; consider a strong typedef using phantom types.
  */
-using ImageNum = std::size_t;
 using LandmarkId = std::size_t;
 using TimePoint = std::chrono::steady_clock::time_point;
 
@@ -41,15 +40,13 @@ struct LandmarkMeasurement {
     TimePoint time_point;
     S sensor_id;
     LandmarkId landmark_id;
-    ImageNum image;
     T value;
 
     LandmarkMeasurement(const TimePoint &t,
                         const S &s,
                         const LandmarkId &id,
-                        const ImageNum &img,
                         const T &v)
-        : time_point{t}, sensor_id{s}, landmark_id{id}, image{img}, value{v} {}
+        : time_point{t}, sensor_id{s}, landmark_id{id}, value{v} {}
 };
 
 

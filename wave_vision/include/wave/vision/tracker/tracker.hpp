@@ -19,7 +19,7 @@ namespace wave {
 /** @addtogroup vision
  *  @{ */
 
-using FeatureTrack = std::vector<LandmarkMeasurement<int>>;
+using FeatureTrack = std::vector<LandmarkMeasurement<Vec2, int>>;
 
 /** Image tracker class.
  *
@@ -60,7 +60,7 @@ class Tracker {
      * @return Tracks corresponding to all detected landmarks in the image, from
      * the start of time to the given image.
      */
-    std::vector<FeatureTrack> getTracks(const uint64_t stamp) const;
+    std::vector<FeatureTrack> getTracks(const TimePoint &stamp) const;
 
     /** Add a new image to the tracker (presumably the next in a sequence).
      *
@@ -122,21 +122,12 @@ class Tracker {
                           std::vector<cv::KeyPoint> &keypoints,
                           cv::Mat &descriptor);
 
-    /** Register the current time with the current img_count
-     *
-     * @param current_time the time at which this image was received
-     */
-    void timestampImage(const TimePoint &current_time) {
-        auto img_count = this->img_times.size();
-        this->img_times[img_count] = current_time;
-    }
-
     /** Cleans out the LandmarkMeasurementContainer for images outside the
      *  requested window_size.
      *
      *  @param img The image to remove landmark information for.
      */
-    void purgeContainer(const int img);
+    void maintainContainers();
 
     /** Registers the latest matched keypoints with IDs. Assigns a new ID if one
      * has not already been provided.
@@ -145,7 +136,7 @@ class Tracker {
      * @param matches the matches between the current and previous images.
      * @return the map corresponding current keypoints to IDs.
      */
-    std::map<int, size_t> registerKeypoints(
+    std::map<int, LandmarkId> registerKeypoints(
       const std::vector<cv::KeyPoint> &curr_kp,
       const std::vector<cv::DMatch> &matches);
 
@@ -158,21 +149,16 @@ class Tracker {
      */
     size_t window_size;
 
-    /** If in sliding window mode, this represents the highest image number that
-     *  can be requested to extract tracks from.
-     */
-    uint64_t cleared_img_threshold = 0;
-
     // Keypoints and descriptors from the previous timestep
     std::vector<cv::KeyPoint> prev_kp;
     cv::Mat prev_desc;
 
     // Correspondence maps
-    std::map<int, size_t> prev_ids;
-    std::map<size_t, TimePoint> img_times;
+    std::map<int, LandmarkId> prev_ids;
+    std::vector<TimePoint> image_stamps;
 
     // Measurement container variables
-    LandmarkMeasurementContainer<LandmarkMeasurement<int>> landmarks;
+    LandmarkMeasurementContainer<LandmarkMeasurement<Vec2, int>> landmarks;
 
     // The sensor ID. TODO: Expand this for use with multiple cams.
     int sensor_id = 0;
