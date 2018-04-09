@@ -37,15 +37,10 @@
 #include "wave/odometry/kernels.hpp"
 #include "wave/odometry/integrals.hpp"
 #include "wave/odometry/sensor_model.hpp"
-#include "wave/optimization/ceres/local_params/null_SE3_parameterization.hpp"
-#include "wave/optimization/ceres/local_params/null_SE3_parameterization_remap.hpp"
-#include "wave/optimization/ceres/local_params/solution_remapping_parameterization.hpp"
-#include "wave/optimization/ceres/odom_gp/point_to_line_gp.hpp"
-#include "wave/optimization/ceres/odom_gp/point_to_plane_gp.hpp"
-#include "wave/optimization/ceres/odom_gp/constant_velocity.hpp"
-#include "wave/optimization/ceres/trajectory_prior.hpp"
+#include "wave/optimization/ceres/odom_gp_twist/point_to_line_gp.hpp"
+#include "wave/optimization/ceres/odom_gp_twist/point_to_plane_gp.hpp"
+#include "wave/optimization/ceres/odom_gp_twist/constant_velocity.hpp"
 #include "wave/optimization/ceres/loss_function/bisquare_loss.hpp"
-#include "wave/optimization/ceres/loss_function/quartic_loss.hpp"
 #include "wave/utils/math.hpp"
 #include "wave/utils/data.hpp"
 
@@ -73,9 +68,9 @@ struct LaserOdomParams {
     // How many scans to optimize over, must be at least 1, obviously
     uint32_t n_window = 1;
 
-    int opt_iters = 25;     // How many times to refind correspondences
+    int opt_iters = 25;         // How many times to refind correspondences
     int max_inner_iters = 100;  // How many iterations of ceres to run with each set of correspondences
-    float diff_tol = 1e-6;  // If the transform from one iteration to the next changes less than this,
+    float diff_tol = 1e-4;      // If the transform from one iteration to the next changes less than this,
     // skip the next iterations
     int solver_threads = 0;               // How many threads ceres should use. 0 or less results in using the
                                           // number of logical threads on the machine
@@ -102,26 +97,26 @@ struct LaserOdomParams {
     unlong angular_bins = 12;
     float min_intensity = 10.0;
     float max_intensity = 50.0;
-    float occlusion_tol = 0.1;    // Radians
-    float occlusion_tol_2 = 1;  // m. Distance between points to initiate occlusion check
-    float parallel_tol = 0.002;   // ditto
-    double edge_tol = 0.1;        // Edge features must have score higher than this
-    double flat_tol = 0.1;        // Plane features must have score lower than this
-    double int_edge_tol = 2;      // Intensity edge features must have score greater than this
-    double int_flat_tol = 0.1;    // Intensity edges must have range score lower than this
-    int n_edge = 40;              // How many edge features to pick out per ring
-    int n_flat = 100;             // How many plane features to pick out per ring
-    int n_int_edge = 0;           // How many intensity edges to pick out per ring
-    unlong knn = 5;               // 1/2 nearest neighbours for computing curvature
-    unlong key_radius = 5;        // minimum number of points between keypoints on the same laser ring
-    float edge_map_density = 0.01;     // Minimum l2squared spacing of features kept for odometry
+    float occlusion_tol = 0.1;      // Radians
+    float occlusion_tol_2 = 1;      // m. Distance between points to initiate occlusion check
+    float parallel_tol = 0.002;     // ditto
+    double edge_tol = 0.1;          // Edge features must have score higher than this
+    double flat_tol = 0.1;          // Plane features must have score lower than this
+    double int_edge_tol = 2;        // Intensity edge features must have score greater than this
+    double int_flat_tol = 0.1;      // Intensity edges must have range score lower than this
+    int n_edge = 40;                // How many edge features to pick out per ring
+    int n_flat = 100;               // How many plane features to pick out per ring
+    int n_int_edge = 0;             // How many intensity edges to pick out per ring
+    unlong knn = 5;                 // 1/2 nearest neighbours for computing curvature
+    unlong key_radius = 5;          // minimum number of points between keypoints on the same laser ring
+    float edge_map_density = 0.01;  // Minimum l2squared spacing of features kept for odometry
     float flat_map_density = 0.25;
     // one degree. Beam spacing is 1.33deg, so this should be sufficient
     double azimuth_tol = 0.0174532925199433;  // Minimum azimuth difference across correspondences
     uint16_t TTL = 1;                         // Maximum life of feature in local map with no correspondences
 
     double min_eigen = 100.0;
-    double max_extrapolation = 0.0;       // Increasing this number from 0 will allow a bit of extrapolation
+    double max_extrapolation = 0.0;  // Increasing this number from 0 will allow a bit of extrapolation
 
     // Setting flags
     bool visualize = false;               // Whether to run a visualization for debugging
@@ -155,7 +150,7 @@ class LaserOdom {
 
     std::vector<std::vector<std::vector<PointXYZIT>>> feature_points;  // edges, flats;
 
-    std::vector<FeatureKDTree<double>> prv_feature_points;             // previous features now in map
+    std::vector<FeatureKDTree<double>> prv_feature_points;  // previous features now in map
 
     struct Trajectory {
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -179,8 +174,10 @@ class LaserOdom {
     // Shared memory
     std::mutex output_mutex;
     pcl::PointCloud<pcl::PointXYZI> undistorted_cld;
-    std::vector<pcl::PointCloud<pcl::PointXYZ>, Eigen::aligned_allocator<pcl::PointCloud<pcl::PointXYZ>>> undis_features;  // undis_edges, undis_flats;
-    std::vector<pcl::PointCloud<pcl::PointXYZ>, Eigen::aligned_allocator<pcl::PointCloud<pcl::PointXYZ>>> map_features;    // map_edges, map_flats;
+    std::vector<pcl::PointCloud<pcl::PointXYZ>, Eigen::aligned_allocator<pcl::PointCloud<pcl::PointXYZ>>>
+      undis_features;  // undis_edges, undis_flats;
+    std::vector<pcl::PointCloud<pcl::PointXYZ>, Eigen::aligned_allocator<pcl::PointCloud<pcl::PointXYZ>>>
+      map_features;  // map_edges, map_flats;
     std::vector<std::vector<std::vector<double>>> output_corrs;
     std::vector<double> output_eigen;
     TimeType undistorted_stamp;
@@ -214,10 +211,14 @@ class LaserOdom {
     void undistort();
 
     // ceres optimizer stuff
-    std::vector<const double *> param_blocks;
+    std::vector<Vec12> param_blocks;
     // Preallocated memory for the residuals
-    std::vector<SE3PointToLineGPObjects, Eigen::aligned_allocator<SE3PointToLineGPObjects>> PtLMem;
-    std::vector<SE3PointToPlaneGPObjects, Eigen::aligned_allocator<SE3PointToPlaneGPObjects>> PtPMem;
+    std::vector<wave_optimization::SE3PointToLineGPObjects,
+                Eigen::aligned_allocator<wave_optimization::SE3PointToLineGPObjects>>
+      PtLMem;
+    std::vector<wave_optimization::SE3PointToPlaneGPObjects,
+                Eigen::aligned_allocator<wave_optimization::SE3PointToPlaneGPObjects>>
+      PtPMem;
 
     LaserOdomParams param;
     bool initialized = false, full_revolution = false;
@@ -232,17 +233,20 @@ class LaserOdom {
 
     PCLPointXYZIT applyIMU(const PCLPointXYZIT &pt);
     void transformToMap(
-            const double *const pt, const uint32_t tick, double *output, uint32_t &k, uint32_t &kp1, double &tau);
+      const double *const pt, const uint32_t tick, double *output, uint32_t &k, uint32_t &kp1, double &tau);
     void transformToMap(const double *const pt, const uint32_t tick, double *output);
     void transformToCurLidar(const double *const pt, const uint32_t tick, double *output);
     void resetTrajectory();
     void copyTrajectory();
     void applyRemap();
+    void updateOperatingPoint();
 
     // Lidar Sensor Model
     std::shared_ptr<RangeSensor> range_sensor;
     // Motion Model
-    std::vector<wave_kinematics::ConstantVelocityPrior, Eigen::aligned_allocator<wave_kinematics::ConstantVelocityPrior>> cv_vector;
+    std::vector<wave_kinematics::ConstantVelocityPrior,
+                Eigen::aligned_allocator<wave_kinematics::ConstantVelocityPrior>>
+      cv_vector;
     std::vector<double> trajectory_stamps;
 
     Mat6 sqrtinfo;
@@ -284,7 +288,7 @@ class LaserOdom {
     // Eventually connect to yamls to be able to change
     // kernels & policies very quickly
     enum SelectionPolicy { HIGH_POS, HIGH_NEG, NEAR_ZERO };
-    //todo: Rename Kernel, not just a kernel anymore
+    // todo: Rename Kernel, not just a kernel anymore
     enum Kernel { LOAM, LOG, FOG, RNG_VAR, INT_VAR };
     enum ResidualType { PointToLine, PointToPlane };
     struct Criteria {

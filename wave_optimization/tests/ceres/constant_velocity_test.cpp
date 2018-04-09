@@ -326,18 +326,14 @@ TEST(ConstantVelocity, IncrementalStates) {
     ceres::CostFunction *cost_function =
       new wave_optimization::ConstantVelocityPrior(Eigen::Matrix<double, 12, 12>::Identity(), E_op, delta_T);
 
-    Vec6 Tk_eps, Tkp1_eps, Vk_eps, Vkp1_eps;
+    Vec12 Tk_eps, Tkp1_eps;
     Tk_eps.setZero();
     Tkp1_eps.setZero();
-    Vk_eps.setZero();
-    Vkp1_eps.setZero();
 
     const double **params;
-    params = new const double *[4];
+    params = new const double *[2];
     params[0] = Tk_eps.data();
     params[1] = Tkp1_eps.data();
-    params[2] = Vk_eps.data();
-    params[3] = Vkp1_eps.data();
 
     ceres::NumericDiffOptions ndiff_options;
     ceres::GradientChecker g_check(cost_function, nullptr, ndiff_options);

@@ -30,14 +30,11 @@ SE3PointToPlaneGP::SE3PointToPlaneGP(const double *const pA,
 }
 
 bool SE3PointToPlaneGP::Evaluate(double const *const *parameters, double *residuals, double **jacobians) const {
-    Eigen::Map<const wave::Vec6> tk_map(parameters[0], 6, 1);
-    Eigen::Map<const wave::Vec6> tkp1_map(parameters[1], 6, 1);
-    Eigen::Map<const wave::Vec6> vel_k(parameters[2], 6, 1);
-    Eigen::Map<const wave::Vec6> vel_kp1(parameters[3], 6, 1);
+    Eigen::Map<const wave::Vec12> state_tk_map(parameters[0]);
+    Eigen::Map<const wave::Vec12> state_tkp1_map(parameters[1]);
 
     this->objects.T_cur_twist =
-      this->objects.hat.block<6, 6>(0, 0) * tk_map + this->objects.hat.block<6, 6>(0, 6) * vel_k +
-      this->objects.candle.block<6, 6>(0, 0) * tkp1_map + this->objects.candle.block<6, 6>(0, 6) * vel_kp1;
+            this->objects.hat * state_tk_map + this->objects.candle * state_tkp1_map;
 
     this->objects.T_current.setFromExpMap(this->objects.T_cur_twist);
 
@@ -62,22 +59,12 @@ bool SE3PointToPlaneGP::Evaluate(double const *const *parameters, double *residu
         this->objects.Jr_T = this->weight * this->objects.Jr_P * this->objects.JP_T * this->objects.Jexp;
 
         if (jacobians[0]) {
-            Eigen::Map<Eigen::Matrix<double, 1, 6, Eigen::RowMajor>> Jr_Tk(jacobians[0], 1, 6);
-            Jr_Tk.setZero();
-            Jr_Tk = this->objects.Jr_T * this->objects.hat.block<6, 6>(0, 0);
+            Eigen::Map<Eigen::Matrix<double, 1, 12, Eigen::RowMajor>> Jr_Tk(jacobians[0], 1, 12);
+            Jr_Tk = this->objects.Jr_T * this->objects.hat;
         }
         if (jacobians[1]) {
-            Eigen::Map<Eigen::Matrix<double, 1, 6, Eigen::RowMajor>> Jr_Tkp1(jacobians[1], 1, 6);
-            Jr_Tkp1.setZero();
-            Jr_Tkp1 = this->objects.Jr_T * this->objects.candle.block<6, 6>(0, 0);
-        }
-        if (jacobians[2]) {
-            Eigen::Map<Eigen::Matrix<double, 1, 6, Eigen::RowMajor>> jac_map(jacobians[2], 1, 6);
-            jac_map = this->objects.Jr_T * this->objects.hat.block<6, 6>(0, 6);
-        }
-        if (jacobians[3]) {
-            Eigen::Map<Eigen::Matrix<double, 1, 6, Eigen::RowMajor>> jac_map(jacobians[3], 1, 6);
-            jac_map = this->objects.Jr_T * this->objects.candle.block<6, 6>(0, 6);
+            Eigen::Map<Eigen::Matrix<double, 1, 12, Eigen::RowMajor>> Jr_Tkp1(jacobians[1], 1, 12);
+            Jr_Tkp1 = this->objects.Jr_T * this->objects.candle;
         }
     }
 

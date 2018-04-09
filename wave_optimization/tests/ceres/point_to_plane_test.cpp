@@ -109,19 +109,17 @@ TEST(Local_Twist_Param_Plane, Jacobians) {
     params = new const double *[4];
 
     Transformation<Eigen::Matrix<double, 3, 4>, false> T_k, T_kp1;
-    Vec6 epsT_k, epsT_kp1, vel_k, vel_kp1, eps_vel_k, eps_vel_kp1;
+    Vec6 vel_k, vel_kp1;
 
-    eps_vel_k.setZero();
-    eps_vel_kp1.setZero();
-    epsT_k.setZero();
-    epsT_kp1.setZero();
+    Vec12 state_k_eps, state_kp1_eps;
 
-    epsT_k(3) = 0.2;
+    state_k_eps.setZero();
+    state_kp1_eps.setZero();
 
-    params[0] = epsT_k.data();
-    params[1] = epsT_kp1.data();
-    params[2] = eps_vel_k.data();
-    params[3] = eps_vel_kp1.data();
+    state_k_eps(3) = 0.2;
+
+    params[0] = state_k_eps.data();
+    params[1] = state_kp1_eps.data();
 
     T_k.setIdentity();
     vel_k << 0.1, -0.1, 0.1, 5, 1, -1;
@@ -156,16 +154,6 @@ TEST(Local_Twist_Param_Plane, Jacobians) {
             objects,
             Mat3::Identity(),
             true);
-    double **jacobian;
-    jacobian = new double *[4];
-    jacobian[0] = new double[6];
-    jacobian[1] = new double[6];
-    jacobian[2] = new double[6];
-    jacobian[3] = new double[6];
-
-    double op_result;
-
-    cost_function->Evaluate(params, &op_result, jacobian);
 
     ceres::NumericDiffOptions ndiff_options;
     ceres::GradientChecker g_check(cost_function, nullptr, ndiff_options);

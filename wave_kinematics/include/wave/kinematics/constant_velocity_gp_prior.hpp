@@ -17,8 +17,8 @@ struct ConstantVelocityPrior {
     ConstantVelocityPrior() = delete;
     ConstantVelocityPrior(const double &tk, const double &tkp1, const double* tau, const wave::Mat6& Qc, const wave::Mat6& inv_Qc);
 
-    const double &tk;
-    const double &tkp1;
+    const double tk;
+    const double tkp1;
     const double dT;
     const double *tau;
     const wave::Mat6 &Qc;

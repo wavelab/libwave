@@ -31,7 +31,7 @@ struct SE3PointToPlaneGPObjects {
     mutable Eigen::Matrix<double, 1, 6> Jr_T;
 };
 
-class SE3PointToPlaneGP : public ceres::SizedCostFunction<1, 6, 6, 6, 6> {
+class SE3PointToPlaneGP : public ceres::SizedCostFunction<1, 12, 12> {
  public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
  private:

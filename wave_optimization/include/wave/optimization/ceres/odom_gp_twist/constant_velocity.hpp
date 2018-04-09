@@ -7,7 +7,7 @@
 
 namespace wave_optimization {
 
-class ConstantVelocityPrior : public ceres::SizedCostFunction<12, 6, 6, 6, 6> {
+class ConstantVelocityPrior : public ceres::SizedCostFunction<12, 12, 12> {
  private:
     /// Weight Matrix (square-root of information matrix)
     const Eigen::Matrix<double, 12, 12> weight;

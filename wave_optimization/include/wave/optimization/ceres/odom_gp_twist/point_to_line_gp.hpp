@@ -46,7 +46,7 @@ struct SE3PointToLineGPObjects {
     Eigen::Matrix3d rotation;
 };
 
-class SE3PointToLineGP : public ceres::SizedCostFunction<2, 6, 6, 6, 6> {
+class SE3PointToLineGP : public ceres::SizedCostFunction<2, 12, 12> {
  public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
  private:
