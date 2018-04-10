@@ -158,11 +158,16 @@ class LaserOdom {
         Vec6 vel;
     };
 
+    struct TrajDifference {
+        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+        Vec12 hat_multiplier, candle_multiplier;
+    };
+
     std::vector<Trajectory, Eigen::aligned_allocator<Trajectory>> cur_trajectory;
+    std::vector<TrajDifference, Eigen::aligned_allocator<TrajDifference>> cur_difference;
     Vec6 current_twist;
 
     std::vector<Trajectory, Eigen::aligned_allocator<Trajectory>> prev_trajectory;
-    Vec6 previous_twist;
 
     T_TYPE inv_prior_pose;
     Vec6 prior_twist;
@@ -239,6 +244,8 @@ class LaserOdom {
     void resetTrajectory();
     void copyTrajectory();
     void applyRemap();
+    // Do some calculations for transforms ahead of time
+    void updateDifferences();
     void updateOperatingPoint();
 
     // Lidar Sensor Model

@@ -99,6 +99,7 @@ LaserOdom::LaserOdom(const LaserOdomParams params) : param(params) {
     }
 
     this->param_blocks.resize(this->param.num_trajectory_states);
+    this->cur_difference.resize(this->param.num_trajectory_states - 1);
     for (auto &block : this->param_blocks) {
         block.setZero();
     }
@@ -117,13 +118,15 @@ LaserOdom::LaserOdom(const LaserOdomParams params) : param(params) {
         this->prior_twist.setZero();
         this->cur_trajectory.emplace_back(unit);
         this->prev_trajectory.emplace_back(unit2);
-        this->trajectory_stamps.emplace_back(i*step_size);
+        this->trajectory_stamps.emplace_back(i * step_size);
         if (i > 0) {
             this->cv_vector.emplace_back(this->trajectory_stamps.at(i - 1),
                                          this->trajectory_stamps.at(i),
                                          nullptr,
                                          this->param.Qc,
                                          this->param.inv_Qc);
+            this->cur_difference.at(i - 1).hat_multiplier.setZero();
+            this->cur_difference.at(i - 1).candle_multiplier.setZero();
         }
     }
     this->sqrtinfo.setIdentity();
@@ -179,17 +182,12 @@ void LaserOdom::transformToMap(
     this->cv_vector.at(k).tau = &tau;
     this->cv_vector.at(k).calculateStuff(hat, candle);
 
-    T_TYPE T_MAP_LIDAR_i;
-    T_MAP_LIDAR_i.interpolate(this->cur_trajectory.at(k).pose,
-                              this->cur_trajectory.at(kp1).pose,
-                              this->cur_trajectory.at(k).vel,
-                              this->cur_trajectory.at(kp1).vel,
-                              hat.block<6, 12>(0, 0),
-                              candle.block<6, 12>(0, 0),
-                              T_MAP_LIDAR_i);
+    T_TYPE T_MAP_LIDAR_i = this->cur_trajectory.at(k).pose;
 
     Eigen::Map<const Vec3> LIDAR_i_P(pt, 3, 1);
     Eigen::Map<Vec3> MAP_P(output, 3, 1);
+    T_MAP_LIDAR_i.manifoldPlus(hat.block<6, 12>(0, 0) * this->cur_difference.at(k).hat_multiplier +
+                               candle.block<6, 12>(0, 0) * this->cur_difference.at(k).candle_multiplier);
     T_MAP_LIDAR_i.transform(LIDAR_i_P, MAP_P);
 }
 
@@ -209,14 +207,10 @@ void LaserOdom::transformToCurLidar(const double *const pt, const uint32_t tick,
     this->cv_vector.at(k).tau = &tau;
     this->cv_vector.at(k).calculateStuff(hat, candle);
 
-    T_TYPE T_MAP_LIDAR_i;
-    T_MAP_LIDAR_i.interpolate(this->cur_trajectory.at(k).pose,
-                              this->cur_trajectory.at(kp1).pose,
-                              this->cur_trajectory.at(k).vel,
-                              this->cur_trajectory.at(kp1).vel,
-                              hat.block<6, 12>(0, 0),
-                              candle.block<6, 12>(0, 0),
-                              T_MAP_LIDAR_i);
+    T_TYPE T_MAP_LIDAR_i = this->cur_trajectory.at(k).pose;
+
+    T_MAP_LIDAR_i.manifoldPlus(hat.block<6, 12>(0, 0) * this->cur_difference.at(k).hat_multiplier +
+                               candle.block<6, 12>(0, 0) * this->cur_difference.at(k).candle_multiplier);
 
     Eigen::Map<const Vec3> LIDAR_I_P(pt, 3, 1);
     Eigen::Map<Vec3> LIDAR_END_P(output, 3, 1);
@@ -224,8 +218,6 @@ void LaserOdom::transformToCurLidar(const double *const pt, const uint32_t tick,
     auto &T_MAP_LIDAR_END = this->cur_trajectory.back().pose;
 
     (T_MAP_LIDAR_END.transformInverse() * T_MAP_LIDAR_i).transform(LIDAR_I_P, LIDAR_END_P);
-
-    //    transform.inverseTransform(Vecpt, op_map);
 }
 
 float LaserOdom::l2sqrd(const PCLPointXYZIT &p1, const PCLPointXYZIT &p2) {
@@ -388,7 +380,6 @@ void LaserOdom::copyTrajectory() {
         this->prev_trajectory.at(i).pose = this->cur_trajectory.at(i).pose;
         this->prev_trajectory.at(i).vel = this->cur_trajectory.at(i).vel;
     }
-    this->previous_twist = this->current_twist;
 }
 
 /**
@@ -450,7 +441,7 @@ void LaserOdom::applyRemap() {
           this->cur_trajectory.at(i + offset).vel + mapped_diff.block<6, 1>(12 * i + 6, 0);
     }
 
-    // set previous to current trajector to update operating point
+    // set previous to current trajectory to update operating point
     this->copyTrajectory();
 }
 
@@ -513,7 +504,7 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
                     this->undistort_transform = this->cur_trajectory.back().pose;
                     memcpy(this->undistort_velocity.data(), this->cur_trajectory.back().vel.data(), 48);
 
-                    this->undistort();
+                    //this->undistort();
                     this->fresh_output = true;
                 }
                 this->output_condition.notify_one();
@@ -530,7 +521,7 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
         p.intensity = pt.intensity;
         p.tick = tick + n_scan_in_batch * this->param.max_ticks;
         float range = std::sqrt(l2sqrd(p));
-        //this->cur_scan.at(pt.ring).push_back(this->applyIMU(p));
+        // this->cur_scan.at(pt.ring).push_back(this->applyIMU(p));
         this->cur_scan.at(pt.ring).push_back(p);
         this->signals[0].at(pt.ring).push_back((double) range);
         this->signals[1].at(pt.ring).push_back(
@@ -574,7 +565,6 @@ void LaserOdom::updateViz() {
     }
 
     this->display->addPointcloud(this->prev_viz, 0);
-    std::this_thread::sleep_for(std::chrono::milliseconds((int) (10 * this->param.scan_period)));
 }
 
 PCLPointXYZIT LaserOdom::applyIMU(const PCLPointXYZIT &p) {
@@ -621,6 +611,7 @@ void LaserOdom::rollover(TimeType stamp) {
     }
     // Now previous trajectory will hold the "motion generated" trajectory
     this->copyTrajectory();
+    this->updateDifferences();
 }
 
 void LaserOdom::buildTrees() {
@@ -1023,22 +1014,34 @@ bool LaserOdom::match() {
         //            LOG_ERROR("covariance did not compute");
         //        }
         //        covariance.GetCovarianceMatrixInTangentSpace(this->param_blocks, this->covar.data());
-        //        if (this->param.solution_remapping) {
-        //            this->applyRemap();
-        //        }
+        if (this->param.solution_remapping) {
+            this->applyRemap();
+        }
         this->updateOperatingPoint();
     }
     delete[] parameters;
     return true;
 }
 
+void LaserOdom::updateDifferences() {
+    for (uint32_t i = 0; i < this->cur_difference.size(); i++) {
+        this->cur_difference.at(i).hat_multiplier.block<6, 1>(6, 0) = this->cur_trajectory.at(i).vel;
+        this->cur_difference.at(i).candle_multiplier.block<6, 1>(0, 0) =
+          this->cur_trajectory.at(i + 1).pose.manifoldMinus(this->cur_trajectory.at(i).pose);
+        this->cur_difference.at(i).candle_multiplier.block<6, 1>(6, 0) =
+          T_TYPE::SE3ApproxInvLeftJacobian(this->cur_difference.at(i).candle_multiplier.block<6, 1>(0, 0)) *
+                this->cur_trajectory.at(i+1).vel;
+    }
+}
+
 void LaserOdom::updateOperatingPoint() {
     // update trajectory with current twist vectors
     for (uint32_t i = 0; i < this->param_blocks.size(); i++) {
-        this->cur_trajectory.at(i).pose.manifoldPlus(this->param_blocks.at(i).block<6, 1>(0,0));
+        this->cur_trajectory.at(i).pose.manifoldPlus(this->param_blocks.at(i).block<6, 1>(0, 0));
         this->cur_trajectory.at(i).vel += this->param_blocks.at(i).block<6, 1>(6, 0);
         this->param_blocks.at(i).setZero();
     }
+    this->updateDifferences();
 }
 
 void LaserOdom::resetTrajectory() {

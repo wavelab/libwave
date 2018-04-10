@@ -104,10 +104,15 @@ void Transformation<Derived, approximate>::interpolate(const Transformation<InTy
                                                        const Eigen::Matrix<double, 6, 12> &hat,
                                                        const Eigen::Matrix<double, 6, 12> &candle,
                                                        Transformation<Other, O_approx> &T_int) {
-    Mat6 J_left, J_right;
-    auto eps = T_kp1.manifoldMinusAndJacobian(T_k, J_left, J_right);
+    Mat6 J_left;
+    auto eps = T_kp1.manifoldMinus(T_k);
 
-//    T_int.deepCopy(T_k);
+    if (approximate) {
+        J_left = Transformation<>::SE3ApproxInvLeftJacobian(eps);
+    } else {
+        J_left = Transformation<>::SE3LeftJacobian(eps).inverse();
+    }
+
     T_int = T_k;
     T_int.manifoldPlus(hat.block<6, 6>(0, 6) * twist_k + candle.block<6, 6>(0, 0) * eps +
                        candle.block<6, 6>(0, 6) * J_left * twist_kp1);
@@ -622,7 +627,7 @@ Vec6 Transformation<Derived, approximate>::manifoldMinusAndJacobian(const Transf
     // logmap(T1 * inv(T2))
     Mat6 J_logm;
     Transformation<Mat34, approximate> T2inv;
-//    T2inv.deepCopy(T.transformInverse());
+
     T.transformInverse(T2inv);
     Transformation<Mat34, approximate> diff;
     diff = (*this) * T2inv;
