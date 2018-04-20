@@ -48,6 +48,7 @@ FIND_PACKAGE(yaml-cpp REQUIRED)
 FIND_PACKAGE(Ceres 1.12)
 FIND_PACKAGE(GTSAM)
 FIND_PACKAGE(GeographicLib 1.49)
+FIND_PACKAGE(libpointmatcher 1.2.3)
 
 # Where dependencies do not provide IMPORTED targets, define them
 INCLUDE(cmake/ImportEigen3.cmake)
@@ -56,6 +57,7 @@ INCLUDE(cmake/ImportPCL.cmake)
 INCLUDE(cmake/ImportKindr.cmake)
 INCLUDE(cmake/ImportYaml-cpp.cmake)
 INCLUDE(cmake/ImportCeres.cmake)
+INCLUDE(cmake/ImportLibpointmatcher.cmake)
 
 # Optionally build tests. `gtest` is included with this project
 IF(BUILD_TESTING)
