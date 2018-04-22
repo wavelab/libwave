@@ -114,7 +114,7 @@ class Tracker {
      * Detects features and computes descriptors using the templated detector
      * and descriptor.
      *
-     * @param image The image to detect fatures in.
+     * @param image The image to detect features in.
      * @param keypoints The keypoints detected by the feature detector.
      * @param descriptor The descriptors for keypoints detected in the image.
      */
@@ -124,8 +124,6 @@ class Tracker {
 
     /** Cleans out the LandmarkMeasurementContainer for images outside the
      *  requested window_size.
-     *
-     *  @param img The image to remove landmark information for.
      */
     void maintainContainers();
 
@@ -149,18 +147,22 @@ class Tracker {
      */
     size_t window_size;
 
-    // Keypoints and descriptors from the previous timestep
+    /// Keypoints from the previous timestep.
     std::vector<cv::KeyPoint> prev_kp;
+
+    /// Descriptors from the previous timestep.
     cv::Mat prev_desc;
 
-    // Correspondence maps
+    /// Correspondence map between keypoints and landmark IDs in the prev image.
     std::map<int, LandmarkId> prev_ids;
+
+    /// Times at which each image occurred.
     std::vector<TimePoint> image_stamps;
 
-    // Measurement container variables
+    /// Measurement container.
     LandmarkMeasurementContainer<LandmarkMeasurement<Vec2, int>> landmarks;
 
-    // The sensor ID. TODO: Expand this for use with multiple cams.
+    /// The sensor ID
     int sensor_id = 0;
 };
 
