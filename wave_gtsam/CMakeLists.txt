@@ -10,7 +10,8 @@ WAVE_ADD_MODULE(${PROJECT_NAME} DEPENDS
     src/decaying_bias.cpp
     src/gps_factor_with_bias.cpp
     src/pose_vel.cpp
-    src/pose_vel_bias.cpp)
+    src/pose_vel_bias.cpp
+    src/pose_vel_imubias.cpp)
 
 # Unit tests
 IF(BUILD_TESTING)
