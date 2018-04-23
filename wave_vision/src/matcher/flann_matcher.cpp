@@ -119,8 +119,7 @@ std::vector<cv::DMatch> FLANNMatcher::filterMatches(
     // Keep any match that is less than the rejection heuristic times minimum
     // distance
     for (auto &match : matches) {
-        if (match.distance <=
-            this->config.distance_threshold * min_distance) {
+        if (match.distance <= this->config.distance_threshold * min_distance) {
             filtered_matches.push_back(match);
         }
     }

@@ -110,8 +110,7 @@ TEST(FLANNTests, ConfigurationTests) {
     ASSERT_EQ(curr_config_1.use_knn, ref_config.use_knn);
     ASSERT_EQ(curr_config_1.ratio_threshold, ref_config.ratio_threshold);
     ASSERT_EQ(curr_config_1.distance_threshold, ref_config.distance_threshold);
-    ASSERT_EQ(curr_config_1.remove_outliers,
-              ref_config.remove_outliers);
+    ASSERT_EQ(curr_config_1.remove_outliers, ref_config.remove_outliers);
     ASSERT_EQ(curr_config_1.fm_method, ref_config.fm_method);
 
     // Confirm default construction
@@ -119,8 +118,7 @@ TEST(FLANNTests, ConfigurationTests) {
     ASSERT_EQ(curr_config_2.use_knn, ref_config.use_knn);
     ASSERT_EQ(curr_config_2.ratio_threshold, ref_config.ratio_threshold);
     ASSERT_EQ(curr_config_2.distance_threshold, ref_config.distance_threshold);
-    ASSERT_EQ(curr_config_2.remove_outliers,
-              ref_config.remove_outliers);
+    ASSERT_EQ(curr_config_2.remove_outliers, ref_config.remove_outliers);
     ASSERT_EQ(curr_config_2.fm_method, ref_config.fm_method);
 
     // Confirm construction with .yaml file
@@ -128,8 +126,7 @@ TEST(FLANNTests, ConfigurationTests) {
     ASSERT_EQ(curr_config_3.use_knn, ref_config.use_knn);
     ASSERT_EQ(curr_config_3.ratio_threshold, ref_config.ratio_threshold);
     ASSERT_EQ(curr_config_3.distance_threshold, ref_config.distance_threshold);
-    ASSERT_EQ(curr_config_3.remove_outliers,
-              ref_config.remove_outliers);
+    ASSERT_EQ(curr_config_3.remove_outliers, ref_config.remove_outliers);
     ASSERT_EQ(curr_config_3.fm_method, ref_config.fm_method);
 }
 }  // namespace wave
