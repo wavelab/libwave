@@ -6,7 +6,7 @@
 #include <gtsam/base/Lie.h>
 #include <gtsam/geometry/Pose3.h>
 #include <gtsam/geometry/Point3.h>
-
+#include <gtsam/navigation/ImuBias.h>
 /**
  * This implements the traits required to optimize with gtsam
  * This state is combined pose, velocity, and some of biases.
@@ -28,13 +28,15 @@ struct PoseVelBias {
     /// Angular followed by linear
     VelType vel;
     BiasType bias;
+    gtsam::imuBias::ConstantBias imu_bias;
 
     PoseVelBias() {
         vel.setZero();
         bias.setZero();
     }
 
-    enum { pose_offset = 0, vel_offset = 6, bias_offset = 12 };
+    enum { pose_offset = 0, vel_offset = 6, bias_offset = 12,
+                                            imu_bias_offset = 15 };
 };
 }
 
@@ -53,6 +55,7 @@ struct traits<wave::PoseVelBias> {
         traits<Pose3>::Print(m1.pose, str);
         traits<VelType>::Print(m1.vel, str);
         traits<BiasType>::Print(m1.bias, str);
+        traits<imuBias::ConstantBias>::Print(m1.imu_bias, str);
     }
 
     static bool Equals(const wave::PoseVelBias &m1,
@@ -67,6 +70,11 @@ struct traits<wave::PoseVelBias> {
         if (!traits<BiasType>::Equals(m1.bias, m2.bias, tol)) {
             return false;
         }
+        if (!traits<imuBias::ConstantBias>::Equals(m1.imu_bias,
+                                                    m2.imu_bias,
+                                                    tol)) {
+            return false;
+        }
         return true;
     }
 
@@ -74,7 +82,7 @@ struct traits<wave::PoseVelBias> {
      * Manifold
      */
 
-    enum { dimension = 15 };
+    enum { dimension = 21 };
     static int GetDimension(const wave::PoseVelBias &) {
         return dimension;
     }
@@ -92,6 +100,9 @@ struct traits<wave::PoseVelBias> {
           traits<VelType>::Local(origin.vel, other.vel);
         retval.block<3, 1>(12, 0).noalias() =
           traits<BiasType>::Local(origin.bias, other.bias);
+        retval.block<6, 1>(15, 0).noalias() =
+          traits<imuBias::ConstantBias>::Local(origin.imu_bias,
+                                                other.imu_bias);
         return retval;
     }
 
@@ -102,6 +113,9 @@ struct traits<wave::PoseVelBias> {
         retval.vel = traits<VelType>::Retract(origin.vel, v.block<6, 1>(6, 0));
         retval.bias =
           traits<BiasType>::Retract(origin.bias, v.block<3, 1>(12, 0));
+        retval.imu_bias = traits<imuBias::ConstantBias>::Retract(
+                                                    origin.imu_bias,
+                                                    v.block<6, 1>(15, 0));
         return retval;
     }
 
@@ -119,7 +133,7 @@ struct traits<wave::PoseVelBias> {
 
     static TangentVector Logmap(const wave::PoseVelBias &m,
                                 ChartJacobian Hm = boost::none) {
-        Eigen::MatrixXd J1, J2, J3;
+        Eigen::MatrixXd J1, J2, J3, J4;
 
         TangentVector retval;
         if (Hm) {
@@ -127,15 +141,19 @@ struct traits<wave::PoseVelBias> {
             J1.resize(6, 6);
             J2.resize(6, 6);
             J3.resize(3, 3);
+            J4.resize(6, 6);
         }
         retval.block<6, 1>(0, 0).noalias() = traits<Pose3>::Logmap(m.pose, J1);
         retval.block<6, 1>(6, 0).noalias() = traits<VelType>::Logmap(m.vel, J2);
         retval.block<3, 1>(12, 0).noalias() =
           traits<BiasType>::Logmap(m.bias, J3);
+        retval.block<6, 1>(15, 0).noalias() =
+                        traits<imuBias::ConstantBias>::Logmap(m.imu_bias, J4);
         if (Hm) {
             Hm->block<6, 6>(0, 0).noalias() = J1;
             Hm->block<6, 6>(6, 6).noalias() = J2;
             Hm->block<3, 3>(12, 12).noalias() = J3;
+            Hm->block<6, 6>(15, 15).noalias() = J4;
         }
         return retval;
     }
@@ -143,20 +161,24 @@ struct traits<wave::PoseVelBias> {
     static wave::PoseVelBias Expmap(const TangentVector &v,
                                     ChartJacobian Hv = boost::none) {
         wave::PoseVelBias retval;
-        Eigen::MatrixXd J1, J2, J3;
+        Eigen::MatrixXd J1, J2, J3, J4;
         if (Hv) {
             Hv->setZero();
             J1.resize(6, 6);
             J2.resize(6, 6);
             J3.resize(3, 3);
+            J4.resize(6, 6);
         }
         retval.pose = traits<Pose3>::Expmap(v.block<6, 1>(0, 0), J1);
         retval.vel = traits<VelType>::Expmap(v.block<6, 1>(6, 0), J2);
         retval.bias = traits<BiasType>::Expmap(v.block<3, 1>(12, 0), J3);
+        retval.imu_bias =
+               traits<imuBias::ConstantBias>::Expmap(v.block<6, 1>(15, 0), J4);
         if (Hv) {
             Hv->block<6, 6>(0, 0).noalias() = J1;
             Hv->block<6, 6>(6, 6).noalias() = J2;
             Hv->block<3, 3>(12, 12).noalias() = J3;
+            Hv->block<6, 6>(15, 15).noalias() = J4;
         }
         return retval;
     }
@@ -166,31 +188,38 @@ struct traits<wave::PoseVelBias> {
                                      ChartJacobian H1 = boost::none,
                                      ChartJacobian H2 = boost::none) {
         wave::PoseVelBias retval;
-        Eigen::MatrixXd J1, J2, J3, J4, J5, J6;
+        Eigen::MatrixXd J1, J2, J3, J4, J5, J6, J7, J8;
         if (H1) {
             H1->setZero();
             J1.resize(6, 6);
             J3.resize(6, 6);
             J5.resize(3, 3);
+            J7.resize(6, 6);
         }
         if (H2) {
             H2->setZero();
             J2.resize(6, 6);
             J4.resize(6, 6);
             J6.resize(3, 3);
+            J8.resize(6, 6);
         }
         retval.pose = traits<Pose3>::Compose(m1.pose, m2.pose, J1, J2);
         retval.vel = traits<VelType>::Compose(m1.vel, m2.vel, J3, J4);
         retval.bias = traits<BiasType>::Compose(m1.bias, m2.bias, J5, J6);
+        retval.imu_bias = traits<imuBias::ConstantBias>::Compose(m1.imu_bias,
+                                                            m2.imu_bias,
+                                                            J7, J8);
         if (H1) {
             H1->block<6, 6>(0, 0).noalias() = J1;
             H1->block<6, 6>(6, 6).noalias() = J3;
             H1->block<3, 3>(12, 12).noalias() = J5;
+            H1->block<6, 6>(15, 15).noalias() = J7;
         }
         if (H2) {
             H2->block<6, 6>(0, 0).noalias() = J2;
             H2->block<6, 6>(6, 6).noalias() = J4;
             H2->block<3, 3>(12, 12).noalias() = J6;
+            H2->block<6, 6>(15, 15).noalias() = J8;
         }
         return retval;
     }
@@ -200,31 +229,38 @@ struct traits<wave::PoseVelBias> {
                                      ChartJacobian H1 = boost::none,
                                      ChartJacobian H2 = boost::none) {
         wave::PoseVelBias retval;
-        Eigen::MatrixXd J1, J2, J3, J4, J5, J6;
+        Eigen::MatrixXd J1, J2, J3, J4, J5, J6, J7, J8;
         if (H1) {
             H1->setZero();
             J1.resize(6, 6);
             J3.resize(6, 6);
             J5.resize(3, 3);
+            J7.resize(6, 6);
         }
         if (H2) {
             H2->setZero();
             J2.resize(6, 6);
             J4.resize(6, 6);
             J6.resize(3, 3);
+            J8.resize(6, 6);
         }
         retval.pose = traits<Pose3>::Between(m1.pose, m2.pose, J1, J2);
         retval.vel = traits<VelType>::Between(m1.vel, m2.vel, J3, J4);
         retval.bias = traits<BiasType>::Between(m1.bias, m2.bias, J5, J6);
+        retval.imu_bias = traits<imuBias::ConstantBias>::Between(m1.imu_bias,
+                                                            m2.imu_bias,
+                                                            J7, J8);
         if (H1) {
             H1->block<6, 6>(0, 0).noalias() = J1;
             H1->block<6, 6>(6, 6).noalias() = J3;
             H1->block<3, 3>(12, 12).noalias() = J5;
+            H1->block<6, 6>(15, 15).noalias() = J7;
         }
         if (H2) {
             H2->block<6, 6>(0, 0).noalias() = J2;
             H2->block<6, 6>(6, 6).noalias() = J4;
             H2->block<3, 3>(12, 12).noalias() = J6;
+            H2->block<6, 6>(15, 15).noalias() = J8;
         }
         return retval;
     }
@@ -232,20 +268,24 @@ struct traits<wave::PoseVelBias> {
     static wave::PoseVelBias Inverse(const wave::PoseVelBias &m,
                                      ChartJacobian H = boost::none) {
         wave::PoseVelBias retval;
-        Eigen::MatrixXd J1, J2, J3;
+        Eigen::MatrixXd J1, J2, J3, J4;
         if (H) {
             H->setZero();
             J1.resize(6, 6);
             J2.resize(6, 6);
             J3.resize(3, 3);
+            J4.resize(6, 6);
         }
         retval.pose = traits<Pose3>::Inverse(m.pose, J1);
         retval.vel = traits<VelType>::Inverse(m.vel, J2);
         retval.bias = traits<BiasType>::Inverse(m.bias, J3);
+        retval.imu_bias = 
+            traits<imuBias::ConstantBias>::Inverse(m.imu_bias, J4);
         if (H) {
             H->block<6, 6>(0, 0).noalias() = J1;
             H->block<6, 6>(6, 6).noalias() = J2;
             H->block<3, 3>(12, 12).noalias() = J3;
+            H->block<6, 6>(15, 15).noalias() = J4;
         }
         return retval;
     }
