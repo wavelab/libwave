@@ -8,11 +8,11 @@ namespace wave {
 template <class T>
 class ImuBiasPrior : public gtsam::NoiseModelFactor1<T> {
  private:
-    Eigen::Matrix<double, 6, 1> prior;
+    gtsam::imuBias::ConstantBias prior;
 
  public:
-    BiasPrior(gtsam::Key key,
-              Eigen::Matrix<double, 6, 1> m,
+    ImuBiasPrior(gtsam::Key key,
+              gtsam::imuBias::ConstantBias m,
               const gtsam::SharedNoiseModel &model)
         : gtsam::NoiseModelFactor1<T>::NoiseModelFactor1(model, key),
           prior(m) {}
