@@ -153,7 +153,7 @@ struct traits<wave::PoseVelImuBias> {
         }
         retval.pose = traits<Pose3>::Expmap(v.block<6, 1>(0, 0), J1);
         /* Confirm and add comment for why logmap */
-        retval.vel = traits<VelType>::Logmap(v.block<6, 1>(6, 0), J2);
+        retval.vel = traits<VelType>::Expmap(v.block<6, 1>(6, 0), J2);
         retval.imu_bias =
                traits<imuBias::ConstantBias>::Expmap(v.block<6, 1>(12, 0), J3);
         if (Hv) {
@@ -248,7 +248,8 @@ struct traits<wave::PoseVelImuBias> {
         }
         retval.pose = traits<Pose3>::Inverse(m.pose, J1);
         retval.vel = traits<VelType>::Inverse(m.vel, J2);
-        retval.imu_bias = traits<imuBias::ConstantBias>::Inverse(m.imu_bias, J3);
+        retval.imu_bias = 
+                traits<imuBias::ConstantBias>::Inverse(m.imu_bias, J3);
         if (H) {
             H->block<6, 6>(0, 0).noalias() = J1;
             H->block<6, 6>(6, 6).noalias() = J2;
