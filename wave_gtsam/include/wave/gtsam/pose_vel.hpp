@@ -133,7 +133,7 @@ struct traits<wave::PoseVel> {
             J2.resize(6, 6);
         }
         retval.pose = traits<Pose3>::Expmap(v.block<6, 1>(0, 0), J1);
-        retval.vel = traits<VelType>::Logmap(v.block<6, 1>(6, 0), J2);
+        retval.vel = traits<VelType>::Expmap(v.block<6, 1>(6, 0), J2);
         if (Hv) {
             Hv->block<6, 6>(0, 0).noalias() = J1;
             Hv->block<6, 6>(6, 6).noalias() = J2;
