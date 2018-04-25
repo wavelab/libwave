@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <Eigen/Core>
+#include "wave/utils/math.hpp"
 
 namespace wave {
 
@@ -12,8 +13,8 @@ namespace wave {
 struct RangeSensorParams {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     unsigned int rings;
-    /// The elevation angles should be sorted in same order as feature rings
-    std::vector<float> elevation_angles;
+    /// The elevation angles should be sorted in same order as feature rings. Column Vector
+    MatX elevation_angles;
 
     /** Covariance of noise in spherical coordinates
     * Noise should be in linear, angular, angular units

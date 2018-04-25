@@ -23,19 +23,17 @@ LaserOdom::LaserOdom(const LaserOdomParams params) : param(params) {
     this->CSVFormat = new Eigen::IOFormat(Eigen::FullPrecision, Eigen::DontAlignCols, ", ", ", ");
 
     auto n_ring = static_cast<size_t>(param.n_ring);
-    this->cur_scan.resize(n_ring);
-    this->kernels.resize(this->N_SCORES);
-    this->kernels.at(0) = std::make_shared<Eigen::Tensor<double, 1>>(11);
-    memcpy(this->kernels.at(0)->data(), loam_kernel, 88);
-    this->kernels.at(1) = std::make_shared<Eigen::Tensor<double, 1>>(11);
-    memcpy(this->kernels.at(1)->data(), LoG_kernel, 88);
-    this->kernels.at(2) = std::make_shared<Eigen::Tensor<double, 1>>(9);
-    memcpy(this->kernels.at(2)->data(), FoG_kernel, 72);
+    this->counters.resize(n_ring);
+    std::fill(this->counters.begin(), this->counters.end(), 0);
 
-    this->kernels.at(3) = std::make_shared<Eigen::Tensor<double, 1>>(11);
-    this->kernels.at(3)->setConstant(1.0);
-    this->kernels.at(4) = std::make_shared<Eigen::Tensor<double, 1>>(11);
-    this->kernels.at(4)->setConstant(1.0);
+    this->cur_scan = Eigen::Tensor<float, 3>(5, param.n_ring, 2200);
+    this->kernels = Eigen::Tensor<float, 2>(this->N_SCORES, 11);
+
+    this->kernels.chip(0, 0) = Eigen::TensorMap<Eigen::Tensor<float, 1>>(loam_kernel, 11);
+    this->kernels.chip(1, 0) = Eigen::TensorMap<Eigen::Tensor<float, 1>>(LoG_kernel, 11);
+    this->kernels.chip(2, 0) = Eigen::TensorMap<Eigen::Tensor<float, 1>>(FoG_kernel, 11);
+    this->kernels.chip(3, 0).setConstant(1.0);
+    this->kernels.chip(4, 0).setConstant(1.0);
 
     this->range_sensor = std::make_shared<RangeSensor>(param.sensor_params);
 
@@ -63,10 +61,8 @@ LaserOdom::LaserOdom(const LaserOdomParams params) : param(params) {
     this->feature_definitions.emplace_back(
       FeatureDefinition{edge_int_low, ResidualType::PointToLine, &(param.n_int_edge)});
 
-    this->signals.resize(this->N_SIGNALS);
-    this->scores.resize(this->N_SCORES);
+    this->valid_pts = Eigen::Tensor<bool, 3>(this->N_FEATURES, this->param.n_ring, 2200);
 
-    this->valid_pts.resize(this->N_FEATURES);
     this->filtered_scores.resize(this->N_FEATURES);
     this->feature_points.resize(this->N_FEATURES);
     this->prv_feature_points.resize(this->N_FEATURES);
@@ -77,16 +73,11 @@ LaserOdom::LaserOdom(const LaserOdomParams params) : param(params) {
     this->undis_features.resize(this->N_FEATURES);
     this->map_features.resize(this->N_FEATURES);
 
-    for (uint32_t i = 0; i < this->N_SIGNALS; i++) {
-        this->signals.at(i).resize(n_ring);
-    }
+    this->signals = Eigen::Tensor<float, 3>(this->N_SIGNALS, this->param.n_ring, 2200);
 
-    for (uint32_t i = 0; i < this->N_SCORES; i++) {
-        this->scores.at(i).resize(n_ring);
-    }
+    this->scores = Eigen::Tensor<float, 3>(this->N_SCORES, this->param.n_ring, 2200);
 
     for (uint32_t i = 0; i < this->N_FEATURES; i++) {
-        this->valid_pts.at(i).resize(n_ring);
         this->feature_points.at(i).resize(n_ring);
         this->feature_idx.at(i) =
           std::make_shared<kd_tree_t>(3, this->prv_feature_points.at(i), nanoflann::KDTreeSingleIndexAdaptorParams(20));
@@ -227,20 +218,6 @@ float LaserOdom::l2sqrd(const PCLPointXYZIT &p1, const PCLPointXYZIT &p2) {
     return dx * dx + dy * dy + dz * dz;
 }
 
-float LaserOdom::l2sqrd(const PCLPointXYZIT &pt) {
-    return pt.x * pt.x + pt.y * pt.y + pt.z * pt.z;
-}
-
-PCLPointXYZIT LaserOdom::scale(const PCLPointXYZIT &pt, const float scale) {
-    PCLPointXYZIT p;
-    p.x = pt.x * scale;
-    p.y = pt.y * scale;
-    p.z = pt.z * scale;
-    p.intensity = pt.intensity;
-    p.tick = pt.tick;
-    return p;
-}
-
 void LaserOdom::updateParams(const LaserOdomParams new_params) {
     this->param = new_params;
 }
@@ -267,7 +244,7 @@ LaserOdom::~LaserOdom() {
 }
 
 void LaserOdom::registerOutputFunction(std::function<void()> output_function) {
-    this->f_output = output_function;
+    this->f_output = std::move(output_function);
     this->output_thread = std::unique_ptr<std::thread>(new std::thread(&LaserOdom::spinOutput, this));
 }
 
@@ -448,14 +425,14 @@ void LaserOdom::applyRemap() {
 // For annoying clamping function
 namespace {
 
-inline double clampToRange(const float ip, const float min, const float max) {
+inline float clampToRange(const float ip, const float min, const float max) {
     if (ip > max) {
-        return (double) max;
+        return max;
     }
     if (ip < min) {
-        return (double) min;
+        return min;
     }
-    return (double) ip;
+    return ip;
 }
 }
 
@@ -470,8 +447,8 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
     }
     if (trigger) {                 // tolerate minor nonlinearity error
         this->generateFeatures();  // generate features on the current scan
-        if (this->initialized) {   // there is a set of previous features from
-                                   // last scan
+        if (this->initialized) {  // there is a set of previous features from
+                                  // last scan
             T_TYPE last_transform;
             auto &ref = this->cur_trajectory.back().pose;
 
@@ -504,28 +481,28 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
                     this->undistort_transform = this->cur_trajectory.back().pose;
                     memcpy(this->undistort_velocity.data(), this->cur_trajectory.back().vel.data(), 48);
 
-                    //this->undistort();
+                    // this->undistort();
                     this->fresh_output = true;
                 }
                 this->output_condition.notify_one();
             }
         }
         this->rollover(stamp);
+        std::fill(this->counters.begin(), this->counters.end(), 0);
     }
 
+    float tick_frac = (float) tick / (float) this->param.max_ticks;
     for (PointXYZIR pt : pts) {
-        PCLPointXYZIT p;
-        p.x = pt.x;
-        p.y = pt.y;
-        p.z = pt.z;
-        p.intensity = pt.intensity;
-        p.tick = tick + n_scan_in_batch * this->param.max_ticks;
-        float range = std::sqrt(l2sqrd(p));
-        // this->cur_scan.at(pt.ring).push_back(this->applyIMU(p));
-        this->cur_scan.at(pt.ring).push_back(p);
-        this->signals[0].at(pt.ring).push_back((double) range);
-        this->signals[1].at(pt.ring).push_back(
-          clampToRange(p.intensity, this->param.min_intensity, this->param.max_intensity));
+        this->cur_scan(0, pt.ring, counters.at(pt.ring)) = pt.x;
+        this->cur_scan(1, pt.ring, counters.at(pt.ring)) = pt.y;
+        this->cur_scan(2, pt.ring, counters.at(pt.ring)) = pt.z;
+        this->cur_scan(3, pt.ring, counters.at(pt.ring)) = tick_frac;
+        this->cur_scan(4, pt.ring, counters.at(pt.ring)) = 0;
+
+        this->signals(1, pt.ring, counters.at(pt.ring)) =
+          clampToRange(pt.intensity, this->param.min_intensity, this->param.max_intensity);
+
+        this->counters.at(pt.ring)++;
     }
 
     this->prv_tick = tick;
@@ -681,8 +658,6 @@ void LaserOdom::buildTrees() {
         if (!this->prv_feature_points.at(i).points.empty()) {
             this->feature_idx.at(i)->buildIndex();
         }
-        //        LOG_INFO("There are %lu feature type %u in the local map",
-        //        this->prv_feature_points.at(i).points.size(), i);
     }
 }
 
@@ -740,29 +715,7 @@ bool LaserOdom::outOfBounds(const Vec3 &query, const uint32_t &f_idx, const std:
     Eigen::Map<const Vec3> pA(this->prv_feature_points.at(f_idx).points.at(index.at(0)).data());
     Eigen::Map<const Vec3> pB(this->prv_feature_points.at(f_idx).points.at(index.at(1)).data());
     if (this->feature_definitions.at(f_idx).residual == PointToPlane) {
-        // todo(ben) Get rid of following line
         return false;
-
-        Eigen::Map<const Vec3> pC(this->prv_feature_points.at(f_idx).points.at(index.at(2)).data());
-
-        Vec3 v0 = pC - pA;
-        Vec3 v1 = pB - pA;
-        Vec3 v2 = query - pA;
-
-        double dot00 = v0.dot(v0);
-        double dot01 = v0.dot(v1);
-        double dot02 = v0.dot(v2);
-        double dot11 = v1.dot(v1);
-        double dot12 = v1.dot(v2);
-
-        double invDenom = 1.0 / (dot00 * dot11 - dot01 * dot01);
-        double u = (dot11 * dot02 - dot01 * dot12) * invDenom;
-        double v = (dot00 * dot12 - dot01 * dot02) * invDenom;
-
-        if ((u < -this->param.max_extrapolation) || (v < -this->param.max_extrapolation) ||
-            (u + v > (1.0 + this->param.max_extrapolation))) {
-            return true;
-        }
     } else {
         Vec3 AB = pB - pA;
         Vec3 Aq = query - pA;
@@ -1030,7 +983,7 @@ void LaserOdom::updateDifferences() {
           this->cur_trajectory.at(i + 1).pose.manifoldMinus(this->cur_trajectory.at(i).pose);
         this->cur_difference.at(i).candle_multiplier.block<6, 1>(6, 0) =
           T_TYPE::SE3ApproxInvLeftJacobian(this->cur_difference.at(i).candle_multiplier.block<6, 1>(0, 0)) *
-                this->cur_trajectory.at(i+1).vel;
+          this->cur_trajectory.at(i + 1).vel;
     }
 }
 
@@ -1109,42 +1062,58 @@ void LaserOdom::generateFeatures() {
 }
 
 void LaserOdom::computeScores() {
+    Eigen::ThreadPool tp(this->param.solver_threads);
+    Eigen::ThreadPoolDevice threaded_device(&tp, this->param.solver_threads);
+
+    int max = *std::max_element(this->counters.begin(), this->counters.end());
+
     Eigen::array<ptrdiff_t, 1> dims({0});
-    Eigen::Tensor<double, 1> sum_kernel(this->param.variance_window);
+    Eigen::Tensor<float, 1> sum_kernel(this->param.variance_window);
     sum_kernel.setConstant(1.0);
 
-    for (unlong i = 0; i < this->param.n_ring; i++) {
-        for (ulong j = 0; j < this->N_SCORES; j++) {
-            // todo(ben) Include signal to score explicitly in feature definitions and get rid of this hack.
-            ulong s_idx = 0;
-            if (j < 1 || j == 3) {
-                s_idx = 0;
-            } else {
-                s_idx = 1;
-            }
-            // todo have flexibility for different kernel sizes
-            Eigen::TensorMap<Eigen::Tensor<const double, 1>> inputmap(this->signals.at(s_idx).at(i).data(),
-                                                                      this->signals.at(s_idx).at(i).size());
-            if (inputmap.size() + 1 > kernels.at(j)->size()) {
-                // check if simple convolution
-                this->scores.at(j).at(i).resize(inputmap.size() - kernels.at(j)->size() + 1);
-                Eigen::TensorMap<Eigen::Tensor<double, 1>> outputmap(this->scores.at(j).at(i).data(),
-                                                                     this->scores.at(j).at(i).size());
-                if (j < 3) {
-                    outputmap = inputmap.convolve(*(this->kernels.at(j)), dims);
-                    // or if sample variance
-                } else {
-                    auto &N = this->param.variance_window;
-                    Eigen::Tensor<double, 1> Ninv(1);
-                    Ninv.setConstant(1.0 / (double) N);
-                    Eigen::Tensor<double, 1> Nm1inv(1);
-                    Nm1inv.setConstant(1.0 / (double) (N - 1));
+    // range calculation
+    Eigen::array<int, 3> offsets({0, 0, 0});
+    Eigen::array<int, 3> extents({3, (int) this->param.n_ring, max});
 
-                    // so called computational formula for sample variance
-                    outputmap = (inputmap.square().convolve(sum_kernel, dims) -
-                                 inputmap.convolve(sum_kernel, dims).square().convolve(Ninv, dims))
-                                  .convolve(Nm1inv, dims);
-                }
+    this->signals.chip(0, 0).device(threaded_device) =
+      this->cur_scan.slice(offsets, extents).square().sum(Eigen::array<int, 1>({0})).sqrt();
+
+    for (ulong j = 0; j < this->N_SCORES; j++) {
+        // todo(ben) Include signal to score explicitly in feature definitions and get rid of this hack.
+        int s_idx = 0;
+        if (j < 1 || j == 3) {
+            s_idx = 0;
+        } else {
+            s_idx = 1;
+        }
+
+        Eigen::array<int, 3> sig_offsets({s_idx, 0, 0});
+        Eigen::array<int, 3> sig_extents({0, (int) this->param.n_ring, max});
+
+        // todo have flexibility for different kernel sizes
+        if (max > 10) {
+            Eigen::array<int, 3> result_offset({(int) j, 0, 0});
+            Eigen::array<int, 3> result_extent({0, (int) this->param.n_ring, max - 10});
+
+            if (j < 3) {
+                this->scores.slice(result_offset, result_extent).device(threaded_device) =
+                  this->signals.slice(sig_offsets, sig_extents).convolve(this->kernels.chip((int) j, 0), dims);
+                // or if sample variance
+            } else {
+                auto &N = this->param.variance_window;
+                Eigen::Tensor<float, 1> Ninv(1);
+                Ninv.setConstant(1.0 / (float) N);
+                Eigen::Tensor<float, 1> Nm1inv(1);
+                Nm1inv.setConstant(1.0 / (float) (N - 1));
+
+                // so called computational formula for sample variance
+                this->scores.slice(result_offset, result_extent).device(threaded_device) =
+                  (this->signals.slice(sig_offsets, sig_extents).square().convolve(sum_kernel, dims) -
+                   this->signals.slice(sig_offsets, sig_extents)
+                     .convolve(sum_kernel, dims)
+                     .square()
+                     .convolve(Ninv, dims))
+                    .convolve(Nm1inv, dims);
             }
         }
     }
@@ -1153,9 +1122,29 @@ void LaserOdom::computeScores() {
 // This part filters out points that will not provide salient features
 // based on range signal and any gaps.
 void LaserOdom::prefilter() {
+    int max = *std::max_element(this->counters.begin(), this->counters.end());
+    // Assume all points are valid until proven otherwise
+    Eigen::Tensor<bool, 2> valid(this->param.n_ring, max);
+    valid.setConstant(true);
+
+    Eigen::ThreadPool tp(this->param.solver_threads);
+    Eigen::ThreadPoolDevice threaded_device(&tp, this->param.solver_threads);
+
+    Eigen::array<ptrdiff_t, 1> dims({1});
+    Eigen::Tensor<float, 1> diff_kernel(2);
+    diff_kernel.setValues({1f, -1f});
+
+    Eigen::Tensor<float, 2> rng_diff;
+    rng_diff.device(threaded_device) = this->signals.chip(0, 0).convolve(diff_kernel, 1);
+
+    Eigen::Tensor<bool, 2> oc_tol2_cond = rng_diff.abs() > this->param.occlusion_tol_2;
+    Eigen::Tensor<bool, 2> ang_diff_cond = this->cur_scan.chip(4, 0).convolve(diff_kernel, 1) < this->param.occlusion_tol;
+
+    Eigen::Tensor<bool, 2> branch_1_cond = oc_tol2_cond && ang_diff_cond && (rng_diff > 0f);
+    Eigen::Tensor<bool, 2> branch_2_cond = oc_tol2_cond && ang_diff_cond && (rng_diff < 0f);
+
     for (uint32_t i = 0; i < this->param.n_ring; i++) {
-        // The scores will be offset from the points by (kernel_size - 1)/2
-        std::vector<bool> valid(this->signals[0].at(i).size(), true);
+
         // Now loop through the points in this ring and set valid_idx accordingly
         for (unlong j = 1; j + 1 < this->cur_scan.at(i).size(); j++) {
             auto &rng_cur = this->signals[0].at(i).at(j);
@@ -1163,13 +1152,7 @@ void LaserOdom::prefilter() {
 
             // First section excludes any points who's score is likely caused
             // by occlusion
-            //            if (delforward > this->param.occlusion_tol_2) {
             if (std::abs(rng_cur - rng_nxt) > this->param.occlusion_tol_2) {
-                //                double &d1 = this->signals[0].at(i).at(j);
-                //                double &d2 = this->signals[0].at(i).at(j + 1);
-                //                auto unit1 = this->scale(this->cur_scan.at(i).at(j), 1.0 / d1);
-                //                auto unit2 = this->scale(this->cur_scan.at(i).at(j + 1), 1.0 / d2);
-                //                auto diff = std::sqrt(this->l2sqrd(unit1, unit2));
                 double angular_diff =
                   ((double) (this->cur_scan.at(i).at(j + 1).tick) - (double) this->cur_scan.at(i).at(j).tick) /
                   (double) this->param.max_ticks;
@@ -1180,12 +1163,14 @@ void LaserOdom::prefilter() {
                     // todo(ben) replace magic 5 with something
                     if (rng_cur > rng_nxt) {
                         for (unlong l = 0; l <= 5; l++) {
+                            // Branch 1 condition
                             if (j >= l) {
                                 valid.at(j - l) = false;
                             }
                         }
                     } else {
                         for (unlong l = 1; l <= 5; l++) {
+                            // Branch 2 condition
                             if (j + l < this->signals[0].at(i).size()) {
                                 valid.at(j + l) = false;
                             }
@@ -1197,7 +1182,6 @@ void LaserOdom::prefilter() {
             // near to parallel to the laser beam
             auto delforward = this->l2sqrd(this->cur_scan.at(i).at(j), this->cur_scan.at(i).at(j + 1));
             auto delback = this->l2sqrd(this->cur_scan.at(i).at(j), this->cur_scan.at(i).at(j - 1));
-            //            auto dis = this->l2sqrd(this->cur_scan.at(i).at(j));
             double dis = this->signals.at(0).at(i).at(j) * this->signals.at(0).at(i).at(j);
             if ((delforward > (this->param.parallel_tol) * dis) && (delback > (this->param.parallel_tol * dis))) {
                 valid.at(j) = false;

@@ -2,6 +2,7 @@
 
 rings: 32
 
+# todo Actually get these
 elevation_angles:
   rows: 32
   cols: 1

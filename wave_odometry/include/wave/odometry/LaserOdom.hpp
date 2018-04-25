@@ -1,6 +1,11 @@
 #ifndef WAVE_LASERODOM_HPP
 #define WAVE_LASERODOM_HPP
 
+#ifndef EIGEN_USE_THREADS
+#define EIGEN_USE_THREADS
+#endif
+
+#include <unsupported/Eigen/CXX11/Tensor>
 #include <vector>
 #include <array>
 #include <algorithm>
@@ -25,7 +30,6 @@
 #include <Eigen/Core>
 #include <Eigen/Sparse>
 #include <Eigen/Eigenvalues>
-#include <unsupported/Eigen/CXX11/Tensor>
 
 #include "wave/containers/measurement_container.hpp"
 #include "wave/containers/measurement.hpp"
@@ -134,7 +138,6 @@ struct LaserOdomParams {
                                      * defined by the original line points and the origin
                                      */
     bool treat_lines_as_planes = false;
-    bool moving_prior = false;  // If set, update the velocity prior after each outer iteration
 };
 
 class LaserOdom {
@@ -216,7 +219,7 @@ class LaserOdom {
     void undistort();
 
     // ceres optimizer stuff
-    std::vector<Vec12> param_blocks;
+    std::vector<Vec12, Eigen::aligned_allocator<Vec12>> param_blocks;
     // Preallocated memory for the residuals
     std::vector<wave_optimization::SE3PointToLineGPObjects,
                 Eigen::aligned_allocator<wave_optimization::SE3PointToLineGPObjects>>
@@ -262,22 +265,27 @@ class LaserOdom {
     void getTransformIndices(const uint32_t &tick, uint32_t &start, uint32_t &end, double &frac);
 
     static float l2sqrd(const PCLPointXYZIT &p1, const PCLPointXYZIT &p2);
-    static float l2sqrd(const PCLPointXYZIT &pt);
-    static PCLPointXYZIT scale(const PCLPointXYZIT &pt, const float scale);
+
     void flagNearbyPoints(const unlong f_idx, const unlong ring, const unlong p_idx);
 
     // The input, in order of processing
 
-    // Input set of points. Grouped by laser
-    std::vector<pcl::PointCloud<PCLPointXYZIT>, Eigen::aligned_allocator<pcl::PointCloud<PCLPointXYZIT>>> cur_scan;
-    // The range and intensity signals, grouped by kernel and ring
-    std::vector<std::vector<std::vector<double>>> signals;
+    // Input scan as an eigen tensor with dimensions (channels, rings, max_azimuth)
+    std::vector<uint32_t> counters;
+    Eigen::Tensor<float, 3> cur_scan;
+
+    // dimensions (channels, rings, max_azimuth)
+    Eigen::Tensor<float, 3> signals;
+
     // The resulting scores for each signal, grouped by kernel and ring
-    std::vector<std::vector<std::vector<double>>> scores;
+    Eigen::Tensor<float, 3> scores;
+
     // Whether points are still considered candidates. Required to avoid picking neighbouring points
-    std::vector<std::vector<std::vector<bool>>> valid_pts;
-    // Shared pointers to scoring kernels
-    std::vector<std::shared_ptr<Eigen::Tensor<double, 1>>> kernels;
+    Eigen::Tensor<bool, 3> valid_pts;
+
+    // Scoring kernels, indexed along 1st dimension
+    Eigen::Tensor<float, 2> kernels;
+
     // Container to sort scores with. Each is built depending on feature specification
     std::vector<std::vector<std::vector<std::pair<unlong, double>>>> filtered_scores;
 

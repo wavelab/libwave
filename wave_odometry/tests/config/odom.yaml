@@ -10,11 +10,13 @@ Qc:
          0, 0, 0, 0, 0, 1]
 
 # How many states per revolution to optimize over, there must be at minimum two.
-num_trajectory_states: 4
-opt_iters: 25  # how many iterations of the matcher to run
-diff_tol: 1e-6 # norm of solution difference for stopping criteria
+num_trajectory_states: 3
+n_window: 1 # Size of sliding window, not implemented yet
+opt_iters: 5  # how many iterations of the matcher to run
+max_inner_iters: 50 # limit on iterations of ceres at each matcher iteration
+diff_tol: 1e-4 # norm of solution difference for stopping criteria
+solver_threads: 1 # number of threads the solver should use
 robust_param: 0.2 # Parameter used in tukey loss function
-
 max_correspondence_dist: 0.4  #  correspondences greater than this are discarded
 max_residual_val: 0.1        #  Residuals with an initial error greater than this are not used.
 min_residuals: 30          #  Problem will be reset if the number of residuals is less than this
@@ -23,9 +25,15 @@ local_map_range: 10000  #  Maximum range of features to keep. square metres
 #  Sensor parameters
 scan_period: 0.1  #  Seconds
 max_ticks: 36000    #  encoder ticks per revolution
-unlong n_ring: 32       #  number of laser-detector pairs
+n_ring: 32       #  number of laser-detector pairs
 
 #  Feature extraction parameters
+variance_window: 11   # How many points should be included in the sample variance calculation
+variance_limit_rng: 1 # Threshold for conditionals on range signal
+variance_limit_int: 1 # Threshold for conditionals on intensity signal
+angular_bins: 12      # Angular bins to spread out feature sampling
+min_intensity: 10     # Hard cutoff
+max_intensity: 50     # Hard cutoff
 occlusion_tol: 0.1    #  Radians
 occlusion_tol_2: 0.1  #  m^2. Distance between points to initiate occlusion check
 parallel_tol: 0.002   #  ditto
@@ -36,13 +44,17 @@ int_flat_tol: 0.1     #  Intensity edges must have range score lower than this
 n_edge: 40              #  How many edge features to pick out per ring
 n_flat: 100             #  How many plane features to pick out per ring
 n_int_edge: 0           #  How many intensity edges to pick out per ring
-unlong knn: 5               #  1/2 nearest neighbours for computing curvature
-unlong key_radius: 5        #  minimum number of points between keypoints on the same laser ring
-map_density: 0.01     #  Minimum l2squared spacing of features kept for odometry
+knn: 5               #  1/2 nearest neighbours for computing curvature
+key_radius: 5        #  minimum number of points between keypoints on the same laser ring
+edge_map_density: 0.01     #  Minimum l2squared spacing of features kept for odometry
+flat_map_density: 0.25
 #  one degree. Beam spacing is 1.33deg, so this should be sufficient
 azimuth_tol: 0.0174532925199433    #  Minimum azimuth difference across correspondences
 TTL: 1             #  Maximum life of feature in local map with no correspondences
 iso_var: 0.005       #  Variance to use if weighing is set.
+
+min_eigen: 100
+max_extrapolation: 0.0 # How far to extrapolate line correspondences
 
 #  Setting flags
 visualize: false               #  Whether to run a visualization for debugging
@@ -50,5 +62,12 @@ output_trajectory: false       #  Whether to output solutions for debugging/plot
 output_correspondences: false  #  Whether to output correpondences for debugging/plotting
 only_extract_features: false   #  If set, no transforms are calculated
 use_weighting: false           #  If set, pre-whiten residuals
+lock_first: true               #  If set, don't optimize starting pose
+plot_stuff: false              #  If set, plot stuff
+solution_remapping: false      #  If set, use solution remapping
+motion_prior:  true            #  Use a motion prior for smoothing
+no_extrapolation: false        #  Don't allow extrapolation
 check_gradients: false         #  If set, use Ceres gradient checker on each jacobians
 treat_lines_as_planes: false   #  If set, use point to plane cost function exclusively
+limit_rng_var: false
+limit_int_var: false

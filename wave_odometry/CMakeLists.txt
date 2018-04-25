@@ -22,4 +22,5 @@ IF(BUILD_TESTING)
 
     # Copy the test data
     FILE(COPY tests/data DESTINATION ${PROJECT_BINARY_DIR}/tests)
+    FILE(COPY tests/config DESTINATION ${PROJECT_BINARY_DIR}/tests)
 ENDIF(BUILD_TESTING)

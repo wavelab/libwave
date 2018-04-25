@@ -39,11 +39,24 @@ class OdomTestFile : public testing::Test {
     pcl::PointCloud<PointXYZIR> ref;
 };
 
-void LoadParameters(const std::string &path, LaserOdomParams &params) {
+void LoadSensorParameters(const std::string &path, const std::string &filename, RangeSensorParams &senparams) {
     wave::ConfigParser parser;
+    parser.addParam("rings", &(senparams.rings));
+    parser.addParam("sigma_spherical", &(senparams.sigma_spherical));
+    parser.addParam("elevation_angles", &(senparams.elevation_angles));
+
+    parser.load(path + filename);
+}
+
+void LoadParameters(const std::string &path, const std::string &filename, LaserOdomParams &params) {
+    wave::ConfigParser parser;
+    parser.addParam("Qc", &(params.Qc));
     parser.addParam("num_trajectory_states", &(params.num_trajectory_states));
+    parser.addParam("n_window", &(params.n_window));
     parser.addParam("opt_iters", &(params.opt_iters));
+    parser.addParam("max_inner_iters", &(params.max_inner_iters));
     parser.addParam("diff_tol", &(params.diff_tol));
+    parser.addParam("solver_threads", &(params.solver_threads));
     parser.addParam("robust_param", &(params.robust_param));
     parser.addParam("max_correspondence_dist", &(params.max_correspondence_dist));
     parser.addParam("max_residual_val", &(params.max_residual_val));
@@ -51,11 +64,47 @@ void LoadParameters(const std::string &path, LaserOdomParams &params) {
     parser.addParam("local_map_range", &(params.local_map_range));
     parser.addParam("scan_period", &(params.scan_period));
     parser.addParam("max_ticks", &(params.max_ticks));
+    parser.addParam("n_ring", &(params.n_ring));
+
+    LoadSensorParameters(path, "sensor_model.yaml", params.sensor_params);
+
+    parser.addParam("variance_window", &(params.variance_window));
+    parser.addParam("variance_limit_rng", &(params.variance_limit_rng));
+    parser.addParam("variance_limit_int", &(params.variance_limit_int));
+    parser.addParam("angular_bins", &(params.angular_bins));
+    parser.addParam("min_intensity", &(params.min_intensity));
+    parser.addParam("max_intensity", &(params.max_intensity));
     parser.addParam("occlusion_tol", &(params.occlusion_tol));
     parser.addParam("occlusion_tol_2", &(params.occlusion_tol_2));
     parser.addParam("parallel_tol", &(params.parallel_tol));
     parser.addParam("edge_tol", &(params.edge_tol));
-//    parser.addParam("fla")
+    parser.addParam("flat_tol", &(params.flat_tol));
+    parser.addParam("int_edge_tol", &(params.int_edge_tol));
+    parser.addParam("int_flat_tol", &(params.int_flat_tol));
+    parser.addParam("n_edge", &(params.n_edge));
+    parser.addParam("n_flat", &(params.n_flat));
+    parser.addParam("n_int_edge", &(params.n_int_edge));
+    parser.addParam("knn", &(params.knn));
+    parser.addParam("key_radius", &(params.key_radius));
+    parser.addParam("edge_map_density", &(params.edge_map_density));
+    parser.addParam("flat_map_density", &(params.flat_map_density));
+    parser.addParam("azimuth_tol", &(params.azimuth_tol));
+    parser.addParam("TTL", &(params.TTL));
+    parser.addParam("min_eigen", &(params.min_eigen));
+    parser.addParam("max_extrapolation", &(params.max_extrapolation));
+    parser.addParam("visualize", &(params.visualize));
+    parser.addParam("output_trajectory", &(params.output_trajectory));
+    parser.addParam("output_correspondences", &(params.output_correspondences));
+    parser.addParam("only_extract_features", &(params.only_extract_features));
+    parser.addParam("use_weighting", &(params.use_weighting));
+    parser.addParam("lock_first", &(params.lock_first));
+    parser.addParam("plot_stuff", &(params.plot_stuff));
+    parser.addParam("solution_remapping", &(params.solution_remapping));
+    parser.addParam("motion_prior", &(params.motion_prior));
+    parser.addParam("no_extrapolation", &(params.no_extrapolation));
+    parser.addParam("treat_lines_as_planes", &(params.treat_lines_as_planes));
+
+    parser.load(path + filename);
 }
 
 }
@@ -122,6 +171,10 @@ TEST(OdomTest, StraightLineGarage) {
     std::copy(boost::filesystem::directory_iterator(p), boost::filesystem::directory_iterator(), std::back_inserter(v));
     std::sort(v.begin(), v.end());
     int length = 0;
+    int max_clouds;
+    wave::ConfigParser parser;
+    parser.addParam("max_clouds", &max_clouds);
+    parser.load("config/test_length.yaml");
     for (auto iter = v.begin(); iter != v.end(); ++iter) {
         std::cout << "Loading cloud " << length << std::endl;
         pcl::io::loadPCDFile(iter->string(), temp);
@@ -131,54 +184,16 @@ TEST(OdomTest, StraightLineGarage) {
         *ptr = clds.at(length);
         cldptr.push_back(ptr);
         length++;
-//        if (length == 5) {
-//            break;
-//        }
+        if (length == max_clouds) {
+            break;
+        }
     }
 
     LOG_INFO("Finished loading clouds");
     // odom setup
     LaserOdomParams params;
-    params.TTL = 10;
-    params.n_flat = 40;
-    params.n_edge = 20;
-    params.n_int_edge = 0;
-    params.edge_tol = 2;
-    params.flat_tol = 0.05;
-    params.int_flat_tol = 0.05;
-    params.int_edge_tol = 5;
-    params.max_correspondence_dist = 1;
-    params.robust_param = 0.2;
-    params.max_residual_val = 0.2;
-    params.opt_iters = 5;
-    params.min_residuals = 30;
-    params.visualize = false;
-    params.n_window = 1;
-    params.num_trajectory_states = 3;
-    params.solver_threads = 1;
 
-    params.sensor_params.rings = 32;
-    float ang = -0.5352924815866609;
-    for (int i = 0; i < 32; i++) {
-        params.sensor_params.elevation_angles.emplace_back(ang);
-        ang += 0.0232748100894986;
-    }
-    Eigen::Matrix3f variance;
-    variance << 0.1, 0, 0, 0, 0.1, 0, 0, 0, 0.1;
-
-    params.sensor_params.sigma_spherical = variance;
-    params.use_weighting = false;
-//    params.only_extract_features = true;
-    params.output_trajectory = true;
-//    params.output_correspondences = true;
-    params.Qc = 100 * Eigen::Matrix<double, 6, 6>::Identity();
-    params.inv_Qc = params.Qc.inverse();
-    params.treat_lines_as_planes = false;
-    params.min_eigen = 100;
-    params.solution_remapping = false;
-    params.plot_stuff = false;
-    params.motion_prior = true;
-    params.no_extrapolation = true;
+    LoadParameters("config/", "odom.yaml",  params);
 
     LaserOdom odom(params);
     std::vector<PointXYZIR> vec;

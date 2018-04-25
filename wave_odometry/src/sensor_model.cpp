@@ -7,8 +7,8 @@ RangeSensor::RangeSensor(RangeSensorParams params) : param(params) {
     this->sin_elev.resize(0);
 
     for (uint16_t i = 0; i < this->param.rings; i++) {
-        this->cos_elev.emplace_back(cos(this->param.elevation_angles.at(i)));
-        this->sin_elev.emplace_back(sin(this->param.elevation_angles.at(i)));
+        this->cos_elev.emplace_back(cos(this->param.elevation_angles(i,0)));
+        this->sin_elev.emplace_back(sin(this->param.elevation_angles(i,0)));
     }
 }
 
