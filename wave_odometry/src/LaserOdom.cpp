@@ -1124,97 +1124,100 @@ void LaserOdom::computeScores() {
 void LaserOdom::prefilter() {
     int max = *std::max_element(this->counters.begin(), this->counters.end());
     // Assume all points are valid until proven otherwise
-    Eigen::Tensor<bool, 2> valid(this->param.n_ring, max);
-    valid.setConstant(true);
+    this->valid_pts = Eigen::Tensor<bool, 2>(this->param.n_ring, max);
+    this->valid_pts.setConstant(true);
 
     Eigen::ThreadPool tp(this->param.solver_threads);
     Eigen::ThreadPoolDevice threaded_device(&tp, this->param.solver_threads);
 
     Eigen::array<ptrdiff_t, 1> dims({1});
     Eigen::Tensor<float, 1> diff_kernel(2);
-    diff_kernel.setValues({1f, -1f});
+    diff_kernel.setValues({1.f, -1.f});
 
     Eigen::Tensor<float, 2> rng_diff;
-    rng_diff.device(threaded_device) = this->signals.chip(0, 0).convolve(diff_kernel, 1);
+    rng_diff.device(threaded_device) = this->signals.chip(0, 0).convolve(diff_kernel, dims);
 
     Eigen::Tensor<bool, 2> oc_tol2_cond = rng_diff.abs() > this->param.occlusion_tol_2;
     Eigen::Tensor<bool, 2> ang_diff_cond = this->cur_scan.chip(4, 0).convolve(diff_kernel, 1) < this->param.occlusion_tol;
 
-    Eigen::Tensor<bool, 2> branch_1_cond = oc_tol2_cond && ang_diff_cond && (rng_diff > 0f);
-    Eigen::Tensor<bool, 2> branch_2_cond = oc_tol2_cond && ang_diff_cond && (rng_diff < 0f);
+    Eigen::Tensor<bool, 2> branch_1_cond = oc_tol2_cond && ang_diff_cond && (rng_diff > 0.0f);
+    Eigen::Tensor<bool, 2> branch_2_cond = oc_tol2_cond && ang_diff_cond && (rng_diff < 0.0f);
 
-    for (uint32_t i = 0; i < this->param.n_ring; i++) {
+    // This section excludes any points whose nearby surface is
+    // near to parallel to the laser beam
+    Eigen::array<ptrdiff_t, 2> dims2({0, 2});
+    Eigen::Tensor<float, 2> l2diffkernel(3, 2);
+    l2diffkernel.setValues({{1.0f, -1.0f}, {1.0f, -1.0f}, {1.0f, -1.0f}});
 
-        // Now loop through the points in this ring and set valid_idx accordingly
-        for (unlong j = 1; j + 1 < this->cur_scan.at(i).size(); j++) {
-            auto &rng_cur = this->signals[0].at(i).at(j);
-            auto &rng_nxt = this->signals[0].at(i).at(j + 1);
+    Eigen::array<int, 3> offset({0, 0, 0});
+    Eigen::array<int, 3> extent({3, (int) this->param.n_ring, max});
 
-            // First section excludes any points who's score is likely caused
-            // by occlusion
-            if (std::abs(rng_cur - rng_nxt) > this->param.occlusion_tol_2) {
-                double angular_diff =
-                  ((double) (this->cur_scan.at(i).at(j + 1).tick) - (double) this->cur_scan.at(i).at(j).tick) /
-                  (double) this->param.max_ticks;
-                if (angular_diff < 0) {
-                    throw std::out_of_range("input scan clouds are not in order");
-                }
-                if (angular_diff < this->param.occlusion_tol) {
-                    // todo(ben) replace magic 5 with something
-                    if (rng_cur > rng_nxt) {
-                        for (unlong l = 0; l <= 5; l++) {
-                            // Branch 1 condition
-                            if (j >= l) {
-                                valid.at(j - l) = false;
-                            }
-                        }
-                    } else {
-                        for (unlong l = 1; l <= 5; l++) {
-                            // Branch 2 condition
-                            if (j + l < this->signals[0].at(i).size()) {
-                                valid.at(j + l) = false;
-                            }
-                        }
-                    }
-                }
+    Eigen::Tensor<float, 2> delforback;
+    delforback.device(threaded_device) = this->cur_scan.slice(offset, extent).convolve(l2diffkernel, dims2).square().sum(Eigen::array<int, 1>({0}));
+
+    Eigen::Tensor<bool, 2> raw_cond = delforback > this->signals.slice(offset, Eigen::array<int, 3>({3, (int) this->param.n_ring, max}));
+
+    Eigen::Tensor<bool, 2> branch_3_cond;
+
+    Eigen::array<int, 2> offsets1 = {0, 1};
+    Eigen::array<int, 2> extents = {(int) this->param.n_ring, max - 1};
+
+    Eigen::array<int, 2> offsets2 = {0, 0};
+
+    branch_3_cond.device(threaded_device) = raw_cond.slice(offsets1, extents) && raw_cond.slice(offsets2, extents);
+
+    for (int i = 0; i < this->param.n_ring; i++) {
+        for(int j = 0; j + 1 < this->counters.at(i); j++) {
+            // for me, compiler will delete anyway
+            int p_idx = j + 1;
+            if (branch_1_cond(i, j)) {
+                int start;
+                (p_idx - 5) >= 0 ? start = p_idx - 5 : start = 0;
+
+                Eigen::array<int, 2> starts({i, start});
+                Eigen::array<int, 2> extents({1, start + 6});
+
+                this->valid_pts.slice(starts, extents).setConstant(false);
             }
-            // This section excludes any points whose nearby surface is
-            // near to parallel to the laser beam
-            auto delforward = this->l2sqrd(this->cur_scan.at(i).at(j), this->cur_scan.at(i).at(j + 1));
-            auto delback = this->l2sqrd(this->cur_scan.at(i).at(j), this->cur_scan.at(i).at(j - 1));
-            double dis = this->signals.at(0).at(i).at(j) * this->signals.at(0).at(i).at(j);
-            if ((delforward > (this->param.parallel_tol) * dis) && (delback > (this->param.parallel_tol * dis))) {
-                valid.at(j) = false;
+            if (branch_2_cond(i, j)) {
+                int end;
+                (p_idx + 5) >= this->counters.at(i) ? end = this->counters.at(i) - 1 : end = p_idx + 5;
+
+                Eigen::array<int, 2> starts({i, p_idx});
+                Eigen::array<int, 2> extents({0, end - p_idx});
+
+                this->valid_pts.slice(starts, extents).setConstant(false);
             }
         }
-        // now store each selected point for sorting
-        // Each point will be only be put in if it is a valid candidate for
-        // that feature type
-        for (uint32_t k = 0; k < this->N_FEATURES; k++) {
-            this->buildFilteredScore(valid, k, i);
-        }
+    }
+    // now store each selected point for sorting
+    // Each point will be only be put in if it is a valid candidate for
+    // that feature type
+    for (uint32_t k = 0; k < this->N_FEATURES; k++) {
+        this->buildFilteredScore(k);
     }
 }
 
-bool near_zero_score(double score, double threshold) {
-    return std::abs(score) < threshold;
+namespace {
+
+template<typename TensorType>
+Eigen::Tensor<bool, 2> near_zero_score(const TensorType &score, float threshold) {
+    return score.abs() < threshold;
 }
 
-bool high_pos_score(double score, double threshold) {
+template<typename TensorType>
+Eigen::Tensor<bool, 2> high_pos_score(const TensorType &score, float threshold) {
     return score > threshold;
 }
 
-bool high_neg_score(double score, double threshold) {
+template<typename TensorType>
+Eigen::Tensor<bool, 2> high_neg_score(const TensorType &score, float threshold) {
     return score < -threshold;
 }
 
-bool null_score(double, double) {
-    return false;
 }
 
-void LaserOdom::buildFilteredScore(const std::vector<bool> &valid, const uint32_t &f_idx, const uint32_t &ring) {
-    this->filtered_scores.at(f_idx).at(ring).clear();
-    this->valid_pts.at(f_idx).at(ring).clear();
+void LaserOdom::buildFilteredScore(const uint32_t &f_idx) {
     auto &def = this->feature_definitions.at(f_idx);
     // get primary score index by kernel type
     std::vector<std::function<bool(double, double)>> compfuns;
@@ -1228,7 +1231,7 @@ void LaserOdom::buildFilteredScore(const std::vector<bool> &valid, const uint32_
             case SelectionPolicy::NEAR_ZERO: compfuns.at(i) = near_zero_score; break;
             case SelectionPolicy::HIGH_POS: compfuns.at(i) = high_pos_score; break;
             case SelectionPolicy::HIGH_NEG: compfuns.at(i) = high_neg_score; break;
-            default: compfuns.at(i) = null_score;
+            default: throw std::out_of_range("Invalid Comparison Function")
         }
         switch (def.criteria.at(i).kernel) {
             case Kernel::LOAM: k_idx.at(i) = 0; break;
@@ -1238,16 +1241,12 @@ void LaserOdom::buildFilteredScore(const std::vector<bool> &valid, const uint32_
             case Kernel::INT_VAR: k_idx.at(i) = 4; break;
             default: throw std::out_of_range("Unrecognized Kernel!");
         }
-        // todo use the difference between input and score to figure this out instead?
-        k_offsets.emplace_back((this->kernels.at(k_idx.at(i))->size() - 1) / 2);
-        if (offset < (this->kernels.at(k_idx.at(i))->size() - 1) / 2) {
-            offset = (this->kernels.at(k_idx.at(i))->size() - 1) / 2;
-        }
+        //todo something about this
+        k_offsets.emplace_back(5);
+        offset = 5;
     }
 
-    // copy valid vector for use later
-    this->valid_pts.at(f_idx).at(ring) = std::vector<bool>(valid.begin(), valid.end());
-
+    this->filtered_scores.at(f_idx).at(ring).clear();
     for (uint64_t j = offset; j + offset < valid.size(); j++) {
         if (valid.at(j)) {
             bool meets_criteria = true;

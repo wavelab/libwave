@@ -281,7 +281,7 @@ class LaserOdom {
     Eigen::Tensor<float, 3> scores;
 
     // Whether points are still considered candidates. Required to avoid picking neighbouring points
-    Eigen::Tensor<bool, 3> valid_pts;
+    Eigen::Tensor<bool, 2> valid_pts;
 
     // Scoring kernels, indexed along 1st dimension
     Eigen::Tensor<float, 2> kernels;
@@ -297,7 +297,7 @@ class LaserOdom {
     enum AssociationStatus { CORRESPONDED, UNCORRESPONDED };
     std::vector<std::vector<std::pair<uint64_t, AssociationStatus>>> feature_association;
 
-    void buildFilteredScore(const std::vector<bool> &valid, const uint32_t &f_idx, const uint32_t &ring);
+    void buildFilteredScore(const uint32_t &f_idx);
     std::vector<std::shared_ptr<kd_tree_t>> feature_idx;
 
     // Eventually connect to yamls to be able to change
