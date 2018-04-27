@@ -199,6 +199,7 @@ class LaserOdom {
     const uint32_t N_SIGNALS = 2;
     const uint32_t N_SCORES = 5;
     const uint32_t N_FEATURES = 5;
+    const uint32_t MAX_POINTS = 2200;
 
  private:
     // Visualizer elements, not allocated unless used
@@ -270,18 +271,18 @@ class LaserOdom {
 
     // The input, in order of processing
 
-    // Input scan as an eigen tensor with dimensions (channels, rings, max_azimuth)
+    // Input scan as an vector of eigen tensors with dimensions rings x (channels, points in ring)
     std::vector<uint32_t> counters;
-    Eigen::Tensor<float, 3> cur_scan;
+    std::vector<Eigen::Tensor<float, 2>, Eigen::aligned_allocator<Eigen::Tensor<float, 2>>> cur_scan;
 
-    // dimensions (channels, rings, max_azimuth)
-    Eigen::Tensor<float, 3> signals;
+    // rings x (channels, points in ring)
+    std::vector<Eigen::Tensor<float, 2>, Eigen::aligned_allocator<Eigen::Tensor<float, 2>>> signals;
 
     // The resulting scores for each signal, grouped by kernel and ring
-    Eigen::Tensor<float, 3> scores;
+    std::vector<Eigen::Tensor<float, 2>, Eigen::aligned_allocator<Eigen::Tensor<float, 2>>> scores;
 
     // Whether points are still considered candidates. Required to avoid picking neighbouring points
-    Eigen::Tensor<bool, 2> valid_pts;
+    std::vector<Eigen::Tensor<bool, 1>, Eigen::aligned_allocator<Eigen::Tensor<bool, 1>>> valid_pts;
 
     // Scoring kernels, indexed along 1st dimension
     Eigen::Tensor<float, 2> kernels;
