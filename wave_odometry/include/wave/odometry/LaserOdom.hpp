@@ -91,28 +91,6 @@ struct LaserOdomParams {
 
     RangeSensorParams sensor_params;
 
-    // Feature extraction parameters
-    unlong variance_window = 11;
-    bool limit_rng_var = false;
-    bool limit_int_var = false;
-    double variance_limit_rng = 1;
-    double variance_limit_int = 1;
-
-    unlong angular_bins = 12;
-    float min_intensity = 10.0;
-    float max_intensity = 50.0;
-    float occlusion_tol = 0.1;      // Radians
-    float occlusion_tol_2 = 1;      // m. Distance between points to initiate occlusion check
-    float parallel_tol = 0.002;     // ditto
-    double edge_tol = 0.1;          // Edge features must have score higher than this
-    double flat_tol = 0.1;          // Plane features must have score lower than this
-    double int_edge_tol = 2;        // Intensity edge features must have score greater than this
-    double int_flat_tol = 0.1;      // Intensity edges must have range score lower than this
-    int n_edge = 40;                // How many edge features to pick out per ring
-    int n_flat = 100;               // How many plane features to pick out per ring
-    int n_int_edge = 0;             // How many intensity edges to pick out per ring
-    unlong knn = 5;                 // 1/2 nearest neighbours for computing curvature
-    unlong key_radius = 5;          // minimum number of points between keypoints on the same laser ring
     float edge_map_density = 0.01;  // Minimum l2squared spacing of features kept for odometry
     float flat_map_density = 0.25;
     // one degree. Beam spacing is 1.33deg, so this should be sufficient
@@ -231,9 +209,6 @@ class LaserOdom {
     bool initialized = false, full_revolution = false;
     int prv_tick = std::numeric_limits<int>::max();
 
-    void computeScores();
-    void prefilter();
-    void generateFeatures();
     void buildTrees();
     bool findCorrespondingPoints(const Vec3 &query, const uint32_t &f_idx, std::vector<size_t> *index);
     bool outOfBounds(const Vec3 &query, const uint32_t &f_idx, const std::vector<size_t> &index);
@@ -265,26 +240,12 @@ class LaserOdom {
 
     void flagNearbyPoints(const unlong p_idx, Eigen::Tensor<bool, 1> &);
 
-    // The input, in order of processing
-
     // Input scan as an vector of eigen tensors with dimensions rings x (channels, points in ring)
     std::vector<int> counters;
     std::vector<Eigen::Tensor<float, 2>, Eigen::aligned_allocator<Eigen::Tensor<float, 2>>> cur_scan;
 
     // rings x (channels, points in ring)
     std::vector<Eigen::Tensor<float, 2>, Eigen::aligned_allocator<Eigen::Tensor<float, 2>>> signals;
-
-    // The resulting scores for each signal, grouped by kernel and ring
-    std::vector<Eigen::Tensor<float, 2>, Eigen::aligned_allocator<Eigen::Tensor<float, 2>>> scores;
-
-    // Whether points are still considered candidates. Required to avoid picking neighbouring points
-    std::vector<Eigen::Tensor<bool, 1>, Eigen::aligned_allocator<Eigen::Tensor<bool, 1>>> valid_pts;
-
-    // Scoring kernels, indexed along 1st dimension
-    std::vector<Eigen::Tensor<float, 1>, Eigen::aligned_allocator<Eigen::Tensor<float, 1>>> kernels;
-
-    // Container to sort scores with. Each is built depending on feature specification
-    std::vector<std::vector<std::vector<std::pair<unlong, float>>>> filtered_scores;
 
     // feature points, indexed by feature type, each is a tensor.
     std::vector<Eigen::Tensor<float, 2>, Eigen::aligned_allocator<Eigen::Tensor<float, 2>>> feature_points;
@@ -298,30 +259,10 @@ class LaserOdom {
     enum AssociationStatus { CORRESPONDED, UNCORRESPONDED };
     std::vector<std::vector<std::pair<uint64_t, AssociationStatus>>> feature_association;
 
-    void buildFilteredScore(const uint32_t &f_idx);
     std::vector<std::shared_ptr<kd_tree_t>> feature_idx;
 
-    // Eventually connect to yamls to be able to change
-    // kernels & policies very quickly
-    enum SelectionPolicy { HIGH_POS, HIGH_NEG, NEAR_ZERO };
-    // todo: Rename Kernel, not just a kernel anymore
-    enum Kernel { LOAM, LOG, FOG, RNG_VAR, INT_VAR };
     enum ResidualType { PointToLine, PointToPlane };
-    struct Criteria {
-        Kernel kernel;
-        SelectionPolicy sel_pol;
-        double *threshold;
-    };
-
-    struct FeatureDefinition {
-        // score criteria. First item defines sort, any other criteria
-        // is checked for validity.
-        std::vector<Criteria> criteria;
-        // Type of residual to use with this feature type
-        ResidualType residual;
-        int *n_limit;
-    };
-    std::vector<FeatureDefinition> feature_definitions;
+    std::vector<ResidualType> feature_residuals;
 };
 
 }  // namespace wave
