@@ -151,8 +151,6 @@ class LaserOdom {
     ~LaserOdom();
     void addPoints(const std::vector<PointXYZIR> &pts, int tick, TimeType stamp);
 
-    std::vector<std::vector<std::vector<PointXYZIT>>> feature_points;  // edges, flats;
-
     std::vector<FeatureKDTree<double>> prv_feature_points;  // previous features now in map
 
     struct Trajectory {
@@ -265,14 +263,12 @@ class LaserOdom {
 
     void getTransformIndices(const uint32_t &tick, uint32_t &start, uint32_t &end, double &frac);
 
-    static float l2sqrd(const PCLPointXYZIT &p1, const PCLPointXYZIT &p2);
-
-    void flagNearbyPoints(const unlong f_idx, const unlong ring, const unlong p_idx);
+    void flagNearbyPoints(const unlong p_idx, Eigen::Tensor<bool, 1> &);
 
     // The input, in order of processing
 
     // Input scan as an vector of eigen tensors with dimensions rings x (channels, points in ring)
-    std::vector<uint32_t> counters;
+    std::vector<int> counters;
     std::vector<Eigen::Tensor<float, 2>, Eigen::aligned_allocator<Eigen::Tensor<float, 2>>> cur_scan;
 
     // rings x (channels, points in ring)
@@ -285,10 +281,14 @@ class LaserOdom {
     std::vector<Eigen::Tensor<bool, 1>, Eigen::aligned_allocator<Eigen::Tensor<bool, 1>>> valid_pts;
 
     // Scoring kernels, indexed along 1st dimension
-    Eigen::Tensor<float, 2> kernels;
+    std::vector<Eigen::Tensor<float, 1>, Eigen::aligned_allocator<Eigen::Tensor<float, 1>>> kernels;
 
     // Container to sort scores with. Each is built depending on feature specification
-    std::vector<std::vector<std::vector<std::pair<unlong, double>>>> filtered_scores;
+    std::vector<std::vector<std::vector<std::pair<unlong, float>>>> filtered_scores;
+
+    // feature points, indexed by feature type, each is a tensor.
+    std::vector<Eigen::Tensor<float, 2>, Eigen::aligned_allocator<Eigen::Tensor<float, 2>>> feature_points;
+    Eigen::Tensor<int, 2> feature_cnt;
 
     // This is container to hold indices of for each feature used in the optimization
     // It is indexed by feature_id, then by ring_id, then by correspondence.
