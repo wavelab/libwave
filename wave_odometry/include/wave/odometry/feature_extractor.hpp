@@ -52,6 +52,30 @@ struct FeatureExtractorParams {
     unlong key_radius = 5;       // minimum number of points between keypoints on the same laser ring
 
     int eigen_threads = 4;
+
+    const uint32_t N_SCORES = 5;
+    const uint32_t N_FEATURES = 5;
+
+    enum SelectionPolicy { HIGH_POS, HIGH_NEG, NEAR_ZERO };
+    enum Kernel { LOAM, LOG, FOG, RNG_VAR, INT_VAR };
+    enum Signal { RANGE, INTENSITY };
+
+    struct Criteria {
+        Signal signal;
+        Kernel kernel;
+        SelectionPolicy sel_pol;
+        float *threshold;
+    };
+
+    struct FeatureDefinition {
+        // First item defines sort, rest are logical.
+        std::vector<Criteria> criteria;
+        int *n_limit;
+    };
+
+    /// Building these definitions is the responsibility of the application
+    std::vector<FeatureDefinition> feature_definitions;
+
 };
 
 class FeatureExtractor {
@@ -67,41 +91,29 @@ class FeatureExtractor {
     using Tensorf = Vec<Tensor2f, Eigen::aligned_allocator<Tensor2f>>;
     // type for outgoing keypoint indices
     // Each ring and feature type combination has a variable number of feature points, so the container
-    // must support both
+    // must support both. Indexed by feature id, then ring in that order.
     using TensorIdx = Vec<Vec<Eigen::Tensor<int, 1>, Eigen::aligned_allocator<Eigen::Tensor<int, 1>>>>;
 
  public:
     FeatureExtractor FeatureExtractor() = default;
-    FeatureExtractor FeatureExtractor(FeatureExtractorParams params) : param(param) {}
+    FeatureExtractor FeatureExtractor(FeatureExtractorParams params, unlong n_rings);
 
-    void init(unlong n_rings);
-    void setParams(FeatureExtractorParams params);
+    void setParams(FeatureExtractorParams params, unlong n_rings);
 
     // Designed as function for outside world to call
     void getFeatures(const Tensorf &scan, const FeatureExtractor::Tensorf &signals,
                      const std::vector<int> &range, FeatureExtractor::TensorIdx &indices);
 
  private:
+    bool ready = false;
+    void setup();
 
     void computeScores(const Tensorf &signals, const Vec<int> &range);
     void preFilter(const Tensorf &scan, const Tensorf &signals, const Vec<int> &range);
     void buildFilteredScore(const Vec<int> &range);
-    void sortAndBin();
+    void sortAndBin(const Tensorf &scan, TensorIdx &feature_indices);
 
-    enum SelectionPolicy { HIGH_POS, HIGH_NEG, NEAR_ZERO };
-    enum Kernel { LOAM, LOG, FOG, RNG_VAR, INT_VAR };
-    struct Criteria {
-        Kernel kernel;
-        SelectionPolicy sel_pol;
-        float *threshold;
-    };
-
-    struct FeatureDefinition {
-        // First item defines sort, rest are logical.
-        std::vector<Criteria> criteria;
-        int *n_limit;
-    };
-    std::vector<FeatureDefinition> feature_definitions;
+    void flagNearbyPoints(const uint32_t p_idx, Eigen::Tensor<bool, 1> &valid)
 
     // This is separate from params because it depends on hardware
     unlong n_ring;
@@ -118,9 +130,6 @@ class FeatureExtractor {
 
     // Container to sort scores with. Each is built depending on feature specification
     Vec<Vec<Vec<std::pair<unlong, float>>>> filtered_scores;
-
-    const uint32_t N_SCORES = 5;
-    const uint32_t N_FEATURES = 5;
 
     std::unique_ptr<Eigen::ThreadPool> threadpool;
     std::unique_ptr<Eigen::ThreadPoolDevice> thrddev;

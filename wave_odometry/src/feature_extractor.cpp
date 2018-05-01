@@ -2,18 +2,44 @@
 
 namespace wave {
 
-void FeatureExtractor::init(unlong n_ring) {
-    this->n_ring = n_ring;
+void FeatureExtractor::setup() {
     this->threadpool = std::unique_ptr<Eigen::ThreadPool>(new Eigen::ThreadPool(this->param.eigen_threads));
     this->thrddev = std::unique_ptr<Eigen::ThreadPoolDevice>(
-      new Eigen::ThreadPoolDevice(this->threadpool.get(), this->param.eigen_threads));
+            new Eigen::ThreadPoolDevice(this->threadpool.get(), this->param.eigen_threads));
+
+    this->valid_pts.resize(this->n_ring);
+    this->scores.resize(this->n_ring);
+    this->kernels.resize(this->param.N_SCORES);
+    this->filtered_scores.resize(this->param.N_FEATURES);
+    for(uint32_t i = 0; i < this->param.N_FEATURES; i++) {
+        this->filtered_scores.at(i).resize(this->n_ring);
+    }
+
+    this->kernels.at(0) = Eigen::TensorMap<Eigen::Tensor<float, 1>>(loam_kernel, 11);
+    this->kernels.at(1) = Eigen::TensorMap<Eigen::Tensor<float, 1>>(LoG_kernel, 11);
+    this->kernels.at(2) = Eigen::TensorMap<Eigen::Tensor<float, 1>>(FoG_kernel, 11);
+    this->kernels.at(3).setConstant(1.0);
+    this->kernels.at(4).setConstant(1.0);
+
+    this->ready = true;
 }
 
-void FeatureExtractor::setParams(FeatureExtractorParams params) {
+FeatureExtractor::FeatureExtractor(FeatureExtractorParams params, unlong n_ring) : param(params), n_ring(n_ring) {
+    this->setup();
+}
+
+void FeatureExtractor::setParams(FeatureExtractorParams params, unlong n_ring) {
     this->param = params;
+
+    if(!this->ready) {
+        this->setup();
+    }
 }
 
 void FeatureExtractor::computeScores(const Tensorf &signals, const Vec<int> &range) {
+    if (!this->ready) {
+        throw std::length_error("Must set feature parameters before using");
+    }
     Eigen::array<ptrdiff_t, 1> dims({1});
     Eigen::Tensor<float, 1> sum_kernel(this->param.variance_window);
     sum_kernel.setConstant(1.0);
@@ -21,19 +47,13 @@ void FeatureExtractor::computeScores(const Tensorf &signals, const Vec<int> &ran
     for (uint32_t i = 0; i < this->n_ring; i++) {
         auto max = (int) range.at(i);
 
-        for (ulong j = 0; j < this->N_SCORES; j++) {
-            // todo(ben) Include signal to score explicitly in feature definitions and get rid of this hack.
-            int s_idx = 0;
-            if (j < 1 || j == 3) {
-                s_idx = 0;
-            } else {
-                s_idx = 1;
-            }
+        for (ulong j = 0; j < this->param.N_SCORES; j++) {
+            int s_idx = static_cast<int>(this->param.feature_definitions.at(j).criteria.front().signal);
 
             // todo have flexibility for different kernel sizes
             if (max > 10) {
                 if (j < 3) {
-                    this->scores.at(i).slice(ar2({(long int) j, 0}), ar2({1, max - 10})).device(*(this->thrddev)) =
+                    this->scores.at(i).device(*(this->thrddev)) =
                       signals.at(i).slice(ar2({s_idx, 0}), ar2({1, max})).convolve(this->kernels.at(j), dims);
                     // or if sample variance
                 } else {
@@ -45,7 +65,6 @@ void FeatureExtractor::computeScores(const Tensorf &signals, const Vec<int> &ran
 
                     // so called computational formula for sample variance
                     this->scores.at(i)
-                      .slice(ar2({(int) j, 0}), ar2({1, max - (int) this->param.variance_window + 1}))
                       .device(*(this->thrddev)) =
                       (signals.at(i).slice(ar2({s_idx, 0}), ar2({1, max})).square().convolve(sum_kernel, dims) -
                        signals.at(i)
@@ -126,9 +145,6 @@ void FeatureExtractor::preFilter(const Tensorf &scan, const Tensorf &signals, co
             }
         }
     }
-    // now store each selected point for sorting
-    // Each point will be only be put in if it is a valid candidate for
-    // that feature type
 }
 
 namespace {
@@ -147,8 +163,8 @@ Eigen::Tensor<bool, 1> high_neg_score(const Eigen::Tensor<float, 1> &score, floa
 }
 
 void FeatureExtractor::buildFilteredScore(const Vec<int> &range) {
-    for (uint32_t k = 0; k < this->N_FEATURES; k++) {
-        auto &def = this->feature_definitions.at(k);
+    for (uint32_t k = 0; k < this->param.N_FEATURES; k++) {
+        auto &def = this->param.feature_definitions.at(k);
         // get primary score index by kernel type
         std::vector<std::function<Eigen::Tensor<bool, 1>(const Eigen::Tensor<float, 1> &, double)>> compfuns;
         std::vector<uint32_t> k_idx;
@@ -158,19 +174,12 @@ void FeatureExtractor::buildFilteredScore(const Vec<int> &range) {
         k_idx.resize(def.criteria.size());
         for (uint32_t i = 0; i < def.criteria.size(); i++) {
             switch (def.criteria.at(i).sel_pol) {
-                case SelectionPolicy::NEAR_ZERO: compfuns.at(i) = near_zero_score; break;
-                case SelectionPolicy::HIGH_POS: compfuns.at(i) = high_pos_score; break;
-                case SelectionPolicy::HIGH_NEG: compfuns.at(i) = high_neg_score; break;
+                case FeatureExtractorParams::SelectionPolicy::NEAR_ZERO: compfuns.at(i) = near_zero_score; break;
+                case FeatureExtractorParams::SelectionPolicy::HIGH_POS: compfuns.at(i) = high_pos_score; break;
+                case FeatureExtractorParams::SelectionPolicy::HIGH_NEG: compfuns.at(i) = high_neg_score; break;
                 default: throw std::out_of_range("Invalid Comparison Function");
             }
-            switch (def.criteria.at(i).kernel) {
-                case Kernel::LOAM: k_idx.at(i) = 0; break;
-                case Kernel::LOG: k_idx.at(i) = 1; break;
-                case Kernel::FOG: k_idx.at(i) = 2; break;
-                case Kernel::RNG_VAR: k_idx.at(i) = 3; break;
-                case Kernel::INT_VAR: k_idx.at(i) = 4; break;
-                default: throw std::out_of_range("Unrecognized Kernel!");
-            }
+            k_idx.at(i) = static_cast<uint32_t>(def.criteria.at(i).kernel);
             // todo something about this
             k_offsets.emplace_back(5);
             offset = 5;
@@ -192,13 +201,28 @@ void FeatureExtractor::buildFilteredScore(const Vec<int> &range) {
     }
 }
 
-void FeatureExtractor::sortAndBin() {
+void FeatureExtractor::flagNearbyPoints(const uint32_t p_idx, Eigen::Tensor<bool, 1> &valid) {
+    for (uint32_t j = 0; j < this->param.key_radius; j++) {
+        if (p_idx + j + 1 >= valid.dimension(0)) {
+            break;
+        }
+        valid(p_idx + j + 1) = false;
+    }
+    for (uint32_t j = 0; j < this->param.key_radius; j++) {
+        if (p_idx < j + 1) {
+            break;
+        }
+        valid(p_idx - j - 1) = false;
+    }
+}
+
+void FeatureExtractor::sortAndBin(const Tensorf &scan, TensorIdx &feature_indices) {
     std::vector<unlong> cnt_in_bins;
     cnt_in_bins.resize(this->param.angular_bins);
-    for (uint32_t i = 0; i < this->N_FEATURES; i++) {
-        this->feature_cnt(i, 0) = 0;
-        for (unlong j = 0; j < this->param.n_ring; j++) {
-            auto &def = this->feature_definitions.at(i);
+    for (uint32_t i = 0; i < this->param.N_FEATURES; i++) {
+        for (unlong j = 0; j < this->n_ring; j++) {
+            feature_indices.at(i).at(j).clear();
+            auto &def = this->param.feature_definitions.at(i);
             auto &pol = def.criteria.at(0).sel_pol;
             auto &filt_scores = this->filtered_scores.at(i).at(j);
 
@@ -208,7 +232,7 @@ void FeatureExtractor::sortAndBin() {
             unlong max_bin = *(def.n_limit) / this->param.angular_bins;
             std::fill(cnt_in_bins.begin(), cnt_in_bins.end(), 0);
 
-            if (pol == SelectionPolicy::HIGH_NEG || pol == SelectionPolicy::NEAR_ZERO) {
+            if (pol != FeatureExtractorParams::SelectionPolicy::HIGH_POS) {
                 std::sort(filt_scores.begin(),
                           filt_scores.end(),
                           [](const std::pair<unlong, double> lhs, const std::pair<unlong, double> rhs) {
@@ -229,11 +253,10 @@ void FeatureExtractor::sortAndBin() {
                     continue;
                 }
                 if (valid_pts_copy(score.first)) {
-                    this->feature_points.at(i).slice(ar2({0, this->feature_cnt(i, 0)}), ar2({3, 1})) =
-                            scan.at(j).slice(ar2({0, (int) score.first}), ar2({3, 1}));
+                    feature_indices.at(i).at(j).emplace_back(score.first);
+
                     this->flagNearbyPoints(score.first, valid_pts_copy);
                     cnt_in_bins.at(bin)++;
-                    this->feature_cnt(i, 0)++;
                 }
             }
         }
@@ -243,9 +266,9 @@ void FeatureExtractor::sortAndBin() {
 void FeatureExtractor::getFeatures(const Tensorf &scan, const Tensorf &signals,
                                    const std::vector<int> &range, TensorIdx &indices) {
     this->computeScores(signals, range);
-    this->prefilter(<#initializer#>, <#initializer#>);
-    this->buildFilteredScore(<#initializer#>);
-    this->sortAndBin();
+    this->preFilter(scan, signals, range);
+    this->buildFilteredScore(range);
+    this->sortAndBin(scan, indices);
 }
 
 }

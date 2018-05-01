@@ -5,7 +5,6 @@
 #define EIGEN_USE_THREADS
 #endif
 
-#include <unsupported/Eigen/CXX11/Tensor>
 #include <vector>
 #include <array>
 #include <algorithm>
@@ -30,16 +29,19 @@
 #include <Eigen/Core>
 #include <Eigen/Sparse>
 #include <Eigen/Eigenvalues>
+#include <unsupported/Eigen/CXX11/Tensor>
 
-#include "wave/containers/measurement_container.hpp"
-#include "wave/containers/measurement.hpp"
+#include <ceres/ceres.h>
+#include <ceres/normal_prior.h>
+#include <ceres/rotation.h>
+
 #include "wave/geometry/transformation.hpp"
+#include "wave/kinematics/constant_velocity_gp_prior.hpp"
 #include "wave/matching/pointcloud_display.hpp"
+#include "wave/odometry/feature_extractor.hpp"
 #include "wave/odometry/kdtreetype.hpp"
 #include "wave/odometry/PointXYZIR.hpp"
 #include "wave/odometry/PointXYZIT.hpp"
-#include "wave/odometry/kernels.hpp"
-#include "wave/odometry/integrals.hpp"
 #include "wave/odometry/sensor_model.hpp"
 #include "wave/optimization/ceres/odom_gp_twist/point_to_line_gp.hpp"
 #include "wave/optimization/ceres/odom_gp_twist/point_to_plane_gp.hpp"
@@ -48,10 +50,6 @@
 #include "wave/utils/math.hpp"
 #include "wave/utils/data.hpp"
 
-#include <ceres/ceres.h>
-#include <ceres/normal_prior.h>
-#include <ceres/rotation.h>
-#include <wave/kinematics/constant_velocity_gp_prior.hpp>
 
 namespace wave {
 
@@ -67,7 +65,7 @@ struct LaserOdomParams {
     Mat6 inv_Qc = Mat6::Identity();
     // Optimizer parameters
     // How many states per revolution to optimize over
-    // There must be at minimum two.
+    // There must be at minimum two (start and end. Consecutive scans share a state for end-start boundary)
     uint32_t num_trajectory_states = 3;
     // How many scans to optimize over, must be at least 1, obviously
     uint32_t n_window = 1;
@@ -125,7 +123,7 @@ class LaserOdom {
 
  public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    explicit LaserOdom(const LaserOdomParams params);
+    explicit LaserOdom(const LaserOdomParams params, const FeatureExtractorParams feat_params);
     ~LaserOdom();
     void addPoints(const std::vector<PointXYZIR> &pts, int tick, TimeType stamp);
 
@@ -193,7 +191,6 @@ class LaserOdom {
     std::unique_ptr<std::thread> output_thread;
     void spinOutput();
     std::function<void()> f_output;
-    void undistort();
 
     // ceres optimizer stuff
     std::vector<Vec12, Eigen::aligned_allocator<Vec12>> param_blocks;
@@ -209,10 +206,13 @@ class LaserOdom {
     bool initialized = false, full_revolution = false;
     int prv_tick = std::numeric_limits<int>::max();
 
+    FeatureExtractor feature_extractor;
+
     void buildTrees();
     bool findCorrespondingPoints(const Vec3 &query, const uint32_t &f_idx, std::vector<size_t> *index);
     bool outOfBounds(const Vec3 &query, const uint32_t &f_idx, const std::vector<size_t> &index);
 
+    void undistort();
     PCLPointXYZIT applyIMU(const PCLPointXYZIT &pt);
     void transformToMap(
       const double *const pt, const uint32_t tick, double *output, uint32_t &k, uint32_t &kp1, double &tau);
@@ -238,18 +238,15 @@ class LaserOdom {
 
     void getTransformIndices(const uint32_t &tick, uint32_t &start, uint32_t &end, double &frac);
 
-    void flagNearbyPoints(const unlong p_idx, Eigen::Tensor<bool, 1> &);
-
-    // Input scan as an vector of eigen tensors with dimensions rings x (channels, points in ring)
+    // Input scan as an vector of eigen tensors with dimensions rings x (channels, max points in ring)
     std::vector<int> counters;
     std::vector<Eigen::Tensor<float, 2>, Eigen::aligned_allocator<Eigen::Tensor<float, 2>>> cur_scan;
 
     // rings x (channels, points in ring)
     std::vector<Eigen::Tensor<float, 2>, Eigen::aligned_allocator<Eigen::Tensor<float, 2>>> signals;
 
-    // feature points, indexed by feature type, each is a tensor.
-    std::vector<Eigen::Tensor<float, 2>, Eigen::aligned_allocator<Eigen::Tensor<float, 2>>> feature_points;
-    Eigen::Tensor<int, 2> feature_cnt;
+    // feature points, indexed by feature type and ring
+    std::vector<std::vector<Eigen::Tensor<float, 2>, Eigen::aligned_allocator<Eigen::Tensor<float, 2>>>> feature_points;
 
     // This is container to hold indices of for each feature used in the optimization
     // It is indexed by feature_id, then by ring_id, then by correspondence.

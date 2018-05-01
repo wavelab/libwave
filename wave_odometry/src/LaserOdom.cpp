@@ -22,61 +22,25 @@ double norm(const std::vector<double> &vec) {
 
 }
 
-LaserOdom::LaserOdom(const LaserOdomParams params) : param(params) {
+LaserOdom::LaserOdom(const LaserOdomParams params, const FeatureExtractorParams feat_params) : param(params) {
     this->CSVFormat = new Eigen::IOFormat(Eigen::FullPrecision, Eigen::DontAlignCols, ", ", ", ");
 
     auto n_ring = static_cast<size_t>(param.n_ring);
+    this->feature_extractor.setParams(feat_params, n_ring);
     this->counters.resize(n_ring);
     std::fill(this->counters.begin(), this->counters.end(), 0);
 
     this->cur_scan.resize(n_ring);
-    this->valid_pts.resize(n_ring);
     this->signals.resize(n_ring);
-    this->scores.resize(n_ring);
-    this->kernels.resize(this->N_SCORES);
 
     for (uint32_t i = 0; i < n_ring; i++) {
         this->cur_scan.at(i) = Eigen::Tensor<float, 2>(5, this->MAX_POINTS);
-        this->valid_pts.at(i) = Eigen::Tensor<bool, 1>(this->MAX_POINTS);
         this->signals.at(i) = Eigen::Tensor<float, 2>(this->N_SIGNALS, this->MAX_POINTS);
-        this->scores.at(i) = Eigen::Tensor<float, 2>(this->N_SCORES, this->MAX_POINTS);
     }
-
-    this->kernels.at(0) = Eigen::TensorMap<Eigen::Tensor<float, 1>>(loam_kernel, 11);
-    this->kernels.at(1) = Eigen::TensorMap<Eigen::Tensor<float, 1>>(LoG_kernel, 11);
-    this->kernels.at(2) = Eigen::TensorMap<Eigen::Tensor<float, 1>>(FoG_kernel, 11);
-    this->kernels.at(3).setConstant(1.0);
-    this->kernels.at(4).setConstant(1.0);
 
     this->range_sensor = std::make_shared<RangeSensor>(param.sensor_params);
 
-    // Define features
-    std::vector<Criteria> edge_high, edge_low, flat, edge_int_high, edge_int_low;
-    edge_high.emplace_back(Criteria{Kernel::LOAM, SelectionPolicy::HIGH_POS, &(param.edge_tol)});
-
-    edge_low.emplace_back(Criteria{Kernel::LOAM, SelectionPolicy::HIGH_NEG, &(param.edge_tol)});
-
-    flat.emplace_back(Criteria{Kernel::LOAM, SelectionPolicy::NEAR_ZERO, &(param.flat_tol)});
-
-    edge_int_high.emplace_back(Criteria{Kernel::FOG, SelectionPolicy::HIGH_POS, &(param.int_edge_tol)});
-    edge_int_high.emplace_back(Criteria{Kernel::LOAM, SelectionPolicy::NEAR_ZERO, &(param.int_flat_tol)});
-    edge_int_high.emplace_back(Criteria{Kernel::RNG_VAR, SelectionPolicy::NEAR_ZERO, &(param.variance_limit_rng)});
-
-    edge_int_low.emplace_back(Criteria{Kernel::FOG, SelectionPolicy::HIGH_NEG, &(param.int_edge_tol)});
-    edge_int_low.emplace_back(Criteria{Kernel::LOAM, SelectionPolicy::NEAR_ZERO, &(param.int_flat_tol)});
-    edge_int_low.emplace_back(Criteria{Kernel::RNG_VAR, SelectionPolicy::NEAR_ZERO, &(param.variance_limit_rng)});
-
-    this->feature_definitions.emplace_back(FeatureDefinition{edge_high, ResidualType::PointToLine, &(param.n_edge)});
-    this->feature_definitions.emplace_back(FeatureDefinition{edge_low, ResidualType::PointToLine, &(param.n_edge)});
-    this->feature_definitions.emplace_back(FeatureDefinition{flat, ResidualType::PointToPlane, &(param.n_flat)});
-    this->feature_definitions.emplace_back(
-      FeatureDefinition{edge_int_high, ResidualType::PointToLine, &(param.n_int_edge)});
-    this->feature_definitions.emplace_back(
-      FeatureDefinition{edge_int_low, ResidualType::PointToLine, &(param.n_int_edge)});
-
-    this->filtered_scores.resize(this->N_FEATURES);
     this->feature_points.resize(this->N_FEATURES);
-    this->feature_cnt = Eigen::Tensor<int, 2>(this->param.n_window, this->N_FEATURES);
     this->prv_feature_points.resize(this->N_FEATURES);
     this->feature_corrs.resize(this->N_FEATURES);
     this->output_corrs.resize(this->N_FEATURES);
@@ -86,10 +50,8 @@ LaserOdom::LaserOdom(const LaserOdomParams params) : param(params) {
     this->map_features.resize(this->N_FEATURES);
 
     for (uint32_t i = 0; i < this->N_FEATURES; i++) {
-        this->feature_points.at(i) = Eigen::Tensor<float, 2>(3, this->param.n_flat * this->param.n_ring);
         this->feature_idx.at(i) =
           std::make_shared<kd_tree_t>(3, this->prv_feature_points.at(i), nanoflann::KDTreeSingleIndexAdaptorParams(20));
-        this->filtered_scores.at(i).resize(n_ring);
         this->feature_corrs.at(i).resize(n_ring);
     }
 
@@ -156,21 +118,6 @@ void LaserOdom::getTransformIndices(const uint32_t &tick, uint32_t &start, uint3
     start = ((tick * (param.num_trajectory_states - 1)) / (param.max_ticks * this->param.n_window));
     end = start + 1;
     tau = (tick * this->param.scan_period) / (this->param.max_ticks * this->param.n_window);
-}
-
-void LaserOdom::flagNearbyPoints(const unlong p_idx, Eigen::Tensor<bool, 1> &valid) {
-    for (unlong j = 0; j < this->param.key_radius; j++) {
-        if (p_idx + j + 1 >= valid.dimension(0)) {
-            break;
-        }
-        valid(p_idx + j + 1) = false;
-    }
-    for (unlong j = 0; j < this->param.key_radius; j++) {
-        if (p_idx < j + 1) {
-            break;
-        }
-        valid(p_idx - j - 1) = false;
-    }
 }
 
 void LaserOdom::transformToMap(
@@ -446,7 +393,7 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
         }
     }
     if (trigger) {                 // tolerate minor nonlinearity error
-        this->generateFeatures();  // generate features on the current scan
+        this->feature_extractor.getFeatures(this->cur_scan, this->signals, this->counters, indices);
         if (this->initialized) {   // there is a set of previous features from
                                    // last scan
             T_TYPE last_transform;
@@ -502,9 +449,9 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
         this->cur_scan.at(pt.ring)(3, counters.at(pt.ring)) = tick_frac;
         // todo put timestamp here
         this->cur_scan.at(pt.ring)(4, counters.at(pt.ring)) = 0;
-
-        this->signals.at(pt.ring)(1, counters.at(pt.ring)) =
-          clampToRange(pt.intensity, this->param.min_intensity, this->param.max_intensity);
+        // todo, consider doing this operation using tensors to check for speedup
+        this->signals.at(pt.ring)(0, counters.at(pt.ring)) = (float) sqrt(pt.x * pt.x + pt.y * pt.y + pt.z * pt.z);
+        this->signals.at(pt.ring)(1, counters.at(pt.ring)) = pt.intensity;
 
         this->counters.at(pt.ring)++;
     }
@@ -667,7 +614,7 @@ bool LaserOdom::findCorrespondingPoints(const Vec3 &query, const uint32_t &f_idx
     std::vector<ContType> indices_dists;
     nanoflann::RadiusResultSet<double, size_t> resultSet(this->param.max_correspondence_dist, indices_dists);
     uint32_t knn = 0;
-    switch (this->feature_definitions.at(f_idx).residual) {
+    switch (this->feature_residuals.at(f_idx)) {
         case PointToLine: knn = 2; break;
         case PointToPlane: knn = 3; break;
         default: knn = 0;
@@ -715,7 +662,7 @@ bool LaserOdom::findCorrespondingPoints(const Vec3 &query, const uint32_t &f_idx
 bool LaserOdom::outOfBounds(const Vec3 &query, const uint32_t &f_idx, const std::vector<size_t> &index) {
     Eigen::Map<const Vec3> pA(this->prv_feature_points.at(f_idx).points.at(index.at(0)).data());
     Eigen::Map<const Vec3> pB(this->prv_feature_points.at(f_idx).points.at(index.at(1)).data());
-    if (this->feature_definitions.at(f_idx).residual == PointToPlane) {
+    if (this->feature_residuals.at(f_idx) == PointToPlane) {
         return false;
     } else {
         Vec3 AB = pB - pA;
