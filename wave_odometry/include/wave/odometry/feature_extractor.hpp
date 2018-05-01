@@ -81,22 +81,22 @@ struct FeatureExtractorParams {
 class FeatureExtractor {
  private:
     template<typename datatype>
-    using Vec<datatype> = std::vector<datatype>;
+    using Vec = std::vector<datatype>;
 
     template<typename datatype, typename alloctype>
-    using Vec<datatype, alloctype> = std::vector<datatype, alloctype>;
+    using VecA = std::vector<datatype, alloctype>;
 
     using Tensor2f = Eigen::Tensor<float, 2>;
     // type for incoming signals. Vector is ringsize long, each element is channels x points tensor
-    using Tensorf = Vec<Tensor2f, Eigen::aligned_allocator<Tensor2f>>;
+    using Tensorf = VecA<Tensor2f, Eigen::aligned_allocator<Tensor2f>>;
     // type for outgoing keypoint indices
     // Each ring and feature type combination has a variable number of feature points, so the container
     // must support both. Indexed by feature id, then ring in that order.
-    using TensorIdx = Vec<Vec<Eigen::Tensor<int, 1>, Eigen::aligned_allocator<Eigen::Tensor<int, 1>>>>;
+    using TensorIdx = Vec<VecA<Eigen::Tensor<int, 1>, Eigen::aligned_allocator<Eigen::Tensor<int, 1>>>>;
 
  public:
-    FeatureExtractor FeatureExtractor() = default;
-    FeatureExtractor FeatureExtractor(FeatureExtractorParams params, unlong n_rings);
+    FeatureExtractor() = default;
+    FeatureExtractor(FeatureExtractorParams params, unlong n_rings);
 
     void setParams(FeatureExtractorParams params, unlong n_rings);
 
@@ -113,20 +113,19 @@ class FeatureExtractor {
     void buildFilteredScore(const Vec<int> &range);
     void sortAndBin(const Tensorf &scan, TensorIdx &feature_indices);
 
-    void flagNearbyPoints(const uint32_t p_idx, Eigen::Tensor<bool, 1> &valid)
+    void flagNearbyPoints(const uint32_t p_idx, Eigen::Tensor<bool, 1> &valid);
 
-    // This is separate from params because it depends on hardware
-    unlong n_ring;
     FeatureExtractorParams param;
+    unlong n_ring; // This is separate from params because it depends on hardware
 
     // The resulting scores for each signal, grouped by kernel and ring
-    Vec<Tensor2f, Eigen::aligned_allocator<Tensor2f>> scores;
+    VecA<Tensor2f, Eigen::aligned_allocator<Tensor2f>> scores;
 
     // Whether points are still considered candidates. Required to avoid picking neighbouring points
-    Vec<Eigen::Tensor<bool, 1>, Eigen::aligned_allocator<Eigen::Tensor<bool, 1>>> valid_pts;
+    VecA<Eigen::Tensor<bool, 1>, Eigen::aligned_allocator<Eigen::Tensor<bool, 1>>> valid_pts;
 
     // Scoring kernels, indexed along 1st dimension
-    Vec<Eigen::Tensor<float, 1>, Eigen::aligned_allocator<Eigen::Tensor<float, 1>>> kernels;
+    VecA<Eigen::Tensor<float, 1>, Eigen::aligned_allocator<Eigen::Tensor<float, 1>>> kernels;
 
     // Container to sort scores with. Each is built depending on feature specification
     Vec<Vec<Vec<std::pair<unlong, float>>>> filtered_scores;
