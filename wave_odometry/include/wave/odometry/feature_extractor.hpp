@@ -15,7 +15,7 @@
 
 #include "wave/utils/math.hpp"
 #include "wave/utils/data.hpp"
-#include "wave/odometry/kernels.hpp"
+#include "wave/odometry/odometry_types.hpp"
 
 namespace wave {
 
@@ -53,23 +53,6 @@ struct FeatureExtractorParams {
 
     uint32_t N_SCORES = 5;
     uint32_t N_FEATURES = 5;
-
-    enum SelectionPolicy { HIGH_POS, HIGH_NEG, NEAR_ZERO };
-    enum Kernel { LOAM, LOG, FOG, RNG_VAR, INT_VAR };
-    enum Signal { RANGE, INTENSITY };
-
-    struct Criteria {
-        Signal signal;
-        Kernel kernel;
-        SelectionPolicy sel_pol;
-        float *threshold;
-    };
-
-    struct FeatureDefinition {
-        // First item defines sort, rest are logical.
-        std::vector<Criteria> criteria;
-        int *n_limit;
-    };
 
     /// Building these definitions is the responsibility of the application
     std::vector<FeatureDefinition> feature_definitions;

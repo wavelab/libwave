@@ -42,6 +42,7 @@
 #include "wave/odometry/kdtreetype.hpp"
 #include "wave/odometry/PointXYZIR.hpp"
 #include "wave/odometry/PointXYZIT.hpp"
+#include "wave/odometry/odometry_types.hpp"
 #include "wave/odometry/sensor_model.hpp"
 #include "wave/optimization/ceres/odom_gp_twist/point_to_line_gp.hpp"
 #include "wave/optimization/ceres/odom_gp_twist/point_to_plane_gp.hpp"
@@ -49,7 +50,6 @@
 #include "wave/optimization/ceres/loss_function/bisquare_loss.hpp"
 #include "wave/utils/math.hpp"
 #include "wave/utils/data.hpp"
-
 
 namespace wave {
 
@@ -118,10 +118,6 @@ struct LaserOdomParams {
 };
 
 class LaserOdom {
-    // true uses transform class with some approximations for exp map, etc
-    // false uses full analytical expressions wherever possible
-    using T_TYPE = Transformation<Eigen::Matrix<double, 3, 4>, true>;
-
  public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     explicit LaserOdom(const LaserOdomParams params, const FeatureExtractorParams feat_params);
@@ -129,17 +125,6 @@ class LaserOdom {
     void addPoints(const std::vector<PointXYZIR> &pts, int tick, TimeType stamp);
 
     std::vector<FeatureKDTree<double>> prv_feature_points;  // previous features now in map
-
-    struct Trajectory {
-        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-        T_TYPE pose;
-        Vec6 vel;
-    };
-
-    struct TrajDifference {
-        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-        Vec12 hat_multiplier, candle_multiplier;
-    };
 
     std::vector<Trajectory, Eigen::aligned_allocator<Trajectory>> cur_trajectory;
     std::vector<TrajDifference, Eigen::aligned_allocator<TrajDifference>> cur_difference;
@@ -172,7 +157,6 @@ class LaserOdom {
     LaserOdomParams getParams();
 
     const uint32_t N_SIGNALS = 2;
-    const uint32_t N_SCORES = 5;
     const uint32_t N_FEATURES = 5;
     const uint32_t MAX_POINTS = 2200;
 
@@ -255,12 +239,11 @@ class LaserOdom {
     // It contains a vector of indices, the first is the feature point, the next are the indices of the
     // map or prv feature points it corresponds to
     std::vector<std::vector<std::vector<std::vector<uint64_t>>>> feature_corrs;
-    enum AssociationStatus { CORRESPONDED, UNCORRESPONDED };
+
     std::vector<std::vector<std::pair<uint64_t, AssociationStatus>>> feature_association;
 
     std::vector<std::shared_ptr<kd_tree_t>> feature_idx;
 
-    enum ResidualType { PointToLine, PointToPlane };
     std::vector<ResidualType> feature_residuals;
 };
 
