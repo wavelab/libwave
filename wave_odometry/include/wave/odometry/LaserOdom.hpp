@@ -76,6 +76,7 @@ struct LaserOdomParams {
     // skip the next iterations
     int solver_threads = 0;               // How many threads ceres should use. 0 or less results in using the
                                           // number of logical threads on the machine
+    int min_features = 300;               // How many features are required
     float robust_param = 0.2;             // Hyper-parameter for bisquare (Tukey) loss function
     float max_correspondence_dist = 0.4;  // correspondences greater than this are discarded
     double max_residual_val = 0.1;        // Residuals with an initial error greater than this are not used.
@@ -246,6 +247,7 @@ class LaserOdom {
     std::vector<Eigen::Tensor<float, 2>, Eigen::aligned_allocator<Eigen::Tensor<float, 2>>> signals;
 
     // feature points, indexed by feature type and ring
+    std::vector<std::vector<Eigen::Tensor<int, 1>, Eigen::aligned_allocator<Eigen::Tensor<int, 1>>>> indices;
     std::vector<std::vector<Eigen::Tensor<float, 2>, Eigen::aligned_allocator<Eigen::Tensor<float, 2>>>> feature_points;
 
     // This is container to hold indices of for each feature used in the optimization

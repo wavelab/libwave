@@ -393,7 +393,7 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
         }
     }
     if (trigger) {                 // tolerate minor nonlinearity error
-        this->feature_extractor.getFeatures(this->cur_scan, this->signals, this->counters, indices);
+        this->feature_extractor.getFeatures(this->cur_scan, this->signals, this->counters, this->indices);
         if (this->initialized) {   // there is a set of previous features from
                                    // last scan
             T_TYPE last_transform;
@@ -520,7 +520,7 @@ void LaserOdom::rollover(TimeType stamp) {
         for (uint32_t i = 0; i < this->N_FEATURES; i++) {
             feature_count += this->prv_feature_points.at(i).points.size();
         }
-        if (feature_count >= (size_t)(this->param.n_edge + this->param.n_flat)) {
+        if (feature_count >= (size_t)(this->param.min_features)) {
             this->initialized = true;
         }
     }

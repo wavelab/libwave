@@ -68,24 +68,6 @@ void LoadParameters(const std::string &path, const std::string &filename, LaserO
 
     LoadSensorParameters(path, "sensor_model.yaml", params.sensor_params);
 
-    parser.addParam("variance_window", &(params.variance_window));
-    parser.addParam("variance_limit_rng", &(params.variance_limit_rng));
-    parser.addParam("variance_limit_int", &(params.variance_limit_int));
-    parser.addParam("angular_bins", &(params.angular_bins));
-    parser.addParam("min_intensity", &(params.min_intensity));
-    parser.addParam("max_intensity", &(params.max_intensity));
-    parser.addParam("occlusion_tol", &(params.occlusion_tol));
-    parser.addParam("occlusion_tol_2", &(params.occlusion_tol_2));
-    parser.addParam("parallel_tol", &(params.parallel_tol));
-    parser.addParam("edge_tol", &(params.edge_tol));
-    parser.addParam("flat_tol", &(params.flat_tol));
-    parser.addParam("int_edge_tol", &(params.int_edge_tol));
-    parser.addParam("int_flat_tol", &(params.int_flat_tol));
-    parser.addParam("n_edge", &(params.n_edge));
-    parser.addParam("n_flat", &(params.n_flat));
-    parser.addParam("n_int_edge", &(params.n_int_edge));
-    parser.addParam("knn", &(params.knn));
-    parser.addParam("key_radius", &(params.key_radius));
     parser.addParam("edge_map_density", &(params.edge_map_density));
     parser.addParam("flat_map_density", &(params.flat_map_density));
     parser.addParam("azimuth_tol", &(params.azimuth_tol));
@@ -245,9 +227,6 @@ TEST_F(OdomTestFile, VisualizeFeatures) {
     PointCloudDisplay display("odom");
     display.startSpin();
     LaserOdomParams params;
-    params.n_flat = 30;
-    params.n_edge = 40;
-    params.edge_tol = 2;
     LaserOdom odom(params);
     std::vector<PointXYZIR> vec;
     pcl::PointCloud<pcl::PointXYZI>::Ptr vizref(new pcl::PointCloud<pcl::PointXYZI>);

@@ -29,7 +29,8 @@ FeatureExtractor::FeatureExtractor(FeatureExtractorParams params, unlong n_ring)
 }
 
 void FeatureExtractor::setParams(FeatureExtractorParams params, unlong n_ring) {
-    this->param = params;
+    this->param = std::move(params);
+    this->n_ring = n_ring;
 
     if(!this->ready) {
         this->setup();
@@ -46,42 +47,50 @@ void FeatureExtractor::computeScores(const Tensorf &signals, const Vec<int> &ran
 
     for (uint32_t i = 0; i < this->n_ring; i++) {
         auto max = (int) range.at(i);
+        //resize
+        if (max < 11) {
+            continue;
+        }
+        this->scores.at(i).resize(this->param.N_SCORES, max - 10);
 
         for (ulong j = 0; j < this->param.N_SCORES; j++) {
             int s_idx = static_cast<int>(this->param.feature_definitions.at(j).criteria.front().signal);
 
             // todo have flexibility for different kernel sizes
-            if (max > 10) {
-                if (j < 3) {
-                    this->scores.at(i).device(*(this->thrddev)) =
-                      signals.at(i).slice(ar2({s_idx, 0}), ar2({1, max})).convolve(this->kernels.at(j), dims);
-                    // or if sample variance
-                } else {
-                    auto &N = this->param.variance_window;
-                    Eigen::Tensor<float, 1> Ninv(1);
-                    Ninv.setConstant(1.0 / (float) N);
-                    Eigen::Tensor<float, 1> Nm1inv(1);
-                    Nm1inv.setConstant(1.0 / (float) (N - 1));
+            if (j < 3) {
+                this->scores.at(i).slice(ar2({j, 0}), ar2({1, max - 10})).device(*(this->thrddev)) =
+                        signals.at(i).slice(ar2({s_idx, 0}), ar2({1, max})).convolve(this->kernels.at(j), dims);
+                // or if sample variance
+            } else {
+                auto &N = this->param.variance_window;
+                Eigen::Tensor<float, 1> Ninv(1);
+                Ninv.setConstant(1.0 / (float) N);
+                Eigen::Tensor<float, 1> Nm1inv(1);
+                Nm1inv.setConstant(1.0 / (float) (N - 1));
 
-                    // so called computational formula for sample variance
-                    this->scores.at(i)
-                      .device(*(this->thrddev)) =
-                      (signals.at(i).slice(ar2({s_idx, 0}), ar2({1, max})).square().convolve(sum_kernel, dims) -
-                       signals.at(i)
-                         .slice(ar2({s_idx, 0}), ar2({1, max}))
-                         .convolve(sum_kernel, dims)
-                         .square()
-                         .convolve(Ninv, dims))
-                        .convolve(Nm1inv, dims);
-                }
+                // so called computational formula for sample variance
+                this->scores.at(i).slice(ar2({j, 0}), ar2({1, max - 10}))
+                  .device(*(this->thrddev)) =
+                  (signals.at(i).slice(ar2({s_idx, 0}), ar2({1, max})).square().convolve(sum_kernel, dims) -
+                   signals.at(i)
+                     .slice(ar2({s_idx, 0}), ar2({1, max}))
+                     .convolve(sum_kernel, dims)
+                     .square()
+                     .convolve(Ninv, dims))
+                    .convolve(Nm1inv, dims);
             }
+
         }
     }
 }
 
 void FeatureExtractor::preFilter(const Tensorf &scan, const Tensorf &signals, const Vec<int> &range) {
     for (uint32_t i = 0; i < this->n_ring; i++) {
-        this->valid_pts.at(i) = Eigen::Tensor<bool, 1>(range.at(i));
+        if(range.at(i) < 11) {
+            this->valid_pts.at(i).resize(0);
+            continue;
+        }
+        this->valid_pts.at(i).resize(range.at(i));
         // Assume all points are valid until proven otherwise
         this->valid_pts.at(i).setConstant(true);
 
@@ -90,41 +99,41 @@ void FeatureExtractor::preFilter(const Tensorf &scan, const Tensorf &signals, co
         diff_kernel.setValues({1.f, -1.f});
 
         Eigen::Tensor<float, 1> rng_diff;
-        rng_diff.device(*(this->thrddev)) = signals.at(i).chip(0, 0).convolve(diff_kernel, dims);
+        rng_diff.resize(range.at(i) - 1);
+        rng_diff.device(*(this->thrddev)) = signals.at(i).slice(ar2({0, 0}), ar2({1, range.at(i)})).convolve(diff_kernel, dims).chip(0,0);
 
         Eigen::Tensor<bool, 1> oc_tol2_cond = rng_diff.abs() > this->param.occlusion_tol_2;
         Eigen::Tensor<bool, 1> ang_diff_cond =
-                scan.at(i).chip(4, 0).convolve(diff_kernel, dims) < this->param.occlusion_tol;
+                scan.at(i).slice(ar2({4, 0}), ar2({1, range.at(i)})).convolve(diff_kernel, dims).chip(0,0) < this->param.occlusion_tol;
 
         Eigen::Tensor<bool, 1> branch_1_cond = oc_tol2_cond && ang_diff_cond && (rng_diff > 0.0f);
         Eigen::Tensor<bool, 1> branch_2_cond = oc_tol2_cond && ang_diff_cond && (rng_diff < 0.0f);
 
         // This section excludes any points whose nearby surface is
         // near to parallel to the laser beam
-        Eigen::array<ptrdiff_t, 1> dims2({1});
-        Eigen::Tensor<float, 2> l2diffkernel(3, 2);
-        l2diffkernel.setValues({{1.0f, -1.0f}, {1.0f, -1.0f}, {1.0f, -1.0f}});
+        Eigen::array<ptrdiff_t, 2> dims2({0, 1});
+        Eigen::Tensor<float, 2> ex_diff_K(1, 2);
+        ex_diff_K.setValues({{1.f, -1.f}});
 
         Eigen::Tensor<float, 1> delforback;
+
+        delforback.resize(range.at(i) - 1);
         delforback.device(*(this->thrddev)) = scan.at(i)
-                .slice(ar2({0, 0}), ar2({3, range.at(i)}))
-                .convolve(l2diffkernel, dims2)
-                .square()
-                .sum(Earr<1>({0}));
+                .slice(ar2({0, 0}), ar2({3, range.at(i)})).convolve(ex_diff_K, dims2).square().sum(Earr<1>({0}));
 
-        Eigen::Tensor<bool, 1> raw_cond =
-                delforback > this->param.parallel_tol * signals.at(i).slice(ar2({0, 1}), ar2({1, range.at(i) - 1})).square();
+        Eigen::Tensor<float, 1> sqr_rng = signals.at(i).slice(ar2({0, 1}), ar2({1, range.at(i) - 2})).square().chip(0,0);
 
-        Eigen::Tensor<bool, 1> branch_3_cond;
-        branch_3_cond.device(*(this->thrddev)) = raw_cond.slice(ar1({0}), ar1({(int) raw_cond.dimension(0) - 1})) &&
-                                                raw_cond.slice(ar1({1}), ar1({(int) raw_cond.dimension(0) - 1}));
+        Eigen::Tensor<bool, 1> low_side_cond = delforback.slice(ar1({0}), ar1({range.at(i) - 2})) > this->param.parallel_tol * sqr_rng;
+        Eigen::Tensor<bool, 1> high_side_cond = delforback.slice(ar1({1}), ar1({range.at(i) - 2})) > this->param.parallel_tol * sqr_rng;
+
+        Eigen::Tensor<bool, 1> branch_3_cond = low_side_cond && high_side_cond;
 
         Eigen::Tensor<bool, 1> false_tensor(range.at(i) - 2);
         false_tensor.setConstant(false);
         this->valid_pts.at(i).slice(ar1({1}), ar1({range.at(i) - 2})) =
                 branch_3_cond.select(false_tensor, this->valid_pts.at(i).slice(ar1({1}), ar1({range.at(i) - 2})));
 
-        for (int j = 0; j + 1 < range.at(i); j++) {
+        for (int j = 1; j + 1 < range.at(i); j++) {
             if (branch_1_cond(j)) {
                 int start;
                 (j - 5) >= 0 ? start = j - 5 : start = 0;
@@ -187,6 +196,9 @@ void FeatureExtractor::buildFilteredScore(const Vec<int> &range) {
 
         for (uint32_t i = 0; i < this->n_ring; i++) {
             this->filtered_scores.at(k).at(i).clear();
+            if (range.at(i) < 11) {
+                continue;
+            }
             Eigen::Tensor<bool, 1> condition = this->valid_pts.at(i).slice(ar1({offset}), ar1({range.at(i) - 2 * offset}));
             for (uint32_t l = 0; l < def.criteria.size(); l++) {
                 condition = condition && compfuns.at(l)(this->scores.at(i).chip(k_idx.at(l), 0), *(def.criteria.at(l).threshold));
@@ -221,10 +233,12 @@ void FeatureExtractor::sortAndBin(const Tensorf &scan, TensorIdx &feature_indice
     cnt_in_bins.resize(this->param.angular_bins);
     for (uint32_t i = 0; i < this->param.N_FEATURES; i++) {
         for (unlong j = 0; j < this->n_ring; j++) {
-            feature_indices.at(i).at(j).clear();
             auto &def = this->param.feature_definitions.at(i);
             auto &pol = def.criteria.at(0).sel_pol;
             auto &filt_scores = this->filtered_scores.at(i).at(j);
+
+            feature_indices.at(i).at(j) = Eigen::Tensor<int, 1>(*(def.n_limit));
+            uint64_t feat_cnt = 0;
 
             Eigen::Tensor<bool, 1> valid_pts_copy;
             valid_pts_copy = this->valid_pts.at(j);
@@ -253,18 +267,24 @@ void FeatureExtractor::sortAndBin(const Tensorf &scan, TensorIdx &feature_indice
                     continue;
                 }
                 if (valid_pts_copy(score.first)) {
-                    feature_indices.at(i).at(j).emplace_back(score.first);
+                    feature_indices.at(i).at(j)(feat_cnt) = (int) score.first;
+                    feat_cnt++;
 
                     this->flagNearbyPoints(score.first, valid_pts_copy);
                     cnt_in_bins.at(bin)++;
                 }
             }
+            feature_indices.at(i).at(j) = feature_indices.at(i).at(j).slice(ar1({0}), ar1({feat_cnt}));
         }
     }
 }
 
 void FeatureExtractor::getFeatures(const Tensorf &scan, const Tensorf &signals,
                                    const std::vector<int> &range, TensorIdx &indices) {
+    if (scan.size() != this->n_ring || signals.size() != this->n_ring) {
+        throw std::length_error("mismatch between configured ring count and input scan/signals size");
+    }
+
     this->computeScores(signals, range);
     this->preFilter(scan, signals, range);
     this->buildFilteredScore(range);
