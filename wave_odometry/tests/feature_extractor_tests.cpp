@@ -222,18 +222,30 @@ TEST_F(FeatureExtractorTests, VisualizeFeatures) {
 
     extractor.getFeatures(this->scan, this->signals, this->range, this->indices);
 
-    std::vector<pcl::PointCloud<pcl::PointXYZI>> feature_viz;
-    feature_viz.resize(2);
-
-    for (uint32_t i = 0; i < 2; i++) {
-        feature_viz.at(i).clear();
-        for (uint32_t j = 0; j < 32, j++) {
-
-        }
-    }
+    pcl::PointCloud<pcl::PointXYZ> ref_cloud;
+    pcl::copyPointCloud(ref, ref_cloud);
+    std::vector<pcl::PointCloud<pcl::PointXYZ>> feature_viz;
+    feature_viz.resize(3);
 
     PointCloudDisplay display("LIDAR Features");
     display.startSpin();
+
+    for (uint32_t i = 0; i < 3; i++) {
+        feature_viz.at(i).clear();
+        for (uint32_t j = 0; j < 32; j++) {
+            for (int k = 0; k < this->indices.at(i).at(j).dimension(0); k++) {
+                pcl::PointXYZ pt;
+                pt.x = this->scan.at(j)(0, this->indices.at(i).at(j)(k));
+                pt.y = this->scan.at(j)(1, this->indices.at(i).at(j)(k));
+                pt.z = this->scan.at(j)(2, this->indices.at(i).at(j)(k));
+
+                feature_viz.at(i).push_back(pt);
+            }
+        }
+        display.addPointcloud(feature_viz.at(i).makeShared(), i);
+    }
+
+    cin.get();
 }
 
 }

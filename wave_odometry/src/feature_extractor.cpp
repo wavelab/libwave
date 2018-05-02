@@ -237,7 +237,8 @@ void FeatureExtractor::sortAndBin(const Tensorf &scan, TensorIdx &feature_indice
             auto &pol = def.criteria.at(0).sel_pol;
             auto &filt_scores = this->filtered_scores.at(i).at(j);
 
-            feature_indices.at(i).at(j) = Eigen::Tensor<int, 1>(*(def.n_limit));
+            //feature_indices.at(i).at(j) = Eigen::Tensor<int, 1>(*(def.n_limit));
+            Eigen::Tensor<int, 1> cur_feat_idx(*(def.n_limit));
             uint64_t feat_cnt = 0;
 
             Eigen::Tensor<bool, 1> valid_pts_copy;
@@ -260,21 +261,21 @@ void FeatureExtractor::sortAndBin(const Tensorf &scan, TensorIdx &feature_indice
                           });
             }
 
-            for (auto score : filt_scores) {
+            for (const auto &score : filt_scores) {
                 // Using data conversion to floor result
-                unlong bin = (unlong) scan.at(j)(3, score.first) * this->param.angular_bins;
+                auto bin = (unlong) (scan.at(j)(3, score.first) * this->param.angular_bins);
                 if (cnt_in_bins.at(bin) >= max_bin) {
                     continue;
                 }
                 if (valid_pts_copy(score.first)) {
-                    feature_indices.at(i).at(j)(feat_cnt) = (int) score.first;
+                    cur_feat_idx(feat_cnt) = (int) score.first;
                     feat_cnt++;
 
                     this->flagNearbyPoints(score.first, valid_pts_copy);
                     cnt_in_bins.at(bin)++;
                 }
             }
-            feature_indices.at(i).at(j) = feature_indices.at(i).at(j).slice(ar1({0}), ar1({feat_cnt}));
+            feature_indices.at(i).at(j) = cur_feat_idx.slice(ar1({0}), ar1({feat_cnt}));
         }
     }
 }
