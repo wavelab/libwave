@@ -94,37 +94,6 @@ void LoadParameters(const std::string &path, const std::string &filename, LaserO
 TEST(laserodom, Init) {
     LaserOdom odom(LaserOdomParams());
 }
-// This visualizes the sequence in order to check that my hacky packaging works
-// Should produce visualization coloured by encoder angle
-
-TEST(laserodom, VizSequence) {
-    // Playback in visualizer
-    PointCloudDisplay display("sequence");
-    display.startSpin();
-    // Put entire sequence in memory
-    std::vector<pcl::PointCloud<pcl::PointXYZI>> clds;
-    std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr> cldptr;
-    pcl::PointCloud<pcl::PointXYZI> temp;
-    for (int i = 0; i < sequence_length; i++) {
-        pcl::io::loadPCDFile(TEST_SEQUENCE_DIR + std::to_string(i) + ".pcd", temp);
-        clds.push_back(temp);
-        pcl::PointCloud<pcl::PointXYZI>::Ptr ptr(new pcl::PointCloud<pcl::PointXYZI>);
-
-        for (size_t j = 0; j < clds.at(i).size(); j++) {
-            float packed = clds.at(i).at(j).intensity;
-            uint16_t encoder = *static_cast<uint16_t *>(static_cast<void *>(&packed));
-            clds.at(i).at(j).intensity = static_cast<float>(encoder);
-        }
-        *ptr = clds.at(i);
-        cldptr.push_back(ptr);
-    }
-
-    for (int i = 0; i < sequence_length; i++) {
-        display.addPointcloud(cldptr.at(i), 0);
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    }
-    display.stopSpin();
-}
 
 // See if packing data into a float works as I expect
 TEST(Packing_test, intsintofloat) {
@@ -217,60 +186,6 @@ TEST(OdomTest, StraightLineGarage) {
     std::cout << "It took "
               << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count()
               << "ms.\n";
-}
-
-// This is less of a test and more something that can be
-// played with to see how changing parameters affects which
-// points are selected as keypoints
-
-TEST_F(OdomTestFile, VisualizeFeatures) {
-    PointCloudDisplay display("odom");
-    display.startSpin();
-    LaserOdomParams params;
-    LaserOdom odom(params);
-    std::vector<PointXYZIR> vec;
-    pcl::PointCloud<pcl::PointXYZI>::Ptr vizref(new pcl::PointCloud<pcl::PointXYZI>);
-    std::vector<pcl::PointCloud<pcl::PointXYZI>> feature_viz;
-    feature_viz.resize(odom.N_FEATURES);
-    int counter = 1;
-    auto timepoint = std::chrono::steady_clock::now();
-    for (auto iter = this->ref.begin(); iter < this->ref.end(); iter++) {
-        pcl::PointXYZI pt;
-        pt.x = iter->x;
-        pt.y = iter->y;
-        pt.z = iter->z;
-        pt.intensity = iter->intensity;
-        vizref->push_back(pt);
-        vec.push_back(*iter);
-        if (counter % 12 == 0) {
-            odom.addPoints(vec, 2000, timepoint);
-            vec.clear();
-        }
-        counter++;
-    }
-    // Now add points with a tick of 0 to trigger feature extraction
-    auto start = std::chrono::steady_clock::now();
-    odom.addPoints(vec, 0, timepoint);
-    auto extract_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start);
-    LOG_INFO("Feature extraction took %lu ms", extract_time.count());
-
-    for (uint16_t j = 0; j < odom.N_FEATURES; j++) {
-        feature_viz.at(j).clear();
-        for (uint16_t i = 0; i < 32; i++) {
-            for (auto iter = odom.feature_points.at(j).at(i).begin(); iter < odom.feature_points.at(j).at(i).end(); iter++) {
-                pcl::PointXYZI pt;
-                pt.x = iter->pt[0];
-                pt.y = iter->pt[1];
-                pt.z = iter->pt[2];
-                pt.intensity = j*20;
-                feature_viz.at(j).push_back(pt);
-            }
-        }
-        display.addPointcloud(feature_viz.at(j).makeShared(), j);
-        std::this_thread::sleep_for(std::chrono::seconds(5));
-    }
-    cin.get();
-    display.stopSpin();
 }
 
 TEST(Transforms, forward_backwards) {
