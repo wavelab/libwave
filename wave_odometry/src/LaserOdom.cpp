@@ -122,19 +122,19 @@ void LaserOdom::getTransformIndices(const uint32_t &tick, uint32_t &start, uint3
 
 void LaserOdom::transformToMap(
   const double *const pt, const uint32_t tick, double *output, uint32_t &k, uint32_t &kp1, double &tau) {
-    this->getTransformIndices(tick, k, kp1, tau);
-
-    Eigen::Matrix<double, 12, 12> hat, candle;
-    this->cv_vector.at(k).tau = &tau;
-    this->cv_vector.at(k).calculateStuff(hat, candle);
-
-    T_TYPE T_MAP_LIDAR_i = this->cur_trajectory.at(k).pose;
-
-    Eigen::Map<const Vec3> LIDAR_i_P(pt, 3, 1);
-    Eigen::Map<Vec3> MAP_P(output, 3, 1);
-    T_MAP_LIDAR_i.manifoldPlus(hat.block<6, 12>(0, 0) * this->cur_difference.at(k).hat_multiplier +
-                               candle.block<6, 12>(0, 0) * this->cur_difference.at(k).candle_multiplier);
-    T_MAP_LIDAR_i.transform(LIDAR_i_P, MAP_P);
+//    this->getTransformIndices(tick, k, kp1, tau);
+//
+//    Eigen::Matrix<double, 12, 12> hat, candle;
+//    this->cv_vector.at(k).tau = &tau;
+//    this->cv_vector.at(k).calculateStuff(hat, candle);
+//
+//    T_TYPE T_MAP_LIDAR_i = this->cur_trajectory.at(k).pose;
+//
+//    Eigen::Map<const Vec3> LIDAR_i_P(pt, 3, 1);
+//    Eigen::Map<Vec3> MAP_P(output, 3, 1);
+//    T_MAP_LIDAR_i.manifoldPlus(hat.block<6, 12>(0, 0) * this->cur_difference.at(k).hat_multiplier +
+//                               candle.block<6, 12>(0, 0) * this->cur_difference.at(k).candle_multiplier);
+//    T_MAP_LIDAR_i.transform(LIDAR_i_P, MAP_P);
 }
 
 void LaserOdom::transformToMap(const double *const pt, const uint32_t tick, double *output) {
@@ -145,25 +145,25 @@ void LaserOdom::transformToMap(const double *const pt, const uint32_t tick, doub
 }
 
 void LaserOdom::transformToCurLidar(const double *const pt, const uint32_t tick, double *output) {
-    uint32_t k, kp1;
-    double tau;
-    this->getTransformIndices(tick, k, kp1, tau);
-
-    Eigen::Matrix<double, 12, 12> hat, candle;
-    this->cv_vector.at(k).tau = &tau;
-    this->cv_vector.at(k).calculateStuff(hat, candle);
-
-    T_TYPE T_MAP_LIDAR_i = this->cur_trajectory.at(k).pose;
-
-    T_MAP_LIDAR_i.manifoldPlus(hat.block<6, 12>(0, 0) * this->cur_difference.at(k).hat_multiplier +
-                               candle.block<6, 12>(0, 0) * this->cur_difference.at(k).candle_multiplier);
-
-    Eigen::Map<const Vec3> LIDAR_I_P(pt, 3, 1);
-    Eigen::Map<Vec3> LIDAR_END_P(output, 3, 1);
-
-    auto &T_MAP_LIDAR_END = this->cur_trajectory.back().pose;
-
-    (T_MAP_LIDAR_END.transformInverse() * T_MAP_LIDAR_i).transform(LIDAR_I_P, LIDAR_END_P);
+//    uint32_t k, kp1;
+//    double tau;
+//    this->getTransformIndices(tick, k, kp1, tau);
+//
+//    Eigen::Matrix<double, 12, 12> hat, candle;
+//    this->cv_vector.at(k).tau = &tau;
+//    this->cv_vector.at(k).calculateStuff(hat, candle);
+//
+//    T_TYPE T_MAP_LIDAR_i = this->cur_trajectory.at(k).pose;
+//
+//    T_MAP_LIDAR_i.manifoldPlus(hat.block<6, 12>(0, 0) * this->cur_difference.at(k).hat_multiplier +
+//                               candle.block<6, 12>(0, 0) * this->cur_difference.at(k).candle_multiplier);
+//
+//    Eigen::Map<const Vec3> LIDAR_I_P(pt, 3, 1);
+//    Eigen::Map<Vec3> LIDAR_END_P(output, 3, 1);
+//
+//    auto &T_MAP_LIDAR_END = this->cur_trajectory.back().pose;
+//
+//    (T_MAP_LIDAR_END.transformInverse() * T_MAP_LIDAR_i).transform(LIDAR_I_P, LIDAR_END_P);
 }
 
 void LaserOdom::updateParams(const LaserOdomParams new_params) {
@@ -926,12 +926,12 @@ bool LaserOdom::match() {
 
 void LaserOdom::updateDifferences() {
     for (uint32_t i = 0; i < this->cur_difference.size(); i++) {
-        this->cur_difference.at(i).hat_multiplier.block<6, 1>(6, 0) = this->cur_trajectory.at(i).vel;
+        this->cur_difference.at(i).hat_multiplier.block<6, 1>(6, 0) = this->cur_trajectory.at(i).vel.cast<float>();
         this->cur_difference.at(i).candle_multiplier.block<6, 1>(0, 0) =
-          this->cur_trajectory.at(i + 1).pose.manifoldMinus(this->cur_trajectory.at(i).pose);
+          this->cur_trajectory.at(i + 1).pose.manifoldMinus(this->cur_trajectory.at(i).pose).cast<float>();
         this->cur_difference.at(i).candle_multiplier.block<6, 1>(6, 0) =
-          T_TYPE::SE3ApproxInvLeftJacobian(this->cur_difference.at(i).candle_multiplier.block<6, 1>(0, 0)) *
-          this->cur_trajectory.at(i + 1).vel;
+                (T_TYPE::SE3ApproxInvLeftJacobian(this->cur_difference.at(i).candle_multiplier.block<6, 1>(0, 0)) *
+          this->cur_trajectory.at(i + 1).vel.cast<float>()).cast<float>();
     }
 }
 

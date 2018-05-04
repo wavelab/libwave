@@ -192,7 +192,8 @@ class Transformation {
      * @param W The twist
      * @return Inverse Left SE3 Jacobian
      */
-    static Mat6 SE3ApproxInvLeftJacobian(const Vec6 &W);
+     template<typename OtherDerived>
+    static Eigen::Matrix<typename OtherDerived::Scalar, 6, 6> SE3ApproxInvLeftJacobian(const Eigen::MatrixBase<OtherDerived> &W);
 
     /**
      * Implements ^ operator mapping a vector to a skew symmetric matrix
