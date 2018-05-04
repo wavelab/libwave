@@ -16,9 +16,9 @@ struct SE3PointToPlaneGPObjects {
 
     mutable Transformation<Mat34, true> T_current;
     // Interpolation factors
-    Eigen::Matrix<double, 6, 12> hat;
+    Mat12 hat;
 
-    Eigen::Matrix<double, 6, 12> candle;
+    Mat12 candle;
 
     // Interpolation Jacobians
     mutable Eigen::Matrix<double, 6, 6> JT_Ti, JT_Tip1, JT_Wi, JT_Wip1;

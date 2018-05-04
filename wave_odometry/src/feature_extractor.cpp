@@ -12,12 +12,23 @@ void FeatureExtractor::setup() {
     this->kernels.resize(this->param.N_SCORES);
     this->filtered_scores.resize(this->param.N_FEATURES);
     for(uint32_t i = 0; i < this->param.N_FEATURES; i++) {
+        this->kernels.at(i).resize(11);
         this->filtered_scores.at(i).resize(this->n_ring);
     }
 
-    this->kernels.at(0) = Eigen::TensorMap<Eigen::Tensor<float, 1>>(loam_kernel, 11);
-    this->kernels.at(1) = Eigen::TensorMap<Eigen::Tensor<float, 1>>(LoG_kernel, 11);
-    this->kernels.at(2) = Eigen::TensorMap<Eigen::Tensor<float, 1>>(FoG_kernel, 11);
+    this->kernels.at(0).setValues({1, 1, 1, 1, 1, -10, 1, 1, 1, 1, 1});
+    this->kernels.at(1).setValues({0.000232391821040,
+                                  0.001842097682135,
+                                  0.034270489647107,
+                                  0.166944943945706,
+                                  -0.009954755288609,
+                                  -0.386583206270711,
+                                  -0.009954755288609,
+                                  0.166944943945706,
+                                  0.034270489647107,
+                                  0.001842097682135,
+                                  0.000232391821040});
+    this->kernels.at(2).setValues({0, 0.003571428, -0.0380952, 0.2, -0.8, 0, 0.8, -0.2, 0.0380952, -0.003571428, 0});
     this->kernels.at(3).setConstant(1.0);
     this->kernels.at(4).setConstant(1.0);
 
@@ -58,7 +69,7 @@ void FeatureExtractor::computeScores(const Tensorf &signals, const Vec<int> &ran
 
             // todo have flexibility for different kernel sizes
             if (j < 3) {
-                this->scores.at(i).slice(ar2({j, 0}), ar2({1, max - 10})).device(*(this->thrddev)) =
+                this->scores.at(i).slice(ar2({static_cast<long>(j), 0}), ar2({1, max - 10})).device(*(this->thrddev)) =
                         signals.at(i).slice(ar2({s_idx, 0}), ar2({1, max})).convolve(this->kernels.at(j), dims);
                 // or if sample variance
             } else {
@@ -69,7 +80,7 @@ void FeatureExtractor::computeScores(const Tensorf &signals, const Vec<int> &ran
                 Nm1inv.setConstant(1.0 / (float) (N - 1));
 
                 // so called computational formula for sample variance
-                this->scores.at(i).slice(ar2({j, 0}), ar2({1, max - 10}))
+                this->scores.at(i).slice(ar2({static_cast<long>(j), 0}), ar2({1, max - 10}))
                   .device(*(this->thrddev)) =
                   (signals.at(i).slice(ar2({s_idx, 0}), ar2({1, max})).square().convolve(sum_kernel, dims) -
                    signals.at(i)
@@ -183,9 +194,9 @@ void FeatureExtractor::buildFilteredScore(const Vec<int> &range) {
         k_idx.resize(def.criteria.size());
         for (uint32_t i = 0; i < def.criteria.size(); i++) {
             switch (def.criteria.at(i).sel_pol) {
-                case FeatureExtractorParams::SelectionPolicy::NEAR_ZERO: compfuns.at(i) = near_zero_score; break;
-                case FeatureExtractorParams::SelectionPolicy::HIGH_POS: compfuns.at(i) = high_pos_score; break;
-                case FeatureExtractorParams::SelectionPolicy::HIGH_NEG: compfuns.at(i) = high_neg_score; break;
+                case SelectionPolicy::NEAR_ZERO: compfuns.at(i) = near_zero_score; break;
+                case SelectionPolicy::HIGH_POS: compfuns.at(i) = high_pos_score; break;
+                case SelectionPolicy::HIGH_NEG: compfuns.at(i) = high_neg_score; break;
                 default: throw std::out_of_range("Invalid Comparison Function");
             }
             k_idx.at(i) = static_cast<uint32_t>(def.criteria.at(i).kernel);
@@ -247,7 +258,7 @@ void FeatureExtractor::sortAndBin(const Tensorf &scan, TensorIdx &feature_indice
             unlong max_bin = *(def.n_limit) / this->param.angular_bins;
             std::fill(cnt_in_bins.begin(), cnt_in_bins.end(), 0);
 
-            if (pol != FeatureExtractorParams::SelectionPolicy::HIGH_POS) {
+            if (pol != SelectionPolicy::HIGH_POS) {
                 std::sort(filt_scores.begin(),
                           filt_scores.end(),
                           [](const std::pair<unlong, double> lhs, const std::pair<unlong, double> rhs) {
@@ -275,7 +286,7 @@ void FeatureExtractor::sortAndBin(const Tensorf &scan, TensorIdx &feature_indice
                     cnt_in_bins.at(bin)++;
                 }
             }
-            feature_indices.at(i).at(j) = cur_feat_idx.slice(ar1({0}), ar1({feat_cnt}));
+            feature_indices.at(i).at(j) = cur_feat_idx.slice(ar1({0}), ar1({static_cast<long>(feat_cnt)}));
         }
     }
 }

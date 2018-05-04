@@ -95,9 +95,20 @@ class Transformation {
                             const Transformation<InType, InApprox> &T_kp1,
                             const Vec6 &twist_k,
                             const Vec6 &twist_kp1,
-                            const Eigen::Matrix<double, 6, 12> &hat,
-                            const Eigen::Matrix<double, 6, 12> &candle,
-                            Transformation<Other, O_approx> &T_int);
+                            const Mat12 &hat,
+                            const Mat12 &candle,
+                            Transformation<Other, O_approx> &T_int,
+                            Vec6* interpTwist = nullptr);
+
+    template <typename InType, typename Other, bool InApprox, bool O_approx>
+    static void interpolate(const Transformation<InType, InApprox> &T_k,
+                            const Transformation<InType, InApprox> &T_kp1,
+                            const Vec6 &twist_k,
+                            const Vec6 &twist_kp1,
+                            const Mat4 &hat,
+                            const Mat4 &candle,
+                            Transformation<Other, O_approx> &T_int,
+                            Vec6* interpTwist = nullptr);
 
     /**
      * Returns an interpolated tranform at time t where t is between t_k and t_kp1.
@@ -115,8 +126,8 @@ class Transformation {
                                         const Transformation<InType, InApprox> &T_kp1,
                                         const Vec6 &twist_k,
                                         const Vec6 &twist_kp1,
-                                        const Eigen::Matrix<double, 6, 12> &hat,
-                                        const Eigen::Matrix<double, 6, 12> &candle,
+                                        const Mat12 &hat,
+                                        const Mat12 &candle,
                                         Transformation<Other, O_approx> &Tint,
                                         Mat6 &J_Tk,
                                         Mat6 &J_Tkp1,

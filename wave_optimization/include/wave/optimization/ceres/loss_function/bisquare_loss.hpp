@@ -7,11 +7,10 @@ namespace wave {
 
 class BisquareLoss : public ceres::LossFunction {
  public:
-    explicit BisquareLoss(double k) : k_(k), k2_(k*k) {}
+    explicit BisquareLoss(double k) : k2_(k*k) {}
     virtual void Evaluate(double ip, double* op) const;
 
  private:
-    const double k_;
     const double k2_;
 };
 

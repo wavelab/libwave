@@ -6,8 +6,8 @@ namespace wave {
 SE3PointToLineGPRed::SE3PointToLineGPRed(const double *const p,
                                          const double *const pA,
                                          const double *const pB,
-                                         const Eigen::Matrix<double, 6, 12> &hat,
-                                         const Eigen::Matrix<double, 6, 12> &candle,
+                                         const Mat12 &hat,
+                                         const Mat12 &candle,
                                          const Mat3 &CovZ,
                                          bool calculate_weight)
     : pt(p), ptA(pA), ptB(pB), hat(hat), candle(candle) {

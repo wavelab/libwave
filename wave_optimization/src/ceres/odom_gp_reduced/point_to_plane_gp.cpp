@@ -6,8 +6,8 @@ SE3PointToPlaneGPRed::SE3PointToPlaneGPRed(const double *const p,
                                      const double *const pA,
                                      const double *const pB,
                                      const double *const pC,
-                                     const Eigen::Matrix<double, 6, 12> &hat,
-                                     const Eigen::Matrix<double, 6, 12> &candle,
+                                     const Mat12 &hat,
+                                     const Mat12 &candle,
                                      const Mat3 &covZ,
                                      bool use_weighting)
     : pt(p), ptA(pA), ptB(pB), ptC(pC), hat(hat), candle(candle) {

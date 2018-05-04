@@ -216,7 +216,7 @@ class LaserOdom {
     std::vector<wave_kinematics::ConstantVelocityPrior,
                 Eigen::aligned_allocator<wave_kinematics::ConstantVelocityPrior>>
       cv_vector;
-    std::vector<double> trajectory_stamps;
+    std::vector<float> trajectory_stamps;
 
     Mat6 sqrtinfo;
     TimeType prv_time, cur_time;

@@ -26,9 +26,9 @@ class SE3PointToPlaneGPRed : public ceres::SizedCostFunction<1, 12, 12, 6> {
 
     mutable Transformation<Eigen::Matrix<double, 3, 4>, true> T_current;
     // Interpolation factors
-    const Eigen::Matrix<double, 6, 12> hat;
+    const Mat12 hat;
 
-    const Eigen::Matrix<double, 6, 12> candle;
+    const Mat12 candle;
 
     // Interpolation Jacobians
     mutable Eigen::Matrix<double, 6, 6> JT_Ti, JT_Tip1, JT_Wi, JT_Wip1;
@@ -46,8 +46,8 @@ class SE3PointToPlaneGPRed : public ceres::SizedCostFunction<1, 12, 12, 6> {
                     const double *const pA,
                     const double *const pB,
                     const double *const pC,
-                    const Eigen::Matrix<double, 6, 12> &JT_Tk,
-                    const Eigen::Matrix<double, 6, 12> &JT_Tkp1,
+                    const Mat12 &JT_Tk,
+                    const Mat12 &JT_Tkp1,
                     const Mat3 &covZ,
                     bool use_weighting);
 

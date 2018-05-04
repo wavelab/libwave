@@ -101,9 +101,10 @@ void Transformation<Derived, approximate>::interpolate(const Transformation<InTy
                                                        const Transformation<InType, InApprox> &T_kp1,
                                                        const Vec6 &twist_k,
                                                        const Vec6 &twist_kp1,
-                                                       const Eigen::Matrix<double, 6, 12> &hat,
-                                                       const Eigen::Matrix<double, 6, 12> &candle,
-                                                       Transformation<Other, O_approx> &T_int) {
+                                                       const Mat12 &hat,
+                                                       const Mat12 &candle,
+                                                       Transformation<Other, O_approx> &T_int,
+                                                       Vec6* interpTwist) {
     Mat6 J_left;
     auto eps = T_kp1.manifoldMinus(T_k);
 
@@ -116,6 +117,38 @@ void Transformation<Derived, approximate>::interpolate(const Transformation<InTy
     T_int = T_k;
     T_int.manifoldPlus(hat.block<6, 6>(0, 6) * twist_k + candle.block<6, 6>(0, 0) * eps +
                        candle.block<6, 6>(0, 6) * J_left * twist_kp1);
+    if (interpTwist) {
+        *interpTwist = hat.block<6, 6>(6, 6) * twist_k + candle.block<6, 6>(6, 0) * eps +
+                       candle.block<6, 6>(6, 6) * J_left * twist_kp1;
+    }
+}
+
+template <typename Derived, bool approximate>
+template<typename InType, typename Other, bool InApprox, bool O_approx>
+void Transformation<Derived, approximate>::interpolate(const Transformation<InType, InApprox> &T_k,
+                                                       const Transformation<InType, InApprox> &T_kp1,
+                                                       const Vec6 &twist_k,
+                                                       const Vec6 &twist_kp1,
+                                                       const Mat4 &hat,
+                                                       const Mat4 &candle,
+                                                       Transformation<Other, O_approx> &T_int,
+                                                       Vec6* interpTwist) {
+    Mat6 J_left;
+    auto eps = T_kp1.manifoldMinus(T_k);
+
+    if (approximate) {
+        J_left = Transformation<>::SE3ApproxInvLeftJacobian(eps);
+    } else {
+        J_left = Transformation<>::SE3LeftJacobian(eps).inverse();
+    }
+
+    T_int = T_k;
+    T_int.manifoldPlus(hat(0, 1) * twist_k + candle(0, 0) * eps +
+                       candle(0, 1) * J_left * twist_kp1);
+    if (interpTwist) {
+        *interpTwist = hat(1, 1) * twist_k + candle(1, 0) * eps +
+                       candle(1, 1) * J_left * twist_kp1;
+    }
 }
 
 template <typename Derived, bool approximate>
@@ -124,8 +157,8 @@ void Transformation<Derived, approximate>::interpolateAndJacobians(const Transfo
                                                                    const Transformation<InType, InApprox> &T_kp1,
                                                                    const Vec6 &twist_k,
                                                                    const Vec6 &twist_kp1,
-                                                                   const Eigen::Matrix<double, 6, 12> &hat,
-                                                                   const Eigen::Matrix<double, 6, 12> &candle,
+                                                                   const Mat12 &hat,
+                                                                   const Mat12 &candle,
                                                                    Transformation<Other, O_approx> &T_int,
                                                                    Mat6 &J_Tk,
                                                                    Mat6 &J_Tkp1,
@@ -651,7 +684,7 @@ Vec6 Transformation<Derived, approximate>::manifoldMinusAndJacobian(const Transf
                                             this->storage.template block<3, 3>(0, 0) *
                                               skewSymmetric3(T2inv.storage.template block<3, 1>(0, 3)) *
                                               T.storage.template block<3, 3>(0, 0).transpose();
-    J_comp_inv.template block(0, 3, 3, 3).setZero();
+    J_comp_inv.template block<3, 3>(0, 3).setZero();
 
     J_left = J_logm;
     J_right = J_logm * J_comp_inv;

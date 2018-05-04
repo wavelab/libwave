@@ -15,8 +15,8 @@
 
 #include <unsupported/Eigen/CXX11/Tensor>
 
-#include "wave/odometry/odometry_types.hpp"
 #include "wave/geometry/transformation.hpp"
+#include "wave/odometry/odometry_types.hpp"
 
 namespace wave {
 
@@ -42,15 +42,26 @@ class Transformer {
     TransformerParams params;
 
     /// Prepares any required interpolated states
-    void update(const std::vector<Trajectory, Eigen::aligned_allocator<Trajectory>> &trajectory);
+    void update(const std::vector<Trajectory, Eigen::aligned_allocator<Trajectory>> &trajectory,
+                const std::vector<float> &stamps);
 
-    /// Points should be a 4xN tensor, xyz + tick fraction
+    /** Points should be a 4xN tensor, xyz + tick fraction
+     * It is assumed the points are given in the sensor frame at the time that each one was observed.
+     * They will be transformed to the sensor frame at the beginning of the scan
+     * @param points
+     * @param points_transformed
+     * @param scan_offset
+     */
     void transformToStart(const Eigen::Tensor<float, 2> &points, Eigen::Tensor<float, 2> &points_transformed, int scan_offset);
     void transformToEnd(const Eigen::Tensor<float, 2> &points, Eigen::Tensor<float, 2> &points_transformed, int scan_offset);
  private:
     std::vector<Trajectory, Eigen::aligned_allocator<Trajectory>> aug_trajectories;
     std::vector<TrajDifference, Eigen::aligned_allocator<TrajDifference>> differences;
+    std::vector<float> stamps;
     std::vector<float> indices;
+
+    // With approximation used, each block of the interpolation factors is a scalar multiple of identity
+    void calculateInterpolationFactors(const float &t1, const float &t2, const float &tau, Mat4 &candle, Mat4 &hat);
 
 };
 

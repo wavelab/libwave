@@ -38,9 +38,9 @@ class SE3PointToLineGPRed : public ceres::SizedCostFunction<2, 12, 12, 6> {
     mutable T_TYPE T_current;
 
     // Interpolation factors
-    const Eigen::Matrix<double, 6, 12> hat;
+    const Mat12 hat;
 
-    const Eigen::Matrix<double, 6, 12> candle;
+    const Mat12 candle;
 
     // Interpolation Jacobians
     mutable Eigen::Matrix<double, 6, 6> JT_Ti, JT_Tip1, JT_Wi, JT_Wip1;
@@ -66,8 +66,8 @@ class SE3PointToLineGPRed : public ceres::SizedCostFunction<2, 12, 12, 6> {
     SE3PointToLineGPRed(const double *const p,
                    const double *const pA,
                    const double *const pB,
-                   const Eigen::Matrix<double, 6, 12> &hat,
-                   const Eigen::Matrix<double, 6, 12> &candle,
+                   const Mat12 &hat,
+                   const Mat12 &candle,
                    const Mat3 &CovZ,
                    bool calculate_weight);
 

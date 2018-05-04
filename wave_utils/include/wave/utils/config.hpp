@@ -51,7 +51,7 @@ struct ConfigParamBase {
     bool optional;    //!< if true, it is not an error if the key is not found
 
  protected:
-    ~ConfigParamBase() = default;  // disallow deletion through pointer to base
+    virtual ~ConfigParamBase() = default;
 };
 
 /** Represents a parameter to be parsed in the yaml file */

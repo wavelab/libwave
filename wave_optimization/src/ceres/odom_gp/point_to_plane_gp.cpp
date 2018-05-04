@@ -42,16 +42,16 @@ bool SE3PointToPlaneGP::Evaluate(double const *const *parameters, double *residu
 
     if (jacobians) {
         Transformation<Mat34, true>::interpolateAndJacobians<>(Tk,
-                                                                                                       Tkp1,
-                                                                                                       vel_k,
-                                                                                                       vel_kp1,
-                                                                                                       this->objects.hat,
-                                                                                                       this->objects.candle,
-                                                                                                       this->objects.T_current,
-                                                                                                       this->objects.JT_Ti,
-                                                                                                       this->objects.JT_Tip1,
-                                                                                                       this->objects.JT_Wi,
-                                                                                                       this->objects.JT_Wip1);
+                                                               Tkp1,
+                                                               vel_k,
+                                                               vel_kp1,
+                                                               this->objects.hat,
+                                                               this->objects.candle,
+                                                               this->objects.T_current,
+                                                               this->objects.JT_Ti,
+                                                               this->objects.JT_Tip1,
+                                                               this->objects.JT_Wi,
+                                                               this->objects.JT_Wip1);
     } else {
         Transformation<Mat34, true>::interpolate<>(
           Tk, Tkp1, vel_k, vel_kp1, this->objects.hat, this->objects.candle, this->objects.T_current);
