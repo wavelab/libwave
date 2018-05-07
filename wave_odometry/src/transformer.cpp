@@ -5,20 +5,25 @@ namespace wave {
 void Transformer::update(const std::vector<Trajectory, Eigen::aligned_allocator<Trajectory>> &trajectory,
                          const std::vector<float> &stamps) {
     this->aug_trajectories = trajectory;
-    this->stamps = stamps;
-    this->indices.resize(this->params.n_scans * (this->params.traj_resolution - 1) + 1);
-    std::generate(this->indices.begin(), this->indices.end(), [n = 0]() mutable { return (float) n++; });
+    this->traj_stamps = stamps;
+    this->scan_indices.resize(this->params.n_scans);
+    uint32_t n = 0;
+    for (auto &val : this->scan_indices) {
+        val = n;
+        n += this->params.traj_resolution - 1;
+    }
 
     uint32_t i = 0;
     Mat4 hat, candle;
-    while (i + 1 < this->indices.size()) {
+    while (i + 1 < this->traj_stamps.size()) {
         Vec6 pose_diff = this->aug_trajectories.at(i + 1).pose.manifoldMinus(this->aug_trajectories.at(i).pose);
         Vec6 vel_diff = this->aug_trajectories.at(i + 1).vel - this->aug_trajectories.at(i).vel;
         if (pose_diff.block<3, 1>(0, 0).cwiseAbs().sum() > this->params.delRTol ||
             vel_diff.block<3, 1>(3, 0).cwiseAbs().sum() > this->params.delVTol ||
             vel_diff.block<3, 1>(0, 0).cwiseAbs().sum() > this->params.delWTol) {
+            float new_stamp = (this->traj_stamps.at(i + 1) + this->traj_stamps.at(i)) * 0.5f;
             this->calculateInterpolationFactors(
-              this->stamps.at(i), this->stamps.at(i + 1), this->stamps.at(i + 1) - this->stamps.at(i), candle, hat);
+              this->traj_stamps.at(i), this->traj_stamps.at(i + 1), new_stamp, candle, hat);
 
             Trajectory interp;
             T_TYPE::interpolate(this->aug_trajectories.at(i).pose,
@@ -30,16 +35,19 @@ void Transformer::update(const std::vector<Trajectory, Eigen::aligned_allocator<
                                 interp.pose,
                                 &(interp.vel));
 
-            this->aug_trajectories.insert(this->aug_trajectories.begin() + i, interp);
-            this->stamps.insert(this->stamps.begin() + i, (this->stamps.at(i + 1) + this->stamps.at(i)) * 0.5f);
-            this->indices.insert(std::next(this->indices.begin(), i),
-                                 (this->indices.at(i + 1) - this->indices.at(i)) / 2.0f);
+            for (auto &idx : this->scan_indices) {
+                if (this->traj_stamps.at(idx) > new_stamp) {
+                    ++idx;
+                }
+            }
+            this->aug_trajectories.insert(this->aug_trajectories.begin() + i + 1, interp);
+            this->traj_stamps.insert(this->traj_stamps.begin() + i + 1, new_stamp);
         } else {
             ++i;
         }
     }
     // Now precalculate the differences between each transform
-    this->differences.resize(this->indices.size() - 1);
+    this->differences.resize(this->traj_stamps.size() - 1);
     i = 0;
     for (auto &diff : this->differences) {
         diff.hat_multiplier.block<6, 1>(0, 0).setZero();
@@ -49,53 +57,70 @@ void Transformer::update(const std::vector<Trajectory, Eigen::aligned_allocator<
         diff.candle_multiplier.block<6, 1>(6, 0) =
           T_TYPE::SE3ApproxInvLeftJacobian(diff.candle_multiplier.block<6, 1>(0, 0)).cast<float>() *
           this->aug_trajectories.at(i + 1).vel.cast<float>();
+        ++i;
+    }
+
+    /** At this point, all of the transforms are with respect to a common frame, now, in order to save a transform
+     * inversion and multiplication later, all transforms be recast to be
+     * with respect to the transform at the start of the scan
+     * DANGER DANGER, this means that the states are no longer proper, because the twist doesn't get transformed, but it
+     * doesn't matter because the differences have already been computed.
+     */
+    i = 0;
+    for (uint32_t j = 0; j < this->aug_trajectories.size(); j++) {
+        this->aug_trajectories.at(j).pose =
+          this->aug_trajectories.at(this->scan_indices.at(i)).pose.transformInverse() *
+          this->aug_trajectories.at(j).pose;
+        if (j + 1 == this->scan_indices.at(i)) {
+            ++i;
+        }
     }
 }
 
-void Transformer::transformToStart(const Eigen::Tensor<float, 2> &points,
-                                   Eigen::Tensor<float, 2> &points_transformed,
-                                   int scan_offset) {
+void Transformer::transformToStart(const Eigen::Tensor<float, 2> &points, Eigen::Tensor<float, 2> &points_transformed) {
     points_transformed.resize(3, points.dimensions().at(1));
 
-    // todo possibly look at tensorizing this, but may not help dt memory
     Mat4 hat, candle;
     Mat34f trans;
     Vec6f tan_vec;
     Eigen::Map<const VecXf> pt(points.data(), points.dimension(0), points.dimension(1));
     Eigen::Map<VecXf> ptT(points_transformed.data(), points_transformed.dimension(0), points_transformed.dimension(1));
     for (long i = 0; i < points.dimension(1); i++) {
-        auto idx = std::lower_bound(this->stamps.begin(), this->stamps.end(), points(3, i));
+        auto idx = std::lower_bound(this->traj_stamps.begin(), this->traj_stamps.end(), points(3, i));
+        auto index = static_cast<uint32_t>(idx - this->traj_stamps.begin());
         this->calculateInterpolationFactors(*idx, *(idx + 1), points(3, i), candle, hat);
-        uint32_t index = idx - this->stamps.begin();
         tan_vec = hat(0, 1) * this->differences.at(index).hat_multiplier.block<6, 1>(6, 0) +
                   candle(0, 0) * this->differences.at(index).candle_multiplier.block<6, 1>(0, 0) +
                   candle(0, 1) * this->differences.at(index).candle_multiplier.block<6, 1>(6, 0);
         T_TYPE::expMap(tan_vec, trans);
-        ptT.block<3, 1>(0, i).noalias() = trans.block<3, 3>(0, 0) * pt.block<3, 1>(0, i) + trans.block<3, 1>(0, 3);
+        auto &ref = this->aug_trajectories.at(index).pose.storage;
+        ptT.block<3, 1>(0, i).noalias() =
+          trans.block<3, 3>(0, 0) *
+            (ref.block<3, 3>(0, 0).cast<float>() * pt.block<3, 1>(0, i) + ref.block<3, 1>(0, 3).cast<float>()) +
+          trans.block<3, 1>(0, 3);
     }
 }
 
-void Transformer::transformToEnd(const Eigen::Tensor<float, 2> &points,
-                                 Eigen::Tensor<float, 2> &points_transformed,
-                                 int scan_offset) {
+void Transformer::transformToEnd(const Eigen::Tensor<float, 2> &points, Eigen::Tensor<float, 2> &points_transformed) {
     points_transformed.resize(3, points.dimensions().at(1));
 
-    // todo possibly look at tensorizing this, but may not help dt memory
     Mat4 hat, candle;
     Mat34f trans;
     Vec6f tan_vec;
     Eigen::Map<const VecXf> pt(points.data(), points.dimension(0), points.dimension(1));
     Eigen::Map<VecXf> ptT(points_transformed.data(), points_transformed.dimension(0), points_transformed.dimension(1));
     for (long i = 0; i < points.dimension(1); i++) {
-        auto idx = std::lower_bound(this->stamps.begin(), this->stamps.end(), points(3, i));
+        auto idx = std::lower_bound(this->traj_stamps.begin(), this->traj_stamps.end(), points(3, i));
+        auto index = static_cast<uint32_t>(idx - this->traj_stamps.begin());
         this->calculateInterpolationFactors(*idx, *(idx + 1), points(3, i), candle, hat);
-        uint32_t index = idx - this->stamps.begin();
         tan_vec = hat(0, 1) * this->differences.at(index).hat_multiplier.block<6, 1>(6, 0) +
                   candle(0, 0) * this->differences.at(index).candle_multiplier.block<6, 1>(0, 0) +
                   candle(0, 1) * this->differences.at(index).candle_multiplier.block<6, 1>(6, 0);
         T_TYPE::expMap(tan_vec, trans);
-        ptT.block<3, 1>(0, i).noalias() = trans.block<3, 3>(0, 0).transpose() * pt.block<3, 1>(0, i) -
-                                          trans.block<3, 3>(0, 0).transpose() * trans.block<3, 1>(0, 3);
+        auto &ref = this->aug_trajectories.at(index).pose.storage;
+
+        ptT.block<3, 1>(0, i).noalias() = ref.block<3, 3>(0,0).transpose().cast<float>() *
+                (trans.block<3, 3>(0,0).transpose() *(pt.block<3, 1>(0,i) - trans.block<3, 1>(0,3)) - ref.block<3, 1>(0, 3).cast<float>());
     }
 }
 

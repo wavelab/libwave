@@ -18,13 +18,18 @@ WAVE_ADD_MODULE(${PROJECT_NAME}
 IF(BUILD_TESTING)
     WAVE_ADD_TEST(${PROJECT_NAME}_tests
             tests/laserodom_tests.cpp)
+    TARGET_LINK_LIBRARIES(
+            ${PROJECT_NAME}_tests
+            ${PROJECT_NAME})
+
     WAVE_ADD_TEST(feature_extraction_tests
             tests/feature_extractor_tests.cpp)
-    TARGET_LINK_LIBRARIES(
-        ${PROJECT_NAME}_tests
-        ${PROJECT_NAME})
-
     TARGET_LINK_LIBRARIES(feature_extraction_tests
+            ${PROJECT_NAME})
+
+    WAVE_ADD_TEST(transformer_tests
+            tests/transformer_tests.cpp)
+    TARGET_LINK_LIBRARIES(transformer_tests
             ${PROJECT_NAME})
 
     # Copy the test data

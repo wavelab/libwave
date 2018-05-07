@@ -37,7 +37,7 @@ struct TransformerParams {
 class Transformer {
  public:
     Transformer() = delete;
-    Transformer(TransformerParams params = TransformerParams()) : params(params) {}
+    Transformer(TransformerParams params) : params(params) {}
 
     TransformerParams params;
 
@@ -45,26 +45,31 @@ class Transformer {
     void update(const std::vector<Trajectory, Eigen::aligned_allocator<Trajectory>> &trajectory,
                 const std::vector<float> &stamps);
 
-    /** Points should be a 4xN tensor, xyz + tick fraction
+    /** Points should be a 4xN tensor, xyz + timestamp
      * It is assumed the points are given in the sensor frame at the time that each one was observed.
      * They will be transformed to the sensor frame at the beginning of the scan
      * @param points
      * @param points_transformed
      * @param scan_offset
      */
-    void transformToStart(const Eigen::Tensor<float, 2> &points, Eigen::Tensor<float, 2> &points_transformed, int scan_offset);
-    void transformToEnd(const Eigen::Tensor<float, 2> &points, Eigen::Tensor<float, 2> &points_transformed, int scan_offset);
+    void transformToStart(const Eigen::Tensor<float, 2> &points,
+                          Eigen::Tensor<float, 2> &points_transformed);
+    void transformToEnd(const Eigen::Tensor<float, 2> &points,
+                        Eigen::Tensor<float, 2> &points_transformed);
+
  private:
+    /// Contains the trajectories optimized over plus any extras required to meet difference criteria
     std::vector<Trajectory, Eigen::aligned_allocator<Trajectory>> aug_trajectories;
+    /// Container for reusable differences.
     std::vector<TrajDifference, Eigen::aligned_allocator<TrajDifference>> differences;
-    std::vector<float> scan_stamps;
-    std::vector<float> indices;
+    /// Given a scan index, what is the transform index in the trajectories container?
+    std::vector<uint32_t> scan_indices;
+    /// Timestamp for each of the trajectories in the container.
+    std::vector<float> traj_stamps;
 
     // With approximation used, each block of the interpolation factors is a scalar multiple of identity
     void calculateInterpolationFactors(const float &t1, const float &t2, const float &tau, Mat4 &candle, Mat4 &hat);
-
 };
-
 }
 
-#endif //WAVE_TRANSFORMER_HPP
+#endif  // WAVE_TRANSFORMER_HPP
