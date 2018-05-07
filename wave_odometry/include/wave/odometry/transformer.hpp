@@ -57,7 +57,7 @@ class Transformer {
  private:
     std::vector<Trajectory, Eigen::aligned_allocator<Trajectory>> aug_trajectories;
     std::vector<TrajDifference, Eigen::aligned_allocator<TrajDifference>> differences;
-    std::vector<float> stamps;
+    std::vector<float> scan_stamps;
     std::vector<float> indices;
 
     // With approximation used, each block of the interpolation factors is a scalar multiple of identity
