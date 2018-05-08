@@ -100,6 +100,20 @@ class ICPMatcher : public Matcher<PCLPointCloudPtr> {
     /** Reads the `params` member and updates other members */
     void updateFromParams();
 
+    /**
+     * Calculates a covariance estimate based on Lu and Milios Scan Matching
+     */
+    void estimateLUM();
+    void estimateLUMold();
+
+    /**
+     * Calculates a covariance estimate based on Censi
+     */
+    void estimateCensi();
+
+ private:
+    ICPMatcherParams params;
+
     /** An instance of the ICP class from PCL */
     pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
     /** An instance of a PCL voxel filter. It is used to downsample input. */
@@ -119,19 +133,9 @@ class ICPMatcher : public Matcher<PCLPointCloudPtr> {
     PCLPointCloudPtr downsampled_target =
       boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
 
-    /**
-     * Calculates a covariance estimate based on Lu and Milios Scan Matching
-     */
-    void estimateLUM();
-    void estimateLUMold();
-
-    /**
-     * Calculates a covariance estimate based on Censi
-     */
-    void estimateCensi();
-
- private:
-    ICPMatcherParams params;
+    // Set true when `ref` or `target` changed; next match needs to use new ones
+    bool ref_updated = true;
+    bool target_updated = true;
 };
 
 /** @} group matching */

@@ -30,8 +30,8 @@ ICPMatcherParams::ICPMatcherParams(const std::string &config_path) {
 }
 
 ICPMatcher::ICPMatcher(const ICPMatcherParams &params) : params(params) {
-    this->ref =
-    this->target = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+    this->ref = this->target =
+      boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
     this->final = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
     this->downsampled_ref =
       boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
@@ -59,15 +59,22 @@ void ICPMatcher::updateFromParams() {
 }
 
 void ICPMatcher::setRef(const PCLPointCloudPtr &ref) {
-    this->ref = ref;
+    if (ref != this->ref) {
+        this->ref = ref;
+        this->ref_updated = true;
+    }
 }
 
 void ICPMatcher::setTarget(const PCLPointCloudPtr &target) {
-    this->target = target;
+    if (target != this->target) {
+        this->target = target;
+        this->target_updated = true;
+    }
 }
 
 bool ICPMatcher::match() {
     if (this->params.res > 0) {
+        // Use downsampling
         if (this->params.multiscale_steps > 0) {
             Affine3 running_transform = Affine3::Identity();
             for (int i = this->params.multiscale_steps; i >= 0; i--) {
@@ -99,13 +106,19 @@ bool ICPMatcher::match() {
         } else {
             this->filter.setLeafSize(
               this->params.res, this->params.res, this->params.res);
-            this->filter.setInputCloud(this->ref);
-            this->filter.filter(*(this->downsampled_ref));
-            this->icp.setInputSource(this->downsampled_ref);
 
-            this->filter.setInputCloud(this->target);
-            this->filter.filter(*(this->downsampled_target));
-            this->icp.setInputTarget(this->downsampled_target);
+            if (this->ref_updated) {
+                this->filter.setInputCloud(this->ref);
+                this->filter.filter(*(this->downsampled_ref));
+                this->icp.setInputSource(this->downsampled_ref);
+                this->ref_updated = false;
+            }
+            if (this->target_updated) {
+                this->filter.setInputCloud(this->target);
+                this->filter.filter(*(this->downsampled_target));
+                this->icp.setInputTarget(this->downsampled_target);
+                this->target_updated = false;
+            }
 
             this->icp.align(*(this->final));
             if (icp.hasConverged()) {
@@ -115,8 +128,15 @@ bool ICPMatcher::match() {
             }
         }
     } else {
-        this->icp.setInputTarget(this->target);
-        this->icp.setInputSource(this->ref);
+        // No downsampling
+        if (this->target_updated) {
+            this->icp.setInputTarget(this->target);
+            this->target_updated = false;
+        }
+        if (this->ref_updated) {
+            this->icp.setInputSource(this->ref);
+            this->ref_updated = false;
+        }
         this->icp.align(*(this->final));
         if (this->icp.hasConverged()) {
             this->result.matrix() = icp.getFinalTransformation().cast<double>();
