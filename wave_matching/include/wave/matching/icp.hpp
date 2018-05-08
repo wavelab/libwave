@@ -71,8 +71,11 @@ class ICPMatcher : public Matcher<PCLPointCloudPtr> {
      * downsampled using a voxel filter, the argument is the edge length of
      * each voxel. If resolution is non-positive, no downsampling is used.
      */
-    explicit ICPMatcher(ICPMatcherParams params1);
+    explicit ICPMatcher(const ICPMatcherParams &params);
     ~ICPMatcher();
+
+    /** Sets the parameters used by subsequent matches */
+    void setParams(const ICPMatcherParams &params);
 
     /** sets the reference pointcloud for the matcher
      * @param ref - Pointcloud
@@ -93,9 +96,10 @@ class ICPMatcher : public Matcher<PCLPointCloudPtr> {
      */
     void estimateInfo();
 
-    ICPMatcherParams params;
-
  private:
+    /** Reads the `params` member and updates other members */
+    void updateFromParams();
+
     /** An instance of the ICP class from PCL */
     pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
     /** An instance of a PCL voxel filter. It is used to downsample input. */
@@ -117,6 +121,9 @@ class ICPMatcher : public Matcher<PCLPointCloudPtr> {
      * Calculates a covariance estimate based on Censi
      */
     void estimateCensi();
+
+ private:
+    ICPMatcherParams params;
 };
 
 /** @} group matching */

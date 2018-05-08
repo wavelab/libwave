@@ -29,7 +29,7 @@ ICPMatcherParams::ICPMatcherParams(const std::string &config_path) {
     }
 }
 
-ICPMatcher::ICPMatcher(ICPMatcherParams params1) : params(params1) {
+ICPMatcher::ICPMatcher(const ICPMatcherParams &params) : params(params) {
     this->ref = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
     this->target = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
     this->final = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
@@ -38,16 +38,7 @@ ICPMatcher::ICPMatcher(ICPMatcherParams params1) : params(params1) {
     this->downsampled_target =
       boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
 
-    if (this->params.res > 0) {
-        this->filter.setLeafSize(
-          this->params.res, this->params.res, this->params.res);
-    }
-    this->resolution = this->params.res;
-
-    this->icp.setMaxCorrespondenceDistance(this->params.max_corr);
-    this->icp.setMaximumIterations(this->params.max_iter);
-    this->icp.setTransformationEpsilon(this->params.t_eps);
-    this->icp.setEuclideanFitnessEpsilon(this->params.fit_eps);
+    this->updateFromParams();
 }
 
 ICPMatcher::~ICPMatcher() {
@@ -62,6 +53,23 @@ ICPMatcher::~ICPMatcher() {
     if (this->final) {
         this->final.reset();
     }
+}
+
+void ICPMatcher::setParams(const ICPMatcherParams &params) {
+    this->params = params;
+}
+
+void ICPMatcher::updateFromParams() {
+    if (this->params.res > 0) {
+        this->filter.setLeafSize(
+          this->params.res, this->params.res, this->params.res);
+    }
+    this->resolution = this->params.res;
+
+    this->icp.setMaxCorrespondenceDistance(this->params.max_corr);
+    this->icp.setMaximumIterations(this->params.max_iter);
+    this->icp.setTransformationEpsilon(this->params.t_eps);
+    this->icp.setEuclideanFitnessEpsilon(this->params.fit_eps);
 }
 
 void ICPMatcher::setRef(const PCLPointCloudPtr &ref) {
