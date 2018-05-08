@@ -30,7 +30,7 @@ ICPMatcherParams::ICPMatcherParams(const std::string &config_path) {
 }
 
 ICPMatcher::ICPMatcher(const ICPMatcherParams &params) : params(params) {
-    this->ref = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+    this->ref =
     this->target = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
     this->final = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
     this->downsampled_ref =
@@ -39,20 +39,6 @@ ICPMatcher::ICPMatcher(const ICPMatcherParams &params) : params(params) {
       boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
 
     this->updateFromParams();
-}
-
-ICPMatcher::~ICPMatcher() {
-    if (this->ref) {
-        this->ref.reset();
-        this->downsampled_ref.reset();
-    }
-    if (this->target) {
-        this->target.reset();
-        this->downsampled_target.reset();
-    }
-    if (this->final) {
-        this->final.reset();
-    }
 }
 
 void ICPMatcher::setParams(const ICPMatcherParams &params) {

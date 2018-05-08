@@ -72,7 +72,7 @@ class ICPMatcher : public Matcher<PCLPointCloudPtr> {
      * each voxel. If resolution is non-positive, no downsampling is used.
      */
     explicit ICPMatcher(const ICPMatcherParams &params);
-    ~ICPMatcher();
+    ~ICPMatcher() = default;
 
     /** Sets the parameters used by subsequent matches */
     void setParams(const ICPMatcherParams &params);
@@ -109,7 +109,15 @@ class ICPMatcher : public Matcher<PCLPointCloudPtr> {
      * is not exposed. PCL's ICP class creates an aligned verison of the target
      * pointcloud after matching, so the "final" member is used as a sink for
      * it. */
-    PCLPointCloudPtr ref, target, final, downsampled_ref, downsampled_target;
+    PCLPointCloudPtr ref = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+    PCLPointCloudPtr target =
+      boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+    PCLPointCloudPtr final =
+      boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+    PCLPointCloudPtr downsampled_ref =
+      boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+    PCLPointCloudPtr downsampled_target =
+      boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
 
     /**
      * Calculates a covariance estimate based on Lu and Milios Scan Matching
