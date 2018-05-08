@@ -387,6 +387,23 @@ void Transformation<T_str, approximate>::expMap(const Eigen::MatrixBase<VType> &
     }
 }
 
+template <typename T_str, bool approximate>
+template <typename VType, typename MType>
+void Transformation<T_str, approximate>::expMap1st(const Eigen::MatrixBase<VType> &W, Eigen::MatrixBase<MType> &retval) {
+    EIGEN_STATIC_ASSERT_VECTOR_SPECIFIC_SIZE(Eigen::MatrixBase<VType>, 6)
+    EIGEN_STATIC_ASSERT_MATRIX_SPECIFIC_SIZE(Eigen::MatrixBase<MType>, 3, 4)
+
+    using VScalar = typename VType::Scalar;
+    using MScalar = typename MType::Scalar;
+
+    Eigen::Matrix<VScalar, 3, 3> wx;
+    skewSymmetric3(W.template block<3, 1>(0, 0), wx);
+
+    // 1st order taylor expansion
+    retval.template block<3, 3>(0, 0).noalias() = (Eigen::Matrix<VScalar, 3, 3>::Identity() + wx).template cast<MScalar>();
+    retval.template block<3, 1>(0, 3).noalias() = ((Eigen::Matrix<VScalar, 3, 3>::Identity() + 0.5 * wx) * W.template block<3, 1>(3, 0)).template cast<MScalar>();
+}
+
 template <typename Derived, bool approximate>
 Mat6 Transformation<Derived, approximate>::expMapAdjoint(const Vec6 &W) {
     double wn = W.template block<3, 1>(0, 0).norm();

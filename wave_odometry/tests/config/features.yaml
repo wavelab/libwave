@@ -17,3 +17,4 @@ n_flat: 100           #  How many plane features to pick out per ring
 n_int_edge: 0         #  How many intensity edges to pick out per ring
 knn: 5                #  1/2 nearest neighbours for computing curvature
 key_radius: 5         #  minimum number of points between keypoints on the same laser ring
+eigen_threads: 4

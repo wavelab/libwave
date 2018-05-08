@@ -86,7 +86,6 @@ class FeatureExtractor {
 
     FeatureExtractorParams param;
 
- private:
     bool ready = false;
     void setup();
 

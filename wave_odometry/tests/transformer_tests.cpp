@@ -87,8 +87,8 @@ TEST(Transformer, transformViz) {
     params.traj_resolution = 3;
     uint32_t cnt = params.n_scans * (params.traj_resolution - 1) + 1;
 
-    Vec6 acc;
-    acc << 0, 0, 1.5, 3, 0, 0;
+    Vec6 vel;
+    vel << 0, 0, 1.5, 3, 0, 2;
 
     stamps.resize(cnt);
     trajectory.resize(cnt);
@@ -97,9 +97,9 @@ TEST(Transformer, transformViz) {
         stamps.at(i) = static_cast<float>(i) * 0.1f;
         if (i != 0) {
             trajectory.at(i).pose = trajectory.at(i - 1).pose;
-            trajectory.at(i).pose.manifoldPlus(trajectory.at(i-1).vel * 0.1);
+            trajectory.at(i).pose.manifoldPlus(vel * 0.1);
         }
-        trajectory.at(i).vel = static_cast<double>(i) * 0.1 * acc;
+        trajectory.at(i).vel = vel;
     }
     Transformer transformer(params);
     transformer.update(trajectory, stamps);

@@ -31,6 +31,8 @@
 #include <Eigen/Eigenvalues>
 #include <unsupported/Eigen/CXX11/Tensor>
 
+#include <nabo/nabo.h>
+
 #include <ceres/ceres.h>
 #include <ceres/normal_prior.h>
 #include <ceres/rotation.h>
@@ -44,6 +46,7 @@
 #include "wave/odometry/PointXYZIT.hpp"
 #include "wave/odometry/odometry_types.hpp"
 #include "wave/odometry/sensor_model.hpp"
+#include "wave/odometry/transformer.hpp"
 #include "wave/optimization/ceres/odom_gp_twist/point_to_line_gp.hpp"
 #include "wave/optimization/ceres/odom_gp_twist/point_to_plane_gp.hpp"
 #include "wave/optimization/ceres/odom_gp_twist/constant_velocity.hpp"

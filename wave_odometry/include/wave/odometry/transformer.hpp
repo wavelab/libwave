@@ -13,6 +13,7 @@
 #define EIGEN_USE_THREADS
 #endif
 
+#include <omp.h>
 #include <unsupported/Eigen/CXX11/Tensor>
 
 #include "wave/geometry/transformation.hpp"

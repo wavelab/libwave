@@ -32,7 +32,20 @@ IF(BUILD_TESTING)
     TARGET_LINK_LIBRARIES(transformer_tests
             ${PROJECT_NAME})
 
+    WAVE_ADD_BENCHMARK(feature_benchmark
+            tests/feature_extractor_benchmark.cpp)
+    TARGET_LINK_LIBRARIES(feature_benchmark
+            ${PROJECT_NAME})
+
+    WAVE_ADD_BENCHMARK(transformer_benchmark
+            tests/transformer_benchmark.cpp)
+    TARGET_LINK_LIBRARIES(transformer_benchmark
+            ${PROJECT_NAME})
+
     # Copy the test data
     FILE(COPY tests/data DESTINATION ${PROJECT_BINARY_DIR}/tests)
     FILE(COPY tests/config DESTINATION ${PROJECT_BINARY_DIR}/tests)
+
+    FILE(COPY tests/data DESTINATION ${PROJECT_BINARY_DIR}/benchmarks)
+    FILE(COPY tests/config DESTINATION ${PROJECT_BINARY_DIR}/benchmarks)
 ENDIF(BUILD_TESTING)

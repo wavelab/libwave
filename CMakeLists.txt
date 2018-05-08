@@ -35,7 +35,7 @@ OPTION(EXPORT_BUILD
 OPTION(BUILD_TESTING "Build tests" ON)
 OPTION(BUILD_BENCHMARKS
     "Build benchmarks for some components. Requires google benchmark package."
-    OFF)
+    ON)
 
 
 # Find all dependencies here, and ensure they have IMPORTED targets
@@ -52,6 +52,12 @@ FIND_PACKAGE(Ceres 1.13)
 FIND_PACKAGE(GTSAM)
 FIND_PACKAGE(PythonLibs 2.7 REQUIRED)
 FIND_PACKAGE(GeographicLib 1.49)
+FIND_PACKAGE(OpenMP)
+if (OPENMP_FOUND)
+    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+    set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
+endif()
 
 # Where dependencies do not provide IMPORTED targets, define them
 INCLUDE(cmake/ImportEigen3.cmake)

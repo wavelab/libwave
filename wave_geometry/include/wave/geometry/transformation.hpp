@@ -156,6 +156,16 @@ class Transformation {
     template <typename VType, typename MType>
     static void expMap(const Eigen::MatrixBase<VType> &W, Eigen::MatrixBase<MType> &retval);
 
+    /** Computes a first order approximation of exp map of the input and computes the Jacobian
+     * of the exp map wrt @f$ w @f$.
+     *
+     * @param[in] W The input vector we are taking the expmap of.
+     * @param[in]TOL Tolerance to switch between exact and taylor approximation (avoids singularity at zero)
+     * @f$ W @f$.
+     */
+    template <typename VType, typename MType>
+    static void expMap1st(const Eigen::MatrixBase<VType> &W, Eigen::MatrixBase<MType> &retval);
+
     /**
      * Computes the exponential map of the for the adjoint
      * @param W The input vector we are taking the expmap of.
