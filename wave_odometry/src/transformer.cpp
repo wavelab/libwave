@@ -83,12 +83,19 @@ void Transformer::transformToStart(const Eigen::Tensor<float, 2> &points, Eigen:
     Mat4 hat, candle;
     Mat34f trans;
     Vec6f tan_vec;
-    Eigen::Map<const VecXf> pt(points.data(), points.dimension(0), points.dimension(1));
-    Eigen::Map<VecXf> ptT(points_transformed.data(), points_transformed.dimension(0), points_transformed.dimension(1));
+    Eigen::Map<const MatXf> pt(points.data(), points.dimension(0), points.dimension(1));
+    Eigen::Map<MatXf> ptT(points_transformed.data(), points_transformed.dimension(0), points_transformed.dimension(1));
     for (long i = 0; i < points.dimension(1); i++) {
-        auto idx = std::lower_bound(this->traj_stamps.begin(), this->traj_stamps.end(), points(3, i));
+        float time = points(3, i);
+        auto idx = std::lower_bound(this->traj_stamps.begin(), this->traj_stamps.end(), time);
         auto index = static_cast<uint32_t>(idx - this->traj_stamps.begin());
-        this->calculateInterpolationFactors(*idx, *(idx + 1), points(3, i), candle, hat);
+        if (time < this->traj_stamps.at(index)) {
+            if (index == 0) {
+                throw std::out_of_range("Invalid stamps in points");
+            }
+            index--;
+        }
+        this->calculateInterpolationFactors(this->traj_stamps.at(index), this->traj_stamps.at(index + 1), points(3, i), candle, hat);
         tan_vec = hat(0, 1) * this->differences.at(index).hat_multiplier.block<6, 1>(6, 0) +
                   candle(0, 0) * this->differences.at(index).candle_multiplier.block<6, 1>(0, 0) +
                   candle(0, 1) * this->differences.at(index).candle_multiplier.block<6, 1>(6, 0);
