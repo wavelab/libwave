@@ -70,12 +70,12 @@ static void BM_TRANSFORM_UPDATE(benchmark::State &state) {
 
 BENCHMARK(BM_TRANSFORM_UPDATE);
 
-static void BM_TRANSFORM_1K(benchmark::State &state) {
+static void BM_TRANSFORM_N(benchmark::State &state) {
     std::vector<wave::Trajectory, Eigen::aligned_allocator<wave::Trajectory>> trajectory;
     std::vector<float> stamps;
     wave::TransformerParams params;
     params.n_scans = 4;
-    long n_pts = 250;
+    long n_pts = state.range(0) / params.n_scans;
     Eigen::Tensor<float, 2> scan(4, params.n_scans * n_pts);
     Eigen::Tensor<float, 2> tscan(4, params.n_scans * n_pts);
 
@@ -89,70 +89,7 @@ static void BM_TRANSFORM_1K(benchmark::State &state) {
     }
 }
 
-BENCHMARK(BM_TRANSFORM_1K);
-
-static void BM_TRANSFORM_10K(benchmark::State &state) {
-    std::vector<wave::Trajectory, Eigen::aligned_allocator<wave::Trajectory>> trajectory;
-    std::vector<float> stamps;
-    wave::TransformerParams params;
-    params.n_scans = 4;
-    long n_pts = 2500;
-    Eigen::Tensor<float, 2> scan(4, params.n_scans * n_pts);
-    Eigen::Tensor<float, 2> tscan(4, params.n_scans * n_pts);
-
-    setup(trajectory, stamps, params, scan, n_pts);
-
-    wave::Transformer transformer(params);
-    transformer.update(trajectory, stamps);
-
-    for (auto _ : state) {
-        transformer.transformToStart(scan, tscan);
-    }
-}
-
-BENCHMARK(BM_TRANSFORM_10K);
-
-static void BM_TRANSFORM_100K(benchmark::State &state) {
-    std::vector<wave::Trajectory, Eigen::aligned_allocator<wave::Trajectory>> trajectory;
-    std::vector<float> stamps;
-    wave::TransformerParams params;
-    params.n_scans = 4;
-    long n_pts = 25000;
-    Eigen::Tensor<float, 2> scan(4, params.n_scans * n_pts);
-    Eigen::Tensor<float, 2> tscan(4, params.n_scans * n_pts);
-
-    setup(trajectory, stamps, params, scan, n_pts);
-
-    wave::Transformer transformer(params);
-    transformer.update(trajectory, stamps);
-
-    for (auto _ : state) {
-        transformer.transformToStart(scan, tscan);
-    }
-}
-
-BENCHMARK(BM_TRANSFORM_100K);
-
-static void BM_TRANSFORM_1M(benchmark::State &state) {
-    std::vector<wave::Trajectory, Eigen::aligned_allocator<wave::Trajectory>> trajectory;
-    std::vector<float> stamps;
-    wave::TransformerParams params;
-    params.n_scans = 4;
-    long n_pts = 250000;
-    Eigen::Tensor<float, 2> scan(4, params.n_scans * n_pts);
-    Eigen::Tensor<float, 2> tscan(4, params.n_scans * n_pts);
-
-    setup(trajectory, stamps, params, scan, n_pts);
-
-    wave::Transformer transformer(params);
-    transformer.update(trajectory, stamps);
-
-    for (auto _ : state) {
-        transformer.transformToStart(scan, tscan);
-    }
-}
-
-BENCHMARK(BM_TRANSFORM_1M);
+BENCHMARK(BM_TRANSFORM_N)->RangeMultiplier(10)->Range(1000, 1000000);
 
 // Ensure that StateIterator provides all the necessary typedefs required to
 // instantiate std::iterator_traits.

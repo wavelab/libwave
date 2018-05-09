@@ -245,7 +245,7 @@ class LaserOdom {
 
     std::vector<std::vector<std::pair<uint64_t, AssociationStatus>>> feature_association;
 
-    std::vector<std::shared_ptr<kd_tree_t>> feature_idx;
+    std::vector<std::shared_ptr<kd_tree_t<double>>> feature_idx;
 
     std::vector<ResidualType> feature_residuals;
 };

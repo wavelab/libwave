@@ -1,13 +1,14 @@
-#ifndef WAVE_KDTREETYPE_HPP
-#define WAVE_KDTREETYPE_HPP
+#ifndef WAVE_NANOFLANNTESTTYPE_HPP
+#define WAVE_NANOFLANNTESTTYPE_HPP
 
+#include <Eigen/Eigen>
 #include <nanoflann.hpp>
 
 namespace wave {
 
 template<typename T>
 struct FeatureKDTree {
-    std::vector<std::array<T, 3>> points;
+    Eigen::Matrix<T, Eigen::Dynamic, Eigen::Dynamic> points;
 
     // Must return the number of data points
     inline size_t kdtree_get_point_count() const {
@@ -20,11 +21,11 @@ struct FeatureKDTree {
     //  "if/else's" are actually solved at compile time.
     inline T kdtree_get_pt(const size_t idx, int dim) const {
         if (dim == 0)
-            return points[idx][0];
+            return points(0, idx);
         else if (dim == 1)
-            return points[idx][1];
+            return points(1, idx);
         else
-            return points[idx][2];
+            return points(2, idx);
     }
 
     // Optional bounding-box computation: return false to default to a standard
@@ -48,4 +49,4 @@ using kd_tree_t = nanoflann::KDTreeSingleIndexAdaptor<
 
 }
 
-#endif //WAVE_KDTREETYPE_HPP
+#endif //WAVE_NANOFLANNTESTTYPE_HPP

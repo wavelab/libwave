@@ -40,7 +40,7 @@ OPTION(BUILD_BENCHMARKS
 
 # Find all dependencies here, and ensure they have IMPORTED targets
 
-# Require Eigen 3.2.92, also called 3.3 beta-1, since it's in xenial
+# Require Eigen 3.3.4
 FIND_PACKAGE(Eigen3 3.3.4 REQUIRED)
 FIND_PACKAGE(Boost 1.54.0 COMPONENTS system filesystem)
 FIND_PACKAGE(PCL 1.8 COMPONENTS
@@ -48,7 +48,7 @@ FIND_PACKAGE(PCL 1.8 COMPONENTS
 FIND_PACKAGE(kindr)
 FIND_PACKAGE(OpenCV 3.2.0)
 FIND_PACKAGE(yaml-cpp REQUIRED)
-FIND_PACKAGE(Ceres 1.13)
+FIND_PACKAGE(Ceres 1.14)
 FIND_PACKAGE(GTSAM)
 FIND_PACKAGE(PythonLibs 2.7 REQUIRED)
 FIND_PACKAGE(GeographicLib 1.49)
@@ -58,6 +58,10 @@ if (OPENMP_FOUND)
     set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
     set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
 endif()
+FIND_PACKAGE(libnabo)
+
+MESSAGE(STATUS ${libnabo_INCLUDE_DIRS})
+MESSAGE(STATUS ${libnabo_LIBRARIES})
 
 # Where dependencies do not provide IMPORTED targets, define them
 INCLUDE(cmake/ImportEigen3.cmake)
@@ -66,6 +70,7 @@ INCLUDE(cmake/ImportPCL.cmake)
 INCLUDE(cmake/ImportKindr.cmake)
 INCLUDE(cmake/ImportYaml-cpp.cmake)
 INCLUDE(cmake/ImportCeres.cmake)
+INCLUDE(cmake/ImportLibnabo.cmake)
 
 # Optionally build tests. `gtest` is included with this project
 IF(BUILD_TESTING)

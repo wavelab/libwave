@@ -7,6 +7,7 @@ WAVE_ADD_MODULE(${PROJECT_NAME}
     wave::kinematics
     wave::matching
     PCL::PCL
+    libnabo::libnabo
     SOURCES
     src/weighting_functions.cpp
     src/integrals.cpp
@@ -40,6 +41,11 @@ IF(BUILD_TESTING)
     WAVE_ADD_BENCHMARK(transformer_benchmark
             tests/transformer_benchmark.cpp)
     TARGET_LINK_LIBRARIES(transformer_benchmark
+            ${PROJECT_NAME})
+
+    WAVE_ADD_BENCHMARK(nn_benchmark
+            tests/nn_benchmark.cpp)
+    TARGET_LINK_LIBRARIES(nn_benchmark
             ${PROJECT_NAME})
 
     # Copy the test data
