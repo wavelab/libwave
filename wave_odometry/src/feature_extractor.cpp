@@ -3,10 +3,6 @@
 namespace wave {
 
 void FeatureExtractor::setup() {
-    this->threadpool = std::unique_ptr<Eigen::ThreadPool>(new Eigen::ThreadPool(this->param.eigen_threads));
-    this->thrddev = std::unique_ptr<Eigen::ThreadPoolDevice>(
-      new Eigen::ThreadPoolDevice(this->threadpool.get(), this->param.eigen_threads));
-
     this->valid_pts.resize(this->n_ring);
     this->scores.resize(this->n_ring);
     this->kernels.resize(this->param.N_SCORES);
@@ -57,7 +53,7 @@ void FeatureExtractor::computeScores(const Tensorf &signals, const Vec<int> &ran
     Eigen::array<ptrdiff_t, 1> dims({1});
     Eigen::Tensor<float, 1> sum_kernel(this->param.variance_window);
     sum_kernel.setConstant(1.0);
-
+#pragma omp parallel for
     for (uint32_t i = 0; i < this->n_ring; i++) {
         auto max = (int) range.at(i);
         // resize
@@ -71,7 +67,7 @@ void FeatureExtractor::computeScores(const Tensorf &signals, const Vec<int> &ran
 
             // todo have flexibility for different kernel sizes
             if (j < 3) {
-                this->scores.at(i).slice(ar2({static_cast<long>(j), 0}), ar2({1, max - 10})).device(*(this->thrddev)) =
+                this->scores.at(i).slice(ar2({static_cast<long>(j), 0}), ar2({1, max - 10})) =
                   signals.at(i).slice(ar2({s_idx, 0}), ar2({1, max})).convolve(this->kernels.at(j), dims);
                 // or if sample variance
             } else {
@@ -82,7 +78,7 @@ void FeatureExtractor::computeScores(const Tensorf &signals, const Vec<int> &ran
                 Nm1inv.setConstant(1.0 / (float) (N - 1));
 
                 // so called computational formula for sample variance
-                this->scores.at(i).slice(ar2({static_cast<long>(j), 0}), ar2({1, max - 10})).device(*(this->thrddev)) =
+                this->scores.at(i).slice(ar2({static_cast<long>(j), 0}), ar2({1, max - 10})) =
                   (signals.at(i).slice(ar2({s_idx, 0}), ar2({1, max})).square().convolve(sum_kernel, dims) -
                    signals.at(i)
                      .slice(ar2({s_idx, 0}), ar2({1, max}))
@@ -96,6 +92,7 @@ void FeatureExtractor::computeScores(const Tensorf &signals, const Vec<int> &ran
 }
 
 void FeatureExtractor::preFilter(const Tensorf &scan, const Tensorf &signals, const Vec<int> &range) {
+#pragma omp parallel for
     for (uint32_t i = 0; i < this->n_ring; i++) {
         if (range.at(i) < 11) {
             this->valid_pts.at(i).resize(0);
@@ -110,19 +107,21 @@ void FeatureExtractor::preFilter(const Tensorf &scan, const Tensorf &signals, co
         diff_kernel.setValues({1.f, -1.f});
 
         Eigen::Tensor<float, 1> rng_diff(range.at(i) - 1);
-        rng_diff.device(*(this->thrddev)) =
+        rng_diff =
           signals.at(i).slice(ar2({0, 0}), ar2({1, range.at(i)})).convolve(diff_kernel, dims).chip(0, 0);
 
         Eigen::Tensor<bool, 1> oc_tol2_cond = rng_diff.abs() > this->param.occlusion_tol_2;
         Eigen::Tensor<bool, 1> ang_diff_cond(range.at(i) - 1);
-        ang_diff_cond.device(*(this->thrddev)) =
+        ang_diff_cond =
           scan.at(i).slice(ar2({4, 0}), ar2({1, range.at(i)})).convolve(diff_kernel, dims).chip(0, 0) <
           this->param.occlusion_tol;
 
         Eigen::Tensor<bool, 1> branch_1_cond(range.at(i) - 1);
         Eigen::Tensor<bool, 1> branch_2_cond(range.at(i) - 1);
-        branch_1_cond.device(*(this->thrddev)) = oc_tol2_cond && ang_diff_cond && (rng_diff > 0.0f);
-        branch_2_cond.device(*(this->thrddev)) = oc_tol2_cond && ang_diff_cond && (rng_diff < 0.0f);
+        branch_1_cond =
+                oc_tol2_cond && ang_diff_cond && (rng_diff > 0.0f);
+        branch_2_cond =
+                oc_tol2_cond && ang_diff_cond && (rng_diff < 0.0f);
 
         // This section excludes any points whose nearby surface is
         // near to parallel to the laser beam
@@ -132,21 +131,21 @@ void FeatureExtractor::preFilter(const Tensorf &scan, const Tensorf &signals, co
 
         Eigen::Tensor<float, 1> delforback(range.at(i) - 1);
 
-        delforback.device(*(this->thrddev)) =
+        delforback =
           scan.at(i).slice(ar2({0, 0}), ar2({3, range.at(i)})).convolve(ex_diff_K, dims2).square().sum(Earr<1>({0}));
 
         Eigen::Tensor<float, 1> sqr_rng(range.at(i) - 2);
-        sqr_rng.device(*(this->thrddev)) =
+        sqr_rng =
           signals.at(i).slice(ar2({0, 1}), ar2({1, range.at(i) - 2})).square().chip(0, 0);
 
         Eigen::Tensor<bool, 1> low_side_cond(range.at(i) - 2);
-        low_side_cond.device(*(this->thrddev)) =
+        low_side_cond =
           delforback.slice(ar1({0}), ar1({range.at(i) - 2})) > this->param.parallel_tol * sqr_rng;
         Eigen::Tensor<bool, 1> high_side_cond(range.at(i) - 2);
         high_side_cond = delforback.slice(ar1({1}), ar1({range.at(i) - 2})) > this->param.parallel_tol * sqr_rng;
 
         Eigen::Tensor<bool, 1> branch_3_cond(range.at(i) - 2);
-        branch_3_cond.device(*(this->thrddev)) = low_side_cond && high_side_cond;
+        branch_3_cond = low_side_cond && high_side_cond;
 
         Eigen::Tensor<bool, 1> false_tensor(range.at(i) - 2);
         false_tensor.setConstant(false);
@@ -192,6 +191,7 @@ Eigen::Tensor<bool, 1> high_neg_score(const Eigen::Tensor<float, 1> &score, floa
 }
 
 void FeatureExtractor::buildFilteredScore(const Vec<int> &range) {
+#pragma omp parallel for
     for (uint32_t k = 0; k < this->param.N_FEATURES; k++) {
         auto &def = this->param.feature_definitions.at(k);
         // get primary score index by kernel type
@@ -222,8 +222,7 @@ void FeatureExtractor::buildFilteredScore(const Vec<int> &range) {
             Eigen::Tensor<bool, 1> condition =
               this->valid_pts.at(i).slice(ar1({offset}), ar1({range.at(i) - 2 * offset}));
             for (uint32_t l = 0; l < def.criteria.size(); l++) {
-                condition.device(*(this->thrddev)) =
-                  condition && compfuns.at(l)(this->scores.at(i).chip(k_idx.at(l), 0), *(def.criteria.at(l).threshold));
+                condition = condition && compfuns.at(l)(this->scores.at(i).chip(k_idx.at(l), 0), *(def.criteria.at(l).threshold));
             }
 
             for (int j = offset; j + offset < condition.dimension(0); j++) {
@@ -251,8 +250,7 @@ void FeatureExtractor::flagNearbyPoints(const uint32_t p_idx, Eigen::Tensor<bool
 }
 
 void FeatureExtractor::sortAndBin(const Tensorf &scan, TensorIdx &feature_indices) {
-    std::vector<unlong> cnt_in_bins;
-    cnt_in_bins.resize(this->param.angular_bins);
+#pragma omp parallel for
     for (uint32_t i = 0; i < this->param.N_FEATURES; i++) {
         for (unlong j = 0; j < this->n_ring; j++) {
             auto &def = this->param.feature_definitions.at(i);
@@ -267,6 +265,8 @@ void FeatureExtractor::sortAndBin(const Tensorf &scan, TensorIdx &feature_indice
             valid_pts_copy = this->valid_pts.at(j);
 
             unlong max_bin = *(def.n_limit) / this->param.angular_bins;
+            std::vector<unlong> cnt_in_bins;
+            cnt_in_bins.resize(this->param.angular_bins);
             std::fill(cnt_in_bins.begin(), cnt_in_bins.end(), 0);
 
             if (pol != SelectionPolicy::HIGH_POS) {

@@ -1,14 +1,12 @@
 #ifndef WAVE_FEATURE_EXTRACTOR_HPP
 #define WAVE_FEATURE_EXTRACTOR_HPP
 
-#ifndef EIGEN_USE_THREADS
-#define EIGEN_USE_THREADS
-#endif
-
 #include <vector>
 #include <array>
 #include <algorithm>
 #include <exception>
+
+#include <omp.h>
 
 #include <Eigen/Core>
 #include <unsupported/Eigen/CXX11/Tensor>
@@ -109,9 +107,6 @@ class FeatureExtractor {
 
     // Container to sort scores with. Each is built depending on feature specification
     Vec<Vec<Vec<std::pair<unlong, float>>>> filtered_scores;
-
-    std::unique_ptr<Eigen::ThreadPool> threadpool;
-    std::unique_ptr<Eigen::ThreadPoolDevice> thrddev;
 };
 }
 
