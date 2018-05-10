@@ -126,7 +126,6 @@ class LaserOdom {
     ~LaserOdom();
     void addPoints(const std::vector<PointXYZIR> &pts, int tick, TimeType stamp);
     void rollover(TimeType stamp);
-    bool match();
     void registerOutputFunction(std::function<void()> output_function);
     void updateParams(const LaserOdomParams);
     LaserOdomParams getParams();
@@ -188,7 +187,11 @@ class LaserOdom {
     int prv_tick = std::numeric_limits<int>::max();
 
     FeatureExtractor feature_extractor;
+    Transformer transformer;
+
     void updateStoredFeatures();
+    bool match();
+    bool runOptimization();
 
     void buildTrees();
     bool findCorrespondingPoints(const Vec3 &query, const uint32_t &f_idx, std::vector<size_t> *index);
@@ -212,7 +215,8 @@ class LaserOdom {
     std::vector<float> trajectory_stamps;
 
     Mat6 sqrtinfo;
-    std::vector<TimeType> scan_stamps;
+    std::vector<TimeType> scan_stamps_chrono;
+    std::vector<float> scan_stampsf;
 
     // Input scan as an vector of eigen tensors with dimensions rings x (channels, max points in ring)
     std::vector<int> counters;
@@ -225,7 +229,8 @@ class LaserOdom {
     std::vector<std::vector<Eigen::Tensor<int, 1>, Eigen::aligned_allocator<Eigen::Tensor<int, 1>>>> indices;
 
     //Feature points indexed by scan id and then feature index
-    std::vector<std::vector<Eigen::Tensor<float, 2>, Eigen::aligned_allocator<Eigen::Tensor<float, 2>>>> feature_points;
+    std::vector<std::vector<Eigen::Tensor<float, 2>, Eigen::aligned_allocator<Eigen::Tensor<float, 2>>>> feat_pts, feat_pts_T;
+
 
     // This is container to hold indices of for each feature used in the optimization
     // It is indexed by feature_id, then by ring_id, then by correspondence.

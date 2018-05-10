@@ -77,7 +77,8 @@ void Transformer::update(const std::vector<Trajectory, Eigen::aligned_allocator<
     }
 }
 
-void Transformer::transformToStart(const Eigen::Tensor<float, 2> &points, Eigen::Tensor<float, 2> &points_transformed) {
+void Transformer::transformToStart(const Eigen::Tensor<float, 2> &points, Eigen::Tensor<float, 2> &points_transformed,
+                                   const uint32_t &scan) {
     points_transformed.resize(3, points.dimensions().at(1));
 
     Eigen::Map<const MatXf> pt(points.data(), points.dimension(0), points.dimension(1));
@@ -116,7 +117,8 @@ void Transformer::transformToStart(const Eigen::Tensor<float, 2> &points, Eigen:
     }
 }
 
-void Transformer::transformToEnd(const Eigen::Tensor<float, 2> &points, Eigen::Tensor<float, 2> &points_transformed) {
+void Transformer::transformToEnd(const Eigen::Tensor<float, 2> &points, Eigen::Tensor<float, 2> &points_transformed,
+                                 const uint32_t &scan) {
     points_transformed.resize(3, points.dimensions().at(1));
 
     Eigen::Map<const MatXf> pt(points.data(), points.dimension(0), points.dimension(1));

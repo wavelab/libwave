@@ -73,7 +73,7 @@ TEST(Transformer, transformToStart) {
         scan(2,i) = 0.0f;
         scan(3,i) = 0.4f + 0.2f * (static_cast<float>(i)/100.0f);
     }
-    EXPECT_NO_THROW(transformer.transformToStart(scan, tscan));
+    EXPECT_NO_THROW(transformer.transformToStart(scan, tscan, <#initializer#>));
 }
 
 /// Given a set of points in a circle, this should stretch/transform it smoothly across trajectory
@@ -117,7 +117,7 @@ TEST(Transformer, transformViz) {
         }
     }
 
-    transformer.transformToStart(scan, tscan);
+    transformer.transformToStart(scan, tscan, <#initializer#>);
 
     pcl::PointCloud<pcl::PointXYZI> transformed, original;
     for (long i = 0; i < params.n_scans * n_pts; i++) {

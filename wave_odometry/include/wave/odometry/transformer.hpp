@@ -49,14 +49,17 @@ class Transformer {
     /** Points should be a 4xN tensor, xyz + timestamp
      * It is assumed the points are given in the sensor frame at the time that each one was observed.
      * They will be transformed to the sensor frame at the beginning of the scan
-     * @param points
-     * @param points_transformed
-     * @param scan_offset
+     *
+     * The timesteps for each point should be relative to the start of the scan
+     *
+     * @param points 2 dimensional tensor, 4 x N
+     * @param points_transformed 2 dimensional tensor, will be resized to 3 x N
+     * @param scan index of scan
      */
-    void transformToStart(const Eigen::Tensor<float, 2> &points,
-                          Eigen::Tensor<float, 2> &points_transformed);
-    void transformToEnd(const Eigen::Tensor<float, 2> &points,
-                        Eigen::Tensor<float, 2> &points_transformed);
+    void transformToStart(const Eigen::Tensor<float, 2> &points, Eigen::Tensor<float, 2> &points_transformed,
+                          const uint32_t &scan);
+    void transformToEnd(const Eigen::Tensor<float, 2> &points, Eigen::Tensor<float, 2> &points_transformed,
+                            const uint32_t &scan);
 
  private:
     /// Contains the trajectories optimized over plus any extras required to meet difference criteria

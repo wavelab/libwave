@@ -19,7 +19,6 @@ double norm(const std::vector<double> &vec) {
     }
     return std::sqrt(retval);
 }
-
 }
 
 LaserOdom::LaserOdom(const LaserOdomParams params, const FeatureExtractorParams feat_params) : param(params) {
@@ -40,7 +39,7 @@ LaserOdom::LaserOdom(const LaserOdomParams params, const FeatureExtractorParams 
 
     this->range_sensor = std::make_shared<RangeSensor>(param.sensor_params);
 
-    this->feature_points.resize(this->N_FEATURES);
+    this->feat_pts.resize(this->N_FEATURES);
     this->prv_feature_points.resize(this->N_FEATURES);
     this->feature_corrs.resize(this->N_FEATURES);
     this->output_corrs.resize(this->N_FEATURES);
@@ -50,8 +49,8 @@ LaserOdom::LaserOdom(const LaserOdomParams params, const FeatureExtractorParams 
     this->map_features.resize(this->N_FEATURES);
 
     for (uint32_t i = 0; i < this->N_FEATURES; i++) {
-        this->feature_idx.at(i) =
-          std::make_shared<kd_tree_t<double>>(3, this->prv_feature_points.at(i), nanoflann::KDTreeSingleIndexAdaptorParams(20));
+        this->feature_idx.at(i) = std::make_shared<kd_tree_t<double>>(
+          3, this->prv_feature_points.at(i), nanoflann::KDTreeSingleIndexAdaptorParams(20));
         this->feature_corrs.at(i).resize(n_ring);
     }
 
@@ -160,89 +159,90 @@ void LaserOdom::spinOutput() {
  * This function should transform all points of interest to the frame of the lidar at the end of the last scan
  */
 void LaserOdom::undistort() {
-//    this->undistorted_cld.clear();
-//    for (uint32_t i = 0; i < this->N_FEATURES; i++) {
-//        this->undis_features.at(i).clear();
-//        this->map_features.at(i).resize(this->prv_feature_points.at(i).points.size());
-//        this->output_corrs.at(i).clear();
-//    }
-//
-//    for (uint16_t r_idx = 0; r_idx < this->param.n_ring; r_idx++) {
-//        for (PCLPointXYZIT pt : this->cur_scan.at(r_idx)) {
-//            double point[3] = {pt.x, pt.y, pt.z};
-//            double u_pt[3];
-//            this->transformToCurLidar(point, pt.tick, u_pt);
-//            pcl::PointXYZI op_pt;
-//            op_pt.x = (float) u_pt[0];
-//            op_pt.y = (float) u_pt[1];
-//            op_pt.z = (float) u_pt[2];
-//            op_pt.intensity = pt.intensity;
-//            this->undistorted_cld.push_back(op_pt);
-//        }
-//        for (uint32_t j = 0; j < this->N_FEATURES; j++) {
-//            for (uint32_t i = 0; i < this->feature_points.at(j).at(r_idx).size(); i++) {
-//                double point[3] = {this->feature_points.at(j).at(r_idx).at(i).pt[0],
-//                                   feature_points.at(j).at(r_idx).at(i).pt[1],
-//                                   feature_points.at(j).at(r_idx).at(i).pt[2]};
-//                double u_pt[3];
-//                this->transformToCurLidar(point, feature_points.at(j).at(r_idx).at(i).tick, u_pt);
-//                pcl::PointXYZ op_pt;
-//                op_pt.x = (float) u_pt[0];
-//                op_pt.y = (float) u_pt[1];
-//                op_pt.z = (float) u_pt[2];
-//                this->undis_features.at(j).push_back(op_pt);
-//            }
-//
-//            for (uint32_t c_idx = 0; c_idx < this->feature_corrs.at(j).at(r_idx).size(); c_idx++) {
-//                auto &corr_list = this->feature_corrs.at(j).at(r_idx).at(c_idx);
-//                std::vector<double> undis(3 * (corr_list.size() + 1));
-//
-//                // putting the undistorted point into the end of the vector
-//                this->transformToCurLidar(&(this->feature_points.at(j).at(r_idx).at(corr_list.at(0)).pt[0]),
-//                                          this->feature_points.at(j).at(r_idx).at(corr_list.at(0)).tick,
-//                                          &(undis[undis.size() - 3]));
-//
-//                // putting uncorrection point into vector
-//                memcpy(undis.data(), this->feature_points.at(j).at(r_idx).at(corr_list.at(0)).pt, 24);
-//
-//                for (uint32_t k = 1; k < corr_list.size(); k++) {
-//                    Eigen::Map<const Vec3> map_point(this->prv_feature_points.at(j).points.at(corr_list.at(k)).data());
-//                    Eigen::Map<Vec3> transformed_map_point(undis.data() + 3 * k);
-//                    this->cur_trajectory.back().pose.inverseTransform(map_point, transformed_map_point);
-//                }
-//
-//                this->output_corrs.at(j).emplace_back(std::vector<double>(undis.begin(), undis.end()));
-//            }
-//        }
-//    }
-//
-//    if (this->param.output_correspondences) {
-//        long timestamp = std::chrono::system_clock::now().time_since_epoch().count();
-//        for (uint32_t i = 0; i < this->N_FEATURES; i++) {
-//            ofstream cur_file;
-//            cur_file.open(std::to_string(timestamp) + "feature_" + std::to_string(i) + "_cor.txt");
-//            for (auto vec : this->output_corrs.at(i)) {
-//                for (auto val : vec) {
-//                    cur_file << std::to_string(val) << " ";
-//                }
-//                cur_file << std::endl;
-//            }
-//            cur_file.close();
-//        }
-//    }
-//
-//    for (uint32_t j = 0; j < this->N_FEATURES; j++) {
-//        for (size_t i = 0; i < this->prv_feature_points.at(j).points.size(); i++) {
-//
-//            // Publishing in map frame
-//            Eigen::Map<Eigen::Vector3f> map_feature(this->map_features.at(j).points.at(i).data);
-//
-//            // Point is in map frame
-//            Eigen::Map<Eigen::Vector3d> prv_feature_point(this->prv_feature_points.at(j).points.at(i).data());
-//
-//            map_feature = prv_feature_point.cast<float>();
-//        }
-//    }
+    //    this->undistorted_cld.clear();
+    //    for (uint32_t i = 0; i < this->N_FEATURES; i++) {
+    //        this->undis_features.at(i).clear();
+    //        this->map_features.at(i).resize(this->prv_feature_points.at(i).points.size());
+    //        this->output_corrs.at(i).clear();
+    //    }
+    //
+    //    for (uint16_t r_idx = 0; r_idx < this->param.n_ring; r_idx++) {
+    //        for (PCLPointXYZIT pt : this->cur_scan.at(r_idx)) {
+    //            double point[3] = {pt.x, pt.y, pt.z};
+    //            double u_pt[3];
+    //            this->transformToCurLidar(point, pt.tick, u_pt);
+    //            pcl::PointXYZI op_pt;
+    //            op_pt.x = (float) u_pt[0];
+    //            op_pt.y = (float) u_pt[1];
+    //            op_pt.z = (float) u_pt[2];
+    //            op_pt.intensity = pt.intensity;
+    //            this->undistorted_cld.push_back(op_pt);
+    //        }
+    //        for (uint32_t j = 0; j < this->N_FEATURES; j++) {
+    //            for (uint32_t i = 0; i < this->feat_pts.at(j).at(r_idx).size(); i++) {
+    //                double point[3] = {this->feat_pts.at(j).at(r_idx).at(i).pt[0],
+    //                                   feat_pts.at(j).at(r_idx).at(i).pt[1],
+    //                                   feat_pts.at(j).at(r_idx).at(i).pt[2]};
+    //                double u_pt[3];
+    //                this->transformToCurLidar(point, feat_pts.at(j).at(r_idx).at(i).tick, u_pt);
+    //                pcl::PointXYZ op_pt;
+    //                op_pt.x = (float) u_pt[0];
+    //                op_pt.y = (float) u_pt[1];
+    //                op_pt.z = (float) u_pt[2];
+    //                this->undis_features.at(j).push_back(op_pt);
+    //            }
+    //
+    //            for (uint32_t c_idx = 0; c_idx < this->feature_corrs.at(j).at(r_idx).size(); c_idx++) {
+    //                auto &corr_list = this->feature_corrs.at(j).at(r_idx).at(c_idx);
+    //                std::vector<double> undis(3 * (corr_list.size() + 1));
+    //
+    //                // putting the undistorted point into the end of the vector
+    //                this->transformToCurLidar(&(this->feat_pts.at(j).at(r_idx).at(corr_list.at(0)).pt[0]),
+    //                                          this->feat_pts.at(j).at(r_idx).at(corr_list.at(0)).tick,
+    //                                          &(undis[undis.size() - 3]));
+    //
+    //                // putting uncorrection point into vector
+    //                memcpy(undis.data(), this->feat_pts.at(j).at(r_idx).at(corr_list.at(0)).pt, 24);
+    //
+    //                for (uint32_t k = 1; k < corr_list.size(); k++) {
+    //                    Eigen::Map<const Vec3>
+    //                    map_point(this->prv_feature_points.at(j).points.at(corr_list.at(k)).data());
+    //                    Eigen::Map<Vec3> transformed_map_point(undis.data() + 3 * k);
+    //                    this->cur_trajectory.back().pose.inverseTransform(map_point, transformed_map_point);
+    //                }
+    //
+    //                this->output_corrs.at(j).emplace_back(std::vector<double>(undis.begin(), undis.end()));
+    //            }
+    //        }
+    //    }
+    //
+    //    if (this->param.output_correspondences) {
+    //        long timestamp = std::chrono::system_clock::now().time_since_epoch().count();
+    //        for (uint32_t i = 0; i < this->N_FEATURES; i++) {
+    //            ofstream cur_file;
+    //            cur_file.open(std::to_string(timestamp) + "feature_" + std::to_string(i) + "_cor.txt");
+    //            for (auto vec : this->output_corrs.at(i)) {
+    //                for (auto val : vec) {
+    //                    cur_file << std::to_string(val) << " ";
+    //                }
+    //                cur_file << std::endl;
+    //            }
+    //            cur_file.close();
+    //        }
+    //    }
+    //
+    //    for (uint32_t j = 0; j < this->N_FEATURES; j++) {
+    //        for (size_t i = 0; i < this->prv_feature_points.at(j).points.size(); i++) {
+    //
+    //            // Publishing in map frame
+    //            Eigen::Map<Eigen::Vector3f> map_feature(this->map_features.at(j).points.at(i).data);
+    //
+    //            // Point is in map frame
+    //            Eigen::Map<Eigen::Vector3d> prv_feature_point(this->prv_feature_points.at(j).points.at(i).data());
+    //
+    //            map_feature = prv_feature_point.cast<float>();
+    //        }
+    //    }
 }
 
 void LaserOdom::copyTrajectory() {
@@ -318,7 +318,7 @@ void LaserOdom::applyRemap() {
 void LaserOdom::updateStoredFeatures() {
 #pragma omp parallel for
     for (uint32_t i = 0; i < this->N_FEATURES; i++) {
-        auto &feat = this->feature_points.back().at(i);
+        auto &feat = this->feat_pts.back().at(i);
         long featcnt = 0;
         for (const auto &elem : this->indices.at(i)) {
             featcnt += elem.dimension(0);
@@ -335,24 +335,11 @@ void LaserOdom::updateStoredFeatures() {
 }
 
 void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, TimeType stamp) {
-    if (tick - this->prv_tick < -200) {                 // tolerate minor nonlinearity error
+    if (tick - this->prv_tick < -200) {  // tolerate minor nonlinearity error
         this->feature_extractor.getFeatures(this->cur_scan, this->signals, this->counters, this->indices);
         this->updateStoredFeatures();
         if (this->initialized) {
-            T_TYPE last_transform;
-            auto &ref = this->cur_trajectory.back().pose;
-
-            for (int i = 0; i < this->param.opt_iters; i++) {
-                if (i > 0) {
-                    memcpy(last_transform.storage.data(), ref.storage.data(), 96);
-                }
-                if (!this->match()) {
-                    return;
-                }
-                if (i > 0 && ref.isNear(last_transform, this->param.diff_tol)) {
-                    break;
-                }
-            }
+            this->match();
 
             if (this->param.output_trajectory) {
                 this->file << this->cur_trajectory.back().pose.storage.format(*(this->CSVFormat)) << std::endl;
@@ -388,7 +375,8 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
         this->cur_scan.at(pt.ring)(0, counters.at(pt.ring)) = pt.x;
         this->cur_scan.at(pt.ring)(1, counters.at(pt.ring)) = pt.y;
         this->cur_scan.at(pt.ring)(2, counters.at(pt.ring)) = pt.z;
-        this->cur_scan.at(pt.ring)(3, counters.at(pt.ring)) = std::chrono::duration<float, std::chrono::seconds>(stamp - this->scan_stamps.back()).count();
+        this->cur_scan.at(pt.ring)(3, counters.at(pt.ring)) =
+          std::chrono::duration<float, std::chrono::seconds>(stamp - this->scan_stamps_chrono.back()).count();
 
         this->signals.at(pt.ring)(0, counters.at(pt.ring)) = sqrtf(pt.x * pt.x + pt.y * pt.y + pt.z * pt.z);
         this->signals.at(pt.ring)(1, counters.at(pt.ring)) = pt.intensity;
@@ -402,43 +390,43 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
 void LaserOdom::updateViz() {
     // populate prev with points stored in kd tree
     // These are already transformed to the start of the current scan
-//    this->display->removeAll();
-//    this->prev_viz->clear();
-//    this->cur_viz->clear();
-//
-//    for (uint32_t i = 0; i < this->N_FEATURES; i++) {
-//        for (auto iter = this->prv_feature_points.at(i).points.begin();
-//             iter != this->prv_feature_points.at(i).points.end();
-//             iter++) {
-//            pcl::PointXYZI pt;
-//            pt.x = (float) (*iter).at(0);
-//            pt.y = (float) (*iter).at(1);
-//            pt.z = (float) (*iter).at(2);
-//            pt.intensity = 1 + i;
-//            this->prev_viz->push_back(pt);
-//        }
-//
-//        for (uint32_t j = 0; j < this->param.n_ring; j++) {
-//            for (auto pt : this->feature_points.at(i).at(j)) {
-//                double T_pt[3];
-//                this->transformToMap(pt.pt, pt.tick, T_pt);
-//                pcl::PointXYZI point;
-//                point.x = T_pt[0];
-//                point.y = T_pt[1];
-//                point.z = T_pt[2];
-//                point.intensity = 10 + i;
-//                this->prev_viz->push_back(point);
-//            }
-//        }
-//    }
-//
-//    this->display->addPointcloud(this->prev_viz, 0);
+    //    this->display->removeAll();
+    //    this->prev_viz->clear();
+    //    this->cur_viz->clear();
+    //
+    //    for (uint32_t i = 0; i < this->N_FEATURES; i++) {
+    //        for (auto iter = this->prv_feature_points.at(i).points.begin();
+    //             iter != this->prv_feature_points.at(i).points.end();
+    //             iter++) {
+    //            pcl::PointXYZI pt;
+    //            pt.x = (float) (*iter).at(0);
+    //            pt.y = (float) (*iter).at(1);
+    //            pt.z = (float) (*iter).at(2);
+    //            pt.intensity = 1 + i;
+    //            this->prev_viz->push_back(pt);
+    //        }
+    //
+    //        for (uint32_t j = 0; j < this->param.n_ring; j++) {
+    //            for (auto pt : this->feat_pts.at(i).at(j)) {
+    //                double T_pt[3];
+    //                this->transformToMap(pt.pt, pt.tick, T_pt);
+    //                pcl::PointXYZI point;
+    //                point.x = T_pt[0];
+    //                point.y = T_pt[1];
+    //                point.z = T_pt[2];
+    //                point.intensity = 10 + i;
+    //                this->prev_viz->push_back(point);
+    //            }
+    //        }
+    //    }
+    //
+    //    this->display->addPointcloud(this->prev_viz, 0);
 }
 
 void LaserOdom::rollover(TimeType stamp) {
     for (uint32_t i = 0; i + 1 < this->param.n_window; i++) {
-        std::swap(this->feature_points.at(i), this->feature_points.at(i+1));
-        std::swap(this->scan_stamps.at(i), this->scan_stamps.at(i+1));
+        std::swap(this->feat_pts.at(i), this->feat_pts.at(i + 1));
+        std::swap(this->scan_stamps.at(i), this->scan_stamps.at(i + 1));
     }
     this->scan_stamps.back() = stamp;
 
@@ -515,28 +503,29 @@ void LaserOdom::buildTrees() {
             this->feature_idx.at(i)->buildIndex();
         }
         for (uint16_t j = 0; j < this->param.n_ring; j++) {
-//            for (PointXYZIT pt : this->feature_points.at(i).at(j)) {
-//                double transformed_pt[3] = {0};
-//                //                this->transformToCurLidar(pt.pt, pt.tick, transformed_pt);
-//                this->transformToMap(pt.pt, pt.tick, transformed_pt);
-//
-//                resultSet.init(&ret_index, &out_dist_sqr);
-//
-//                this->feature_idx.at(i)->findNeighbors(resultSet, transformed_pt, nanoflann::SearchParams(32, 1));
-//
-//                float map_density;
-//                if (this->feature_definitions.at(i).residual == PointToLine) {
-//                    map_density = this->param.edge_map_density;
-//                } else {
-//                    map_density = this->param.flat_map_density;
-//                }
-//                if (out_dist_sqr > map_density) {
-//                    this->feature_association.at(i).emplace_back(
-//                      std::make_pair(this->param.TTL, AssociationStatus::UNCORRESPONDED));
-//                    this->prv_feature_points.at(i).points.push_back(
-//                      std::array<double, 3>{transformed_pt[0], transformed_pt[1], transformed_pt[2]});
-//                }
-//            }
+            //            for (PointXYZIT pt : this->feat_pts.at(i).at(j)) {
+            //                double transformed_pt[3] = {0};
+            //                //                this->transformToCurLidar(pt.pt, pt.tick, transformed_pt);
+            //                this->transformToMap(pt.pt, pt.tick, transformed_pt);
+            //
+            //                resultSet.init(&ret_index, &out_dist_sqr);
+            //
+            //                this->feature_idx.at(i)->findNeighbors(resultSet, transformed_pt,
+            //                nanoflann::SearchParams(32, 1));
+            //
+            //                float map_density;
+            //                if (this->feature_definitions.at(i).residual == PointToLine) {
+            //                    map_density = this->param.edge_map_density;
+            //                } else {
+            //                    map_density = this->param.flat_map_density;
+            //                }
+            //                if (out_dist_sqr > map_density) {
+            //                    this->feature_association.at(i).emplace_back(
+            //                      std::make_pair(this->param.TTL, AssociationStatus::UNCORRESPONDED));
+            //                    this->prv_feature_points.at(i).points.push_back(
+            //                      std::array<double, 3>{transformed_pt[0], transformed_pt[1], transformed_pt[2]});
+            //                }
+            //            }
         }
         // rebuild kdtree index
         if (!this->prv_feature_points.at(i).points.empty()) {
@@ -613,7 +602,7 @@ bool LaserOdom::outOfBounds(const Vec3 &query, const uint32_t &f_idx, const std:
     return false;
 }
 
-bool LaserOdom::match() {
+bool LaserOdom::runOptimization() {
     // set up pointer for evaluating residuals
     const double **parameters;
     parameters = new const double *[4];
@@ -672,189 +661,229 @@ bool LaserOdom::match() {
 
     uint64_t cur_PtL_idx = 0, cur_PtP_idx = 0;
 
-//    for (uint16_t i = 0; i < this->N_FEATURES; i++) {
-//        for (uint16_t j = 0; j < this->param.n_ring; j++) {
-//            this->feature_corrs.at(i).at(j).clear();
-//            for (uint64_t pt_cntr = 0; pt_cntr < this->feature_points.at(i).at(j).size(); pt_cntr++) {
-//                double transformed[3];
-//                this->transformToMap(this->feature_points.at(i).at(j).at(pt_cntr).pt,
-//                                     this->feature_points.at(i).at(j).at(pt_cntr).tick,
-//                                     transformed,
-//                                     k,
-//                                     kp1,
-//                                     tau);
-//                Eigen::Map<const Vec3> query(transformed, 3, 1);
-//                ret_indices.clear();
-//                out_dist_sqr.clear();
-//                Eigen::Matrix3f covZ;
-//                this->range_sensor->getEuclideanCovariance(query.data(), j, covZ);
-//                if (this->findCorrespondingPoints(query, i, &ret_indices)) {
-//                    // check if there is enough memory for next cost function
-//                    if (cur_PtL_idx == this->PtLMem.size()) {
-//                        LOG_ERROR("Pre allocated point to line memory block is too small, reseting");
-//                        return false;
-//                    }
-//                    if (cur_PtP_idx == this->PtPMem.size()) {
-//                        LOG_ERROR("Pre allocated point to plane memory block is too small, reseting");
-//                        return false;
-//                    }
-//                    if (this->param.no_extrapolation && this->outOfBounds(query, i, ret_indices)) {
-//                        break;
-//                    }
-//                    this->cv_vector.at(k).tau = &tau;
-//                    this->cv_vector.at(k).calculateStuff(hat, candle);
-//                    ceres::CostFunction *cost_function;
-//                    wave_optimization::SE3PointToLineGP *pTl_cost_function = nullptr;
-//                    wave_optimization::SE3PointToPlaneGP *pTPl_cost_function = nullptr;
-//                    double rescale;
-//                    switch (this->feature_definitions.at(i).residual) {
-//                        case PointToLine:
-//                            if (this->param.treat_lines_as_planes) {
-//                                this->PtPMem.at(cur_PtP_idx).hat = hat.block<6, 12>(0, 0);
-//                                this->PtPMem.at(cur_PtP_idx).candle = candle.block<6, 12>(0, 0);
-//                                this->PtPMem.at(cur_PtP_idx).T0_pt = query;
-//                                pTPl_cost_function = new wave_optimization::SE3PointToPlaneGP(
-//                                  this->prv_feature_points.at(i).points.at(ret_indices.at(0)).data(),
-//                                  this->prv_feature_points.at(i).points.at(ret_indices.at(1)).data(),
-//                                  zero_pt,
-//                                  this->PtPMem.at(cur_PtP_idx),
-//                                  covZ.cast<double>(),
-//                                  this->param.use_weighting);
-//                                residuals.resize(1);
-//                                rescale = pTPl_cost_function->weight;
-//                                cost_function = pTPl_cost_function;
-//                            } else {
-//                                this->PtLMem.at(cur_PtL_idx).hat = hat.block<6, 12>(0, 0);
-//                                this->PtLMem.at(cur_PtL_idx).candle = candle.block<6, 12>(0, 0);
-//                                this->PtLMem.at(cur_PtP_idx).T0_pt = query;
-//                                pTl_cost_function = new wave_optimization::SE3PointToLineGP(
-//                                  this->prv_feature_points.at(i).points.at(ret_indices.at(0)).data(),
-//                                  this->prv_feature_points.at(i).points.at(ret_indices.at(1)).data(),
-//                                  this->PtLMem.at(cur_PtL_idx),
-//                                  covZ.cast<double>(),
-//                                  this->param.use_weighting);
-//                                residuals.resize(2);
-//                                rescale = pTl_cost_function->weight_matrix.trace();
-//                                cost_function = pTl_cost_function;
-//                            }
-//                            break;
-//                        case PointToPlane:
-//                            this->PtPMem.at(cur_PtP_idx).hat = hat.block<6, 12>(0, 0);
-//                            this->PtPMem.at(cur_PtP_idx).candle = candle.block<6, 12>(0, 0);
-//                            this->PtPMem.at(cur_PtP_idx).T0_pt = query;
-//                            pTPl_cost_function = new wave_optimization::SE3PointToPlaneGP(
-//                              this->prv_feature_points.at(i).points.at(ret_indices.at(0)).data(),
-//                              this->prv_feature_points.at(i).points.at(ret_indices.at(1)).data(),
-//                              this->prv_feature_points.at(i).points.at(ret_indices.at(2)).data(),
-//                              this->PtPMem.at(cur_PtP_idx),
-//                              covZ.cast<double>(),
-//                              this->param.use_weighting);
-//                            residuals.resize(1);
-//                            rescale = pTPl_cost_function->weight;
-//                            cost_function = pTPl_cost_function;
-//                            break;
-//                        default: continue;
-//                    }
-//
-//                    parameters[0] = this->param_blocks.at(k).data();
-//                    parameters[1] = this->param_blocks.at(kp1).data();
-//
-//                    if (!cost_function->Evaluate(parameters, residuals.data(), nullptr)) {
-//                        LOG_ERROR("Cost function did not evaluate");
-//                        delete cost_function;
-//                        continue;
-//                    }
-//                    rescale *= rescale;
-//
-//                    if (norm(residuals) > rescale * this->param.max_residual_val) {
-//                        delete cost_function;
-//                        continue;
-//                    }
-//
-//                    ceres::LossFunction *p_LossFunction = new BisquareLoss(this->param.robust_param);
-//                    std::vector<uint64_t> corr_list;
-//                    corr_list.emplace_back(pt_cntr);
-//                    for (auto index : ret_indices) {
-//                        corr_list.emplace_back(index);
-//                        this->feature_association.at(i).at(index).second = AssociationStatus::CORRESPONDED;
-//                    }
-//                    this->feature_corrs.at(i).at(j).emplace_back(corr_list);
-//
-//                    problem.AddResidualBlock(cost_function,
-//                                             p_LossFunction,
-//                                             this->param_blocks.at(k).data(),
-//                                             this->param_blocks.at(kp1).data());
-//
-//                    if (pTl_cost_function) {
-//                        cur_PtL_idx++;
-//                    } else if (pTPl_cost_function) {
-//                        cur_PtP_idx++;
-//                    }
-//                }
-//            }
-//        }
-//    }
-//
-//    if (this->param.lock_first) {
-//        this->covar.resize(12 * (this->param.num_trajectory_states - 1), 12 * (this->param.num_trajectory_states - 1));
-//    } else {
-//        this->covar.resize(12 * this->param.num_trajectory_states, 12 * this->param.num_trajectory_states);
-//    }
-//
-//    for (auto &block : this->param_blocks) {
-//        problem.AddParameterBlock(block.data(), 12, nullptr);
-//    }
-//
-//    ceres::Solver::Options options;
-//    options.linear_solver_type = ceres::DENSE_QR;
-//    options.max_num_iterations = this->param.max_inner_iters;
-//    options.max_num_consecutive_invalid_steps = 30;
-//    options.function_tolerance = 1e-8;
-//    options.parameter_tolerance = 1e-7;
-//    options.logging_type = ceres::LoggingType::SILENT;
-//
-//    ceres::Covariance::Options covar_options;
-//    covar_options.sparse_linear_algebra_library_type = ceres::SparseLinearAlgebraLibraryType::SUITE_SPARSE;
-//    covar_options.algorithm_type = ceres::CovarianceAlgorithmType::SPARSE_QR;
-//
-//    if (this->param.solver_threads < 1) {
-//        options.num_threads = std::thread::hardware_concurrency();
-//        options.num_linear_solver_threads = std::thread::hardware_concurrency();
-//        covar_options.num_threads = std::thread::hardware_concurrency();
-//    } else {
-//        options.num_threads = this->param.solver_threads;
-//        options.num_linear_solver_threads = this->param.solver_threads;
-//        covar_options.num_threads = this->param.solver_threads;
-//    }
-//
-//    if (this->param.lock_first) {
-//        problem.SetParameterBlockConstant(this->param_blocks.at(0).data());
-//    }
-//
-//    if (problem.NumResidualBlocks() < this->param.min_residuals) {
-//        LOG_ERROR("Less than expected residuals, resetting");
-//        LOG_ERROR("%d residuals, threshold is %d", problem.NumResidualBlocks(), this->param.min_residuals);
-//        this->resetTrajectory();
-//        this->initialized = false;
-//        delete[] parameters;
-//        return false;
-//    } else if (!this->param.only_extract_features) {
-//        ceres::Solver::Summary summary;
-//        ceres::Solve(options, &problem, &summary);
-//        if (this->param.plot_stuff) {
-//            LOG_INFO("%s", summary.FullReport().c_str());
-//        }
-//        //        ceres::Covariance covariance(covar_options);
-//        //        if (!covariance.Compute(this->param_blocks, &problem)) {
-//        //            LOG_ERROR("covariance did not compute");
-//        //        }
-//        //        covariance.GetCovarianceMatrixInTangentSpace(this->param_blocks, this->covar.data());
-//        if (this->param.solution_remapping) {
-//            this->applyRemap();
-//        }
-//        this->updateOperatingPoint();
-//    }
-//    delete[] parameters;
+    //    for (uint16_t i = 0; i < this->N_FEATURES; i++) {
+    //        for (uint16_t j = 0; j < this->param.n_ring; j++) {
+    //            this->feature_corrs.at(i).at(j).clear();
+    //            for (uint64_t pt_cntr = 0; pt_cntr < this->feat_pts.at(i).at(j).size(); pt_cntr++) {
+    //                double transformed[3];
+    //                this->transformToMap(this->feat_pts.at(i).at(j).at(pt_cntr).pt,
+    //                                     this->feat_pts.at(i).at(j).at(pt_cntr).tick,
+    //                                     transformed,
+    //                                     k,
+    //                                     kp1,
+    //                                     tau);
+    //                Eigen::Map<const Vec3> query(transformed, 3, 1);
+    //                ret_indices.clear();
+    //                out_dist_sqr.clear();
+    //                Eigen::Matrix3f covZ;
+    //                this->range_sensor->getEuclideanCovariance(query.data(), j, covZ);
+    //                if (this->findCorrespondingPoints(query, i, &ret_indices)) {
+    //                    // check if there is enough memory for next cost function
+    //                    if (cur_PtL_idx == this->PtLMem.size()) {
+    //                        LOG_ERROR("Pre allocated point to line memory block is too small, reseting");
+    //                        return false;
+    //                    }
+    //                    if (cur_PtP_idx == this->PtPMem.size()) {
+    //                        LOG_ERROR("Pre allocated point to plane memory block is too small, reseting");
+    //                        return false;
+    //                    }
+    //                    if (this->param.no_extrapolation && this->outOfBounds(query, i, ret_indices)) {
+    //                        break;
+    //                    }
+    //                    this->cv_vector.at(k).tau = &tau;
+    //                    this->cv_vector.at(k).calculateStuff(hat, candle);
+    //                    ceres::CostFunction *cost_function;
+    //                    wave_optimization::SE3PointToLineGP *pTl_cost_function = nullptr;
+    //                    wave_optimization::SE3PointToPlaneGP *pTPl_cost_function = nullptr;
+    //                    double rescale;
+    //                    switch (this->feature_definitions.at(i).residual) {
+    //                        case PointToLine:
+    //                            if (this->param.treat_lines_as_planes) {
+    //                                this->PtPMem.at(cur_PtP_idx).hat = hat.block<6, 12>(0, 0);
+    //                                this->PtPMem.at(cur_PtP_idx).candle = candle.block<6, 12>(0, 0);
+    //                                this->PtPMem.at(cur_PtP_idx).T0_pt = query;
+    //                                pTPl_cost_function = new wave_optimization::SE3PointToPlaneGP(
+    //                                  this->prv_feature_points.at(i).points.at(ret_indices.at(0)).data(),
+    //                                  this->prv_feature_points.at(i).points.at(ret_indices.at(1)).data(),
+    //                                  zero_pt,
+    //                                  this->PtPMem.at(cur_PtP_idx),
+    //                                  covZ.cast<double>(),
+    //                                  this->param.use_weighting);
+    //                                residuals.resize(1);
+    //                                rescale = pTPl_cost_function->weight;
+    //                                cost_function = pTPl_cost_function;
+    //                            } else {
+    //                                this->PtLMem.at(cur_PtL_idx).hat = hat.block<6, 12>(0, 0);
+    //                                this->PtLMem.at(cur_PtL_idx).candle = candle.block<6, 12>(0, 0);
+    //                                this->PtLMem.at(cur_PtP_idx).T0_pt = query;
+    //                                pTl_cost_function = new wave_optimization::SE3PointToLineGP(
+    //                                  this->prv_feature_points.at(i).points.at(ret_indices.at(0)).data(),
+    //                                  this->prv_feature_points.at(i).points.at(ret_indices.at(1)).data(),
+    //                                  this->PtLMem.at(cur_PtL_idx),
+    //                                  covZ.cast<double>(),
+    //                                  this->param.use_weighting);
+    //                                residuals.resize(2);
+    //                                rescale = pTl_cost_function->weight_matrix.trace();
+    //                                cost_function = pTl_cost_function;
+    //                            }
+    //                            break;
+    //                        case PointToPlane:
+    //                            this->PtPMem.at(cur_PtP_idx).hat = hat.block<6, 12>(0, 0);
+    //                            this->PtPMem.at(cur_PtP_idx).candle = candle.block<6, 12>(0, 0);
+    //                            this->PtPMem.at(cur_PtP_idx).T0_pt = query;
+    //                            pTPl_cost_function = new wave_optimization::SE3PointToPlaneGP(
+    //                              this->prv_feature_points.at(i).points.at(ret_indices.at(0)).data(),
+    //                              this->prv_feature_points.at(i).points.at(ret_indices.at(1)).data(),
+    //                              this->prv_feature_points.at(i).points.at(ret_indices.at(2)).data(),
+    //                              this->PtPMem.at(cur_PtP_idx),
+    //                              covZ.cast<double>(),
+    //                              this->param.use_weighting);
+    //                            residuals.resize(1);
+    //                            rescale = pTPl_cost_function->weight;
+    //                            cost_function = pTPl_cost_function;
+    //                            break;
+    //                        default: continue;
+    //                    }
+    //
+    //                    parameters[0] = this->param_blocks.at(k).data();
+    //                    parameters[1] = this->param_blocks.at(kp1).data();
+    //
+    //                    if (!cost_function->Evaluate(parameters, residuals.data(), nullptr)) {
+    //                        LOG_ERROR("Cost function did not evaluate");
+    //                        delete cost_function;
+    //                        continue;
+    //                    }
+    //                    rescale *= rescale;
+    //
+    //                    if (norm(residuals) > rescale * this->param.max_residual_val) {
+    //                        delete cost_function;
+    //                        continue;
+    //                    }
+    //
+    //                    ceres::LossFunction *p_LossFunction = new BisquareLoss(this->param.robust_param);
+    //                    std::vector<uint64_t> corr_list;
+    //                    corr_list.emplace_back(pt_cntr);
+    //                    for (auto index : ret_indices) {
+    //                        corr_list.emplace_back(index);
+    //                        this->feature_association.at(i).at(index).second = AssociationStatus::CORRESPONDED;
+    //                    }
+    //                    this->feature_corrs.at(i).at(j).emplace_back(corr_list);
+    //
+    //                    problem.AddResidualBlock(cost_function,
+    //                                             p_LossFunction,
+    //                                             this->param_blocks.at(k).data(),
+    //                                             this->param_blocks.at(kp1).data());
+    //
+    //                    if (pTl_cost_function) {
+    //                        cur_PtL_idx++;
+    //                    } else if (pTPl_cost_function) {
+    //                        cur_PtP_idx++;
+    //                    }
+    //                }
+    //            }
+    //        }
+    //    }
+    //
+    //    if (this->param.lock_first) {
+    //        this->covar.resize(12 * (this->param.num_trajectory_states - 1), 12 * (this->param.num_trajectory_states -
+    //        1));
+    //    } else {
+    //        this->covar.resize(12 * this->param.num_trajectory_states, 12 * this->param.num_trajectory_states);
+    //    }
+    //
+    //    for (auto &block : this->param_blocks) {
+    //        problem.AddParameterBlock(block.data(), 12, nullptr);
+    //    }
+    //
+    //    ceres::Solver::Options options;
+    //    options.linear_solver_type = ceres::DENSE_QR;
+    //    options.max_num_iterations = this->param.max_inner_iters;
+    //    options.max_num_consecutive_invalid_steps = 30;
+    //    options.function_tolerance = 1e-8;
+    //    options.parameter_tolerance = 1e-7;
+    //    options.logging_type = ceres::LoggingType::SILENT;
+    //
+    //    ceres::Covariance::Options covar_options;
+    //    covar_options.sparse_linear_algebra_library_type = ceres::SparseLinearAlgebraLibraryType::SUITE_SPARSE;
+    //    covar_options.algorithm_type = ceres::CovarianceAlgorithmType::SPARSE_QR;
+    //
+    //    if (this->param.solver_threads < 1) {
+    //        options.num_threads = std::thread::hardware_concurrency();
+    //        options.num_linear_solver_threads = std::thread::hardware_concurrency();
+    //        covar_options.num_threads = std::thread::hardware_concurrency();
+    //    } else {
+    //        options.num_threads = this->param.solver_threads;
+    //        options.num_linear_solver_threads = this->param.solver_threads;
+    //        covar_options.num_threads = this->param.solver_threads;
+    //    }
+    //
+    //    if (this->param.lock_first) {
+    //        problem.SetParameterBlockConstant(this->param_blocks.at(0).data());
+    //    }
+    //
+    //    if (problem.NumResidualBlocks() < this->param.min_residuals) {
+    //        LOG_ERROR("Less than expected residuals, resetting");
+    //        LOG_ERROR("%d residuals, threshold is %d", problem.NumResidualBlocks(), this->param.min_residuals);
+    //        this->resetTrajectory();
+    //        this->initialized = false;
+    //        delete[] parameters;
+    //        return false;
+    //    } else if (!this->param.only_extract_features) {
+    //        ceres::Solver::Summary summary;
+    //        ceres::Solve(options, &problem, &summary);
+    //        if (this->param.plot_stuff) {
+    //            LOG_INFO("%s", summary.FullReport().c_str());
+    //        }
+    //        //        ceres::Covariance covariance(covar_options);
+    //        //        if (!covariance.Compute(this->param_blocks, &problem)) {
+    //        //            LOG_ERROR("covariance did not compute");
+    //        //        }
+    //        //        covariance.GetCovarianceMatrixInTangentSpace(this->param_blocks, this->covar.data());
+    //        if (this->param.solution_remapping) {
+    //            this->applyRemap();
+    //        }
+    //        this->updateOperatingPoint();
+    //    }
+    //    delete[] parameters;
+    return true;
+}
+
+bool LaserOdom::match() {
+    T_TYPE last_transform;
+    auto &ref = this->cur_trajectory.back().pose;
+
+    for (int i = 0; i < this->param.opt_iters; i++) {
+        if (i > 0) {
+            memcpy(last_transform.storage.data(), ref.storage.data(), 96);
+        }
+        /// 1. Transform all features to the start of their respective scans
+        for (uint32_t i = 0; i < this->scan_stamps_chrono.size(); i++) {
+            this->scan_stampsf.at(i) = std::chrono::duration<float, std::chrono::seconds>(
+                                         this->scan_stamps_chrono.at(i) - this->scan_stamps_chrono.front())
+                                         .count();
+        }
+        this->transformer.update(this->cur_trajectory, this->scan_stampsf);
+        for (uint32_t i = 0; i < this->param.n_window; i++) {
+            for (uint32_t j = 0; j < this->N_FEATURES; j++) {
+                auto &feat = this->feat_pts.at(i).at(j);
+                auto &featT = this->feat_pts_T.at(i).at(j);
+                this->transformer.transformToStart(feat, featT, <#initializer#>);
+            }
+        }
+
+        /// 2. Build kd trees on transformed points
+        /// 3. Transform and match to configured number of nearest neighbours, depending on config
+        /// 4. Filter out bad correspondences
+        /// 5. Build Ceres Residuals
+        /// 6. Solve
+
+        if (!this->runOptimization()) {
+            return false;
+        }
+        if (i > 0 && ref.isNear(last_transform, this->param.diff_tol)) {
+            break;
+        }
+    }
     return true;
 }
 
@@ -864,8 +893,9 @@ void LaserOdom::updateDifferences() {
         this->cur_difference.at(i).candle_multiplier.block<6, 1>(0, 0) =
           this->cur_trajectory.at(i + 1).pose.manifoldMinus(this->cur_trajectory.at(i).pose).cast<float>();
         this->cur_difference.at(i).candle_multiplier.block<6, 1>(6, 0) =
-                (T_TYPE::SE3ApproxInvLeftJacobian(this->cur_difference.at(i).candle_multiplier.block<6, 1>(0, 0)) *
-          this->cur_trajectory.at(i + 1).vel.cast<float>()).cast<float>();
+          (T_TYPE::SE3ApproxInvLeftJacobian(this->cur_difference.at(i).candle_multiplier.block<6, 1>(0, 0)) *
+           this->cur_trajectory.at(i + 1).vel.cast<float>())
+            .cast<float>();
     }
 }
 
