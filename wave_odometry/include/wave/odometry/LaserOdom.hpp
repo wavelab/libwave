@@ -41,7 +41,6 @@
 #include "wave/kinematics/constant_velocity_gp_prior.hpp"
 #include "wave/matching/pointcloud_display.hpp"
 #include "wave/odometry/feature_extractor.hpp"
-#include "wave/odometry/kdtreetype.hpp"
 #include "wave/odometry/PointXYZIR.hpp"
 #include "wave/odometry/PointXYZIT.hpp"
 #include "wave/odometry/odometry_types.hpp"
@@ -126,38 +125,32 @@ class LaserOdom {
     explicit LaserOdom(const LaserOdomParams params, const FeatureExtractorParams feat_params);
     ~LaserOdom();
     void addPoints(const std::vector<PointXYZIR> &pts, int tick, TimeType stamp);
-
-    std::vector<FeatureKDTree<double>> prv_feature_points;  // previous features now in map
-
-    std::vector<Trajectory, Eigen::aligned_allocator<Trajectory>> cur_trajectory;
-    std::vector<TrajDifference, Eigen::aligned_allocator<TrajDifference>> cur_difference;
-    Vec6 current_twist;
-
-    std::vector<Trajectory, Eigen::aligned_allocator<Trajectory>> prev_trajectory;
-
-    T_TYPE inv_prior_pose;
-    Vec6 prior_twist;
-
     void rollover(TimeType stamp);
     bool match();
     void registerOutputFunction(std::function<void()> output_function);
+    void updateParams(const LaserOdomParams);
+    LaserOdomParams getParams();
+
+    std::vector<Trajectory, Eigen::aligned_allocator<Trajectory>> cur_trajectory;
+    std::vector<Trajectory, Eigen::aligned_allocator<Trajectory>> prev_trajectory;
+    std::vector<TrajDifference, Eigen::aligned_allocator<TrajDifference>> cur_difference;
+
+    T_TYPE inv_prior_pose;
+    Vec6 prior_twist;
 
     // Shared memory
     std::mutex output_mutex;
     pcl::PointCloud<pcl::PointXYZI> undistorted_cld;
     std::vector<pcl::PointCloud<pcl::PointXYZ>, Eigen::aligned_allocator<pcl::PointCloud<pcl::PointXYZ>>>
-      undis_features;  // undis_edges, undis_flats;
+      undis_features;
     std::vector<pcl::PointCloud<pcl::PointXYZ>, Eigen::aligned_allocator<pcl::PointCloud<pcl::PointXYZ>>>
-      map_features;  // map_edges, map_flats;
+      map_features;
     std::vector<std::vector<std::vector<double>>> output_corrs;
     std::vector<double> output_eigen;
     TimeType undistorted_stamp;
     Transformation<> undistort_transform;
     Vec6 undistort_velocity;
     Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> covar;
-
-    void updateParams(const LaserOdomParams);
-    LaserOdomParams getParams();
 
     const uint32_t N_SIGNALS = 2;
     const uint32_t N_FEATURES = 5;
@@ -195,17 +188,14 @@ class LaserOdom {
     int prv_tick = std::numeric_limits<int>::max();
 
     FeatureExtractor feature_extractor;
+    void updateStoredFeatures();
 
     void buildTrees();
     bool findCorrespondingPoints(const Vec3 &query, const uint32_t &f_idx, std::vector<size_t> *index);
     bool outOfBounds(const Vec3 &query, const uint32_t &f_idx, const std::vector<size_t> &index);
 
     void undistort();
-    PCLPointXYZIT applyIMU(const PCLPointXYZIT &pt);
-    void transformToMap(
-      const double *const pt, const uint32_t tick, double *output, uint32_t &k, uint32_t &kp1, double &tau);
-    void transformToMap(const double *const pt, const uint32_t tick, double *output);
-    void transformToCurLidar(const double *const pt, const uint32_t tick, double *output);
+
     void resetTrajectory();
     void copyTrajectory();
     void applyRemap();
@@ -222,9 +212,7 @@ class LaserOdom {
     std::vector<float> trajectory_stamps;
 
     Mat6 sqrtinfo;
-    TimeType prv_time, cur_time;
-
-    void getTransformIndices(const uint32_t &tick, uint32_t &start, uint32_t &end, double &frac);
+    std::vector<TimeType> scan_stamps;
 
     // Input scan as an vector of eigen tensors with dimensions rings x (channels, max points in ring)
     std::vector<int> counters;
@@ -233,8 +221,10 @@ class LaserOdom {
     // rings x (channels, points in ring)
     std::vector<Eigen::Tensor<float, 2>, Eigen::aligned_allocator<Eigen::Tensor<float, 2>>> signals;
 
-    // feature points, indexed by feature type and ring
+    // indices of points to use for features, indexed by feature type and ring
     std::vector<std::vector<Eigen::Tensor<int, 1>, Eigen::aligned_allocator<Eigen::Tensor<int, 1>>>> indices;
+
+    //Feature points indexed by scan id and then feature index
     std::vector<std::vector<Eigen::Tensor<float, 2>, Eigen::aligned_allocator<Eigen::Tensor<float, 2>>>> feature_points;
 
     // This is container to hold indices of for each feature used in the optimization
@@ -242,10 +232,7 @@ class LaserOdom {
     // It contains a vector of indices, the first is the feature point, the next are the indices of the
     // map or prv feature points it corresponds to
     std::vector<std::vector<std::vector<std::vector<uint64_t>>>> feature_corrs;
-
     std::vector<std::vector<std::pair<uint64_t, AssociationStatus>>> feature_association;
-
-    std::vector<std::shared_ptr<kd_tree_t<double>>> feature_idx;
 
     std::vector<ResidualType> feature_residuals;
 };

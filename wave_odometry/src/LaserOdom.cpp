@@ -34,7 +34,7 @@ LaserOdom::LaserOdom(const LaserOdomParams params, const FeatureExtractorParams 
     this->signals.resize(n_ring);
 
     for (uint32_t i = 0; i < n_ring; i++) {
-        this->cur_scan.at(i) = Eigen::Tensor<float, 2>(5, this->MAX_POINTS);
+        this->cur_scan.at(i) = Eigen::Tensor<float, 2>(4, this->MAX_POINTS);
         this->signals.at(i) = Eigen::Tensor<float, 2>(this->N_SIGNALS, this->MAX_POINTS);
     }
 
@@ -112,60 +112,6 @@ LaserOdom::LaserOdom(const LaserOdomParams params, const FeatureExtractorParams 
     this->PtPMem.resize(3000);
 }
 
-/// tau is the time of the point
-void LaserOdom::getTransformIndices(const uint32_t &tick, uint32_t &start, uint32_t &end, double &tau) {
-    // This will round down to provide first transform index
-    start = ((tick * (param.num_trajectory_states - 1)) / (param.max_ticks * this->param.n_window));
-    end = start + 1;
-    tau = (tick * this->param.scan_period) / (this->param.max_ticks * this->param.n_window);
-}
-
-void LaserOdom::transformToMap(
-  const double *const pt, const uint32_t tick, double *output, uint32_t &k, uint32_t &kp1, double &tau) {
-//    this->getTransformIndices(tick, k, kp1, tau);
-//
-//    Eigen::Matrix<double, 12, 12> hat, candle;
-//    this->cv_vector.at(k).tau = &tau;
-//    this->cv_vector.at(k).calculateStuff(hat, candle);
-//
-//    T_TYPE T_MAP_LIDAR_i = this->cur_trajectory.at(k).pose;
-//
-//    Eigen::Map<const Vec3> LIDAR_i_P(pt, 3, 1);
-//    Eigen::Map<Vec3> MAP_P(output, 3, 1);
-//    T_MAP_LIDAR_i.manifoldPlus(hat.block<6, 12>(0, 0) * this->cur_difference.at(k).hat_multiplier +
-//                               candle.block<6, 12>(0, 0) * this->cur_difference.at(k).candle_multiplier);
-//    T_MAP_LIDAR_i.transform(LIDAR_i_P, MAP_P);
-}
-
-void LaserOdom::transformToMap(const double *const pt, const uint32_t tick, double *output) {
-    uint32_t k, kp1;
-    double tau;
-
-    this->transformToMap(pt, tick, output, k, kp1, tau);
-}
-
-void LaserOdom::transformToCurLidar(const double *const pt, const uint32_t tick, double *output) {
-//    uint32_t k, kp1;
-//    double tau;
-//    this->getTransformIndices(tick, k, kp1, tau);
-//
-//    Eigen::Matrix<double, 12, 12> hat, candle;
-//    this->cv_vector.at(k).tau = &tau;
-//    this->cv_vector.at(k).calculateStuff(hat, candle);
-//
-//    T_TYPE T_MAP_LIDAR_i = this->cur_trajectory.at(k).pose;
-//
-//    T_MAP_LIDAR_i.manifoldPlus(hat.block<6, 12>(0, 0) * this->cur_difference.at(k).hat_multiplier +
-//                               candle.block<6, 12>(0, 0) * this->cur_difference.at(k).candle_multiplier);
-//
-//    Eigen::Map<const Vec3> LIDAR_I_P(pt, 3, 1);
-//    Eigen::Map<Vec3> LIDAR_END_P(output, 3, 1);
-//
-//    auto &T_MAP_LIDAR_END = this->cur_trajectory.back().pose;
-//
-//    (T_MAP_LIDAR_END.transformInverse() * T_MAP_LIDAR_i).transform(LIDAR_I_P, LIDAR_END_P);
-}
-
 void LaserOdom::updateParams(const LaserOdomParams new_params) {
     this->param = new_params;
 }
@@ -193,7 +139,7 @@ LaserOdom::~LaserOdom() {
 
 void LaserOdom::registerOutputFunction(std::function<void()> output_function) {
     this->f_output = std::move(output_function);
-    this->output_thread = std::unique_ptr<std::thread>(new std::thread(&LaserOdom::spinOutput, this));
+    this->output_thread = std::make_unique<std::thread>(&LaserOdom::spinOutput, this);
 }
 
 void LaserOdom::spinOutput() {
@@ -369,33 +315,30 @@ void LaserOdom::applyRemap() {
     this->copyTrajectory();
 }
 
-// For annoying clamping function
-namespace {
-
-inline float clampToRange(const float ip, const float min, const float max) {
-    if (ip > max) {
-        return max;
+void LaserOdom::updateStoredFeatures() {
+#pragma omp parallel for
+    for (uint32_t i = 0; i < this->N_FEATURES; i++) {
+        auto &feat = this->feature_points.back().at(i);
+        long featcnt = 0;
+        for (const auto &elem : this->indices.at(i)) {
+            featcnt += elem.dimension(0);
+        }
+        feat.resize(4, featcnt);
+        long offset = 0;
+        for (const auto &elem : this->indices.at(i)) {
+            for (long j = 0; j < elem.dimension(0); j++) {
+                feat.slice(ar2({0, offset}), ar2({4, 1})) = elem.slice(ar2({j, 0}), ar2({4, 1}));
+            }
+            offset += elem.dimension(0);
+        }
     }
-    if (ip < min) {
-        return min;
-    }
-    return ip;
-}
 }
 
 void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, TimeType stamp) {
-    static uint32_t n_scan_in_batch = 0;
-    bool trigger = false;
-    if (tick - this->prv_tick < -200) {
-        n_scan_in_batch = (n_scan_in_batch + 1) % this->param.n_window;
-        if (n_scan_in_batch == 0) {
-            trigger = true;
-        }
-    }
-    if (trigger) {                 // tolerate minor nonlinearity error
+    if (tick - this->prv_tick < -200) {                 // tolerate minor nonlinearity error
         this->feature_extractor.getFeatures(this->cur_scan, this->signals, this->counters, this->indices);
-        if (this->initialized) {   // there is a set of previous features from
-                                   // last scan
+        this->updateStoredFeatures();
+        if (this->initialized) {
             T_TYPE last_transform;
             auto &ref = this->cur_trajectory.back().pose;
 
@@ -438,7 +381,6 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
         std::fill(this->counters.begin(), this->counters.end(), 0);
     }
 
-    float tick_frac = (float) tick / (float) this->param.max_ticks;
     for (PointXYZIR pt : pts) {
         if (counters.at(pt.ring) >= this->MAX_POINTS) {
             throw std::out_of_range("Rebuild with higher max points");
@@ -446,11 +388,9 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
         this->cur_scan.at(pt.ring)(0, counters.at(pt.ring)) = pt.x;
         this->cur_scan.at(pt.ring)(1, counters.at(pt.ring)) = pt.y;
         this->cur_scan.at(pt.ring)(2, counters.at(pt.ring)) = pt.z;
-        this->cur_scan.at(pt.ring)(3, counters.at(pt.ring)) = tick_frac;
-        // todo put timestamp here
-        this->cur_scan.at(pt.ring)(4, counters.at(pt.ring)) = 0;
-        // todo, consider doing this operation using tensors to check for speedup
-        this->signals.at(pt.ring)(0, counters.at(pt.ring)) = (float) sqrt(pt.x * pt.x + pt.y * pt.y + pt.z * pt.z);
+        this->cur_scan.at(pt.ring)(3, counters.at(pt.ring)) = std::chrono::duration<float, std::chrono::seconds>(stamp - this->scan_stamps.back()).count();
+
+        this->signals.at(pt.ring)(0, counters.at(pt.ring)) = sqrtf(pt.x * pt.x + pt.y * pt.y + pt.z * pt.z);
         this->signals.at(pt.ring)(1, counters.at(pt.ring)) = pt.intensity;
 
         this->counters.at(pt.ring)++;
@@ -495,16 +435,12 @@ void LaserOdom::updateViz() {
 //    this->display->addPointcloud(this->prev_viz, 0);
 }
 
-PCLPointXYZIT LaserOdom::applyIMU(const PCLPointXYZIT &p) {
-    // for now don't transform
-    PCLPointXYZIT pt;
-    pt = p;
-    return pt;
-}
-
 void LaserOdom::rollover(TimeType stamp) {
-    this->prv_time = this->cur_time;
-    this->cur_time = stamp;
+    for (uint32_t i = 0; i + 1 < this->param.n_window; i++) {
+        std::swap(this->feature_points.at(i), this->feature_points.at(i+1));
+        std::swap(this->scan_stamps.at(i), this->scan_stamps.at(i+1));
+    }
+    this->scan_stamps.back() = stamp;
 
     this->buildTrees();
     for (unlong i = 0; i < this->param.n_ring; i++) {
@@ -678,8 +614,6 @@ bool LaserOdom::outOfBounds(const Vec3 &query, const uint32_t &f_idx, const std:
 }
 
 bool LaserOdom::match() {
-    double zero_pt[3] = {0};
-
     // set up pointer for evaluating residuals
     const double **parameters;
     parameters = new const double *[4];
