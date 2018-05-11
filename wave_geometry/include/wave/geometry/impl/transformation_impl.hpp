@@ -464,14 +464,15 @@ Mat6 Transformation<Derived, approximate>::SE3ApproxLeftJacobian(const Vec6 &W) 
     Mat3 wx;
     skewSymmetric3(W.template block<3, 1>(0, 0), wx);
 
-    Mat6 retval, adj;
+    Mat6 retval; //, adj;
     retval.setZero();
-    adj.setZero();
+    //adj.setZero();
 
     // This is applying the adjoint operator to the se(3) vector: se(3) -> adj(se(3))
-    adj.template block<3, 3>(0, 0) = wx;
-    adj.template block<3, 3>(3, 3) = wx;
-    adj.template block<3, 3>(3, 0) = skewSymmetric3(W.template block<3, 1>(3, 0));
+    retval.template block<3, 3>(0, 0) = 0.5 * wx;
+    retval.template block<3, 3>(3, 3) = 0.5 * wx;
+    retval.template block<3, 3>(3, 0) = 0.5 * skewSymmetric3(W.template block<3, 1>(3, 0));
+    retval = retval + Mat6::Identity();
 
     // double A;
     // Fourth order terms are shown should you ever want to used them.
@@ -480,8 +481,8 @@ Mat6 Transformation<Derived, approximate>::SE3ApproxLeftJacobian(const Vec6 &W) 
     // C = 1/24 - wn*wn/360 + wn*wn*wn*wn/13440;
     // D = 1/120 -wn*wn/2520 + wn*wn*wn*wn/120960;
 
-    retval.noalias() =
-      Mat6::Identity() + 0.5 * adj + 0.1666666666666666666666 * adj * adj;  // + *adj*adj*adj; // + D*adj*adj*adj*adj;
+//    retval.noalias() =
+//      Mat6::Identity() + 0.5 * adj; // + 0.1666666666666666666666 * adj * adj;  // + *adj*adj*adj; // + D*adj*adj*adj*adj;
 
     return retval;
 }

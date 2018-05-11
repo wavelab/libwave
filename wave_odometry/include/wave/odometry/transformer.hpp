@@ -18,6 +18,7 @@
 
 #include "wave/geometry/transformation.hpp"
 #include "wave/odometry/odometry_types.hpp"
+#include "wave/utils/math.hpp"
 
 namespace wave {
 
@@ -60,6 +61,8 @@ class Transformer {
                           const uint32_t &scan);
     void transformToEnd(const Eigen::Tensor<float, 2> &points, Eigen::Tensor<float, 2> &points_transformed,
                             const uint32_t &scan);
+
+    void constantTransform(const uint32_t &fromScan, const uint32_t &toScan, const Eigen::Tensor<float, 2> &input, Eigen::Tensor<float, 2> &output);
 
  private:
     /// Contains the trajectories optimized over plus any extras required to meet difference criteria

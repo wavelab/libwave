@@ -193,7 +193,7 @@ class LaserOdom {
 
     void updateStoredFeatures();
     bool match();
-    bool runOptimization();
+    bool runOptimization(ceres::Problem &problem);
 
     void buildTrees();
     bool findCorrespondingPoints(const Vec3 &query, const uint32_t &f_idx, std::vector<size_t> *index);
@@ -234,6 +234,14 @@ class LaserOdom {
     std::vector<std::vector<Eigen::Tensor<float, 2>, Eigen::aligned_allocator<Eigen::Tensor<float, 2>>>> feat_pts, feat_pts_T;
     std::vector<std::vector<Eigen::Map<Eigen::MatrixXf>>> mapped_features;
     std::vector<std::vector<Nabo::NNSearchF*>> kdidx;
+
+    struct Correspondence {
+        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+        Eigen::Tensor<float, 2> Tpts;
+        Eigen::MatrixXi indices;
+        Eigen::MatrixXf sqrdist;
+    };
+    std::vector<std::vector<Correspondence, Eigen::aligned_allocator<Correspondence>>> corrs;
 
     // This is container to hold indices of for each feature used in the optimization
     // It is indexed by feature_id, then by ring_id, then by correspondence.

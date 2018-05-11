@@ -69,9 +69,9 @@ bool SE3PointToLineGP::Evaluate(double const *const *parameters, double *residua
     this->objects.T_cur_twist =
       this->objects.hat * state_tk_map + this->objects.candle * state_tkp1_map;
 
-    this->objects.T_current.setFromExpMap(this->objects.T_cur_twist);
+    wave::Transformation::expMap1st(this->objects.T_cur_twist, this->objects.T_current);
 
-    wave::Vec3 point = this->objects.T_current.transform(this->objects.T0_pt);
+    wave::Vec3 point = this->objects.T_current.block<3,3>(0,0) * this->objects.T0_pt + this->objects.T_current.block<3,1>(0,3);
 
     double p_A[3] = {point(0) - this->ptA[0], point(1) - this->ptA[1], point(2) - this->ptA[2]};
 

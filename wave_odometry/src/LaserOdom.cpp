@@ -557,7 +557,7 @@ bool LaserOdom::findCorrespondingPoints(const Vec3 &query, const uint32_t &f_idx
     // use bins and enforce that the set of correspondences should fall into at
     // least 2 bins
     double offset = 0;
-    double current_azimuth = 0;
+    double current_elevation = 0;
     uint16_t counter = 0;
     bool non_zero_bin = false;
     double const *point;
@@ -566,8 +566,8 @@ bool LaserOdom::findCorrespondingPoints(const Vec3 &query, const uint32_t &f_idx
         if (counter == 0) {
             offset = std::atan2(point[2], std::sqrt(point[0] * point[0] + point[1] * point[1]));
         } else {
-            current_azimuth = std::atan2(point[2], std::sqrt(point[0] * point[0] + point[1] * point[1]));
-            double t_bin = (current_azimuth - offset) / this->param.azimuth_tol;
+            current_elevation = std::atan2(point[2], std::sqrt(point[0] * point[0] + point[1] * point[1]));
+            double t_bin = (current_elevation - offset) / this->param.azimuth_tol;
             int cur_bin = t_bin > 0 ? (int) (t_bin + 0.5) : (int) (t_bin - 0.5);
             if (cur_bin != 0) {
                 non_zero_bin = true;
@@ -602,64 +602,66 @@ bool LaserOdom::outOfBounds(const Vec3 &query, const uint32_t &f_idx, const std:
     return false;
 }
 
-bool LaserOdom::runOptimization() {
+bool LaserOdom::runOptimization(ceres::Problem &problem) {
     // set up pointer for evaluating residuals
-    const double **parameters;
-    parameters = new const double *[4];
-    std::vector<double> residuals;
-
-    ceres::Problem problem;
+    //    const double **parameters;
+    //    parameters = new const double *[4];
+    //    std::vector<double> residuals;
+    //
+    //    ceres::Problem problem;
 
     // Add motion residuals
     // The prior for the pose at the end of the previous trajectory, the prior for twist is the twist at the end of the
     // previous
     // trajectory
     //    Transformation<> identity;
-    if (this->param.motion_prior) {
-        this->cv_vector.at(0).calculateLinInvCovariance();
-
-        Vec12 op_error;
-
-        T_TYPE diff;
-        this->cur_trajectory.begin()->pose.compose(this->inv_prior_pose, diff);
-        op_error.block<6, 1>(0, 0) = diff.logMap();
-        op_error.block<6, 1>(6, 0) = this->cur_trajectory.begin()->vel - this->prior_twist;
-
-        // expect the correction to be the negative of the error
-        ceres::CostFunction *prior_cost = new ceres::NormalPrior(this->cv_vector.at(0).inv_covar.sqrt(), -op_error);
-
-        problem.AddResidualBlock(prior_cost, nullptr, this->param_blocks.at(0).data());
-    }
-
-    for (uint32_t i = 0; i < this->param.num_trajectory_states; i++) {
-        if (i + 1 < this->param.num_trajectory_states) {
-            this->cv_vector.at(i).calculateLinInvCovariance();
-
-            Vec12 op_error;
-
-            op_error.block<6, 1>(0, 0) =
-              this->cur_trajectory.at(i + 1).pose.manifoldMinus(this->cur_trajectory.at(i).pose) -
-              (this->cv_vector.at(i).tkp1 - this->cv_vector.at(i).tk) * this->cur_trajectory.at(i).vel;
-            op_error.block<6, 1>(6, 0) = this->cur_trajectory.at(i + 1).vel - this->cur_trajectory.at(i).vel;
-
-            ceres::CostFunction *motion_cost = new wave_optimization::ConstantVelocityPrior(
-              this->cv_vector.at(i).inv_covar.sqrt(), op_error, this->cv_vector.at(i).tkp1 - this->cv_vector.at(i).tk);
-
-            problem.AddResidualBlock(
-              motion_cost, nullptr, this->param_blocks.at(i).data(), this->param_blocks.at(i + 1).data());
-        }
-    }
-
-    // now loop over each type of feature, and generate residuals for each
-    Eigen::Matrix<double, 12, 12> candle, hat;
-
-    uint32_t k, kp1;
-    double tau;
-
-    std::vector<size_t> ret_indices;
-    std::vector<double> out_dist_sqr;
-
-    uint64_t cur_PtL_idx = 0, cur_PtP_idx = 0;
+    //    if (this->param.motion_prior) {
+    //        this->cv_vector.at(0).calculateLinInvCovariance();
+    //
+    //        Vec12 op_error;
+    //
+    //        T_TYPE diff;
+    //        this->cur_trajectory.begin()->pose.compose(this->inv_prior_pose, diff);
+    //        op_error.block<6, 1>(0, 0) = diff.logMap();
+    //        op_error.block<6, 1>(6, 0) = this->cur_trajectory.begin()->vel - this->prior_twist;
+    //
+    //        // expect the correction to be the negative of the error
+    //        ceres::CostFunction *prior_cost = new ceres::NormalPrior(this->cv_vector.at(0).inv_covar.sqrt(),
+    //        -op_error);
+    //
+    //        problem.AddResidualBlock(prior_cost, nullptr, this->param_blocks.at(0).data());
+    //    }
+    //
+    //    for (uint32_t i = 0; i < this->param.num_trajectory_states; i++) {
+    //        if (i + 1 < this->param.num_trajectory_states) {
+    //            this->cv_vector.at(i).calculateLinInvCovariance();
+    //
+    //            Vec12 op_error;
+    //
+    //            op_error.block<6, 1>(0, 0) =
+    //              this->cur_trajectory.at(i + 1).pose.manifoldMinus(this->cur_trajectory.at(i).pose) -
+    //              (this->cv_vector.at(i).tkp1 - this->cv_vector.at(i).tk) * this->cur_trajectory.at(i).vel;
+    //            op_error.block<6, 1>(6, 0) = this->cur_trajectory.at(i + 1).vel - this->cur_trajectory.at(i).vel;
+    //
+    //            ceres::CostFunction *motion_cost = new wave_optimization::ConstantVelocityPrior(
+    //              this->cv_vector.at(i).inv_covar.sqrt(), op_error, this->cv_vector.at(i).tkp1 -
+    //              this->cv_vector.at(i).tk);
+    //
+    //            problem.AddResidualBlock(
+    //              motion_cost, nullptr, this->param_blocks.at(i).data(), this->param_blocks.at(i + 1).data());
+    //        }
+    //    }
+    //
+    //    // now loop over each type of feature, and generate residuals for each
+    //    Eigen::Matrix<double, 12, 12> candle, hat;
+    //
+    //    uint32_t k, kp1;
+    //    double tau;
+    //
+    //    std::vector<size_t> ret_indices;
+    //    std::vector<double> out_dist_sqr;
+    //
+    //    uint64_t cur_PtL_idx = 0, cur_PtP_idx = 0;
 
     //    for (uint16_t i = 0; i < this->N_FEATURES; i++) {
     //        for (uint16_t j = 0; j < this->param.n_ring; j++) {
@@ -795,62 +797,62 @@ bool LaserOdom::runOptimization() {
     //        problem.AddParameterBlock(block.data(), 12, nullptr);
     //    }
     //
-    //    ceres::Solver::Options options;
-    //    options.linear_solver_type = ceres::DENSE_QR;
-    //    options.max_num_iterations = this->param.max_inner_iters;
-    //    options.max_num_consecutive_invalid_steps = 30;
-    //    options.function_tolerance = 1e-8;
-    //    options.parameter_tolerance = 1e-7;
-    //    options.logging_type = ceres::LoggingType::SILENT;
-    //
-    //    ceres::Covariance::Options covar_options;
-    //    covar_options.sparse_linear_algebra_library_type = ceres::SparseLinearAlgebraLibraryType::SUITE_SPARSE;
-    //    covar_options.algorithm_type = ceres::CovarianceAlgorithmType::SPARSE_QR;
-    //
-    //    if (this->param.solver_threads < 1) {
-    //        options.num_threads = std::thread::hardware_concurrency();
-    //        options.num_linear_solver_threads = std::thread::hardware_concurrency();
-    //        covar_options.num_threads = std::thread::hardware_concurrency();
-    //    } else {
-    //        options.num_threads = this->param.solver_threads;
-    //        options.num_linear_solver_threads = this->param.solver_threads;
-    //        covar_options.num_threads = this->param.solver_threads;
-    //    }
-    //
-    //    if (this->param.lock_first) {
-    //        problem.SetParameterBlockConstant(this->param_blocks.at(0).data());
-    //    }
-    //
-    //    if (problem.NumResidualBlocks() < this->param.min_residuals) {
-    //        LOG_ERROR("Less than expected residuals, resetting");
-    //        LOG_ERROR("%d residuals, threshold is %d", problem.NumResidualBlocks(), this->param.min_residuals);
-    //        this->resetTrajectory();
-    //        this->initialized = false;
-    //        delete[] parameters;
-    //        return false;
-    //    } else if (!this->param.only_extract_features) {
-    //        ceres::Solver::Summary summary;
-    //        ceres::Solve(options, &problem, &summary);
-    //        if (this->param.plot_stuff) {
-    //            LOG_INFO("%s", summary.FullReport().c_str());
-    //        }
-    //        //        ceres::Covariance covariance(covar_options);
-    //        //        if (!covariance.Compute(this->param_blocks, &problem)) {
-    //        //            LOG_ERROR("covariance did not compute");
-    //        //        }
-    //        //        covariance.GetCovarianceMatrixInTangentSpace(this->param_blocks, this->covar.data());
-    //        if (this->param.solution_remapping) {
-    //            this->applyRemap();
-    //        }
-    //        this->updateOperatingPoint();
-    //    }
-    //    delete[] parameters;
+    ceres::Solver::Options options;
+    options.linear_solver_type = ceres::DENSE_QR;
+    options.max_num_iterations = this->param.max_inner_iters;
+    options.max_num_consecutive_invalid_steps = 30;
+    options.function_tolerance = 1e-8;
+    options.parameter_tolerance = 1e-7;
+    options.logging_type = ceres::LoggingType::SILENT;
+
+    ceres::Covariance::Options covar_options;
+    covar_options.sparse_linear_algebra_library_type = ceres::SparseLinearAlgebraLibraryType::SUITE_SPARSE;
+    covar_options.algorithm_type = ceres::CovarianceAlgorithmType::SPARSE_QR;
+
+    if (this->param.solver_threads < 1) {
+        options.num_threads = std::thread::hardware_concurrency();
+        options.num_linear_solver_threads = std::thread::hardware_concurrency();
+        covar_options.num_threads = std::thread::hardware_concurrency();
+    } else {
+        options.num_threads = this->param.solver_threads;
+        options.num_linear_solver_threads = this->param.solver_threads;
+        covar_options.num_threads = this->param.solver_threads;
+    }
+
+    if (this->param.lock_first) {
+        problem.SetParameterBlockConstant(this->param_blocks.at(0).data());
+    }
+
+    if (problem.NumResidualBlocks() < this->param.min_residuals) {
+        LOG_ERROR("Less than expected residuals, resetting");
+        LOG_ERROR("%d residuals, threshold is %d", problem.NumResidualBlocks(), this->param.min_residuals);
+        this->resetTrajectory();
+        this->initialized = false;
+        return false;
+    } else if (!this->param.only_extract_features) {
+        ceres::Solver::Summary summary;
+        ceres::Solve(options, &problem, &summary);
+        if (this->param.plot_stuff) {
+            LOG_INFO("%s", summary.FullReport().c_str());
+        }
+        //        ceres::Covariance covariance(covar_options);
+        //        if (!covariance.Compute(this->param_blocks, &problem)) {
+        //            LOG_ERROR("covariance did not compute");
+        //        }
+        //        covariance.GetCovarianceMatrixInTangentSpace(this->param_blocks, this->covar.data());
+        if (this->param.solution_remapping) {
+            this->applyRemap();
+        }
+        this->updateOperatingPoint();
+    }
     return true;
 }
 
 bool LaserOdom::match() {
     T_TYPE last_transform;
     auto &ref = this->cur_trajectory.back().pose;
+
+    ceres::Problem problem;
 
     for (int op = 0; op < this->param.opt_iters; op++) {
         if (op > 0) {
@@ -869,51 +871,163 @@ bool LaserOdom::match() {
                 auto &featT = this->feat_pts_T.at(i).at(j);
                 this->transformer.transformToStart(feat, featT, i);
 
-                this->mapped_features.at(i).at(j) = Eigen::Map<Eigen::MatrixXf>(featT.data(), featT.dimension(0), featT.dimension(1));
+                this->mapped_features.at(i).at(j) =
+                  Eigen::Map<Eigen::MatrixXf>(featT.data(), featT.dimension(0), featT.dimension(1));
             }
         }
 
-        /// 2. Build kd trees on transformed points
+/// 2. Build kd trees on transformed points
 #pragma omp parallel for
         for (uint32_t i = 0; i < this->param.n_window; i++) {
             for (uint32_t j = 0; j < this->N_FEATURES; j++) {
                 delete this->kdidx.at(i).at(j);
-                //todo, see if this is creating a eigen matrix instead of just using the map
+                // todo, see if this is creating a eigen matrix instead of just using the map
                 this->kdidx.at(i).at(j) = Nabo::NNSearchF::createKDTreeLinearHeap(this->mapped_features.at(i).at(j));
             }
         }
 
-        /// 3. Transform and match to configured number of nearest neighbours, depending on config
+/// 3. Transform and match to configured number of nearest neighbours, depending on config
+#pragma omp parallel for
         for (int i = 0; i < this->param.n_window; i++) {
+            uint32_t cnt = 0;
             for (int j = -this->param.nn_matches; j <= this->param.nn_matches; j++) {
                 // make sure that matches are within bounds
-                if (i+j >= this->param.n_window ||
-                    i+j < 0 ||
-                    j == 0) {
+                if (i + j >= this->param.n_window || i + j < 0 || j == 0) {
                     continue;
                 }
                 for (uint32_t k = 0; k < this->N_FEATURES; k++) {
-                    //
-                    transformer.constantTransform(T1, T2, dataIn, dataOut);
+                    transformer.constantTransform(
+                      i + j, i, this->feat_pts_T.at(i + j).at(k), this->corrs.at(i).at(cnt).Tpts);
                     // Find 5 nearest neighbours with 10% error allowed.
-                    this->kdidx.at(i).at(k)->knn(dataOut, this->some, this->some2, 5, 0.1, Nabo::NNSearchF::SORT_RESULTS);
+                    Eigen::Map<Eigen::MatrixXf> search(this->corrs.at(i).at(cnt).Tpts.data(),
+                                                       this->corrs.at(i).at(cnt).Tpts.dimension(0),
+                                                       this->corrs.at(i).at(cnt).Tpts.dimension(1));
+                    this->kdidx.at(i).at(k)->knn(search,
+                                                 this->corrs.at(i).at(cnt).indices,
+                                                 this->corrs.at(i).at(cnt).sqrdist,
+                                                 5,
+                                                 0.1,
+                                                 Nabo::NNSearchF::SORT_RESULTS);
                 }
             }
         }
 
-        /// 4. Filter out bad correspondences
-        /// 5. Build Ceres Residuals
-        /// 6. Solve
-        this->runOptimization();
+        /// 4. Build Ceres Residuals while filtering bad correspondences
+        // todo think about covariance weighting
+        for (uint32_t m_idx = 0; m_idx < this->param.n_window; m_idx++) {
+            Eigen::Matrix3f covZ;
+            if (this->findCorrespondingPoints(query, i, &ret_indices)) {
+                // check if there is enough memory for next cost function
+                if (cur_PtL_idx == this->PtLMem.size()) {
+                    LOG_ERROR("Pre allocated point to line memory block is too small, reseting");
+                    return false;
+                }
+                if (cur_PtP_idx == this->PtPMem.size()) {
+                    LOG_ERROR("Pre allocated point to plane memory block is too small, reseting");
+                    return false;
+                }
+                if (this->param.no_extrapolation && this->outOfBounds(query, i, ret_indices)) {
+                    break;
+                }
+                this->cv_vector.at(k).tau = &tau;
+                this->cv_vector.at(k).calculateStuff(hat, candle);
+                ceres::CostFunction *cost_function;
+                wave_optimization::SE3PointToLineGP *pTl_cost_function = nullptr;
+                wave_optimization::SE3PointToPlaneGP *pTPl_cost_function = nullptr;
+                double rescale;
+                switch (this->feature_definitions.at(i).residual) {
+                    case PointToLine:
+                        if (this->param.treat_lines_as_planes) {
+                            this->PtPMem.at(cur_PtP_idx).hat = hat.block<6, 12>(0, 0);
+                            this->PtPMem.at(cur_PtP_idx).candle = candle.block<6, 12>(0, 0);
+                            this->PtPMem.at(cur_PtP_idx).T0_pt = query;
+                            pTPl_cost_function = new wave_optimization::SE3PointToPlaneGP(
+                              this->prv_feature_points.at(i).points.at(ret_indices.at(0)).data(),
+                              this->prv_feature_points.at(i).points.at(ret_indices.at(1)).data(),
+                              zero_pt,
+                              this->PtPMem.at(cur_PtP_idx),
+                              covZ.cast<double>(),
+                              this->param.use_weighting);
+                            residuals.resize(1);
+                            rescale = pTPl_cost_function->weight;
+                            cost_function = pTPl_cost_function;
+                        } else {
+                            this->PtLMem.at(cur_PtL_idx).hat = hat.block<6, 12>(0, 0);
+                            this->PtLMem.at(cur_PtL_idx).candle = candle.block<6, 12>(0, 0);
+                            this->PtLMem.at(cur_PtP_idx).T0_pt = query;
+                            pTl_cost_function = new wave_optimization::SE3PointToLineGP(
+                              this->prv_feature_points.at(i).points.at(ret_indices.at(0)).data(),
+                              this->prv_feature_points.at(i).points.at(ret_indices.at(1)).data(),
+                              this->PtLMem.at(cur_PtL_idx),
+                              covZ.cast<double>(),
+                              this->param.use_weighting);
+                            residuals.resize(2);
+                            rescale = pTl_cost_function->weight_matrix.trace();
+                            cost_function = pTl_cost_function;
+                        }
+                        break;
+                    case PointToPlane:
+                        this->PtPMem.at(cur_PtP_idx).hat = hat.block<6, 12>(0, 0);
+                        this->PtPMem.at(cur_PtP_idx).candle = candle.block<6, 12>(0, 0);
+                        this->PtPMem.at(cur_PtP_idx).T0_pt = query;
+                        pTPl_cost_function = new wave_optimization::SE3PointToPlaneGP(
+                          this->prv_feature_points.at(i).points.at(ret_indices.at(0)).data(),
+                          this->prv_feature_points.at(i).points.at(ret_indices.at(1)).data(),
+                          this->prv_feature_points.at(i).points.at(ret_indices.at(2)).data(),
+                          this->PtPMem.at(cur_PtP_idx),
+                          covZ.cast<double>(),
+                          this->param.use_weighting);
+                        residuals.resize(1);
+                        rescale = pTPl_cost_function->weight;
+                        cost_function = pTPl_cost_function;
+                        break;
+                    default: continue;
+                }
 
-        if (!this->runOptimization()) {
-            return false;
-        }
-        if (op > 0 && ref.isNear(last_transform, this->param.diff_tol)) {
-            break;
+                parameters[0] = this->param_blocks.at(k).data();
+                parameters[1] = this->param_blocks.at(kp1).data();
+
+                if (!cost_function->Evaluate(parameters, residuals.data(), nullptr)) {
+                    LOG_ERROR("Cost function did not evaluate");
+                    delete cost_function;
+                    continue;
+                }
+                rescale *= rescale;
+
+                if (norm(residuals) > rescale * this->param.max_residual_val) {
+                    delete cost_function;
+                    continue;
+                }
+
+                ceres::LossFunction *p_LossFunction = new BisquareLoss(this->param.robust_param);
+                std::vector<uint64_t> corr_list;
+                corr_list.emplace_back(pt_cntr);
+                for (auto index : ret_indices) {
+                    corr_list.emplace_back(index);
+                    this->feature_association.at(i).at(index).second = AssociationStatus::CORRESPONDED;
+                }
+                this->feature_corrs.at(i).at(j).emplace_back(corr_list);
+
+                problem.AddResidualBlock(
+                  cost_function, p_LossFunction, this->param_blocks.at(k).data(), this->param_blocks.at(kp1).data());
+
+                if (pTl_cost_function) {
+                    cur_PtL_idx++;
+                } else if (pTPl_cost_function) {
+                    cur_PtP_idx++;
+                }
+                /// 5. Solve
+                if (!this->runOptimization(problem)) {
+                    return false;
+                }
+                if (op > 0 && ref.isNear(last_transform, this->param.diff_tol)) {
+                    return true;
+                }
+            }
+            LOG_INFO("Problem did not converge within allowed iterations");
+            return true;
         }
     }
-    return true;
 }
 
 void LaserOdom::updateDifferences() {
@@ -944,7 +1058,6 @@ void LaserOdom::resetTrajectory() {
         tra.vel.setZero();
     }
     this->prior_twist.setZero();
-    this->current_twist.setZero();
 }
 
 }  // namespace wave

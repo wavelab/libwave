@@ -174,4 +174,29 @@ void Transformer::calculateInterpolationFactors(
     hat(0, 1) = T1 - dT * candle(0, 0) - candle(0, 1);
     hat(1, 1) = 1.0f - dT * candle(1, 0) - candle(1, 1);
 }
+
+void
+Transformer::constantTransform(const uint32_t &fromScan, const uint32_t &toScan, const Eigen::Tensor<float, 2> &input,
+                               Eigen::Tensor<float, 2> &output) {
+    output.resize(3, input.dimension(1));
+
+    const Mat3f RtT = this->aug_trajectories.at(this->scan_indices.at(toScan)).pose.storage.block<3, 3>(0,0).transpose().cast<float>();
+    const Mat3f Rf = this->aug_trajectories.at(this->scan_indices.at(fromScan)).pose.storage.block<3, 3>(0,0).cast<float>();
+
+    const Vec3f Tt = this->aug_trajectories.at(this->scan_indices.at(toScan)).pose.storage.block<3, 1>(3,0).cast<float>();
+    const Vec3f Tf = this->aug_trajectories.at(this->scan_indices.at(fromScan)).pose.storage.block<3, 1>(3,0).cast<float>();
+
+    const Eigen::Matrix<float, 3, 3, Eigen::RowMajor> R = RtT * Rf;
+    const Vec3f T = RtT * (Tf - Tt);
+
+    Eigen::TensorMap<Eigen::Tensor<const float, 1>> R1(R.data(), 3);
+    Eigen::TensorMap<Eigen::Tensor<const float, 1>> R2(R.data() + 3, 3);
+    Eigen::TensorMap<Eigen::Tensor<const float, 1>> R3(R.data() + 6, 3);
+    Eigen::TensorMap<Eigen::Tensor<const float, 2>> TT(T.data(), {3, 1});
+
+    Eigen::array<ptrdiff_t, 1> dims({0});
+    Eigen::array<long, 2> bcast({1, input.dimension(1)});
+
+    output = input.convolve(R1, dims).concatenate(input.convolve(R2, dims), 0).concatenate(input.convolve(R3, dims), 0) + TT.broadcast(bcast);
+}
 }
