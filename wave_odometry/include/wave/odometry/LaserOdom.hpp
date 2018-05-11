@@ -71,6 +71,8 @@ struct LaserOdomParams {
     uint32_t num_trajectory_states = 3;
     // How many scans to optimize over, must be at least 1, obviously
     uint32_t n_window = 1;
+    // Distance of scans to match. eg. 1 scan-to-scan only, 2 scan-to-scan and scan-to-next-scan, etc
+    int nn_matches = 1;
 
     int opt_iters = 25;         // How many times to refind correspondences
     int max_inner_iters = 100;  // How many iterations of ceres to run with each set of correspondences
@@ -230,7 +232,8 @@ class LaserOdom {
 
     //Feature points indexed by scan id and then feature index
     std::vector<std::vector<Eigen::Tensor<float, 2>, Eigen::aligned_allocator<Eigen::Tensor<float, 2>>>> feat_pts, feat_pts_T;
-
+    std::vector<std::vector<Eigen::Map<Eigen::MatrixXf>>> mapped_features;
+    std::vector<std::vector<Nabo::NNSearchF*>> kdidx;
 
     // This is container to hold indices of for each feature used in the optimization
     // It is indexed by feature_id, then by ring_id, then by correspondence.

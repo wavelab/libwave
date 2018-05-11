@@ -852,8 +852,8 @@ bool LaserOdom::match() {
     T_TYPE last_transform;
     auto &ref = this->cur_trajectory.back().pose;
 
-    for (int i = 0; i < this->param.opt_iters; i++) {
-        if (i > 0) {
+    for (int op = 0; op < this->param.opt_iters; op++) {
+        if (op > 0) {
             memcpy(last_transform.storage.data(), ref.storage.data(), 96);
         }
         /// 1. Transform all features to the start of their respective scans
@@ -867,20 +867,49 @@ bool LaserOdom::match() {
             for (uint32_t j = 0; j < this->N_FEATURES; j++) {
                 auto &feat = this->feat_pts.at(i).at(j);
                 auto &featT = this->feat_pts_T.at(i).at(j);
-                this->transformer.transformToStart(feat, featT, <#initializer#>);
+                this->transformer.transformToStart(feat, featT, i);
+
+                this->mapped_features.at(i).at(j) = Eigen::Map<Eigen::MatrixXf>(featT.data(), featT.dimension(0), featT.dimension(1));
             }
         }
 
         /// 2. Build kd trees on transformed points
+#pragma omp parallel for
+        for (uint32_t i = 0; i < this->param.n_window; i++) {
+            for (uint32_t j = 0; j < this->N_FEATURES; j++) {
+                delete this->kdidx.at(i).at(j);
+                //todo, see if this is creating a eigen matrix instead of just using the map
+                this->kdidx.at(i).at(j) = Nabo::NNSearchF::createKDTreeLinearHeap(this->mapped_features.at(i).at(j));
+            }
+        }
+
         /// 3. Transform and match to configured number of nearest neighbours, depending on config
+        for (int i = 0; i < this->param.n_window; i++) {
+            for (int j = -this->param.nn_matches; j <= this->param.nn_matches; j++) {
+                // make sure that matches are within bounds
+                if (i+j >= this->param.n_window ||
+                    i+j < 0 ||
+                    j == 0) {
+                    continue;
+                }
+                for (uint32_t k = 0; k < this->N_FEATURES; k++) {
+                    //
+                    transformer.constantTransform(T1, T2, dataIn, dataOut);
+                    // Find 5 nearest neighbours with 10% error allowed.
+                    this->kdidx.at(i).at(k)->knn(dataOut, this->some, this->some2, 5, 0.1, Nabo::NNSearchF::SORT_RESULTS);
+                }
+            }
+        }
+
         /// 4. Filter out bad correspondences
         /// 5. Build Ceres Residuals
         /// 6. Solve
+        this->runOptimization();
 
         if (!this->runOptimization()) {
             return false;
         }
-        if (i > 0 && ref.isNear(last_transform, this->param.diff_tol)) {
+        if (op > 0 && ref.isNear(last_transform, this->param.diff_tol)) {
             break;
         }
     }
