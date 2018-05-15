@@ -29,15 +29,16 @@ ICPMatcherParams::ICPMatcherParams(const std::string &config_path) {
     }
 }
 
-ICPMatcher::ICPMatcher(ICPMatcherParams params1) : params(params1) {
-    this->ref = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
-    this->target = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
-    this->final = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
-    this->downsampled_ref =
-      boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
-    this->downsampled_target =
-      boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+ICPMatcher::ICPMatcher(const ICPMatcherParams &params) : params(params) {
+    this->updateFromParams();
+}
 
+void ICPMatcher::setParams(const ICPMatcherParams &params) {
+    this->params = params;
+    this->updateFromParams();
+}
+
+void ICPMatcher::updateFromParams() {
     if (this->params.res > 0) {
         this->filter.setLeafSize(
           this->params.res, this->params.res, this->params.res);
@@ -50,30 +51,19 @@ ICPMatcher::ICPMatcher(ICPMatcherParams params1) : params(params1) {
     this->icp.setEuclideanFitnessEpsilon(this->params.fit_eps);
 }
 
-ICPMatcher::~ICPMatcher() {
-    if (this->ref) {
-        this->ref.reset();
-        this->downsampled_ref.reset();
-    }
-    if (this->target) {
-        this->target.reset();
-        this->downsampled_target.reset();
-    }
-    if (this->final) {
-        this->final.reset();
-    }
-}
-
 void ICPMatcher::setRef(const PCLPointCloudPtr &ref) {
     this->ref = ref;
+    this->icp.setInputSource(this->ref);
 }
 
 void ICPMatcher::setTarget(const PCLPointCloudPtr &target) {
     this->target = target;
+    this->icp.setInputTarget(this->target);
 }
 
 bool ICPMatcher::match() {
     if (this->params.res > 0) {
+        // Use downsampling
         if (this->params.multiscale_steps > 0) {
             Affine3 running_transform = Affine3::Identity();
             for (int i = this->params.multiscale_steps; i >= 0; i--) {
@@ -105,6 +95,7 @@ bool ICPMatcher::match() {
         } else {
             this->filter.setLeafSize(
               this->params.res, this->params.res, this->params.res);
+
             this->filter.setInputCloud(this->ref);
             this->filter.filter(*(this->downsampled_ref));
             this->icp.setInputSource(this->downsampled_ref);
@@ -121,8 +112,9 @@ bool ICPMatcher::match() {
             }
         }
     } else {
-        this->icp.setInputTarget(this->target);
-        this->icp.setInputSource(this->ref);
+        // No downsampling
+        // In this case we've already called setInputSource and setInputTarget
+        // and don't need to again.
         this->icp.align(*(this->final));
         if (this->icp.hasConverged()) {
             this->result.matrix() = icp.getFinalTransformation().cast<double>();

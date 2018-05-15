@@ -71,8 +71,11 @@ class ICPMatcher : public Matcher<PCLPointCloudPtr> {
      * downsampled using a voxel filter, the argument is the edge length of
      * each voxel. If resolution is non-positive, no downsampling is used.
      */
-    explicit ICPMatcher(ICPMatcherParams params1);
-    ~ICPMatcher();
+    explicit ICPMatcher(const ICPMatcherParams &params);
+    ~ICPMatcher() = default;
+
+    /** Sets the parameters used by subsequent matches */
+    void setParams(const ICPMatcherParams &params);
 
     /** sets the reference pointcloud for the matcher
      * @param ref - Pointcloud
@@ -84,6 +87,10 @@ class ICPMatcher : public Matcher<PCLPointCloudPtr> {
      */
     void setTarget(const PCLPointCloudPtr &target);
 
+    PCLPointCloudPtr getTarget() const {
+        return this->target;
+    };
+
     /** runs the matcher, blocks until finished.
      * Returns true if successful
      */
@@ -93,19 +100,9 @@ class ICPMatcher : public Matcher<PCLPointCloudPtr> {
      */
     void estimateInfo();
 
-    ICPMatcherParams params;
-
  private:
-    /** An instance of the ICP class from PCL */
-    pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
-    /** An instance of a PCL voxel filter. It is used to downsample input. */
-    pcl::VoxelGrid<pcl::PointXYZ> filter;
-
-    /** Pointers to the reference and target pointclouds. The "final" pointcloud
-     * is not exposed. PCL's ICP class creates an aligned verison of the target
-     * pointcloud after matching, so the "final" member is used as a sink for
-     * it. */
-    PCLPointCloudPtr ref, target, final, downsampled_ref, downsampled_target;
+    /** Reads the `params` member and updates other members */
+    void updateFromParams();
 
     /**
      * Calculates a covariance estimate based on Lu and Milios Scan Matching
@@ -117,6 +114,28 @@ class ICPMatcher : public Matcher<PCLPointCloudPtr> {
      * Calculates a covariance estimate based on Censi
      */
     void estimateCensi();
+
+ private:
+    ICPMatcherParams params;
+
+    /** An instance of the ICP class from PCL */
+    pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
+    /** An instance of a PCL voxel filter. It is used to downsample input. */
+    pcl::VoxelGrid<pcl::PointXYZ> filter;
+
+    /** Pointers to the reference and target pointclouds. The "final" pointcloud
+     * is not exposed. PCL's ICP class creates an aligned verison of the target
+     * pointcloud after matching, so the "final" member is used as a sink for
+     * it. */
+    PCLPointCloudPtr ref = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+    PCLPointCloudPtr target =
+      boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+    PCLPointCloudPtr final =
+      boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+    PCLPointCloudPtr downsampled_ref =
+      boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+    PCLPointCloudPtr downsampled_target =
+      boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
 };
 
 /** @} group matching */
