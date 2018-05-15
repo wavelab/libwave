@@ -87,6 +87,10 @@ class ICPMatcher : public Matcher<PCLPointCloudPtr> {
      */
     void setTarget(const PCLPointCloudPtr &target);
 
+    PCLPointCloudPtr getTarget() const {
+        return this->target;
+    };
+
     /** runs the matcher, blocks until finished.
      * Returns true if successful
      */
@@ -132,10 +136,6 @@ class ICPMatcher : public Matcher<PCLPointCloudPtr> {
       boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
     PCLPointCloudPtr downsampled_target =
       boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
-
-    // Set true when `ref` or `target` changed; next match needs to use new ones
-    bool ref_updated = true;
-    bool target_updated = true;
 };
 
 /** @} group matching */

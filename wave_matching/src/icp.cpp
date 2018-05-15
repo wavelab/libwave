@@ -43,6 +43,7 @@ ICPMatcher::ICPMatcher(const ICPMatcherParams &params) : params(params) {
 
 void ICPMatcher::setParams(const ICPMatcherParams &params) {
     this->params = params;
+    this->updateFromParams();
 }
 
 void ICPMatcher::updateFromParams() {
@@ -59,17 +60,13 @@ void ICPMatcher::updateFromParams() {
 }
 
 void ICPMatcher::setRef(const PCLPointCloudPtr &ref) {
-    if (ref != this->ref) {
-        this->ref = ref;
-        this->ref_updated = true;
-    }
+    this->ref = ref;
+    this->icp.setInputSource(this->ref);
 }
 
 void ICPMatcher::setTarget(const PCLPointCloudPtr &target) {
-    if (target != this->target) {
-        this->target = target;
-        this->target_updated = true;
-    }
+    this->target = target;
+    this->icp.setInputTarget(this->target);
 }
 
 bool ICPMatcher::match() {
@@ -107,18 +104,13 @@ bool ICPMatcher::match() {
             this->filter.setLeafSize(
               this->params.res, this->params.res, this->params.res);
 
-            if (this->ref_updated) {
-                this->filter.setInputCloud(this->ref);
-                this->filter.filter(*(this->downsampled_ref));
-                this->icp.setInputSource(this->downsampled_ref);
-                this->ref_updated = false;
-            }
-            if (this->target_updated) {
-                this->filter.setInputCloud(this->target);
-                this->filter.filter(*(this->downsampled_target));
-                this->icp.setInputTarget(this->downsampled_target);
-                this->target_updated = false;
-            }
+            this->filter.setInputCloud(this->ref);
+            this->filter.filter(*(this->downsampled_ref));
+            this->icp.setInputSource(this->downsampled_ref);
+
+            this->filter.setInputCloud(this->target);
+            this->filter.filter(*(this->downsampled_target));
+            this->icp.setInputTarget(this->downsampled_target);
 
             this->icp.align(*(this->final));
             if (icp.hasConverged()) {
@@ -129,14 +121,8 @@ bool ICPMatcher::match() {
         }
     } else {
         // No downsampling
-        if (this->target_updated) {
-            this->icp.setInputTarget(this->target);
-            this->target_updated = false;
-        }
-        if (this->ref_updated) {
-            this->icp.setInputSource(this->ref);
-            this->ref_updated = false;
-        }
+        // In this case we've already called setInputSource and setInputTarget
+        // and don't need to again.
         this->icp.align(*(this->final));
         if (this->icp.hasConverged()) {
             this->result.matrix() = icp.getFinalTransformation().cast<double>();
