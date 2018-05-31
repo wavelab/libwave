@@ -12,8 +12,8 @@ class ImuBiasPrior : public gtsam::NoiseModelFactor1<T> {
 
  public:
     ImuBiasPrior(gtsam::Key key,
-              gtsam::imuBias::ConstantBias m,
-              const gtsam::SharedNoiseModel &model)
+                 gtsam::imuBias::ConstantBias m,
+                 const gtsam::SharedNoiseModel &model)
         : gtsam::NoiseModelFactor1<T>::NoiseModelFactor1(model, key),
           prior(m) {}
 

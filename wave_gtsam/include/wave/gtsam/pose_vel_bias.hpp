@@ -35,8 +35,12 @@ struct PoseVelBias {
         bias.setZero();
     }
 
-    enum { pose_offset = 0, vel_offset = 6, bias_offset = 12,
-                                            imu_bias_offset = 15 };
+    enum {
+        pose_offset = 0,
+        vel_offset = 6,
+        bias_offset = 12,
+        imu_bias_offset = 15
+    };
 };
 }
 
@@ -70,9 +74,8 @@ struct traits<wave::PoseVelBias> {
         if (!traits<BiasType>::Equals(m1.bias, m2.bias, tol)) {
             return false;
         }
-        if (!traits<imuBias::ConstantBias>::Equals(m1.imu_bias,
-                                                    m2.imu_bias,
-                                                    tol)) {
+        if (!traits<imuBias::ConstantBias>::Equals(
+              m1.imu_bias, m2.imu_bias, tol)) {
             return false;
         }
         return true;
@@ -101,8 +104,7 @@ struct traits<wave::PoseVelBias> {
         retval.block<3, 1>(12, 0).noalias() =
           traits<BiasType>::Local(origin.bias, other.bias);
         retval.block<6, 1>(15, 0).noalias() =
-          traits<imuBias::ConstantBias>::Local(origin.imu_bias,
-                                                other.imu_bias);
+          traits<imuBias::ConstantBias>::Local(origin.imu_bias, other.imu_bias);
         return retval;
     }
 
@@ -114,8 +116,7 @@ struct traits<wave::PoseVelBias> {
         retval.bias =
           traits<BiasType>::Retract(origin.bias, v.block<3, 1>(12, 0));
         retval.imu_bias = traits<imuBias::ConstantBias>::Retract(
-                                                    origin.imu_bias,
-                                                    v.block<6, 1>(15, 0));
+          origin.imu_bias, v.block<6, 1>(15, 0));
         return retval;
     }
 
@@ -148,7 +149,7 @@ struct traits<wave::PoseVelBias> {
         retval.block<3, 1>(12, 0).noalias() =
           traits<BiasType>::Logmap(m.bias, J3);
         retval.block<6, 1>(15, 0).noalias() =
-                        traits<imuBias::ConstantBias>::Logmap(m.imu_bias, J4);
+          traits<imuBias::ConstantBias>::Logmap(m.imu_bias, J4);
         if (Hm) {
             Hm->block<6, 6>(0, 0).noalias() = J1;
             Hm->block<6, 6>(6, 6).noalias() = J2;
@@ -173,7 +174,7 @@ struct traits<wave::PoseVelBias> {
         retval.vel = traits<VelType>::Expmap(v.block<6, 1>(6, 0), J2);
         retval.bias = traits<BiasType>::Expmap(v.block<3, 1>(12, 0), J3);
         retval.imu_bias =
-               traits<imuBias::ConstantBias>::Expmap(v.block<6, 1>(15, 0), J4);
+          traits<imuBias::ConstantBias>::Expmap(v.block<6, 1>(15, 0), J4);
         if (Hv) {
             Hv->block<6, 6>(0, 0).noalias() = J1;
             Hv->block<6, 6>(6, 6).noalias() = J2;
@@ -206,9 +207,8 @@ struct traits<wave::PoseVelBias> {
         retval.pose = traits<Pose3>::Compose(m1.pose, m2.pose, J1, J2);
         retval.vel = traits<VelType>::Compose(m1.vel, m2.vel, J3, J4);
         retval.bias = traits<BiasType>::Compose(m1.bias, m2.bias, J5, J6);
-        retval.imu_bias = traits<imuBias::ConstantBias>::Compose(m1.imu_bias,
-                                                            m2.imu_bias,
-                                                            J7, J8);
+        retval.imu_bias = traits<imuBias::ConstantBias>::Compose(
+          m1.imu_bias, m2.imu_bias, J7, J8);
         if (H1) {
             H1->block<6, 6>(0, 0).noalias() = J1;
             H1->block<6, 6>(6, 6).noalias() = J3;
@@ -247,9 +247,8 @@ struct traits<wave::PoseVelBias> {
         retval.pose = traits<Pose3>::Between(m1.pose, m2.pose, J1, J2);
         retval.vel = traits<VelType>::Between(m1.vel, m2.vel, J3, J4);
         retval.bias = traits<BiasType>::Between(m1.bias, m2.bias, J5, J6);
-        retval.imu_bias = traits<imuBias::ConstantBias>::Between(m1.imu_bias,
-                                                            m2.imu_bias,
-                                                            J7, J8);
+        retval.imu_bias = traits<imuBias::ConstantBias>::Between(
+          m1.imu_bias, m2.imu_bias, J7, J8);
         if (H1) {
             H1->block<6, 6>(0, 0).noalias() = J1;
             H1->block<6, 6>(6, 6).noalias() = J3;
@@ -279,8 +278,8 @@ struct traits<wave::PoseVelBias> {
         retval.pose = traits<Pose3>::Inverse(m.pose, J1);
         retval.vel = traits<VelType>::Inverse(m.vel, J2);
         retval.bias = traits<BiasType>::Inverse(m.bias, J3);
-        retval.imu_bias = 
-            traits<imuBias::ConstantBias>::Inverse(m.imu_bias, J4);
+        retval.imu_bias =
+          traits<imuBias::ConstantBias>::Inverse(m.imu_bias, J4);
         if (H) {
             H->block<6, 6>(0, 0).noalias() = J1;
             H->block<6, 6>(6, 6).noalias() = J2;

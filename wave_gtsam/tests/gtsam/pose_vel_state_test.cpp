@@ -214,9 +214,8 @@ TEST(pose_vel_bias_state, logmap) {
     auto tangent_vel = gtsam::traits<gtsam::Vector6>::Logmap(state.vel, H_vel);
     auto tangent_bias =
       gtsam::traits<gtsam::Vector3>::Logmap(state.bias, H_bias);
-    auto tangent_imubias = gtsam::traits<gtsam::imuBias::ConstantBias>::Logmap(
-                                                            bias,
-                                                            H_imubias);
+    auto tangent_imubias =
+      gtsam::traits<gtsam::imuBias::ConstantBias>::Logmap(bias, H_imubias);
 
     // Actual value
     auto tangent_combined =
@@ -276,10 +275,7 @@ TEST(pose_vel_imubias_state, example) {
 
     auto noise = gtsam::noiseModel::Gaussian::Information(info);
     MotionFactor<wave::PoseVelImuBias, wave::PoseVelImuBias> factor(
-                                                            from,
-                                                            to,
-                                                            delta_t,
-                                                            noise);
+      from, to, delta_t, noise);
 
     PoseVelImuBias Start, End;
     Start.vel << 0, 0, 0.1, 5, 0, 0;
@@ -321,12 +317,10 @@ TEST(pose_vel_imubias_state, single_prior) {
     auto result = optimizer.optimize();
 
     EXPECT_TRUE(gtsam::traits<PoseVelImuBias>::Equals(
-                                                state,
-                                                result.at<PoseVelImuBias>(1)));
+      state, result.at<PoseVelImuBias>(1)));
 }
 
 TEST(pose_vel_imubias_state, logmap) {
-
     Eigen::Affine3d T_local_s1;
     T_local_s1.matrix() << 0.936293363584199, -0.275095847318244,
       0.218350663146334, 32.000000000000000, 0.289629477625516,
@@ -349,13 +343,11 @@ TEST(pose_vel_imubias_state, logmap) {
     // Expected values from separate objects
     auto tangent_pose = gtsam::Pose3::Logmap(state.pose, H_pose);
     auto tangent_vel = gtsam::traits<gtsam::Vector6>::Logmap(state.vel, H_vel);
-    auto tangent_imubias = gtsam::traits<gtsam::imuBias::ConstantBias>::Logmap(
-                                                            bias,
-                                                            H_imubias);
+    auto tangent_imubias =
+      gtsam::traits<gtsam::imuBias::ConstantBias>::Logmap(bias, H_imubias);
     // Actual value
-    auto tangent_combined = gtsam::traits<PoseVelImuBias>::Logmap(
-                                                            state,
-                                                            H_combined);
+    auto tangent_combined =
+      gtsam::traits<PoseVelImuBias>::Logmap(state, H_combined);
 
     EXPECT_PRED2(VectorsNear, tangent_combined.segment<6>(0), tangent_pose);
     EXPECT_PRED2(VectorsNear, tangent_combined.segment<6>(6), tangent_vel);
@@ -384,11 +376,8 @@ TEST(pose_vel_imubias_state, trivial_problem) {
         states.at(i).pose =
           states.at(i - 1).pose.retract(delta_t * states.at(i - 1).vel);
         states.at(i).vel = states.at(i - 1).vel;
-        graph.add(
-          MotionFactor<wave::PoseVelImuBias, wave::PoseVelImuBias>(i - 1,
-                                                                i,
-                                                                delta_t,
-                                                                model));
+        graph.add(MotionFactor<wave::PoseVelImuBias, wave::PoseVelImuBias>(
+          i - 1, i, delta_t, model));
     }
 
     gtsam::LevenbergMarquardtOptimizer optimizer(graph, initial);
@@ -396,9 +385,8 @@ TEST(pose_vel_imubias_state, trivial_problem) {
 
     for (uint64_t i = 0; i < result.size(); i++) {
         PoseVelImuBias res = result.at<PoseVelImuBias>(i);
-        EXPECT_TRUE(gtsam::traits<PoseVelImuBias>::Equals(states.at(i),
-                                                        res,
-                                                        1e-3));
+        EXPECT_TRUE(
+          gtsam::traits<PoseVelImuBias>::Equals(states.at(i), res, 1e-3));
     }
 }
 
