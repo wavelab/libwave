@@ -198,6 +198,29 @@ TEST(WaveImuFactor, WaveErrorAndJacobians) {
     double diffDelta = 1e-7;
     EXPECT_TRUE(gtsam::internal::testFactorJacobians(
       "ImuFactor", factor, values, diffDelta, 1e-3));
+
+
+    // Evaluate error with wrong values
+    Vector3 v2_wrong = v2 + Vector3(0.1, 0.1, 0.1);
+    s2.vel.tail<3>() = v2_wrong;
+    values.update(S(2), s2);
+    expectedError.tail<3>() << -0.0724744871, -0.040715657, -0.151952901;
+    EXPECT_TRUE(assert_equal(
+      expectedError, factor.evaluateError(s1, s2, kZeroBias), 1e-2));
+
+    EXPECT_TRUE(
+      assert_equal(expectedError, factor.unwhitenedError(values), 1e-2));
+
+    // Make sure the whitening is done correctly
+    Matrix cov = pim.preintMeasCov();
+    Matrix R = RtR(cov.inverse());
+    Vector whitened = R * expectedError;
+    EXPECT_TRUE(
+      assert_equal(0.5 * whitened.squaredNorm(), factor.error(values), 1e-4));
+
+    // Make sure linearization is correct
+    EXPECT_TRUE(gtsam::internal::testFactorJacobians(
+      "ImuFactorWrongValues", factor, values, diffDelta, 1e-3));
 }
 
 }  // namespace wave
