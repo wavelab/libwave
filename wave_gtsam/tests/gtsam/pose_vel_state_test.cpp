@@ -284,7 +284,7 @@ TEST(pose_vel_imubias_state, example) {
     End.pose = Start.pose.Retract(delta_t * Start.vel);
 
     gtsam::Matrix H1, H2;
-    Eigen::Matrix<double, 15, 1> err = factor.evaluateError(Start, End, H1, H2);
+    Eigen::Matrix<double, 18, 1> err = factor.evaluateError(Start, End, H1, H2);
 
     EXPECT_TRUE(err.isZero());
 }
