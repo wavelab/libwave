@@ -149,12 +149,10 @@ TEST(WaveImuFactor, WaveErrorAndJacobians) {
     auto s1 = wave::PoseVelBias{};
     s1.pose = x1;
     s1.vel << kZero, v1;
-    s1.imu_bias = bias;
 
     auto s2 = wave::PoseVelBias{};
     s2.pose = x2;
     s2.vel << kZero, v2;
-    s2.imu_bias = bias2;
 
     // Create expected factor
     PreintegratedImuMeasurements pim(
@@ -164,16 +162,19 @@ TEST(WaveImuFactor, WaveErrorAndJacobians) {
     Vector errorExpected = imuFactor.evaluateError(x1, v1, x2, v2, bias);
 
     // Create our factor
-    PreintegratedImuFactor<wave::PoseVelBias> factor{S(1), S(2), combined_pim};
+    PreintegratedImuFactor<wave::PoseVelBias> factor{
+      S(1), S(2), B(1), B(2), combined_pim};
 
     // Call evaluateError directly
-    EXPECT_TRUE(
-      assert_equal(errorExpected, factor.evaluateError(s1, s2).head(9)));
+    EXPECT_TRUE(assert_equal(
+      errorExpected, factor.evaluateError(s1, s2, bias, bias2).head(9)));
 
     // Call with values
     Values values;
     values.insert(S(1), s1);
     values.insert(S(2), s2);
+    values.insert(B(1), bias);
+    values.insert(B(2), bias2);
     EXPECT_TRUE(
       assert_equal(errorExpected, factor.unwhitenedError(values).head(9)));
 

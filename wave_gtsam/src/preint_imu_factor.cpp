@@ -12,7 +12,7 @@ gtsam::Vector PreintegratedImuFactor<PoseVelBias>::evaluateError(
   boost::optional<gtsam::Matrix &> H2,
   boost::optional<gtsam::Matrix &> H3,
   boost::optional<gtsam::Matrix &> H4) const {
-    // Split up the PoseVelImuBias combined states into pose, vel, and IMU bias.
+    // Split up the PoseVelImuBias combined states into pose and vel.
     // (ignore gps bias)
     // Then use code adapted from gtsam::CombinedImuFactor.
     const auto &pose_i = state_i.pose;
@@ -46,7 +46,7 @@ gtsam::Vector PreintegratedImuFactor<PoseVelBias>::evaluateError(
                                          H1 ? &D_r_bias_i : 0);
 
     if (H1) {
-        H1->resize(15, 18);
+        H1->resize(15, 15);
 
         // Jacobian wrt pose (Pi)
         H1->block<9, 6>(0, PoseVelImuBias::pose_offset).noalias() = D_r_pose_i;
@@ -59,13 +59,13 @@ gtsam::Vector PreintegratedImuFactor<PoseVelBias>::evaluateError(
         // Jacobian of bias wrt linear velocity is zero
         H1->block<6, 3>(9, PoseVelImuBias::vel_offset + 3).setZero();
         // Jacobian of all wrt angular velocity is zero
-        H1->block<12, 3>(0, PoseVelImuBias::vel_offset).setZero();
+        H1->block<15, 3>(0, PoseVelImuBias::vel_offset).setZero();
 
         // Jacobian of all wrt gps bias is zero
         H1->block<15, 3>(0, PoseVelBias::bias_offset).setZero();
     }
     if (H2) {
-        H2->resize(15, 18);
+        H2->resize(15, 15);
 
         // Jacobian wrt pose (Pj)
         H2->block<9, 6>(0, PoseVelImuBias::pose_offset).noalias() = D_r_pose_j;
@@ -78,7 +78,7 @@ gtsam::Vector PreintegratedImuFactor<PoseVelBias>::evaluateError(
         // Jacobian of bias wrt linear velocity is zero
         H2->block<6, 3>(9, PoseVelImuBias::vel_offset + 3).setZero();
         // Jacobian of all wrt angular velocity is zero
-        H2->block<12, 3>(0, PoseVelImuBias::vel_offset).setZero();
+        H2->block<15, 3>(0, PoseVelImuBias::vel_offset).setZero();
 
         // Jacobian of all wrt gps bias is zero
         H2->block<15, 3>(0, PoseVelBias::bias_offset).setZero();
@@ -93,9 +93,9 @@ gtsam::Vector PreintegratedImuFactor<PoseVelBias>::evaluateError(
     if (H4) {
         H4->resize(15, 6);
         // Jacobian wrt imu bias_j is zero
-        H4->block<9, 6>(0, PoseVelImuBias::imu_bias_offset).setZero();
+        H4->block<9, 6>(0, 0).setZero();
         // adding: [dBiasAcc/dBias_i ; dBiasOmega/dBias_i]
-        H4->block<6, 6>(9, PoseVelImuBias::imu_bias_offset) = Hbias_j;
+        H4->block<6, 6>(9, 0) = Hbias_j;
     }
 
     // Return overall error
@@ -114,8 +114,7 @@ gtsam::Vector PreintegratedImuFactor<PoseVelImuBias>::evaluateError(
   boost::optional<gtsam::Matrix &> H2,
   boost::optional<gtsam::Matrix &> H3,
   boost::optional<gtsam::Matrix &> H4) const {
-    // Split up the PoseVelImuBias combined states into pose, vel, and IMU bias.
-    // (ignore gps bias)
+    // Split up the PoseVelImuBias combined states into pose and vel.
     // Then use code adapted from gtsam::CombinedImuFactor.
     const auto &pose_i = state_i.pose;
     const auto &pose_j = state_j.pose;
@@ -148,7 +147,7 @@ gtsam::Vector PreintegratedImuFactor<PoseVelImuBias>::evaluateError(
                                          H1 ? &D_r_bias_i : 0);
 
     if (H1) {
-        H1->resize(15, 18);
+        H1->resize(15, 12);
 
         // Jacobian wrt pose (Pi)
         H1->block<9, 6>(0, PoseVelImuBias::pose_offset).noalias() = D_r_pose_i;
@@ -161,10 +160,10 @@ gtsam::Vector PreintegratedImuFactor<PoseVelImuBias>::evaluateError(
         // Jacobian of bias wrt linear velocity is zero
         H1->block<6, 3>(9, PoseVelImuBias::vel_offset + 3).setZero();
         // Jacobian of all wrt angular velocity is zero
-        H1->block<12, 3>(0, PoseVelImuBias::vel_offset).setZero();
+        H1->block<15, 3>(0, PoseVelImuBias::vel_offset).setZero();
     }
     if (H2) {
-        H2->resize(15, 18);
+        H2->resize(15, 12);
 
         // Jacobian wrt pose (Pj)
         H2->block<9, 6>(0, PoseVelImuBias::pose_offset).noalias() = D_r_pose_j;
@@ -177,7 +176,7 @@ gtsam::Vector PreintegratedImuFactor<PoseVelImuBias>::evaluateError(
         // Jacobian of bias wrt linear velocity is zero
         H2->block<6, 3>(9, PoseVelImuBias::vel_offset + 3).setZero();
         // Jacobian of all wrt angular velocity is zero
-        H2->block<12, 3>(0, PoseVelImuBias::vel_offset).setZero();
+        H2->block<15, 3>(0, PoseVelImuBias::vel_offset).setZero();
     }
     if (H3) {
         H3->resize(15, 6);
@@ -189,9 +188,9 @@ gtsam::Vector PreintegratedImuFactor<PoseVelImuBias>::evaluateError(
     if (H4) {
         H4->resize(15, 6);
         // Jacobian wrt imu bias_j is zero
-        H4->block<9, 6>(0, PoseVelImuBias::imu_bias_offset).setZero();
+        H4->block<9, 6>(0, 0).setZero();
         // adding: [dBiasAcc/dBias_i ; dBiasOmega/dBias_i]
-        H4->block<6, 6>(9, PoseVelImuBias::imu_bias_offset) = Hbias_j;
+        H4->block<6, 6>(9, 0) = Hbias_j;
     }
 
     // Return overall error

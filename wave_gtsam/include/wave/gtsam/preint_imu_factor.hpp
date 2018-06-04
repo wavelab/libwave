@@ -24,15 +24,22 @@ class PreintegratedImuFactor
                                     gtsam::imuBias::ConstantBias> {
  private:
     gtsam::PreintegratedCombinedMeasurements pim;
-    using Base = gtsam::NoiseModelFactor2<StateType, StateType>;
+    using Base = gtsam::NoiseModelFactor4<StateType,
+                                          StateType,
+                                          gtsam::imuBias::ConstantBias,
+                                          gtsam::imuBias::ConstantBias>;
 
  public:
     PreintegratedImuFactor(gtsam::Key S1,
                            gtsam::Key S2,
+                           gtsam::Key B1,
+                           gtsam::Key B2,
                            const gtsam::PreintegratedCombinedMeasurements &pim)
         : Base{gtsam::noiseModel::Gaussian::Covariance(pim.preintMeasCov()),
                S1,
-               S2},
+               S2,
+               B1,
+               B2},
           pim{pim} {}
 
     gtsam::Vector evaluateError(
