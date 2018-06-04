@@ -133,7 +133,7 @@ TEST(pose_vel_bias_state, example) {
     from = 1;
     to = 2;
 
-    Eigen::Matrix<double, 21, 21> info;
+    Eigen::Matrix<double, 15, 15> info;
     info.setIdentity();
     auto noise = gtsam::noiseModel::Gaussian::Information(info);
     MotionFactor<wave::PoseVelBias, wave::PoseVelBias> factor(
@@ -146,7 +146,7 @@ TEST(pose_vel_bias_state, example) {
     End.pose = Start.pose.Retract(delta_t * Start.vel);
 
     gtsam::Matrix H1, H2;
-    Eigen::Matrix<double, 21, 1> err = factor.evaluateError(Start, End, H1, H2);
+    Eigen::Matrix<double, 15, 1> err = factor.evaluateError(Start, End, H1, H2);
 
     EXPECT_TRUE(err.isZero());
 }
@@ -170,12 +170,7 @@ TEST(pose_vel_bias_state, single_prior) {
     state.vel << -0.4, 0.3, 0.1, 5, 2, 1;
     state.bias << 0.2, -0.1, 0.4;
 
-    gtsam::Vector biasAcc(gtsam::Vector3(0.2, -0.1, 0));
-    gtsam::Vector biasGyro(gtsam::Vector3(0.1, -0.3, -0.2));
-    gtsam::imuBias::ConstantBias bias(biasAcc, biasGyro);
-    state.imu_bias = bias;
-
-    Eigen::Matrix<double, 21, 21> info;
+    Eigen::Matrix<double, 15, 15> info;
     info.setIdentity();
     auto model = gtsam::noiseModel::Gaussian::Information(info);
     auto factor = gtsam::PriorFactor<PoseVelBias>(1, state, model);
@@ -202,20 +197,13 @@ TEST(pose_vel_bias_state, logmap) {
     state.vel << -0.4, 0.3, 0.1, 5, 2, 1;
     state.bias << 0.2, -0.1, 0.4;
 
-    gtsam::Vector biasAcc(gtsam::Vector3(0.2, -0.1, 0));
-    gtsam::Vector biasGyro(gtsam::Vector3(0.1, -0.3, -0.2));
-    gtsam::imuBias::ConstantBias bias(biasAcc, biasGyro);
-    state.imu_bias = bias;
-
-    gtsam::Matrix H_combined, H_pose, H_vel, H_bias, H_imubias;
+    gtsam::Matrix H_combined, H_pose, H_vel, H_bias;
 
     // Expected values from separate objects
     auto tangent_pose = gtsam::Pose3::Logmap(state.pose, H_pose);
     auto tangent_vel = gtsam::traits<gtsam::Vector6>::Logmap(state.vel, H_vel);
     auto tangent_bias =
       gtsam::traits<gtsam::Vector3>::Logmap(state.bias, H_bias);
-    auto tangent_imubias =
-      gtsam::traits<gtsam::imuBias::ConstantBias>::Logmap(bias, H_imubias);
 
     // Actual value
     auto tangent_combined =
@@ -224,11 +212,9 @@ TEST(pose_vel_bias_state, logmap) {
     EXPECT_PRED2(VectorsNear, tangent_combined.segment<6>(0), tangent_pose);
     EXPECT_PRED2(VectorsNear, tangent_combined.segment<6>(6), tangent_vel);
     EXPECT_PRED2(VectorsNear, tangent_combined.segment<3>(12), tangent_bias);
-    EXPECT_PRED2(VectorsNear, tangent_combined.segment<6>(15), tangent_imubias);
     EXPECT_PRED2(MatricesNear, (H_combined.block<6, 6>(0, 0)), H_pose);
     EXPECT_PRED2(MatricesNear, (H_combined.block<6, 6>(6, 6)), H_vel);
     EXPECT_PRED2(MatricesNear, (H_combined.block<3, 3>(12, 12)), H_bias);
-    EXPECT_PRED2(MatricesNear, (H_combined.block<6, 6>(15, 15)), H_imubias);
     EXPECT_TRUE((H_combined.block<6, 9>(0, 6)).isZero());
 }
 
@@ -241,7 +227,7 @@ TEST(pose_vel_bias_state, trivial_problem) {
     initial.insert(0, states.at(0));
     states.at(0).vel << 0, 0, 0.1, 5, 0, 0;
     // Add prior factor on first state
-    auto info = Eigen::Matrix<double, 21, 21>::Identity();
+    auto info = Eigen::Matrix<double, 15, 15>::Identity();
     auto model = gtsam::noiseModel::Gaussian::Information(info);
     graph.add(gtsam::PriorFactor<PoseVelBias>(0, states.at(0), model));
 
@@ -321,6 +307,10 @@ TEST(pose_vel_imubias_state, single_prior) {
 }
 
 TEST(pose_vel_imubias_state, logmap) {
+    gtsam::Vector biasAcc(gtsam::Vector3(0.2, -0.1, 0));
+    gtsam::Vector biasGyro(gtsam::Vector3(0.1, -0.3, -0.2));
+    gtsam::imuBias::ConstantBias bias(biasAcc, biasGyro);
+
     Eigen::Affine3d T_local_s1;
     T_local_s1.matrix() << 0.936293363584199, -0.275095847318244,
       0.218350663146334, 32.000000000000000, 0.289629477625516,
@@ -332,12 +322,7 @@ TEST(pose_vel_imubias_state, logmap) {
     gtsam::Pose3 prior_pose(T_local_s1.matrix());
     state.pose = prior_pose;
     state.vel << -0.4, 0.3, 0.1, 5, 2, 1;
-
-    gtsam::Vector biasAcc(gtsam::Vector3(0.2, -0.1, 0));
-    gtsam::Vector biasGyro(gtsam::Vector3(0.1, -0.3, -0.2));
-    gtsam::imuBias::ConstantBias bias(biasAcc, biasGyro);
     state.imu_bias = bias;
-
     gtsam::Matrix H_combined, H_pose, H_vel, H_imubias;
 
     // Expected values from separate objects

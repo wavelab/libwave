@@ -12,10 +12,9 @@ MotionFactor<wave::PoseVelBias, wave::PoseVelBias>::evaluateError(
   boost::optional<gtsam::Matrix &> H1,
   boost::optional<gtsam::Matrix &> H2) const {
     gtsam::Vector retval;
-    gtsam::imuBias::ConstantBias imu_bias_error;
 
     if (H1) {
-        H1->resize(21, 21);
+        H1->resize(15, 15);
         H1->setIdentity();
 
         H1->block<6, 6>(0, 6).noalias() =
@@ -23,17 +22,15 @@ MotionFactor<wave::PoseVelBias, wave::PoseVelBias>::evaluateError(
     }
 
     if (H2) {
-        H2->resize(21, 21);
-        *H2 = -1 * Eigen::Matrix<double, 21, 21>::Identity();
+        H2->resize(15, 15);
+        *H2 = -1 * Eigen::Matrix<double, 15, 15>::Identity();
     }
 
-    retval.resize(21, 1);
+    retval.resize(15, 1);
     retval.block<6, 1>(0, 0).noalias() =
       m1.vel * this->delt - m1.pose.localCoordinates(m2.pose);
     retval.block<6, 1>(6, 0).noalias() = m1.vel - m2.vel;
     retval.block<3, 1>(12, 0).noalias() = m1.bias - m2.bias;
-    imu_bias_error = m1.imu_bias - m2.imu_bias;
-    retval.block<6, 1>(15, 0) = imu_bias_error.vector();
 
     return retval;
 }
