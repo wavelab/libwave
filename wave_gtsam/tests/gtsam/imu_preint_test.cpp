@@ -11,7 +11,7 @@
 #include <gtsam/base/TestableAssertions.h>
 #include <gtsam/base/numericalDerivative.h>
 
-#include <wave/gtsam/preintg_imu_factor/preint_imu_factor.hpp>
+#include <wave/gtsam/preint_imu_factor.hpp>
 
 #include "wave/wave_test.hpp"
 

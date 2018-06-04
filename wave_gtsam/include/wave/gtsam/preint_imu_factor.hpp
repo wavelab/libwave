@@ -1,5 +1,5 @@
-#ifndef WAVE_PREINTG_IMU_FACTOR_HPP
-#define WAVE_PREINTG_IMU_FACTOR_HPP
+#ifndef WAVE_PREINT_IMU_FACTOR_HPP
+#define WAVE_PREINT_IMU_FACTOR_HPP
 
 #include <gtsam/nonlinear/NonlinearFactor.h>
 #include <gtsam/base/Matrix.h>
@@ -32,4 +32,4 @@ class PreintegratedImuFactor
 };
 }
 
-#endif  // WAVE_PREINTG_IMU_FACTOR_HPP
+#endif  // WAVE_PREINT_IMU_FACTOR_HPP

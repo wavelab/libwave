@@ -12,7 +12,7 @@ WAVE_ADD_MODULE(${PROJECT_NAME} DEPENDS
     src/pose_vel.cpp
     src/pose_vel_bias.cpp
     src/pose_vel_imubias.cpp
-  src/preint_imu_factor/preint_imu_factor.cpp)
+    src/preint_imu_factor.cpp)
 
 # Unit tests
 IF(BUILD_TESTING)
