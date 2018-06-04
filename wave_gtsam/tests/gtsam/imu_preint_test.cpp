@@ -164,7 +164,7 @@ TEST(WaveImuFactor, WaveErrorAndJacobians) {
     Vector errorExpected = imuFactor.evaluateError(x1, v1, x2, v2, bias);
 
     // Create our factor
-    PreintegratedImuFactor factor{S(1), S(2), combined_pim};
+    PreintegratedImuFactor<wave::PoseVelBias> factor{S(1), S(2), combined_pim};
 
     // Call evaluateError directly
     EXPECT_TRUE(
