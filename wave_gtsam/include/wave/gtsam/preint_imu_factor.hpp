@@ -11,14 +11,17 @@
 namespace wave {
 
 /**
- * Binary factor connecting two combined pose/vel/bias states, providing the
- * effect of gtsam::CombinedImuFactor (a 6-ary factor).
+ * 4-ary factor connecting two combined pose/vel/bias states and two IMU biases.
+ * Provides the effect of gtsam::CombinedImuFactor (a 6-ary factor).
  *
  * @tparam StateType either PoseVelBias or PoseVelImuBias
  */
 template <typename StateType>
 class PreintegratedImuFactor
-  : public gtsam::NoiseModelFactor2<StateType, StateType> {
+  : public gtsam::NoiseModelFactor4<StateType,
+                                    StateType,
+                                    gtsam::imuBias::ConstantBias,
+                                    gtsam::imuBias::ConstantBias> {
  private:
     gtsam::PreintegratedCombinedMeasurements pim;
     using Base = gtsam::NoiseModelFactor2<StateType, StateType>;
@@ -35,8 +38,12 @@ class PreintegratedImuFactor
     gtsam::Vector evaluateError(
       const StateType &state_i,
       const StateType &state_j,
+      const gtsam::imuBias::ConstantBias &bias_i,
+      const gtsam::imuBias::ConstantBias &bias_j,
       boost::optional<gtsam::Matrix &> H1 = boost::none,
-      boost::optional<gtsam::Matrix &> H2 = boost::none) const;
+      boost::optional<gtsam::Matrix &> H2 = boost::none,
+      boost::optional<gtsam::Matrix &> H3 = boost::none,
+      boost::optional<gtsam::Matrix &> H4 = boost::none) const;
 };
 }  // namespace wave
 
