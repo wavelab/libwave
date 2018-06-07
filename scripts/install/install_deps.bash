@@ -9,17 +9,17 @@ echo
 
 # Echo the commands before running them
 set -x
-sudo apt-add-repository ppa:lkoppel/robotics
+sudo add-apt-repository ppa:lkoppel/robotics-wavelab
 sudo apt-get update
 
 sudo apt-get install cmake \
   libboost-dev \
   libyaml-cpp-dev \
   libeigen3-dev \
-  libpcl-dev \
+  libpcl1.8-dev \
   libopencv-dev \
-  libceres-dev \
-  libkindr-dev
+  libopencv-core-dev \
+  libceres-wavelab-dev
 
 set +x
 echo
