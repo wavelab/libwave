@@ -20,11 +20,30 @@ This library contains reusable code for:
 - yaml-cpp 0.5.1
 - CMake 2.8.3
 - GCC 5.4
+- gtsam
+- GeographicLib
 
 The above versions are the minimum we test against.
 Some earlier versions may work, but are not tested.
-For convenience, we provide a script which installs these dependencies (except 
-GCC) on Ubuntu 14.04 or Ubuntu 16.04, in `scripts/install/install_deps.bash`.
+For convenience, we provide scripts which install these dependencies (except
+GCC) on Ubuntu 14.04 or Ubuntu 16.04, in `scripts/install/install_deps.bash`,
+ `scripts/install/install_geographiclib.bash`, and `scripts/install/install_gtsam.bash`.
+
+The requirements for each module are:
+
+| Module | Dependencies |
+| ------ | ------------ |
+| wave\_benchmark | <ul><li>Eigen3</li><li>wave\_containers</li><li>wave\_geometry</li><li>wave\_utils</li></ul> |
+| wave\_containers | <ul><li>Boost</li><li>Eigen3</li></ul> |
+| wave\_controls | <ul><li>Eigen3</li></ul> |
+| wave\_geography | <ul><li>Eigen3</li><li>GeographicLib</li></ul> |
+| wave\_geometry | <ul><li>Eigen3</li><li>Kindr</li><li>wave\_utils</li></ul> |
+| wave\_gtsam | <ul><li>Eigen3</li><li>gtsam</li><li>wave\_utils</li></ul> |
+| wave\_kinematics | <ul><li>Eigen3</li><li>wave\_controls</li><li>wave\_utils</li></ul> |
+| wave\_matching | <ul><li>Boost</li><li>Eigen3</li><li>PCL</li><li>wave\_utils</li></ul> |
+| wave\_optimization | <ul><li>ceres</li><li>Eigen3</li><li>wave\_kinematics</li><li>wave\_utils</li><li>wave\_vision</li></ul> |
+| wave\_utils | <ul><li>Eigen3</li><li>yaml-cpp</li></ul> |
+| wave\_vision | <ul><li>Boost Filesystem</li><li>wave\_kinematics</li><li>wave\_utils</li><li>wave\_containers</li><li>Eigen3</li><li>opencv\_calib3d</li><li>opencv\_core</li><li>opencv\_features2d</li><li>opencv\_highgui</li><li>opencv\_imgproc</li><li>opencv\_videoio</li></ul> |
 
 ## Install
 
@@ -44,7 +63,8 @@ Execute the following in the terminal where you want libwave to reside:
 
     # install dependencies
     bash scripts/install/install_deps.bash
-
+    bash scripts/install/install_geographiclib.bash
+    bash scripts/install/install_gtsam.bash
     # compile libwave
     mkdir -p build
     cd build

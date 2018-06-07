@@ -22,6 +22,8 @@ initialize_gitsubmodules() {
 install_deps() {
     cd libwave
     bash scripts/install/install_deps.bash
+    bash scripts/install/install_geographiclib.bash
+    bash scripts/install/install_gtsam.bash
     cd -
 }
 
