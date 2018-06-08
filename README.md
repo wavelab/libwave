@@ -26,10 +26,13 @@ This library contains reusable code for:
 The above versions are the minimum we test against.
 Some earlier versions may work, but are not tested.
 For convenience, we provide scripts which install these dependencies (except
-GCC) on Ubuntu 14.04 or Ubuntu 16.04, in `scripts/install/install_deps.bash`,
- `scripts/install/install_geographiclib.bash`, and `scripts/install/install_gtsam.bash`.
+GCC) on Ubuntu 14.04 or Ubuntu 16.04:
+* `scripts/install/install_deps.bash`
+* `scripts/install/install_geographiclib.bash`
+* `scripts/install/install_gtsam.bash`
+* `scripts/install/install_opencv.bash`
 
-The requirements for each module are:
+The dependencies for each module are:
 
 | Module | Dependencies |
 | ------ | ------------ |
@@ -65,6 +68,8 @@ Execute the following in the terminal where you want libwave to reside:
     bash scripts/install/install_deps.bash
     bash scripts/install/install_geographiclib.bash
     bash scripts/install/install_gtsam.bash
+    bash scripts/install/install_opencv.bash
+
     # compile libwave
     mkdir -p build
     cd build
