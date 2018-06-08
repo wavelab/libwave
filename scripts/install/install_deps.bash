@@ -17,8 +17,6 @@ sudo apt-get install cmake \
   libyaml-cpp-dev \
   libeigen3-dev \
   libpcl1.8-dev \
-  libopencv-dev \
-  libopencv-core-dev \
   libceres-wavelab-dev
 
 set +x
