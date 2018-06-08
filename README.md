@@ -21,7 +21,7 @@ This library contains reusable code for:
 - CMake 2.8.3
 - GCC 5.4
 - gtsam
-- GeographicLib
+- GeographicLib 1.49
 
 The above versions are the minimum we test against.
 Some earlier versions may work, but are not tested.
@@ -46,7 +46,7 @@ The dependencies for each module are:
 | wave\_matching | <ul><li>Boost</li><li>Eigen3</li><li>PCL</li><li>wave\_utils</li></ul> |
 | wave\_optimization | <ul><li>ceres</li><li>Eigen3</li><li>wave\_kinematics</li><li>wave\_utils</li><li>wave\_vision</li></ul> |
 | wave\_utils | <ul><li>Eigen3</li><li>yaml-cpp</li></ul> |
-| wave\_vision | <ul><li>Boost Filesystem</li><li>wave\_kinematics</li><li>wave\_utils</li><li>wave\_containers</li><li>Eigen3</li><li>opencv\_calib3d</li><li>opencv\_core</li><li>opencv\_features2d</li><li>opencv\_highgui</li><li>opencv\_imgproc</li><li>opencv\_videoio</li></ul> |
+| wave\_vision | <ul><li>Boost Filesystem</li><li>Eigen3</li><li>opencv\_calib3d</li><li>opencv\_core</li><li>opencv\_features2d</li><li>opencv\_highgui</li><li>opencv\_imgproc</li><li>opencv\_videoio</li><li>wave\_containers</li><li>wave\_kinematics</li><li>wave\_utils</li></ul> |
 
 ## Install
 

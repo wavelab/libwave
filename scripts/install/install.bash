@@ -24,6 +24,7 @@ install_deps() {
     bash scripts/install/install_deps.bash
     bash scripts/install/install_geographiclib.bash
     bash scripts/install/install_gtsam.bash
+    bash scripts/install/install_opencv.bash
     cd -
 }
 
