@@ -197,6 +197,9 @@ class Transformation {
      */
     static Mat6 SE3ApproxLeftJacobian(const Vec6 &W);
 
+    template<typename Derived, typename OtherDerived>
+    static void SE3ApproxLeftJacobian(const Eigen::MatrixBase<Derived> &W, Eigen::MatrixBase<OtherDerived> &J);
+
     /**
      * Computes the inverse left side Jacobian using a 1st order Taylor Expansion
      * @param W The twist
@@ -264,8 +267,8 @@ class Transformation {
     template <typename IP_T, typename OP_T, typename M_T1, typename M_T2>
     void transformAndJacobian(const Eigen::MatrixBase<IP_T> &input_vector,
                               Eigen::MatrixBase<OP_T> &output_vector,
-                              Eigen::MatrixBase<M_T1> &Jpoint,
-                              Eigen::MatrixBase<M_T2> &Jparam) const;
+                              Eigen::MatrixBase<M_T1> *Jpoint = nullptr,
+                              Eigen::MatrixBase<M_T2> *Jparam = nullptr) const;
 
     /** transforms the input vector by the inverse of this transformation.
      *

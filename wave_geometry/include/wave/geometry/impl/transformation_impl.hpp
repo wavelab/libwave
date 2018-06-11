@@ -488,6 +488,25 @@ Mat6 Transformation<Derived, approximate>::SE3ApproxLeftJacobian(const Vec6 &W) 
 }
 
 template <typename Derived, bool approximate>
+template <typename MType, typename VType>
+void Transformation<Derived, approximate>::SE3ApproxLeftJacobian(const Eigen::MatrixBase<VType> &W, Eigen::MatrixBase<MType> &J) {
+    EIGEN_STATIC_ASSERT_VECTOR_SPECIFIC_SIZE(Eigen::MatrixBase<VType>, 6)
+    EIGEN_STATIC_ASSERT_MATRIX_SPECIFIC_SIZE(Eigen::MatrixBase<MType>, 6, 6)
+
+    using VScalar = typename VType::Scalar;
+    using MScalar = typename MType::Scalar;
+
+    Eigen::Matrix<VType, 3, 3> wx;
+    skewSymmetric3(W.template block<3, 1>(0, 0), wx);
+
+    J.setIdentity();
+
+    J.template block<3, 3>(0, 0).noalias() += 0.5 * wx;
+    J.template block<3, 3>(3, 3).noalias() += 0.5 * wx;
+    J.template block<3, 3>(3, 0).noalias() += 0.5 * skewSymmetric3(W.template block<3, 1>(3, 0));
+}
+
+template <typename Derived, bool approximate>
 template <typename OtherDerived>
 Eigen::Matrix<typename OtherDerived::Scalar, 6, 6> Transformation<Derived, approximate>::SE3ApproxInvLeftJacobian(
   const Eigen::MatrixBase<OtherDerived> &W) {
@@ -588,20 +607,29 @@ template <typename Derived, bool approximate>
 template <typename IP_T, typename OP_T, typename M_T1, typename M_T2>
 void Transformation<Derived, approximate>::transformAndJacobian(const Eigen::MatrixBase<IP_T> &input_vector,
                                                                 Eigen::MatrixBase<OP_T> &output_vector,
-                                                                Eigen::MatrixBase<M_T1> &Jpoint,
-                                                                Eigen::MatrixBase<M_T2> &Jparam) const {
+                                                                Eigen::MatrixBase<M_T1> *Jpoint,
+                                                                Eigen::MatrixBase<M_T2> *Jparam) const {
     EIGEN_STATIC_ASSERT_VECTOR_SPECIFIC_SIZE(Eigen::MatrixBase<IP_T>, 3)
     EIGEN_STATIC_ASSERT_VECTOR_SPECIFIC_SIZE(Eigen::MatrixBase<OP_T>, 3)
     EIGEN_STATIC_ASSERT_MATRIX_SPECIFIC_SIZE(Eigen::MatrixBase<M_T1>, 3, 3)
     EIGEN_STATIC_ASSERT_MATRIX_SPECIFIC_SIZE(Eigen::MatrixBase<M_T2>, 3, 6)
 
+    using IP_Type = typename IP_T::Scalar;
+    using OP_Type = typename OP_T::Scalar;
+    using M1_Type = typename M_T1::Scalar;
+    using M2_Type = typename M_T2::Scalar;
+
     this->transform(input_vector, output_vector);
 
-    Jpoint = this->storage.template block<3, 3>(0, 0);
+    if(Jpoint) {
+        *Jpoint = this->storage.template block<3, 3>(0, 0).cast<M1_Type>();
+    }
 
-    skewSymmetric3(output_vector, Jparam.template block<3, 3>(0, 0));
-    Jparam.template block<3, 3>(0, 0) *= -1;
-    Jparam.template block<3, 3>(0, 3).setIdentity();
+    if(Jparam) {
+        skewSymmetric3(output_vector, Jparam->template block<3, 3>(0, 0));
+        Jparam->template block<3, 3>(0, 0) *= -1;
+        Jparam->template block<3, 3>(0, 3).setIdentity();
+    }
 }
 
 template <typename Derived, bool approximate>
