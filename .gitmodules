@@ -2,3 +2,6 @@
 	path = deps/googletest
 	url = https://github.com/google/googletest.git
     ignore = dirty
+[submodule "deps/wave_geometry"]
+	path = deps/wave_geometry
+	url = https://github.com/wavelab/wave_geometry
