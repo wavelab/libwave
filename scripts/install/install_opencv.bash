@@ -20,7 +20,7 @@ make_with_progress()
 
 install_opencv()
 {
-    VERSION="3.2.0"
+    VERSION="3.3.1"
     URL="https://github.com/opencv/opencv/archive/$VERSION.zip"
     OPENCV_DIR="opencv-$VERSION"
     FILE="$VERSION.zip"
