@@ -1,15 +1,23 @@
 PROJECT(wave_geometry)
 
-WAVE_ADD_MODULE(${PROJECT_NAME}
+SET(CMAKE_CURRENT_SOURCE_DIR ${WAVE_GEOMETRY_SOURCE_DIR})
+
+ADD_LIBRARY(Tick::Tick INTERFACE IMPORTED)
+SET_PROPERTY(TARGET Tick::Tick PROPERTY
+  INTERFACE_INCLUDE_DIRECTORIES "${WAVE_GEOMETRY_SOURCE_DIR}/3rd-party/Tick")
+
+#WAVE_ADD_LIBRARY(wave_geometry)
+#TARGET_COMPILE_OPTIONS(wave_geometry INTERFACE -Wall -Wextra)
+#TARGET_LINK_LIBRARIES(wave_geometry INTERFACE Boost::boost Eigen3::Eigen Tick::Tick)
+#WAVE_INCLUDE_DIRECTORIES(wave_geometry INTERFACE "include")
+
+WAVE_ADD_MODULE(
+    ${PROJECT_NAME}
     DEPENDS
-    wave::utils
+    Boost::boost
     Eigen3::Eigen
-    Kindr::kindr
-    SOURCES
-    src/rotation.cpp)
+    Tick::Tick)
 
 # Unit tests
 IF(BUILD_TESTING)
-    WAVE_ADD_TEST(${PROJECT_NAME}_tests tests/rotation_test.cpp)
-    TARGET_LINK_LIBRARIES(${PROJECT_NAME}_tests ${PROJECT_NAME})
 ENDIF(BUILD_TESTING)
