@@ -195,8 +195,6 @@ class Transformation {
      * @param W The twist location to calculate the jacobian of
      * @return Left SE3 jacobian
      */
-    static Mat6 SE3ApproxLeftJacobian(const Vec6 &W);
-
     template<typename Derived, typename OtherDerived>
     static void SE3ApproxLeftJacobian(const Eigen::MatrixBase<Derived> &W, Eigen::MatrixBase<OtherDerived> &J);
 

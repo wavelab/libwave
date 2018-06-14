@@ -55,7 +55,7 @@ bool SE3PointToPlaneGP::Evaluate(double const *const *parameters, double *residu
         this->objects.JP_T(2, 0) = point(1);
         this->objects.JP_T(2, 1) = -point(0);
 
-        this->objects.Jexp = wave::Transformation<>::SE3ApproxLeftJacobian(this->objects.T_cur_twist);
+        wave::Transformation<>::SE3ApproxLeftJacobian(this->objects.T_cur_twist, this->objects.Jexp);
         this->objects.Jr_T = this->weight * this->objects.Jr_P * this->objects.JP_T * this->objects.Jexp;
 
         if (jacobians[0]) {

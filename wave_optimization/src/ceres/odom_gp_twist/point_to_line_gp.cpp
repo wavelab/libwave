@@ -69,7 +69,7 @@ bool SE3PointToLineGP::Evaluate(double const *const *parameters, double *residua
     this->objects.T_cur_twist =
       this->objects.hat * state_tk_map + this->objects.candle * state_tkp1_map;
 
-    wave::Transformation::expMap1st(this->objects.T_cur_twist, this->objects.T_current);
+    wave::Transformation<>::expMap1st(this->objects.T_cur_twist, this->objects.T_current);
 
     wave::Vec3 point = this->objects.T_current.block<3,3>(0,0) * this->objects.T0_pt + this->objects.T_current.block<3,1>(0,3);
 
@@ -94,7 +94,7 @@ bool SE3PointToLineGP::Evaluate(double const *const *parameters, double *residua
         this->objects.JP_T(2, 0) = point(1);
         this->objects.JP_T(2, 1) = -point(0);
 
-        this->objects.Jexp = wave::Transformation<>::SE3ApproxLeftJacobian(this->objects.T_cur_twist);
+        wave::Transformation<>::SE3ApproxLeftJacobian(this->objects.T_cur_twist, this->objects.Jexp );
 
         // Jres_P already has rotation incorporated during construction
         this->objects.Jr_T = this->weight_matrix * this->objects.Jres_P.block<2, 3>(0, 0) * this->objects.JP_T * this->objects.Jexp;

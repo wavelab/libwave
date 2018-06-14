@@ -179,7 +179,7 @@ void Transformation<Derived, approximate>::interpolateAndJacobians(const Transfo
     Mat6 Jexp;
 
     if (approximate) {
-        Jexp = Transformation<Derived>::SE3ApproxLeftJacobian(int_twist);
+        Transformation<Derived>::SE3ApproxLeftJacobian(int_twist,  Jexp);
     } else {
         Jexp = Transformation<Derived>::SE3LeftJacobian(int_twist);
     };
@@ -460,35 +460,7 @@ Mat6 Transformation<Derived, approximate>::SE3LeftJacobian(const Vec6 &W) {
 }
 
 template <typename Derived, bool approximate>
-Mat6 Transformation<Derived, approximate>::SE3ApproxLeftJacobian(const Vec6 &W) {
-    Mat3 wx;
-    skewSymmetric3(W.template block<3, 1>(0, 0), wx);
-
-    Mat6 retval; //, adj;
-    retval.setZero();
-    //adj.setZero();
-
-    // This is applying the adjoint operator to the se(3) vector: se(3) -> adj(se(3))
-    retval.template block<3, 3>(0, 0) = 0.5 * wx;
-    retval.template block<3, 3>(3, 3) = 0.5 * wx;
-    retval.template block<3, 3>(3, 0) = 0.5 * skewSymmetric3(W.template block<3, 1>(3, 0));
-    retval = retval + Mat6::Identity();
-
-    // double A;
-    // Fourth order terms are shown should you ever want to used them.
-    // A = 0.5;  // - wn*wn*wn*wn/720;
-    // B = 1 / 6;  // - wn*wn*wn*wn/5040;
-    // C = 1/24 - wn*wn/360 + wn*wn*wn*wn/13440;
-    // D = 1/120 -wn*wn/2520 + wn*wn*wn*wn/120960;
-
-//    retval.noalias() =
-//      Mat6::Identity() + 0.5 * adj; // + 0.1666666666666666666666 * adj * adj;  // + *adj*adj*adj; // + D*adj*adj*adj*adj;
-
-    return retval;
-}
-
-template <typename Derived, bool approximate>
-template <typename MType, typename VType>
+template <typename VType, typename MType>
 void Transformation<Derived, approximate>::SE3ApproxLeftJacobian(const Eigen::MatrixBase<VType> &W, Eigen::MatrixBase<MType> &J) {
     EIGEN_STATIC_ASSERT_VECTOR_SPECIFIC_SIZE(Eigen::MatrixBase<VType>, 6)
     EIGEN_STATIC_ASSERT_MATRIX_SPECIFIC_SIZE(Eigen::MatrixBase<MType>, 6, 6)
@@ -496,14 +468,14 @@ void Transformation<Derived, approximate>::SE3ApproxLeftJacobian(const Eigen::Ma
     using VScalar = typename VType::Scalar;
     using MScalar = typename MType::Scalar;
 
-    Eigen::Matrix<VType, 3, 3> wx;
+    Eigen::Matrix<VScalar, 3, 3> wx;
     skewSymmetric3(W.template block<3, 1>(0, 0), wx);
 
     J.setIdentity();
 
-    J.template block<3, 3>(0, 0).noalias() += 0.5 * wx;
-    J.template block<3, 3>(3, 3).noalias() += 0.5 * wx;
-    J.template block<3, 3>(3, 0).noalias() += 0.5 * skewSymmetric3(W.template block<3, 1>(3, 0));
+    J.template block<3, 3>(0, 0).noalias() += 0.5 * wx.template cast<MScalar>();
+    J.template block<3, 3>(3, 3).noalias() += 0.5 * wx.template cast<MScalar>();
+    J.template block<3, 3>(3, 0).noalias() += 0.5 * skewSymmetric3(W.template block<3, 1>(3, 0)).template cast<MScalar>();
 }
 
 template <typename Derived, bool approximate>
@@ -614,15 +586,12 @@ void Transformation<Derived, approximate>::transformAndJacobian(const Eigen::Mat
     EIGEN_STATIC_ASSERT_MATRIX_SPECIFIC_SIZE(Eigen::MatrixBase<M_T1>, 3, 3)
     EIGEN_STATIC_ASSERT_MATRIX_SPECIFIC_SIZE(Eigen::MatrixBase<M_T2>, 3, 6)
 
-    using IP_Type = typename IP_T::Scalar;
-    using OP_Type = typename OP_T::Scalar;
     using M1_Type = typename M_T1::Scalar;
-    using M2_Type = typename M_T2::Scalar;
 
     this->transform(input_vector, output_vector);
 
     if(Jpoint) {
-        *Jpoint = this->storage.template block<3, 3>(0, 0).cast<M1_Type>();
+        *Jpoint = this->storage.template block<3, 3>(0, 0).template cast<M1_Type>();
     }
 
     if(Jparam) {
