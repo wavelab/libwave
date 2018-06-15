@@ -12,7 +12,7 @@ gtsam::Vector PreintegratedImuFactor<PoseVelBias>::evaluateError(
   boost::optional<gtsam::Matrix &> H2,
   boost::optional<gtsam::Matrix &> H3,
   boost::optional<gtsam::Matrix &> H4) const {
-    // Split up the PoseVelImuBias combined states into pose and vel.
+    // Split up the PoseVelBias combined states into pose and vel.
     // (ignore gps bias)
     // Then use code adapted from gtsam::CombinedImuFactor.
     const auto &pose_i = state_i.pose;
@@ -49,17 +49,17 @@ gtsam::Vector PreintegratedImuFactor<PoseVelBias>::evaluateError(
         H1->resize(15, 15);
 
         // Jacobian wrt pose (Pi)
-        H1->block<9, 6>(0, PoseVelImuBias::pose_offset).noalias() = D_r_pose_i;
+        H1->block<9, 6>(0, PoseVelBias::pose_offset).noalias() = D_r_pose_i;
         // adding: [dBiasAcc/dPi ; dBiasOmega/dPi]
-        H1->block<6, 6>(9, PoseVelImuBias::pose_offset).setZero();
+        H1->block<6, 6>(9, PoseVelBias::pose_offset).setZero();
 
         // Jacobian wrt linear velocity
-        H1->block<9, 3>(0, PoseVelImuBias::vel_offset + 3).noalias() =
+        H1->block<9, 3>(0, PoseVelBias::vel_offset + 3).noalias() =
           D_r_vel_i;
         // Jacobian of bias wrt linear velocity is zero
-        H1->block<6, 3>(9, PoseVelImuBias::vel_offset + 3).setZero();
+        H1->block<6, 3>(9, PoseVelBias::vel_offset + 3).setZero();
         // Jacobian of all wrt angular velocity is zero
-        H1->block<15, 3>(0, PoseVelImuBias::vel_offset).setZero();
+        H1->block<15, 3>(0, PoseVelBias::vel_offset).setZero();
 
         // Jacobian of all wrt gps bias is zero
         H1->block<15, 3>(0, PoseVelBias::bias_offset).setZero();
@@ -68,17 +68,17 @@ gtsam::Vector PreintegratedImuFactor<PoseVelBias>::evaluateError(
         H2->resize(15, 15);
 
         // Jacobian wrt pose (Pj)
-        H2->block<9, 6>(0, PoseVelImuBias::pose_offset).noalias() = D_r_pose_j;
+        H2->block<9, 6>(0, PoseVelBias::pose_offset).noalias() = D_r_pose_j;
         // adding: [dBiasAcc/dPj ; dBiasOmega/dPj]
-        H2->block<6, 6>(9, PoseVelImuBias::pose_offset).setZero();
+        H2->block<6, 6>(9, PoseVelBias::pose_offset).setZero();
 
         // Jacobian wrt linear velocity
-        H2->block<9, 3>(0, PoseVelImuBias::vel_offset + 3).noalias() =
+        H2->block<9, 3>(0, PoseVelBias::vel_offset + 3).noalias() =
           D_r_vel_j;
         // Jacobian of bias wrt linear velocity is zero
-        H2->block<6, 3>(9, PoseVelImuBias::vel_offset + 3).setZero();
+        H2->block<6, 3>(9, PoseVelBias::vel_offset + 3).setZero();
         // Jacobian of all wrt angular velocity is zero
-        H2->block<15, 3>(0, PoseVelImuBias::vel_offset).setZero();
+        H2->block<15, 3>(0, PoseVelBias::vel_offset).setZero();
 
         // Jacobian of all wrt gps bias is zero
         H2->block<15, 3>(0, PoseVelBias::bias_offset).setZero();
@@ -105,16 +105,16 @@ gtsam::Vector PreintegratedImuFactor<PoseVelBias>::evaluateError(
 }
 
 template <>
-gtsam::Vector PreintegratedImuFactor<PoseVelImuBias>::evaluateError(
-  const PoseVelImuBias &state_i,
-  const PoseVelImuBias &state_j,
+gtsam::Vector PreintegratedImuFactor<PoseVel>::evaluateError(
+  const PoseVel &state_i,
+  const PoseVel &state_j,
   const gtsam::imuBias::ConstantBias &bias_i,
   const gtsam::imuBias::ConstantBias &bias_j,
   boost::optional<gtsam::Matrix &> H1,
   boost::optional<gtsam::Matrix &> H2,
   boost::optional<gtsam::Matrix &> H3,
   boost::optional<gtsam::Matrix &> H4) const {
-    // Split up the PoseVelImuBias combined states into pose and vel.
+    // Split up the PoseVel combined states into pose and vel.
     // Then use code adapted from gtsam::CombinedImuFactor.
     const auto &pose_i = state_i.pose;
     const auto &pose_j = state_j.pose;
@@ -150,33 +150,33 @@ gtsam::Vector PreintegratedImuFactor<PoseVelImuBias>::evaluateError(
         H1->resize(15, 12);
 
         // Jacobian wrt pose (Pi)
-        H1->block<9, 6>(0, PoseVelImuBias::pose_offset).noalias() = D_r_pose_i;
+        H1->block<9, 6>(0, PoseVel::pose_offset).noalias() = D_r_pose_i;
         // adding: [dBiasAcc/dPi ; dBiasOmega/dPi]
-        H1->block<6, 6>(9, PoseVelImuBias::pose_offset).setZero();
+        H1->block<6, 6>(9, PoseVel::pose_offset).setZero();
 
         // Jacobian wrt linear velocity
-        H1->block<9, 3>(0, PoseVelImuBias::vel_offset + 3).noalias() =
+        H1->block<9, 3>(0, PoseVel::vel_offset + 3).noalias() =
           D_r_vel_i;
         // Jacobian of bias wrt linear velocity is zero
-        H1->block<6, 3>(9, PoseVelImuBias::vel_offset + 3).setZero();
+        H1->block<6, 3>(9, PoseVel::vel_offset + 3).setZero();
         // Jacobian of all wrt angular velocity is zero
-        H1->block<15, 3>(0, PoseVelImuBias::vel_offset).setZero();
+        H1->block<15, 3>(0, PoseVel::vel_offset).setZero();
     }
     if (H2) {
         H2->resize(15, 12);
 
         // Jacobian wrt pose (Pj)
-        H2->block<9, 6>(0, PoseVelImuBias::pose_offset).noalias() = D_r_pose_j;
+        H2->block<9, 6>(0, PoseVel::pose_offset).noalias() = D_r_pose_j;
         // adding: [dBiasAcc/dPj ; dBiasOmega/dPj]
-        H2->block<6, 6>(9, PoseVelImuBias::pose_offset).setZero();
+        H2->block<6, 6>(9, PoseVel::pose_offset).setZero();
 
         // Jacobian wrt linear velocity
-        H2->block<9, 3>(0, PoseVelImuBias::vel_offset + 3).noalias() =
+        H2->block<9, 3>(0, PoseVel::vel_offset + 3).noalias() =
           D_r_vel_j;
         // Jacobian of bias wrt linear velocity is zero
-        H2->block<6, 3>(9, PoseVelImuBias::vel_offset + 3).setZero();
+        H2->block<6, 3>(9, PoseVel::vel_offset + 3).setZero();
         // Jacobian of all wrt angular velocity is zero
-        H2->block<15, 3>(0, PoseVelImuBias::vel_offset).setZero();
+        H2->block<15, 3>(0, PoseVel::vel_offset).setZero();
     }
     if (H3) {
         H3->resize(15, 6);

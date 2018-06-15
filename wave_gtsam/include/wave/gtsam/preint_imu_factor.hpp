@@ -4,7 +4,7 @@
 #include <gtsam/nonlinear/NonlinearFactor.h>
 #include <gtsam/base/Matrix.h>
 #include "wave/gtsam/pose_vel_bias.hpp"
-#include "wave/gtsam/pose_vel_imubias.hpp"
+#include "wave/gtsam/pose_vel.hpp"
 #include <gtsam/navigation/CombinedImuFactor.h>
 #include <gtsam/navigation/NavState.h>
 
@@ -14,7 +14,7 @@ namespace wave {
  * 4-ary factor connecting two combined pose/vel/bias states and two IMU biases.
  * Provides the effect of gtsam::CombinedImuFactor (a 6-ary factor).
  *
- * @tparam StateType either PoseVelBias or PoseVelImuBias
+ * @tparam StateType either PoseVel or PoseVelBias
  */
 template <typename StateType>
 class PreintegratedImuFactor

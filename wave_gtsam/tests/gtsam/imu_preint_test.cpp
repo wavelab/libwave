@@ -183,5 +183,4 @@ TEST(WaveImuFactor, WaveErrorAndJacobians) {
     EXPECT_TRUE(gtsam::internal::testFactorJacobians(
       "ImuFactor", factor, values, diffDelta, 1e-3));
 }
-
 }  // namespace wave
