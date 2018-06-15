@@ -37,7 +37,8 @@ IF(BUILD_TESTING)
                  #tests/ceres/ba_test.cpp
                  tests/ceres/ceres_examples_test.cpp
                  tests/ceres/SE3_local_parameter_test.cpp
-                 tests/ceres/solution_remapping_test.cpp)
+                 tests/ceres/solution_remapping_test.cpp
+                 tests/ceres/spherical_param_test.cpp)
 
     TARGET_LINK_LIBRARIES(${PROJECT_NAME}_tests ${PROJECT_NAME})
 
