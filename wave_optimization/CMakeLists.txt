@@ -14,6 +14,7 @@ WAVE_ADD_MODULE(${PROJECT_NAME} DEPENDS
     src/ceres/local_params/SE3Parameterization.cpp
     src/ceres/local_params/null_SE3_parameterization.cpp
     src/ceres/local_params/null_SE3_parameterization_remap.cpp
+    src/ceres/local_params/spherical_parameterization.cpp
     src/ceres/odom_gp/point_to_line_gp.cpp
     src/ceres/odom_gp/point_to_plane_gp.cpp
     src/ceres/odom_gp/constant_velocity.cpp
