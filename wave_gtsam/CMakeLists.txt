@@ -14,6 +14,8 @@ WAVE_ADD_MODULE(${PROJECT_NAME} DEPENDS
     src/pose_vel_imubias.cpp
     src/preint_imu_factor.cpp)
 
+TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} SYSTEM PUBLIC ${GTSAM_INCLUDE_DIR})
+
 # Unit tests
 IF(BUILD_TESTING)
 
