@@ -5,7 +5,6 @@
 #include <gtsam/base/Matrix.h>
 #include "wave/gtsam/pose_vel.hpp"
 #include "wave/gtsam/pose_vel_bias.hpp"
-#include "wave/gtsam/pose_vel_imubias.hpp"
 
 /**
  * This factor implements  a simple constant velocity model with forward

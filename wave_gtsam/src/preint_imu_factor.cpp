@@ -54,8 +54,7 @@ gtsam::Vector PreintegratedImuFactor<PoseVelBias>::evaluateError(
         H1->block<6, 6>(9, PoseVelBias::pose_offset).setZero();
 
         // Jacobian wrt linear velocity
-        H1->block<9, 3>(0, PoseVelBias::vel_offset + 3).noalias() =
-          D_r_vel_i;
+        H1->block<9, 3>(0, PoseVelBias::vel_offset + 3).noalias() = D_r_vel_i;
         // Jacobian of bias wrt linear velocity is zero
         H1->block<6, 3>(9, PoseVelBias::vel_offset + 3).setZero();
         // Jacobian of all wrt angular velocity is zero
@@ -73,8 +72,7 @@ gtsam::Vector PreintegratedImuFactor<PoseVelBias>::evaluateError(
         H2->block<6, 6>(9, PoseVelBias::pose_offset).setZero();
 
         // Jacobian wrt linear velocity
-        H2->block<9, 3>(0, PoseVelBias::vel_offset + 3).noalias() =
-          D_r_vel_j;
+        H2->block<9, 3>(0, PoseVelBias::vel_offset + 3).noalias() = D_r_vel_j;
         // Jacobian of bias wrt linear velocity is zero
         H2->block<6, 3>(9, PoseVelBias::vel_offset + 3).setZero();
         // Jacobian of all wrt angular velocity is zero
@@ -155,8 +153,7 @@ gtsam::Vector PreintegratedImuFactor<PoseVel>::evaluateError(
         H1->block<6, 6>(9, PoseVel::pose_offset).setZero();
 
         // Jacobian wrt linear velocity
-        H1->block<9, 3>(0, PoseVel::vel_offset + 3).noalias() =
-          D_r_vel_i;
+        H1->block<9, 3>(0, PoseVel::vel_offset + 3).noalias() = D_r_vel_i;
         // Jacobian of bias wrt linear velocity is zero
         H1->block<6, 3>(9, PoseVel::vel_offset + 3).setZero();
         // Jacobian of all wrt angular velocity is zero
@@ -171,8 +168,7 @@ gtsam::Vector PreintegratedImuFactor<PoseVel>::evaluateError(
         H2->block<6, 6>(9, PoseVel::pose_offset).setZero();
 
         // Jacobian wrt linear velocity
-        H2->block<9, 3>(0, PoseVel::vel_offset + 3).noalias() =
-          D_r_vel_j;
+        H2->block<9, 3>(0, PoseVel::vel_offset + 3).noalias() = D_r_vel_j;
         // Jacobian of bias wrt linear velocity is zero
         H2->block<6, 3>(9, PoseVel::vel_offset + 3).setZero();
         // Jacobian of all wrt angular velocity is zero

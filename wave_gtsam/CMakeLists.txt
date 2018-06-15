@@ -11,7 +11,6 @@ WAVE_ADD_MODULE(${PROJECT_NAME} DEPENDS
     src/gps_factor_with_bias.cpp
     src/pose_vel.cpp
     src/pose_vel_bias.cpp
-    src/pose_vel_imubias.cpp
     src/preint_imu_factor.cpp)
 
 TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} SYSTEM PUBLIC ${GTSAM_INCLUDE_DIR})
