@@ -33,6 +33,11 @@ IF(BUILD_TESTING)
     TARGET_LINK_LIBRARIES(transformer_tests
             ${PROJECT_NAME})
 
+    WAVE_ADD_TEST(residual_tests
+            tests/residual_test/implicit_line_test.cpp)
+    TARGET_LINK_LIBRARIES(residual_tests
+            ${PROJECT_NAME})
+
     WAVE_ADD_BENCHMARK(feature_benchmark
             tests/feature_extractor_benchmark.cpp)
     TARGET_LINK_LIBRARIES(feature_benchmark
