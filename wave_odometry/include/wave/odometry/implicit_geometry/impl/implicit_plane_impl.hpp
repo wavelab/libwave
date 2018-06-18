@@ -1,12 +1,12 @@
-#ifndef WAVE_IMPLICIT_LINE_IMPL_HPP
-#define WAVE_IMPLICIT_LINE_IMPL_HPP
+#ifndef WAVE_IMPLICIT_PLANE_IMPL_HPP
+#define WAVE_IMPLICIT_PLANE_IMPL_HPP
 
-#include "../implicit_line.hpp"
+#include "../implicit_plane.hpp"
 
 namespace wave {
 
 template<int cnt, int state_dim, int... idx>
-bool ImplicitLineResidual::Evaluate(double const *const *parameters, double *residuals, double **jacobians) const {
+bool ImplicitPlaneResidual::Evaluate(double const *const *parameters, double *residuals, double **jacobians) const {
     Eigen::Map<Eigen::Matrix<double, cnt, 1>> error(residuals);
     Eigen::Map<const Vec3> normal(&parameters[0][0]);
 
@@ -30,28 +30,27 @@ bool ImplicitLineResidual::Evaluate(double const *const *parameters, double *res
         // Calculate error and jacobians
         for (uint32_t i = 0; i < this->pts.tpts.size(); i++) {
             auto diff = this->pts.tpts.at(i) - avg;
-            double scalar = (normal.transpose() * diff).sqrt();
             double nm1on = (cnt_d - 1.0) / cnt_d;
             double oon = 1.0 / cnt_d;
-            error.template block<3, 1>(i * 3, 0) = diff - scalar * normal;
-            normal_jac.template block<3, 3>(i*3, 0) = -normal * diff.transpose() / (2*scalar) - scalar * Mat3::Identity();
-            Eigen::Matrix<double, 3, 3> del_e_del_diff;
-            del_e_del_diff = Mat3::Identity() - normal * normal.transpose() / (2*scalar);
-            state_jacs.at(this->pts.p_states.at(i)).template block<3, state_dim>(i*3, 0) += del_e_del_diff * nm1on * (*(this->pts.prev_jac.at(i)));
-            state_jacs.at(this->pts.n_states.at(i)).template block<3, state_dim>(i*3, 0) += del_e_del_diff * nm1on * (*(this->pts.next_jac.at(i)));
+            error(i, 0) = diff.transpose() * normal;
+            normal_jac.template block<1, 3>(i, 0) = diff.transpose();
+            Eigen::Matrix<double, 1, 3> del_e_del_diff;
+            del_e_del_diff = normal.transpose();
+            state_jacs.at(this->pts.p_states.at(i)).template block<1, state_dim>(i, 0) += del_e_del_diff * nm1on * (*(this->pts.prev_jac.at(i)));
+            state_jacs.at(this->pts.n_states.at(i)).template block<1, state_dim>(i, 0) += del_e_del_diff * nm1on * (*(this->pts.next_jac.at(i)));
             for (uint32_t j = 0; j <this->pts.tpts.size(); j++) {
                 if (i == j) {
                     continue;
                 }
-                state_jacs.at(this->pts.p_states.at(j)).template block<3, state_dim>(i*3, 0) -= del_e_del_diff * oon * (*(this->pts.prev_jac.at(j)));
-                state_jacs.at(this->pts.n_states.at(j)).template block<3, state_dim>(i*3, 0) -= del_e_del_diff * oon * (*(this->pts.next_jac.at(j)));
+                state_jacs.at(this->pts.p_states.at(j)).template block<1, state_dim>(i, 0) -= del_e_del_diff * oon * (*(this->pts.prev_jac.at(j)));
+                state_jacs.at(this->pts.n_states.at(j)).template block<1, state_dim>(i, 0) -= del_e_del_diff * oon * (*(this->pts.next_jac.at(j)));
             }
         }
     } else {
         // Calculate error
         for (uint32_t i = 0; i < this->pts.tpts.size(); i++) {
             auto diff = this->pts.tpts.at(i) - avg;
-            error.template block<3, 1>(i * 3, 0) = diff - (normal.transpose() * diff).sqrt() * normal;
+            error(i, 0) = diff.transpose() * normal;
         }
     }
     return true;
@@ -59,4 +58,4 @@ bool ImplicitLineResidual::Evaluate(double const *const *parameters, double *res
 
 }
 
-#endif //WAVE_IMPLICIT_LINE_IMPL_HPP
+#endif //WAVE_IMPLICIT_PLANE_IMPL_HPP

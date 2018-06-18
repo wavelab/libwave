@@ -15,17 +15,17 @@
 
 namespace wave {
 
-template <int cnt, int... num>
+template <int cnt, int state_dim, int... num>
 class ImplicitLineResidual : public ceres::SizedCostFunction<cnt, num...> {
  public:
     virtual ~ImplicitLineResidual() {}
 
-    ImplicitLineResidual(const FeatureTrack &pts) : pts(pts) {}
+    ImplicitLineResidual(const FeatureTrack<state_dim> &pts) : pts(pts) {}
 
     virtual bool Evaluate(double const *const *parameters, double *residuals, double **jacobians) const;
 
  private:
-    const FeatureTrack &pts;
+    const FeatureTrack<state_dim> &pts;
 };
 }
 

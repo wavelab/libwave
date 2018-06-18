@@ -6,6 +6,7 @@
 
 namespace wave {
 
+template<int state_dim>
 struct FeatureTrack {
     // pointer to xyz position of each point
     std::vector<double *> pts;
@@ -16,7 +17,7 @@ struct FeatureTrack {
     std::vector<uint32_t> n_states;
 
     // transform jacobians. prev is the state before, next is the state after
-    std::vector<Eigen::Matrix<double, 3, 12> *> prev_jac, next_jac;
+    std::vector<Eigen::Matrix<double, 3, state_dim> *> prev_jac, next_jac;
 };
 
 }
