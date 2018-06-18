@@ -22,7 +22,7 @@ bool ImplicitPlaneResidual::Evaluate(double const *const *parameters, double *re
     if (jacobians) {
         std::vector<Eigen::Map<Eigen::Matrix<double, cnt, state_dim, Eigen::RowMajor>>> state_jacs;
         Eigen::Map<Eigen::Matrix<double, cnt, 3, Eigen::RowMajor>> normal_jac(jacobians[0]);
-        normal_jac.template setZero();
+
         for (uint32_t i = 0; i < sizeof...(idx); i++) {
             state_jacs.emplace_back(Eigen::Map<Eigen::Matrix<double, cnt, state_dim, Eigen::RowMajor>>(jacobians[i+1]));
             state_jacs.at(i).template setZero();
@@ -36,14 +36,14 @@ bool ImplicitPlaneResidual::Evaluate(double const *const *parameters, double *re
             normal_jac.template block<1, 3>(i, 0) = diff.transpose();
             Eigen::Matrix<double, 1, 3> del_e_del_diff;
             del_e_del_diff = normal.transpose();
-            state_jacs.at(this->pts.p_states.at(i)).template block<1, state_dim>(i, 0) += del_e_del_diff * nm1on * (*(this->pts.prev_jac.at(i)));
-            state_jacs.at(this->pts.n_states.at(i)).template block<1, state_dim>(i, 0) += del_e_del_diff * nm1on * (*(this->pts.next_jac.at(i)));
+            state_jacs.at(this->pts.p_states.at(i)).template block<1, state_dim>(i, 0) += del_e_del_diff * nm1on * this->pts.prev_jac.at(i);
+            state_jacs.at(this->pts.n_states.at(i)).template block<1, state_dim>(i, 0) += del_e_del_diff * nm1on * this->pts.next_jac.at(i);
             for (uint32_t j = 0; j <this->pts.tpts.size(); j++) {
                 if (i == j) {
                     continue;
                 }
-                state_jacs.at(this->pts.p_states.at(j)).template block<1, state_dim>(i, 0) -= del_e_del_diff * oon * (*(this->pts.prev_jac.at(j)));
-                state_jacs.at(this->pts.n_states.at(j)).template block<1, state_dim>(i, 0) -= del_e_del_diff * oon * (*(this->pts.next_jac.at(j)));
+                state_jacs.at(this->pts.p_states.at(j)).template block<1, state_dim>(i, 0) -= del_e_del_diff * oon * this->pts.prev_jac.at(j);
+                state_jacs.at(this->pts.n_states.at(j)).template block<1, state_dim>(i, 0) -= del_e_del_diff * oon * this->pts.next_jac.at(j);
             }
         }
     } else {

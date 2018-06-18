@@ -77,8 +77,7 @@ void Transformer::update(const std::vector<Trajectory, Eigen::aligned_allocator<
     }
 }
 
-void Transformer::transformToStart(const Eigen::Tensor<float, 2> &points, Eigen::Tensor<float, 2> &points_transformed,
-                                   const uint32_t &scan) {
+void Transformer::transformToStart(const Eigen::Tensor<float, 2> &points, Eigen::Tensor<float, 2> &points_transformed) {
     points_transformed.resize(3, points.dimensions().at(1));
 
     Eigen::Map<const MatXf> pt(points.data(), points.dimension(0), points.dimension(1));
@@ -108,7 +107,7 @@ void Transformer::transformToStart(const Eigen::Tensor<float, 2> &points, Eigen:
                             candle(0, 1) * this->differences.at(index).candle_multiplier.block<6, 1>(6, 0);
             Mat34f trans;
             T_TYPE::expMap1st(tan_vec, trans);
-            auto &ref = this->aug_trajectories.at(index).pose.storage;
+            auto &ref = this->aug_trajectories.front().pose.storage;
             ptT.block<3, 1>(0, i).noalias() =
               trans.block<3, 3>(0, 0) *
                 (ref.block<3, 3>(0, 0).cast<float>() * pt.block<3, 1>(0, i) + ref.block<3, 1>(0, 3).cast<float>()) +
@@ -117,8 +116,7 @@ void Transformer::transformToStart(const Eigen::Tensor<float, 2> &points, Eigen:
     }
 }
 
-void Transformer::transformToEnd(const Eigen::Tensor<float, 2> &points, Eigen::Tensor<float, 2> &points_transformed,
-                                 const uint32_t &scan) {
+void Transformer::transformToEnd(const Eigen::Tensor<float, 2> &points, Eigen::Tensor<float, 2> &points_transformed) {
     points_transformed.resize(3, points.dimensions().at(1));
 
     Eigen::Map<const MatXf> pt(points.data(), points.dimension(0), points.dimension(1));
@@ -148,7 +146,7 @@ void Transformer::transformToEnd(const Eigen::Tensor<float, 2> &points, Eigen::T
                             candle(0, 1) * this->differences.at(index).candle_multiplier.block<6, 1>(6, 0);
             Mat34f trans;
             T_TYPE::expMap1st(tan_vec, trans);
-            auto &ref = this->aug_trajectories.at(index).pose.storage;
+            auto &ref = this->aug_trajectories.back().pose.storage;
             ptT.block<3, 1>(0, i).noalias() =
               ref.block<3, 3>(0, 0).transpose().cast<float>() *
               (trans.block<3, 3>(0, 0).transpose() * (pt.block<3, 1>(0, i) - trans.block<3, 1>(0, 3)) -

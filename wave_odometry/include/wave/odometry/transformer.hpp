@@ -39,7 +39,7 @@ struct TransformerParams {
 class Transformer {
  public:
     Transformer() = delete;
-    Transformer(TransformerParams params) : params(params) {}
+    explicit Transformer(TransformerParams params) : params(params) {}
 
     TransformerParams params;
 
@@ -49,18 +49,15 @@ class Transformer {
 
     /** Points should be a 4xN tensor, xyz + timestamp
      * It is assumed the points are given in the sensor frame at the time that each one was observed.
-     * They will be transformed to the sensor frame at the beginning of the scan
+     * They will be transformed to the sensor frame at the beginning of the first scan
      *
      * The timesteps for each point should be relative to the start of the scan
      *
      * @param points 2 dimensional tensor, 4 x N
      * @param points_transformed 2 dimensional tensor, will be resized to 3 x N
-     * @param scan index of scan
      */
-    void transformToStart(const Eigen::Tensor<float, 2> &points, Eigen::Tensor<float, 2> &points_transformed,
-                          const uint32_t &scan);
-    void transformToEnd(const Eigen::Tensor<float, 2> &points, Eigen::Tensor<float, 2> &points_transformed,
-                            const uint32_t &scan);
+    void transformToStart(const Eigen::Tensor<float, 2> &points, Eigen::Tensor<float, 2> &points_transformed);
+    void transformToEnd(const Eigen::Tensor<float, 2> &points, Eigen::Tensor<float, 2> &points_transformed);
 
     void constantTransform(const uint32_t &fromScan, const uint32_t &toScan, const Eigen::Tensor<float, 2> &input, Eigen::Tensor<float, 2> &output);
 
