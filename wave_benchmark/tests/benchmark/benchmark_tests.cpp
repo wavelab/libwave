@@ -10,7 +10,7 @@ TEST(TrajectoryCompare, contructor) {
 TEST(TrajectoryCompare, pushTruth) {
     TrajectoryCompare compare;
     BenchmarkPose testpose;
-    testpose.rotation.setIdentity();
+    testpose.rotation = RotationMd::Identity();
     testpose.translation.setOnes();
     auto now = std::chrono::steady_clock::now();
 
@@ -21,7 +21,7 @@ TEST(TrajectoryCompare, pushTruth) {
 TEST(TrajectoryCompare, reset) {
     TrajectoryCompare compare;
     BenchmarkPose testpose;
-    testpose.rotation.setIdentity();
+    testpose.rotation = RotationMd::Identity();
     testpose.translation.setOnes();
     auto now = std::chrono::steady_clock::now();
 
@@ -33,7 +33,7 @@ TEST(TrajectoryCompare, reset) {
 TEST(TrajectoryCompare, errorStraight) {
     TrajectoryCompare compare;
     BenchmarkPose traj_sample;
-    traj_sample.rotation.setIdentity();
+    traj_sample.rotation = RotationMd::Identity();
     auto start_t = std::chrono::steady_clock::now();
 
     for (int i = 0; i < 10; i++) {
@@ -58,21 +58,27 @@ TEST(TrajectoryCompare, errorStraight) {
 TEST(TrajectoryCompare, errorRotation) {
     TrajectoryCompare compare;
     BenchmarkPose truth_sample, traj_sample;
-    std::vector<Rotation> expected_error;
+    std::vector<RotationMd> expected_error;
 
-    truth_sample.rotation.setIdentity();
+    truth_sample.rotation = RotationMd::Identity();
     truth_sample.translation.setOnes();
-    traj_sample.rotation.setIdentity();
+    traj_sample.rotation = RotationMd::Identity();
     traj_sample.translation.setOnes();
     auto start_t = std::chrono::steady_clock::now();
 
     for (int i = 0; i < 10; i++) {
-        truth_sample.rotation.setFromExpMap(Vec3(0.2 * i, 0.15 * i, 0.18 * i));
+        auto rot = Eigen::AngleAxisd(0.18 * i, Vec3::UnitZ()) *
+                   Eigen::AngleAxisd(0.15 * i, Vec3::UnitY()) *
+                   Eigen::AngleAxisd(0.2 * i, Vec3::UnitX());
+        truth_sample.rotation = RotationMd(rot);
         compare.pushTruth(truth_sample, start_t + std::chrono::seconds(i));
-        traj_sample.rotation.setFromExpMap(Vec3(0.25 * i, 0.20 * i, 0.15 * i));
-        expected_error.push_back(Rotation().setFromMatrix(
-          truth_sample.rotation.toRotationMatrix().transpose() *
-          traj_sample.rotation.toRotationMatrix()));
+        rot = Eigen::AngleAxisd(0.15 * i, Vec3::UnitZ()) *
+              Eigen::AngleAxisd(0.20 * i, Vec3::UnitY()) *
+              Eigen::AngleAxisd(0.25 * i, Vec3::UnitX());
+        traj_sample.rotation = RotationMd(rot);
+        expected_error.push_back(RotationMd(
+          truth_sample.rotation.value().transpose() *
+          traj_sample.rotation.value()));
         compare.pushMeasurement(traj_sample, start_t + std::chrono::seconds(i));
     }
     compare.calculateError();
@@ -80,7 +86,7 @@ TEST(TrajectoryCompare, errorRotation) {
 
     for (int i = 0; i < 10; i++) {
         auto time_c = start_t + std::chrono::seconds(i);
-        EXPECT_TRUE(expected_error.at(i).isNear(
+        EXPECT_TRUE(expected_error.at(i).isApprox(
           compare.error.get(time_c, ComparisonKey::ERROR).rotation, 1e-5));
     }
 }
@@ -90,16 +96,22 @@ TEST(TrajectoryCompare, outputCSV) {
     TrajectoryCompare compare;
     BenchmarkPose truth_sample, traj_sample;
 
-    truth_sample.rotation.setIdentity();
+    truth_sample.rotation = RotationMd::Identity();
     truth_sample.translation.setOnes();
-    traj_sample.rotation.setIdentity();
+    traj_sample.rotation = RotationMd::Identity();
     traj_sample.translation.setOnes();
 
     auto start_t = std::chrono::steady_clock::now();
     for (int i = 0; i < 10; i++) {
-        truth_sample.rotation.setFromExpMap(Vec3(0.2 * i, 0.15 * i, 0.18 * i));
+        auto rot = Eigen::AngleAxisd(0.18 * i, Vec3::UnitZ()) *
+                   Eigen::AngleAxisd(0.15 * i, Vec3::UnitY()) *
+                   Eigen::AngleAxisd(0.2 * i, Vec3::UnitX());
+        truth_sample.rotation = RotationMd(rot);
         compare.pushTruth(truth_sample, start_t + std::chrono::seconds(i));
-        traj_sample.rotation.setFromExpMap(Vec3(0.25 * i, 0.20 * i, 0.15 * i));
+        rot = Eigen::AngleAxisd(0.15 * i, Vec3::UnitZ()) *
+              Eigen::AngleAxisd(0.20 * i, Vec3::UnitY()) *
+              Eigen::AngleAxisd(0.25 * i, Vec3::UnitX());
+        traj_sample.rotation = RotationMd(rot);
         compare.pushMeasurement(traj_sample, start_t + std::chrono::seconds(i));
     }
     compare.calculateError();
@@ -109,9 +121,12 @@ TEST(TrajectoryCompare, outputCSV) {
 TEST(RotationInterpolation, quarterTurn) {
     // Setup
     MeasurementContainer<PoseMeasurement> container;
-    BenchmarkPose pose(Rotation(Vec3::Zero()), Vec3::Zero());
-    BenchmarkPose pose_rot(Rotation(Vec3(2, 0, 0)), Vec3::Zero());
-    BenchmarkPose expected(Rotation(Vec3(0.5, 0, 0)), Vec3::Zero());
+    BenchmarkPose pose(RotationMd(Eigen::Matrix3d::Zero()), Vec3::Zero());
+
+    auto rot = Eigen::AngleAxisd(2, Vec3::UnitX());
+    BenchmarkPose pose_rot(RotationMd(rot), Vec3::Zero());
+    rot = Eigen::AngleAxisd(0.5, Vec3::UnitX());
+    BenchmarkPose expected(RotationMd(rot), Vec3::Zero());
     auto start_t = std::chrono::steady_clock::now();
 
     container.emplace(start_t, ComparisonKey::GROUND_TRUTH, pose);
@@ -121,7 +136,7 @@ TEST(RotationInterpolation, quarterTurn) {
     // Test
     BenchmarkPose inter = container.get(start_t + std::chrono::seconds(1),
                                         ComparisonKey::GROUND_TRUTH);
-    EXPECT_TRUE(expected.rotation.isNear(inter.rotation, 0.1));
+    EXPECT_TRUE(expected.rotation.isApprox(inter.rotation, 0.1));
 }
 
 }  // end of namespace wave

@@ -6,7 +6,7 @@
 #define WAVE_BENCHMARK_POSE_MEASUREMENT_HPP
 
 #include <chrono>
-#include "wave/geometry/rotation.hpp"
+#include "wave/geometry/geometry.hpp"
 #include "wave/utils/math.hpp"
 #include "wave/containers/measurement.hpp"
 #include "wave/benchmark/enum_class.hpp"
@@ -16,11 +16,11 @@ namespace wave {
  *  @{ */
 
 struct BenchmarkPose {
-    Rotation rotation;
+    RotationMd rotation;
     Vec3 translation;
 
-    BenchmarkPose() : rotation(Rotation()), translation{0.0, 0.0, 0.0} {}
-    BenchmarkPose(Rotation rot, Vec3 trans)
+    BenchmarkPose() : rotation(RotationMd()), translation{0.0, 0.0, 0.0} {}
+    BenchmarkPose(RotationMd rot, Vec3 trans)
         : rotation(rot), translation(trans) {}
 };
 
@@ -33,18 +33,19 @@ inline BenchmarkPose interpolate(const PoseMeasurement &m1,
                                  const TimePoint &t) {
     auto w2 = 1.0 * (t - m1.time_point) / (m2.time_point - m1.time_point);
 
-    auto m1inverse = m1.value.rotation;
-    m1inverse.invert();
+    auto m1inverse = inverse(m1.value.rotation);
 
-    auto relative = m2.value.rotation * m1inverse;
-    Vec3 wvec = w2 * relative.logMap();
+    auto relative = eval(log(m2.value.rotation * m1inverse));
+    relative.value() *= w2;  // operator* not done for wave_geometry, so cheating by accessing Eigen object
 
-    Rotation interpolated;
-    interpolated.setFromExpMap(wvec);
     auto trans = (1 - w2) * m1.value.translation + w2 * m2.value.translation;
 
     BenchmarkPose retval;
-    retval.rotation = interpolated * m1.value.rotation;
+    Eigen::Matrix3d rot;
+    rot = Eigen::AngleAxisd(relative.value()(2,0), Vec3::UnitZ()) *
+         Eigen::AngleAxisd(relative.value()(1,0), Vec3::UnitY()) *
+         Eigen::AngleAxisd(relative.value()(0,0), Vec3::UnitX());
+    retval.rotation = RotationMd(rot * m1.value.rotation.value());
     retval.translation = trans;
     return retval;
 };
