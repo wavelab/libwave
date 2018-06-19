@@ -16,7 +16,7 @@
 namespace wave {
 
 template <int cnt, int state_dim, int... num>
-class ImplicitLineResidual : public ceres::SizedCostFunction<cnt, num...> {
+class ImplicitLineResidual : public ceres::SizedCostFunction<3*cnt, 3, num...> {
  public:
     virtual ~ImplicitLineResidual() {}
 

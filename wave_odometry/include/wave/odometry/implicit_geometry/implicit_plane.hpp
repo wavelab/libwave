@@ -9,7 +9,7 @@
 namespace wave {
 
 template <int cnt, int state_dim, int... num>
-class ImplicitPlaneResidual : public ceres::SizedCostFunction<cnt, num...> {
+class ImplicitPlaneResidual : public ceres::SizedCostFunction<cnt, 3, num...> {
  public:
     virtual ~ImplicitPlaneResidual() {}
 

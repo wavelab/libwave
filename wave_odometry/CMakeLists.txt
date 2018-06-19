@@ -34,7 +34,7 @@ IF(BUILD_TESTING)
             ${PROJECT_NAME})
 
     WAVE_ADD_TEST(residual_tests
-            tests/residual_test/implicit_line_test.cpp)
+            tests/residual_test/residual_test.cpp)
     TARGET_LINK_LIBRARIES(residual_tests
             ${PROJECT_NAME})
 

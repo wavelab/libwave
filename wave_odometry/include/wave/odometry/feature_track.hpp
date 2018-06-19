@@ -9,7 +9,7 @@ namespace wave {
 template <int state_dim>
 struct FeatureTrack {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    // pointer to xyz position of each point
+    // pointers to each point
     std::vector<double *> pts;
     // points transformed according to current operating point.
     std::vector<Vec3, Eigen::aligned_allocator<Vec3>> tpts;
