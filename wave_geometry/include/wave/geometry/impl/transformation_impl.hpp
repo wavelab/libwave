@@ -128,7 +128,7 @@ void Transformation<Derived, approximate>::interpolate(const Transformation<InTy
 
 template <typename Derived, bool approximate>
 template <typename InType, typename Other, bool InApprox, bool O_approx>
-void Transformation<Derived, approximate>::interpolate(const Transformation<InType, InApprox> &T_k,
+void Transformation<Derived, approximate>::interpolateReduced(const Transformation<InType, InApprox> &T_k,
                                                        const Transformation<InType, InApprox> &T_kp1,
                                                        const Vec6 &twist_k,
                                                        const Vec6 &twist_kp1,

@@ -26,7 +26,7 @@ void Transformer::update(const std::vector<Trajectory, Eigen::aligned_allocator<
               this->traj_stamps.at(i), this->traj_stamps.at(i + 1), new_stamp, candle, hat);
 
             Trajectory interp;
-            T_TYPE::interpolate(this->aug_trajectories.at(i).pose,
+            T_TYPE::interpolateReduced(this->aug_trajectories.at(i).pose,
                                 this->aug_trajectories.at(i + 1).pose,
                                 this->aug_trajectories.at(i).vel,
                                 this->aug_trajectories.at(i + 1).vel,
@@ -78,7 +78,9 @@ void Transformer::update(const std::vector<Trajectory, Eigen::aligned_allocator<
 }
 
 void Transformer::transformToStart(const Eigen::Tensor<float, 2> &points, Eigen::Tensor<float, 2> &points_transformed) {
-    points_transformed.resize(3, points.dimensions().at(1));
+    if (points_transformed.dimension(0) != 3 || points_transformed.dimension(1) != points.dimension(1)) {
+        points_transformed.resize(3, points.dimensions().at(1));
+    }
 
     Eigen::Map<const MatXf> pt(points.data(), points.dimension(0), points.dimension(1));
     Eigen::Map<MatXf> ptT(points_transformed.data(), points_transformed.dimension(0), points_transformed.dimension(1));
@@ -117,7 +119,9 @@ void Transformer::transformToStart(const Eigen::Tensor<float, 2> &points, Eigen:
 }
 
 void Transformer::transformToEnd(const Eigen::Tensor<float, 2> &points, Eigen::Tensor<float, 2> &points_transformed) {
-    points_transformed.resize(3, points.dimensions().at(1));
+    if (points_transformed.dimension(0) != 3 || points_transformed.dimension(1) != points.dimension(1)) {
+        points_transformed.resize(3, points.dimensions().at(1));
+    }
 
     Eigen::Map<const MatXf> pt(points.data(), points.dimension(0), points.dimension(1));
     Eigen::Map<MatXf> ptT(points_transformed.data(), points_transformed.dimension(0), points_transformed.dimension(1));
@@ -146,11 +150,12 @@ void Transformer::transformToEnd(const Eigen::Tensor<float, 2> &points, Eigen::T
                             candle(0, 1) * this->differences.at(index).candle_multiplier.block<6, 1>(6, 0);
             Mat34f trans;
             T_TYPE::expMap1st(tan_vec, trans);
-            auto &ref = this->aug_trajectories.back().pose.storage;
+            auto &ref = this->aug_trajectories.at(index).pose.storage;
+            auto &final = this->aug_trajectories.back().pose.storage;
             ptT.block<3, 1>(0, i).noalias() =
-              ref.block<3, 3>(0, 0).transpose().cast<float>() *
-              (trans.block<3, 3>(0, 0).transpose() * (pt.block<3, 1>(0, i) - trans.block<3, 1>(0, 3)) -
-               ref.block<3, 1>(0, 3).cast<float>());
+              final.block<3, 3>(0, 0).transpose().cast<float>() *
+              (trans.block<3, 3>(0, 0) * (pt.block<3, 1>(0, i) + ref.block<3, 1>(0, 3).cast<float>()) +
+               trans.block<3, 1>(0, 3).cast<float>() - final.block<3, 1>(0,3).cast<float>());
         }
     }
 }

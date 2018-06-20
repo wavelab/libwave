@@ -69,10 +69,10 @@ TEST_F(TransformationInterpolationTestFixture, testInterpolation) {
     T_Type Tint;
 
     T_Type::interpolateAndJacobians(
-      T_k, T_kp1, vel_k, vel_kp1, hat.block<6,12>(0,0), candle.block<6,12>(0,0), Tint, J_T_k_an, J_T_kp1_an, J_vel_k_an, J_vel_kp1_an);
+      T_k, T_kp1, vel_k, vel_kp1, hat, candle, Tint, J_T_k_an, J_T_kp1_an, J_vel_k_an, J_vel_kp1_an);
 
     T_Type Tint_nojac;
-    T_Type::interpolate(T_k, T_kp1, vel_k, vel_kp1, hat.block<6,12>(0,0), candle.block<6,12>(0,0), Tint_nojac);
+    T_Type::interpolate(T_k, T_kp1, vel_k, vel_kp1, hat, candle, Tint_nojac);
 
     T_Type T_k_full, T_kp1_full;
 
@@ -82,23 +82,23 @@ TEST_F(TransformationInterpolationTestFixture, testInterpolation) {
     T_Type Tint_full, Tint_full_nojac;
 
     T_Type::interpolateAndJacobians(
-            T_k_full, T_kp1_full, vel_k, vel_kp1, hat.block<6,12>(0,0), candle.block<6,12>(0,0), Tint_full, J_T_k_an, J_T_kp1_an, J_vel_k_an, J_vel_kp1_an);
+            T_k_full, T_kp1_full, vel_k, vel_kp1, hat, candle, Tint_full, J_T_k_an, J_T_kp1_an, J_vel_k_an, J_vel_kp1_an);
 
-    T_Type::interpolate(T_k_full, T_kp1_full, vel_k, vel_kp1, hat.block<6,12>(0,0), candle.block<6,12>(0,0), Tint_full_nojac);
+    T_Type::interpolate(T_k_full, T_kp1_full, vel_k, vel_kp1, hat, candle, Tint_full_nojac);
 
-    TInterpolatedJTLeftFunctor<T_Type> J_Tleft_functor(T_k, T_kp1, vel_k, vel_kp1, hat.block<6,12>(0,0), candle.block<6,12>(0,0));
+    TInterpolatedJTLeftFunctor<T_Type> J_Tleft_functor(T_k, T_kp1, vel_k, vel_kp1, hat, candle);
     numerical_jacobian(J_Tleft_functor, perturbation_vec, J_T_k_num);
     perturbation_vec = Vec6::Zero();
 
-    TInterpolatedJTRightFunctor<T_Type> J_Tright_functor(T_k, T_kp1, vel_k, vel_kp1, hat.block<6,12>(0,0), candle.block<6,12>(0,0));
+    TInterpolatedJTRightFunctor<T_Type> J_Tright_functor(T_k, T_kp1, vel_k, vel_kp1, hat, candle);
     numerical_jacobian(J_Tright_functor, perturbation_vec, J_T_kp1_num);
     perturbation_vec = Vec6::Zero();
 
-    TInterpolatedJVLeftFunctor<T_Type> J_Vleft_functor(T_k, T_kp1, vel_k, vel_kp1, hat.block<6,12>(0,0), candle.block<6,12>(0,0));
+    TInterpolatedJVLeftFunctor<T_Type> J_Vleft_functor(T_k, T_kp1, vel_k, vel_kp1, hat, candle);
     numerical_jacobian(J_Vleft_functor, perturbation_vec, J_vel_k_num);
     perturbation_vec = Vec6::Zero();
 
-    TInterpolatedJVRightFunctor<T_Type> J_Vright_functor(T_k, T_kp1, vel_k, vel_kp1, hat.block<6,12>(0,0), candle.block<6,12>(0,0));
+    TInterpolatedJVRightFunctor<T_Type> J_Vright_functor(T_k, T_kp1, vel_k, vel_kp1, hat, candle);
     numerical_jacobian(J_Vright_functor, perturbation_vec, J_vel_kp1_num);
 
     wave::MatX errmat = J_T_k_an - J_T_k_num;

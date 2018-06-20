@@ -174,12 +174,6 @@ class LaserOdom {
     // ceres optimizer stuff
     std::vector<Vec12, Eigen::aligned_allocator<Vec12>> param_blocks;
     // Preallocated memory for the residuals
-    std::vector<wave_optimization::SE3PointToLineGPObjects,
-                Eigen::aligned_allocator<wave_optimization::SE3PointToLineGPObjects>>
-      PtLMem;
-    std::vector<wave_optimization::SE3PointToPlaneGPObjects,
-                Eigen::aligned_allocator<wave_optimization::SE3PointToPlaneGPObjects>>
-      PtPMem;
 
     LaserOdomParams param;
     bool initialized = false, full_revolution = false;

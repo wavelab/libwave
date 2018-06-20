@@ -186,7 +186,7 @@ TEST_F(TransformationTestFixture, testTransformAndJacobian) {
     Eigen::Matrix<double, 3, 6> Jparam_analytical, Jparam_numerical;
     Mat3 Jpoint_analytical, Jpoint_numerical;
     // get analytical jacobians
-    this->transform_expected.transformAndJacobian(v, dead_end, Jpoint_analytical, Jparam_analytical);
+    this->transform_expected.transformAndJacobian(v, dead_end, &Jpoint_analytical, &Jparam_analytical);
 
     TransformAndJacobianJpointFunctor Jpoint_functor(this->transform_expected);
     numerical_jacobian(Jpoint_functor, v, Jpoint_numerical);

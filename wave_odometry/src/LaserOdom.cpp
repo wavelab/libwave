@@ -803,44 +803,44 @@ bool LaserOdom::runOptimization(ceres::Problem &problem) {
 }
 
 bool LaserOdom::match() {
-//    T_TYPE last_transform;
-//    auto &ref = this->cur_trajectory.back().pose;
+    T_TYPE last_transform;
+    auto &ref = this->cur_trajectory.back().pose;
+
+    ceres::Problem problem;
+
+    for (int op = 0; op < this->param.opt_iters; op++) {
+        if (op > 0) {
+            last_transform = ref;
+        }
+        /// 1. Transform all features to the start of the window
+        for (uint32_t i = 0; i < this->scan_stamps_chrono.size(); i++) {
+            this->scan_stampsf.at(i) = std::chrono::duration<float, std::chrono::seconds>(
+                                         this->scan_stamps_chrono.at(i) - this->scan_stamps_chrono.front())
+                                         .count();
+        }
+        this->transformer.update(this->cur_trajectory, this->scan_stampsf);
+
+        for (uint32_t i = 0; i < this->param.n_window; i++) {
+            for (uint32_t j = 0; j < this->N_FEATURES; j++) {
+                auto &feat = this->feat_pts.at(i).at(j);
+                auto &featT = this->feat_pts_T.at(i).at(j);
+                this->transformer.transformToStart(feat, featT);
+
+                this->mapped_features.at(i).at(j) =
+                  Eigen::Map<Eigen::MatrixXf>(featT.data(), featT.dimension(0), featT.dimension(1));
+            }
+        }
+
+///// 2. Build kd trees on previous two scans. N_window is required to be at least 2
+        for (uint32_t i = this->param.n_window - 2; i < this->param.n_window; i++) {
+            for (uint32_t j = 0; j < this->N_FEATURES; j++) {
+                delete this->kdidx.at(i).at(j);
+                // todo, see if this is creating a eigen matrix instead of just using the map
+                this->kdidx.at(i).at(j) = Nabo::NNSearchF::createKDTreeLinearHeap(this->mapped_features.at(i).at(j));
+            }
+        }
 //
-//    ceres::Problem problem;
-//
-//    for (int op = 0; op < this->param.opt_iters; op++) {
-//        if (op > 0) {
-//            memcpy(last_transform.storage.data(), ref.storage.data(), 96);
-//        }
-//        /// 1. Transform all features to the start of the window
-//        for (uint32_t i = 0; i < this->scan_stamps_chrono.size(); i++) {
-//            this->scan_stampsf.at(i) = std::chrono::duration<float, std::chrono::seconds>(
-//                                         this->scan_stamps_chrono.at(i) - this->scan_stamps_chrono.front())
-//                                         .count();
-//        }
-//        this->transformer.update(this->cur_trajectory, this->scan_stampsf);
-//        for (uint32_t i = 0; i < this->param.n_window; i++) {
-//            for (uint32_t j = 0; j < this->N_FEATURES; j++) {
-//                auto &feat = this->feat_pts.at(i).at(j);
-//                auto &featT = this->feat_pts_T.at(i).at(j);
-//                this->transformer.transformToStart(feat, featT);
-//
-//                this->mapped_features.at(i).at(j) =
-//                  Eigen::Map<Eigen::MatrixXf>(featT.data(), featT.dimension(0), featT.dimension(1));
-//            }
-//        }
-//
-///// 2. Build kd trees on transformed points
-//#pragma omp parallel for
-//        for (uint32_t i = 0; i < this->param.n_window; i++) {
-//            for (uint32_t j = 0; j < this->N_FEATURES; j++) {
-//                delete this->kdidx.at(i).at(j);
-//                // todo, see if this is creating a eigen matrix instead of just using the map
-//                this->kdidx.at(i).at(j) = Nabo::NNSearchF::createKDTreeLinearHeap(this->mapped_features.at(i).at(j));
-//            }
-//        }
-//
-///// 3. Match to configured number of nearest neighbours, depending on config
+///// 3. Attempt to extend all feature tracks that continue into previous scan.
 //#pragma omp parallel for
 //        for (int i = 0; i < this->param.n_window; i++) {
 //            uint32_t cnt = 0;

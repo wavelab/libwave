@@ -30,7 +30,8 @@ IF(BUILD_TESTING)
     WAVE_ADD_TEST(transformer_tests
             tests/transformer_tests.cpp)
     TARGET_LINK_LIBRARIES(transformer_tests
-            ${PROJECT_NAME})
+            ${PROJECT_NAME}
+            wave::matching)
 
     WAVE_ADD_TEST(residual_tests
             tests/residual_test/residual_test.cpp)

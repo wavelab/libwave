@@ -24,7 +24,7 @@ namespace wave {
 
 struct TransformerParams {
     /// Maximum difference between two subsequent transforms (radians)
-    float delRTol = 1e-1f;
+    float delRTol = 1e-2f;
     /// Maximum difference between two subsequent angular velocities (radians/s)
     float delWTol = 1e-1f;
     /// Maximum difference between two subsequent linear velocities

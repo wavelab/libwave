@@ -107,6 +107,7 @@ TEST(Transformer, transformViz) {
     long n_pts = 100;
     Eigen::Tensor<float, 2> scan(4, params.n_scans * n_pts);
     Eigen::Tensor<float, 2> tscan(4, params.n_scans * n_pts);
+    Eigen::Tensor<float, 2> bscan(4, params.n_scans * n_pts);
 
     for (long j = 0; j < params.n_scans; j++) {
         for (long i = 0; i < n_pts; i++) {
@@ -118,13 +119,19 @@ TEST(Transformer, transformViz) {
     }
 
     transformer.transformToStart(scan, tscan);
+    transformer.transformToEnd(scan, bscan);
 
-    pcl::PointCloud<pcl::PointXYZI> transformed, original;
+    pcl::PointCloud<pcl::PointXYZI> transformed, original, btransformed;
     for (long i = 0; i < params.n_scans * n_pts; i++) {
-        pcl::PointXYZI tpt, orpt;
+        pcl::PointXYZI tpt, orpt, bpt;
         tpt.x = tscan(0,i);
         tpt.y = tscan(1,i);
         tpt.z = tscan(2,i);
+        tpt.intensity = scan(3,i);
+
+        bpt.x = bscan(0,i);
+        bpt.y = bscan(1,i);
+        bpt.z = bscan(2,i);
         tpt.intensity = scan(3,i);
 
         orpt.x = scan(0,i);
@@ -133,6 +140,7 @@ TEST(Transformer, transformViz) {
         orpt.intensity = scan(3,i);
 
         transformed.push_back(tpt);
+        btransformed.push_back(bpt);
         original.push_back(orpt);
     }
 
@@ -140,6 +148,7 @@ TEST(Transformer, transformViz) {
     display.startSpin();
     display.addPointcloud(transformed.makeShared(), 0);
     display.addPointcloud(original.makeShared(), 1);
+    display.addPointcloud(btransformed.makeShared(), 2);
 
     cin.get();
 }

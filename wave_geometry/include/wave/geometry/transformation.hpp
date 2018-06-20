@@ -101,7 +101,7 @@ class Transformation {
                             Vec6* interpTwist = nullptr);
 
     template <typename InType, typename Other, bool InApprox, bool O_approx>
-    static void interpolate(const Transformation<InType, InApprox> &T_k,
+    static void interpolateReduced(const Transformation<InType, InApprox> &T_k,
                             const Transformation<InType, InApprox> &T_kp1,
                             const Vec6 &twist_k,
                             const Vec6 &twist_kp1,
