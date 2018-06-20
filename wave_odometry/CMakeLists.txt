@@ -5,7 +5,6 @@ WAVE_ADD_MODULE(${PROJECT_NAME}
     wave::optimization
     wave::geometry
     wave::kinematics
-    wave::matching
     PCL::PCL
     libnabo::libnabo
     SOURCES

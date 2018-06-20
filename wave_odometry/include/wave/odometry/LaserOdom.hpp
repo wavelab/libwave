@@ -39,16 +39,18 @@
 
 #include "wave/geometry/transformation.hpp"
 #include "wave/kinematics/constant_velocity_gp_prior.hpp"
-#include "wave/matching/pointcloud_display.hpp"
 #include "wave/odometry/feature_extractor.hpp"
 #include "wave/odometry/PointXYZIR.hpp"
 #include "wave/odometry/PointXYZIT.hpp"
 #include "wave/odometry/odometry_types.hpp"
 #include "wave/odometry/sensor_model.hpp"
 #include "wave/odometry/transformer.hpp"
-#include "wave/optimization/ceres/odom_gp_twist/point_to_line_gp.hpp"
-#include "wave/optimization/ceres/odom_gp_twist/point_to_plane_gp.hpp"
+#include "wave/odometry/feature_track.hpp"
+#include "wave/odometry/feature_extractor.hpp"
+#include "wave/odometry/implicit_geometry/implicit_plane.hpp"
+#include "wave/odometry/implicit_geometry/implicit_line.hpp"
 #include "wave/optimization/ceres/odom_gp_twist/constant_velocity.hpp"
+#include "wave/optimization/ceres/local_params/spherical_parameterization.hpp"
 #include "wave/optimization/ceres/loss_function/bisquare_loss.hpp"
 #include "wave/utils/math.hpp"
 #include "wave/utils/data.hpp"
@@ -104,7 +106,6 @@ struct LaserOdomParams {
     double max_extrapolation = 0.0;  // Increasing this number from 0 will allow a bit of extrapolation
 
     // Setting flags
-    bool visualize = false;               // Whether to run a visualization for debugging
     bool output_trajectory = false;       // Whether to output solutions for debugging/plotting
     bool output_correspondences = false;  // Whether to output correpondences for debugging/plotting
     bool only_extract_features = false;   // If set, no transforms are calculated
@@ -158,10 +159,6 @@ class LaserOdom {
     const uint32_t MAX_POINTS = 2200;
 
  private:
-    // Visualizer elements, not allocated unless used
-    PointCloudDisplay *display;
-    pcl::PointCloud<pcl::PointXYZI>::Ptr prev_viz, cur_viz;
-    void updateViz();
     // Output trajectory file
     std::ofstream file;
     Eigen::IOFormat *CSVFormat;
@@ -251,6 +248,8 @@ class LaserOdom {
     std::vector<std::vector<std::pair<uint64_t, AssociationStatus>>> feature_association;
 
     std::vector<ResidualType> feature_residuals;
+
+    std::vector<FeatureTrack<12>, Eigen::aligned_allocator<FeatureTrack<12>>> features_tracks;
 };
 
 }  // namespace wave

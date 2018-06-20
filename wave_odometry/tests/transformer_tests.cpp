@@ -73,7 +73,7 @@ TEST(Transformer, transformToStart) {
         scan(2,i) = 0.0f;
         scan(3,i) = 0.4f + 0.2f * (static_cast<float>(i)/100.0f);
     }
-    EXPECT_NO_THROW(transformer.transformToStart(scan, tscan, <#initializer#>));
+    EXPECT_NO_THROW(transformer.transformToStart(scan, tscan));
 }
 
 /// Given a set of points in a circle, this should stretch/transform it smoothly across trajectory
@@ -88,7 +88,7 @@ TEST(Transformer, transformViz) {
     uint32_t cnt = params.n_scans * (params.traj_resolution - 1) + 1;
 
     Vec6 vel;
-    vel << 0, 0, 1.5, 3, 0, 2;
+    vel << 0.4, 0, 1.5, 3, 0, 0;
 
     stamps.resize(cnt);
     trajectory.resize(cnt);
@@ -110,14 +110,14 @@ TEST(Transformer, transformViz) {
 
     for (long j = 0; j < params.n_scans; j++) {
         for (long i = 0; i < n_pts; i++) {
-            scan(0,j*n_pts + i) = static_cast<float>(std::cos(2*M_PI * static_cast<double>(i)/100.0));
-            scan(1,j*n_pts + i) = static_cast<float>(std::sin(2*M_PI * static_cast<double>(i)/100.0));
+            scan(0,j*n_pts + i) = static_cast<float>(0.0);
+            scan(1,j*n_pts + i) = static_cast<float>(0.0);
             scan(2,j*n_pts + i) = 0.0f;
             scan(3,j*n_pts + i) = 0.2f * (float)j + 0.2f * (static_cast<float>(i)/100.0f);
         }
     }
 
-    transformer.transformToStart(scan, tscan, <#initializer#>);
+    transformer.transformToStart(scan, tscan);
 
     pcl::PointCloud<pcl::PointXYZI> transformed, original;
     for (long i = 0; i < params.n_scans * n_pts; i++) {

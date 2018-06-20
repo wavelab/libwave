@@ -85,7 +85,7 @@ static void BM_TRANSFORM_N(benchmark::State &state) {
     transformer.update(trajectory, stamps);
 
     for (auto _ : state) {
-        transformer.transformToStart(scan, tscan, <#initializer#>);
+        transformer.transformToStart(scan, tscan);
     }
 }
 

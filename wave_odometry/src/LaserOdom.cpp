@@ -93,13 +93,6 @@ LaserOdom::LaserOdom(const LaserOdomParams params, const FeatureExtractorParams 
     //    }
     //    this->sqrtinfo.setIdentity();
     //
-    //    if (params.visualize) {
-    //        this->display = new PointCloudDisplay("laser odom");
-    //        this->display->startSpin();
-    //        // Allocate space for visualization clouds
-    //        this->prev_viz = boost::shared_ptr<pcl::PointCloud<pcl::PointXYZI>>(new pcl::PointCloud<pcl::PointXYZI>);
-    //        this->cur_viz = boost::shared_ptr<pcl::PointCloud<pcl::PointXYZI>>(new pcl::PointCloud<pcl::PointXYZI>);
-    //    }
     //
     //    if (params.output_trajectory) {
     //        long timestamp = std::chrono::system_clock::now().time_since_epoch().count();
@@ -122,10 +115,6 @@ LaserOdomParams LaserOdom::getParams() {
 }
 
 LaserOdom::~LaserOdom() {
-    if (this->param.visualize) {
-        this->display->stopSpin();
-        delete this->display;
-    }
     if (this->param.output_trajectory) {
         this->file.close();
     }
@@ -346,9 +335,6 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
     //            if (this->param.output_trajectory) {
     //                this->file << this->cur_trajectory.back().pose.storage.format(*(this->CSVFormat)) << std::endl;
     //            }
-    //            if (this->param.visualize) {
-    //                this->updateViz();
-    //            }
     //            if (this->output_thread) {
     //                {
     //                    std::unique_lock<std::mutex> lk(this->output_mutex);
@@ -387,42 +373,6 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
     //    }
     //
     //    this->prv_tick = tick;
-}
-
-void LaserOdom::updateViz() {
-    // populate prev with points stored in kd tree
-    // These are already transformed to the start of the current scan
-    //    this->display->removeAll();
-    //    this->prev_viz->clear();
-    //    this->cur_viz->clear();
-    //
-    //    for (uint32_t i = 0; i < this->N_FEATURES; i++) {
-    //        for (auto iter = this->prv_feature_points.at(i).points.begin();
-    //             iter != this->prv_feature_points.at(i).points.end();
-    //             iter++) {
-    //            pcl::PointXYZI pt;
-    //            pt.x = (float) (*iter).at(0);
-    //            pt.y = (float) (*iter).at(1);
-    //            pt.z = (float) (*iter).at(2);
-    //            pt.intensity = 1 + i;
-    //            this->prev_viz->push_back(pt);
-    //        }
-    //
-    //        for (uint32_t j = 0; j < this->param.n_ring; j++) {
-    //            for (auto pt : this->feat_pts.at(i).at(j)) {
-    //                double T_pt[3];
-    //                this->transformToMap(pt.pt, pt.tick, T_pt);
-    //                pcl::PointXYZI point;
-    //                point.x = T_pt[0];
-    //                point.y = T_pt[1];
-    //                point.z = T_pt[2];
-    //                point.intensity = 10 + i;
-    //                this->prev_viz->push_back(point);
-    //            }
-    //        }
-    //    }
-    //
-    //    this->display->addPointcloud(this->prev_viz, 0);
 }
 
 void LaserOdom::rollover(TimeType stamp) {

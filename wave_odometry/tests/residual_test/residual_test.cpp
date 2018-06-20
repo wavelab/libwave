@@ -15,7 +15,6 @@ struct TestEvalCallback : ceres::EvaluationCallback {
         for (uint32_t i = 0; i < this->track->pts.size(); ++i) {
             Eigen::Map<const wave::Vec3> vec(this->track->pts.at(i));
             this->track->tpts.at(i) = vec;
-//            std::cout << "tptss \n" << this->track->tpts.at(i) << "\n";
         }
     }
     wave::FeatureTrack<3> *track;
