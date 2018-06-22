@@ -25,8 +25,8 @@ install_opencv()
     OPENCV_DIR="opencv-$VERSION"
     FILE="$VERSION.zip"
 
-    pkg-config --atleast-version=$VERSION opencv
-    if [ "$?" == "0" ]; then
+    local RETVAL=$(pkg-config --atleast-version=$VERSION opencv)
+    if [ "$RETVAL" == "0" ]; then
         echo "opencv version $(pkg-config --modversion opencv) is already installed."
     else
         echo "Installing opencv version $VERSION ..."
