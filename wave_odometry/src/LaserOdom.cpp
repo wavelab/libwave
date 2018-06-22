@@ -307,72 +307,75 @@ void LaserOdom::applyRemap() {
 }
 
 void LaserOdom::updateStoredFeatures() {
-//#pragma omp parallel for
-//    for (uint32_t i = 0; i < this->N_FEATURES; i++) {
-//        auto &feat = this->feat_pts.back().at(i);
-//        long featcnt = 0;
-//        for (const auto &elem : this->indices.at(i)) {
-//            featcnt += elem.dimension(0);
-//        }
-//        feat.resize(4, featcnt);
-//        long offset = 0;
-//        for (const auto &elem : this->indices.at(i)) {
-//            for (long j = 0; j < elem.dimension(0); j++) {
-//                feat.slice(ar2({0, offset}), ar2({4, 1})) = elem.slice(ar2({j, 0}), ar2({4, 1}));
-//            }
-//            offset += elem.dimension(0);
-//        }
-//    }
+    // Perform a left rotation
+    std::rotate(this->feat_pts.begin(), this->feat_pts.begin() + 1, this->feat_pts.end());
+    std::rotate(this->feat_pts_T.begin(), this->feat_pts_T.begin() + 1; this->feat_pts_T.end());
+#pragma omp parallel for
+    for (uint32_t i = 0; i < this->N_FEATURES; i++) {
+        auto &feat = this->feat_pts.back().at(i);
+        long featcnt = 0;
+        for (const auto &elem : this->indices.at(i)) {
+            featcnt += elem.dimension(0);
+        }
+        feat.resize(4, featcnt);
+        long offset = 0;
+        for (const auto &elem : this->indices.at(i)) {
+            for (long j = 0; j < elem.dimension(0); j++) {
+                feat.slice(ar2({0, offset}), ar2({4, 1})) = elem.slice(ar2({j, 0}), ar2({4, 1}));
+            }
+            offset += elem.dimension(0);
+        }
+    }
 }
 
 void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, TimeType stamp) {
-    //    if (tick - this->prv_tick < -200) {  // tolerate minor nonlinearity error
-    //        this->feature_extractor.getFeatures(this->cur_scan, this->signals, this->counters, this->indices);
-    //        this->updateStoredFeatures();
-    //        if (this->initialized) {
-    //            this->match();
-    //
-    //            if (this->param.output_trajectory) {
-    //                this->file << this->cur_trajectory.back().pose.storage.format(*(this->CSVFormat)) << std::endl;
-    //            }
-    //            if (this->output_thread) {
-    //                {
-    //                    std::unique_lock<std::mutex> lk(this->output_mutex);
-    //                    if (this->fresh_output) {
-    //                        // data from last time hasn't been consumed yet
-    //                        LOG_ERROR("Overwriting previous output");
-    //                    }
-    //                    this->undistorted_stamp = this->prv_time;
-    //                    this->undistort_transform = this->cur_trajectory.back().pose;
-    //                    memcpy(this->undistort_velocity.data(), this->cur_trajectory.back().vel.data(), 48);
-    //
-    //                    // this->undistort();
-    //                    this->fresh_output = true;
-    //                }
-    //                this->output_condition.notify_one();
-    //            }
-    //        }
-    //        this->rollover(stamp);
-    //        std::fill(this->counters.begin(), this->counters.end(), 0);
-    //    }
-    //
-    //    for (PointXYZIR pt : pts) {
-    //        if (counters.at(pt.ring) >= this->MAX_POINTS) {
-    //            throw std::out_of_range("Rebuild with higher max points");
-    //        }
-    //        this->cur_scan.at(pt.ring)(0, counters.at(pt.ring)) = pt.x;
-    //        this->cur_scan.at(pt.ring)(1, counters.at(pt.ring)) = pt.y;
-    //        this->cur_scan.at(pt.ring)(2, counters.at(pt.ring)) = pt.z;
-    //        this->cur_scan.at(pt.ring)(3, counters.at(pt.ring)) =
-    //          std::chrono::duration<float, std::chrono::seconds>(stamp - this->scan_stamps_chrono.back()).count();
-    //
-    //        this->signals.at(pt.ring)(0, counters.at(pt.ring)) = sqrtf(pt.x * pt.x + pt.y * pt.y + pt.z * pt.z);
-    //        this->signals.at(pt.ring)(1, counters.at(pt.ring)) = pt.intensity;
-    //
-    //        this->counters.at(pt.ring)++;
-    //    }
-    //
-    //    this->prv_tick = tick;
+        if (tick - this->prv_tick < -200) {  // tolerate minor nonlinearity error
+            this->feature_extractor.getFeatures(this->cur_scan, this->signals, this->counters, this->indices);
+            this->updateStoredFeatures();
+            if (this->initialized) {
+                this->match();
+
+                if (this->param.output_trajectory) {
+                    this->file << this->cur_trajectory.back().pose.storage.format(*(this->CSVFormat)) << std::endl;
+                }
+                if (this->output_thread) {
+                    {
+                        std::unique_lock<std::mutex> lk(this->output_mutex);
+                        if (this->fresh_output) {
+                            // data from last time hasn't been consumed yet
+                            LOG_ERROR("Overwriting previous output");
+                        }
+//                        this->undistorted_stamp = this->prv_time;
+                        this->undistort_transform = this->cur_trajectory.back().pose;
+                        memcpy(this->undistort_velocity.data(), this->cur_trajectory.back().vel.data(), 48);
+
+                        // this->undistort();
+                        this->fresh_output = true;
+                    }
+                    this->output_condition.notify_one();
+                }
+            }
+            this->rollover(stamp);
+            std::fill(this->counters.begin(), this->counters.end(), 0);
+        }
+
+        for (PointXYZIR pt : pts) {
+            if (counters.at(pt.ring) >= this->MAX_POINTS) {
+                throw std::out_of_range("Rebuild with higher max points");
+            }
+            this->cur_scan.at(pt.ring)(0, counters.at(pt.ring)) = pt.x;
+            this->cur_scan.at(pt.ring)(1, counters.at(pt.ring)) = pt.y;
+            this->cur_scan.at(pt.ring)(2, counters.at(pt.ring)) = pt.z;
+            this->cur_scan.at(pt.ring)(3, counters.at(pt.ring)) =
+              std::chrono::duration<float, std::chrono::seconds>(stamp - this->scan_stamps_chrono.back()).count();
+
+            this->signals.at(pt.ring)(0, counters.at(pt.ring)) = sqrtf(pt.x * pt.x + pt.y * pt.y + pt.z * pt.z);
+            this->signals.at(pt.ring)(1, counters.at(pt.ring)) = pt.intensity;
+
+            this->counters.at(pt.ring)++;
+        }
+
+        this->prv_tick = tick;
 }
 
 void LaserOdom::rollover(TimeType stamp) {
@@ -488,56 +491,6 @@ void LaserOdom::buildTrees() {
     //    }
 }
 
-bool LaserOdom::findCorrespondingPoints(const Vec3 &query, const uint32_t &f_idx, std::vector<size_t> *index) {
-    //    using ContType = std::pair<size_t, double>;
-    //    std::vector<ContType> indices_dists;
-    //    nanoflann::RadiusResultSet<double, size_t> resultSet(this->param.max_correspondence_dist, indices_dists);
-    //    uint32_t knn = 0;
-    //    switch (this->feature_residuals.at(f_idx)) {
-    //        case PointToLine: knn = 2; break;
-    //        case PointToPlane: knn = 3; break;
-    //        default: knn = 0;
-    //    }
-    //    this->feature_idx.at(f_idx)->findNeighbors(resultSet, query.data(), nanoflann::SearchParams());
-    //    if (indices_dists.size() < knn) {
-    //        return false;
-    //    }
-    //    std::sort(indices_dists.begin(), indices_dists.end(), [](const ContType &left, const ContType &right) {
-    //        return left.second < right.second;
-    //    });
-    //
-    //    index->clear();
-    //    // In order to ensure correspondences are not picked along a scan line,
-    //    // use bins and enforce that the set of correspondences should fall into at
-    //    // least 2 bins
-    //    double offset = 0;
-    //    double current_elevation = 0;
-    //    uint16_t counter = 0;
-    //    bool non_zero_bin = false;
-    //    double const *point;
-    //    while (counter < indices_dists.size()) {
-    //        point = this->prv_feature_points.at(f_idx).points.at(indices_dists.at(counter).first).data();
-    //        if (counter == 0) {
-    //            offset = std::atan2(point[2], std::sqrt(point[0] * point[0] + point[1] * point[1]));
-    //        } else {
-    //            current_elevation = std::atan2(point[2], std::sqrt(point[0] * point[0] + point[1] * point[1]));
-    //            double t_bin = (current_elevation - offset) / this->param.azimuth_tol;
-    //            int cur_bin = t_bin > 0 ? (int) (t_bin + 0.5) : (int) (t_bin - 0.5);
-    //            if (cur_bin != 0) {
-    //                non_zero_bin = true;
-    //            }
-    //        }
-    //        if (index->size() + 1 != knn || non_zero_bin) {
-    //            index->push_back(indices_dists.at(counter).first);
-    //        }
-    //        if (index->size() == knn) {
-    //            return true;
-    //        }
-    //        ++counter;
-    //    }
-    //    return false;
-}
-
 bool LaserOdom::outOfBounds(const Vec3 &query, const uint32_t &f_idx, const std::vector<size_t> &index) {
     //    Eigen::Map<const Vec3> pA(this->prv_feature_points.at(f_idx).points.at(index.at(0)).data());
     //    Eigen::Map<const Vec3> pB(this->prv_feature_points.at(f_idx).points.at(index.at(1)).data());
@@ -557,9 +510,6 @@ bool LaserOdom::outOfBounds(const Vec3 &query, const uint32_t &f_idx, const std:
 }
 
 bool LaserOdom::runOptimization(ceres::Problem &problem) {
-    // set up pointer for evaluating residuals
-    //    const double **parameters;
-    //    parameters = new const double *[4];
     //    std::vector<double> residuals;
     //
     //    ceres::Problem problem;
@@ -617,105 +567,6 @@ bool LaserOdom::runOptimization(ceres::Problem &problem) {
     //
     //    uint64_t cur_PtL_idx = 0, cur_PtP_idx = 0;
 
-    //    for (uint16_t i = 0; i < this->N_FEATURES; i++) {
-    //        for (uint16_t j = 0; j < this->param.n_ring; j++) {
-    //            this->feature_corrs.at(i).at(j).clear();
-    //            for (uint64_t pt_cntr = 0; pt_cntr < this->feat_pts.at(i).at(j).size(); pt_cntr++) {
-    //                double transformed[3];
-    //                this->transformToMap(this->feat_pts.at(i).at(j).at(pt_cntr).pt,
-    //                                     this->feat_pts.at(i).at(j).at(pt_cntr).tick,
-    //                                     transformed,
-    //                                     k,
-    //                                     kp1,
-    //                                     tau);
-    //                Eigen::Map<const Vec3> query(transformed, 3, 1);
-    //                ret_indices.clear();
-    //                out_dist_sqr.clear();
-    //                Eigen::Matrix3f covZ;
-    //                this->range_sensor->getEuclideanCovariance(query.data(), j, covZ);
-    //                if (this->findCorrespondingPoints(query, i, &ret_indices)) {
-    //                    // check if there is enough memory for next cost function
-    //                    if (cur_PtL_idx == this->PtLMem.size()) {
-    //                        LOG_ERROR("Pre allocated point to line memory block is too small, reseting");
-    //                        return false;
-    //                    }
-    //                    if (cur_PtP_idx == this->PtPMem.size()) {
-    //                        LOG_ERROR("Pre allocated point to plane memory block is too small, reseting");
-    //                        return false;
-    //                    }
-    //                    if (this->param.no_extrapolation && this->outOfBounds(query, i, ret_indices)) {
-    //                        break;
-    //                    }
-    //                    this->cv_vector.at(k).tau = &tau;
-    //                    this->cv_vector.at(k).calculateStuff(hat, candle);
-    //                    ceres::CostFunction *cost_function;
-    //                    wave_optimization::SE3PointToLineGP *pTl_cost_function = nullptr;
-    //                    wave_optimization::SE3PointToPlaneGP *pTPl_cost_function = nullptr;
-    //                    double rescale;
-    //                    switch (this->feature_definitions.at(i).residual) {
-    //                        case PointToLine:
-    //                            if (this->param.treat_lines_as_planes) {
-    //                                this->PtPMem.at(cur_PtP_idx).hat = hat.block<6, 12>(0, 0);
-    //                                this->PtPMem.at(cur_PtP_idx).candle = candle.block<6, 12>(0, 0);
-    //                                this->PtPMem.at(cur_PtP_idx).T0_pt = query;
-    //                                pTPl_cost_function = new wave_optimization::SE3PointToPlaneGP(
-    //                                  this->prv_feature_points.at(i).points.at(ret_indices.at(0)).data(),
-    //                                  this->prv_feature_points.at(i).points.at(ret_indices.at(1)).data(),
-    //                                  zero_pt,
-    //                                  this->PtPMem.at(cur_PtP_idx),
-    //                                  covZ.cast<double>(),
-    //                                  this->param.use_weighting);
-    //                                residuals.resize(1);
-    //                                rescale = pTPl_cost_function->weight;
-    //                                cost_function = pTPl_cost_function;
-    //                            } else {
-    //                                this->PtLMem.at(cur_PtL_idx).hat = hat.block<6, 12>(0, 0);
-    //                                this->PtLMem.at(cur_PtL_idx).candle = candle.block<6, 12>(0, 0);
-    //                                this->PtLMem.at(cur_PtP_idx).T0_pt = query;
-    //                                pTl_cost_function = new wave_optimization::SE3PointToLineGP(
-    //                                  this->prv_feature_points.at(i).points.at(ret_indices.at(0)).data(),
-    //                                  this->prv_feature_points.at(i).points.at(ret_indices.at(1)).data(),
-    //                                  this->PtLMem.at(cur_PtL_idx),
-    //                                  covZ.cast<double>(),
-    //                                  this->param.use_weighting);
-    //                                residuals.resize(2);
-    //                                rescale = pTl_cost_function->weight_matrix.trace();
-    //                                cost_function = pTl_cost_function;
-    //                            }
-    //                            break;
-    //                        case PointToPlane:
-    //                            this->PtPMem.at(cur_PtP_idx).hat = hat.block<6, 12>(0, 0);
-    //                            this->PtPMem.at(cur_PtP_idx).candle = candle.block<6, 12>(0, 0);
-    //                            this->PtPMem.at(cur_PtP_idx).T0_pt = query;
-    //                            pTPl_cost_function = new wave_optimization::SE3PointToPlaneGP(
-    //                              this->prv_feature_points.at(i).points.at(ret_indices.at(0)).data(),
-    //                              this->prv_feature_points.at(i).points.at(ret_indices.at(1)).data(),
-    //                              this->prv_feature_points.at(i).points.at(ret_indices.at(2)).data(),
-    //                              this->PtPMem.at(cur_PtP_idx),
-    //                              covZ.cast<double>(),
-    //                              this->param.use_weighting);
-    //                            residuals.resize(1);
-    //                            rescale = pTPl_cost_function->weight;
-    //                            cost_function = pTPl_cost_function;
-    //                            break;
-    //                        default: continue;
-    //                    }
-    //
-    //                    parameters[0] = this->param_blocks.at(k).data();
-    //                    parameters[1] = this->param_blocks.at(kp1).data();
-    //
-    //                    if (!cost_function->Evaluate(parameters, residuals.data(), nullptr)) {
-    //                        LOG_ERROR("Cost function did not evaluate");
-    //                        delete cost_function;
-    //                        continue;
-    //                    }
-    //                    rescale *= rescale;
-    //
-    //                    if (norm(residuals) > rescale * this->param.max_residual_val) {
-    //                        delete cost_function;
-    //                        continue;
-    //                    }
-    //
     //                    ceres::LossFunction *p_LossFunction = new BisquareLoss(this->param.robust_param);
     //                    std::vector<uint64_t> corr_list;
     //                    corr_list.emplace_back(pt_cntr);
@@ -773,9 +624,7 @@ bool LaserOdom::runOptimization(ceres::Problem &problem) {
         covar_options.num_threads = this->param.solver_threads;
     }
 
-    if (this->param.lock_first) {
-        problem.SetParameterBlockConstant(this->param_blocks.at(0).data());
-    }
+    problem.SetParameterBlockConstant(this->param_blocks.at(0).data());
 
     if (problem.NumResidualBlocks() < this->param.min_residuals) {
         LOG_ERROR("Less than expected residuals, resetting");
@@ -802,6 +651,55 @@ bool LaserOdom::runOptimization(ceres::Problem &problem) {
     return true;
 }
 
+bool LaserOdom::findCorrespondingPoints(const Vec3 &query, const uint32_t &f_idx, std::vector<size_t> *index) {
+    // In order to ensure correspondences are not picked along a scan line,
+    // use bins and enforce that the set of correspondences should fall into at
+    // least 2 bins
+    double offset = 0;
+    double current_elevation = 0;
+    uint16_t counter = 0;
+    bool non_zero_bin = false;
+    double const *point;
+    while (counter < indices_dists.size()) {
+        point = this->prv_feature_points.at(f_idx).points.at(indices_dists.at(counter).first).data();
+        if (counter == 0) {
+            offset = std::atan2(point[2], std::sqrt(point[0] * point[0] + point[1] * point[1]));
+        } else {
+            current_elevation = std::atan2(point[2], std::sqrt(point[0] * point[0] + point[1] * point[1]));
+            double t_bin = (current_elevation - offset) / this->param.azimuth_tol;
+            int cur_bin = t_bin > 0 ? (int) (t_bin + 0.5) : (int) (t_bin - 0.5);
+            if (cur_bin != 0) {
+                non_zero_bin = true;
+            }
+        }
+        if (index->size() + 1 != knn || non_zero_bin) {
+            index->push_back(indices_dists.at(counter).first);
+        }
+        if (index->size() == knn) {
+            return true;
+        }
+        ++counter;
+    }
+    return false;
+}
+
+void LaserOdom::extendFeatureTracks(const Eigen::MatrixXi &idx, const Eigen::MatrixXf &dist, uint32_t feat_id) {
+    for (uint32_t j = 0; j < idx.cols(); ++j) {
+        std::vector<uint32_t> matches;
+        double elevation_ref;
+        for(uint32_t i = 0; i < idx.rows(); ++i) {
+            auto &pt = this->mapped_features.back().at(feat_id).block<3, 1>(0, idx(i, j));
+            if (matches.size() == 0) {
+                matches.emplace_back(idx(i, j));
+                elevation_ref = std::atan2(pt(2), std::sqrt(pt(0) * pt(0) + pt(1) * pt(1)));
+            }
+            else {
+
+            }
+        }
+    }
+}
+
 bool LaserOdom::match() {
     T_TYPE last_transform;
     auto &ref = this->cur_trajectory.back().pose;
@@ -812,16 +710,14 @@ bool LaserOdom::match() {
         if (op > 0) {
             last_transform = ref;
         }
-        /// 1. Transform all features to the start of the window
         for (uint32_t i = 0; i < this->scan_stamps_chrono.size(); i++) {
-            this->scan_stampsf.at(i) = std::chrono::duration<float, std::chrono::seconds>(
-                                         this->scan_stamps_chrono.at(i) - this->scan_stamps_chrono.front())
-                                         .count();
+            this->scan_stampsf.at(i) = std::chrono::duration_cast<float, std::chrono::seconds>(this->scan_stamps_chrono.at(i) - this->scan_stamps_chrono.front()).count();
         }
         this->transformer.update(this->cur_trajectory, this->scan_stampsf);
 
-        for (uint32_t i = 0; i < this->param.n_window; i++) {
-            for (uint32_t j = 0; j < this->N_FEATURES; j++) {
+        for (uint32_t j = 0; j < this->N_FEATURES; j++) {
+            /// 1. Transform all features to the start of the window
+            for (uint32_t i = 0; i < this->param.n_window; i++) {
                 auto &feat = this->feat_pts.at(i).at(j);
                 auto &featT = this->feat_pts_T.at(i).at(j);
                 this->transformer.transformToStart(feat, featT);
@@ -829,45 +725,36 @@ bool LaserOdom::match() {
                 this->mapped_features.at(i).at(j) =
                   Eigen::Map<Eigen::MatrixXf>(featT.data(), featT.dimension(0), featT.dimension(1));
             }
-        }
-
-///// 2. Build kd trees on previous two scans. N_window is required to be at least 2
-        for (uint32_t i = this->param.n_window - 2; i < this->param.n_window; i++) {
-            for (uint32_t j = 0; j < this->N_FEATURES; j++) {
-                delete this->kdidx.at(i).at(j);
-                // todo, see if this is creating a eigen matrix instead of just using the map
-                this->kdidx.at(i).at(j) = Nabo::NNSearchF::createKDTreeLinearHeap(this->mapped_features.at(i).at(j));
+            /// 2. Update average point position in the feature tracks
+#pragma omp parallel for
+            for (uint32_t t_idx = 0; t_idx < this->features_tracks.at(j).size(); t_idx++) {
+                auto &track = this->features_tracks.at(j).at(t_idx);
+                this->ave_pts.at(j).block<3, 1>(0, track.ave_pt_idx).setZero();
+                Vec3f avg = Vec3f::Zero();
+                for (uint32_t k = 0; k < track.pt_idx.size(); k++) {
+                    this->ave_pts.at(j).block<3, 1>(0, track.ave_pt_idx) +=
+                            this->mapped_features.at(track.scan_idx.at(k)).at(j).block<3, 1>(0, track.pt_idx.at(k));
+                }
+                this->ave_pts.at(j).block<3, 1>(0, track.ave_pt_idx) /= static_cast<float>(track.pt_idx.size());
             }
+            /// 3. Build kd trees on previous two scans, and on average track locations
+            delete this->cur_kd_idx.at(j);
+            delete this->curm1_kd_idx.at(j);
+            delete this->ave_kd_idx.at(j);
+            this->cur_kd_idx.at(j) = Nabo::NNSearchF::createKDTreeLinearHeap(this->mapped_features.at(this->param.n_window - 1).at(j));
+            this->curm1_kd_idx.at(j) = Nabo::NNSearchF::createKDTreeLinearHeap(this->mapped_features.at(this->param.n_window - 2).at(j));
+            this->ave_kd_idx.at(j) = Nabo::NNSearchF::createKDTreeLinearHeap(this->ave_pts.at(j));
+
+            /// 4. Find correspondences for existing feature tracks in current scan
+            Eigen::MatrixXi nn_idx;
+            Eigen::MatrixXf nn_dist;
+            this->cur_kd_idx.at(j)->knn(this->ave_pts.at(j), nn_idx, nn_dist, 5, 0.1, Nabo::NNSearchF::SORT_RESULTS);
+            this->cur_feat_idx.at(j).resize(this->mapped_features.at(this->param.n_window - 1).at(j).size());
+            std::fill(this->cur_feat_idx.at(j).begin(), this->cur_feat_idx.at(j).end(), -1);
+            this->extendFeatureTracks(nn_idx, nn_dist, j);
         }
-//
-///// 3. Attempt to extend all feature tracks that continue into previous scan.
-//#pragma omp parallel for
-//        for (int i = 0; i < this->param.n_window; i++) {
-//            uint32_t cnt = 0;
-//            for (int j = -this->param.nn_matches; j <= this->param.nn_matches; j++) {
-//                // make sure that matches are within bounds
-//                if (i + j >= this->param.n_window || i + j < 0 || j == 0) {
-//                    continue;
-//                }
-//                for (uint32_t k = 0; k < this->N_FEATURES; k++) {
-//                    transformer.constantTransform(
-//                      i + j, i, this->feat_pts_T.at(i + j).at(k), this->corrs.at(i).at(cnt).Tpts);
-//                    // Find 5 nearest neighbours with 10% error allowed.
-//                    Eigen::Map<Eigen::MatrixXf> search(this->corrs.at(i).at(cnt).Tpts.data(),
-//                                                       this->corrs.at(i).at(cnt).Tpts.dimension(0),
-//                                                       this->corrs.at(i).at(cnt).Tpts.dimension(1));
-//                    this->kdidx.at(i).at(k)->knn(search,
-//                                                 this->corrs.at(i).at(cnt).indices,
-//                                                 this->corrs.at(i).at(cnt).sqrdist,
-//                                                 5,
-//                                                 0.1,
-//                                                 Nabo::NNSearchF::SORT_RESULTS);
-//                }
-//            }
-//        }
 
         /// 4. Build Ceres Residuals while filtering bad correspondences
-        // todo think about covariance weighting
         //        for (uint32_t m_idx = 0; m_idx < this->param.n_window; m_idx++) {
         //            Eigen::Matrix3f covZ;
         //            if (this->findCorrespondingPoints(query, i, &ret_indices)) {
@@ -982,7 +869,7 @@ bool LaserOdom::match() {
         //            LOG_INFO("Problem did not converge within allowed iterations");
         //            return true;
         //        }
-//    }
+    }
 }
 
 void LaserOdom::updateDifferences() {

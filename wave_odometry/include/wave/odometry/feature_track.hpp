@@ -9,10 +9,11 @@ namespace wave {
 template <int state_dim>
 struct FeatureTrack {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    // indicies to each point
-    std::vector<uint32_t> pts;
-    // mean of transformed points
-    Vec3f ave_pt;
+    // indicies to each point within each scan
+    std::vector<uint32_t> pt_idx, scan_idx;
+
+    // Index to the average of the points
+    uint32_t ave_pt_idx;
     // normal for feature track
     Vec3 normal;
 

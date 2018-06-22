@@ -71,23 +71,22 @@ struct LaserOdomParams {
     // How many states per revolution to optimize over
     // There must be at minimum two (start and end. Consecutive scans share a state for end-start boundary)
     uint32_t num_trajectory_states = 3;
-    // How many scans to optimize over, must be at least 1, obviously
-    uint32_t n_window = 1;
+    // How many scans to optimize over, must be at least 2 (scan-to-scan matching)
+    uint32_t n_window = 2;
     // Distance of scans to match. eg. 1 scan-to-scan only, 2 scan-to-scan and scan-to-next-scan, etc
     int nn_matches = 1;
 
     int opt_iters = 25;         // How many times to refind correspondences
     int max_inner_iters = 100;  // How many iterations of ceres to run with each set of correspondences
-    float diff_tol = 1e-4;      // If the transform from one iteration to the next changes less than this,
+    float diff_tol = 1e-5;      // If the transform from one iteration to the next changes less than this,
     // skip the next iterations
     int solver_threads = 0;               // How many threads ceres should use. 0 or less results in using the
                                           // number of logical threads on the machine
     int min_features = 300;               // How many features are required
     float robust_param = 0.2;             // Hyper-parameter for bisquare (Tukey) loss function
-    float max_correspondence_dist = 0.4;  // correspondences greater than this are discarded
+    float max_correspondence_dist = 1;  // correspondences greater than this are discarded
     double max_residual_val = 0.1;        // Residuals with an initial error greater than this are not used.
     int min_residuals = 30;               // Problem will be reset if the number of residuals is less than this
-    double local_map_range = 10000;       // Maximum range of features to keep. square metres
 
     // Sensor parameters
     float scan_period = 0.1;  // Seconds
@@ -96,8 +95,6 @@ struct LaserOdomParams {
 
     RangeSensorParams sensor_params;
 
-    float edge_map_density = 0.01;  // Minimum l2squared spacing of features kept for odometry
-    float flat_map_density = 0.25;
     // one degree. Beam spacing is 1.33deg, so this should be sufficient
     double azimuth_tol = 0.0174532925199433;  // Minimum azimuth difference across correspondences
     uint16_t TTL = 1;                         // Maximum life of feature in local map with no correspondences
@@ -110,7 +107,6 @@ struct LaserOdomParams {
     bool output_correspondences = false;  // Whether to output correpondences for debugging/plotting
     bool only_extract_features = false;   // If set, no transforms are calculated
     bool use_weighting = false;           // If set, pre-whiten residuals
-    bool lock_first = true;               // If set, assume starting position is identity
     bool plot_stuff = false;              // If set, plot things for debugging
     bool solution_remapping = false;      // If set, use solution remapping
     bool motion_prior = true;             // If set, use a constant velocity prior
@@ -188,6 +184,7 @@ class LaserOdom {
 
     void buildTrees();
     bool findCorrespondingPoints(const Vec3 &query, const uint32_t &f_idx, std::vector<size_t> *index);
+    void extendFeatureTracks(const Eigen::MatrixXi &indices, const Eigen::MatrixXf &dist, uint32_t feat_id);
     bool outOfBounds(const Vec3 &query, const uint32_t &f_idx, const std::vector<size_t> &index);
 
     void undistort();
@@ -224,26 +221,16 @@ class LaserOdom {
     //Feature points indexed by scan id and then feature index
     std::vector<std::vector<Eigen::Tensor<float, 2>, Eigen::aligned_allocator<Eigen::Tensor<float, 2>>>> feat_pts, feat_pts_T;
     std::vector<std::vector<Eigen::Map<Eigen::MatrixXf>>> mapped_features;
-    std::vector<std::vector<Nabo::NNSearchF*>> kdidx;
-
-    struct Correspondence {
-        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-        Eigen::Tensor<float, 2> Tpts;
-        Eigen::MatrixXi indices;
-        Eigen::MatrixXf sqrdist;
-    };
-    std::vector<std::vector<Correspondence, Eigen::aligned_allocator<Correspondence>>> corrs;
-
-    // This is container to hold indices of for each feature used in the optimization
-    // It is indexed by feature_id, then by ring_id, then by correspondence.
-    // It contains a vector of indices, the first is the feature point, the next are the indices of the
-    // map or prv feature points it corresponds to
-    std::vector<std::vector<std::vector<std::vector<uint64_t>>>> feature_corrs;
-    std::vector<std::vector<std::pair<uint64_t, AssociationStatus>>> feature_association;
+    std::vector<Nabo::NNSearchF*>   cur_kd_idx, curm1_kd_idx, ave_kd_idx;
 
     std::vector<ResidualType> feature_residuals;
 
-    std::vector<FeatureTrack<12>, Eigen::aligned_allocator<FeatureTrack<12>>> features_tracks;
+    //storage for average feature points. 3 x N
+    std::vector<MatXf, Eigen::aligned_allocator<MatXf>> ave_pts;
+    std::vector<std::vector<uint32_t>> track_ids;
+    std::vector<std::vector<FeatureTrack<12>, Eigen::aligned_allocator<FeatureTrack<12>>>> features_tracks;
+    // stores the index of the feature track associated with each feature point. -1 if not associated with a feature track
+    std::vector<std::vector<int>> cur_feat_idx, prev_feat_idx;
 };
 
 }  // namespace wave
