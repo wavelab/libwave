@@ -249,12 +249,9 @@ void LaserOdom::copyTrajectory() {
 void LaserOdom::applyRemap() {
     VecX cur_diff;
     uint32_t offset = 0;
-    if (this->param.lock_first) {
-        cur_diff.resize((this->param.num_trajectory_states - 1) * 12, 1);
-        offset = 1;
-    } else {
-        cur_diff.resize(this->param.num_trajectory_states * 12, 1);
-    }
+
+    cur_diff.resize((this->param.num_trajectory_states - 1) * 12, 1);
+    offset = 1;
 
     for (uint32_t i = 0; i + offset < this->param.num_trajectory_states; i++) {
         cur_diff.block<6, 1>(12 * i, 0) =
@@ -309,8 +306,8 @@ void LaserOdom::applyRemap() {
 void LaserOdom::updateStoredFeatures() {
     // Perform a left rotation
     std::rotate(this->feat_pts.begin(), this->feat_pts.begin() + 1, this->feat_pts.end());
-    std::rotate(this->feat_pts_T.begin(), this->feat_pts_T.begin() + 1; this->feat_pts_T.end());
-#pragma omp parallel for
+    std::rotate(this->feat_pts_T.begin(), this->feat_pts_T.begin() + 1, this->feat_pts_T.end());
+
     for (uint32_t i = 0; i < this->N_FEATURES; i++) {
         auto &feat = this->feat_pts.back().at(i);
         long featcnt = 0;
@@ -319,11 +316,13 @@ void LaserOdom::updateStoredFeatures() {
         }
         feat.resize(4, featcnt);
         long offset = 0;
-        for (const auto &elem : this->indices.at(i)) {
-            for (long j = 0; j < elem.dimension(0); j++) {
-                feat.slice(ar2({0, offset}), ar2({4, 1})) = elem.slice(ar2({j, 0}), ar2({4, 1}));
+        for (uint32_t j = 0; j < this->indices.at(i).size(); ++j) {
+#pragma omp parallel for
+            for (uint32_t k = 0; k < this->indices.at(i).at(j).dimension(0); ++k) {
+                const int &idx = this->indices.at(i).at(j)(k);
+                feat.slice(ar2({0, offset}), ar2({4, 1})) = this->cur_scan.at(j).slice(ar2({0, idx}), ar2({4, 1}));
             }
-            offset += elem.dimension(0);
+            offset += this->indices.at(i).at(j).dimension(0);
         }
     }
 }
@@ -367,7 +366,7 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
             this->cur_scan.at(pt.ring)(1, counters.at(pt.ring)) = pt.y;
             this->cur_scan.at(pt.ring)(2, counters.at(pt.ring)) = pt.z;
             this->cur_scan.at(pt.ring)(3, counters.at(pt.ring)) =
-              std::chrono::duration<float, std::chrono::seconds>(stamp - this->scan_stamps_chrono.back()).count();
+              std::chrono::duration_cast<std::chrono::seconds>(stamp - this->scan_stamps_chrono.back()).count();
 
             this->signals.at(pt.ring)(0, counters.at(pt.ring)) = sqrtf(pt.x * pt.x + pt.y * pt.y + pt.z * pt.z);
             this->signals.at(pt.ring)(1, counters.at(pt.ring)) = pt.intensity;
@@ -651,51 +650,41 @@ bool LaserOdom::runOptimization(ceres::Problem &problem) {
     return true;
 }
 
-bool LaserOdom::findCorrespondingPoints(const Vec3 &query, const uint32_t &f_idx, std::vector<size_t> *index) {
-    // In order to ensure correspondences are not picked along a scan line,
-    // use bins and enforce that the set of correspondences should fall into at
-    // least 2 bins
-    double offset = 0;
-    double current_elevation = 0;
-    uint16_t counter = 0;
-    bool non_zero_bin = false;
-    double const *point;
-    while (counter < indices_dists.size()) {
-        point = this->prv_feature_points.at(f_idx).points.at(indices_dists.at(counter).first).data();
-        if (counter == 0) {
-            offset = std::atan2(point[2], std::sqrt(point[0] * point[0] + point[1] * point[1]));
-        } else {
-            current_elevation = std::atan2(point[2], std::sqrt(point[0] * point[0] + point[1] * point[1]));
-            double t_bin = (current_elevation - offset) / this->param.azimuth_tol;
-            int cur_bin = t_bin > 0 ? (int) (t_bin + 0.5) : (int) (t_bin - 0.5);
-            if (cur_bin != 0) {
-                non_zero_bin = true;
-            }
-        }
-        if (index->size() + 1 != knn || non_zero_bin) {
-            index->push_back(indices_dists.at(counter).first);
-        }
-        if (index->size() == knn) {
-            return true;
-        }
-        ++counter;
-    }
-    return false;
-}
-
 void LaserOdom::extendFeatureTracks(const Eigen::MatrixXi &idx, const Eigen::MatrixXf &dist, uint32_t feat_id) {
+    uint32_t knn = 3;
+    if (this->feature_residuals.at(feat_id) == PointToLine) {
+        knn = 2;
+    }
     for (uint32_t j = 0; j < idx.cols(); ++j) {
         std::vector<uint32_t> matches;
-        double elevation_ref;
+        double min_elev, max_elev;
+        bool wide_spread = false;
         for(uint32_t i = 0; i < idx.rows(); ++i) {
-            auto &pt = this->mapped_features.back().at(feat_id).block<3, 1>(0, idx(i, j));
-            if (matches.size() == 0) {
+            Vec3f pt = this->mapped_features.back().at(feat_id).block<3, 1>(0, idx(i, j));
+            if (matches.empty()) {
                 matches.emplace_back(idx(i, j));
-                elevation_ref = std::atan2(pt(2), std::sqrt(pt(0) * pt(0) + pt(1) * pt(1)));
+                min_elev = std::atan2(pt(2), std::sqrt(pt(0) * pt(0) + pt(1) * pt(1)));
+                max_elev = min_elev;
+                continue;
             }
-            else {
+            if (wide_spread || matches.size() + 1 != knn) {
+                if (!wide_spread) {
+                    double new_elev = std::atan2(pt(2), std::sqrt(pt(0) * pt(0) + pt(1) * pt(1)));
+                    if(new_elev > max_elev)
+                        max_elev = new_elev;
+                    else if (new_elev < min_elev)
+                        min_elev = new_elev;
+                    if (max_elev - min_elev > this->param.azimuth_tol)
+                        wide_spread = true;
+                }
+                matches.emplace_back(idx(i, j));
+            }
+            if (matches.size() == knn)
+                break;
+        }
+        /// add to residual if normal is close
+        if (matches.size() == knn) {
 
-            }
         }
     }
 }
@@ -711,7 +700,7 @@ bool LaserOdom::match() {
             last_transform = ref;
         }
         for (uint32_t i = 0; i < this->scan_stamps_chrono.size(); i++) {
-            this->scan_stampsf.at(i) = std::chrono::duration_cast<float, std::chrono::seconds>(this->scan_stamps_chrono.at(i) - this->scan_stamps_chrono.front()).count();
+            this->scan_stampsf.at(i) = std::chrono::duration_cast<std::chrono::seconds>(this->scan_stamps_chrono.at(i) - this->scan_stamps_chrono.front()).count();
         }
         this->transformer.update(this->cur_trajectory, this->scan_stampsf);
 

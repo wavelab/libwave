@@ -20,12 +20,14 @@ class ImplicitLineResidual : public ceres::SizedCostFunction<3*cnt, 3, num...> {
  public:
     virtual ~ImplicitLineResidual() {}
 
-    ImplicitLineResidual(const FeatureTrack<state_dim> &pts) : pts(pts) {}
+    ImplicitLineResidual(const FeatureTrack<state_dim> &tracks) : tracks(tracks) {}
 
     virtual bool Evaluate(double const *const *parameters, double *residuals, double **jacobians) const;
 
  private:
-    const FeatureTrack<state_dim> &pts;
+    const FeatureTrack<state_dim> &tracks;
+    const double *ptdata;
+    const double *avgdata;
 };
 }
 
