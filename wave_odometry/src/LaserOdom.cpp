@@ -2,25 +2,6 @@
 
 namespace wave {
 
-namespace {
-
-double l2length(const double *const vec, uint16_t length) {
-    double retval = 0;
-    for (uint16_t i = 0; i < length; i++) {
-        retval += vec[i] * vec[i];
-    }
-    return retval;
-}
-
-double norm(const std::vector<double> &vec) {
-    double retval = 0;
-    for (auto elem : vec) {
-        retval += elem * elem;
-    }
-    return std::sqrt(retval);
-}
-}
-
 LaserOdom::LaserOdom(const LaserOdomParams params, const FeatureExtractorParams feat_params)
     : param(params), transformer(Transformer(TransformerParams())) {
     //    this->CSVFormat = new Eigen::IOFormat(Eigen::FullPrecision, Eigen::DontAlignCols, ", ", ", ");
@@ -720,11 +701,11 @@ bool LaserOdom::match() {
                 auto &track = this->features_tracks.at(j).at(t_idx);
                 this->ave_pts.at(j).block<3, 1>(0, track.ave_pt_idx).setZero();
                 Vec3f avg = Vec3f::Zero();
-                for (uint32_t k = 0; k < track.pt_idx.size(); k++) {
+                for (uint32_t k = 0; k < track.mapping.size(); k++) {
                     this->ave_pts.at(j).block<3, 1>(0, track.ave_pt_idx) +=
-                            this->mapped_features.at(track.scan_idx.at(k)).at(j).block<3, 1>(0, track.pt_idx.at(k));
+                            this->mapped_features.at(track.mapping.at(k).scan_idx).at(j).block<3, 1>(0, track.mapping.at(k).pt_idx);
                 }
-                this->ave_pts.at(j).block<3, 1>(0, track.ave_pt_idx) /= static_cast<float>(track.pt_idx.size());
+                this->ave_pts.at(j).block<3, 1>(0, track.ave_pt_idx) /= static_cast<float>(track.mapping.size());
             }
             /// 3. Build kd trees on previous two scans, and on average track locations
             delete this->cur_kd_idx.at(j);

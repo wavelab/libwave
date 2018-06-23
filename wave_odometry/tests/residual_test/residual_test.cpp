@@ -6,20 +6,25 @@
 #include "wave/odometry/implicit_geometry/implicit_line.hpp"
 #include "wave/odometry/implicit_geometry/implicit_plane.hpp"
 #include "wave/optimization/ceres/local_params/spherical_parameterization.hpp"
+#include "wave/utils/math.hpp"
 #include "wave/wave_test.hpp"
 
 struct TestEvalCallback : ceres::EvaluationCallback {
-    explicit TestEvalCallback(wave::FeatureTrack<3> *track) : ceres::EvaluationCallback(), track(track) {}
+    explicit TestEvalCallback(wave::FeatureTrack<3> *track,
+                              std::vector<std::vector<Eigen::Map<wave::MatXf>>> *feat_points,
+                              std::vector<wave::MatXf, Eigen::aligned_allocator<wave::MatXf>> * ave_pts) :
+            ceres::EvaluationCallback(), track(track), feat_points(feat_points), ave_pts(ave_pts) {}
 
     virtual void PrepareForEvaluation(bool, bool) {
-        for (uint32_t i = 0; i < this->track->pts.size(); ++i) {
-            Eigen::Map<const wave::Vec3> vec(this->track->pts.at(i));
+        for (uint32_t i = 0; i < this->track->mapping.size(); ++i) {
+            Eigen::Map<const wave::Vec3> vec(this->feat_points.at(i));
             this->track->tpts.at(i) = vec;
         }
     }
     wave::FeatureTrack<3> *track;
+    std::vector<std::vector<Eigen::Map<wave::MatXf>>> *feat_points;
+    std::vector<wave::MatXf, Eigen::aligned_allocator<wave::MatXf>> *ave_pts;
 };
-
 
 namespace wave {
 

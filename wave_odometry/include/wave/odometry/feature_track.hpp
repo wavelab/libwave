@@ -10,7 +10,11 @@ template <int state_dim>
 struct FeatureTrack {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     // indicies to each point within each scan
-    std::vector<uint32_t> pt_idx, scan_idx;
+    struct Mapping {
+        uint32_t pt_idx, scan_idx;
+    };
+    std::vector<Mapping> mapping;
+    uint32_t featT_idx;
 
     // Index to the average of the points
     uint32_t ave_pt_idx;
