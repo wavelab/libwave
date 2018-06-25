@@ -18,17 +18,16 @@ struct FeatureTrack {
 
     // Index to the average of the points
     uint32_t ave_pt_idx;
-    // normal for feature track
-    Vec3 normal;
+    // line/plane definition
+    Vec6 geometry;
 
-    // corresponding states
-    std::vector<uint32_t> p_states;
-    std::vector<uint32_t> n_states;
+    // state ids, indexed by pointid, then by state number
+    std::vector<std::vector<uint32_t>> state_ids;
     uint32_t length;
 
-    // transform jacobians. prev is the state before, next is the state after
-    std::vector<Eigen::Matrix<double, 3, state_dim>, Eigen::aligned_allocator<Eigen::Matrix<double, 3, state_dim>>>
-      prev_jac, next_jac;
+    // state jacobians. indexed by point, then by state.
+    std::vector<std::vector<Eigen::Matrix<double, 3, state_dim>, Eigen::aligned_allocator<Eigen::Matrix<double, 3, state_dim>>>>
+      jacs;
 };
 }
 

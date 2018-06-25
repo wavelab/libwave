@@ -24,6 +24,7 @@ namespace wave {
 
 #ifndef EIGEN_TYPEDEF
 #define EIGEN_TYPEDEF
+typedef Eigen::Matrix<double, 1, 1> Vec1;
 typedef Eigen::Vector2d Vec2;
 typedef Eigen::Vector3d Vec3;
 typedef Eigen::Vector4d Vec4;

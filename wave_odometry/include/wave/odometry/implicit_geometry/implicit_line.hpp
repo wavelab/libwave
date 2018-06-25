@@ -12,25 +12,27 @@
 #include <ceres/ceres.h>
 #include "wave/geometry/transformation.hpp"
 #include "wave/odometry/feature_track.hpp"
+#include "wave/utils/param_pack.hpp"
 
 namespace wave {
 
-template <int cnt, int state_dim, int... num>
-class ImplicitLineResidual : public ceres::SizedCostFunction<3*cnt, 3, num...> {
+/// error is 3 dimensional, followed by 6 dimensional vector for line, and then all the states
+template <int... states>
+class ImplicitLineResidual : public ceres::SizedCostFunction<3, 6, states...> {
  public:
     virtual ~ImplicitLineResidual() {}
 
-    ImplicitLineResidual(const FeatureTrack<state_dim> &track,
-                         const std::vector<std::vector<Eigen::Map<Eigen::MatrixXf>>> *feat_points,
-                         const std::vector<MatXf, Eigen::aligned_allocator<MatXf>> *avg_points) :
-            track(track), feat_points(feat_points), avg_points(avg_points) {}
+    ImplicitLineResidual(const uint32_t &pt_id,
+                         const FeatureTrack<get<0>(states...)> *track,
+                         const std::vector<std::vector<Eigen::Map<Eigen::MatrixXf>>> *feat_points) :
+            pt_id(pt_id), track(track), feat_points(feat_points) {}
 
     virtual bool Evaluate(double const *const *parameters, double *residuals, double **jacobians) const;
 
  private:
-    const FeatureTrack<state_dim> &track;
+    const uint32_t pt_id;
+    const FeatureTrack<get<0>(states...)> *track;
     const std::vector<std::vector<Eigen::Map<MatXf>>> *feat_points;
-    const std::vector<MatXf, Eigen::aligned_allocator<MatXf>> *avg_points;
 };
 }
 

@@ -5,63 +5,85 @@
 #include "wave/odometry/feature_track.hpp"
 #include "wave/odometry/implicit_geometry/implicit_line.hpp"
 #include "wave/odometry/implicit_geometry/implicit_plane.hpp"
-#include "wave/optimization/ceres/local_params/spherical_parameterization.hpp"
+#include "wave/optimization/ceres/local_params/line_parameterization.hpp"
+#include "wave/optimization/ceres/local_params/plane_parameterization.hpp"
 #include "wave/utils/math.hpp"
 #include "wave/wave_test.hpp"
 
 struct TestEvalCallback : ceres::EvaluationCallback {
-    explicit TestEvalCallback(wave::FeatureTrack<3> *track,
-                              std::vector<std::vector<Eigen::Map<wave::MatXf>>> *feat_points,
-                              std::vector<wave::MatXf, Eigen::aligned_allocator<wave::MatXf>> * ave_pts) :
-            ceres::EvaluationCallback(), track(track), feat_points(feat_points), ave_pts(ave_pts) {}
+    explicit TestEvalCallback(wave::Vec3 *state_point,
+                              std::vector<std::vector<Eigen::Map<wave::MatXf>>> *feat_points) :
+            ceres::EvaluationCallback(), state_point(state_point), feat_points(feat_points) {}
 
     virtual void PrepareForEvaluation(bool, bool) {
-        for (uint32_t i = 0; i < this->track->mapping.size(); ++i) {
-            Eigen::Map<const wave::Vec3> vec(this->feat_points.at(i));
-            this->track->tpts.at(i) = vec;
-        }
+        feat_points->at(0).at(0).block<3, 1>(0, 2) = state_point->cast<float>();
     }
-    wave::FeatureTrack<3> *track;
+    wave::Vec3 *state_point;
     std::vector<std::vector<Eigen::Map<wave::MatXf>>> *feat_points;
-    std::vector<wave::MatXf, Eigen::aligned_allocator<wave::MatXf>> *ave_pts;
 };
 
 namespace wave {
 
 TEST(implicit_line, simple) {
+    std::vector<std::vector<Eigen::Map<MatXf>>> feat_points;
+
+    // one "scan"
+    feat_points.resize(1);
+    // one "feature type"
+    MatXf feature_points;
+    feature_points.resize(3, 3);
+    feat_points.at(0).emplace_back(Eigen::Map<MatXf>(feature_points.data(), feature_points.rows(), feature_points.cols()));
+
     FeatureTrack<3> track;
-    track.pts.resize(3);
-    track.tpts.resize(3);
+    track.mapping.resize(3);
+    track.mapping.resize(3);
+    track.featT_idx = 0;
 
-    std::vector<Vec3, Eigen::aligned_allocator<Vec3>> test_pts;
-    test_pts.resize(3);
-    for (int i = 0; i < 3; i++) {
-        test_pts.at(i) = Vec3::Random();
-        track.pts.at(i) = test_pts.at(i).data();
+    track.state_ids.resize(3);
+    track.jacs.resize(3);
 
-        track.n_states.emplace_back(0);
-        track.p_states.emplace_back(0);
+    Vec3 state_point;
+    for (uint32_t i = 0; i < 3; i++) {
+        track.mapping.at(i).pt_idx = i;
+        track.mapping.at(i).scan_idx = 0;
+
+        track.state_ids.at(i).emplace_back(0);
         if (i == 2) {
-            track.prev_jac.emplace_back(Mat3::Identity());
+            track.jacs.at(i).emplace_back(Mat3::Identity());
+            feat_points.at(0).at(0).block<3, 1>(0, i) = Vec3f::Random();
         } else {
-            track.prev_jac.emplace_back(Mat3::Zero());
+            track.jacs.at(i).emplace_back(Mat3::Zero());
+            Vec3f temp;
+            temp << 0.0, 0.0, 2 * static_cast<float>(i);
+            feat_points.at(0).at(0).block<3, 1>(0, i) = temp;
         }
-        track.next_jac.emplace_back(Mat3::Zero());
     }
+    state_point = feat_points.at(0).at(0).block<3, 1>(0, 2).cast<double>();
 
-    Vec3 normal = test_pts.at(0) - test_pts.at(2);
-    normal.normalize();
+    track.geometry.block<3, 1>(0,0) = Vec3::Random();
+    if (track.geometry(2) < 0) {
+        track.geometry.block<3, 1>(0,0) *= -1.0;
+    }
+    track.geometry.block<3, 1>(0,0).normalize();
+    track.geometry.block<3, 1>(3,0).setZero();
 
-    ImplicitLineResidual<3, 3, 3> cost_function(track);
     ceres::Problem::Options options;
     options.cost_function_ownership = ceres::DO_NOT_TAKE_OWNERSHIP;
     ceres::Problem problem(options);
-    problem.AddResidualBlock(&cost_function, nullptr, normal.data(), test_pts.at(2).data());
 
-    ceres::LocalParameterization *spherical = new SphericalParameterization();
-    problem.SetParameterization(normal.data(), spherical);
+    std::list<ImplicitLineResidual<3>> costs;
+    for (uint32_t i = 0; i < 3; ++i) {
+        costs.emplace_back(i, &track, &feat_points);
+    }
 
-    TestEvalCallback callback(&track);
+    for (auto &cost : costs) {
+        problem.AddResidualBlock(&cost, nullptr, track.geometry.data(), state_point.data());
+    }
+
+    ceres::LocalParameterization *local_param = new LineParameterization();
+    problem.SetParameterization(track.geometry.data(), local_param);
+
+    TestEvalCallback callback(&state_point, &feat_points);
 
     ceres::Solver::Options solve_options;
     solve_options.evaluation_callback = &callback;
@@ -69,56 +91,79 @@ TEST(implicit_line, simple) {
     ceres::Solver::Summary summary;
     ceres::Solve(solve_options, &problem, &summary);
 
-    std::cout << summary.BriefReport();
+    std::cout << "\n" << summary.BriefReport() << "\n";
 
-    /// Checking that directions between all points match the normal
-    std::vector<Vec3, Eigen::aligned_allocator<Vec3>> normals;
-    normals.emplace_back(test_pts[0] - test_pts[1]);
-    normals.emplace_back(test_pts[0] - test_pts[2]);
-    normals.emplace_back(test_pts[1] - test_pts[2]);
+    /// Checking that all points are on the line defined by geometry in track
+    std::vector<Vec3f, Eigen::aligned_allocator<Vec3f>> normals;
+    normals.emplace_back(feat_points.at(0).at(0).block<3, 1>(0, 0) - track.geometry.block<3, 1>(3,0).cast<float>());
+    normals.emplace_back(feat_points.at(0).at(0).block<3, 1>(0, 1) - track.geometry.block<3, 1>(3,0).cast<float>());
+    normals.emplace_back(feat_points.at(0).at(0).block<3, 1>(0, 2) - track.geometry.block<3, 1>(3,0).cast<float>());
+
     for (auto &dir : normals) {
         dir.normalize();
-        double dot = dir.transpose() * normal;
+        float dot = dir.transpose() * track.geometry.block<3, 1>(0,0).cast<float>();
         EXPECT_NEAR(std::abs(dot), 1.0, 1.0e-6);
     }
 }
 
 TEST(implicit_plane, simple) {
-    constexpr int n_pts = 4;
+    std::vector<std::vector<Eigen::Map<MatXf>>> feat_points;
+
+    // one "scan"
+    feat_points.resize(1);
+    // one "feature type"
+    MatXf feature_points;
+    feature_points.resize(3, 4);
+    feat_points.at(0).emplace_back(Eigen::Map<MatXf>(feature_points.data(), feature_points.rows(), feature_points.cols()));
+
     FeatureTrack<3> track;
-    track.pts.resize(n_pts);
-    track.tpts.resize(n_pts);
+    track.mapping.resize(4);
+    track.mapping.resize(4);
+    track.featT_idx = 0;
 
-    std::vector<Vec3, Eigen::aligned_allocator<Vec3>> test_pts;
-    test_pts.resize(n_pts);
-    for (int i = 0; i < n_pts; i++) {
-        test_pts.at(i) = Vec3::Random();
-        track.pts.at(i) = test_pts.at(i).data();
+    track.state_ids.resize(4);
+    track.jacs.resize(4);
 
-        track.n_states.emplace_back(0);
-        track.p_states.emplace_back(0);
-        if (i + 1 == n_pts) {
-            track.prev_jac.emplace_back(Mat3::Identity());
+    Vec3 state_point;
+    for (uint32_t i = 0; i < 4; i++) {
+        track.mapping.at(i).pt_idx = i;
+        track.mapping.at(i).scan_idx = 0;
+
+        track.state_ids.at(i).emplace_back(0);
+        if (i == 2) {
+            track.jacs.at(i).emplace_back(Mat3::Identity());
+            feat_points.at(0).at(0).block<3, 1>(0, i) = Vec3f::Random();
         } else {
-            track.prev_jac.emplace_back(Mat3::Zero());
+            track.jacs.at(i).emplace_back(Mat3::Zero());
+            feat_points.at(0).at(0).block<3, 1>(0, i) = Vec3f::Random();
         }
-        track.next_jac.emplace_back(Mat3::Zero());
     }
+    state_point = feat_points.at(0).at(0).block<3, 1>(0, 2).cast<double>();
 
-    /// Normal is calculated using the point that will change position
-    Vec3 normal = (test_pts[0] - test_pts[3]).cross(test_pts[1] - test_pts[3]);
-    normal.normalize();
+    track.geometry.block<3, 1>(0,0) = Vec3::Random();
+    if (track.geometry(2) < 0) {
+        track.geometry.block<3, 1>(0,0) *= -1.0;
+    }
+    track.geometry.block<3, 1>(0,0).normalize();
+    track.geometry.block<3, 1>(3,0).setZero();
 
-    ImplicitPlaneResidual<n_pts, 3, 3> cost_function(track);
     ceres::Problem::Options options;
     options.cost_function_ownership = ceres::DO_NOT_TAKE_OWNERSHIP;
     ceres::Problem problem(options);
-    problem.AddResidualBlock(&cost_function, nullptr, normal.data(), test_pts.at(3).data());
 
-    ceres::LocalParameterization *spherical = new SphericalParameterization();
-    problem.SetParameterization(normal.data(), spherical);
+    std::list<ImplicitPlaneResidual<3>> costs;
+    for (uint32_t i = 0; i < 4; ++i) {
+        costs.emplace_back(i, &track, &feat_points);
+    }
 
-    TestEvalCallback callback(&track);
+    for (auto &cost : costs) {
+        problem.AddResidualBlock(&cost, nullptr, track.geometry.data(), state_point.data());
+    }
+
+    ceres::LocalParameterization *local_param = new PlaneParameterization();
+    problem.SetParameterization(track.geometry.data(), local_param);
+
+    TestEvalCallback callback(&state_point, &feat_points);
 
     ceres::Solver::Options solve_options;
     solve_options.evaluation_callback = &callback;
@@ -126,20 +171,19 @@ TEST(implicit_plane, simple) {
     ceres::Solver::Summary summary;
     ceres::Solve(solve_options, &problem, &summary);
 
-    std::cout << summary.BriefReport();
+    std::cout << "\n" << summary.BriefReport() << "\n";
 
-    /// Checking that directions between all points are orthogonal to the normal
-    std::vector<Vec3, Eigen::aligned_allocator<Vec3>> normals;
-    normals.emplace_back(test_pts[0] - test_pts[1]);
-    normals.emplace_back(test_pts[0] - test_pts[2]);
-    normals.emplace_back(test_pts[0] - test_pts[3]);
-    normals.emplace_back(test_pts[1] - test_pts[2]);
-    normals.emplace_back(test_pts[1] - test_pts[3]);
-    normals.emplace_back(test_pts[2] - test_pts[3]);
+    /// Checking that all points are on the plane
+    std::vector<Vec3f, Eigen::aligned_allocator<Vec3f>> normals;
+    normals.emplace_back(feat_points.at(0).at(0).block<3, 1>(0, 0) - track.geometry.block<3, 1>(3,0).cast<float>());
+    normals.emplace_back(feat_points.at(0).at(0).block<3, 1>(0, 1) - track.geometry.block<3, 1>(3,0).cast<float>());
+    normals.emplace_back(feat_points.at(0).at(0).block<3, 1>(0, 2) - track.geometry.block<3, 1>(3,0).cast<float>());
+    normals.emplace_back(feat_points.at(0).at(0).block<3, 1>(0, 3) - track.geometry.block<3, 1>(3,0).cast<float>());
+
     for (auto &dir : normals) {
         dir.normalize();
-        double dot = dir.transpose() * normal;
-        EXPECT_NEAR(dot, 0.0, 1.0e-6);
+        float dot = dir.transpose() * track.geometry.block<3, 1>(0,0).cast<float>();
+        EXPECT_NEAR(std::abs(dot), 0, 1.0e-6);
     }
 }
 
