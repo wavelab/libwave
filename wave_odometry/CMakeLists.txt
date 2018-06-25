@@ -9,6 +9,7 @@ WAVE_ADD_MODULE(${PROJECT_NAME}
     libnabo::libnabo
     SOURCES
     src/weighting_functions.cpp
+    src/odometry_callback.cpp
     src/integrals.cpp
     src/sensor_model.cpp
     src/transformer.cpp

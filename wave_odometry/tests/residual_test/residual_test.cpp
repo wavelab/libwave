@@ -87,6 +87,7 @@ TEST(implicit_line, simple) {
 
     ceres::Solver::Options solve_options;
     solve_options.evaluation_callback = &callback;
+    solve_options.max_num_consecutive_invalid_steps = 2;
 
     ceres::Solver::Summary summary;
     ceres::Solve(solve_options, &problem, &summary);
@@ -167,6 +168,7 @@ TEST(implicit_plane, simple) {
 
     ceres::Solver::Options solve_options;
     solve_options.evaluation_callback = &callback;
+    solve_options.max_num_consecutive_invalid_steps = 2;
 
     ceres::Solver::Summary summary;
     ceres::Solve(solve_options, &problem, &summary);
