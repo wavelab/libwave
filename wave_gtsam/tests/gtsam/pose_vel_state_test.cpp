@@ -248,4 +248,5 @@ TEST(pose_vel_bias_state, trivial_problem) {
           gtsam::traits<PoseVelBias>::Equals(states.at(i), res, 1e-3));
     }
 }
+
 }  // namespace wave
