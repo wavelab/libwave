@@ -11,8 +11,8 @@
 namespace wave {
 
 /**
- * 4-ary factor connecting two combined pose/vel/bias states and two IMU biases.
- * Provides the effect of gtsam::CombinedImuFactor (a 6-ary factor).
+ * 4-ary factor connecting two combined pose/vel/bias states and two 6d IMU bias
+ * estimates. Provides the effect of gtsam::CombinedImuFactor (a 6-ary factor).
  *
  * @tparam StateType either PoseVel or PoseVelBias
  */

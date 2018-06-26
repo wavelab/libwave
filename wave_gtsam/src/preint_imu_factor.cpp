@@ -2,6 +2,8 @@
 
 namespace wave {
 
+// Implementation of evaluateError for PoseVelBias states
+// This function is adapted from GTSAM's IMU factor code
 template <>
 gtsam::Vector PreintegratedImuFactor<PoseVelBias>::evaluateError(
   const PoseVelBias &state_i,
@@ -63,6 +65,7 @@ gtsam::Vector PreintegratedImuFactor<PoseVelBias>::evaluateError(
         // Jacobian of all wrt gps bias is zero
         H1->block<15, 3>(0, PoseVelBias::bias_offset).setZero();
     }
+
     if (H2) {
         H2->resize(15, 15);
 
@@ -81,6 +84,7 @@ gtsam::Vector PreintegratedImuFactor<PoseVelBias>::evaluateError(
         // Jacobian of all wrt gps bias is zero
         H2->block<15, 3>(0, PoseVelBias::bias_offset).setZero();
     }
+
     if (H3) {
         H3->resize(15, 6);
         // Jacobian wrt imu bias
@@ -88,6 +92,7 @@ gtsam::Vector PreintegratedImuFactor<PoseVelBias>::evaluateError(
         // adding: [dBiasAcc/dBias_i ; dBiasOmega/dBias_i]
         H3->block<6, 6>(9, 0) = Hbias_i;
     }
+
     if (H4) {
         H4->resize(15, 6);
         // Jacobian wrt imu bias_j is zero
@@ -102,6 +107,8 @@ gtsam::Vector PreintegratedImuFactor<PoseVelBias>::evaluateError(
     return r;
 }
 
+// Implementation of evaluateError for PoseVel states
+// This function is adapted from GTSAM's IMU factor code
 template <>
 gtsam::Vector PreintegratedImuFactor<PoseVel>::evaluateError(
   const PoseVel &state_i,
@@ -159,6 +166,7 @@ gtsam::Vector PreintegratedImuFactor<PoseVel>::evaluateError(
         // Jacobian of all wrt angular velocity is zero
         H1->block<15, 3>(0, PoseVel::vel_offset).setZero();
     }
+
     if (H2) {
         H2->resize(15, 12);
 
@@ -174,6 +182,7 @@ gtsam::Vector PreintegratedImuFactor<PoseVel>::evaluateError(
         // Jacobian of all wrt angular velocity is zero
         H2->block<15, 3>(0, PoseVel::vel_offset).setZero();
     }
+
     if (H3) {
         H3->resize(15, 6);
         // Jacobian wrt imu bias
@@ -181,6 +190,7 @@ gtsam::Vector PreintegratedImuFactor<PoseVel>::evaluateError(
         // adding: [dBiasAcc/dBias_i ; dBiasOmega/dBias_i]
         H3->block<6, 6>(9, 0) = Hbias_i;
     }
+
     if (H4) {
         H4->resize(15, 6);
         // Jacobian wrt imu bias_j is zero
