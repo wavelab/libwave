@@ -30,7 +30,7 @@ install_geographiclib()
         echo "Installing GeographicLib version $GEOGRAPHICLIB_VERSION ..."
         mkdir -p "$DEPS_DIR"
         cd "$DEPS_DIR"
-        wget "$GEOGRAPHICLIB_URL"
+        curl -LO "$GEOGRAPHICLIB_URL"
         tar -xf "GeographicLib-$GEOGRAPHICLIB_VERSION.tar.gz"
         rm -rf "GeographicLib-$GEOGRAPHICLIB_VERSION.tar.gz"
 
