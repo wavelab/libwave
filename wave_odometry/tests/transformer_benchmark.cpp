@@ -4,7 +4,7 @@
 
 namespace {
 
-void setup(std::vector<wave::Trajectory, Eigen::aligned_allocator<wave::Trajectory>> &trajectory,
+void setup(std::vector<wave::PoseVel, Eigen::aligned_allocator<wave::PoseVel>> &trajectory,
            std::vector<float> &stamps, wave::TransformerParams &params,
            Eigen::Tensor<float, 2> &scan, long n_pts) {
     params.n_scans = 4;
@@ -39,7 +39,7 @@ void setup(std::vector<wave::Trajectory, Eigen::aligned_allocator<wave::Trajecto
 }
 
 static void BM_TRANSFORM_UPDATE(benchmark::State &state) {
-    std::vector<wave::Trajectory, Eigen::aligned_allocator<wave::Trajectory>> trajectory;
+    std::vector<wave::PoseVel, Eigen::aligned_allocator<wave::PoseVel>> trajectory;
     std::vector<float> stamps;
 
     wave::TransformerParams params;
@@ -71,7 +71,7 @@ static void BM_TRANSFORM_UPDATE(benchmark::State &state) {
 BENCHMARK(BM_TRANSFORM_UPDATE);
 
 static void BM_TRANSFORM_N(benchmark::State &state) {
-    std::vector<wave::Trajectory, Eigen::aligned_allocator<wave::Trajectory>> trajectory;
+    std::vector<wave::PoseVel, Eigen::aligned_allocator<wave::PoseVel>> trajectory;
     std::vector<float> stamps;
     wave::TransformerParams params;
     params.n_scans = 4;

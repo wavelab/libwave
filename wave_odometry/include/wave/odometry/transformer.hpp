@@ -23,6 +23,9 @@
 namespace wave {
 
 struct TransformerParams {
+    /// These parameters tradeoff between accuracy of transforms points and
+    /// the number of high accuracy interpolated transforms calculated and stored
+
     /// Maximum difference between two subsequent transforms (radians)
     float delRTol = 1e-2f;
     /// Maximum difference between two subsequent angular velocities (radians/s)
@@ -44,7 +47,7 @@ class Transformer {
     TransformerParams params;
 
     /// Prepares any required interpolated states
-    void update(const std::vector<Trajectory, Eigen::aligned_allocator<Trajectory>> &trajectory,
+    void update(const std::vector<PoseVel, Eigen::aligned_allocator<PoseVel>> &trajectory,
                 const std::vector<float> &stamps);
 
     /** Points should be a 4xN tensor, xyz + timestamp
@@ -63,9 +66,9 @@ class Transformer {
 
  private:
     /// Contains the trajectories optimized over plus any extras required to meet difference criteria
-    std::vector<Trajectory, Eigen::aligned_allocator<Trajectory>> aug_trajectories;
+    std::vector<PoseVel, Eigen::aligned_allocator<PoseVel>> aug_trajectories;
     /// Container for reusable differences.
-    std::vector<TrajDifference, Eigen::aligned_allocator<TrajDifference>> differences;
+    std::vector<PoseVelDiff, Eigen::aligned_allocator<PoseVelDiff>> differences;
     /// Given a scan index, what is the transform index in the trajectories container?
     std::vector<uint32_t> scan_indices;
     /// Timestamp for each of the trajectories in the container.

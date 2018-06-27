@@ -6,7 +6,6 @@
 
 namespace wave {
 
-template <int state_dim>
 struct FeatureTrack {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     // indicies to each point within each scan
@@ -25,9 +24,9 @@ struct FeatureTrack {
     std::vector<std::vector<uint32_t>> state_ids;
     uint32_t length;
 
-    // state jacobians. indexed by point, then by state.
-    std::vector<std::vector<Eigen::Matrix<double, 3, state_dim>, Eigen::aligned_allocator<Eigen::Matrix<double, 3, state_dim>>>>
-      jacs;
+    /// state jacobians. indexed by point, then by state. Should be populated to match dimensions
+    /// in application
+    std::vector<std::vector<MatX, Eigen::aligned_allocator<MatX>>> jacs;
 };
 }
 

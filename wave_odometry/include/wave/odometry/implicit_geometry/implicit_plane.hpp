@@ -3,9 +3,8 @@
 
 #include <Eigen/Core>
 #include <ceres/ceres.h>
-#include "wave/geometry/transformation.hpp"
+#include "wave/odometry/implicit_geometry/assign_jacobians.hpp"
 #include "wave/odometry/feature_track.hpp"
-#include "wave/utils/param_pack.hpp"
 
 namespace wave {
 
@@ -15,7 +14,7 @@ class ImplicitPlaneResidual : public ceres::SizedCostFunction<1, 6, states...> {
     virtual ~ImplicitPlaneResidual() {}
 
     ImplicitPlaneResidual(const uint32_t &pt_id,
-                          const FeatureTrack<get<0>(states...)> *track,
+                          const FeatureTrack *track,
                           const std::vector<std::vector<Eigen::Map<Eigen::MatrixXf>>> *feat_points) :
             pt_id(pt_id), track(track), feat_points(feat_points) {}
 
@@ -23,7 +22,7 @@ class ImplicitPlaneResidual : public ceres::SizedCostFunction<1, 6, states...> {
 
  private:
     const uint32_t pt_id;
-    const FeatureTrack<get<0>(states...)> *track;
+    const FeatureTrack *track;
     const std::vector<std::vector<Eigen::Map<MatXf>>> *feat_points;
 };
 }

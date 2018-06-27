@@ -17,13 +17,13 @@ enum Signal { RANGE, INTENSITY };
 // false uses full analytical expressions wherever possible
 using T_TYPE = Transformation<Eigen::Matrix<double, 3, 4>, true>;
 
-struct Trajectory {
+struct PoseVel {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     T_TYPE pose;
     Vec6 vel;
 };
 
-struct TrajDifference {
+struct PoseVelDiff {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     Vec12f hat_multiplier, candle_multiplier;
 };

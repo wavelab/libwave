@@ -745,7 +745,7 @@ template <typename Derived, bool approximate>
 Transformation<Derived, approximate> &Transformation<Derived, approximate>::normalizeMaybe(double tolerance) {
     // Check if R has strayed too far outside SO(3)
     // and if so normalize
-    if ((this->storage.template block<3, 3>(0, 0).determinant() - 1) > tolerance) {
+    if (std::abs(this->storage.template block<3, 3>(0, 0).determinant() - 1) > tolerance) {
         Mat3 R = this->storage.template block<3, 3>(0, 0);
         Mat3 temp = R * R.transpose();
         temp = temp.sqrt().inverse();

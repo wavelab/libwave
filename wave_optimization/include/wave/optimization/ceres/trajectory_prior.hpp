@@ -35,7 +35,7 @@ class TrajectoryPrior : public ceres::SizedCostFunction<12, 12, 6> {
             throw std::invalid_argument("Twist Prior not finite");
         }
         if (!weight_matrix.allFinite()) {
-            throw std::invalid_argument("Trajectory Prior weight matrix not finite");
+            throw std::invalid_argument("PoseVel Prior weight matrix not finite");
         }
         this->J_T.setZero();
     }

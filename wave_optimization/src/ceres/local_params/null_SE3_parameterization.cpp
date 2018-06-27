@@ -21,14 +21,18 @@ bool NullSE3Parameterization::Plus(const double *x, const double *delta, double 
     Eigen::Map<const Vec6> delta_vec(delta);
 
     Eigen::Map<const Mat34> xmap(x);
-    Transformation<Eigen::Map<const Mat34>, true> Tx(xmap);
-
+    
     Eigen::Map<Mat34> xpdmap(x_plus_delta);
-    Transformation<Eigen::Map<Mat34>, true> Txpd(xpdmap);
 
-    Txpd = Tx;
-    Txpd.manifoldPlus(delta_vec);
-    Txpd.normalizeMaybe(1e-5);
+    Mat34 exmp;
+    Transformation<>::expMap1st(delta_vec, exmp);
+    xpdmap.block<3,3>(0,0).noalias() = exmp.block<3,3>(0,0) * xmap.block<3,3>(0,0);
+    xpdmap.block<3,1>(0,3).noalias() = exmp.block<3,3>(0,0) * xmap.block<3,1>(0,3) + exmp.block<3,1>(0,3);
+
+    if(std::abs(xpdmap.block<3,3>(0,0).determinant() - 1.0) > 1e-3) {
+        Transformation<Eigen::Map<Mat34>, true> Txpd(xpdmap);
+        Txpd.normalizeMaybe(1e-3);
+    }
 
     return true;
 }

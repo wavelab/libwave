@@ -1,6 +1,7 @@
 #ifndef WAVE_IMPLICIT_LINE_IMPL_HPP
 #define WAVE_IMPLICIT_LINE_IMPL_HPP
 
+#include <wave/odometry/implicit_geometry/assign_jacobians.hpp>
 #include "../implicit_line.hpp"
 
 namespace wave {
@@ -32,10 +33,7 @@ bool ImplicitLineResidual<states...>::Evaluate(double const *const *parameters, 
         // jacobian wrt pt on line
         line_jac.block<3, 3>(0,3) = -del_e_del_diff;
 
-        for (uint32_t i = 0; i < sizeof...(states); i++) {
-            Eigen::Map<Eigen::Matrix<double, 3, get<0>(states...), Eigen::RowMajor>> jac(jacobians[i+1]);
-            jac = del_e_del_diff * this->track->jacs.at(this->pt_id).at(i);
-        }
+        assignJacobian(jacobians + 1, del_e_del_diff, this->track->jacs.at(this->pt_id), 0, states...);
     }
     return true;
 }

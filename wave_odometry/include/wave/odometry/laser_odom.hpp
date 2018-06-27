@@ -129,9 +129,9 @@ class LaserOdom {
     void updateParams(const LaserOdomParams);
     LaserOdomParams getParams();
 
-    std::vector<Trajectory, Eigen::aligned_allocator<Trajectory>> cur_trajectory;
-    std::vector<Trajectory, Eigen::aligned_allocator<Trajectory>> prev_trajectory;
-    std::vector<TrajDifference, Eigen::aligned_allocator<TrajDifference>> cur_difference;
+    std::vector<PoseVel, Eigen::aligned_allocator<PoseVel>> cur_trajectory;
+    std::vector<PoseVel, Eigen::aligned_allocator<PoseVel>> prev_trajectory;
+    std::vector<PoseVelDiff, Eigen::aligned_allocator<PoseVelDiff>> cur_difference;
 
     T_TYPE inv_prior_pose;
     Vec6 prior_twist;
@@ -167,10 +167,6 @@ class LaserOdom {
     void spinOutput();
     std::function<void()> f_output;
 
-    // ceres optimizer stuff
-    std::vector<Vec12, Eigen::aligned_allocator<Vec12>> param_blocks;
-    // Preallocated memory for the residuals
-
     LaserOdomParams param;
     bool initialized = false, full_revolution = false;
     int prv_tick = std::numeric_limits<int>::max();
@@ -193,15 +189,13 @@ class LaserOdom {
     void copyTrajectory();
     void applyRemap();
     // Do some calculations for transforms ahead of time
-    void updateDifferences();
-    void updateOperatingPoint();
+    void updateInterpFactors();
 
     // Lidar Sensor Model
     std::shared_ptr<RangeSensor> range_sensor;
     // Motion Model
     std::vector<wave_kinematics::ConstantVelocityPrior,
-                Eigen::aligned_allocator<wave_kinematics::ConstantVelocityPrior>>
-      cv_vector;
+                Eigen::aligned_allocator<wave_kinematics::ConstantVelocityPrior>> cv_vector;
     std::vector<float> trajectory_stamps;
 
     Mat6 sqrtinfo;
@@ -218,17 +212,22 @@ class LaserOdom {
     // indices of points to use for features, indexed by feature type and ring
     std::vector<std::vector<Eigen::Tensor<int, 1>, Eigen::aligned_allocator<Eigen::Tensor<int, 1>>>> indices;
 
-    //Feature points indexed by scan id and then feature index
+    /**
+     * feat_pts and feat_pts_T are sets of indexed tensors, first by scan then feature type
+     */
     std::vector<std::vector<Eigen::Tensor<float, 2>, Eigen::aligned_allocator<Eigen::Tensor<float, 2>>>> feat_pts, feat_pts_T;
+    /// interp_factors store interpolation factors for use during optimization
+    std::vector<std::vector<Eigen::Tensor<float, 2>, Eigen::aligned_allocator<Eigen::Tensor<float, 2>>>> interp_factors;
+
     std::vector<std::vector<Eigen::Map<Eigen::MatrixXf>>> mapped_features;
-    std::vector<Nabo::NNSearchF*>   cur_kd_idx, curm1_kd_idx, ave_kd_idx;
+    std::vector<Nabo::NNSearchF*> cur_kd_idx, curm1_kd_idx, ave_kd_idx;
 
     std::vector<ResidualType> feature_residuals;
 
     //storage for average feature points. 3 x N
     std::vector<MatXf, Eigen::aligned_allocator<MatXf>> ave_pts;
     std::vector<std::vector<uint32_t>> track_ids;
-    std::vector<std::vector<FeatureTrack<12>, Eigen::aligned_allocator<FeatureTrack<12>>>> features_tracks;
+    std::vector<std::vector<FeatureTrack, Eigen::aligned_allocator<FeatureTrack>>> features_tracks;
     // stores the index of the feature track associated with each feature point. -1 if not associated with a feature track
     std::vector<std::vector<int>> cur_feat_idx, prev_feat_idx;
 };

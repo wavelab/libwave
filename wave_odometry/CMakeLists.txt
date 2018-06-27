@@ -14,7 +14,7 @@ WAVE_ADD_MODULE(${PROJECT_NAME}
     src/sensor_model.cpp
     src/transformer.cpp
     src/feature_extractor.cpp
-    src/LaserOdom.cpp)
+        src/laser_odom.cpp)
 
 IF(BUILD_TESTING)
     WAVE_ADD_TEST(${PROJECT_NAME}_tests

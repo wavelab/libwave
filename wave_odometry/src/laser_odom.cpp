@@ -1,4 +1,4 @@
-#include "wave/odometry/LaserOdom.hpp"
+#include "wave/odometry/laser_odom.hpp"
 
 namespace wave {
 
@@ -51,8 +51,8 @@ LaserOdom::LaserOdom(const LaserOdomParams params, const FeatureExtractorParams 
     //
     //    double step_size = 0.1 / (double) (this->param.num_trajectory_states - 1);
     //    for (uint32_t i = 0; i < this->param.num_trajectory_states; i++) {
-    //        Trajectory unit;
-    //        Trajectory unit2;
+    //        PoseVel unit;
+    //        PoseVel unit2;
     //        unit2.pose.setIdentity();
     //        unit2.vel.setZero();
     //        unit.pose.setIdentity();
@@ -840,28 +840,6 @@ bool LaserOdom::match() {
         //            return true;
         //        }
     }
-}
-
-void LaserOdom::updateDifferences() {
-    for (uint32_t i = 0; i < this->cur_difference.size(); i++) {
-        this->cur_difference.at(i).hat_multiplier.block<6, 1>(6, 0) = this->cur_trajectory.at(i).vel.cast<float>();
-        this->cur_difference.at(i).candle_multiplier.block<6, 1>(0, 0) =
-          this->cur_trajectory.at(i + 1).pose.manifoldMinus(this->cur_trajectory.at(i).pose).cast<float>();
-        this->cur_difference.at(i).candle_multiplier.block<6, 1>(6, 0) =
-          (T_TYPE::SE3ApproxInvLeftJacobian(this->cur_difference.at(i).candle_multiplier.block<6, 1>(0, 0)) *
-           this->cur_trajectory.at(i + 1).vel.cast<float>())
-            .cast<float>();
-    }
-}
-
-void LaserOdom::updateOperatingPoint() {
-    // update trajectory with current twist vectors
-    for (uint32_t i = 0; i < this->param_blocks.size(); i++) {
-        this->cur_trajectory.at(i).pose.manifoldPlus(this->param_blocks.at(i).block<6, 1>(0, 0));
-        this->cur_trajectory.at(i).vel += this->param_blocks.at(i).block<6, 1>(6, 0);
-        this->param_blocks.at(i).setZero();
-    }
-    this->updateDifferences();
 }
 
 void LaserOdom::resetTrajectory() {

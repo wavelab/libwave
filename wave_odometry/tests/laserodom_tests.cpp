@@ -3,7 +3,7 @@
 #include <string>
 #include "wave/wave_test.hpp"
 #include "wave/utils/log.hpp"
-#include "wave/odometry/LaserOdom.hpp"
+#include "wave/odometry/laser_odom.hpp"
 #include "wave/odometry/PointXYZIT.hpp"
 #include "wave/containers/measurement_container.hpp"
 #include "wave/matching/pointcloud_display.hpp"

@@ -34,7 +34,7 @@ TEST(implicit_line, simple) {
     feature_points.resize(3, 3);
     feat_points.at(0).emplace_back(Eigen::Map<MatXf>(feature_points.data(), feature_points.rows(), feature_points.cols()));
 
-    FeatureTrack<3> track;
+    FeatureTrack track;
     track.mapping.resize(3);
     track.mapping.resize(3);
     track.featT_idx = 0;
@@ -87,12 +87,12 @@ TEST(implicit_line, simple) {
 
     ceres::Solver::Options solve_options;
     solve_options.evaluation_callback = &callback;
-    solve_options.max_num_consecutive_invalid_steps = 2;
+    solve_options.use_nonmonotonic_steps = true;
 
     ceres::Solver::Summary summary;
     ceres::Solve(solve_options, &problem, &summary);
 
-    std::cout << "\n" << summary.BriefReport() << "\n";
+    std::cout << "\n" << summary.FullReport() << "\n";
 
     /// Checking that all points are on the line defined by geometry in track
     std::vector<Vec3f, Eigen::aligned_allocator<Vec3f>> normals;
@@ -117,7 +117,7 @@ TEST(implicit_plane, simple) {
     feature_points.resize(3, 4);
     feat_points.at(0).emplace_back(Eigen::Map<MatXf>(feature_points.data(), feature_points.rows(), feature_points.cols()));
 
-    FeatureTrack<3> track;
+    FeatureTrack track;
     track.mapping.resize(4);
     track.mapping.resize(4);
     track.featT_idx = 0;
@@ -141,7 +141,8 @@ TEST(implicit_plane, simple) {
     }
     state_point = feat_points.at(0).at(0).block<3, 1>(0, 2).cast<double>();
 
-    track.geometry.block<3, 1>(0,0) = Vec3::Random();
+    track.geometry.block<3, 1>(0,0) = (feat_points.at(0).at(0).block<3, 1>(0, 1) - feat_points.at(0).at(0).block<3, 1>(0, 0)).cross(
+            feat_points.at(0).at(0).block<3, 1>(0, 2) - feat_points.at(0).at(0).block<3, 1>(0, 0)).cast<double>();
     if (track.geometry(2) < 0) {
         track.geometry.block<3, 1>(0,0) *= -1.0;
     }
@@ -168,12 +169,13 @@ TEST(implicit_plane, simple) {
 
     ceres::Solver::Options solve_options;
     solve_options.evaluation_callback = &callback;
-    solve_options.max_num_consecutive_invalid_steps = 2;
+    // provides roughly 1.5-2x speedup in this case. Presumably because plane is finicky
+    solve_options.use_nonmonotonic_steps = true;
 
     ceres::Solver::Summary summary;
     ceres::Solve(solve_options, &problem, &summary);
 
-    std::cout << "\n" << summary.BriefReport() << "\n";
+    std::cout << "\n" << summary.FullReport() << "\n";
 
     /// Checking that all points are on the plane
     std::vector<Vec3f, Eigen::aligned_allocator<Vec3f>> normals;

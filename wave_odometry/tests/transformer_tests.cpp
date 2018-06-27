@@ -11,7 +11,7 @@ TEST(Transformer, Transformer) {
 
 /// Just test no segfaults when interpolating transform
 TEST(Transformer, update) {
-    std::vector<Trajectory, Eigen::aligned_allocator<Trajectory>> trajectory;
+    std::vector<PoseVel, Eigen::aligned_allocator<PoseVel>> trajectory;
     std::vector<float> stamps;
 
     TransformerParams params;
@@ -39,7 +39,7 @@ TEST(Transformer, update) {
 
 /// Each scan consists of 100 points sampled from a circle
 TEST(Transformer, transformToStart) {
-    std::vector<Trajectory, Eigen::aligned_allocator<Trajectory>> trajectory;
+    std::vector<PoseVel, Eigen::aligned_allocator<PoseVel>> trajectory;
     std::vector<float> stamps;
 
     TransformerParams params;
@@ -79,12 +79,13 @@ TEST(Transformer, transformToStart) {
 /// Given a set of points in a circle, this should stretch/transform it smoothly across trajectory
 /// Sanity check
 TEST(Transformer, transformViz) {
-    std::vector<Trajectory, Eigen::aligned_allocator<Trajectory>> trajectory;
+    std::vector<PoseVel, Eigen::aligned_allocator<PoseVel>> trajectory;
     std::vector<float> stamps;
 
     TransformerParams params;
     params.n_scans = 4;
     params.traj_resolution = 3;
+    params.delRTol = 1e-3;
     uint32_t cnt = params.n_scans * (params.traj_resolution - 1) + 1;
 
     Vec6 vel;

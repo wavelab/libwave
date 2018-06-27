@@ -11,6 +11,7 @@
 #include <ceres/solver.h>
 
 #include "wave/utils/math.hpp"
+#include "wave/geometry/transformation.hpp"
 #include "wave/odometry/feature_track.hpp"
 #include "wave/odometry/odometry_types.hpp"
 #include "wave/odometry/transformer.hpp"
@@ -18,32 +19,37 @@
 namespace wave {
 
 struct OdometryCallback : ceres::EvaluationCallback {
-    explicit OdometryCallback(std::vector<std::vector<FeatureTrack<12>>> *tracks,
-                              std::vector<std::vector<Eigen::Map<wave::MatXf>>> *feat_pts,
-                              std::vector<std::vector<Eigen::Map<wave::MatXf>>> *feat_ptsT,
-                              std::vector<Trajectory, Eigen::aligned_allocator<Trajectory>> *traj,
-                              Transformer *transformer,
-                              std::vector<Vec12, Eigen::aligned_allocator<Vec12>> *params)
+    explicit OdometryCallback(const std::vector<std::vector<FeatureTrack>> *tracks,
+                              const std::vector<std::vector<Eigen::Tensor<float, 2>, Eigen::aligned_allocator<Eigen::Tensor<float, 2>>>> *feat_pts,
+                              std::vector<std::vector<Eigen::Tensor<float, 2>, Eigen::aligned_allocator<Eigen::Tensor<float, 2>>>> *feat_ptsT,
+                              const std::vector<PoseVel, Eigen::aligned_allocator<PoseVel>> *traj,
+                              const std::vector<float> *traj_stamps,
+                              Transformer *transformer)
         : ceres::EvaluationCallback(),
           tracks(tracks),
           feat_pts(feat_pts),
           feat_ptsT(feat_ptsT),
           traj(traj),
-          transformer(transformer),
-          params(params) {}
+          transformer(transformer) { }
 
     virtual void PrepareForEvaluation(bool evaluate_jacobians, bool new_evaluation_point);
     // indexed by feature type, then track index
-    std::vector<std::vector<FeatureTrack<12>>> *tracks;
+    const std::vector<std::vector<FeatureTrack>> *tracks;
     // indexed by scan, then by feature type
-    std::vector<std::vector<Eigen::Map<wave::MatXf>>> *feat_pts, *feat_ptsT;
+    const std::vector<std::vector<Eigen::Tensor<float, 2>, Eigen::aligned_allocator<Eigen::Tensor<float, 2>>>> *feat_pts;
+    const std::vector<std::vector<Eigen::Tensor<float, 2>, Eigen::aligned_allocator<Eigen::Tensor<float, 2>>>> *interp_factors;
+    std::vector<std::vector<Eigen::Tensor<float, 2>, Eigen::aligned_allocator<Eigen::Tensor<float, 2>>>> *feat_ptsT;
 
-    std::vector<Trajectory, Eigen::aligned_allocator<Trajectory>> *traj;
+    ///State Variables, hooked to and updated by Ceres
+    const std::vector<PoseVel, Eigen::aligned_allocator<PoseVel>> *traj;
+
+    const std::vector<float> *traj_stamps;
+
+    /// Cached intermediate variables for Jacobian calculation
+    std::vector<Vec6, Eigen::aligned_allocator<Vec6>> pose_diff;
+    std::vector<Mat6, Eigen::aligned_allocator<Mat6>> J_logmaps;
 
     Transformer *transformer;
-
-    /// State variables
-    std::vector<Vec12, Eigen::aligned_allocator<Vec12>> *params;
 
  private:
     bool old_jacobians = true;

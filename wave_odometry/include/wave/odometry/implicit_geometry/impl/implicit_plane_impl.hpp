@@ -10,28 +10,22 @@ bool ImplicitPlaneResidual<states...>::Evaluate(double const *const *parameters,
     Eigen::Map<Eigen::Matrix<double, 1, 1>> error(residuals);
     Eigen::Map<const Vec6> plane(&parameters[0][0]);
 
-    auto normal = plane.block<3, 1>(0,0);
-    auto avg = plane.block<3, 1>(3,0);
-
     // Calculate error
     auto s_id = this->track->mapping.at(this->pt_id).scan_idx;
     Vec3 pt = (this->feat_points->at(s_id).at(this->track->featT_idx).template block<3, 1>(0, this->track->mapping.at(this->pt_id).pt_idx)).template cast<double>();
-    Vec3 diff = pt - avg;
-    error = diff.transpose() * normal;
+    Vec3 diff = pt - plane.block<3, 1>(3, 0);
+    error = diff.transpose() * plane.block<3, 1>(0, 0);
 
     if (jacobians) {
         Eigen::Map<Eigen::Matrix<double, 1, 6, Eigen::RowMajor>> plane_jac(jacobians[0]);
 
         Eigen::Matrix<double, 1, 3> del_e_del_diff;
-        del_e_del_diff = normal.transpose();
+        del_e_del_diff = plane.block<3, 1>(0, 0).transpose();
 
         plane_jac.template block<1, 3>(0, 0) = diff.transpose();
-        plane_jac.template block<1, 3>(0, 3) = -normal.transpose();
+        plane_jac.template block<1, 3>(0, 3) = -plane.block<3, 1>(0, 0).transpose();
 
-        for (uint32_t i = 0; i < sizeof...(states); i++) {
-            Eigen::Map<Eigen::Matrix<double, 1, get<0>(states...), Eigen::RowMajor>> jac(jacobians[i+1]);
-            jac = del_e_del_diff * this->track->jacs.at(this->pt_id).at(i);
-        }
+        assignJacobian(jacobians + 1, del_e_del_diff, this->track->jacs.at(this->pt_id), 0, states...);
     }
     return true;
 }

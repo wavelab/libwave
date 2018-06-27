@@ -2,7 +2,7 @@
 
 namespace wave {
 
-void Transformer::update(const std::vector<Trajectory, Eigen::aligned_allocator<Trajectory>> &trajectory,
+void Transformer::update(const std::vector<PoseVel, Eigen::aligned_allocator<PoseVel>> &trajectory,
                          const std::vector<float> &stamps) {
     this->aug_trajectories = trajectory;
     this->traj_stamps = stamps;
@@ -25,7 +25,7 @@ void Transformer::update(const std::vector<Trajectory, Eigen::aligned_allocator<
             this->calculateInterpolationFactors(
               this->traj_stamps.at(i), this->traj_stamps.at(i + 1), new_stamp, candle, hat);
 
-            Trajectory interp;
+            PoseVel interp;
             T_TYPE::interpolateReduced(this->aug_trajectories.at(i).pose,
                                 this->aug_trajectories.at(i + 1).pose,
                                 this->aug_trajectories.at(i).vel,
@@ -60,21 +60,6 @@ void Transformer::update(const std::vector<Trajectory, Eigen::aligned_allocator<
         ++i;
     }
 
-    /** At this point, all of the transforms are with respect to a common frame, now, in order to save a transform
-     * inversion and multiplication later, all transforms be recast to be
-     * with respect to the transform at the start of the scan
-     * DANGER DANGER, this means that the states are no longer proper, because the twist doesn't get transformed, but it
-     * doesn't matter because the differences have already been computed.
-     */
-    i = 0;
-    for (uint32_t j = 0; j < this->aug_trajectories.size(); j++) {
-        this->aug_trajectories.at(j).pose =
-          this->aug_trajectories.at(this->scan_indices.at(i)).pose.transformInverse() *
-          this->aug_trajectories.at(j).pose;
-        if (j + 1 == this->scan_indices.at(i)) {
-            ++i;
-        }
-    }
 }
 
 void Transformer::transformToStart(const Eigen::Tensor<float, 2> &points, Eigen::Tensor<float, 2> &points_transformed) {
