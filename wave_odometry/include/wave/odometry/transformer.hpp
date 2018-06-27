@@ -69,7 +69,8 @@ class Transformer {
     std::vector<PoseVel, Eigen::aligned_allocator<PoseVel>> aug_trajectories;
     /// Container for reusable differences.
     std::vector<PoseVelDiff, Eigen::aligned_allocator<PoseVelDiff>> differences;
-    /// Given a scan index, what is the transform index in the trajectories container?
+    /// Given a scan index, what is the transform index in the trajectories container? Contains n_scans + 1 for the
+    /// transform at the end of the trajectory.
     std::vector<uint32_t> scan_indices;
     /// Timestamp for each of the trajectories in the container.
     std::vector<float> traj_stamps;

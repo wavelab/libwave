@@ -6,7 +6,7 @@ void Transformer::update(const std::vector<PoseVel, Eigen::aligned_allocator<Pos
                          const std::vector<float> &stamps) {
     this->aug_trajectories = trajectory;
     this->traj_stamps = stamps;
-    this->scan_indices.resize(this->params.n_scans);
+    this->scan_indices.resize(this->params.n_scans + 1);
     uint32_t n = 0;
     for (auto &val : this->scan_indices) {
         val = n;
@@ -139,8 +139,8 @@ void Transformer::transformToEnd(const Eigen::Tensor<float, 2> &points, Eigen::T
             auto &final = this->aug_trajectories.back().pose.storage;
             ptT.block<3, 1>(0, i).noalias() =
               final.block<3, 3>(0, 0).transpose().cast<float>() *
-              (trans.block<3, 3>(0, 0) * (pt.block<3, 1>(0, i) + ref.block<3, 1>(0, 3).cast<float>()) +
-               trans.block<3, 1>(0, 3).cast<float>() - final.block<3, 1>(0,3).cast<float>());
+              (trans.block<3, 3>(0, 0) * (ref.block<3, 3>(0,0).cast<float>() * pt.block<3, 1>(0, i) + ref.block<3, 1>(0, 3).cast<float>()) +
+               trans.block<3, 1>(0, 3) - final.block<3, 1>(0,3).cast<float>());
         }
     }
 }
@@ -171,8 +171,8 @@ Transformer::constantTransform(const uint32_t &fromScan, const uint32_t &toScan,
     const Mat3f RtT = this->aug_trajectories.at(this->scan_indices.at(toScan)).pose.storage.block<3, 3>(0,0).transpose().cast<float>();
     const Mat3f Rf = this->aug_trajectories.at(this->scan_indices.at(fromScan)).pose.storage.block<3, 3>(0,0).cast<float>();
 
-    const Vec3f Tt = this->aug_trajectories.at(this->scan_indices.at(toScan)).pose.storage.block<3, 1>(3,0).cast<float>();
-    const Vec3f Tf = this->aug_trajectories.at(this->scan_indices.at(fromScan)).pose.storage.block<3, 1>(3,0).cast<float>();
+    const Vec3f Tt = this->aug_trajectories.at(this->scan_indices.at(toScan)).pose.storage.block<3, 1>(0,3).cast<float>();
+    const Vec3f Tf = this->aug_trajectories.at(this->scan_indices.at(fromScan)).pose.storage.block<3, 1>(0,3).cast<float>();
 
     const Eigen::Matrix<float, 3, 3, Eigen::RowMajor> R = RtT * Rf;
     const Vec3f T = RtT * (Tf - Tt);

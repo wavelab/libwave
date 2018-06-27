@@ -604,8 +604,6 @@ bool LaserOdom::runOptimization(ceres::Problem &problem) {
         covar_options.num_threads = this->param.solver_threads;
     }
 
-    problem.SetParameterBlockConstant(this->param_blocks.at(0).data());
-
     if (problem.NumResidualBlocks() < this->param.min_residuals) {
         LOG_ERROR("Less than expected residuals, resetting");
         LOG_ERROR("%d residuals, threshold is %d", problem.NumResidualBlocks(), this->param.min_residuals);
@@ -626,7 +624,6 @@ bool LaserOdom::runOptimization(ceres::Problem &problem) {
         if (this->param.solution_remapping) {
             this->applyRemap();
         }
-        this->updateOperatingPoint();
     }
     return true;
 }

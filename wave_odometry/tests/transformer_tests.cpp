@@ -85,7 +85,7 @@ TEST(Transformer, transformViz) {
     TransformerParams params;
     params.n_scans = 4;
     params.traj_resolution = 3;
-    params.delRTol = 1e-3;
+//    params.delRTol = 1e-3;
     uint32_t cnt = params.n_scans * (params.traj_resolution - 1) + 1;
 
     Vec6 vel;
@@ -110,11 +110,13 @@ TEST(Transformer, transformViz) {
     Eigen::Tensor<float, 2> tscan(4, params.n_scans * n_pts);
     Eigen::Tensor<float, 2> bscan(4, params.n_scans * n_pts);
 
+    Eigen::Tensor<float, 2> btscan(4, params.n_scans * n_pts);
+
     for (long j = 0; j < params.n_scans; j++) {
         for (long i = 0; i < n_pts; i++) {
-            scan(0,j*n_pts + i) = static_cast<float>(0.0);
-            scan(1,j*n_pts + i) = static_cast<float>(0.0);
-            scan(2,j*n_pts + i) = 0.0f;
+            scan(0,j*n_pts + i) = static_cast<float>(2.0);
+            scan(1,j*n_pts + i) = static_cast<float>(2.0);
+            scan(2,j*n_pts + i) = 0.1f * (float)j + 0.1f * (static_cast<float>(i)/100.0f);
             scan(3,j*n_pts + i) = 0.2f * (float)j + 0.2f * (static_cast<float>(i)/100.0f);
         }
     }
@@ -133,7 +135,7 @@ TEST(Transformer, transformViz) {
         bpt.x = bscan(0,i);
         bpt.y = bscan(1,i);
         bpt.z = bscan(2,i);
-        tpt.intensity = scan(3,i);
+        bpt.intensity = scan(3,i);
 
         orpt.x = scan(0,i);
         orpt.y = scan(1,i);
@@ -144,6 +146,16 @@ TEST(Transformer, transformViz) {
         btransformed.push_back(bpt);
         original.push_back(orpt);
     }
+
+    /// The "undistorted" scans should only be a rigid transform apart. Test with constant transform function
+    // Transforming points in the frame at the start to the frame at the end
+    transformer.constantTransform(0, params.n_scans, tscan, btscan);
+
+    Eigen::Tensor<float, 2> error = btscan - bscan;
+
+    Eigen::Tensor<float, 0> max_error = error.abs().maximum();
+
+    EXPECT_NEAR(max_error(0), 0.0f, 1e-6);
 
     PointCloudDisplay display("warped");
     display.startSpin();

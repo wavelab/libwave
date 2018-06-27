@@ -15,5 +15,6 @@
 #include "wave/utils/log.hpp"
 #include "wave/utils/math.hpp"
 #include "wave/utils/time.hpp"
+#include "wave/utils/types.hpp"
 
 #endif  // WAVE_UTILS_UTILS_HPP

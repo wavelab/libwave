@@ -2,7 +2,8 @@
 #define WAVE_FEATURE_TRACK_HPP
 
 #include <vector>
-#include "wave/utils/math.hpp"
+#include <unsupported/Eigen/CXX11/Tensor>
+#include "wave/utils/utils.hpp"
 
 namespace wave {
 
@@ -20,13 +21,12 @@ struct FeatureTrack {
     // line/plane definition
     Vec6 geometry;
 
-    // state ids, indexed by pointid, then by state number
+    // state ids, indexed by point_idx, then by state number
     std::vector<std::vector<uint32_t>> state_ids;
     uint32_t length;
 
-    /// state jacobians. indexed by point, then by state. Should be populated to match dimensions
-    /// in application
-    std::vector<std::vector<MatX, Eigen::aligned_allocator<MatX>>> jacs;
+    /// pointer to state jacobians updated by evaluation callback
+    const Vec<Vec<VecE<Eigen::Tensor<double, 3>>>> *jacs;
 };
 }
 

@@ -9,6 +9,7 @@ void setup(std::vector<wave::PoseVel, Eigen::aligned_allocator<wave::PoseVel>> &
            Eigen::Tensor<float, 2> &scan, long n_pts) {
     params.n_scans = 4;
     params.traj_resolution = 3;
+    params.delRTol = 1e-3;
     uint32_t cnt = params.n_scans * (params.traj_resolution - 1) + 1;
 
     wave::Vec6 vel;
