@@ -17,20 +17,28 @@ OdometryCallback::OdometryCallback(const Vec<VecE<Eigen::Tensor<float, 2>>> *fea
     Eigen::TensorMap<Eigen::Tensor<const float, 1>> T_times(this->traj_stamps->data(), this->traj_stamps->size());
     for(uint32_t scan_idx = 0; scan_idx < this->feat_pts->size(); ++scan_idx) {
         for(uint32_t feat_idx = 0; feat_idx < this->feat_pts->at(scan_idx).size(); ++feat_idx) {
+            //todo figure out how to vectorize this using horrible Tensor interface
             const auto &pts = this->feat_pts->at(scan_idx).at(feat_idx);
+            auto &interp = this->interp_factors.at(scan_idx).at(feat_idx);
+            uint32_t stamp_idx = 0;
+            for(uint32_t pt_idx = 0; pt_idx < pts.dimension(1); ++pt_idx) {
+                float tau = pts(3, pt_idx);
+                if (tau > this->traj_stamps->at(stamp_idx + 1)) {
+                    ++stamp_idx;
+                }
+                float T1 = tau - this->traj_stamps->at(stamp_idx);
+                float T2 = this->traj_stamps->at(stamp_idx + 1) - tau;
+                float dT = this->traj_stamps->at(stamp_idx + 1) - this->traj_stamps->at(stamp_idx);
+                float invT = 1.0f / dT;
+
+                interp(0, pt_idx) = (T1 * T1 * (4 * T1 - 3 * dT + 6 * T2)) * invT * invT * invT;
+                float temp = -(T1 * T1 * (2 * T1 - 2 * dT + 3 * T2)) * invT * invT;
+
+                interp(1, pt_idx) = 1.0f - interp(0, pt_idx);
+                interp(2, pt_idx) = T1 - dT * interp(0, pt_idx) - temp;
+            }
         }
     }
-//    float T1 = tau - t1;
-//    float T2 = t2 - tau;
-//    float dT = t2 - t1;
-//    float invT = 1.0f / dT;
-//
-//    candle(0, 0) = (T1 * T1 * (4 * T1 - 3 * dT + 6 * T2)) * invT * invT * invT;
-//    candle(0, 1) = -(T1 * T1 * (2 * T1 - 2 * dT + 3 * T2)) * invT * invT;
-//
-//    hat(0, 0) = 1.0f - candle(0, 0);
-//    hat(0, 1) = T1 - dT * candle(0, 0) - candle(0, 1);
-
 }
 
 void OdometryCallback::PrepareForEvaluation(bool evaluate_jacobians, bool new_evaluation_point) {
@@ -102,10 +110,6 @@ void OdometryCallback::evaluateJacobians() {
             }
         }
     }
-}
-
-uint32_t OdometryCallback::getTimeIndex(const float stamp) {
-
 }
 
 }

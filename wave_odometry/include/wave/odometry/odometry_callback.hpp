@@ -53,7 +53,6 @@ struct OdometryCallback : ceres::EvaluationCallback {
     bool old_jacobians = true;
 
     void evaluateJacobians();
-    uint32_t getTimeIndex(const float stamp);
 };
 }
 

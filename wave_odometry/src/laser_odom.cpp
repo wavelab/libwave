@@ -128,93 +128,13 @@ void LaserOdom::spinOutput() {
 }
 
 /**
- * This function should transform all points of interest to the frame of the lidar at the end of the last scan
+ * This corrects for motion distortion of the current scan. Transforming it to the end.
  */
 void LaserOdom::undistort() {
-    //    this->undistorted_cld.clear();
-    //    for (uint32_t i = 0; i < this->N_FEATURES; i++) {
-    //        this->undis_features.at(i).clear();
-    //        this->map_features.at(i).resize(this->prv_feature_points.at(i).points.size());
-    //        this->output_corrs.at(i).clear();
-    //    }
-    //
-    //    for (uint16_t r_idx = 0; r_idx < this->param.n_ring; r_idx++) {
-    //        for (PCLPointXYZIT pt : this->cur_scan.at(r_idx)) {
-    //            double point[3] = {pt.x, pt.y, pt.z};
-    //            double u_pt[3];
-    //            this->transformToCurLidar(point, pt.tick, u_pt);
-    //            pcl::PointXYZI op_pt;
-    //            op_pt.x = (float) u_pt[0];
-    //            op_pt.y = (float) u_pt[1];
-    //            op_pt.z = (float) u_pt[2];
-    //            op_pt.intensity = pt.intensity;
-    //            this->undistorted_cld.push_back(op_pt);
-    //        }
-    //        for (uint32_t j = 0; j < this->N_FEATURES; j++) {
-    //            for (uint32_t i = 0; i < this->feat_pts.at(j).at(r_idx).size(); i++) {
-    //                double point[3] = {this->feat_pts.at(j).at(r_idx).at(i).pt[0],
-    //                                   feat_pts.at(j).at(r_idx).at(i).pt[1],
-    //                                   feat_pts.at(j).at(r_idx).at(i).pt[2]};
-    //                double u_pt[3];
-    //                this->transformToCurLidar(point, feat_pts.at(j).at(r_idx).at(i).tick, u_pt);
-    //                pcl::PointXYZ op_pt;
-    //                op_pt.x = (float) u_pt[0];
-    //                op_pt.y = (float) u_pt[1];
-    //                op_pt.z = (float) u_pt[2];
-    //                this->undis_features.at(j).push_back(op_pt);
-    //            }
-    //
-    //            for (uint32_t c_idx = 0; c_idx < this->feature_corrs.at(j).at(r_idx).size(); c_idx++) {
-    //                auto &corr_list = this->feature_corrs.at(j).at(r_idx).at(c_idx);
-    //                std::vector<double> undis(3 * (corr_list.size() + 1));
-    //
-    //                // putting the undistorted point into the end of the vector
-    //                this->transformToCurLidar(&(this->feat_pts.at(j).at(r_idx).at(corr_list.at(0)).pt[0]),
-    //                                          this->feat_pts.at(j).at(r_idx).at(corr_list.at(0)).tick,
-    //                                          &(undis[undis.size() - 3]));
-    //
-    //                // putting uncorrection point into vector
-    //                memcpy(undis.data(), this->feat_pts.at(j).at(r_idx).at(corr_list.at(0)).pt, 24);
-    //
-    //                for (uint32_t k = 1; k < corr_list.size(); k++) {
-    //                    Eigen::Map<const Vec3>
-    //                    map_point(this->prv_feature_points.at(j).points.at(corr_list.at(k)).data());
-    //                    Eigen::Map<Vec3> transformed_map_point(undis.data() + 3 * k);
-    //                    this->cur_trajectory.back().pose.inverseTransform(map_point, transformed_map_point);
-    //                }
-    //
-    //                this->output_corrs.at(j).emplace_back(std::vector<double>(undis.begin(), undis.end()));
-    //            }
-    //        }
-    //    }
-    //
-    //    if (this->param.output_correspondences) {
-    //        long timestamp = std::chrono::system_clock::now().time_since_epoch().count();
-    //        for (uint32_t i = 0; i < this->N_FEATURES; i++) {
-    //            ofstream cur_file;
-    //            cur_file.open(std::to_string(timestamp) + "feature_" + std::to_string(i) + "_cor.txt");
-    //            for (auto vec : this->output_corrs.at(i)) {
-    //                for (auto val : vec) {
-    //                    cur_file << std::to_string(val) << " ";
-    //                }
-    //                cur_file << std::endl;
-    //            }
-    //            cur_file.close();
-    //        }
-    //    }
-    //
-    //    for (uint32_t j = 0; j < this->N_FEATURES; j++) {
-    //        for (size_t i = 0; i < this->prv_feature_points.at(j).points.size(); i++) {
-    //
-    //            // Publishing in map frame
-    //            Eigen::Map<Eigen::Vector3f> map_feature(this->map_features.at(j).points.at(i).data);
-    //
-    //            // Point is in map frame
-    //            Eigen::Map<Eigen::Vector3d> prv_feature_point(this->prv_feature_points.at(j).points.at(i).data());
-    //
-    //            map_feature = prv_feature_point.cast<float>();
-    //        }
-    //    }
+    Eigen::Tensor<float, 2> output;
+    for (auto &line : this->cur_scan) {
+        line.
+    }
 }
 
 void LaserOdom::copyTrajectory() {
@@ -325,11 +245,11 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
                             // data from last time hasn't been consumed yet
                             LOG_ERROR("Overwriting previous output");
                         }
-//                        this->undistorted_stamp = this->prv_time;
+                        this->undistort_state.stamp = stamp;
                         this->undistort_transform = this->cur_trajectory.back().pose;
                         memcpy(this->undistort_velocity.data(), this->cur_trajectory.back().vel.data(), 48);
 
-                        // this->undistort();
+                        this->undistort();
                         this->fresh_output = true;
                     }
                     this->output_condition.notify_one();
@@ -347,7 +267,7 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
             this->cur_scan.at(pt.ring)(1, counters.at(pt.ring)) = pt.y;
             this->cur_scan.at(pt.ring)(2, counters.at(pt.ring)) = pt.z;
             this->cur_scan.at(pt.ring)(3, counters.at(pt.ring)) =
-              std::chrono::duration_cast<std::chrono::seconds>(stamp - this->scan_stamps_chrono.back()).count();
+              std::chrono::duration_cast<std::chrono::seconds>(stamp - this->scan_stamps_chrono.front()).count();
 
             this->signals.at(pt.ring)(0, counters.at(pt.ring)) = sqrtf(pt.x * pt.x + pt.y * pt.y + pt.z * pt.z);
             this->signals.at(pt.ring)(1, counters.at(pt.ring)) = pt.intensity;
@@ -396,79 +316,6 @@ void LaserOdom::rollover(TimeType stamp) {
     //    // Now previous trajectory will hold the "motion generated" trajectory
     //    this->copyTrajectory();
     //    this->updateDifferences();
-}
-
-void LaserOdom::buildTrees() {
-    //    size_t ret_index;
-    //    double out_dist_sqr;
-    //    nanoflann::KNNResultSet<double> resultSet(1);
-    //    resultSet.init(&ret_index, &out_dist_sqr);
-    //
-    //    // First step is to check if any existing map features have expired
-    //    for (uint32_t i = 0; i < this->N_FEATURES; i++) {
-    //        for (uint32_t j = 0; j < this->prv_feature_points.at(i).points.size(); j++) {
-    //            if (this->feature_association.at(i).at(j).first > 0) {
-    //                //                Vec3 transformed_pt;
-    //                Eigen::Map<const Vec3> Vecpt(this->prv_feature_points.at(i).points.at(j).data(), 3, 1);
-    //                //                this->cur_trajectory.front().pose.transform(Vecpt, transformed_pt);
-    //                //                this->cur_trajectory.back().pose.inverseTransform(Vecpt, transformed_pt);
-    //                // Check if feature is within range of map
-    //                if (l2length(Vecpt.data(), 3) < this->param.local_map_range) {
-    //                    //                    memcpy(this->prv_feature_points.at(i).points.at(j).data(), Vecpt.data(),
-    //                    24);
-    //                    if (this->feature_association.at(i).at(j).second == AssociationStatus::CORRESPONDED) {
-    //                        this->feature_association.at(i).at(j).second = AssociationStatus::UNCORRESPONDED;
-    //                        this->feature_association.at(i).at(j).first = this->param.TTL;
-    //                    } else {
-    //                        --(this->feature_association.at(i).at(j).first);
-    //                    }
-    //                    --(this->feature_association.at(i).at(j).first);
-    //                    continue;
-    //                }
-    //            }
-    //            auto loc = this->prv_feature_points.at(i).points.size() - 1;
-    //            memcpy(this->prv_feature_points.at(i).points.at(j).data(),
-    //                   this->prv_feature_points.at(i).points.at(loc).data(),
-    //                   24);
-    //            this->feature_association.at(i).at(j) = this->feature_association.at(i).at(loc);
-    //            this->prv_feature_points.at(i).points.resize(loc);
-    //            this->feature_association.at(i).resize(loc);
-    //        }
-    //        // rebuild kdtree index
-    //        if (!this->prv_feature_points.at(i).points.empty()) {
-    //            this->feature_idx.at(i)->buildIndex();
-    //        }
-    //        for (uint16_t j = 0; j < this->param.n_ring; j++) {
-    //            //            for (PointXYZIT pt : this->feat_pts.at(i).at(j)) {
-    //            //                double transformed_pt[3] = {0};
-    //            //                //                this->transformToCurLidar(pt.pt, pt.tick, transformed_pt);
-    //            //                this->transformToMap(pt.pt, pt.tick, transformed_pt);
-    //            //
-    //            //                resultSet.init(&ret_index, &out_dist_sqr);
-    //            //
-    //            //                this->feature_idx.at(i)->findNeighbors(resultSet, transformed_pt,
-    //            //                nanoflann::SearchParams(32, 1));
-    //            //
-    //            //                float map_density;
-    //            //                if (this->feature_definitions.at(i).residual == PointToLine) {
-    //            //                    map_density = this->param.edge_map_density;
-    //            //                } else {
-    //            //                    map_density = this->param.flat_map_density;
-    //            //                }
-    //            //                if (out_dist_sqr > map_density) {
-    //            //                    this->feature_association.at(i).emplace_back(
-    //            //                      std::make_pair(this->param.TTL, AssociationStatus::UNCORRESPONDED));
-    //            //                    this->prv_feature_points.at(i).points.push_back(
-    //            //                      std::array<double, 3>{transformed_pt[0], transformed_pt[1],
-    //            transformed_pt[2]});
-    //            //                }
-    //            //            }
-    //        }
-    //        // rebuild kdtree index
-    //        if (!this->prv_feature_points.at(i).points.empty()) {
-    //            this->feature_idx.at(i)->buildIndex();
-    //        }
-    //    }
 }
 
 bool LaserOdom::outOfBounds(const Vec3 &query, const uint32_t &f_idx, const std::vector<size_t> &index) {

@@ -17,10 +17,20 @@ enum Signal { RANGE, INTENSITY };
 // false uses full analytical expressions wherever possible
 using T_TYPE = Transformation<Eigen::Matrix<double, 3, 4>, true>;
 
+using TimeType = std::chrono::steady_clock::time_point;
+
 struct PoseVel {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     T_TYPE pose;
     Vec6 vel;
+};
+
+struct PoseVelStamped {
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    T_TYPE pose;
+    Vec6 vel;
+    Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> covar;
+    TimeType stamp;
 };
 
 struct PoseVelDiff {
