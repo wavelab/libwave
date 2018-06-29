@@ -61,25 +61,20 @@ void LoadParameters(const std::string &path, const std::string &filename, LaserO
     parser.addParam("max_correspondence_dist", &(params.max_correspondence_dist));
     parser.addParam("max_residual_val", &(params.max_residual_val));
     parser.addParam("min_residuals", &(params.min_residuals));
-    parser.addParam("local_map_range", &(params.local_map_range));
     parser.addParam("scan_period", &(params.scan_period));
     parser.addParam("max_ticks", &(params.max_ticks));
     parser.addParam("n_ring", &(params.n_ring));
 
     LoadSensorParameters(path, "sensor_model.yaml", params.sensor_params);
 
-    parser.addParam("edge_map_density", &(params.edge_map_density));
-    parser.addParam("flat_map_density", &(params.flat_map_density));
     parser.addParam("azimuth_tol", &(params.azimuth_tol));
     parser.addParam("TTL", &(params.TTL));
     parser.addParam("min_eigen", &(params.min_eigen));
     parser.addParam("max_extrapolation", &(params.max_extrapolation));
-    parser.addParam("visualize", &(params.visualize));
     parser.addParam("output_trajectory", &(params.output_trajectory));
     parser.addParam("output_correspondences", &(params.output_correspondences));
     parser.addParam("only_extract_features", &(params.only_extract_features));
     parser.addParam("use_weighting", &(params.use_weighting));
-    parser.addParam("lock_first", &(params.lock_first));
     parser.addParam("plot_stuff", &(params.plot_stuff));
     parser.addParam("solution_remapping", &(params.solution_remapping));
     parser.addParam("motion_prior", &(params.motion_prior));

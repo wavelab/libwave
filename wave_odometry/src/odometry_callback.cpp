@@ -5,22 +5,31 @@ namespace wave {
 OdometryCallback::OdometryCallback(const Vec<VecE<Eigen::Tensor<float, 2>>> *feat_pts,
                                    Vec<VecE<Eigen::Tensor<float, 2>>> *feat_ptsT,
                                    const VecE<PoseVel> *traj,
+                                   Vec<Vec<VecE<Eigen::Tensor<double, 3>>>> *ptT_jacobians,
                                    const Vec<float> *traj_stamps,
                                    Transformer *transformer)
     : ceres::EvaluationCallback(),
       feat_pts(feat_pts),
       feat_ptsT(feat_ptsT),
       traj(traj),
+      ptT_jacobians(ptT_jacobians),
       traj_stamps(traj_stamps),
       transformer(transformer) {
 
+    this->interp_factors.resize(this->feat_pts->size());
+    this->pose_diff.resize(traj->size() - 1);
+    this->J_logmaps.resize(traj->size() - 1);
+
     Eigen::TensorMap<Eigen::Tensor<const float, 1>> T_times(this->traj_stamps->data(), this->traj_stamps->size());
     for(uint32_t scan_idx = 0; scan_idx < this->feat_pts->size(); ++scan_idx) {
+        this->interp_factors.at(scan_idx).resize(this->feat_pts->at(scan_idx).size());
         for(uint32_t feat_idx = 0; feat_idx < this->feat_pts->at(scan_idx).size(); ++feat_idx) {
             //todo figure out how to vectorize this using horrible Tensor interface
             const auto &pts = this->feat_pts->at(scan_idx).at(feat_idx);
             auto &interp = this->interp_factors.at(scan_idx).at(feat_idx);
             uint32_t stamp_idx = 0;
+
+            interp = Eigen::Tensor<float, 2>(3, pts.dimension(1));
             for(uint32_t pt_idx = 0; pt_idx < pts.dimension(1); ++pt_idx) {
                 float tau = pts(3, pt_idx);
                 if (tau > this->traj_stamps->at(stamp_idx + 1)) {
@@ -70,13 +79,19 @@ void OdometryCallback::evaluateJacobians() {
 #pragma omp parallel for
     for (uint32_t scan_idx = 0; scan_idx < this->feat_pts->size(); ++scan_idx) {
         for (uint32_t feat_idx = 0; feat_idx < this->feat_pts->at(scan_idx).size(); ++feat_idx) {
-            for (uint32_t pt_cnt = 0; pt_cnt < this->feat_pts->at(scan_idx).at(feat_idx).dimension(1); ++pt_cnt) {
-                auto &intfac = this->interp_factors.at(scan_idx).at(feat_idx);
-                auto &pt_jacs = this->ptT_jacobians->at(scan_idx).at(feat_idx);
-                const auto &pts = this->feat_pts->at(scan_idx).at(feat_idx);
+            auto &intfac = this->interp_factors.at(scan_idx).at(feat_idx);
+            const auto &pts = this->feat_pts->at(scan_idx).at(feat_idx);
+            const auto &Tpts = this->feat_ptsT->at(scan_idx).at(feat_idx);
+            auto &pt_jacs = this->ptT_jacobians->at(scan_idx).at(feat_idx);
+            pt_jacs.at(0) = Eigen::Tensor<double, 3>(pts.dimension(1), 3, 12);
+            pt_jacs.at(1) = Eigen::Tensor<double, 3>(pts.dimension(1), 3, 6);
+            pt_jacs.at(2) = Eigen::Tensor<double, 3>(pts.dimension(1), 3, 12);
+            pt_jacs.at(3) = Eigen::Tensor<double, 3>(pts.dimension(1), 3, 6);
+            for (uint32_t pt_cnt = 0; pt_cnt < pts.dimension(1); ++pt_cnt) {
 
                 /// need to find the state indices based on point timestamps
-                auto iter = std::lower_bound(this->traj_stamps->begin(), this->traj_stamps->end(), pts(3, pt_cnt));
+                auto iter = std::upper_bound(this->traj_stamps->begin(), this->traj_stamps->end(), pts(3, pt_cnt));
+                iter--;
                 auto prev_idx = static_cast<uint32_t>(iter - this->traj_stamps->begin());
                 uint32_t next_idx = prev_idx + 1;
 
@@ -89,24 +104,30 @@ void OdometryCallback::evaluateJacobians() {
                 Transformation<>::skewSymmetric6(inc_twist, Ad_inc_twist);
                 Transformation<>::skewSymmetric6(this->pose_diff.at(prev_idx), Ad_twist);
 
-                MatX jacobian(6, 12);
-                jacobian.block<6, 6>(0, 6).setZero();
+                MatX jacobian(3, 12);
+                jacobian.block<3, 6>(0, 6).setZero();
                 // column major storage so this is fine.
-                Eigen::TensorMap<Eigen::Tensor<double, 2>> t6_12map(jacobian.data(), 6, 12);
-                Eigen::TensorMap<Eigen::Tensor<double, 2>> t6_6map(jacobian.data(), 6, 6);
+                Eigen::TensorMap<Eigen::Tensor<double, 2>> t3_12map(jacobian.data(), 3, 12);
+                Eigen::TensorMap<Eigen::Tensor<double, 2>> t3_6map(jacobian.data(), 3, 6);
+
+                /// Jacobian for point transformation
+                Eigen::Matrix<double, 3, 6> J_pt;
+                J_pt << 0, Tpts(2, pt_cnt), -Tpts(1, pt_cnt), 1, 0, 0,
+                        -Tpts(2, pt_cnt), 0, Tpts(0, pt_cnt), 0, 1, 0,
+                        Tpts(1, pt_cnt), -Tpts(0, pt_cnt), 0, 0, 0, 1;
 
                 /// jacobian for first pose
-                jacobian.block<6, 6>(0, 0) =
-                  Ad_inc_twist - intfac(1, pt_cnt) * J_inc_twist * this->J_logmaps.at(prev_idx) * Ad_twist;
-                pt_jacs.at(0).chip(pt_cnt, 0) = t6_12map;
+                jacobian.block<3, 6>(0, 0) = J_pt * (Ad_inc_twist - intfac(1, pt_cnt) * J_inc_twist * this->J_logmaps.at(prev_idx) * Ad_twist);
+                pt_jacs.at(0).chip(pt_cnt, 0) = t3_12map;
                 /// jacobian for first twist
-                jacobian.block<6, 6>(0, 0) = intfac(0, pt_cnt) * J_inc_twist;
-                pt_jacs.at(1).chip(pt_cnt, 0) = t6_6map;
+                jacobian.block<3, 6>(0, 0) = J_pt * (intfac(0, pt_cnt) * J_inc_twist);
+                pt_jacs.at(1).chip(pt_cnt, 0) = t3_6map;
                 /// jacobian for second pose
-                jacobian.block<6, 6>(0, 0) = intfac(1, pt_cnt) * J_inc_twist * this->J_logmaps.at(prev_idx);
-                pt_jacs.at(2).chip(pt_cnt, 0) = t6_12map;
+                jacobian.block<3, 6>(0, 0) = J_pt * (intfac(1, pt_cnt) * J_inc_twist * this->J_logmaps.at(prev_idx));
+                pt_jacs.at(2).chip(pt_cnt, 0) = t3_12map;
                 /// jacobian for second twist
-                jacobian.block<6, 6>(0, 0) = intfac(2, pt_cnt) * J_inc_twist * this->J_logmaps.at(prev_idx);
+                jacobian.block<3, 6>(0, 0) = J_pt * (intfac(2, pt_cnt) * J_inc_twist * this->J_logmaps.at(prev_idx));
+                pt_jacs.at(3).chip(pt_cnt, 0) = t3_6map;
             }
         }
     }

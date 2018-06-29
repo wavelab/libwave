@@ -24,12 +24,12 @@ IF(BUILD_TESTING)
             ${PROJECT_NAME})
 
     WAVE_ADD_TEST(feature_extraction_tests
-            tests/feature_extractor_tests.cpp)
+            tests/feature_extractor/feature_extractor_tests.cpp)
     TARGET_LINK_LIBRARIES(feature_extraction_tests
             ${PROJECT_NAME})
 
     WAVE_ADD_TEST(transformer_tests
-            tests/transformer_tests.cpp)
+            tests/transformer/transformer_tests.cpp)
     TARGET_LINK_LIBRARIES(transformer_tests
             ${PROJECT_NAME}
             wave::matching)
@@ -39,18 +39,23 @@ IF(BUILD_TESTING)
     TARGET_LINK_LIBRARIES(residual_tests
             ${PROJECT_NAME})
 
+    WAVE_ADD_TEST(callback_tests
+            tests/callback/odometry_callback_test.cpp)
+    TARGET_LINK_LIBRARIES(callback_tests
+            ${PROJECT_NAME})
+
     WAVE_ADD_BENCHMARK(feature_benchmark
-            tests/feature_extractor_benchmark.cpp)
+            tests/feature_extractor/feature_extractor_benchmark.cpp)
     TARGET_LINK_LIBRARIES(feature_benchmark
             ${PROJECT_NAME})
 
     WAVE_ADD_BENCHMARK(transformer_benchmark
-            tests/transformer_benchmark.cpp)
+            tests/transformer/transformer_benchmark.cpp)
     TARGET_LINK_LIBRARIES(transformer_benchmark
             ${PROJECT_NAME})
 
     WAVE_ADD_BENCHMARK(nn_benchmark
-            tests/nn_benchmark.cpp)
+            tests/knn/nn_benchmark.cpp)
     TARGET_LINK_LIBRARIES(nn_benchmark
             ${PROJECT_NAME})
 

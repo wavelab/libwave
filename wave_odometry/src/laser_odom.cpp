@@ -133,7 +133,7 @@ void LaserOdom::spinOutput() {
 void LaserOdom::undistort() {
     Eigen::Tensor<float, 2> output;
     for (auto &line : this->cur_scan) {
-        line.
+
     }
 }
 
@@ -162,15 +162,15 @@ void LaserOdom::applyRemap() {
     }
 
     if (this->param.plot_stuff) {
-        plotMat(this->covar);
-        MatX info = this->covar.inverse();
+        plotMat(this->undistort_state.covar);
+        MatX info = this->undistort_state.covar.inverse();
         plotMat(info);
         Eigen::SelfAdjointEigenSolver<MatX> eigs(info);
         plotVec(eigs.eigenvalues(), true);
         plotMat(eigs.eigenvectors());
     }
 
-    MatX AtA = this->covar.inverse();
+    MatX AtA = this->undistort_state.covar.inverse();
 
     Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigs(AtA);
 
@@ -246,8 +246,8 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
                             LOG_ERROR("Overwriting previous output");
                         }
                         this->undistort_state.stamp = stamp;
-                        this->undistort_transform = this->cur_trajectory.back().pose;
-                        memcpy(this->undistort_velocity.data(), this->cur_trajectory.back().vel.data(), 48);
+                        this->undistort_state.pose = this->cur_trajectory.back().pose;
+                        this->undistort_state.vel = this->cur_trajectory.back().vel;
 
                         this->undistort();
                         this->fresh_output = true;
@@ -463,11 +463,11 @@ bool LaserOdom::runOptimization(ceres::Problem &problem) {
         if (this->param.plot_stuff) {
             LOG_INFO("%s", summary.FullReport().c_str());
         }
-        //        ceres::Covariance covariance(covar_options);
-        //        if (!covariance.Compute(this->param_blocks, &problem)) {
-        //            LOG_ERROR("covariance did not compute");
-        //        }
-        //        covariance.GetCovarianceMatrixInTangentSpace(this->param_blocks, this->covar.data());
+//                ceres::Covariance covariance(covar_options);
+//                if (!covariance.Compute(this->param_blocks, &problem)) {
+//                    LOG_ERROR("covariance did not compute");
+//                }
+//                covariance.GetCovarianceMatrixInTangentSpace(this->param_blocks, this->covar.data());
         if (this->param.solution_remapping) {
             this->applyRemap();
         }

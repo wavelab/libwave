@@ -1,6 +1,7 @@
 #ifndef WAVE_ODOMETRY_TYPES_HPP
 #define WAVE_ODOMETRY_TYPES_HPP
 
+#include <chrono>
 #include <Eigen/Core>
 #include "wave/geometry/transformation.hpp"
 #include "wave/utils/math.hpp"
@@ -21,6 +22,9 @@ using TimeType = std::chrono::steady_clock::time_point;
 
 struct PoseVel {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    PoseVel() {
+        vel.setZero();
+    }
     T_TYPE pose;
     Vec6 vel;
 };

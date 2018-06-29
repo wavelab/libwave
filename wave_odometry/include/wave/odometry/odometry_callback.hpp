@@ -22,8 +22,11 @@ struct OdometryCallback : ceres::EvaluationCallback {
     explicit OdometryCallback(const Vec<VecE<Eigen::Tensor<float, 2>>> *feat_pts,
                               Vec<VecE<Eigen::Tensor<float, 2>>> *feat_ptsT,
                               const VecE<PoseVel> *traj,
+                              Vec<Vec<VecE<Eigen::Tensor<double, 3>>>> *ptT_jacobians,
                               const Vec<float> *traj_stamps,
                               Transformer *transformer);
+    
+    OdometryCallback() = delete;
 
     virtual void PrepareForEvaluation(bool evaluate_jacobians, bool new_evaluation_point);
 
@@ -36,11 +39,6 @@ struct OdometryCallback : ceres::EvaluationCallback {
     ///State Variables, hooked to and updated by Ceres
     const VecE<PoseVel> *traj;
 
-    /// Cached intermediate variables for Jacobian calculation
-    Vec<VecE<Eigen::Tensor<float, 2>>> interp_factors;
-    VecE<Vec6> pose_diff;
-    VecE<Mat6> J_logmaps;
-
     /// Stored jacobians for each point, indexed by scan, feature type, and then state
     /// Each element is a Nx3xK tensor, where n is the point index and k is the dimension of
     /// the state. Shared with residuals
@@ -50,6 +48,11 @@ struct OdometryCallback : ceres::EvaluationCallback {
     Transformer *transformer;
 
  private:
+    /// Cached intermediate variables for Jacobian calculation
+    Vec<VecE<Eigen::Tensor<float, 2>>> interp_factors;
+    VecE<Vec6> pose_diff;
+    VecE<Mat6> J_logmaps;
+
     bool old_jacobians = true;
 
     void evaluateJacobians();
