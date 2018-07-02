@@ -250,10 +250,11 @@ template <typename Derived, bool approximate>
 Mat6 Transformation<Derived, approximate>::adjointRep() const {
     Mat6 retval;
     retval.template block<3, 3>(0, 0) = this->storage.template block<3, 3>(0, 0);
-    retval.block<3, 3>(3, 3) = this->storage.template block<3, 3>(0, 0);
+    retval.template block<3, 3>(3, 3) = this->storage.template block<3, 3>(0, 0);
     Mat3 skew;
     skewSymmetric3(this->storage.template block<3, 1>(0, 3), skew);
-    retval.block<3, 3>(3, 0) = skew * this->storage.template block<3, 3>(0, 0);
+    retval.template block<3, 3>(3, 0) = skew * this->storage.template block<3, 3>(0, 0);
+    retval.template block<3, 3>(0, 3).setZero();
     return retval;
 }
 

@@ -18,6 +18,7 @@ OdometryCallback::OdometryCallback(const Vec<VecE<Eigen::Tensor<float, 2>>> *fea
 
     this->interp_factors.resize(this->feat_pts->size());
     this->pose_diff.resize(traj->size() - 1);
+    this->Pose_diff.resize(traj->size() - 1);
     this->J_logmaps.resize(traj->size() - 1);
 
     Eigen::TensorMap<Eigen::Tensor<const float, 1>> T_times(this->traj_stamps->data(), this->traj_stamps->size());
@@ -40,11 +41,13 @@ OdometryCallback::OdometryCallback(const Vec<VecE<Eigen::Tensor<float, 2>>> *fea
                 float dT = this->traj_stamps->at(stamp_idx + 1) - this->traj_stamps->at(stamp_idx);
                 float invT = 1.0f / dT;
 
-                interp(0, pt_idx) = (T1 * T1 * (4 * T1 - 3 * dT + 6 * T2)) * invT * invT * invT;
-                float temp = -(T1 * T1 * (2 * T1 - 2 * dT + 3 * T2)) * invT * invT;
+                //candle(0,0) and (0,1)
+                interp(1, pt_idx) = (T1 * T1 * (4 * T1 - 3 * dT + 6 * T2)) * invT * invT * invT;
+                interp(2, pt_idx) = -(T1 * T1 * (2 * T1 - 2 * dT + 3 * T2)) * invT * invT;
 
-                interp(1, pt_idx) = 1.0f - interp(0, pt_idx);
-                interp(2, pt_idx) = T1 - dT * interp(0, pt_idx) - temp;
+                //candle
+                interp(0, pt_idx) = T1 - dT * interp(1, pt_idx) - interp(2, pt_idx);
+
             }
         }
     }
@@ -73,10 +76,11 @@ void OdometryCallback::evaluateJacobians() {
     // First calculate the difference, and logmap jacobian between all the transforms
     for (uint32_t i = 0; i + 1 < this->traj->size(); ++i) {
         this->pose_diff.at(i) = this->traj->at(i + 1).pose.manifoldMinus(this->traj->at(i).pose);
+        this->Pose_diff.at(i).setFromExpMap(this->pose_diff.at(i));
         this->J_logmaps.at(i) = Transformation<>::SE3ApproxInvLeftJacobian(this->pose_diff.at(i));
     }
 
-#pragma omp parallel for
+//#pragma omp parallel for
     for (uint32_t scan_idx = 0; scan_idx < this->feat_pts->size(); ++scan_idx) {
         for (uint32_t feat_idx = 0; feat_idx < this->feat_pts->at(scan_idx).size(); ++feat_idx) {
             auto &intfac = this->interp_factors.at(scan_idx).at(feat_idx);
@@ -101,8 +105,10 @@ void OdometryCallback::evaluateJacobians() {
 
                 Mat6 J_inc_twist, Ad_inc_twist, Ad_twist;
                 Transformation<>::SE3ApproxLeftJacobian(inc_twist, J_inc_twist);
-                Transformation<>::skewSymmetric6(inc_twist, Ad_inc_twist);
-                Transformation<>::skewSymmetric6(this->pose_diff.at(prev_idx), Ad_twist);
+                Ad_inc_twist = Transformation<>::expMapAdjoint(inc_twist);
+                Ad_twist = this->Pose_diff.at(prev_idx).adjointRep();
+//                Transformation<>::skewSymmetric6(inc_twist, Ad_inc_twist);
+//                Transformation<>::skewSymmetric6(this->pose_diff.at(prev_idx), Ad_twist);
 
                 MatX jacobian(3, 12);
                 jacobian.block<3, 6>(0, 6).setZero();
@@ -117,6 +123,7 @@ void OdometryCallback::evaluateJacobians() {
                         Tpts(1, pt_cnt), -Tpts(0, pt_cnt), 0, 0, 0, 1;
 
                 /// jacobian for first pose
+                MatX debug = Ad_inc_twist - intfac(1, pt_cnt) * J_inc_twist * this->J_logmaps.at(prev_idx) * Ad_twist;
                 jacobian.block<3, 6>(0, 0) = J_pt * (Ad_inc_twist - intfac(1, pt_cnt) * J_inc_twist * this->J_logmaps.at(prev_idx) * Ad_twist);
                 pt_jacs.at(0).chip(pt_cnt, 0) = t3_12map;
                 /// jacobian for first twist

@@ -50,6 +50,7 @@ struct OdometryCallback : ceres::EvaluationCallback {
  private:
     /// Cached intermediate variables for Jacobian calculation
     Vec<VecE<Eigen::Tensor<float, 2>>> interp_factors;
+    VecE<T_TYPE> Pose_diff;
     VecE<Vec6> pose_diff;
     VecE<Mat6> J_logmaps;
 
