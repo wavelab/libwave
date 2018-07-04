@@ -26,6 +26,7 @@ struct FeatureTrack {
     uint32_t length;
 
     /// pointer to state jacobians updated by evaluation callback
+    /// dimensions of tensor should be 3 x M x n_pts
     const Vec<Vec<VecE<Eigen::Tensor<double, 3>>>> *jacs;
 };
 }

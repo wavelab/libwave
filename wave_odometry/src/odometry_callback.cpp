@@ -87,10 +87,10 @@ void OdometryCallback::evaluateJacobians() {
             const auto &pts = this->feat_pts->at(scan_idx).at(feat_idx);
             const auto &Tpts = this->feat_ptsT->at(scan_idx).at(feat_idx);
             auto &pt_jacs = this->ptT_jacobians->at(scan_idx).at(feat_idx);
-            pt_jacs.at(0) = Eigen::Tensor<double, 3>(pts.dimension(1), 3, 12);
-            pt_jacs.at(1) = Eigen::Tensor<double, 3>(pts.dimension(1), 3, 6);
-            pt_jacs.at(2) = Eigen::Tensor<double, 3>(pts.dimension(1), 3, 12);
-            pt_jacs.at(3) = Eigen::Tensor<double, 3>(pts.dimension(1), 3, 6);
+            pt_jacs.at(0) = Eigen::Tensor<double, 3>(3, 12, pts.dimension(1));
+            pt_jacs.at(1) = Eigen::Tensor<double, 3>(3, 6, pts.dimension(1));
+            pt_jacs.at(2) = Eigen::Tensor<double, 3>(3, 12, pts.dimension(1));
+            pt_jacs.at(3) = Eigen::Tensor<double, 3>(3, 6, pts.dimension(1));
             for (uint32_t pt_cnt = 0; pt_cnt < pts.dimension(1); ++pt_cnt) {
 
                 /// need to find the state indices based on point timestamps
@@ -107,8 +107,6 @@ void OdometryCallback::evaluateJacobians() {
                 Transformation<>::SE3ApproxLeftJacobian(inc_twist, J_inc_twist);
                 Ad_inc_twist = Transformation<>::expMapAdjoint(inc_twist);
                 Ad_twist = this->Pose_diff.at(prev_idx).adjointRep();
-//                Transformation<>::skewSymmetric6(inc_twist, Ad_inc_twist);
-//                Transformation<>::skewSymmetric6(this->pose_diff.at(prev_idx), Ad_twist);
 
                 MatX jacobian(3, 12);
                 jacobian.block<3, 6>(0, 6).setZero();
@@ -125,16 +123,16 @@ void OdometryCallback::evaluateJacobians() {
                 /// jacobian for first pose
                 MatX debug = Ad_inc_twist - intfac(1, pt_cnt) * J_inc_twist * this->J_logmaps.at(prev_idx) * Ad_twist;
                 jacobian.block<3, 6>(0, 0) = J_pt * (Ad_inc_twist - intfac(1, pt_cnt) * J_inc_twist * this->J_logmaps.at(prev_idx) * Ad_twist);
-                pt_jacs.at(0).chip(pt_cnt, 0) = t3_12map;
+                pt_jacs.at(0).chip(pt_cnt, 2) = t3_12map;
                 /// jacobian for first twist
                 jacobian.block<3, 6>(0, 0) = J_pt * (intfac(0, pt_cnt) * J_inc_twist);
-                pt_jacs.at(1).chip(pt_cnt, 0) = t3_6map;
+                pt_jacs.at(1).chip(pt_cnt, 2) = t3_6map;
                 /// jacobian for second pose
                 jacobian.block<3, 6>(0, 0) = J_pt * (intfac(1, pt_cnt) * J_inc_twist * this->J_logmaps.at(prev_idx));
-                pt_jacs.at(2).chip(pt_cnt, 0) = t3_12map;
+                pt_jacs.at(2).chip(pt_cnt, 2) = t3_12map;
                 /// jacobian for second twist
                 jacobian.block<3, 6>(0, 0) = J_pt * (intfac(2, pt_cnt) * J_inc_twist * this->J_logmaps.at(prev_idx));
-                pt_jacs.at(3).chip(pt_cnt, 0) = t3_6map;
+                pt_jacs.at(3).chip(pt_cnt, 2) = t3_6map;
             }
         }
     }
