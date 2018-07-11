@@ -183,7 +183,6 @@ TEST_F(CallbackFixture, JacobianTest) {
                     failures = error.operator>(1e-3).cast<int>();
                     Eigen::Tensor<double, 0> worst = error.maximum();
                     Eigen::Tensor<int, 0> count = failures.sum();
-                    int i_count = count(0);
                     EXPECT_EQ(count(0), 0);
                 }
             }
