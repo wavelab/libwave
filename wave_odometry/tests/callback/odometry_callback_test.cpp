@@ -18,11 +18,11 @@ class CallbackFixture : public testing::Test {
     }
 
     virtual void SetUp() {
-        total_states = (traj_resolution - 1)*n_scans + 1;
+        total_states = (traj_resolution - 1) * n_scans + 1;
         traj.resize(total_states);
         traj_stamps.resize(traj.size());
-        for(uint32_t i = 0; i < traj_stamps.size(); ++i) {
-            traj_stamps.at(i) = (float)(n_scans) * ((float)(i)/(float)(traj_stamps.size() - 1));
+        for (uint32_t i = 0; i < traj_stamps.size(); ++i) {
+            traj_stamps.at(i) = (float) (n_scans) * ((float) (i) / (float) (traj_stamps.size() - 1));
         }
 
         feat_pts.resize(this->n_scans);
@@ -31,21 +31,21 @@ class CallbackFixture : public testing::Test {
 
         auto traj_time = this->traj_stamps.begin() + 1;
 
-        for(uint32_t i = 0; i < n_scans; ++i) {
+        for (uint32_t i = 0; i < n_scans; ++i) {
             feat_pts.at(i).resize(n_features);
             feat_ptsT.at(i).resize(n_features);
             ptT_jacobians.at(i).resize(n_features);
-            for(uint32_t j = 0; j < n_features; ++j) {
+            for (uint32_t j = 0; j < n_features; ++j) {
                 feat_pts.at(i).at(j) = Eigen::Tensor<float, 2>(4, n_pts);
 
-                for(uint32_t k = 0; k < n_pts; ++k) {
+                for (uint32_t k = 0; k < n_pts; ++k) {
                     Eigen::array<int, 2> offsets = {0, static_cast<int>(k)};
                     Eigen::array<int, 2> extents = {3, 1};
                     feat_pts.at(i).at(j).slice(offsets, extents).setRandom();
-                    float stamp = static_cast<float>(i + ((float)k/5000.0));
+                    float stamp = static_cast<float>(i + ((float) k / 5000.0));
                     feat_pts.at(i).at(j)(3, k) = stamp;
                     if (stamp > *traj_time) {
-                        this->crossover.emplace_back(5000*i + k);
+                        this->crossover.emplace_back(5000 * i + k);
                         ++traj_time;
                     }
                 }
@@ -77,8 +77,7 @@ class CallbackFixture : public testing::Test {
     OdometryCallback *cb;
 };
 
-TEST_F(CallbackFixture, OdometryCallback) {
-}
+TEST_F(CallbackFixture, OdometryCallback) {}
 
 TEST_F(CallbackFixture, PrepareForEvaluationFF) {
     cb->PrepareForEvaluation(false, false);
@@ -97,7 +96,7 @@ TEST_F(CallbackFixture, PrepareForEvaluationTT) {
 }
 
 TEST_F(CallbackFixture, JacobianTest) {
-    const double step = sqrt(std::numeric_limits<double>::epsilon());
+    const double step = static_cast<double>(sqrtf(std::numeric_limits<float>::epsilon()));
     // fill analytic Jacobians
     cb->PrepareForEvaluation(true, false);
 
@@ -107,17 +106,16 @@ TEST_F(CallbackFixture, JacobianTest) {
 
     Eigen::Tensor<double, 2> coljac;
 
-    for(uint32_t i = 0; i < this->n_scans; ++i) {
+    for (uint32_t i = 0; i < this->n_scans; ++i) {
         ptT_jacobians_num.at(i).resize(this->n_features);
         for (uint32_t j = 0; j < this->n_features; ++j) {
             ptT_jacobians_num.at(i).at(j).resize(2 * total_states);
             for (uint32_t k = 0; k < this->total_states; ++k) {
-                ptT_jacobians_num.at(i).at(j).at(2 * k) = Eigen::Tensor<double, 3>(3, 12,
-                                                                                   this->feat_pts.at(i).at(j).dimension(
-                                                                                           1));
+                ptT_jacobians_num.at(i).at(j).at(2 * k) =
+                  Eigen::Tensor<double, 3>(3, 12, this->feat_pts.at(i).at(j).dimension(1));
                 ptT_jacobians_num.at(i).at(j).at(2 * k).setZero();
-                ptT_jacobians_num.at(i).at(j).at(2 * k + 1) = Eigen::Tensor<double, 3>(3, 6, this->feat_pts.at(i).at(
-                        j).dimension(1));
+                ptT_jacobians_num.at(i).at(j).at(2 * k + 1) =
+                  Eigen::Tensor<double, 3>(3, 6, this->feat_pts.at(i).at(j).dimension(1));
                 for (uint32_t dim_idx = 0; dim_idx < 6; ++dim_idx) {
                     diff.setZero();
                     diff(dim_idx) = step;
@@ -129,70 +127,90 @@ TEST_F(CallbackFixture, JacobianTest) {
 
                     Eigen::array<int, 2> offsets = {0, 0};
                     Eigen::array<int, 2> extents = {3, static_cast<int>(this->feat_pts.at(i).at(j).dimension(1))};
-                    coljac = (this->feat_ptsT.at(i).at(j) -
-                              this->feat_pts.at(i).at(j).slice(offsets, extents)).cast<double>() / step;
+                    coljac = (this->feat_ptsT.at(i).at(j) - this->feat_pts.at(i).at(j).slice(offsets, extents))
+                               .cast<double>() /
+                             step;
 
                     ptT_jacobians_num.at(i).at(j).at(2 * k).chip(dim_idx, 1) = coljac;
 
-                    //now do velocity portion
+                    // now do velocity portion
                     this->traj.at(k).pose.setIdentity();
                     this->traj.at(k).vel(dim_idx) = step;
 
                     this->transformer->update(this->traj, this->traj_stamps);
                     this->transformer->transformToStart(this->feat_pts.at(i).at(j), this->feat_ptsT.at(i).at(j));
 
-                    coljac = (this->feat_ptsT.at(i).at(j) -
-                              this->feat_pts.at(i).at(j).slice(offsets, extents)).cast<double>() / step;
+                    coljac = (this->feat_ptsT.at(i).at(j) - this->feat_pts.at(i).at(j).slice(offsets, extents))
+                               .cast<double>() /
+                             step;
 
                     ptT_jacobians_num.at(i).at(j).at(2 * k + 1).chip(dim_idx, 1) = coljac;
 
                     this->traj.at(k).vel.setZero();
                 }
-//                Eigen::Tensor<double, 2> random_analytic = ptT_jacobians.at(i).at(j).at(k).chip(0, 0);
-//                Eigen::Map<MatX> map_analytic(random_analytic.data(), random_analytic.dimension(0),
-//                                              random_analytic.dimension(1));
-//                MatX debugview_analytic = map_analytic;
-//
-//                Eigen::Tensor<double, 2> random_numerical = ptT_jacobians_num.at(i).at(j).at(k).chip(0, 0);
-//                Eigen::Map<MatX> map_numerical(random_numerical.data(), random_numerical.dimension(0),
-//                                               random_numerical.dimension(1));
-//                MatX debugview = map_numerical;
             }
             /// At this point the numerical jacobians of each transformed point wrt each state should be calculated.
             /// The feature index does not matter, only the scan index and crossover points
 
-            Eigen::array<int, 3> offsets = {0, 0, 0};
-            Eigen::array<int, 3> extents = {3, 1, 0};
+            for (uint32_t pt_idx = 0; pt_idx < this->n_pts; ++pt_idx) {
+                auto state_iter = std::lower_bound(
+                  this->traj_stamps.begin(), this->traj_stamps.end(), this->feat_pts.at(i).at(j)(3, pt_idx));
+                auto state_offset = static_cast<uint32_t>(state_iter - this->traj_stamps.begin());
 
-            
+                if(*state_iter >= this->feat_pts.at(i).at(j)(3, pt_idx) && state_offset > 0) {
+                    --state_offset;
+                }
 
-//            for (uint32_t pt_idx = 0; pt_idx < this->n_pts; ++pt_idx) {
-//                auto error = ptT_jacobians_num.at(i).at(j).at()
-//            }
-//
-//            Eigen::Tensor<double, 2> random_error = error.chip(0, 0);
-//            Eigen::Map<MatX> map_error(random_error.data(), random_error.dimension(0), random_error.dimension(1));
-//            MatX error_view = map_error;
-//
-//            Eigen::Tensor<int, 3> failures = error.operator>(1e-6).cast<int>();
-//
-//            std::vector<std::vector<uint32_t>> failure_idx;
-//
-//            for (uint32_t pt = 0; pt < failures.dimension(2); ++pt) {
-//                for (uint32_t col = 0; col < failures.dimension(1); ++col) {
-//                    for (uint32_t row = 0; row < failures.dimension(0); ++ row) {
-//                        if (failures(row, col, pt)) {
-//                            failure_idx.emplace_back(std::vector<uint32_t>({row, col, pt}));
-//                        }
-//                    }
-//                }
-//            }
-//
-//            Eigen::Tensor<double, 0> worst = error.maximum();
-//            Eigen::Tensor<int, 0> count = failures.sum();
-//            EXPECT_EQ(count(0), 0);
+                Eigen::Tensor<double, 2> error;
+                Eigen::Tensor<int, 2> failures;
+
+                for (uint32_t stat_num = 0; stat_num < 4; ++stat_num) {
+                    if (stat_num % 2 == 0) {
+                        error.resize(3, 12);
+                        failures.resize(3, 12);
+                    } else {
+                        error.resize(3, 6);
+                        failures.resize(3, 6);
+                    }
+                    Eigen::Tensor<double, 2> chip1, chip2;
+                    chip1 = ptT_jacobians_num.at(i).at(j).at(state_offset*2 + stat_num).chip(pt_idx, 2);
+                    chip2 = this->ptT_jacobians.at(i).at(j).at(stat_num).chip(pt_idx, 2);
+
+                    error = ptT_jacobians_num.at(i).at(j).at(state_offset*2 + stat_num).chip(pt_idx, 2) -
+                                 this->ptT_jacobians.at(i).at(j).at(stat_num).chip(pt_idx, 2);
+
+                    // due to single precision floating point, threshold is relatively large
+                    failures = error.operator>(1e-3).cast<int>();
+                    Eigen::Tensor<double, 0> worst = error.maximum();
+                    Eigen::Tensor<int, 0> count = failures.sum();
+                    int i_count = count(0);
+                    EXPECT_EQ(count(0), 0);
+                }
+            }
+            //
+            //            Eigen::Tensor<double, 2> random_error = error.chip(0, 0);
+            //            Eigen::Map<MatX> map_error(random_error.data(), random_error.dimension(0),
+            //            random_error.dimension(1));
+            //            MatX error_view = map_error;
+            //
+            //            Eigen::Tensor<int, 3> failures = error.operator>(1e-6).cast<int>();
+            //
+            //            std::vector<std::vector<uint32_t>> failure_idx;
+            //
+            //            for (uint32_t pt = 0; pt < failures.dimension(2); ++pt) {
+            //                for (uint32_t col = 0; col < failures.dimension(1); ++col) {
+            //                    for (uint32_t row = 0; row < failures.dimension(0); ++ row) {
+            //                        if (failures(row, col, pt)) {
+            //                            failure_idx.emplace_back(std::vector<uint32_t>({row, col, pt}));
+            //                        }
+            //                    }
+            //                }
+            //            }
+            //
+            //            Eigen::Tensor<double, 0> worst = error.maximum();
+            //            Eigen::Tensor<int, 0> count = failures.sum();
+            //            EXPECT_EQ(count(0), 0);
         }
     }
 }
-
 }
