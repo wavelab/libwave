@@ -196,6 +196,11 @@ class LaserOdom {
     // indices of points to use for features, indexed by feature type and ring
     Vec<VecE<Eigen::Tensor<int, 1>>> indices;
 
+
+    /// This stores candidate feature points before they are put into feat_pts container.
+    VecE<Eigen::Tensor<float, 2>> cur_feature_candidates, prev_feature_candidates;
+    /// stores the index of the feature track associated with each feature point. -1 if not associated with a feature track
+    Vec<Vec<int>> cur_feat_idx, prev_feat_idx;
     /**
      * feat_pts and feat_pts_T are sets of indexed tensors, first by scan then feature type
      */
@@ -211,9 +216,8 @@ class LaserOdom {
     //storage for average feature points. 3 x N
     VecE<MatXf> ave_pts;
     Vec<Vec<uint32_t>> track_ids;
+    // indexed by feature type and then track_id
     Vec<VecE<FeatureTrack>> features_tracks;
-    // stores the index of the feature track associated with each feature point. -1 if not associated with a feature track
-    Vec<Vec<int>> cur_feat_idx, prev_feat_idx;
 };
 
 }  // namespace wave

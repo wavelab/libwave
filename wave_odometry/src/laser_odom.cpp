@@ -210,7 +210,8 @@ void LaserOdom::updateStoredFeatures() {
     std::rotate(this->feat_pts_T.begin(), this->feat_pts_T.begin() + 1, this->feat_pts_T.end());
 
     for (uint32_t i = 0; i < this->N_FEATURES; i++) {
-        auto &feat = this->feat_pts.back().at(i);
+        std::swap(this->cur_feature_candidates.at(i), this->prev_feature_candidates.at(i));
+        auto &feat = this->cur_feature_candidates.at(i);
         long featcnt = 0;
         for (const auto &elem : this->indices.at(i)) {
             featcnt += elem.dimension(0);
@@ -525,7 +526,7 @@ void LaserOdom::extendFeatureTracks(const Eigen::MatrixXi &idx, const Eigen::Mat
                     error = error.transpose() * error;
                 }
                 if (error(0) < sqrt(this->param.max_residual_val)) {
-//                    this->features_tracks.at(feat_id).at(j).
+                    this->features_tracks.at(feat_id).at(j).mapping.emplace_back(idx(elem, j), this->param.n_window - 1);
                 }
             }
         }
