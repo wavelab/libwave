@@ -14,10 +14,8 @@ struct FeatureTrack {
         uint32_t pt_idx, scan_idx;
     };
     std::vector<Mapping> mapping;
-    uint32_t featT_idx;
+//    uint32_t featT_idx;
 
-    // Index to the average of the points
-    uint32_t ave_pt_idx;
     // line/plane definition
     Vec6 geometry;
 
@@ -27,7 +25,8 @@ struct FeatureTrack {
 
     /// pointer to state jacobians updated by evaluation callback
     /// dimensions of tensor should be 3 x M x n_pts
-    const Vec<Vec<VecE<Eigen::Tensor<double, 3>>>> *jacs;
+    // Indexed by scan ID, then by state_id.
+    const Vec<VecE<Eigen::Tensor<double, 3>>> *jacs;
 };
 }
 

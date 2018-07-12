@@ -14,14 +14,15 @@ class ImplicitPlaneResidual : public ceres::SizedCostFunction<1, 6, states...> {
     virtual ~ImplicitPlaneResidual() {}
 
     ImplicitPlaneResidual(const uint32_t &pt_id,
+                          const uint32_t &feat_idx,
                           const FeatureTrack *track,
                           const std::vector<std::vector<Eigen::Map<Eigen::MatrixXf>>> *feat_points) :
-            pt_id(pt_id), track(track), feat_points(feat_points) {}
+            pt_id(pt_id), feat_idx(feat_idx), track(track), feat_points(feat_points) {}
 
     virtual bool Evaluate(double const *const *parameters, double *residuals, double **jacobians) const;
 
  private:
-    const uint32_t pt_id;
+    const uint32_t pt_id, feat_idx;
     const FeatureTrack *track;
     const std::vector<std::vector<Eigen::Map<MatXf>>> *feat_points;
 };

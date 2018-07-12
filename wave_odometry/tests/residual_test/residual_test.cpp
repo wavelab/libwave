@@ -26,33 +26,44 @@ namespace wave {
 
 TEST(implicit_line, simple) {
     std::vector<std::vector<Eigen::Map<MatXf>>> feat_points;
+    Vec<Vec<VecE<Eigen::Tensor<double, 3>>>> jacs;
+
+    uint32_t n_pts = 3;
 
     // one "scan"
     feat_points.resize(1);
+    jacs.resize(1);
     // one "feature type"
     MatXf feature_points;
-    feature_points.resize(3, 3);
+    feature_points.resize(3, n_pts);
     feat_points.at(0).emplace_back(Eigen::Map<MatXf>(feature_points.data(), feature_points.rows(), feature_points.cols()));
+    jacs.at(0).resize(1);
+
+    // one "state"
+    jacs.at(0).at(0).resize(1);
+    jacs.at(0).at(0).at(0) = Eigen::Tensor<double, 3>(3, 3, n_pts);
+    jacs.at(0).at(0).at(0).setZero();
 
     FeatureTrack track;
-    track.mapping.resize(3);
-    track.mapping.resize(3);
-    track.featT_idx = 0;
+    track.mapping.resize(n_pts);
+    track.mapping.resize(n_pts);
+//    track.featT_idx = 0;
 
-    track.state_ids.resize(3);
-    track.jacs.resize(3);
+    track.state_ids.resize(n_pts);
 
     Vec3 state_point;
-    for (uint32_t i = 0; i < 3; i++) {
+    for (uint32_t i = 0; i < n_pts; i++) {
         track.mapping.at(i).pt_idx = i;
         track.mapping.at(i).scan_idx = 0;
 
         track.state_ids.at(i).emplace_back(0);
         if (i == 2) {
-            track.jacs.at(i).emplace_back(Mat3::Identity());
+            jacs.at(0).at(0).at(0)(0,0,i) = 1.0;
+            jacs.at(0).at(0).at(0)(1,1,i) = 1.0;
+            jacs.at(0).at(0).at(0)(2,2,i) = 1.0;
+
             feat_points.at(0).at(0).block<3, 1>(0, i) = Vec3f::Random();
         } else {
-            track.jacs.at(i).emplace_back(Mat3::Zero());
             Vec3f temp;
             temp << 0.0, 0.0, 2 * static_cast<float>(i);
             feat_points.at(0).at(0).block<3, 1>(0, i) = temp;
@@ -71,9 +82,11 @@ TEST(implicit_line, simple) {
     options.cost_function_ownership = ceres::DO_NOT_TAKE_OWNERSHIP;
     ceres::Problem problem(options);
 
+    track.jacs = &(jacs.at(0));
+
     std::list<ImplicitLineResidual<3>> costs;
     for (uint32_t i = 0; i < 3; ++i) {
-        costs.emplace_back(i, &track, &feat_points);
+        costs.emplace_back(i, 0, &track, &feat_points);
     }
 
     for (auto &cost : costs) {
@@ -109,33 +122,43 @@ TEST(implicit_line, simple) {
 
 TEST(implicit_plane, simple) {
     std::vector<std::vector<Eigen::Map<MatXf>>> feat_points;
+    Vec<Vec<VecE<Eigen::Tensor<double, 3>>>> jacs;
+
+    uint32_t n_pts = 4;
 
     // one "scan"
     feat_points.resize(1);
+    jacs.resize(1);
     // one "feature type"
     MatXf feature_points;
-    feature_points.resize(3, 4);
+    feature_points.resize(3, n_pts);
     feat_points.at(0).emplace_back(Eigen::Map<MatXf>(feature_points.data(), feature_points.rows(), feature_points.cols()));
+    jacs.at(0).resize(1);
+
+    // one state
+    jacs.at(0).at(0).resize(1);
+    jacs.at(0).at(0).at(0) = Eigen::Tensor<double, 3>(3, 3, n_pts);
+    jacs.at(0).at(0).at(0).setZero();
 
     FeatureTrack track;
-    track.mapping.resize(4);
-    track.mapping.resize(4);
-    track.featT_idx = 0;
+    track.mapping.resize(n_pts);
+    track.mapping.resize(n_pts);
+//    track.featT_idx = 0;
 
-    track.state_ids.resize(4);
-    track.jacs.resize(4);
+    track.state_ids.resize(n_pts);
 
     Vec3 state_point;
-    for (uint32_t i = 0; i < 4; i++) {
+    for (uint32_t i = 0; i < n_pts; i++) {
         track.mapping.at(i).pt_idx = i;
         track.mapping.at(i).scan_idx = 0;
 
         track.state_ids.at(i).emplace_back(0);
         if (i == 2) {
-            track.jacs.at(i).emplace_back(Mat3::Identity());
+            jacs.at(0).at(0).at(0)(0,0,i) = 1.0;
+            jacs.at(0).at(0).at(0)(1,1,i) = 1.0;
+            jacs.at(0).at(0).at(0)(2,2,i) = 1.0;
             feat_points.at(0).at(0).block<3, 1>(0, i) = Vec3f::Random();
         } else {
-            track.jacs.at(i).emplace_back(Mat3::Zero());
             feat_points.at(0).at(0).block<3, 1>(0, i) = Vec3f::Random();
         }
     }
@@ -149,13 +172,15 @@ TEST(implicit_plane, simple) {
     track.geometry.block<3, 1>(0,0).normalize();
     track.geometry.block<3, 1>(3,0).setZero();
 
+    track.jacs = &(jacs.at(0));
+
     ceres::Problem::Options options;
     options.cost_function_ownership = ceres::DO_NOT_TAKE_OWNERSHIP;
     ceres::Problem problem(options);
 
     std::list<ImplicitPlaneResidual<3>> costs;
     for (uint32_t i = 0; i < 4; ++i) {
-        costs.emplace_back(i, &track, &feat_points);
+        costs.emplace_back(i, 0, &track, &feat_points);
     }
 
     for (auto &cost : costs) {

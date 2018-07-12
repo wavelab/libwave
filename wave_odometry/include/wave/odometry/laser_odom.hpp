@@ -71,8 +71,6 @@ struct LaserOdomParams {
     uint32_t num_trajectory_states = 3;
     // How many scans to optimize over, must be at least 2 (scan-to-scan matching)
     uint32_t n_window = 2;
-    // Distance of scans to match. eg. 1 scan-to-scan only, 2 scan-to-scan and scan-to-next-scan, etc
-    int nn_matches = 1;
 
     int opt_iters = 25;         // How many times to refind correspondences
     int max_inner_iters = 100;  // How many iterations of ceres to run with each set of correspondences

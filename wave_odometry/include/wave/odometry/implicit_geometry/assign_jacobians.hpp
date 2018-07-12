@@ -17,26 +17,36 @@ namespace wave {
 template<typename Derived>
 inline void assignJacobian(double **jacobian,
                     const Eigen::MatrixBase<Derived> &del_e_del_diff,
-                    const std::vector<MatX, Eigen::aligned_allocator<MatX>> &jacs,
+                    const VecE<Eigen::Tensor<double, 3>> *jacs,
+                    int pt_id,
                     int state_idx,
                     int state_dim) {
     Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
             jac(jacobian[state_idx], del_e_del_diff.rows(), state_dim);
-    jac = del_e_del_diff * jacs[state_idx];
+
+    int offset = pt_id * jacs->at(state_idx).dimension(0) * jacs->at(state_idx).dimension(1);
+    Eigen::Map<const MatX> precalc(jacs->at(state_idx).data() + offset, del_e_del_diff.cols(), state_dim);
+
+    jac = del_e_del_diff * precalc;
 }
 
 // Recurse through parameter pack
 template<typename Derived, typename... States>
 inline void assignJacobian(double **jacobian,
                     const Eigen::MatrixBase<Derived> &del_e_del_diff,
-                    const std::vector<MatX, Eigen::aligned_allocator<MatX>> &jacs,
+                    const VecE<Eigen::Tensor<double, 3>> *jacs,
+                    int pt_id,
                     int state_idx,
                     int state_dim,
                     States... states) {
     Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
             jac(jacobian[state_idx], del_e_del_diff.rows(), state_dim);
-    jac = del_e_del_diff * jacs[state_idx];
-    assignJacobian(jacobian, del_e_del_diff, jacs, state_idx + 1, states...);
+
+    int offset = pt_id * jacs->at(state_idx).dimension(0) * jacs->at(state_idx).dimension(1);
+    Eigen::Map<const MatX> precalc(jacs->at(state_idx).data() + offset, del_e_del_diff.cols(), state_dim);
+
+    jac = del_e_del_diff * precalc;
+    assignJacobian(jacobian, del_e_del_diff, jacs, pt_id, state_idx + 1, states...);
 };
 
 }

@@ -485,6 +485,9 @@ void LaserOdom::extendFeatureTracks(const Eigen::MatrixXi &idx, const Eigen::Mat
         double min_elev, max_elev;
         bool wide_spread = false;
         for(uint32_t i = 0; i < idx.rows(); ++i) {
+            if (dist(i, j) > this->param.max_correspondence_dist) {
+                continue;
+            }
             Vec3f pt = this->mapped_features.back().at(feat_id).block<3, 1>(0, idx(i, j));
             if (matches.empty()) {
                 matches.emplace_back(idx(i, j));
@@ -507,9 +510,24 @@ void LaserOdom::extendFeatureTracks(const Eigen::MatrixXi &idx, const Eigen::Mat
             if (matches.size() == knn)
                 break;
         }
-        /// add to residual if normal is close
+        /// add to residual if error against current landmark is low
         if (matches.size() == knn) {
-
+            for (const auto &elem : matches) {
+                const auto &geometry = this->features_tracks.at(feat_id).at(j).geometry;
+                const auto &pt = this->mapped_features.back().at(feat_id).block<3, 1>(0, idx(elem, j));
+                Vec3 diff = (pt.cast<double>() - geometry.block<3, 1>(3,0));
+                Vec1 error;
+                if (this->feature_residuals.at(feat_id) == PointToLine) {
+                    Vec3 err =  (diff - geometry.block<3, 1>(0,0) * (diff.transpose() * geometry.block<3, 1>(0,0)));
+                    error = err.transpose() * err;
+                } else {
+                    error = (diff.transpose() * geometry.block<3, 1>(0,0));
+                    error = error.transpose() * error;
+                }
+                if (error(0) < sqrt(this->param.max_residual_val)) {
+//                    this->features_tracks.at(feat_id).at(j).
+                }
+            }
         }
     }
 }
@@ -543,13 +561,12 @@ bool LaserOdom::match() {
 #pragma omp parallel for
             for (uint32_t t_idx = 0; t_idx < this->features_tracks.at(j).size(); t_idx++) {
                 auto &track = this->features_tracks.at(j).at(t_idx);
-                this->ave_pts.at(j).block<3, 1>(0, track.ave_pt_idx).setZero();
-                Vec3f avg = Vec3f::Zero();
+                this->ave_pts.at(j).block<3, 1>(0, t_idx).setZero();
                 for (uint32_t k = 0; k < track.mapping.size(); k++) {
-                    this->ave_pts.at(j).block<3, 1>(0, track.ave_pt_idx) +=
+                    this->ave_pts.at(j).block<3, 1>(0, t_idx) +=
                             this->mapped_features.at(track.mapping.at(k).scan_idx).at(j).block<3, 1>(0, track.mapping.at(k).pt_idx);
                 }
-                this->ave_pts.at(j).block<3, 1>(0, track.ave_pt_idx) /= static_cast<float>(track.mapping.size());
+                this->ave_pts.at(j).block<3, 1>(0, t_idx) /= static_cast<float>(track.mapping.size());
             }
             /// 3. Build kd trees on previous two scans, and on average track locations
             delete this->cur_kd_idx.at(j);
@@ -566,6 +583,12 @@ bool LaserOdom::match() {
             this->cur_feat_idx.at(j).resize(this->mapped_features.at(this->param.n_window - 1).at(j).size());
             std::fill(this->cur_feat_idx.at(j).begin(), this->cur_feat_idx.at(j).end(), -1);
             this->extendFeatureTracks(nn_idx, nn_dist, j);
+
+            /// 5. Create new feature tracks between new and old scan
+
+            /// 6. Merge feature tracks (optional)
+
+            /// 7. Build Ceres Residuals
         }
 
         /// 4. Build Ceres Residuals while filtering bad correspondences

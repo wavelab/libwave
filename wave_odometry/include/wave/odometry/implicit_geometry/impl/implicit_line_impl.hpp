@@ -17,7 +17,7 @@ bool ImplicitLineResidual<states...>::Evaluate(double const *const *parameters, 
     // Calculate error
     auto s_id = this->track->mapping.at(this->pt_id).scan_idx;
 
-    Vec3 pt = (this->feat_points->at(s_id).at(this->track->featT_idx).template block<3, 1>(0, this->track->mapping.at(this->pt_id).pt_idx)).template cast<double>();
+    Vec3 pt = (this->feat_points->at(s_id).at(this->feat_idx).template block<3, 1>(0, this->track->mapping.at(this->pt_id).pt_idx)).template cast<double>();
     Vec3 diff = pt - avg;
     double dp = (normal.transpose() * diff)(0);
     error = diff - dp * normal;
@@ -33,7 +33,7 @@ bool ImplicitLineResidual<states...>::Evaluate(double const *const *parameters, 
         // jacobian wrt pt on line
         line_jac.block<3, 3>(0,3) = -del_e_del_diff;
 
-        assignJacobian(jacobians + 1, del_e_del_diff, this->track->jacs.at(this->pt_id), 0, states...);
+        assignJacobian(jacobians + 1, del_e_del_diff, &(this->track->jacs->at(s_id)), this->pt_id, 0, states...);
     }
     return true;
 }
