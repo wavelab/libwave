@@ -559,7 +559,7 @@ void LaserOdom::extendFeatureTracks(const Eigen::MatrixXi &idx, const Eigen::Mat
 }
 
 void LaserOdom::createNewFeatureTracks(const Eigen::MatrixXi &indices, const Eigen::MatrixXf &dist, uint32_t feat_id) {
-
+    
 }
 
 bool LaserOdom::match() {

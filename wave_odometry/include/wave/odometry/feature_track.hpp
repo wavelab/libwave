@@ -11,6 +11,7 @@ struct FeatureTrack {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     // indicies to each point within each scan
     struct Mapping {
+        Mapping() = default;
         Mapping(uint32_t pt_idx, uint32_t scan_idx) : pt_idx(pt_idx), scan_idx(scan_idx) {}
         uint32_t pt_idx, scan_idx;
     };
