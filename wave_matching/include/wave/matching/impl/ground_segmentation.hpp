@@ -47,8 +47,7 @@ void GroundSegmentation<PointT>::genPolarBinGrid() {
 
         if (sqrt(px * px + py * py + pz * pz) < this->params.rmax) {
             double ph = (atan2(py, px)) * (180 / M_PI);  // in degrees
-            if (ph < 0)
-                ph = 360.0 + ph;
+            ph = wrapTo360(ph);
 
             // bin into sector
 
@@ -65,7 +64,7 @@ void GroundSegmentation<PointT>::genPolarBinGrid() {
               .lin_cell[bind_lin]
               .bin_indices.push_back(i);
             // add the point to the bin
-            // check the protoype point
+            // check the prototype point
             auto &prototype_index = polar_bin_grid.ang_cells[bind_rad]
                                       .lin_cell[bind_lin]
                                       .prototype_index;
