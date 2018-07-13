@@ -186,29 +186,7 @@ TEST_F(CallbackFixture, JacobianTest) {
                     EXPECT_EQ(count(0), 0);
                 }
             }
-            //
-            //            Eigen::Tensor<double, 2> random_error = error.chip(0, 0);
-            //            Eigen::Map<MatX> map_error(random_error.data(), random_error.dimension(0),
-            //            random_error.dimension(1));
-            //            MatX error_view = map_error;
-            //
-            //            Eigen::Tensor<int, 3> failures = error.operator>(1e-6).cast<int>();
-            //
-            //            std::vector<std::vector<uint32_t>> failure_idx;
-            //
-            //            for (uint32_t pt = 0; pt < failures.dimension(2); ++pt) {
-            //                for (uint32_t col = 0; col < failures.dimension(1); ++col) {
-            //                    for (uint32_t row = 0; row < failures.dimension(0); ++ row) {
-            //                        if (failures(row, col, pt)) {
-            //                            failure_idx.emplace_back(std::vector<uint32_t>({row, col, pt}));
-            //                        }
-            //                    }
-            //                }
-            //            }
-            //
-            //            Eigen::Tensor<double, 0> worst = error.maximum();
-            //            Eigen::Tensor<int, 0> count = failures.sum();
-            //            EXPECT_EQ(count(0), 0);
+
         }
     }
 }

@@ -168,6 +168,7 @@ class LaserOdom {
 
     bool findCorrespondingPoints(const Vec3 &query, const uint32_t &f_idx, std::vector<size_t> *index);
     void extendFeatureTracks(const Eigen::MatrixXi &indices, const Eigen::MatrixXf &dist, uint32_t feat_id);
+    void createNewFeatureTracks(const Eigen::MatrixXi &indices, const Eigen::MatrixXf &dist, uint32_t feat_id);
     bool outOfBounds(const Vec3 &query, const uint32_t &f_idx, const std::vector<size_t> &index);
 
     void undistort();
@@ -199,6 +200,8 @@ class LaserOdom {
 
     /// This stores candidate feature points before they are put into feat_pts container.
     VecE<Eigen::Tensor<float, 2>> cur_feature_candidates, prev_feature_candidates;
+    VecE<Eigen::Tensor<float, 2>> cur_feature_candidatesT, prev_feature_candidatesT;
+    Vec<Eigen::Map<Eigen::MatrixXf>> cur_feat_map, prev_feat_map;
     /// stores the index of the feature track associated with each feature point. -1 if not associated with a feature track
     Vec<Vec<int>> cur_feat_idx, prev_feat_idx;
     /**
@@ -208,7 +211,6 @@ class LaserOdom {
     /// interp_factors store interpolation factors for use during optimization
     Vec<VecE<Eigen::Tensor<float, 2>>> interp_factors;
 
-    Vec<Vec<Eigen::Map<Eigen::MatrixXf>>> mapped_features;
     Vec<Nabo::NNSearchF*> cur_kd_idx, curm1_kd_idx, ave_kd_idx;
 
     Vec<ResidualType> feature_residuals;
@@ -217,7 +219,7 @@ class LaserOdom {
     VecE<MatXf> ave_pts;
     Vec<Vec<uint32_t>> track_ids;
     // indexed by feature type and then track_id
-    Vec<VecE<FeatureTrack>> features_tracks;
+    Vec<VecE<FeatureTrack>> feature_tracks;
 };
 
 }  // namespace wave
