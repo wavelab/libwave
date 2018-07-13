@@ -47,7 +47,7 @@ void GroundSegmentation<PointT>::genPolarBinGrid() {
 
         if (sqrt(px * px + py * py + pz * pz) < this->params.rmax) {
             double ph = (atan2(py, px)) * (180 / M_PI);  // in degrees
-            ph = wave::wrapTo360(ph);
+            ph = wrapTo360(ph);
 
             // bin into sector
 
