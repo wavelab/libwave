@@ -3,6 +3,7 @@
 #include <string>
 #include "wave/wave_test.hpp"
 #include "wave/utils/log.hpp"
+#include "wave/utils/config.hpp"
 #include "wave/odometry/laser_odom.hpp"
 #include "wave/odometry/PointXYZIT.hpp"
 #include "wave/containers/measurement_container.hpp"
@@ -87,7 +88,7 @@ void LoadParameters(const std::string &path, const std::string &filename, LaserO
 }
 
 TEST(laserodom, Init) {
-    LaserOdom odom(LaserOdomParams());
+    LaserOdom odom(LaserOdomParams);
 }
 
 // See if packing data into a float works as I expect
@@ -138,10 +139,11 @@ TEST(OdomTest, StraightLineGarage) {
     LOG_INFO("Finished loading clouds");
     // odom setup
     LaserOdomParams params;
+    FeatureExtractorParams feature_params;
 
     LoadParameters("config/", "odom.yaml",  params);
 
-    LaserOdom odom(params);
+    LaserOdom odom(params, feature_params);
     std::vector<PointXYZIR> vec;
     uint16_t prev_enc = 0;
 

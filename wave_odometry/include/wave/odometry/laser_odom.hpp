@@ -158,7 +158,7 @@ class LaserOdom {
     std::function<void()> f_output;
 
     LaserOdomParams param;
-    bool initialized = false, full_revolution = false;
+    bool initialized = false;
     int prv_tick = std::numeric_limits<int>::max();
 
     FeatureExtractor feature_extractor;
@@ -168,8 +168,6 @@ class LaserOdom {
     bool match();
     void buildResiduals(ceres::Problem &problem);
     //todo think about how to reuse residuals
-//    std::list<ImplicitLineResidual<12, 6, 12, 6>> line_costs;
-//    std::list<ImplicitPlaneResidual<12, 6, 12, 6>> plane_costs;
     Vec<std::shared_ptr<ceres::CostFunction>> costs;
     std::vector<std::shared_ptr<ceres::LocalParameterization>> local_params;
     std::vector<std::shared_ptr<ceres::LossFunction>> loss_functions;
@@ -178,7 +176,6 @@ class LaserOdom {
     void extendFeatureTracks(const Eigen::MatrixXi &indices, const Eigen::MatrixXf &dist, uint32_t feat_id);
     void createNewFeatureTracks(const Eigen::MatrixXi &indices, const Eigen::MatrixXf &dist, uint32_t feat_id);
     void mergeFeatureTracks(uint32_t feat_id);
-    bool outOfBounds(const Vec3 &query, const uint32_t &f_idx, const std::vector<size_t> &index);
 
     void undistort();
 

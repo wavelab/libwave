@@ -211,14 +211,20 @@ struct convert<Eigen::Matrix<Scalar, Rows, 1>> {
 // Since the function definition is in a .cpp file, other types will not work
 template struct convert<wave::Mat2>;
 template struct convert<wave::Mat3>;
-template struct convert<Eigen::Matrix<float, 3, 3>>;
 template struct convert<wave::Mat4>;
 template struct convert<wave::Mat6>;
 template struct convert<wave::MatX>;
+
 template struct convert<wave::Vec2>;
 template struct convert<wave::Vec3>;
 template struct convert<wave::Vec4>;
 template struct convert<wave::VecX>;
+
+template struct convert<wave::Mat2f>;
+template struct convert<wave::Mat3f>;
+template struct convert<wave::Mat4f>;
+template struct convert<wave::Mat6f>;
+template struct convert<wave::MatXf>;
 
 }  // namespace YAML
 

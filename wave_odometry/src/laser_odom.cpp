@@ -3,88 +3,60 @@
 namespace wave {
 
 LaserOdom::LaserOdom(const LaserOdomParams params, const FeatureExtractorParams feat_params)
-    : param(params), transformer(Transformer(TransformerParams())) {
-    //    this->CSVFormat = new Eigen::IOFormat(Eigen::FullPrecision, Eigen::DontAlignCols, ", ", ", ");
-    //
-    //    auto n_ring = static_cast<size_t>(param.n_ring);
-    //    this->feature_extractor.setParams(feat_params, n_ring);
-    //    this->counters.resize(n_ring);
-    //    std::fill(this->counters.begin(), this->counters.end(), 0);
-    //
-    //    this->cur_scan.resize(n_ring);
-    //    this->signals.resize(n_ring);
-    //
-    //    for (uint32_t i = 0; i < n_ring; i++) {
-    //        this->cur_scan.at(i) = Eigen::Tensor<float, 2>(4, this->MAX_POINTS);
-    //        this->signals.at(i) = Eigen::Tensor<float, 2>(this->N_SIGNALS, this->MAX_POINTS);
-    //    }
-    //
-    //    this->range_sensor = std::make_shared<RangeSensor>(param.sensor_params);
-    //
-    //    this->feat_pts.resize(this->N_FEATURES);
-    //    this->prv_feature_points.resize(this->N_FEATURES);
-    //    this->feature_corrs.resize(this->N_FEATURES);
-    //    this->output_corrs.resize(this->N_FEATURES);
-    //    this->feature_idx.resize(this->N_FEATURES);
-    //    this->feature_association.resize(this->N_FEATURES);
-    //    this->undis_features.resize(this->N_FEATURES);
-    //    this->map_features.resize(this->N_FEATURES);
-    //
-    //    for (uint32_t i = 0; i < this->N_FEATURES; i++) {
-    //        this->feature_idx.at(i) = std::make_shared<kd_tree_t<double>>(
-    //          3, this->prv_feature_points.at(i), nanoflann::KDTreeSingleIndexAdaptorParams(20));
-    //        this->feature_corrs.at(i).resize(n_ring);
-    //    }
-    //
-    //    if (this->param.num_trajectory_states < 2) {
-    //        throw std::out_of_range("Number of parameter states must be at least 2");
-    //    }
-    //
-    //    this->param_blocks.resize(this->param.num_trajectory_states);
-    //    this->cur_difference.resize(this->param.num_trajectory_states - 1);
-    //    for (auto &block : this->param_blocks) {
-    //        block.setZero();
-    //    }
-    //
-    //    // todo(ben) automatically get the scan
-    //    perithis->trajectory_stamps.reserve(this->param.num_trajectory_states);
-    //
-    //    double step_size = 0.1 / (double) (this->param.num_trajectory_states - 1);
-    //    for (uint32_t i = 0; i < this->param.num_trajectory_states; i++) {
-    //        PoseVel unit;
-    //        PoseVel unit2;
-    //        unit2.pose.setIdentity();
-    //        unit2.vel.setZero();
-    //        unit.pose.setIdentity();
-    //        unit.vel.setZero();
-    //        this->current_twist.setZero();
-    //        this->prior_twist.setZero();
-    //        this->cur_trajectory.emplace_back(unit);
-    //        this->prev_trajectory.emplace_back(unit2);
-    //        this->trajectory_stamps.emplace_back(i * step_size);
-    //        if (i > 0) {
-    //            this->cv_vector.emplace_back(this->trajectory_stamps.at(i - 1),
-    //                                         this->trajectory_stamps.at(i),
-    //                                         nullptr,
-    //                                         this->param.Qc,
-    //                                         this->param.inv_Qc);
-    //            this->cur_difference.at(i - 1).hat_multiplier.setZero();
-    //            this->cur_difference.at(i - 1).candle_multiplier.setZero();
-    //        }
-    //    }
-    //    this->sqrtinfo.setIdentity();
-    //
-    //
-    //    if (params.output_trajectory) {
-    //        long timestamp = std::chrono::system_clock::now().time_since_epoch().count();
-    //        this->file.open(std::to_string(timestamp) + "laser_odom_traj.txt");
-    //    }
-    //
-    //    this->output_eigen.resize(6 * (1 + this->param.num_trajectory_states));
-    //
-    //    // Initial size of pre-allocated memory for jacobians
-    //    this->PtLMem.resize(1000);
-    //    this->PtPMem.resize(3000);
+    : param(params), feature_extractor(feat_params, params.n_ring), transformer(Transformer(TransformerParams())) {
+    this->CSVFormat = new Eigen::IOFormat(Eigen::FullPrecision, Eigen::DontAlignCols, ", ", ", ");
+
+    auto n_ring = static_cast<size_t>(param.n_ring);
+    this->feature_extractor.setParams(feat_params, n_ring);
+    this->counters.resize(n_ring);
+    std::fill(this->counters.begin(), this->counters.end(), 0);
+
+    this->cur_scan.resize(n_ring);
+    this->signals.resize(n_ring);
+
+    for (uint32_t i = 0; i < n_ring; i++) {
+        this->cur_scan.at(i) = Eigen::Tensor<float, 2>(4, this->MAX_POINTS);
+        this->signals.at(i) = Eigen::Tensor<float, 2>(this->N_SIGNALS, this->MAX_POINTS);
+    }
+
+    this->range_sensor = std::make_shared<RangeSensor>(param.sensor_params);
+
+    this->feat_pts.resize(this->N_FEATURES);
+    this->undis_features.resize(this->N_FEATURES);
+
+    if (this->param.num_trajectory_states < 2) {
+        throw std::out_of_range("Number of parameter states must be at least 2");
+    }
+
+    // todo(ben) automatically get the scan
+    this->trajectory_stamps.reserve(this->param.num_trajectory_states);
+
+    double step_size = 0.1 / (double) (this->param.num_trajectory_states - 1);
+    for (uint32_t i = 0; i < this->param.num_trajectory_states; i++) {
+        PoseVel unit;
+        PoseVel unit2;
+        unit2.pose.setIdentity();
+        unit2.vel.setZero();
+        unit.pose.setIdentity();
+        unit.vel.setZero();
+        this->prior_twist.setZero();
+        this->cur_trajectory.emplace_back(unit);
+        this->prev_trajectory.emplace_back(unit2);
+        this->trajectory_stamps.emplace_back(i * step_size);
+        if (i > 0) {
+            this->cv_vector.emplace_back(this->trajectory_stamps.at(i - 1),
+                                         this->trajectory_stamps.at(i),
+                                         nullptr,
+                                         this->param.Qc,
+                                         this->param.inv_Qc);
+        }
+    }
+    this->sqrtinfo.setIdentity();
+
+    if (params.output_trajectory) {
+        long timestamp = std::chrono::system_clock::now().time_since_epoch().count();
+        this->file.open(std::to_string(timestamp) + "laser_odom_traj.txt");
+    }
 }
 
 void LaserOdom::updateParams(const LaserOdomParams new_params) {
@@ -260,7 +232,7 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
     }
 
     for (PointXYZIR pt : pts) {
-        if (counters.at(pt.ring) >= this->MAX_POINTS) {
+        if (counters.at(pt.ring) >= static_cast<int>(this->MAX_POINTS)) {
             throw std::out_of_range("Rebuild with higher max points");
         }
         this->cur_scan.at(pt.ring)(0, counters.at(pt.ring)) = pt.x;
@@ -316,24 +288,6 @@ void LaserOdom::rollover(TimeType stamp) {
     //    // Now previous trajectory will hold the "motion generated" trajectory
     //    this->copyTrajectory();
     //    this->updateDifferences();
-}
-
-bool LaserOdom::outOfBounds(const Vec3 &query, const uint32_t &f_idx, const std::vector<size_t> &index) {
-    //    Eigen::Map<const Vec3> pA(this->prv_feature_points.at(f_idx).points.at(index.at(0)).data());
-    //    Eigen::Map<const Vec3> pB(this->prv_feature_points.at(f_idx).points.at(index.at(1)).data());
-    //    if (this->feature_residuals.at(f_idx) == PointToPlane) {
-    //        return false;
-    //    } else {
-    //        Vec3 AB = pB - pA;
-    //        Vec3 Aq = query - pA;
-    //
-    //        double eta = Aq.dot(AB) / AB.dot(AB);
-    //
-    //        if (eta < -this->param.max_extrapolation || eta > (1.0 + this->param.max_extrapolation)) {
-    //            return true;
-    //        }
-    //    }
-    //    return false;
 }
 
 bool LaserOdom::runOptimization(ceres::Problem &problem) {
@@ -472,12 +426,10 @@ void LaserOdom::extendFeatureTracks(const Eigen::MatrixXi &idx, const Eigen::Mat
         }
     }
 
-    Eigen::array<long, 2> offsets = {0, 0};
-    Eigen::array<long, 2> extents = {4, static_cast<long>(new_feat_cnt)};
-    this->feat_pts.back().at(feat_id).concatenate(new_feat_points.slice(offsets, extents), 1);
-    //    Eigen::Tensor<float, 2> concatenation =
-    //    this->feat_pts.back().at(feat_id).concatenate(new_feat_points.slice(offsets, extents), 1);
-    //    this->feat_pts.back().at(feat_id) = concatenation;
+    Eigen::array<long int, 2> offsets = {0, 0};
+    Eigen::array<long int, 2> extents = {4, static_cast<long int>(new_feat_cnt)};
+    new_feat_points = new_feat_points.slice(offsets, extents);
+    this->feat_pts.back().at(feat_id) = this->feat_pts.back().at(feat_id).concatenate(new_feat_points, 1);
 }
 
 // todo reduce duplicated code
@@ -605,19 +557,20 @@ void LaserOdom::createNewFeatureTracks(const Eigen::MatrixXi &idx, const Eigen::
         }
     }
 
-    Eigen::array<long, 2> offsets = {0, 0};
-    Eigen::array<long, 2> extents = {4, static_cast<long>(new_feat_cnt)};
-    //    this->feat_pts.back().at(feat_id) =
-    //      this->feat_pts.back().at(feat_id).concatenate(new_feat_points.slice(offsets, extents), 1);
+    Eigen::array<long int, 2> offsets = {0, 0};
+    Eigen::array<long int, 2> extents = {4, static_cast<long int>(new_feat_cnt)};
+    new_feat_points = new_feat_points.slice(offsets, extents);
+    this->feat_pts.back().at(feat_id) = this->feat_pts.back().at(feat_id).concatenate(new_feat_points, 1);
 
-    extents[1] = static_cast<long>(prev_new_feat_cnt);
-    //    this->feat_pts.at(this->param.n_window - 2).at(feat_id) =
-    //      this->feat_pts.at(this->param.n_window - 2)
-    //        .at(feat_id)
-    //        .concatenate(prev_new_feat_points.slice(offsets, extents), 1);
+    extents[1] = static_cast<long int>(prev_new_feat_cnt);
+    prev_new_feat_points = prev_new_feat_points.slice(offsets, extents);
+    this->feat_pts.at(this->param.n_window - 2).at(feat_id) =
+      this->feat_pts.at(this->param.n_window - 2)
+        .at(feat_id)
+        .concatenate(prev_new_feat_points, 1);
 }
 
-void LaserOdom::mergeFeatureTracks(uint32_t feat_id) {}
+void LaserOdom::mergeFeatureTracks(uint32_t) {}
 
 bool LaserOdom::match() {
     T_TYPE last_transform;
