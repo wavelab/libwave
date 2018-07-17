@@ -22,6 +22,7 @@ IF(BUILD_TESTING)
             tests/laserodom_tests.cpp)
     TARGET_LINK_LIBRARIES(
             ${PROJECT_NAME}_tests
+            wave::containers
             ${PROJECT_NAME})
 
     WAVE_ADD_TEST(feature_extraction_tests
