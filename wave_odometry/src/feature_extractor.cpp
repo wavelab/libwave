@@ -64,11 +64,12 @@ void FeatureExtractor::computeScores(const Tensorf &signals, const Vec<int> &ran
 
         for (ulong j = 0; j < this->param.N_SCORES; j++) {
             auto s_idx = static_cast<int>(this->param.feature_definitions.at(j).criteria.front().signal);
+            auto k_idx = static_cast<int>(this->param.feature_definitions.at(j).criteria.front().kernel);
 
             // todo have flexibility for different kernel sizes
             if (j < 3) {
                 this->scores.at(i).slice(ar2({static_cast<long>(j), 0}), ar2({1, max - 10})) =
-                  signals.at(i).slice(ar2({s_idx, 0}), ar2({1, max})).convolve(this->kernels.at(j), dims);
+                  signals.at(i).slice(ar2({s_idx, 0}), ar2({1, max})).convolve(this->kernels.at(k_idx), dims);
                 // or if sample variance
             } else {
                 auto &N = this->param.variance_window;
@@ -78,6 +79,7 @@ void FeatureExtractor::computeScores(const Tensorf &signals, const Vec<int> &ran
                 Nm1inv.setConstant(1.0 / (float) (N - 1));
 
                 // so called computational formula for sample variance
+                // todo. This is quite expensive, should only calculate sample variance on high/low scores
                 this->scores.at(i).slice(ar2({static_cast<long>(j), 0}), ar2({1, max - 10})) =
                   (signals.at(i).slice(ar2({s_idx, 0}), ar2({1, max})).square().convolve(sum_kernel, dims) -
                    signals.at(i)

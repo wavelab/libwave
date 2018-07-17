@@ -133,7 +133,6 @@ void LaserOdom::spinOutput() {
 void LaserOdom::undistort() {
     Eigen::Tensor<float, 2> output;
     for (auto &line : this->cur_scan) {
-
     }
 }
 
@@ -230,53 +229,53 @@ void LaserOdom::updateStoredFeatures() {
 }
 
 void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, TimeType stamp) {
-        if (tick - this->prv_tick < -200) {  // tolerate minor nonlinearity error
-            this->feature_extractor.getFeatures(this->cur_scan, this->signals, this->counters, this->indices);
-            this->updateStoredFeatures();
-            if (this->initialized) {
-                this->match();
+    if (tick - this->prv_tick < -200) {  // tolerate minor nonlinearity error
+        this->feature_extractor.getFeatures(this->cur_scan, this->signals, this->counters, this->indices);
+        this->updateStoredFeatures();
+        if (this->initialized) {
+            this->match();
 
-                if (this->param.output_trajectory) {
-                    this->file << this->cur_trajectory.back().pose.storage.format(*(this->CSVFormat)) << std::endl;
-                }
-                if (this->output_thread) {
-                    {
-                        std::unique_lock<std::mutex> lk(this->output_mutex);
-                        if (this->fresh_output) {
-                            // data from last time hasn't been consumed yet
-                            LOG_ERROR("Overwriting previous output");
-                        }
-                        this->undistort_state.stamp = stamp;
-                        this->undistort_state.pose = this->cur_trajectory.back().pose;
-                        this->undistort_state.vel = this->cur_trajectory.back().vel;
-
-                        this->undistort();
-                        this->fresh_output = true;
+            if (this->param.output_trajectory) {
+                this->file << this->cur_trajectory.back().pose.storage.format(*(this->CSVFormat)) << std::endl;
+            }
+            if (this->output_thread) {
+                {
+                    std::unique_lock<std::mutex> lk(this->output_mutex);
+                    if (this->fresh_output) {
+                        // data from last time hasn't been consumed yet
+                        LOG_ERROR("Overwriting previous output");
                     }
-                    this->output_condition.notify_one();
+                    this->undistort_state.stamp = stamp;
+                    this->undistort_state.pose = this->cur_trajectory.back().pose;
+                    this->undistort_state.vel = this->cur_trajectory.back().vel;
+
+                    this->undistort();
+                    this->fresh_output = true;
                 }
+                this->output_condition.notify_one();
             }
-            this->rollover(stamp);
-            std::fill(this->counters.begin(), this->counters.end(), 0);
         }
+        this->rollover(stamp);
+        std::fill(this->counters.begin(), this->counters.end(), 0);
+    }
 
-        for (PointXYZIR pt : pts) {
-            if (counters.at(pt.ring) >= this->MAX_POINTS) {
-                throw std::out_of_range("Rebuild with higher max points");
-            }
-            this->cur_scan.at(pt.ring)(0, counters.at(pt.ring)) = pt.x;
-            this->cur_scan.at(pt.ring)(1, counters.at(pt.ring)) = pt.y;
-            this->cur_scan.at(pt.ring)(2, counters.at(pt.ring)) = pt.z;
-            this->cur_scan.at(pt.ring)(3, counters.at(pt.ring)) =
-              std::chrono::duration_cast<std::chrono::seconds>(stamp - this->scan_stamps_chrono.front()).count();
-
-            this->signals.at(pt.ring)(0, counters.at(pt.ring)) = sqrtf(pt.x * pt.x + pt.y * pt.y + pt.z * pt.z);
-            this->signals.at(pt.ring)(1, counters.at(pt.ring)) = pt.intensity;
-
-            this->counters.at(pt.ring)++;
+    for (PointXYZIR pt : pts) {
+        if (counters.at(pt.ring) >= this->MAX_POINTS) {
+            throw std::out_of_range("Rebuild with higher max points");
         }
+        this->cur_scan.at(pt.ring)(0, counters.at(pt.ring)) = pt.x;
+        this->cur_scan.at(pt.ring)(1, counters.at(pt.ring)) = pt.y;
+        this->cur_scan.at(pt.ring)(2, counters.at(pt.ring)) = pt.z;
+        this->cur_scan.at(pt.ring)(3, counters.at(pt.ring)) =
+          std::chrono::duration_cast<std::chrono::seconds>(stamp - this->scan_stamps_chrono.front()).count();
 
-        this->prv_tick = tick;
+        this->signals.at(pt.ring)(0, counters.at(pt.ring)) = sqrtf(pt.x * pt.x + pt.y * pt.y + pt.z * pt.z);
+        this->signals.at(pt.ring)(1, counters.at(pt.ring)) = pt.intensity;
+
+        this->counters.at(pt.ring)++;
+    }
+
+    this->prv_tick = tick;
 }
 
 void LaserOdom::rollover(TimeType stamp) {
@@ -338,94 +337,6 @@ bool LaserOdom::outOfBounds(const Vec3 &query, const uint32_t &f_idx, const std:
 }
 
 bool LaserOdom::runOptimization(ceres::Problem &problem) {
-    // Add motion residuals
-    // The prior for the pose at the end of the previous trajectory, the prior for twist is the twist at the end of the
-    // previous
-    // trajectory
-    //    Transformation<> identity;
-    //    if (this->param.motion_prior) {
-    //        this->cv_vector.at(0).calculateLinInvCovariance();
-    //
-    //        Vec12 op_error;
-    //
-    //        T_TYPE diff;
-    //        this->cur_trajectory.begin()->pose.compose(this->inv_prior_pose, diff);
-    //        op_error.block<6, 1>(0, 0) = diff.logMap();
-    //        op_error.block<6, 1>(6, 0) = this->cur_trajectory.begin()->vel - this->prior_twist;
-    //
-    //        // expect the correction to be the negative of the error
-    //        ceres::CostFunction *prior_cost = new ceres::NormalPrior(this->cv_vector.at(0).inv_covar.sqrt(),
-    //        -op_error);
-    //
-    //        problem.AddResidualBlock(prior_cost, nullptr, this->param_blocks.at(0).data());
-    //    }
-    //
-    //    for (uint32_t i = 0; i < this->param.num_trajectory_states; i++) {
-    //        if (i + 1 < this->param.num_trajectory_states) {
-    //            this->cv_vector.at(i).calculateLinInvCovariance();
-    //
-    //            Vec12 op_error;
-    //
-    //            op_error.block<6, 1>(0, 0) =
-    //              this->cur_trajectory.at(i + 1).pose.manifoldMinus(this->cur_trajectory.at(i).pose) -
-    //              (this->cv_vector.at(i).tkp1 - this->cv_vector.at(i).tk) * this->cur_trajectory.at(i).vel;
-    //            op_error.block<6, 1>(6, 0) = this->cur_trajectory.at(i + 1).vel - this->cur_trajectory.at(i).vel;
-    //
-    //            ceres::CostFunction *motion_cost = new wave_optimization::ConstantVelocityPrior(
-    //              this->cv_vector.at(i).inv_covar.sqrt(), op_error, this->cv_vector.at(i).tkp1 -
-    //              this->cv_vector.at(i).tk);
-    //
-    //            problem.AddResidualBlock(
-    //              motion_cost, nullptr, this->param_blocks.at(i).data(), this->param_blocks.at(i + 1).data());
-    //        }
-    //    }
-    //
-    //    // now loop over each type of feature, and generate residuals for each
-    //    Eigen::Matrix<double, 12, 12> candle, hat;
-    //
-    //    uint32_t k, kp1;
-    //    double tau;
-    //
-    //    std::vector<size_t> ret_indices;
-    //    std::vector<double> out_dist_sqr;
-    //
-    //    uint64_t cur_PtL_idx = 0, cur_PtP_idx = 0;
-
-    //                    ceres::LossFunction *p_LossFunction = new BisquareLoss(this->param.robust_param);
-    //                    std::vector<uint64_t> corr_list;
-    //                    corr_list.emplace_back(pt_cntr);
-    //                    for (auto index : ret_indices) {
-    //                        corr_list.emplace_back(index);
-    //                        this->feature_association.at(i).at(index).second = AssociationStatus::CORRESPONDED;
-    //                    }
-    //                    this->feature_corrs.at(i).at(j).emplace_back(corr_list);
-    //
-    //                    problem.AddResidualBlock(cost_function,
-    //                                             p_LossFunction,
-    //                                             this->param_blocks.at(k).data(),
-    //                                             this->param_blocks.at(kp1).data());
-    //
-    //                    if (pTl_cost_function) {
-    //                        cur_PtL_idx++;
-    //                    } else if (pTPl_cost_function) {
-    //                        cur_PtP_idx++;
-    //                    }
-    //                }
-    //            }
-    //        }
-    //    }
-    //
-    //    if (this->param.lock_first) {
-    //        this->covar.resize(12 * (this->param.num_trajectory_states - 1), 12 * (this->param.num_trajectory_states -
-    //        1));
-    //    } else {
-    //        this->covar.resize(12 * this->param.num_trajectory_states, 12 * this->param.num_trajectory_states);
-    //    }
-    //
-    //    for (auto &block : this->param_blocks) {
-    //        problem.AddParameterBlock(block.data(), 12, nullptr);
-    //    }
-    //
     ceres::Solver::Options options;
     options.linear_solver_type = ceres::DENSE_QR;
     options.max_num_iterations = this->param.max_inner_iters;
@@ -460,11 +371,11 @@ bool LaserOdom::runOptimization(ceres::Problem &problem) {
         if (this->param.plot_stuff) {
             LOG_INFO("%s", summary.FullReport().c_str());
         }
-//                ceres::Covariance covariance(covar_options);
-//                if (!covariance.Compute(this->param_blocks, &problem)) {
-//                    LOG_ERROR("covariance did not compute");
-//                }
-//                covariance.GetCovarianceMatrixInTangentSpace(this->param_blocks, this->covar.data());
+        //                ceres::Covariance covariance(covar_options);
+        //                if (!covariance.Compute(this->param_blocks, &problem)) {
+        //                    LOG_ERROR("covariance did not compute");
+        //                }
+        //                covariance.GetCovarianceMatrixInTangentSpace(this->param_blocks, this->covar.data());
         if (this->param.solution_remapping) {
             this->applyRemap();
         }
@@ -479,7 +390,7 @@ void LaserOdom::extendFeatureTracks(const Eigen::MatrixXi &idx, const Eigen::Mat
     }
     /// Each column represents a query (feature track)
     Eigen::Tensor<float, 2> new_feat_points(4, 2000);
-    long start_offset = this->feat_pts.back().at(feat_id).dimension(1);
+    auto offset = this->feat_pts.back().at(feat_id).dimension(1);
     long new_feat_cnt = 0;
     for (uint32_t j = 0; j < idx.cols(); ++j) {
         std::vector<uint32_t> matches;
@@ -487,7 +398,7 @@ void LaserOdom::extendFeatureTracks(const Eigen::MatrixXi &idx, const Eigen::Mat
         double max_elev = 0.0;
         bool wide_spread = false;
         /// Each row is a nearest neighbour
-        for(uint32_t i = 0; i < idx.rows(); ++i) {
+        for (uint32_t i = 0; i < idx.rows(); ++i) {
             if (dist(i, j) > this->param.max_correspondence_dist) {
                 continue;
             }
@@ -501,7 +412,7 @@ void LaserOdom::extendFeatureTracks(const Eigen::MatrixXi &idx, const Eigen::Mat
             if (wide_spread || matches.size() + 1 != knn) {
                 if (!wide_spread) {
                     double new_elev = std::atan2(pt(2), std::sqrt(pt(0) * pt(0) + pt(1) * pt(1)));
-                    if(new_elev > max_elev)
+                    if (new_elev > max_elev)
                         max_elev = new_elev;
                     else if (new_elev < min_elev)
                         min_elev = new_elev;
@@ -513,36 +424,40 @@ void LaserOdom::extendFeatureTracks(const Eigen::MatrixXi &idx, const Eigen::Mat
             if (matches.size() == knn)
                 break;
         }
-        /// add to residual if error against current landmark is low
+        /// add to track if error against current landmark is low
         if (matches.size() == knn) {
             for (const auto &elem : matches) {
+                if (this->cur_feat_idx.at(feat_id).at(elem) != -1) {
+                    continue;
+                }
                 const auto &geometry = this->feature_tracks.at(feat_id).at(j).geometry;
                 const auto &pt = this->cur_feat_map.at(feat_id).block<3, 1>(0, elem);
-                Vec3 diff = (pt.cast<double>() - geometry.block<3, 1>(3,0));
+                Vec3 diff = (pt.cast<double>() - geometry.block<3, 1>(3, 0));
                 Vec1 error;
                 if (this->feature_residuals.at(feat_id) == PointToLine) {
-                    Vec3 err =  (diff - geometry.block<3, 1>(0,0) * (diff.transpose() * geometry.block<3, 1>(0,0)));
+                    Vec3 err = (diff - geometry.block<3, 1>(0, 0) * (diff.transpose() * geometry.block<3, 1>(0, 0)));
                     error = err.transpose() * err;
                 } else {
-                    error = (diff.transpose() * geometry.block<3, 1>(0,0));
+                    error = (diff.transpose() * geometry.block<3, 1>(0, 0));
                     error = error.transpose() * error;
                 }
                 // copy candidate point into the feature point set (both original and transformed) if it is not already
                 // used in another residual
-                if (error(0) < sqrt(this->param.max_residual_val) &&
-                    this->cur_feat_idx.at(feat_id).at(elem) == -1) {
-
+                if (error(0) < sqrt(this->param.max_residual_val)) {
                     this->cur_feat_idx.at(feat_id).at(elem) = j;
 
                     Eigen::array<int, 2> offsets_new = {0, static_cast<int>(new_feat_cnt)};
                     Eigen::array<int, 2> offsets_candidate = {0, static_cast<int>(elem)};
                     Eigen::array<int, 2> extents = {4, 1};
 
-                    new_feat_points.slice(offsets_new, extents) = this->cur_feature_candidates.at(feat_id).slice(offsets_candidate, extents);
+                    new_feat_points.slice(offsets_new, extents) =
+                      this->cur_feature_candidates.at(feat_id).slice(offsets_candidate, extents);
 
-                    this->feature_tracks.at(feat_id).at(j).mapping.emplace_back(new_feat_cnt, this->param.n_window - 1);
+                    this->feature_tracks.at(feat_id).at(j).mapping.emplace_back(offset + new_feat_cnt,
+                                                                                this->param.n_window - 1);
                     std::vector<uint32_t> states(4);
-                    auto bnd = std::upper_bound(this->trajectory_stamps.begin(), this->trajectory_stamps.end(), new_feat_points(3, new_feat_cnt));
+                    auto bnd = std::upper_bound(
+                      this->trajectory_stamps.begin(), this->trajectory_stamps.end(), new_feat_points(3, new_feat_cnt));
                     auto traj_idx = static_cast<uint32_t>(bnd - this->trajectory_stamps.begin() - 1);
                     states.at(0) = traj_idx * 2;
                     states.at(1) = states.at(0) + 1;
@@ -556,24 +471,170 @@ void LaserOdom::extendFeatureTracks(const Eigen::MatrixXi &idx, const Eigen::Mat
             }
         }
     }
+
+    Eigen::array<long, 2> offsets = {0, 0};
+    Eigen::array<long, 2> extents = {4, static_cast<long>(new_feat_cnt)};
+    this->feat_pts.back().at(feat_id).concatenate(new_feat_points.slice(offsets, extents), 1);
+    //    Eigen::Tensor<float, 2> concatenation =
+    //    this->feat_pts.back().at(feat_id).concatenate(new_feat_points.slice(offsets, extents), 1);
+    //    this->feat_pts.back().at(feat_id) = concatenation;
 }
 
-void LaserOdom::createNewFeatureTracks(const Eigen::MatrixXi &indices, const Eigen::MatrixXf &dist, uint32_t feat_id) {
-    
+// todo reduce duplicated code
+void LaserOdom::createNewFeatureTracks(const Eigen::MatrixXi &idx, const Eigen::MatrixXf &dist, uint32_t feat_id) {
+    uint32_t knn = 3;
+    if (this->feature_residuals.at(feat_id) == PointToLine) {
+        knn = 2;
+    }
+    /// Each column represents a query (feature track)
+    Eigen::Tensor<float, 2> new_feat_points(4, 2000), prev_new_feat_points(4, 2000);
+    long new_feat_cnt = 0, prev_new_feat_cnt = 0;
+    auto prev_offset = this->feat_pts.at(this->param.n_window - 2).at(feat_id).dimension(1);
+    auto cur_offset = this->feat_pts.at(this->param.n_window - 1).at(feat_id).dimension(1);
+    for (uint32_t j = 0; j < idx.cols(); ++j) {
+        if (this->cur_feat_idx.at(feat_id).at(j) != -1) {
+            continue;
+        }
+
+        std::vector<uint32_t> matches;
+        double min_elev = 0.0;
+        double max_elev = 0.0;
+        bool wide_spread = false;
+        /// Each row is a nearest neighbour
+        for (uint32_t i = 0; i < idx.rows(); ++i) {
+            if (this->prev_feat_idx.at(feat_id).at(idx(i, j)) != -1) {
+                continue;
+            }
+            if (dist(i, j) > this->param.max_correspondence_dist) {
+                continue;
+            }
+            Vec3f pt = this->cur_feat_map.at(feat_id).block<3, 1>(0, j);
+            if (matches.empty()) {
+                matches.emplace_back(idx(i, j));
+                min_elev = std::atan2(pt(2), std::sqrt(pt(0) * pt(0) + pt(1) * pt(1)));
+                max_elev = min_elev;
+                continue;
+            }
+            if (wide_spread || matches.size() + 1 != knn) {
+                if (!wide_spread) {
+                    double new_elev = std::atan2(pt(2), std::sqrt(pt(0) * pt(0) + pt(1) * pt(1)));
+                    if (new_elev > max_elev)
+                        max_elev = new_elev;
+                    else if (new_elev < min_elev)
+                        min_elev = new_elev;
+                    if (max_elev - min_elev > this->param.azimuth_tol)
+                        wide_spread = true;
+                }
+                matches.emplace_back(idx(i, j));
+            }
+            if (matches.size() == knn)
+                break;
+        }
+        /// create feature track if error is low, and points are not part of another track
+        if (matches.size() == knn) {
+            // Depending on the type of geometry, need to initialize feature track with reasonable estimate
+            Vec6 geometry = Vec6::Zero();
+
+            if (this->feature_residuals.at(feat_id) == PointToLine) {
+                geometry.block<3, 1>(3, 0) =
+                  (this->prev_feat_map.at(feat_id).block<3, 1>(0, matches.at(0)).cast<double>() +
+                   this->prev_feat_map.at(feat_id).block<3, 1>(0, matches.at(1)).cast<double>()) /
+                  2.0;
+
+                geometry.block<3, 1>(0, 0) =
+                  this->prev_feat_map.at(feat_id).block<3, 1>(0, matches.at(0)).cast<double>() -
+                  this->prev_feat_map.at(feat_id).block<3, 1>(0, matches.at(1)).cast<double>();
+            } else {
+                geometry.block<3, 1>(3, 0) =
+                  (this->prev_feat_map.at(feat_id).block<3, 1>(0, matches.at(0)).cast<double>() +
+                   this->prev_feat_map.at(feat_id).block<3, 1>(0, matches.at(1)).cast<double>() +
+                   this->prev_feat_map.at(feat_id).block<3, 1>(0, matches.at(2)).cast<double>()) /
+                  3.0;
+
+                Vec3f a = this->prev_feat_map.at(feat_id).block<3, 1>(0, matches.at(0)) -
+                          this->prev_feat_map.at(feat_id).block<3, 1>(0, matches.at(1));
+                Vec3f b = this->prev_feat_map.at(feat_id).block<3, 1>(0, matches.at(0)) -
+                          this->prev_feat_map.at(feat_id).block<3, 1>(0, matches.at(2));
+                geometry.block<3, 1>(0, 0) = a.cross(b).cast<double>();
+            }
+            geometry.block<3, 1>(3, 0).normalize();
+
+            Vec3 diff = (this->cur_feat_map.at(feat_id).block<3, 1>(0, j).cast<double>() - geometry.block<3, 1>(3, 0));
+            Vec1 error;
+            if (this->feature_residuals.at(feat_id) == PointToLine) {
+                Vec3 err = (diff - geometry.block<3, 1>(0, 0) * (diff.transpose() * geometry.block<3, 1>(0, 0)));
+                error = err.transpose() * err;
+            } else {
+                error = (diff.transpose() * geometry.block<3, 1>(0, 0));
+                error = error.transpose() * error;
+            }
+
+            // create new residual, may need to increase tolerance a bit to find new features when initializing
+            if (error(0) < sqrt(this->param.max_residual_val)) {
+                // create feature track and add queried point
+                this->feature_tracks.at(feat_id).emplace_back(FeatureTrack());
+                auto &track = this->feature_tracks.at(feat_id).back();
+                track.geometry = geometry;
+                track.length = 1;
+                track.mapping.emplace_back(cur_offset + new_feat_cnt, this->param.n_window - 1);
+
+                Eigen::array<int, 2> offsets_new = {0, static_cast<int>(new_feat_cnt)};
+                Eigen::array<int, 2> offsets_candidate = {0, static_cast<int>(j)};
+                Eigen::array<int, 2> extents = {4, 1};
+
+                new_feat_points.slice(offsets_new, extents) =
+                  this->cur_feature_candidates.at(feat_id).slice(offsets_candidate, extents);
+                this->cur_feat_idx.at(feat_id).at(j) = static_cast<int>(this->feature_tracks.size()) - 1;
+
+                ++new_feat_cnt;
+
+                // now add points from previous scan
+                for (auto elem : matches) {
+                    track.mapping.emplace_back(prev_offset + prev_new_feat_cnt, this->param.n_window - 2);
+
+                    offsets_new.at(1) = static_cast<int>(prev_new_feat_cnt);
+                    offsets_candidate.at(1) = static_cast<int>(elem);
+
+                    prev_new_feat_points.slice(offsets_new, extents) =
+                      this->prev_feature_candidates.at(feat_id).slice(offsets_candidate, extents);
+                    this->prev_feat_idx.at(feat_id).at(elem) = static_cast<int>(this->feature_tracks.size()) - 1;
+
+                    ++prev_new_feat_cnt;
+                }
+            }
+        }
+    }
+
+    Eigen::array<long, 2> offsets = {0, 0};
+    Eigen::array<long, 2> extents = {4, static_cast<long>(new_feat_cnt)};
+    //    this->feat_pts.back().at(feat_id) =
+    //      this->feat_pts.back().at(feat_id).concatenate(new_feat_points.slice(offsets, extents), 1);
+
+    extents[1] = static_cast<long>(prev_new_feat_cnt);
+    //    this->feat_pts.at(this->param.n_window - 2).at(feat_id) =
+    //      this->feat_pts.at(this->param.n_window - 2)
+    //        .at(feat_id)
+    //        .concatenate(prev_new_feat_points.slice(offsets, extents), 1);
 }
+
+void LaserOdom::mergeFeatureTracks(uint32_t feat_id) {}
 
 bool LaserOdom::match() {
     T_TYPE last_transform;
     auto &ref = this->cur_trajectory.back().pose;
 
-    ceres::Problem problem;
+    ceres::Problem::Options options;
+    options.cost_function_ownership = ceres::DO_NOT_TAKE_OWNERSHIP;
+    ceres::Problem problem(options);
 
     for (int op = 0; op < this->param.opt_iters; op++) {
         if (op > 0) {
             last_transform = ref;
         }
         for (uint32_t i = 0; i < this->scan_stamps_chrono.size(); i++) {
-            this->scan_stampsf.at(i) = std::chrono::duration_cast<std::chrono::seconds>(this->scan_stamps_chrono.at(i) - this->scan_stamps_chrono.front()).count();
+            this->scan_stampsf.at(i) = std::chrono::duration_cast<std::chrono::seconds>(
+                                         this->scan_stamps_chrono.at(i) - this->scan_stamps_chrono.front())
+                                         .count();
         }
         this->transformer.update(this->cur_trajectory, this->scan_stampsf);
 
@@ -586,12 +647,15 @@ bool LaserOdom::match() {
             }
             /// 1.5 Transform all candidate points to the start of the window
             this->transformer.transformToStart(this->cur_feature_candidates.at(j), this->cur_feature_candidatesT.at(j));
-            this->transformer.transformToStart(this->prev_feature_candidates.at(j), this->prev_feature_candidatesT.at(j));
+            this->transformer.transformToStart(this->prev_feature_candidates.at(j),
+                                               this->prev_feature_candidatesT.at(j));
             auto &cfeat = this->cur_feature_candidatesT.at(j);
-            this->cur_feat_map.at(j) = Eigen::Map<Eigen::MatrixXf>(cfeat.data(), cfeat.dimension(0), cfeat.dimension(1));
+            this->cur_feat_map.at(j) =
+              Eigen::Map<Eigen::MatrixXf>(cfeat.data(), cfeat.dimension(0), cfeat.dimension(1));
 
             auto &pfeat = this->prev_feature_candidatesT.at(j);
-            this->prev_feat_map.at(j) = Eigen::Map<Eigen::MatrixXf>(pfeat.data(), pfeat.dimension(0), pfeat.dimension(1));
+            this->prev_feat_map.at(j) =
+              Eigen::Map<Eigen::MatrixXf>(pfeat.data(), pfeat.dimension(0), pfeat.dimension(1));
 
             /// 2. Update average point position from each feature tracks
             this->ave_pts.at(j).resize(3, this->feature_tracks.at(j).size());
@@ -619,135 +683,60 @@ bool LaserOdom::match() {
             this->extendFeatureTracks(nn_idx, nn_dist, j);
 
             /// 5. Create new feature tracks between new and old scan
-            this->curm1_kd_idx.at(j)->knn(this->cur_feat_map.at(j), nn_idx, nn_dist, 5, 0.1, Nabo::NNSearchF::SORT_RESULTS);
+            this->curm1_kd_idx.at(j)->knn(
+              this->cur_feat_map.at(j), nn_idx, nn_dist, 5, 0.1, Nabo::NNSearchF::SORT_RESULTS);
             this->createNewFeatureTracks(nn_idx, nn_dist, j);
 
             /// 6. Merge feature tracks (optional)
+            this->mergeFeatureTracks(j);
 
             /// 7. Build Feature Residuals
-
+            this->buildResiduals(problem);
 
             if (!this->runOptimization(problem))
                 return false;
-
         }
-
-        //        for (uint32_t m_idx = 0; m_idx < this->param.n_window; m_idx++) {
-        //            Eigen::Matrix3f covZ;
-        //            if (this->findCorrespondingPoints(query, i, &ret_indices)) {
-        //                // check if there is enough memory for next cost function
-        //                if (cur_PtL_idx == this->PtLMem.size()) {
-        //                    LOG_ERROR("Pre allocated point to line memory block is too small, reseting");
-        //                    return false;
-        //                }
-        //                if (cur_PtP_idx == this->PtPMem.size()) {
-        //                    LOG_ERROR("Pre allocated point to plane memory block is too small, reseting");
-        //                    return false;
-        //                }
-        //                if (this->param.no_extrapolation && this->outOfBounds(query, i, ret_indices)) {
-        //                    break;
-        //                }
-        //                this->cv_vector.at(k).tau = &tau;
-        //                this->cv_vector.at(k).calculateStuff(hat, candle);
-        //                ceres::CostFunction *cost_function;
-        //                wave_optimization::SE3PointToLineGP *pTl_cost_function = nullptr;
-        //                wave_optimization::SE3PointToPlaneGP *pTPl_cost_function = nullptr;
-        //                double rescale;
-        //                switch (this->feature_definitions.at(i).residual) {
-        //                    case PointToLine:
-        //                        if (this->param.treat_lines_as_planes) {
-        //                            this->PtPMem.at(cur_PtP_idx).hat = hat.block<6, 12>(0, 0);
-        //                            this->PtPMem.at(cur_PtP_idx).candle = candle.block<6, 12>(0, 0);
-        //                            this->PtPMem.at(cur_PtP_idx).T0_pt = query;
-        //                            pTPl_cost_function = new wave_optimization::SE3PointToPlaneGP(
-        //                              this->prv_feature_points.at(i).points.at(ret_indices.at(0)).data(),
-        //                              this->prv_feature_points.at(i).points.at(ret_indices.at(1)).data(),
-        //                              zero_pt,
-        //                              this->PtPMem.at(cur_PtP_idx),
-        //                              covZ.cast<double>(),
-        //                              this->param.use_weighting);
-        //                            residuals.resize(1);
-        //                            rescale = pTPl_cost_function->weight;
-        //                            cost_function = pTPl_cost_function;
-        //                        } else {
-        //                            this->PtLMem.at(cur_PtL_idx).hat = hat.block<6, 12>(0, 0);
-        //                            this->PtLMem.at(cur_PtL_idx).candle = candle.block<6, 12>(0, 0);
-        //                            this->PtLMem.at(cur_PtP_idx).T0_pt = query;
-        //                            pTl_cost_function = new wave_optimization::SE3PointToLineGP(
-        //                              this->prv_feature_points.at(i).points.at(ret_indices.at(0)).data(),
-        //                              this->prv_feature_points.at(i).points.at(ret_indices.at(1)).data(),
-        //                              this->PtLMem.at(cur_PtL_idx),
-        //                              covZ.cast<double>(),
-        //                              this->param.use_weighting);
-        //                            residuals.resize(2);
-        //                            rescale = pTl_cost_function->weight_matrix.trace();
-        //                            cost_function = pTl_cost_function;
-        //                        }
-        //                        break;
-        //                    case PointToPlane:
-        //                        this->PtPMem.at(cur_PtP_idx).hat = hat.block<6, 12>(0, 0);
-        //                        this->PtPMem.at(cur_PtP_idx).candle = candle.block<6, 12>(0, 0);
-        //                        this->PtPMem.at(cur_PtP_idx).T0_pt = query;
-        //                        pTPl_cost_function = new wave_optimization::SE3PointToPlaneGP(
-        //                          this->prv_feature_points.at(i).points.at(ret_indices.at(0)).data(),
-        //                          this->prv_feature_points.at(i).points.at(ret_indices.at(1)).data(),
-        //                          this->prv_feature_points.at(i).points.at(ret_indices.at(2)).data(),
-        //                          this->PtPMem.at(cur_PtP_idx),
-        //                          covZ.cast<double>(),
-        //                          this->param.use_weighting);
-        //                        residuals.resize(1);
-        //                        rescale = pTPl_cost_function->weight;
-        //                        cost_function = pTPl_cost_function;
-        //                        break;
-        //                    default: continue;
-        //                }
-        //
-        //                parameters[0] = this->param_blocks.at(k).data();
-        //                parameters[1] = this->param_blocks.at(kp1).data();
-        //
-        //                if (!cost_function->Evaluate(parameters, residuals.data(), nullptr)) {
-        //                    LOG_ERROR("Cost function did not evaluate");
-        //                    delete cost_function;
-        //                    continue;
-        //                }
-        //                rescale *= rescale;
-        //
-        //                if (norm(residuals) > rescale * this->param.max_residual_val) {
-        //                    delete cost_function;
-        //                    continue;
-        //                }
-        //
-        //                ceres::LossFunction *p_LossFunction = new BisquareLoss(this->param.robust_param);
-        //                std::vector<uint64_t> corr_list;
-        //                corr_list.emplace_back(pt_cntr);
-        //                for (auto index : ret_indices) {
-        //                    corr_list.emplace_back(index);
-        //                    this->feature_association.at(i).at(index).second = AssociationStatus::CORRESPONDED;
-        //                }
-        //                this->feature_corrs.at(i).at(j).emplace_back(corr_list);
-        //
-        //                problem.AddResidualBlock(
-        //                  cost_function, p_LossFunction, this->param_blocks.at(k).data(),
-        //                  this->param_blocks.at(kp1).data());
-        //
-        //                if (pTl_cost_function) {
-        //                    cur_PtL_idx++;
-        //                } else if (pTPl_cost_function) {
-        //                    cur_PtP_idx++;
-        //                }
-        //                /// 5. Solve
-        //                if (!this->runOptimization(problem)) {
-        //                    return false;
-        //                }
-        //                if (op > 0 && ref.isNear(last_transform, this->param.diff_tol)) {
-        //                    return true;
-        //                }
-        //            }
-        //            LOG_INFO("Problem did not converge within allowed iterations");
-        //            return true;
-        //        }
     }
     return true;
+}
+
+void LaserOdom::buildResiduals(ceres::Problem &problem) {
+    this->costs.clear();
+    this->local_params.clear();
+    this->loss_functions.clear();
+    for (uint32_t f_idx = 0; f_idx < this->N_FEATURES; ++f_idx) {
+        for (auto &track : this->feature_tracks.at(f_idx)) {
+            // plane_cost
+            if (f_idx == 2) {
+                this->local_params.emplace_back(new PlaneParameterization());
+            } else {
+                this->local_params.emplace_back(new LineParameterization());
+            }
+            problem.SetParameterization(track.geometry.data(), this->local_params.back().get());
+            for (uint32_t p_idx = 0; p_idx < track.mapping.size(); ++p_idx) {
+                this->loss_functions.emplace_back(new BisquareLoss(this->param.robust_param));
+                if (f_idx == 2) {
+                    this->costs.emplace_back(
+                      new ImplicitPlaneResidual<12, 6, 12, 6>(p_idx, f_idx, &track, &(this->feat_T_map)));
+                } else {
+                    this->costs.emplace_back(
+                      new ImplicitLineResidual<12, 6, 12, 6>(p_idx, f_idx, &track, &(this->feat_T_map)));
+                }
+                uint32_t start_offset = track.state_ids.at(p_idx).at(0) / 2;
+                problem.AddResidualBlock(this->costs.back().get(),
+                                         this->loss_functions.back().get(),
+                                         track.geometry.data(),
+                                         this->cur_trajectory.at(start_offset).pose.storage.data(),
+                                         this->cur_trajectory.at(start_offset).vel.data(),
+                                         this->cur_trajectory.at(start_offset + 1).pose.storage.data(),
+                                         this->cur_trajectory.at(start_offset + 1).vel.data());
+            }
+        }
+    }
+    for (auto &state : this->cur_trajectory) {
+        this->local_params.emplace_back(new NullSE3Parameterization);
+        problem.SetParameterization(state.pose.storage.data(), this->local_params.back().get());
+    }
 }
 
 void LaserOdom::resetTrajectory() {

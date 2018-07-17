@@ -26,7 +26,8 @@ IF(BUILD_TESTING)
     WAVE_ADD_TEST(feature_extraction_tests
             tests/feature_extractor/feature_extractor_tests.cpp)
     TARGET_LINK_LIBRARIES(feature_extraction_tests
-            ${PROJECT_NAME})
+            ${PROJECT_NAME}
+            wave::matching)
 
     WAVE_ADD_TEST(transformer_tests
             tests/transformer/transformer_tests.cpp)

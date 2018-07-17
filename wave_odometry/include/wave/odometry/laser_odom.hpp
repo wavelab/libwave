@@ -50,7 +50,9 @@
 #include "wave/odometry/implicit_geometry/implicit_plane.hpp"
 #include "wave/odometry/implicit_geometry/implicit_line.hpp"
 #include "wave/optimization/ceres/odom_gp_twist/constant_velocity.hpp"
-#include "wave/optimization/ceres/local_params/spherical_parameterization.hpp"
+#include "wave/optimization/ceres/local_params/null_SE3_parameterization.hpp"
+#include "wave/optimization/ceres/local_params/line_parameterization.hpp"
+#include "wave/optimization/ceres/local_params/plane_parameterization.hpp"
 #include "wave/optimization/ceres/loss_function/bisquare_loss.hpp"
 #include "wave/utils/utils.hpp"
 
@@ -164,11 +166,18 @@ class LaserOdom {
 
     void updateStoredFeatures();
     bool match();
+    void buildResiduals(ceres::Problem &problem);
+    //todo think about how to reuse residuals
+//    std::list<ImplicitLineResidual<12, 6, 12, 6>> line_costs;
+//    std::list<ImplicitPlaneResidual<12, 6, 12, 6>> plane_costs;
+    Vec<std::shared_ptr<ceres::CostFunction>> costs;
+    std::vector<std::shared_ptr<ceres::LocalParameterization>> local_params;
+    std::vector<std::shared_ptr<ceres::LossFunction>> loss_functions;
     bool runOptimization(ceres::Problem &problem);
 
-    bool findCorrespondingPoints(const Vec3 &query, const uint32_t &f_idx, std::vector<size_t> *index);
     void extendFeatureTracks(const Eigen::MatrixXi &indices, const Eigen::MatrixXf &dist, uint32_t feat_id);
     void createNewFeatureTracks(const Eigen::MatrixXi &indices, const Eigen::MatrixXf &dist, uint32_t feat_id);
+    void mergeFeatureTracks(uint32_t feat_id);
     bool outOfBounds(const Vec3 &query, const uint32_t &f_idx, const std::vector<size_t> &index);
 
     void undistort();
@@ -202,6 +211,7 @@ class LaserOdom {
     VecE<Eigen::Tensor<float, 2>> cur_feature_candidates, prev_feature_candidates;
     VecE<Eigen::Tensor<float, 2>> cur_feature_candidatesT, prev_feature_candidatesT;
     Vec<Eigen::Map<Eigen::MatrixXf>> cur_feat_map, prev_feat_map;
+    Vec<Vec<Eigen::Map<MatXf>>> feat_T_map;
     /// stores the index of the feature track associated with each feature point. -1 if not associated with a feature track
     Vec<Vec<int>> cur_feat_idx, prev_feat_idx;
     /**
