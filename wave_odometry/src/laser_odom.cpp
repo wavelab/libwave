@@ -115,66 +115,6 @@ void LaserOdom::copyTrajectory() {
     }
 }
 
-/**
- * Using projection matrix for solution remapping
- */
-void LaserOdom::applyRemap() {
-    VecX cur_diff;
-    uint32_t offset = 0;
-
-    cur_diff.resize((this->param.num_trajectory_states - 1) * 12, 1);
-    offset = 1;
-
-    for (uint32_t i = 0; i + offset < this->param.num_trajectory_states; i++) {
-        cur_diff.block<6, 1>(12 * i, 0) =
-          this->cur_trajectory.at(i + offset).pose.manifoldMinus(this->prev_trajectory.at(i + offset).pose);
-        cur_diff.block<6, 1>(12 * i + 6, 0) =
-          this->cur_trajectory.at(i + offset).vel - this->prev_trajectory.at(i + offset).vel;
-    }
-
-    if (this->param.plot_stuff) {
-        plotMat(this->undistort_state.covar);
-        MatX info = this->undistort_state.covar.inverse();
-        plotMat(info);
-        Eigen::SelfAdjointEigenSolver<MatX> eigs(info);
-        plotVec(eigs.eigenvalues(), true);
-        plotMat(eigs.eigenvectors());
-    }
-
-    MatX AtA = this->undistort_state.covar.inverse();
-
-    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigs(AtA);
-
-    long cnt = 0;
-    while (eigs.eigenvalues()(cnt) < this->param.min_eigen) {
-        cnt++;
-        if (cnt == eigs.eigenvectors().rows())
-            break;
-    }
-
-    Eigen::MatrixXd Vu = eigs.eigenvectors().transpose();
-    Vu.block(0, 0, cnt, Vu.cols()).setZero();
-    MatX proj_mat = eigs.eigenvectors().transpose().inverse() * Vu;
-
-    VecX mapped_diff = proj_mat * cur_diff;
-
-    if (this->param.plot_stuff) {
-        plotVec(cur_diff, true);
-        plotVec(mapped_diff, true);
-    }
-
-    for (uint32_t i = 0; i + offset < this->param.num_trajectory_states; i++) {
-        this->cur_trajectory.at(i + offset).pose = this->prev_trajectory.at(i + offset).pose;
-        this->cur_trajectory.at(i + offset).pose.manifoldPlus(mapped_diff.block<6, 1>(12 * i, 0));
-
-        this->cur_trajectory.at(i + offset).vel =
-          this->cur_trajectory.at(i + offset).vel + mapped_diff.block<6, 1>(12 * i + 6, 0);
-    }
-
-    // set previous to current trajectory to update operating point
-    this->copyTrajectory();
-}
-
 void LaserOdom::updateStoredFeatures() {
     // Perform a left rotation
     std::rotate(this->feat_pts.begin(), this->feat_pts.begin() + 1, this->feat_pts.end());

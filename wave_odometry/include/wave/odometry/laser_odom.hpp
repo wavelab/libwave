@@ -181,7 +181,6 @@ class LaserOdom {
 
     void resetTrajectory();
     void copyTrajectory();
-    void applyRemap();
 
     // Lidar Sensor Model
     std::shared_ptr<RangeSensor> range_sensor;
