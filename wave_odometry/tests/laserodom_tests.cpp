@@ -85,6 +85,35 @@ void LoadParameters(const std::string &path, const std::string &filename, LaserO
     parser.load(path + filename);
 }
 
+void setupFeatureParameters(FeatureExtractorParams &param) {
+    std::vector<Criteria> edge_high, edge_low, flat, edge_int_high, edge_int_low;
+    edge_high.emplace_back(Criteria{Signal::RANGE, Kernel::LOAM, SelectionPolicy::HIGH_POS, &(param.edge_tol)});
+
+    edge_low.emplace_back(Criteria{Signal::RANGE, Kernel::LOAM, SelectionPolicy::HIGH_NEG, &(param.edge_tol)});
+
+    flat.emplace_back(Criteria{Signal::RANGE, Kernel::LOAM, SelectionPolicy::NEAR_ZERO, &(param.flat_tol)});
+
+    edge_int_high.emplace_back(
+            Criteria{Signal::INTENSITY, Kernel::FOG, SelectionPolicy::HIGH_POS, &(param.int_edge_tol)});
+    edge_int_high.emplace_back(
+            Criteria{Signal::RANGE, Kernel::LOAM, SelectionPolicy::NEAR_ZERO, &(param.int_flat_tol)});
+    edge_int_high.emplace_back(
+            Criteria{Signal::RANGE, Kernel::RNG_VAR, SelectionPolicy::NEAR_ZERO, &(param.variance_limit_rng)});
+
+    edge_int_low.emplace_back(
+            Criteria{Signal::INTENSITY, Kernel::FOG, SelectionPolicy::HIGH_NEG, &(param.int_edge_tol)});
+    edge_int_low.emplace_back(Criteria{Signal::RANGE, Kernel::LOAM, SelectionPolicy::NEAR_ZERO, &(param.int_flat_tol)});
+    edge_int_low.emplace_back(
+            Criteria{Signal::RANGE, Kernel::RNG_VAR, SelectionPolicy::NEAR_ZERO, &(param.variance_limit_rng)});
+
+    param.feature_definitions.clear();
+    param.feature_definitions.emplace_back(FeatureDefinition{edge_high, &(param.n_edge)});
+    param.feature_definitions.emplace_back(FeatureDefinition{edge_low, &(param.n_edge)});
+    param.feature_definitions.emplace_back(FeatureDefinition{flat, &(param.n_flat)});
+    param.feature_definitions.emplace_back(FeatureDefinition{edge_int_high, &(param.n_int_edge)});
+    param.feature_definitions.emplace_back(FeatureDefinition{edge_int_low, &(param.n_int_edge)});
+}
+
 }
 
 TEST(laserodom, Init) {
@@ -140,6 +169,7 @@ TEST(OdomTest, StraightLineGarage) {
     // odom setup
     LaserOdomParams params;
     FeatureExtractorParams feature_params;
+    setupFeatureParameters(feature_params);
 
     LoadParameters("config/", "odom.yaml",  params);
 
