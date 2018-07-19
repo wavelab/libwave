@@ -6,7 +6,7 @@
 #include "wave/odometry/PointXYZIR.hpp"
 #include "wave/matching/pointcloud_display.hpp"
 
-namespace wave{
+namespace wave {
 
 namespace {
 
@@ -37,46 +37,24 @@ void loadParameters(const std::string &path, const std::string &filename, Featur
 
 void setupParameters(FeatureExtractorParams &param) {
     std::vector<Criteria> edge_high, edge_low, flat, edge_int_high, edge_int_low;
-    edge_high.emplace_back(Criteria{Signal::RANGE,
-                                                            Kernel::LOAM,
-                                                            SelectionPolicy::HIGH_POS,
-                                                            &(param.edge_tol)});
+    edge_high.emplace_back(Criteria{Signal::RANGE, Kernel::LOAM, SelectionPolicy::HIGH_POS, &(param.edge_tol)});
 
-    edge_low.emplace_back(Criteria{Signal::RANGE,
-                                                            Kernel::LOAM,
-                                                            SelectionPolicy::HIGH_NEG,
-                                                            &(param.edge_tol)});
+    edge_low.emplace_back(Criteria{Signal::RANGE, Kernel::LOAM, SelectionPolicy::HIGH_NEG, &(param.edge_tol)});
 
-    flat.emplace_back(Criteria{Signal::RANGE,
-                                                           Kernel::LOAM,
-                                                           SelectionPolicy::NEAR_ZERO,
-                                                           &(param.flat_tol)});
+    flat.emplace_back(Criteria{Signal::RANGE, Kernel::LOAM, SelectionPolicy::NEAR_ZERO, &(param.flat_tol)});
 
-    edge_int_high.emplace_back(Criteria{Signal::INTENSITY,
-                                                       Kernel::FOG,
-                                                       SelectionPolicy::HIGH_POS,
-                                                       &(param.int_edge_tol)});
-    edge_int_high.emplace_back(Criteria{Signal::RANGE,
-                                                                Kernel::LOAM,
-                                                                SelectionPolicy::NEAR_ZERO,
-                                                                &(param.int_flat_tol)});
-    edge_int_high.emplace_back(Criteria{Signal::RANGE,
-                                                                Kernel::RNG_VAR,
-                                                                SelectionPolicy::NEAR_ZERO,
-                                                                &(param.variance_limit_rng)});
+    edge_int_high.emplace_back(
+      Criteria{Signal::INTENSITY, Kernel::FOG, SelectionPolicy::HIGH_POS, &(param.int_edge_tol)});
+    edge_int_high.emplace_back(
+      Criteria{Signal::RANGE, Kernel::LOAM, SelectionPolicy::NEAR_ZERO, &(param.int_flat_tol)});
+    edge_int_high.emplace_back(
+      Criteria{Signal::RANGE, Kernel::RNG_VAR, SelectionPolicy::NEAR_ZERO, &(param.variance_limit_rng)});
 
-    edge_int_low.emplace_back(Criteria{Signal::INTENSITY,
-                                                                Kernel::FOG,
-                                                                SelectionPolicy::HIGH_NEG,
-                                                                &(param.int_edge_tol)});
-    edge_int_low.emplace_back(Criteria{Signal::RANGE,
-                                                                Kernel::LOAM,
-                                                                SelectionPolicy::NEAR_ZERO,
-                                                                &(param.int_flat_tol)});
-    edge_int_low.emplace_back(Criteria{Signal::RANGE,
-                                                            Kernel::RNG_VAR,
-                                                            SelectionPolicy::NEAR_ZERO,
-                                                                &(param.variance_limit_rng)});
+    edge_int_low.emplace_back(
+      Criteria{Signal::INTENSITY, Kernel::FOG, SelectionPolicy::HIGH_NEG, &(param.int_edge_tol)});
+    edge_int_low.emplace_back(Criteria{Signal::RANGE, Kernel::LOAM, SelectionPolicy::NEAR_ZERO, &(param.int_flat_tol)});
+    edge_int_low.emplace_back(
+      Criteria{Signal::RANGE, Kernel::RNG_VAR, SelectionPolicy::NEAR_ZERO, &(param.variance_limit_rng)});
 
     param.feature_definitions.clear();
     param.feature_definitions.emplace_back(FeatureDefinition{edge_high, &(param.n_edge)});
@@ -85,7 +63,6 @@ void setupParameters(FeatureExtractorParams &param) {
     param.feature_definitions.emplace_back(FeatureDefinition{edge_int_high, &(param.n_int_edge)});
     param.feature_definitions.emplace_back(FeatureDefinition{edge_int_low, &(param.n_int_edge)});
 }
-
 }
 
 // Fixture to perform setup
@@ -140,7 +117,7 @@ TEST_F(FeatureExtractorTests, NoData) {
     this->range.resize(32);
     std::fill(this->range.begin(), this->range.end(), 0);
     this->indices.resize(this->params.N_FEATURES);
-    for(uint32_t i = 0; i < this->params.N_FEATURES; i++) {
+    for (uint32_t i = 0; i < this->params.N_FEATURES; i++) {
         this->indices.at(i).resize(32);
     }
     EXPECT_NO_THROW(this->extractor.getFeatures(this->scan, this->signals, this->range, this->indices));
@@ -152,24 +129,24 @@ TEST_F(FeatureExtractorTests, ProcessScan) {
     this->signals.resize(32);
     this->range.resize(32);
     std::fill(this->range.begin(), this->range.end(), 0);
-    for(uint32_t i = 0; i < 32; i++) {
+    for (uint32_t i = 0; i < 32; i++) {
         this->scan.at(i) = Eigen::Tensor<float, 2>(5, 2200);
         this->signals.at(i) = Eigen::Tensor<float, 2>(2, 2200);
     }
 
     this->indices.resize(this->params.N_FEATURES);
-    for(uint32_t i = 0; i < this->params.N_FEATURES; i++) {
+    for (uint32_t i = 0; i < this->params.N_FEATURES; i++) {
         this->indices.at(i).resize(32);
     }
 
     pcl::PointCloud<PointXYZIR> ref;
     pcl::io::loadPCDFile("data/testscan.pcd", ref);
 
-    for(auto pt : ref) {
-        float ang =(float) (std::atan2(pt.y, pt.x) * -1.0);
+    for (auto pt : ref) {
+        float ang = (float) (std::atan2(pt.y, pt.x) * -1.0);
         // need to fraction of complete rotation
-        ang < 0 ? ang = ang + 2.0*M_PI : ang;
-        ang /= 2.0*M_PI;
+        ang < 0 ? ang = ang + 2.0 * M_PI : ang;
+        ang /= 2.0 * M_PI;
 
         this->scan.at(pt.ring)(0, this->range.at(pt.ring)) = pt.x;
         this->scan.at(pt.ring)(1, this->range.at(pt.ring)) = pt.y;
@@ -190,24 +167,24 @@ TEST_F(FeatureExtractorTests, VisualizeFeatures) {
     this->signals.resize(32);
     this->range.resize(32);
     std::fill(this->range.begin(), this->range.end(), 0);
-    for(uint32_t i = 0; i < 32; i++) {
+    for (uint32_t i = 0; i < 32; i++) {
         this->scan.at(i) = Eigen::Tensor<float, 2>(5, 2200);
         this->signals.at(i) = Eigen::Tensor<float, 2>(2, 2200);
     }
 
     this->indices.resize(this->params.N_FEATURES);
-    for(uint32_t i = 0; i < this->params.N_FEATURES; i++) {
+    for (uint32_t i = 0; i < this->params.N_FEATURES; i++) {
         this->indices.at(i).resize(32);
     }
 
     pcl::PointCloud<PointXYZIR> ref;
     pcl::io::loadPCDFile("data/testscan.pcd", ref);
 
-    for(auto pt : ref) {
-        float ang =(float) (std::atan2(pt.y, pt.x) * -1.0);
+    for (auto pt : ref) {
+        float ang = (float) (std::atan2(pt.y, pt.x) * -1.0);
         // need to fraction of complete rotation
-        ang < 0 ? ang = ang + 2.0*M_PI : ang;
-        ang /= 2.0*M_PI;
+        ang < 0 ? ang = ang + 2.0 * M_PI : ang;
+        ang /= 2.0 * M_PI;
 
         this->scan.at(pt.ring)(0, this->range.at(pt.ring)) = pt.x;
         this->scan.at(pt.ring)(1, this->range.at(pt.ring)) = pt.y;
@@ -247,5 +224,4 @@ TEST_F(FeatureExtractorTests, VisualizeFeatures) {
 
     cin.get();
 }
-
 }

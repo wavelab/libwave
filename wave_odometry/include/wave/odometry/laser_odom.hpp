@@ -159,7 +159,7 @@ class LaserOdom {
 
     LaserOdomParams param;
     bool initialized = false;
-    int prv_tick = std::numeric_limits<int>::max();
+    int prv_tick = 0;
 
     FeatureExtractor feature_extractor;
     Transformer transformer;
