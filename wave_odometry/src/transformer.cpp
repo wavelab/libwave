@@ -62,7 +62,7 @@ void Transformer::update(const std::vector<PoseVel, Eigen::aligned_allocator<Pos
 
 }
 
-void Transformer::transformToStart(const Eigen::Tensor<float, 2> &points, Eigen::Tensor<float, 2> &points_transformed) {
+void Transformer::transformToStart(const Eigen::Tensor<float, 2> &points, Eigen::Tensor<float, 2> &points_transformed, const uint32_t scan_idx) {
     if (points_transformed.dimension(0) != 3 || points_transformed.dimension(1) != points.dimension(1)) {
         points_transformed.resize(3, points.dimensions().at(1));
     }
@@ -70,40 +70,34 @@ void Transformer::transformToStart(const Eigen::Tensor<float, 2> &points, Eigen:
     Eigen::Map<const MatXf> pt(points.data(), points.dimension(0), points.dimension(1));
     Eigen::Map<MatXf> ptT(points_transformed.data(), points_transformed.dimension(0), points_transformed.dimension(1));
 
-#pragma omp parallel
-    {
-        long threadnum = omp_get_thread_num();
-        long numthreads = omp_get_num_threads();
-        long low = points.dimension(1) * threadnum / numthreads;
-        long high = points.dimension(1) * (threadnum + 1) / numthreads;
-        for (long i = low; i < high; i++) {
-            float time = points(3, i);
-            auto idx = std::lower_bound(this->traj_stamps.begin(), this->traj_stamps.end(), time);
-            auto index = static_cast<uint32_t>(idx - this->traj_stamps.begin());
-            if (time < this->traj_stamps.at(index)) {
-                if (index == 0) {
-                    throw std::out_of_range("Invalid stamps in points");
-                }
-                index--;
+//#pragma omp parallel for
+    for (long i = 0; i < points.dimension(1); i++) {
+        float time = points(3, i) + this->traj_stamps.at(this->scan_indices.at(scan_idx));
+        auto idx = std::lower_bound(this->traj_stamps.begin(), this->traj_stamps.end(), time);
+        auto index = static_cast<uint32_t>(idx - this->traj_stamps.begin());
+        if (time < this->traj_stamps.at(index)) {
+            if (index == 0) {
+                throw std::out_of_range("Invalid stamps in points");
             }
-            Mat4 hat, candle;
-            this->calculateInterpolationFactors(
-              this->traj_stamps.at(index), this->traj_stamps.at(index + 1), points(3, i), candle, hat);
-            Vec6f tan_vec = hat(0, 1) * this->differences.at(index).hat_multiplier.block<6, 1>(6, 0) +
-                            candle(0, 0) * this->differences.at(index).candle_multiplier.block<6, 1>(0, 0) +
-                            candle(0, 1) * this->differences.at(index).candle_multiplier.block<6, 1>(6, 0);
-            Mat34f trans;
-            T_TYPE::expMap1st(tan_vec, trans);
-            auto &ref = this->aug_trajectories.at(index).pose.storage;
-            ptT.block<3, 1>(0, i).noalias() =
-              trans.block<3, 3>(0, 0) *
-                (ref.block<3, 3>(0, 0).cast<float>() * pt.block<3, 1>(0, i) + ref.block<3, 1>(0, 3).cast<float>()) +
-              trans.block<3, 1>(0, 3);
+            index--;
         }
+        Mat4 hat, candle;
+        this->calculateInterpolationFactors(
+          this->traj_stamps.at(index), this->traj_stamps.at(index + 1), time, candle, hat);
+        Vec6f tan_vec = hat(0, 1) * this->differences.at(index).hat_multiplier.block<6, 1>(6, 0) +
+                        candle(0, 0) * this->differences.at(index).candle_multiplier.block<6, 1>(0, 0) +
+                        candle(0, 1) * this->differences.at(index).candle_multiplier.block<6, 1>(6, 0);
+        Mat34f trans;
+        T_TYPE::expMap1st(tan_vec, trans);
+        auto &ref = this->aug_trajectories.at(index).pose.storage;
+        ptT.block<3, 1>(0, i).noalias() =
+          trans.block<3, 3>(0, 0) *
+            (ref.block<3, 3>(0, 0).cast<float>() * pt.block<3, 1>(0, i) + ref.block<3, 1>(0, 3).cast<float>()) +
+          trans.block<3, 1>(0, 3);
     }
 }
 
-void Transformer::transformToEnd(const Eigen::Tensor<float, 2> &points, Eigen::Tensor<float, 2> &points_transformed) {
+void Transformer::transformToEnd(const Eigen::Tensor<float, 2> &points, Eigen::Tensor<float, 2> &points_transformed, const uint32_t scan_idx) {
     if (points_transformed.dimension(0) != 3 || points_transformed.dimension(1) != points.dimension(1)) {
         points_transformed.resize(3, points.dimensions().at(1));
     }
@@ -111,37 +105,31 @@ void Transformer::transformToEnd(const Eigen::Tensor<float, 2> &points, Eigen::T
     Eigen::Map<const MatXf> pt(points.data(), points.dimension(0), points.dimension(1));
     Eigen::Map<MatXf> ptT(points_transformed.data(), points_transformed.dimension(0), points_transformed.dimension(1));
 
-#pragma omp parallel
-    {
-        long threadnum = omp_get_thread_num();
-        long numthreads = omp_get_num_threads();
-        long low = points.dimension(1) * threadnum / numthreads;
-        long high = points.dimension(1) * (threadnum + 1) / numthreads;
-        for (long i = low; i < high; i++) {
-            float time = points(3, i);
-            auto idx = std::lower_bound(this->traj_stamps.begin(), this->traj_stamps.end(), time);
-            auto index = static_cast<uint32_t>(idx - this->traj_stamps.begin());
-            if (time < this->traj_stamps.at(index)) {
-                if (index == 0) {
-                    throw std::out_of_range("Invalid stamps in points");
-                }
-                index--;
+//#pragma omp parallel for
+    for (long i = 0; i < points.dimension(1); i++) {
+        float time = points(3, i) + this->traj_stamps.at(this->scan_indices.at(scan_idx));
+        auto idx = std::lower_bound(this->traj_stamps.begin(), this->traj_stamps.end(), time);
+        auto index = static_cast<uint32_t>(idx - this->traj_stamps.begin());
+        if (time < this->traj_stamps.at(index)) {
+            if (index == 0) {
+                throw std::out_of_range("Invalid stamps in points");
             }
-            Mat4 hat, candle;
-            this->calculateInterpolationFactors(
-              this->traj_stamps.at(index), this->traj_stamps.at(index + 1), points(3, i), candle, hat);
-            Vec6f tan_vec = hat(0, 1) * this->differences.at(index).hat_multiplier.block<6, 1>(6, 0) +
-                            candle(0, 0) * this->differences.at(index).candle_multiplier.block<6, 1>(0, 0) +
-                            candle(0, 1) * this->differences.at(index).candle_multiplier.block<6, 1>(6, 0);
-            Mat34f trans;
-            T_TYPE::expMap1st(tan_vec, trans);
-            auto &ref = this->aug_trajectories.at(index).pose.storage;
-            auto &final = this->aug_trajectories.back().pose.storage;
-            ptT.block<3, 1>(0, i).noalias() =
-              final.block<3, 3>(0, 0).transpose().cast<float>() *
-              (trans.block<3, 3>(0, 0) * (ref.block<3, 3>(0,0).cast<float>() * pt.block<3, 1>(0, i) + ref.block<3, 1>(0, 3).cast<float>()) +
-               trans.block<3, 1>(0, 3) - final.block<3, 1>(0,3).cast<float>());
+            index--;
         }
+        Mat4 hat, candle;
+        this->calculateInterpolationFactors(
+          this->traj_stamps.at(index), this->traj_stamps.at(index + 1), time, candle, hat);
+        Vec6f tan_vec = hat(0, 1) * this->differences.at(index).hat_multiplier.block<6, 1>(6, 0) +
+                        candle(0, 0) * this->differences.at(index).candle_multiplier.block<6, 1>(0, 0) +
+                        candle(0, 1) * this->differences.at(index).candle_multiplier.block<6, 1>(6, 0);
+        Mat34f trans;
+        T_TYPE::expMap1st(tan_vec, trans);
+        auto &ref = this->aug_trajectories.at(index).pose.storage;
+        auto &final = this->aug_trajectories.back().pose.storage;
+        ptT.block<3, 1>(0, i).noalias() =
+          final.block<3, 3>(0, 0).transpose().cast<float>() *
+          (trans.block<3, 3>(0, 0) * (ref.block<3, 3>(0,0).cast<float>() * pt.block<3, 1>(0, i) + ref.block<3, 1>(0, 3).cast<float>()) +
+           trans.block<3, 1>(0, 3) - final.block<3, 1>(0,3).cast<float>());
     }
 }
 

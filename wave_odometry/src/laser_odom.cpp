@@ -11,6 +11,10 @@ LaserOdom::LaserOdom(const LaserOdomParams params, const FeatureExtractorParams 
     this->counters.resize(n_ring);
     std::fill(this->counters.begin(), this->counters.end(), 0);
 
+    this->cur_feature_candidates.resize(this->N_FEATURES);
+    this->cur_feature_candidatesT.resize(this->N_FEATURES);
+    this->prev_feature_candidates.resize(this->N_FEATURES);
+
     this->cur_scan.resize(n_ring);
     this->signals.resize(n_ring);
 
@@ -19,39 +23,23 @@ LaserOdom::LaserOdom(const LaserOdomParams params, const FeatureExtractorParams 
         this->signals.at(i) = Eigen::Tensor<float, 2>(this->N_SIGNALS, this->MAX_POINTS);
     }
 
+    this->indices.resize(this->N_FEATURES);
+    for (uint32_t i = 0; i < this->N_FEATURES; i++) {
+        this->indices.at(i).resize(this->param.n_ring);
+    }
+
     this->range_sensor = std::make_shared<RangeSensor>(param.sensor_params);
 
-    this->feat_pts.resize(this->N_FEATURES);
     this->undis_features.resize(this->N_FEATURES);
 
     if (this->param.num_trajectory_states < 2) {
         throw std::out_of_range("Number of parameter states must be at least 2");
     }
-
-    // todo(ben) automatically get the scan
-    this->trajectory_stamps.reserve(this->param.num_trajectory_states);
+    if (this->param.n_window < 2) {
+        throw std::out_of_range("Window size must be at least 2");
+    }
 
     double step_size = 0.1 / (double) (this->param.num_trajectory_states - 1);
-    for (uint32_t i = 0; i < this->param.num_trajectory_states; i++) {
-        PoseVel unit;
-        PoseVel unit2;
-        unit2.pose.setIdentity();
-        unit2.vel.setZero();
-        unit.pose.setIdentity();
-        unit.vel.setZero();
-        this->prior_twist.setZero();
-        this->cur_trajectory.emplace_back(unit);
-        this->prev_trajectory.emplace_back(unit2);
-        this->trajectory_stamps.emplace_back(i * step_size);
-        if (i > 0) {
-            this->cv_vector.emplace_back(this->trajectory_stamps.at(i - 1),
-                                         this->trajectory_stamps.at(i),
-                                         nullptr,
-                                         this->param.Qc,
-                                         this->param.inv_Qc);
-        }
-    }
-    this->sqrtinfo.setIdentity();
 
     if (params.output_trajectory) {
         long timestamp = std::chrono::system_clock::now().time_since_epoch().count();
@@ -115,11 +103,7 @@ void LaserOdom::copyTrajectory() {
     }
 }
 
-void LaserOdom::updateStoredFeatures() {
-    // Perform a left rotation
-    std::rotate(this->feat_pts.begin(), this->feat_pts.begin() + 1, this->feat_pts.end());
-    std::rotate(this->feat_pts_T.begin(), this->feat_pts_T.begin() + 1, this->feat_pts_T.end());
-
+void LaserOdom::updateFeatureCandidates() {
     for (uint32_t i = 0; i < this->N_FEATURES; i++) {
         std::swap(this->cur_feature_candidates.at(i), this->prev_feature_candidates.at(i));
         auto &feat = this->cur_feature_candidates.at(i);
@@ -141,9 +125,9 @@ void LaserOdom::updateStoredFeatures() {
 }
 
 void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, TimeType stamp) {
-    if (tick - this->prv_tick < -200) {  // tolerate minor nonlinearity error
+    if (tick - this->prv_tick < -200) {  // current scan has ended
         this->feature_extractor.getFeatures(this->cur_scan, this->signals, this->counters, this->indices);
-        this->updateStoredFeatures();
+        this->updateFeatureCandidates();
         if (this->initialized) {
             this->match();
 
@@ -178,8 +162,11 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
         this->cur_scan.at(pt.ring)(0, counters.at(pt.ring)) = pt.x;
         this->cur_scan.at(pt.ring)(1, counters.at(pt.ring)) = pt.y;
         this->cur_scan.at(pt.ring)(2, counters.at(pt.ring)) = pt.z;
-        this->cur_scan.at(pt.ring)(3, counters.at(pt.ring)) =
-          std::chrono::duration_cast<std::chrono::seconds>(stamp - this->scan_stamps_chrono.front()).count();
+
+        auto diff = stamp - this->scan_stamps_chrono.back();
+        float secon = std::chrono::duration<float, std::ratio<1>>(diff).count();
+
+        this->cur_scan.at(pt.ring)(3, counters.at(pt.ring)) = secon;
 
         this->signals.at(pt.ring)(0, counters.at(pt.ring)) = sqrtf(pt.x * pt.x + pt.y * pt.y + pt.z * pt.z);
         this->signals.at(pt.ring)(1, counters.at(pt.ring)) = pt.intensity;
@@ -191,48 +178,57 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
 }
 
 void LaserOdom::rollover(TimeType stamp) {
-    //    for (uint32_t i = 0; i + 1 < this->param.n_window; i++) {
-    //        std::swap(this->feat_pts.at(i), this->feat_pts.at(i + 1));
-    //        std::swap(this->scan_stamps.at(i), this->scan_stamps.at(i + 1));
-    //    }
-    //    this->scan_stamps.back() = stamp;
-    //
-    //    this->buildTrees();
-    //    for (unlong i = 0; i < this->param.n_ring; i++) {
-    //        this->counters.at(i) = 0;
-    //    }
-    //    if (!this->initialized) {
-    //        // This check is to avoid initializing against a partial scan.
-    //        if (!this->full_revolution) {
-    //            this->full_revolution = true;
-    //            return;
-    //        }
-    //        size_t feature_count = 0;
-    //        for (uint32_t i = 0; i < this->N_FEATURES; i++) {
-    //            feature_count += this->prv_feature_points.at(i).points.size();
-    //        }
-    //        if (feature_count >= (size_t)(this->param.min_features)) {
-    //            this->initialized = true;
-    //        }
-    //    }
-    //    this->prior_twist = this->cur_trajectory.back().vel;
-    //    this->cur_trajectory.back().pose.transformInverse(this->inv_prior_pose);
-    //
-    //    this->cur_trajectory.front().pose = this->cur_trajectory.back().pose;
-    //
-    //    for (uint32_t i = 1; i < this->param.num_trajectory_states; i++) {
-    //        this->cur_trajectory.at(i).pose = this->cur_trajectory.at(i - 1).pose;
-    //        this->cur_trajectory.at(i).pose.manifoldPlus(
-    //          (this->param.scan_period / (this->param.num_trajectory_states - 1)) * this->cur_trajectory.back().vel);
-    //    }
-    //    // Now previous trajectory will hold the "motion generated" trajectory
-    //    this->copyTrajectory();
-    //    this->updateDifferences();
+    // If there are n_scans worth of data, rotate
+    if (this->scan_stamps_chrono.size() == this->param.n_window) {
+        // Perform a left rotation
+        std::rotate(this->feat_pts.begin(), this->feat_pts.begin() + 1, this->feat_pts.end());
+        std::rotate(this->feat_pts_T.begin(), this->feat_pts_T.begin() + 1, this->feat_pts_T.end());
+        std::rotate(this->scan_stamps_chrono.begin(), this->scan_stamps_chrono.begin() + 1, this->scan_stamps_chrono.end());
+        this->scan_stamps_chrono.back() = stamp;
+    } else {
+        // grow storage
+        this->scan_stamps_chrono.emplace_back(stamp);
+        this->scan_stampsf.resize(this->scan_stamps_chrono.size());
+        VecE<Eigen::Tensor<float, 2>> vec(this->N_FEATURES);
+        this->feat_pts.emplace_back(std::move(vec));
+        VecE<Eigen::Tensor<float, 2>> vec2(this->N_FEATURES);
+        this->feat_pts_T.emplace_back(std::move(vec2));
+    }
+    for (uint32_t i = 0; i < this->scan_stamps_chrono.size(); i++) {
+        auto diff = this->scan_stamps_chrono.at(i) - this->scan_stamps_chrono.front();
+        this->scan_stampsf.at(i) = std::chrono::duration<float, std::ratio<1>>(diff).count();
+    }
+
+    for (unlong i = 0; i < this->param.n_ring; i++) {
+        this->counters.at(i) = 0;
+    }
+    if (!this->initialized) {
+        size_t feature_count = 0;
+        for (uint32_t i = 0; i < this->prev_feature_candidates.size(); i++) {
+            feature_count += this->prev_feature_candidates.at(i).dimension(1);
+        }
+
+        if (feature_count >= (size_t) (this->param.min_features)) {
+            this->initialized = true;
+        }
+    }
+    this->prior_twist = this->cur_trajectory.back().vel;
+    this->cur_trajectory.back().pose.transformInverse(this->inv_prior_pose);
+
+    this->cur_trajectory.front().pose = this->cur_trajectory.back().pose;
+
+    for (uint32_t i = 1; i < this->param.num_trajectory_states; i++) {
+        this->cur_trajectory.at(i).pose = this->cur_trajectory.at(i - 1).pose;
+        this->cur_trajectory.at(i).pose.manifoldPlus(
+          (this->param.scan_period / (this->param.num_trajectory_states - 1)) * this->cur_trajectory.back().vel);
+    }
+    // Now previous trajectory will hold the "motion generated" trajectory
+    this->copyTrajectory();
 }
 
 bool LaserOdom::runOptimization(ceres::Problem &problem) {
     ceres::Solver::Options options;
-    options.linear_solver_type = ceres::DENSE_QR;
+    options.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
     options.max_num_iterations = this->param.max_inner_iters;
     options.max_num_consecutive_invalid_steps = 30;
     options.function_tolerance = 1e-8;
@@ -270,9 +266,6 @@ bool LaserOdom::runOptimization(ceres::Problem &problem) {
         //                    LOG_ERROR("covariance did not compute");
         //                }
         //                covariance.GetCovarianceMatrixInTangentSpace(this->param_blocks, this->covar.data());
-        if (this->param.solution_remapping) {
-            this->applyRemap();
-        }
     }
     return true;
 }
@@ -524,24 +517,19 @@ bool LaserOdom::match() {
         if (op > 0) {
             last_transform = ref;
         }
-        for (uint32_t i = 0; i < this->scan_stamps_chrono.size(); i++) {
-            this->scan_stampsf.at(i) = std::chrono::duration_cast<std::chrono::seconds>(
-                                         this->scan_stamps_chrono.at(i) - this->scan_stamps_chrono.front())
-                                         .count();
-        }
+
         this->transformer.update(this->cur_trajectory, this->scan_stampsf);
 
         for (uint32_t j = 0; j < this->N_FEATURES; j++) {
             /// 1. Transform all features to the start of the window
-            for (uint32_t i = 0; i < this->param.n_window; i++) {
+            for (uint32_t i = 0; i < this->feat_pts.size(); i++) {
                 auto &feat = this->feat_pts.at(i).at(j);
                 auto &featT = this->feat_pts_T.at(i).at(j);
-                this->transformer.transformToStart(feat, featT);
+                this->transformer.transformToStart(feat, featT, i);
             }
             /// 1.5 Transform all candidate points to the start of the window
-            this->transformer.transformToStart(this->cur_feature_candidates.at(j), this->cur_feature_candidatesT.at(j));
-            this->transformer.transformToStart(this->prev_feature_candidates.at(j),
-                                               this->prev_feature_candidatesT.at(j));
+            this->transformer.transformToStart(this->cur_feature_candidates.at(j), this->cur_feature_candidatesT.at(j), this->scan_stamps_chrono.size() - 1);
+            this->transformer.transformToStart(this->prev_feature_candidates.at(j), this->prev_feature_candidatesT.at(j), this->scan_stamps_chrono.size() - 2);
             auto &cfeat = this->cur_feature_candidatesT.at(j);
             this->cur_feat_map.at(j) =
               Eigen::Map<Eigen::MatrixXf>(cfeat.data(), cfeat.dimension(0), cfeat.dimension(1));

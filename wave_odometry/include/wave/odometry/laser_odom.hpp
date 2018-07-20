@@ -106,7 +106,6 @@ struct LaserOdomParams {
     bool only_extract_features = false;   // If set, no transforms are calculated
     bool use_weighting = false;           // If set, pre-whiten residuals
     bool plot_stuff = false;              // If set, plot things for debugging
-    bool solution_remapping = false;      // If set, use solution remapping
     bool motion_prior = true;             // If set, use a constant velocity prior
     bool no_extrapolation = false;  // If set, discard any point match whose correspondences do not bound the point
                                     /**
@@ -159,12 +158,12 @@ class LaserOdom {
 
     LaserOdomParams param;
     bool initialized = false;
-    int prv_tick = 0;
+    int prv_tick = std::numeric_limits<int>::max();
 
     FeatureExtractor feature_extractor;
     Transformer transformer;
 
-    void updateStoredFeatures();
+    void updateFeatureCandidates();
     bool match();
     void buildResiduals(ceres::Problem &problem);
     //todo think about how to reuse residuals

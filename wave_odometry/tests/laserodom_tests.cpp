@@ -18,7 +18,6 @@ namespace {
 
 const std::string TEST_SCAN = "data/testscan.pcd";
 const std::string TEST_SEQUENCE_DIR = "data/garage/";
-const int sequence_length = 80;
 
 // Fixture to load same pointcloud all the time
 class OdomTestFile : public testing::Test {
@@ -77,7 +76,6 @@ void LoadParameters(const std::string &path, const std::string &filename, LaserO
     parser.addParam("only_extract_features", &(params.only_extract_features));
     parser.addParam("use_weighting", &(params.use_weighting));
     parser.addParam("plot_stuff", &(params.plot_stuff));
-    parser.addParam("solution_remapping", &(params.solution_remapping));
     parser.addParam("motion_prior", &(params.motion_prior));
     parser.addParam("no_extrapolation", &(params.no_extrapolation));
     parser.addParam("treat_lines_as_planes", &(params.treat_lines_as_planes));
@@ -142,7 +140,7 @@ TEST(OdomTest, StraightLineGarage) {
     pcl::PCLPointCloud2 temp;
     pcl::PointCloud<PointXYZIR> temp2;
     LOG_INFO("Starting to load clouds");
-    boost::filesystem::path p("/home/bapskiko/rosbags/last_ditch_bags/pcd");
+    boost::filesystem::path p("/home/ben/rosbags/last_ditch_bags/pcd");
     std::vector<boost::filesystem::path> v;
     std::copy(boost::filesystem::directory_iterator(p), boost::filesystem::directory_iterator(), std::back_inserter(v));
     std::sort(v.begin(), v.end());
@@ -176,19 +174,21 @@ TEST(OdomTest, StraightLineGarage) {
     LaserOdom odom(params, feature_params);
     std::vector<PointXYZIR> vec;
     uint16_t prev_enc = 0;
+    uint16_t encoder = 0;
 
     // Loop through pointclouds and send points grouped by encoder angle odom
-    auto start = std::chrono::steady_clock::now();
+    TimeType start;
+    auto offset = std::chrono::microseconds(0);
     for (int i = 0; i < length; i++) {
         std::cout << "Processing cloud " << i << " of " << length << "\n";
-        for (PointXYZIR pt : clds.at(i)) {
+        for (const auto &pt : clds.at(i)) {
             PointXYZIR recovered;
             // unpackage intensity and encoder
             auto ang = (std::atan2(pt.y, pt.x) * -1.0);
             // need to convert to 0 to 2pi
             ang < 0 ? ang = ang + 2.0*M_PI : ang;
 
-            uint16_t encoder = (uint16_t) ((ang / (2.0*M_PI)) * 36000.0);
+            encoder = (uint16_t) ((ang / (2.0*M_PI)) * 36000.0);
 
             // copy remaining fields
             recovered.x = pt.x;
@@ -196,10 +196,15 @@ TEST(OdomTest, StraightLineGarage) {
             recovered.z = pt.z;
             recovered.ring = pt.ring;
             recovered.intensity = pt.intensity;
+
+            if (200 + encoder < prev_enc) {
+                offset = offset + std::chrono::milliseconds(100);
+            }
+
             if (encoder != prev_enc) {
                 if (vec.size() > 0) {
-                    std::chrono::microseconds dur(clds.at(i).header.stamp);
-                    TimeType stamp(dur);
+                    std::chrono::microseconds dur((25 * encoder)/9);
+                    TimeType stamp = start + offset + dur;
                     odom.addPoints(vec, prev_enc, stamp);
                     vec.clear();
                 }

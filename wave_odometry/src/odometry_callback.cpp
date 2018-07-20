@@ -7,6 +7,7 @@ OdometryCallback::OdometryCallback(const Vec<VecE<Eigen::Tensor<float, 2>>> *fea
                                    const VecE<PoseVel> *traj,
                                    Vec<Vec<VecE<Eigen::Tensor<double, 3>>>> *ptT_jacobians,
                                    const Vec<float> *traj_stamps,
+                                   const Vec<float> *scan_stamps,
                                    Transformer *transformer)
     : ceres::EvaluationCallback(),
       feat_pts(feat_pts),
@@ -14,6 +15,7 @@ OdometryCallback::OdometryCallback(const Vec<VecE<Eigen::Tensor<float, 2>>> *fea
       traj(traj),
       ptT_jacobians(ptT_jacobians),
       traj_stamps(traj_stamps),
+      scan_stamps(scan_stamps),
       transformer(transformer) {
 
     this->interp_factors.resize(this->feat_pts->size());
@@ -32,7 +34,7 @@ OdometryCallback::OdometryCallback(const Vec<VecE<Eigen::Tensor<float, 2>>> *fea
 
             interp = Eigen::Tensor<float, 2>(3, pts.dimension(1));
             for(uint32_t pt_idx = 0; pt_idx < pts.dimension(1); ++pt_idx) {
-                float tau = pts(3, pt_idx);
+                float tau = pts(3, pt_idx) + this->scan_stamps->at(scan_idx);
                 if (tau > this->traj_stamps->at(stamp_idx + 1)) {
                     ++stamp_idx;
                 }
@@ -62,7 +64,7 @@ void OdometryCallback::PrepareForEvaluation(bool evaluate_jacobians, bool new_ev
             auto scan_idx = static_cast<uint32_t>(i / feat_cnt);
             auto feat_idx = static_cast<uint32_t>(i % feat_cnt);
             this->transformer->transformToStart(this->feat_pts->at(scan_idx)[feat_idx],
-                                                this->feat_ptsT->at(scan_idx)[feat_idx]);
+                                                this->feat_ptsT->at(scan_idx)[feat_idx], scan_idx);
         }
         this->old_jacobians = true;
     }
@@ -94,7 +96,8 @@ void OdometryCallback::evaluateJacobians() {
             for (uint32_t pt_cnt = 0; pt_cnt < pts.dimension(1); ++pt_cnt) {
 
                 /// need to find the state indices based on point timestamps
-                auto iter = std::upper_bound(this->traj_stamps->begin(), this->traj_stamps->end(), pts(3, pt_cnt));
+                float time = pts(3, pt_cnt) + this->scan_stamps->at(scan_idx);
+                auto iter = std::upper_bound(this->traj_stamps->begin(), this->traj_stamps->end(), time);
                 iter--;
                 auto prev_idx = static_cast<uint32_t>(iter - this->traj_stamps->begin());
                 uint32_t next_idx = prev_idx + 1;

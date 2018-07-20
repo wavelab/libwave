@@ -115,7 +115,7 @@ void FeatureExtractor::preFilter(const Tensorf &scan, const Tensorf &signals, co
         Eigen::Tensor<bool, 1> oc_tol2_cond = rng_diff.abs() > this->param.occlusion_tol_2;
         Eigen::Tensor<bool, 1> ang_diff_cond(range.at(i) - 1);
         ang_diff_cond =
-          scan.at(i).slice(ar2({4, 0}), ar2({1, range.at(i)})).convolve(diff_kernel, dims).chip(0, 0) <
+          signals.at(i).slice(ar2({0, 0}), ar2({1, range.at(i)})).convolve(diff_kernel, dims).chip(0, 0) <
           this->param.occlusion_tol;
 
         Eigen::Tensor<bool, 1> branch_1_cond(range.at(i) - 1);
@@ -252,7 +252,7 @@ void FeatureExtractor::flagNearbyPoints(const uint32_t p_idx, Eigen::Tensor<bool
 }
 
 void FeatureExtractor::sortAndBin(const Tensorf &scan, TensorIdx &feature_indices) {
-#pragma omp parallel for
+//#pragma omp parallel for
     for (uint32_t i = 0; i < this->param.N_FEATURES; i++) {
         for (unlong j = 0; j < this->n_ring; j++) {
             auto &def = this->param.feature_definitions.at(i);
@@ -287,7 +287,7 @@ void FeatureExtractor::sortAndBin(const Tensorf &scan, TensorIdx &feature_indice
 
             for (const auto &score : filt_scores) {
                 // Using data conversion to floor result
-                auto bin = (unlong)(scan.at(j)(3, score.first) * this->param.angular_bins);
+                auto bin = (unlong)((scan.at(j)(3, score.first) / 0.1) * this->param.angular_bins);
                 if (cnt_in_bins.at(bin) >= max_bin) {
                     continue;
                 }

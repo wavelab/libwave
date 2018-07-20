@@ -59,8 +59,8 @@ class Transformer {
      * @param points 2 dimensional tensor, 4 x N
      * @param points_transformed 2 dimensional tensor, will be resized to 3 x N
      */
-    void transformToStart(const Eigen::Tensor<float, 2> &points, Eigen::Tensor<float, 2> &points_transformed);
-    void transformToEnd(const Eigen::Tensor<float, 2> &points, Eigen::Tensor<float, 2> &points_transformed);
+    void transformToStart(const Eigen::Tensor<float, 2> &points, Eigen::Tensor<float, 2> &points_transformed, const uint32_t scan_idx);
+    void transformToEnd(const Eigen::Tensor<float, 2> &points, Eigen::Tensor<float, 2> &points_transformed, const uint32_t scan_idx);
 
     void constantTransform(const uint32_t &fromScan, const uint32_t &toScan, const Eigen::Tensor<float, 2> &input, Eigen::Tensor<float, 2> &output);
 

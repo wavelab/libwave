@@ -4,7 +4,7 @@
 
 namespace wave{
 
-TEST(Transformer, Transformer) {
+TEST(Transformer, Constructor) {
     TransformerParams params;
     Transformer transformer(params);
 }
@@ -73,7 +73,7 @@ TEST(Transformer, transformToStart) {
         scan(2,i) = 0.0f;
         scan(3,i) = 0.4f + 0.2f * (static_cast<float>(i)/100.0f);
     }
-    EXPECT_NO_THROW(transformer.transformToStart(scan, tscan));
+    EXPECT_NO_THROW(transformer.transformToStart(scan, tscan, 0));
 }
 
 /// Given a set of points in a circle, this should stretch/transform it smoothly across trajectory
@@ -123,12 +123,12 @@ TEST(Transformer, transformViz) {
             scan(0,j*n_pts + i) = static_cast<float>(2.0);
             scan(1,j*n_pts + i) = static_cast<float>(2.0);
             scan(2,j*n_pts + i) = 0.1f * (float)j + 0.1f * (static_cast<float>(i)/100.0f);
-            scan(3,j*n_pts + i) = 0.2f * (float)j + 0.2f * (static_cast<float>(i)/100.0f);
+            scan(3,j*n_pts + i) = 0.2f * (static_cast<float>(i)/100.0f);
         }
     }
 
-    transformer.transformToStart(scan, tscan);
-    transformer.transformToEnd(scan, bscan);
+    transformer.transformToStart(scan, tscan, 0);
+    transformer.transformToEnd(scan, bscan, 0);
 
     pcl::PointCloud<pcl::PointXYZI> transformed, original, btransformed;
     for (long i = 0; i < params.n_scans * n_pts; i++) {
@@ -169,7 +169,7 @@ TEST(Transformer, transformViz) {
     display.addPointcloud(original.makeShared(), 1);
     display.addPointcloud(btransformed.makeShared(), 2);
 
-    cin.get();
+    std::this_thread::sleep_for(std::chrono::seconds(10));
 }
 
 }

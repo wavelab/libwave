@@ -32,6 +32,7 @@ class CallbackFixture : public testing::Test {
         auto traj_time = this->traj_stamps.begin() + 1;
 
         for (uint32_t i = 0; i < n_scans; ++i) {
+            scan_stamps.emplace_back((float) i);
             feat_pts.at(i).resize(n_features);
             feat_ptsT.at(i).resize(n_features);
             ptT_jacobians.at(i).resize(n_features);
@@ -42,7 +43,7 @@ class CallbackFixture : public testing::Test {
                     Eigen::array<int, 2> offsets = {0, static_cast<int>(k)};
                     Eigen::array<int, 2> extents = {3, 1};
                     feat_pts.at(i).at(j).slice(offsets, extents).setRandom();
-                    float stamp = static_cast<float>(i + ((float) k / 5000.0));
+                    float stamp = static_cast<float>(((float) k / 5000.0));
                     feat_pts.at(i).at(j)(3, k) = stamp;
                     if (stamp > *traj_time) {
                         this->crossover.emplace_back(5000 * i + k);
@@ -54,9 +55,11 @@ class CallbackFixture : public testing::Test {
             }
         }
 
-        transformer = new Transformer(TransformerParams());
+        TransformerParams transformerParams;
+        transformerParams.traj_resolution = traj_resolution;
+        transformer = new Transformer(transformerParams);
 
-        cb = new OdometryCallback(&feat_pts, &feat_ptsT, &traj, &ptT_jacobians, &traj_stamps, transformer);
+        cb = new OdometryCallback(&feat_pts, &feat_ptsT, &traj, &ptT_jacobians, &traj_stamps, &scan_stamps, transformer);
     }
 
     const unsigned int n_scans = 2;
@@ -71,7 +74,7 @@ class CallbackFixture : public testing::Test {
     Vec<VecE<Eigen::Tensor<float, 2>>> feat_ptsT;
     VecE<PoseVel> traj;
     Vec<Vec<VecE<Eigen::Tensor<double, 3>>>> ptT_jacobians;
-    Vec<float> traj_stamps;
+    Vec<float> traj_stamps, scan_stamps;
     Transformer *transformer;
 
     OdometryCallback *cb;
@@ -123,7 +126,7 @@ TEST_F(CallbackFixture, JacobianTest) {
                     this->traj.at(k).pose.setIdentity();
                     this->traj.at(k).pose.manifoldPlus(diff);
                     this->transformer->update(this->traj, this->traj_stamps);
-                    this->transformer->transformToStart(this->feat_pts.at(i).at(j), this->feat_ptsT.at(i).at(j));
+                    this->transformer->transformToStart(this->feat_pts.at(i).at(j), this->feat_ptsT.at(i).at(j), i);
 
                     Eigen::array<int, 2> offsets = {0, 0};
                     Eigen::array<int, 2> extents = {3, static_cast<int>(this->feat_pts.at(i).at(j).dimension(1))};
@@ -138,7 +141,7 @@ TEST_F(CallbackFixture, JacobianTest) {
                     this->traj.at(k).vel(dim_idx) = step;
 
                     this->transformer->update(this->traj, this->traj_stamps);
-                    this->transformer->transformToStart(this->feat_pts.at(i).at(j), this->feat_ptsT.at(i).at(j));
+                    this->transformer->transformToStart(this->feat_pts.at(i).at(j), this->feat_ptsT.at(i).at(j), i);
 
                     coljac = (this->feat_ptsT.at(i).at(j) - this->feat_pts.at(i).at(j).slice(offsets, extents))
                                .cast<double>() /
@@ -153,11 +156,12 @@ TEST_F(CallbackFixture, JacobianTest) {
             /// The feature index does not matter, only the scan index and crossover points
 
             for (uint32_t pt_idx = 0; pt_idx < this->n_pts; ++pt_idx) {
+                float time = (float)(i) + this->feat_pts.at(i).at(j)(3, pt_idx);
                 auto state_iter = std::lower_bound(
-                  this->traj_stamps.begin(), this->traj_stamps.end(), this->feat_pts.at(i).at(j)(3, pt_idx));
+                  this->traj_stamps.begin(), this->traj_stamps.end(), time);
                 auto state_offset = static_cast<uint32_t>(state_iter - this->traj_stamps.begin());
 
-                if(*state_iter >= this->feat_pts.at(i).at(j)(3, pt_idx) && state_offset > 0) {
+                if(*state_iter >= time && state_offset > 0) {
                     --state_offset;
                 }
 

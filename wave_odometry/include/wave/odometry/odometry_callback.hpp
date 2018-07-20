@@ -24,6 +24,7 @@ struct OdometryCallback : ceres::EvaluationCallback {
                               const VecE<PoseVel> *traj,
                               Vec<Vec<VecE<Eigen::Tensor<double, 3>>>> *ptT_jacobians,
                               const Vec<float> *traj_stamps,
+                              const Vec<float> *scan_stamps,
                               Transformer *transformer);
     
     OdometryCallback() = delete;
@@ -45,6 +46,9 @@ struct OdometryCallback : ceres::EvaluationCallback {
     Vec<Vec<VecE<Eigen::Tensor<double, 3>>>> *ptT_jacobians;
 
     const Vec<float> *traj_stamps;
+
+    /// Points are stored with time relative to the start of the scan
+    const Vec<float> *scan_stamps;
     Transformer *transformer;
 
  private:
