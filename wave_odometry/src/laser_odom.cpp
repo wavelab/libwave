@@ -2,8 +2,9 @@
 
 namespace wave {
 
-LaserOdom::LaserOdom(const LaserOdomParams params, const FeatureExtractorParams feat_params)
-    : param(params), feature_extractor(feat_params, params.n_ring), transformer(Transformer(TransformerParams())) {
+LaserOdom::LaserOdom(const LaserOdomParams params, const FeatureExtractorParams feat_params,
+                     const TransformerParams transformer_params)
+    : param(params), feature_extractor(feat_params, params.n_ring), transformer(transformer_params) {
     this->CSVFormat = new Eigen::IOFormat(Eigen::FullPrecision, Eigen::DontAlignCols, ", ", ", ");
 
     auto n_ring = static_cast<size_t>(param.n_ring);
@@ -14,6 +15,14 @@ LaserOdom::LaserOdom(const LaserOdomParams params, const FeatureExtractorParams 
     this->cur_feature_candidates.resize(this->N_FEATURES);
     this->cur_feature_candidatesT.resize(this->N_FEATURES);
     this->prev_feature_candidates.resize(this->N_FEATURES);
+    this->prev_feature_candidatesT.resize(this->N_FEATURES);
+    this->cur_feat_map.resize(this->N_FEATURES);
+    this->prev_feat_map.resize(this->N_FEATURES);
+    this->ave_pts.resize(this->N_FEATURES);
+    this->feature_tracks.resize(this->N_FEATURES);
+    this->cur_kd_idx.resize(this->N_FEATURES);
+    this->curm1_kd_idx.resize(this->N_FEATURES);
+    this->ave_kd_idx.resize(this->N_FEATURES);
 
     this->cur_scan.resize(n_ring);
     this->signals.resize(n_ring);
@@ -38,8 +47,6 @@ LaserOdom::LaserOdom(const LaserOdomParams params, const FeatureExtractorParams 
     if (this->param.n_window < 2) {
         throw std::out_of_range("Window size must be at least 2");
     }
-
-    double step_size = 0.1 / (double) (this->param.num_trajectory_states - 1);
 
     if (params.output_trajectory) {
         long timestamp = std::chrono::system_clock::now().time_since_epoch().count();
@@ -114,12 +121,13 @@ void LaserOdom::updateFeatureCandidates() {
         feat.resize(4, featcnt);
         long offset = 0;
         for (uint32_t j = 0; j < this->indices.at(i).size(); ++j) {
-#pragma omp parallel for
+//#pragma omp parallel for
             for (uint32_t k = 0; k < this->indices.at(i).at(j).dimension(0); ++k) {
                 const int &idx = this->indices.at(i).at(j)(k);
                 feat.slice(ar2({0, offset}), ar2({4, 1})) = this->cur_scan.at(j).slice(ar2({0, idx}), ar2({4, 1}));
+                ++offset;
             }
-            offset += this->indices.at(i).at(j).dimension(0);
+//            offset += this->indices.at(i).at(j).dimension(0);
         }
     }
 }
@@ -129,7 +137,7 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
         this->feature_extractor.getFeatures(this->cur_scan, this->signals, this->counters, this->indices);
         this->updateFeatureCandidates();
         if (this->initialized) {
-            this->match();
+            this->match(stamp);
 
             if (this->param.output_trajectory) {
                 this->file << this->cur_trajectory.back().pose.storage.format(*(this->CSVFormat)) << std::endl;
@@ -183,8 +191,26 @@ void LaserOdom::rollover(TimeType stamp) {
         // Perform a left rotation
         std::rotate(this->feat_pts.begin(), this->feat_pts.begin() + 1, this->feat_pts.end());
         std::rotate(this->feat_pts_T.begin(), this->feat_pts_T.begin() + 1, this->feat_pts_T.end());
-        std::rotate(this->scan_stamps_chrono.begin(), this->scan_stamps_chrono.begin() + 1, this->scan_stamps_chrono.end());
+        std::rotate(
+          this->scan_stamps_chrono.begin(), this->scan_stamps_chrono.begin() + 1, this->scan_stamps_chrono.end());
+
+        std::rotate(this->cur_trajectory.begin(),
+                    this->cur_trajectory.begin() + this->param.num_trajectory_states - 1,
+                    this->cur_trajectory.end());
+
+        // adjust timestamps and trajectory states to start of new window
+        for (uint32_t i = 0; i < this->scan_stampsf.size() - 1; ++i) {
+            for (uint32_t j = 0; j < this->param.num_trajectory_states - 1; ++j) {
+                this->cur_trajectory.at(i * this->param.num_trajectory_states + j).pose =
+                  this->cur_trajectory.front().pose.transformInverse() *
+                  this->cur_trajectory.at(i * this->param.num_trajectory_states + j).pose;
+            }
+        }
         this->scan_stamps_chrono.back() = stamp;
+        auto index = (this->param.num_trajectory_states - 1) * (this->scan_stampsf.size() - 1);
+        this->cur_trajectory.at(index).pose =
+                this->cur_trajectory.front().pose.transformInverse() *
+                this->cur_trajectory.at(index).pose;
     } else {
         // grow storage
         this->scan_stamps_chrono.emplace_back(stamp);
@@ -193,37 +219,42 @@ void LaserOdom::rollover(TimeType stamp) {
         this->feat_pts.emplace_back(std::move(vec));
         VecE<Eigen::Tensor<float, 2>> vec2(this->N_FEATURES);
         this->feat_pts_T.emplace_back(std::move(vec2));
+
+        if (this->cur_trajectory.empty()) {
+            this->cur_trajectory.resize(this->param.num_trajectory_states);
+            this->trajectory_stamps.resize(this->param.num_trajectory_states);
+        } else {
+            this->cur_trajectory.resize(this->cur_trajectory.size() + this->param.num_trajectory_states - 1);
+            this->trajectory_stamps.resize(this->trajectory_stamps.size() + this->param.num_trajectory_states - 1);
+        }
+        this->prev_trajectory.resize(this->cur_trajectory.size());
     }
+
+    uint32_t mult = this->param.num_trajectory_states - 1;
     for (uint32_t i = 0; i < this->scan_stamps_chrono.size(); i++) {
         auto diff = this->scan_stamps_chrono.at(i) - this->scan_stamps_chrono.front();
         this->scan_stampsf.at(i) = std::chrono::duration<float, std::ratio<1>>(diff).count();
+        this->trajectory_stamps.at(i * mult) = this->scan_stampsf.at(i);
+        if (i != 0) {
+            float step = (this->scan_stampsf.at(i) - this->scan_stampsf.at(i-1)) / mult;
+            for (uint32_t j = 1; j < mult; ++j) {
+                this->trajectory_stamps.at((i-1) * mult + j) = this->trajectory_stamps.at((i-1) * mult) + j * step;
+            }
+        }
     }
 
-    for (unlong i = 0; i < this->param.n_ring; i++) {
-        this->counters.at(i) = 0;
-    }
+    std::fill(this->counters.begin(), this->counters.end(), 0);
+
     if (!this->initialized) {
         size_t feature_count = 0;
-        for (uint32_t i = 0; i < this->prev_feature_candidates.size(); i++) {
-            feature_count += this->prev_feature_candidates.at(i).dimension(1);
+        for (const auto &cand : this->prev_feature_candidates) {
+            feature_count += cand.dimension(1);
         }
 
-        if (feature_count >= (size_t) (this->param.min_features)) {
+        if (feature_count >= (size_t)(this->param.min_features)) {
             this->initialized = true;
         }
     }
-    this->prior_twist = this->cur_trajectory.back().vel;
-    this->cur_trajectory.back().pose.transformInverse(this->inv_prior_pose);
-
-    this->cur_trajectory.front().pose = this->cur_trajectory.back().pose;
-
-    for (uint32_t i = 1; i < this->param.num_trajectory_states; i++) {
-        this->cur_trajectory.at(i).pose = this->cur_trajectory.at(i - 1).pose;
-        this->cur_trajectory.at(i).pose.manifoldPlus(
-          (this->param.scan_period / (this->param.num_trajectory_states - 1)) * this->cur_trajectory.back().vel);
-    }
-    // Now previous trajectory will hold the "motion generated" trajectory
-    this->copyTrajectory();
 }
 
 bool LaserOdom::runOptimization(ceres::Problem &problem) {
@@ -289,7 +320,7 @@ void LaserOdom::extendFeatureTracks(const Eigen::MatrixXi &idx, const Eigen::Mat
             if (dist(i, j) > this->param.max_correspondence_dist) {
                 continue;
             }
-            Vec3f pt = this->cur_feat_map.at(feat_id).block<3, 1>(0, idx(i, j));
+            Vec3f pt = this->cur_feat_map.at(feat_id)->block<3, 1>(0, idx(i, j));
             if (matches.empty()) {
                 matches.emplace_back(idx(i, j));
                 min_elev = std::atan2(pt(2), std::sqrt(pt(0) * pt(0) + pt(1) * pt(1)));
@@ -318,7 +349,7 @@ void LaserOdom::extendFeatureTracks(const Eigen::MatrixXi &idx, const Eigen::Mat
                     continue;
                 }
                 const auto &geometry = this->feature_tracks.at(feat_id).at(j).geometry;
-                const auto &pt = this->cur_feat_map.at(feat_id).block<3, 1>(0, elem);
+                const auto &pt = this->cur_feat_map.at(feat_id)->block<3, 1>(0, elem);
                 Vec3 diff = (pt.cast<double>() - geometry.block<3, 1>(3, 0));
                 Vec1 error;
                 if (this->feature_residuals.at(feat_id) == PointToLine) {
@@ -393,7 +424,7 @@ void LaserOdom::createNewFeatureTracks(const Eigen::MatrixXi &idx, const Eigen::
             if (dist(i, j) > this->param.max_correspondence_dist) {
                 continue;
             }
-            Vec3f pt = this->cur_feat_map.at(feat_id).block<3, 1>(0, j);
+            Vec3f pt = this->cur_feat_map.at(feat_id)->block<3, 1>(0, j);
             if (matches.empty()) {
                 matches.emplace_back(idx(i, j));
                 min_elev = std::atan2(pt(2), std::sqrt(pt(0) * pt(0) + pt(1) * pt(1)));
@@ -422,29 +453,29 @@ void LaserOdom::createNewFeatureTracks(const Eigen::MatrixXi &idx, const Eigen::
 
             if (this->feature_residuals.at(feat_id) == PointToLine) {
                 geometry.block<3, 1>(3, 0) =
-                  (this->prev_feat_map.at(feat_id).block<3, 1>(0, matches.at(0)).cast<double>() +
-                   this->prev_feat_map.at(feat_id).block<3, 1>(0, matches.at(1)).cast<double>()) /
+                  (this->prev_feat_map.at(feat_id)->block<3, 1>(0, matches.at(0)).cast<double>() +
+                   this->prev_feat_map.at(feat_id)->block<3, 1>(0, matches.at(1)).cast<double>()) /
                   2.0;
 
                 geometry.block<3, 1>(0, 0) =
-                  this->prev_feat_map.at(feat_id).block<3, 1>(0, matches.at(0)).cast<double>() -
-                  this->prev_feat_map.at(feat_id).block<3, 1>(0, matches.at(1)).cast<double>();
+                  this->prev_feat_map.at(feat_id)->block<3, 1>(0, matches.at(0)).cast<double>() -
+                  this->prev_feat_map.at(feat_id)->block<3, 1>(0, matches.at(1)).cast<double>();
             } else {
                 geometry.block<3, 1>(3, 0) =
-                  (this->prev_feat_map.at(feat_id).block<3, 1>(0, matches.at(0)).cast<double>() +
-                   this->prev_feat_map.at(feat_id).block<3, 1>(0, matches.at(1)).cast<double>() +
-                   this->prev_feat_map.at(feat_id).block<3, 1>(0, matches.at(2)).cast<double>()) /
+                  (this->prev_feat_map.at(feat_id)->block<3, 1>(0, matches.at(0)).cast<double>() +
+                   this->prev_feat_map.at(feat_id)->block<3, 1>(0, matches.at(1)).cast<double>() +
+                   this->prev_feat_map.at(feat_id)->block<3, 1>(0, matches.at(2)).cast<double>()) /
                   3.0;
 
-                Vec3f a = this->prev_feat_map.at(feat_id).block<3, 1>(0, matches.at(0)) -
-                          this->prev_feat_map.at(feat_id).block<3, 1>(0, matches.at(1));
-                Vec3f b = this->prev_feat_map.at(feat_id).block<3, 1>(0, matches.at(0)) -
-                          this->prev_feat_map.at(feat_id).block<3, 1>(0, matches.at(2));
+                Vec3f a = this->prev_feat_map.at(feat_id)->block<3, 1>(0, matches.at(0)) -
+                          this->prev_feat_map.at(feat_id)->block<3, 1>(0, matches.at(1));
+                Vec3f b = this->prev_feat_map.at(feat_id)->block<3, 1>(0, matches.at(0)) -
+                          this->prev_feat_map.at(feat_id)->block<3, 1>(0, matches.at(2));
                 geometry.block<3, 1>(0, 0) = a.cross(b).cast<double>();
             }
             geometry.block<3, 1>(3, 0).normalize();
 
-            Vec3 diff = (this->cur_feat_map.at(feat_id).block<3, 1>(0, j).cast<double>() - geometry.block<3, 1>(3, 0));
+            Vec3 diff = (this->cur_feat_map.at(feat_id)->block<3, 1>(0, j).cast<double>() - geometry.block<3, 1>(3, 0));
             Vec1 error;
             if (this->feature_residuals.at(feat_id) == PointToLine) {
                 Vec3 err = (diff - geometry.block<3, 1>(0, 0) * (diff.transpose() * geometry.block<3, 1>(0, 0)));
@@ -498,14 +529,42 @@ void LaserOdom::createNewFeatureTracks(const Eigen::MatrixXi &idx, const Eigen::
     extents[1] = static_cast<long int>(prev_new_feat_cnt);
     prev_new_feat_points = prev_new_feat_points.slice(offsets, extents);
     this->feat_pts.at(this->param.n_window - 2).at(feat_id) =
-      this->feat_pts.at(this->param.n_window - 2)
-        .at(feat_id)
-        .concatenate(prev_new_feat_points, 1);
+      this->feat_pts.at(this->param.n_window - 2).at(feat_id).concatenate(prev_new_feat_points, 1);
 }
 
 void LaserOdom::mergeFeatureTracks(uint32_t) {}
 
-bool LaserOdom::match() {
+void LaserOdom::prepTrajectory(const TimeType &stamp) {
+    // scan stamps f holds the timestamps at the start of each scan
+    // need to update the latter half of trajectory stamps based on the difference between
+    // stamp and the last timestamp in stamps chrono.
+    auto diff = stamp - this->scan_stamps_chrono.back();
+    float scan_duration = std::chrono::duration<float, std::ratio<1>>(diff).count();
+
+    // set up timestamps and trajectory for current scan
+    float step = scan_duration / (this->param.num_trajectory_states - 1);
+
+    unlong idx = this->trajectory_stamps.size() - this->param.num_trajectory_states + 1;
+    for ( ; idx < this->trajectory_stamps.size(); ++idx) {
+        this->trajectory_stamps.at(idx) = this->trajectory_stamps.at(idx - 1) + step;
+
+        this->cur_trajectory.at(idx).pose = this->cur_trajectory.at(idx - 1).pose.manifoldPlus(
+                step * this->cur_trajectory.at(idx - 1).vel);
+        this->cur_trajectory.at(idx).vel = this->cur_trajectory.at(idx - 1).vel;
+    }
+    // as to limit floating point error
+    this->trajectory_stamps.back() = std::chrono::duration<float, std::ratio<1>>(
+            stamp - this->scan_stamps_chrono.front()).count();
+
+    this->prior_twist = this->cur_trajectory.back().vel;
+
+    // Now previous trajectory will hold the "motion generated" trajectory
+    this->copyTrajectory();
+}
+
+bool LaserOdom::match(const TimeType &stamp) {
+    this->prepTrajectory(stamp);
+
     T_TYPE last_transform;
     auto &ref = this->cur_trajectory.back().pose;
 
@@ -518,7 +577,7 @@ bool LaserOdom::match() {
             last_transform = ref;
         }
 
-        this->transformer.update(this->cur_trajectory, this->scan_stampsf);
+        this->transformer.update(this->cur_trajectory, this->trajectory_stamps);
 
         for (uint32_t j = 0; j < this->N_FEATURES; j++) {
             /// 1. Transform all features to the start of the window
@@ -528,19 +587,21 @@ bool LaserOdom::match() {
                 this->transformer.transformToStart(feat, featT, i);
             }
             /// 1.5 Transform all candidate points to the start of the window
-            this->transformer.transformToStart(this->cur_feature_candidates.at(j), this->cur_feature_candidatesT.at(j), this->scan_stamps_chrono.size() - 1);
-            this->transformer.transformToStart(this->prev_feature_candidates.at(j), this->prev_feature_candidatesT.at(j), this->scan_stamps_chrono.size() - 2);
+            this->transformer.transformToStart(this->cur_feature_candidates.at(j),
+                                               this->cur_feature_candidatesT.at(j),
+                                               this->scan_stamps_chrono.size() - 1);
+            this->transformer.transformToStart(this->prev_feature_candidates.at(j),
+                                               this->prev_feature_candidatesT.at(j),
+                                               this->scan_stamps_chrono.size() - 2);
             auto &cfeat = this->cur_feature_candidatesT.at(j);
-            this->cur_feat_map.at(j) =
-              Eigen::Map<Eigen::MatrixXf>(cfeat.data(), cfeat.dimension(0), cfeat.dimension(1));
+            this->cur_feat_map.at(j) = std::make_shared<Eigen::Map<MatXf>>(cfeat.data(), cfeat.dimension(0), cfeat.dimension(1));
 
             auto &pfeat = this->prev_feature_candidatesT.at(j);
-            this->prev_feat_map.at(j) =
-              Eigen::Map<Eigen::MatrixXf>(pfeat.data(), pfeat.dimension(0), pfeat.dimension(1));
+            this->prev_feat_map.at(j) = std::make_shared<Eigen::Map<MatXf>>(pfeat.data(), pfeat.dimension(0), pfeat.dimension(1));
 
             /// 2. Update average point position from each feature tracks
             this->ave_pts.at(j).resize(3, this->feature_tracks.at(j).size());
-#pragma omp parallel for
+//#pragma omp parallel for
             for (uint32_t t_idx = 0; t_idx < this->feature_tracks.at(j).size(); t_idx++) {
                 const auto &track = this->feature_tracks.at(j).at(t_idx);
                 this->ave_pts.at(j).block<3, 1>(0, t_idx) = track.geometry.block<3, 1>(3, 0).cast<float>();
@@ -549,23 +610,26 @@ bool LaserOdom::match() {
             delete this->cur_kd_idx.at(j);
             delete this->curm1_kd_idx.at(j);
             delete this->ave_kd_idx.at(j);
-            this->cur_kd_idx.at(j) = Nabo::NNSearchF::createKDTreeLinearHeap(this->cur_feat_map.at(j));
-            this->curm1_kd_idx.at(j) = Nabo::NNSearchF::createKDTreeLinearHeap(this->prev_feat_map.at(j));
-            this->ave_kd_idx.at(j) = Nabo::NNSearchF::createKDTreeLinearHeap(this->ave_pts.at(j));
+            this->cur_kd_idx.at(j) = Nabo::NNSearchF::createKDTreeLinearHeap(*(this->cur_feat_map.at(j)));
+            this->curm1_kd_idx.at(j) = Nabo::NNSearchF::createKDTreeLinearHeap(*(this->prev_feat_map.at(j)));
 
-            /// 4. Find correspondences for existing feature tracks in current scan
             Eigen::MatrixXi nn_idx;
             Eigen::MatrixXf nn_dist;
-            this->cur_kd_idx.at(j)->knn(this->ave_pts.at(j), nn_idx, nn_dist, 5, 0.1, Nabo::NNSearchF::SORT_RESULTS);
-            if (op == 0) {
-                this->cur_feat_idx.at(j).resize(static_cast<unsigned long>(this->cur_feat_map.at(j).size()));
-                std::fill(this->cur_feat_idx.at(j).begin(), this->cur_feat_idx.at(j).end(), -1);
+            if (!this->feature_tracks.at(j).empty()) {
+                this->ave_kd_idx.at(j) = Nabo::NNSearchF::createKDTreeLinearHeap(this->ave_pts.at(j));
+
+                /// 4. Find correspondences for existing feature tracks in current scan
+                this->cur_kd_idx.at(j)->knn(this->ave_pts.at(j), nn_idx, nn_dist, 5, 0.1, Nabo::NNSearchF::SORT_RESULTS);
+                if (op == 0) {
+                    this->cur_feat_idx.at(j).resize(static_cast<unsigned long>(this->cur_feat_map.at(j)->size()));
+                    std::fill(this->cur_feat_idx.at(j).begin(), this->cur_feat_idx.at(j).end(), -1);
+                }
+                this->extendFeatureTracks(nn_idx, nn_dist, j);
             }
-            this->extendFeatureTracks(nn_idx, nn_dist, j);
 
             /// 5. Create new feature tracks between new and old scan
             this->curm1_kd_idx.at(j)->knn(
-              this->cur_feat_map.at(j), nn_idx, nn_dist, 5, 0.1, Nabo::NNSearchF::SORT_RESULTS);
+              *(this->cur_feat_map.at(j)), nn_idx, nn_dist, 5, 0.1, Nabo::NNSearchF::SORT_RESULTS);
             this->createNewFeatureTracks(nn_idx, nn_dist, j);
 
             /// 6. Merge feature tracks (optional)

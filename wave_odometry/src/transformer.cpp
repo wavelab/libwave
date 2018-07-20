@@ -72,6 +72,10 @@ void Transformer::transformToStart(const Eigen::Tensor<float, 2> &points, Eigen:
 
 //#pragma omp parallel for
     for (long i = 0; i < points.dimension(1); i++) {
+        float pttime = points(3, i);
+        if (pttime < 0 || pttime > 0.1) {
+            throw std::out_of_range("point time not good");
+        }
         float time = points(3, i) + this->traj_stamps.at(this->scan_indices.at(scan_idx));
         auto idx = std::lower_bound(this->traj_stamps.begin(), this->traj_stamps.end(), time);
         auto index = static_cast<uint32_t>(idx - this->traj_stamps.begin());

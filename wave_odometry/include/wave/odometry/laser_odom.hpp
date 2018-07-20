@@ -118,7 +118,8 @@ struct LaserOdomParams {
 class LaserOdom {
  public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    explicit LaserOdom(const LaserOdomParams params, const FeatureExtractorParams feat_params);
+    explicit LaserOdom(const LaserOdomParams params, const FeatureExtractorParams feat_params,
+                           const TransformerParams transformer_params);
     ~LaserOdom();
     void addPoints(const std::vector<PointXYZIR> &pts, int tick, TimeType stamp);
     void rollover(TimeType stamp);
@@ -128,7 +129,6 @@ class LaserOdom {
 
     VecE<PoseVel> cur_trajectory, prev_trajectory;
 
-    T_TYPE inv_prior_pose;
     Vec6 prior_twist;
 
     // Shared memory
@@ -164,7 +164,8 @@ class LaserOdom {
     Transformer transformer;
 
     void updateFeatureCandidates();
-    bool match();
+    void prepTrajectory(const TimeType &stamp);
+    bool match(const TimeType &stamp);
     void buildResiduals(ceres::Problem &problem);
     //todo think about how to reuse residuals
     Vec<std::shared_ptr<ceres::CostFunction>> costs;
@@ -205,7 +206,7 @@ class LaserOdom {
     /// This stores candidate feature points before they are put into feat_pts container.
     VecE<Eigen::Tensor<float, 2>> cur_feature_candidates, prev_feature_candidates;
     VecE<Eigen::Tensor<float, 2>> cur_feature_candidatesT, prev_feature_candidatesT;
-    Vec<Eigen::Map<Eigen::MatrixXf>> cur_feat_map, prev_feat_map;
+    Vec<std::shared_ptr<Eigen::Map<Eigen::MatrixXf>>> cur_feat_map, prev_feat_map;
     Vec<Vec<Eigen::Map<MatXf>>> feat_T_map;
     /// stores the index of the feature track associated with each feature point. -1 if not associated with a feature track
     Vec<Vec<int>> cur_feat_idx, prev_feat_idx;
