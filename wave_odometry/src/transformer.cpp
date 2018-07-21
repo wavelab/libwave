@@ -6,7 +6,7 @@ void Transformer::update(const std::vector<PoseVel, Eigen::aligned_allocator<Pos
                          const std::vector<float> &stamps) {
     this->aug_trajectories = trajectory;
     this->traj_stamps = stamps;
-    this->scan_indices.resize(this->params.n_scans + 1);
+    this->scan_indices.resize((this->traj_stamps.size() - 1)/(this->params.traj_resolution - 1));
     uint32_t n = 0;
     for (auto &val : this->scan_indices) {
         val = n;
