@@ -89,6 +89,20 @@ class PointCloudDisplay {
                  int id2,
                  bool reset_camera = false);
 
+    /**
+     * Queues a square to be added to the display.
+     * @param pt0 center of square
+     * @param dir surface normal for square
+     * @param sidelength of the square
+     * @param id Shape id to use in the viewer
+     * @param reset_camera if true, move the camera to fit the scene
+     */
+    void addSquare(const pcl::PointXYZ &pt0,
+                   const pcl::PointXYZ &dir,
+                   float l1dist,
+                   int id,
+                   bool reset_camera = false);
+
     void removeAll();
 
  private:
@@ -134,9 +148,17 @@ class PointCloudDisplay {
         bool reset_camera;
     };
 
+    /** Struct for square buffer */
+    struct Square {
+        pcl::PlanarPolygon<pcl::PointXYZ> planar_poly;
+        int id;
+        bool reset_camera;
+    };
+
     std::queue<Cloud> clouds;
     std::queue<CloudI> cloudsi;
     std::queue<Line> lines;
+    std::queue<Square> squares;
     double radius;  // radius for line endpoints.
 };
 

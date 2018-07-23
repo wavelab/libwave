@@ -75,13 +75,35 @@ void PointCloudDisplay::addLine(const pcl::PointXYZ &pt1,
     this->update_mutex.unlock();
 }
 
+void PointCloudDisplay::addSquare(const pcl::PointXYZ &pt0, const pcl::PointXYZ &dir, float l1dist, int id,
+                                  bool reset_camera) {
+    pcl::PointCloud<pcl::PointXYZ>::VectorType contour;
+    float offset = 0.5f * l1dist;
+    contour.emplace_back(pcl::PointXYZ(-offset, -offset, pt0.z));
+    contour.emplace_back(pcl::PointXYZ(-offset, offset, 0));
+    contour.emplace_back(pcl::PointXYZ(offset, offset, 0));
+    contour.emplace_back(pcl::PointXYZ(offset, -offset, 0));
+
+    Eigen::Vector4f coefficients;
+    coefficients(0) = dir.x;
+    coefficients(1) = dir.y;
+    coefficients(2) = dir.z;
+    coefficients(3) = -pt0.x * dir.x - pt0.y * dir.y - pt0.z * dir.z;
+
+    pcl::PlanarPolygon<pcl::PointXYZ> square_poly(contour, coefficients);
+
+    this->update_mutex.lock();
+    this->squares.emplace(Square{square_poly, id, reset_camera});
+    this->update_mutex.unlock();
+}
+
 void PointCloudDisplay::updateInternal() {
     if(!(this->resetLines.test_and_set(std::memory_order_relaxed))) {
         this->viewer->removeAllShapes();
         this->viewer->removeAllPointClouds();
     }
     // add or update clouds in the viewer until the queue is empty
-    while (this->clouds.size() != 0) {
+    while (!this->clouds.empty()) {
         const auto &cld = this->clouds.front();
         // Give each id a unique color, using the Glasbey table of maximally
         // different colors. Use white for 0
@@ -107,7 +129,7 @@ void PointCloudDisplay::updateInternal() {
         this->clouds.pop();
     }
 
-    while (this->cloudsi.size() != 0) {
+    while (!this->cloudsi.empty()) {
         const auto &cld = this->cloudsi.front();
         pcl::visualization::PointCloudColorHandlerGenericField<pcl::PointXYZI>
           col_handler(cld.cloud, "intensity");
@@ -127,22 +149,8 @@ void PointCloudDisplay::updateInternal() {
     double hi = 200;
     double low = 0;
 
-    while (this->lines.size() != 0) {
+    while (!this->lines.empty()) {
         const auto &line = this->lines.front();
-//        if (this->viewer->contains(std::to_string(line.id1) + "pt")) {
-//            this->viewer->updateSphere(
-//              line.pt1, this->radius, hi, low, low, std::to_string(line.id1) + "pt");
-//        } else {
-//            this->viewer->addSphere(
-//              line.pt1, this->radius, hi, low, low, std::to_string(line.id1) + "pt");
-//        }
-//        if (this->viewer->contains(std::to_string(line.id2) + "pt")) {
-//            this->viewer->updateSphere(
-//              line.pt2, this->radius, hi, low, low, std::to_string(line.id2) + "pt");
-//        } else {
-//            this->viewer->addSphere(
-//              line.pt2, this->radius, hi, low, low, std::to_string(line.id2) + "pt");
-//        }
         // Doesn't seem to be a way to update lines
         auto lineid =
           std::to_string(line.id1) + std::to_string(line.id2) + "ln";
@@ -154,6 +162,22 @@ void PointCloudDisplay::updateInternal() {
             this->viewer->resetCamera();
         }
         this->lines.pop();
+    }
+
+    while (!this->squares.empty()) {
+        const auto &square = this->squares.front();
+
+        auto squareid = std::to_string(square.id) + "sqr";
+
+        if (this->viewer->contains(squareid)) {
+            this->viewer->removeShape(squareid, 0);
+        }
+        //todo decide how to use rgb
+        this->viewer->addPolygon(square.planar_poly, 1.0, 1.0, 1.0, squareid);
+        if (square.reset_camera) {
+            this->viewer->resetCamera();
+        }
+        this->squares.pop();
     }
 }
 }

@@ -70,4 +70,31 @@ TEST(viewer, pointcloud_intensity) {
     display.stopSpin();
 }
 
+TEST(viewer, square) {
+    PointCloudDisplay display("square_test");
+    display.startSpin();
+
+    pcl::PointXYZ pt0, dir;
+    pt0.x = 0;
+    pt0.y = 0;
+    pt0.z = 0;
+
+    dir.x = 0;
+    dir.y = 0;
+    dir.z = 1;
+
+    display.addSquare(pt0, dir, 1, 0, true);
+
+    pt0.z = 2;
+    display.addSquare(pt0, dir, 1, 1, true);
+
+    pt0.x = 2;
+    dir.z = 0;
+    dir.y = 1;
+    display.addSquare(pt0, dir, 1, 2, true);
+
+    std::this_thread::sleep_for(std::chrono::seconds(5));
+    display.stopSpin();
+}
+
 }  // namespace wave
