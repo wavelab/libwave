@@ -11,16 +11,15 @@ template <typename PointT>
 GroundSegmentation<PointT>::GroundSegmentation(
   const GroundSegmentationParams &config)
     : params{config} {
-    this->polar_bin_grid = new PolarBinGrid;
     this->initializePolarBinGrid();
 }
 
 template <typename PointT>
 void GroundSegmentation<PointT>::initializePolarBinGrid() {
-    this->polar_bin_grid->ang_cells.clear();
-    this->polar_bin_grid->ang_cells.resize(this->params.num_bins_a);
+    this->polar_bin_grid.ang_cells.clear();
+    this->polar_bin_grid.ang_cells.resize(this->params.num_bins_a);
     for (int i = 0; i < this->params.num_bins_a; i++) {
-        auto &ang_cell = this->polar_bin_grid->ang_cells[i];
+        auto &ang_cell = this->polar_bin_grid.ang_cells[i];
         ang_cell.lin_cell.resize(this->params.num_bins_l);
         ang_cell.sig_points.resize(this->params.num_bins_l);
         ang_cell.range_height_signal.resize(this->params.num_bins_l);
@@ -48,8 +47,7 @@ void GroundSegmentation<PointT>::genPolarBinGrid() {
 
         if (sqrt(px * px + py * py + pz * pz) < this->params.rmax) {
             double ph = (atan2(py, px)) * (180 / M_PI);  // in degrees
-            if (ph < 0)
-                ph = 360.0 + ph;
+            ph = wrapTo360(ph);
 
             // bin into sector
 
@@ -62,22 +60,22 @@ void GroundSegmentation<PointT>::genPolarBinGrid() {
             unsigned int bind_lin = static_cast<unsigned int>(
               xy_dist / bsize_lin);  // got the radial bin
 
-            this->polar_bin_grid->ang_cells[bind_rad]
+            this->polar_bin_grid.ang_cells[bind_rad]
               .lin_cell[bind_lin]
               .bin_indices.push_back(i);
             // add the point to the bin
-            // check the protoype point
-            auto &prototype_index = polar_bin_grid->ang_cells[bind_rad]
+            // check the prototype point
+            auto &prototype_index = polar_bin_grid.ang_cells[bind_rad]
                                       .lin_cell[bind_lin]
                                       .prototype_index;
             if (prototype_index < 0 ||
                 pz < (*this->input_)[prototype_index].z)  // smallest by z
             {
                 prototype_index = i;
-                this->polar_bin_grid->ang_cells[bind_rad]
+                this->polar_bin_grid.ang_cells[bind_rad]
                   .range_height_signal[bind_lin]
                   .x = xy_dist;
-                this->polar_bin_grid->ang_cells[bind_rad]
+                this->polar_bin_grid.ang_cells[bind_rad]
                   .range_height_signal[bind_lin]
                   .y = pz;
             }
@@ -114,22 +112,22 @@ void GroundSegmentation<PointT>::sectorINSAC(int sector_index) {
     int num_filled = 0;
 
     // pull out the valid points from the sector
-    auto &sig_points = polar_bin_grid->ang_cells[sector_index].sig_points;
+    auto &sig_points = polar_bin_grid.ang_cells[sector_index].sig_points;
     sig_points.clear();
     for (int i = 0; i < this->params.num_bins_l; i++) {
-        if (!std::isnan(polar_bin_grid->ang_cells[sector_index]
+        if (!std::isnan(polar_bin_grid.ang_cells[sector_index]
                           .range_height_signal[i]
                           .x) &&
-            this->polar_bin_grid->ang_cells[sector_index]
+            this->polar_bin_grid.ang_cells[sector_index]
                 .lin_cell[i]
                 .bin_indices.size() > 5) {
             // bin has a valid point, and enough points to make a good
             // guess for a protopoint
             SignalPoint new_point;
             new_point.range =
-              polar_bin_grid->ang_cells[sector_index].range_height_signal[i].x;
+              polar_bin_grid.ang_cells[sector_index].range_height_signal[i].x;
             new_point.height =
-              polar_bin_grid->ang_cells[sector_index].range_height_signal[i].y;
+              polar_bin_grid.ang_cells[sector_index].range_height_signal[i].y;
             new_point.index = i;
             sig_points.push_back(new_point);
             num_filled++;
@@ -295,7 +293,7 @@ void GroundSegmentation<PointT>::sectorINSAC(int sector_index) {
     for (int i = 0; i < (int) current_model.size(); i++) {
         int currIdx = current_model[i].index;
         auto &cur_cell =
-          this->polar_bin_grid->ang_cells[sector_index].lin_cell[currIdx];
+          this->polar_bin_grid.ang_cells[sector_index].lin_cell[currIdx];
 
         // go through all the points in this cell and assign to ground/not
         // ground
@@ -330,7 +328,7 @@ void GroundSegmentation<PointT>::sectorINSAC(int sector_index) {
     if (sufficient_model) {
         // add all the obs points from the non ground classified pts
         for (i = 0; i < (int) sig_points.size(); i++) {
-            auto &cur_cell = polar_bin_grid->ang_cells[sector_index]
+            auto &cur_cell = polar_bin_grid.ang_cells[sector_index]
                                .lin_cell[sig_points[i].index];
 
             for (const auto j : cur_cell.bin_indices) {

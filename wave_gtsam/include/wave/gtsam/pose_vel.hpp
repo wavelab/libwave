@@ -21,7 +21,6 @@ using VelType = Eigen::Matrix<double, 6, 1>;
 
 namespace wave {
 
-// todo: Figure out how to template dimension of bias
 struct PoseVel {
     gtsam::Pose3 pose;
 
@@ -31,6 +30,8 @@ struct PoseVel {
     PoseVel() {
         vel.setZero();
     }
+
+    enum { pose_offset = 0, vel_offset = 6 };
 };
 }
 
@@ -87,8 +88,8 @@ struct traits<wave::PoseVel> {
     static wave::PoseVel Retract(const wave::PoseVel &origin,
                                  const TangentVector &v) {
         wave::PoseVel retval;
-        retval.pose = traits<Pose3>::Retract(origin.pose, v.block<6, 1>(0, 0).);
-        retval.vel = traits<VelType>::Retract(origin.vel, v.block<6, 1>(6, 0).);
+        retval.pose = traits<Pose3>::Retract(origin.pose, v.block<6, 1>(0, 0));
+        retval.vel = traits<VelType>::Retract(origin.vel, v.block<6, 1>(6, 0));
         return retval;
     }
 
@@ -132,7 +133,7 @@ struct traits<wave::PoseVel> {
             J2.resize(6, 6);
         }
         retval.pose = traits<Pose3>::Expmap(v.block<6, 1>(0, 0), J1);
-        retval.vel = traits<VelType>::Logmap(v.block<6, 1>(6, 0), J2);
+        retval.vel = traits<VelType>::Expmap(v.block<6, 1>(6, 0), J2);
         if (Hv) {
             Hv->block<6, 6>(0, 0).noalias() = J1;
             Hv->block<6, 6>(6, 6).noalias() = J2;
@@ -216,16 +217,6 @@ struct traits<wave::PoseVel> {
         return retval;
     }
 };
-}
-
-namespace wave {
-
-PoseVel operator*(const PoseVel &m1, const PoseVel &m2) {
-    wave::PoseVel retval;
-    retval.pose = m1.pose * m2.pose;
-    retval.vel = m1.vel + m2.vel;
-    return retval;
-}
 }
 
 #endif  // WAVE_POSE_VEL_HPP

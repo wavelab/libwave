@@ -132,6 +132,7 @@ struct traits<wave::PoseVelBias> {
         retval.block<6, 1>(6, 0).noalias() = traits<VelType>::Logmap(m.vel, J2);
         retval.block<3, 1>(12, 0).noalias() =
           traits<BiasType>::Logmap(m.bias, J3);
+
         if (Hm) {
             Hm->block<6, 6>(0, 0).noalias() = J1;
             Hm->block<6, 6>(6, 6).noalias() = J2;
@@ -151,8 +152,9 @@ struct traits<wave::PoseVelBias> {
             J3.resize(3, 3);
         }
         retval.pose = traits<Pose3>::Expmap(v.block<6, 1>(0, 0), J1);
-        retval.vel = traits<VelType>::Logmap(v.block<6, 1>(6, 0), J2);
-        retval.bias = traits<BiasType>::Logmap(v.block<3, 1>(12, 0), J3);
+        retval.vel = traits<VelType>::Expmap(v.block<6, 1>(6, 0), J2);
+        retval.bias = traits<BiasType>::Expmap(v.block<3, 1>(12, 0), J3);
+
         if (Hv) {
             Hv->block<6, 6>(0, 0).noalias() = J1;
             Hv->block<6, 6>(6, 6).noalias() = J2;
@@ -182,6 +184,7 @@ struct traits<wave::PoseVelBias> {
         retval.pose = traits<Pose3>::Compose(m1.pose, m2.pose, J1, J2);
         retval.vel = traits<VelType>::Compose(m1.vel, m2.vel, J3, J4);
         retval.bias = traits<BiasType>::Compose(m1.bias, m2.bias, J5, J6);
+
         if (H1) {
             H1->block<6, 6>(0, 0).noalias() = J1;
             H1->block<6, 6>(6, 6).noalias() = J3;
@@ -216,6 +219,7 @@ struct traits<wave::PoseVelBias> {
         retval.pose = traits<Pose3>::Between(m1.pose, m2.pose, J1, J2);
         retval.vel = traits<VelType>::Between(m1.vel, m2.vel, J3, J4);
         retval.bias = traits<BiasType>::Between(m1.bias, m2.bias, J5, J6);
+
         if (H1) {
             H1->block<6, 6>(0, 0).noalias() = J1;
             H1->block<6, 6>(6, 6).noalias() = J3;
@@ -242,6 +246,7 @@ struct traits<wave::PoseVelBias> {
         retval.pose = traits<Pose3>::Inverse(m.pose, J1);
         retval.vel = traits<VelType>::Inverse(m.vel, J2);
         retval.bias = traits<BiasType>::Inverse(m.bias, J3);
+
         if (H) {
             H->block<6, 6>(0, 0).noalias() = J1;
             H->block<6, 6>(6, 6).noalias() = J2;

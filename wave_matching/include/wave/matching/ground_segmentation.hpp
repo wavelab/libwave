@@ -63,8 +63,11 @@ struct AngCell {
 };
 
 /**
-*  Structure to hold all angular bins
-*/
+ *  Structure to hold all angular bins
+ *
+ *  For now there is not much point to having this as a separate struct.
+ *  @todo refactor methods genPolarBinGrid() and initializePolarBinGrid() here.
+ */
 struct PolarBinGrid {
     std::vector<AngCell, Eigen::aligned_allocator<AngCell>> ang_cells;
 };
@@ -150,7 +153,7 @@ class GroundSegmentation : public pcl::Filter<PointT> {
     // Data storage
     // The input pointcloud is in the input_ member inherited from pcl::Filter.
     // Instead of copying points, we keep track of indices to input_.
-    PolarBinGrid *polar_bin_grid;
+    PolarBinGrid polar_bin_grid;
     std::vector<int> ground_indices;  // indices of ground points in input cloud
     std::vector<int> obs_indices;  // indices of obstacle points in input cloud
     std::vector<int> drv_indices;  // indices of drivable points in input cloud
