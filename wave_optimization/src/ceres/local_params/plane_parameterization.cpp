@@ -29,9 +29,17 @@ bool PlaneParameterization::Plus(const double *x, const double *delta, double *x
 
     double a_mag = ceres::sqrt(Dnormal(0) * Dnormal(0) + Dnormal(1) * Dnormal(1));
 
-    normalpD = ceres::cos(a_mag) * normal + ceres::sin(a_mag) * (v / a_mag);
+    if (a_mag < 1e-5) {
+        normalpD = normal + v;
+    } else {
+        normalpD = ceres::cos(a_mag) * normal + ceres::sin(a_mag) * (v / a_mag);
+    }
 
     pt0pD = pt0 + R.block<3, 1>(0,2) * Dpt0;
+
+    if (std::isnan(x_plus_delta[0])) {
+        throw std::runtime_error("in the plus");
+    }
 
     return true;
 }
@@ -56,6 +64,10 @@ bool PlaneParameterization::ComputeJacobian(const double *x, double *jacobian) c
 
     J.block<3, 2>(0,0) = R.block<3, 2>(0,0);
     J.block<3, 1>(3,2) = R.block<3, 1>(0,2);
+
+    if (std::isnan(jacobian[0])) {
+        throw std::runtime_error("aahhhhhh!");
+    }
 
     return true;
 }

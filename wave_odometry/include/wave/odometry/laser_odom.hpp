@@ -49,7 +49,8 @@
 #include "wave/odometry/feature_extractor.hpp"
 #include "wave/odometry/implicit_geometry/implicit_plane.hpp"
 #include "wave/odometry/implicit_geometry/implicit_line.hpp"
-#include "wave/optimization/ceres/odom_gp_twist/constant_velocity.hpp"
+#include "wave/odometry/odometry_callback.hpp"
+#include "wave/optimization/ceres/odom_gp/constant_velocity.hpp"
 #include "wave/optimization/ceres/local_params/null_SE3_parameterization.hpp"
 #include "wave/optimization/ceres/local_params/line_parameterization.hpp"
 #include "wave/optimization/ceres/local_params/plane_parameterization.hpp"
@@ -185,7 +186,7 @@ class LaserOdom {
     // Lidar Sensor Model
     std::shared_ptr<RangeSensor> range_sensor;
     // Motion Model
-    VecE<wave_kinematics::ConstantVelocityPrior> cv_vector;
+    std::shared_ptr<wave_kinematics::ConstantVelocityPrior> cv_model;
     Vec<float> trajectory_stamps;
 
     Mat6 sqrtinfo;
@@ -207,15 +208,14 @@ class LaserOdom {
     VecE<Eigen::Tensor<float, 2>> cur_feature_candidates, prev_feature_candidates;
     VecE<Eigen::Tensor<float, 2>> cur_feature_candidatesT, prev_feature_candidatesT;
     Vec<std::shared_ptr<Eigen::Map<Eigen::MatrixXf>>> cur_feat_map, prev_feat_map;
-    Vec<Vec<Eigen::Map<MatXf>>> feat_T_map;
+    Vec<Vec<std::shared_ptr<Eigen::Map<MatXf>>>> feat_T_map;
     /// stores the index of the feature track associated with each feature point. -1 if not associated with a feature track
     Vec<Vec<int>> cur_feat_idx, prev_feat_idx;
     /**
      * feat_pts and feat_pts_T are sets of indexed tensors, first by scan then feature type
      */
     Vec<VecE<Eigen::Tensor<float, 2>>> feat_pts, feat_pts_T;
-    /// interp_factors store interpolation factors for use during optimization
-    Vec<VecE<Eigen::Tensor<float, 2>>> interp_factors;
+    Vec<Vec<VecE<Eigen::Tensor<double, 3>>>> ptT_jacobians;
 
     Vec<Nabo::NNSearchF*> cur_kd_idx, curm1_kd_idx, ave_kd_idx;
 

@@ -12,7 +12,7 @@ bool ImplicitPlaneResidual<states...>::Evaluate(double const *const *parameters,
 
     // Calculate error
     auto s_id = this->track->mapping.at(this->pt_id).scan_idx;
-    Vec3 pt = (this->feat_points->at(s_id).at(this->feat_idx).template block<3, 1>(0, this->track->mapping.at(this->pt_id).pt_idx)).template cast<double>();
+    Vec3 pt = (this->feat_points->at(s_id).at(this->feat_idx)->template block<3, 1>(0, this->track->mapping.at(this->pt_id).pt_idx)).template cast<double>();
     Vec3 diff = pt - plane.block<3, 1>(3, 0);
     error = diff.transpose() * plane.block<3, 1>(0, 0);
 

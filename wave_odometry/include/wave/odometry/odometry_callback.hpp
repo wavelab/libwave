@@ -40,7 +40,7 @@ struct OdometryCallback : ceres::EvaluationCallback {
     ///State Variables, hooked to and updated by Ceres
     const VecE<PoseVel> *traj;
 
-    /// Stored jacobians for each point, indexed by scan, feature type, and then state
+    /// Stored jacobians for each point, indexed by feature, scan, and then state
     /// Each element is a Nx3xK tensor, where n is the point index and k is the dimension of
     /// the state. Shared with residuals
     Vec<Vec<VecE<Eigen::Tensor<double, 3>>>> *ptT_jacobians;

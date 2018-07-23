@@ -21,7 +21,7 @@ struct FeatureTrack {
     Vec6 geometry;
 
     // state ids, indexed by point_idx, then by state number
-    std::vector<std::vector<uint32_t>> state_ids;
+    std::vector<uint32_t> state_ids;
     uint32_t length;
 
     /// pointer to state jacobians updated by evaluation callback

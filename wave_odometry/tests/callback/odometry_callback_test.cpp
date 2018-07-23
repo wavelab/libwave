@@ -27,7 +27,10 @@ class CallbackFixture : public testing::Test {
 
         feat_pts.resize(this->n_scans);
         feat_ptsT.resize(this->n_scans);
-        ptT_jacobians.resize(this->n_scans);
+        ptT_jacobians.resize(this->n_features);
+        for (uint32_t i = 0; i < this->ptT_jacobians.size(); ++i) {
+            ptT_jacobians.at(i).resize(n_scans);
+        }
 
         auto traj_time = this->traj_stamps.begin() + 1;
 
@@ -35,7 +38,7 @@ class CallbackFixture : public testing::Test {
             scan_stamps.emplace_back((float) i);
             feat_pts.at(i).resize(n_features);
             feat_ptsT.at(i).resize(n_features);
-            ptT_jacobians.at(i).resize(n_features);
+            
             for (uint32_t j = 0; j < n_features; ++j) {
                 feat_pts.at(i).at(j) = Eigen::Tensor<float, 2>(4, n_pts);
 
@@ -51,7 +54,7 @@ class CallbackFixture : public testing::Test {
                     }
                 }
                 feat_ptsT.at(i).at(j) = feat_pts.at(i).at(j);
-                ptT_jacobians.at(i).at(j).resize(n_states);
+                ptT_jacobians.at(j).at(i).resize(n_states);
             }
         }
 
@@ -178,10 +181,10 @@ TEST_F(CallbackFixture, JacobianTest) {
                     }
                     Eigen::Tensor<double, 2> chip1, chip2;
                     chip1 = ptT_jacobians_num.at(i).at(j).at(state_offset*2 + stat_num).chip(pt_idx, 2);
-                    chip2 = this->ptT_jacobians.at(i).at(j).at(stat_num).chip(pt_idx, 2);
+                    chip2 = this->ptT_jacobians.at(j).at(i).at(stat_num).chip(pt_idx, 2);
 
                     error = ptT_jacobians_num.at(i).at(j).at(state_offset*2 + stat_num).chip(pt_idx, 2) -
-                                 this->ptT_jacobians.at(i).at(j).at(stat_num).chip(pt_idx, 2);
+                                 this->ptT_jacobians.at(j).at(i).at(stat_num).chip(pt_idx, 2);
 
                     // due to single precision floating point, threshold is relatively large
                     failures = error.operator>(1e-3).cast<int>();

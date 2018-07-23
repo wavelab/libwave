@@ -58,13 +58,12 @@ OdometryCallback::OdometryCallback(const Vec<VecE<Eigen::Tensor<float, 2>>> *fea
 void OdometryCallback::PrepareForEvaluation(bool evaluate_jacobians, bool new_evaluation_point) {
     if (new_evaluation_point) {
         this->transformer->update(*(this->traj), *(this->traj_stamps));
-        const unsigned long stop = this->feat_pts->size() * this->feat_pts->front().size();
         const unsigned long feat_cnt = this->feat_pts->front().size();
-        for (uint32_t i = 0; i < stop; ++i) {
-            auto scan_idx = static_cast<uint32_t>(i / feat_cnt);
-            auto feat_idx = static_cast<uint32_t>(i % feat_cnt);
-            this->transformer->transformToStart(this->feat_pts->at(scan_idx)[feat_idx],
-                                                this->feat_ptsT->at(scan_idx)[feat_idx], scan_idx);
+        for(uint32_t i = 0; i < this->feat_pts->size(); ++i) {
+            for (uint32_t j = 0; j < this->feat_pts->at(i).size(); ++j) {
+                this->transformer->transformToStart(this->feat_pts->at(i)[j],
+                                                    this->feat_ptsT->at(i)[j], i);
+            }
         }
         this->old_jacobians = true;
     }
@@ -88,7 +87,7 @@ void OdometryCallback::evaluateJacobians() {
             auto &intfac = this->interp_factors.at(scan_idx).at(feat_idx);
             const auto &pts = this->feat_pts->at(scan_idx).at(feat_idx);
             const auto &Tpts = this->feat_ptsT->at(scan_idx).at(feat_idx);
-            auto &pt_jacs = this->ptT_jacobians->at(scan_idx).at(feat_idx);
+            auto &pt_jacs = this->ptT_jacobians->at(feat_idx).at(scan_idx);
             pt_jacs.at(0) = Eigen::Tensor<double, 3>(3, 12, pts.dimension(1));
             pt_jacs.at(1) = Eigen::Tensor<double, 3>(3, 6, pts.dimension(1));
             pt_jacs.at(2) = Eigen::Tensor<double, 3>(3, 12, pts.dimension(1));
