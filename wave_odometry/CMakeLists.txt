@@ -23,6 +23,7 @@ IF(BUILD_TESTING)
     TARGET_LINK_LIBRARIES(
             ${PROJECT_NAME}_tests
             wave::containers
+            wave::matching
             ${PROJECT_NAME})
 
     WAVE_ADD_TEST(feature_extraction_tests

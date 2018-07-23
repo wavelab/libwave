@@ -140,7 +140,11 @@ TEST_F(FeatureExtractorTests, ProcessScan) {
     }
 
     pcl::PointCloud<PointXYZIR> ref;
-    pcl::io::loadPCDFile("data/testscan.pcd", ref);
+    boost::filesystem::path p("/home/bapskiko/rosbags/last_ditch_bags/pcd");
+    std::vector<boost::filesystem::path> v;
+    std::copy(boost::filesystem::directory_iterator(p), boost::filesystem::directory_iterator(), std::back_inserter(v));
+    std::sort(v.begin(), v.end());
+    pcl::io::loadPCDFile(v.front().string(), ref);
 
     for (auto pt : ref) {
         float ang = (float) (std::atan2(pt.y, pt.x) * -1.0);
@@ -178,7 +182,11 @@ TEST_F(FeatureExtractorTests, VisualizeFeatures) {
     }
 
     pcl::PointCloud<PointXYZIR> ref;
-    pcl::io::loadPCDFile("data/testscan.pcd", ref);
+    boost::filesystem::path p("/home/bapskiko/rosbags/last_ditch_bags/pcd");
+    std::vector<boost::filesystem::path> v;
+    std::copy(boost::filesystem::directory_iterator(p), boost::filesystem::directory_iterator(), std::back_inserter(v));
+    std::sort(v.begin(), v.end());
+    pcl::io::loadPCDFile(v.front().string(), ref);
 
     for (auto pt : ref) {
         float ang = (float) (std::atan2(pt.y, pt.x) * -1.0);
@@ -186,13 +194,20 @@ TEST_F(FeatureExtractorTests, VisualizeFeatures) {
         ang < 0 ? ang = ang + 2.0 * M_PI : ang;
         ang /= 2.0 * M_PI;
 
+        float ts = ang * 0.1;
+
+        float range = std::sqrt(pt.x * pt.x + pt.y * pt.y + pt.z * pt.z);
+        if (range < 3.0f) {
+            continue;
+        }
+
         this->scan.at(pt.ring)(0, this->range.at(pt.ring)) = pt.x;
         this->scan.at(pt.ring)(1, this->range.at(pt.ring)) = pt.y;
         this->scan.at(pt.ring)(2, this->range.at(pt.ring)) = pt.z;
-        this->scan.at(pt.ring)(3, this->range.at(pt.ring)) = ang;
-        this->scan.at(pt.ring)(4, this->range.at(pt.ring)) = 0;
+        this->scan.at(pt.ring)(3, this->range.at(pt.ring)) = ts;
+        this->scan.at(pt.ring)(4, this->range.at(pt.ring)) = ang;
 
-        this->signals.at(pt.ring)(0, this->range.at(pt.ring)) = sqrtf(pt.x * pt.x + pt.y * pt.y + pt.z * pt.z);
+        this->signals.at(pt.ring)(0, this->range.at(pt.ring)) = range;
         this->signals.at(pt.ring)(1, this->range.at(pt.ring)) = pt.intensity;
         this->range.at(pt.ring) += 1;
     }

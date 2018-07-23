@@ -137,8 +137,7 @@ class LaserOdom {
     pcl::PointCloud<pcl::PointXYZI> undistorted_cld;
     VecE<pcl::PointCloud<pcl::PointXYZ>> undis_features;
     VecE<Vec6f> geometry_landmarks;
-
-    PoseVelStamped undistort_state;
+    VecE<PoseVelStamped> undistort_trajectory;
 
     const uint32_t N_SIGNALS = 2;
     const uint32_t N_FEATURES = 5;
@@ -181,7 +180,9 @@ class LaserOdom {
     void undistort();
 
     void resetTrajectory();
-    void copyTrajectory();
+
+    template<class S_TYPE, class D_TYPE>
+    void copyTrajectory(const VecE<S_TYPE> &src, VecE<D_TYPE> &dst);
 
     // Lidar Sensor Model
     std::shared_ptr<RangeSensor> range_sensor;

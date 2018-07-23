@@ -58,7 +58,6 @@ OdometryCallback::OdometryCallback(const Vec<VecE<Eigen::Tensor<float, 2>>> *fea
 void OdometryCallback::PrepareForEvaluation(bool evaluate_jacobians, bool new_evaluation_point) {
     if (new_evaluation_point) {
         this->transformer->update(*(this->traj), *(this->traj_stamps));
-        const unsigned long feat_cnt = this->feat_pts->front().size();
         for(uint32_t i = 0; i < this->feat_pts->size(); ++i) {
             for (uint32_t j = 0; j < this->feat_pts->at(i).size(); ++j) {
                 this->transformer->transformToStart(this->feat_pts->at(i)[j],
@@ -81,7 +80,7 @@ void OdometryCallback::evaluateJacobians() {
         this->J_logmaps.at(i) = Transformation<>::SE3ApproxInvLeftJacobian(this->pose_diff.at(i));
     }
 
-//#pragma omp parallel for
+#pragma omp parallel for
     for (uint32_t scan_idx = 0; scan_idx < this->feat_pts->size(); ++scan_idx) {
         for (uint32_t feat_idx = 0; feat_idx < this->feat_pts->at(scan_idx).size(); ++feat_idx) {
             auto &intfac = this->interp_factors.at(scan_idx).at(feat_idx);

@@ -132,6 +132,12 @@ TEST(Packing_test, intsintofloat) {
     ASSERT_EQ(intensity, recovered_in);
 }
 
+void updateVisualizer(const LaserOdom *odom, PointCloudDisplay *display) {
+    pcl::PointCloud<pcl::PointXYZI>::Ptr viz_cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
+    *viz_cloud = odom->undistorted_cld;
+    display->addPointcloud(viz_cloud, 0, true);
+}
+
 // This test is for odometry for the car moving in a straight line through the garage
 TEST(OdomTest, StraightLineGarage) {
     // Load entire sequence into memory
@@ -140,7 +146,7 @@ TEST(OdomTest, StraightLineGarage) {
     pcl::PCLPointCloud2 temp;
     pcl::PointCloud<PointXYZIR> temp2;
     LOG_INFO("Starting to load clouds");
-    boost::filesystem::path p("/home/ben/rosbags/last_ditch_bags/pcd");
+    boost::filesystem::path p("/home/bapskiko/rosbags/last_ditch_bags/pcd");
     std::vector<boost::filesystem::path> v;
     std::copy(boost::filesystem::directory_iterator(p), boost::filesystem::directory_iterator(), std::back_inserter(v));
     std::sort(v.begin(), v.end());
@@ -178,6 +184,11 @@ TEST(OdomTest, StraightLineGarage) {
     std::vector<PointXYZIR> vec;
     uint16_t prev_enc = 0;
     uint16_t encoder = 0;
+
+    PointCloudDisplay display("odom");
+    display.startSpin();
+    std::function<void()> func = std::bind(updateVisualizer, &odom, &display);
+    odom.registerOutputFunction(func);
 
     // Loop through pointclouds and send points grouped by encoder angle odom
     TimeType start;

@@ -287,6 +287,7 @@ void FeatureExtractor::sortAndBin(const Tensorf &scan, TensorIdx &feature_indice
 
             for (const auto &score : filt_scores) {
                 // Using data conversion to floor result
+                // todo remove magic 0.1
                 auto bin = (unlong)((scan.at(j)(3, score.first) / 0.1) * this->param.angular_bins);
                 if (cnt_in_bins.at(bin) >= max_bin) {
                     continue;

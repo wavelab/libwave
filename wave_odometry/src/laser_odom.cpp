@@ -2,19 +2,23 @@
 
 namespace wave {
 
-LaserOdom::LaserOdom(const LaserOdomParams params, const FeatureExtractorParams feat_params,
+LaserOdom::LaserOdom(const LaserOdomParams params,
+                     const FeatureExtractorParams feat_params,
                      const TransformerParams transformer_params)
     : param(params), feature_extractor(feat_params, params.n_ring), transformer(transformer_params) {
     this->CSVFormat = new Eigen::IOFormat(Eigen::FullPrecision, Eigen::DontAlignCols, ", ", ", ");
 
-    this->cv_model = std::make_shared<wave_kinematics::ConstantVelocityPrior>(0, 0, nullptr, this->param.Qc, this->param.inv_Qc);
+    this->continue_output = true;
+
+    this->cv_model =
+      std::make_shared<wave_kinematics::ConstantVelocityPrior>(0, 0, nullptr, this->param.Qc, this->param.inv_Qc);
 
     auto n_ring = static_cast<size_t>(param.n_ring);
     this->feature_extractor.setParams(feat_params, n_ring);
     this->counters.resize(n_ring);
     std::fill(this->counters.begin(), this->counters.end(), 0);
 
-    //todo don't do this
+    // todo don't do this
     this->cur_feature_candidates.resize(this->N_FEATURES);
     this->cur_feature_candidatesT.resize(this->N_FEATURES);
     this->prev_feature_candidates.resize(this->N_FEATURES);
@@ -105,14 +109,28 @@ void LaserOdom::spinOutput() {
  */
 void LaserOdom::undistort() {
     Eigen::Tensor<float, 2> output;
-    for (auto &line : this->cur_scan) {
+    this->transformer.update(this->cur_trajectory, this->trajectory_stamps);
+    this->undistorted_cld.clear();
+    for (uint32_t ring_id = 0; ring_id < this->counters.size(); ++ring_id) {
+        Eigen::Tensor<float, 2> real_points = this->cur_scan.at(ring_id).slice(ar2{0,0}, ar2{4, this->counters.at(ring_id)});
+        this->transformer.transformToEnd(real_points, output, this->scan_stampsf.size() - 1);
+        for (uint32_t i = 0; i < this->counters.at(ring_id); ++i) {
+            pcl::PointXYZI pt;
+            pt.x = output(0,i);
+            pt.y = output(1,i);
+            pt.z = output(2,i);
+            pt.intensity = 2;
+            this->undistorted_cld.push_back(pt);
+        }
     }
 }
 
-void LaserOdom::copyTrajectory() {
-    for (uint32_t i = 0; i < this->param.num_trajectory_states; i++) {
-        this->prev_trajectory.at(i).pose = this->cur_trajectory.at(i).pose;
-        this->prev_trajectory.at(i).vel = this->cur_trajectory.at(i).vel;
+template <class S_TYPE, class D_TYPE>
+void LaserOdom::copyTrajectory(const VecE<S_TYPE> &src, VecE<D_TYPE> &dst) {
+    dst.resize(src.size());
+    for (uint32_t i = 0; i < src.size(); i++) {
+        dst.at(i).pose = src.at(i).pose;
+        dst.at(i).vel = src.at(i).vel;
     }
 }
 
@@ -130,7 +148,8 @@ void LaserOdom::updateFeatureCandidates() {
         std::fill(this->cur_feat_idx.at(i).begin(), this->cur_feat_idx.at(i).end(), -1);
         long offset = 0;
         for (uint32_t j = 0; j < this->indices.at(i).size(); ++j) {
-//#pragma omp parallel for
+            // can't use omp parallel for because of offset. Need to manually split up task to parallelize.
+            //#pragma omp parallel for
             for (uint32_t k = 0; k < this->indices.at(i).at(j).dimension(0); ++k) {
                 const int &idx = this->indices.at(i).at(j)(k);
                 feat.slice(ar2({0, offset}), ar2({4, 1})) = this->cur_scan.at(j).slice(ar2({0, idx}), ar2({4, 1}));
@@ -157,9 +176,12 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
                         // data from last time hasn't been consumed yet
                         LOG_ERROR("Overwriting previous output");
                     }
-                    this->undistort_state.stamp = stamp;
-                    this->undistort_state.pose = this->cur_trajectory.back().pose;
-                    this->undistort_state.vel = this->cur_trajectory.back().vel;
+                    this->copyTrajectory(this->cur_trajectory, this->undistort_trajectory);
+                    for (uint32_t i = 0; i < this->undistort_trajectory.size(); ++i) {
+                        std::chrono::duration<float> fsec(this->trajectory_stamps.at(i));
+                        this->undistort_trajectory.at(i).stamp =
+                          this->scan_stamps_chrono.front() + std::chrono::duration_cast<std::chrono::microseconds>(fsec);
+                    }
 
                     this->undistort();
                     this->fresh_output = true;
@@ -181,6 +203,10 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
 
         auto diff = stamp - this->scan_stamps_chrono.back();
         float secon = std::chrono::duration<float, std::ratio<1>>(diff).count();
+
+        if (secon < 0.0f) {
+            secon = 0;
+        }
 
         this->cur_scan.at(pt.ring)(3, counters.at(pt.ring)) = secon;
 
@@ -217,8 +243,7 @@ void LaserOdom::rollover(TimeType stamp) {
         this->scan_stamps_chrono.back() = stamp;
         auto index = (this->param.num_trajectory_states - 1) * (this->scan_stampsf.size() - 1);
         this->cur_trajectory.at(index).pose =
-                this->cur_trajectory.front().pose.transformInverse() *
-                this->cur_trajectory.at(index).pose;
+          this->cur_trajectory.front().pose.transformInverse() * this->cur_trajectory.at(index).pose;
     } else {
         // grow storage
         this->scan_stamps_chrono.emplace_back(stamp);
@@ -287,7 +312,13 @@ bool LaserOdom::runOptimization(ceres::Problem &problem) {
     options.logging_type = ceres::LoggingType::SILENT;
     options.use_nonmonotonic_steps = true;
 
-    auto callback = new OdometryCallback(&(this->feat_pts), &(this->feat_pts_T), &(this->cur_trajectory), &(this->ptT_jacobians), &(this->trajectory_stamps), &(this->scan_stampsf), &(this->transformer));
+    auto callback = new OdometryCallback(&(this->feat_pts),
+                                         &(this->feat_pts_T),
+                                         &(this->cur_trajectory),
+                                         &(this->ptT_jacobians),
+                                         &(this->trajectory_stamps),
+                                         &(this->scan_stampsf),
+                                         &(this->transformer));
     options.evaluation_callback = callback;
 
     ceres::Covariance::Options covar_options;
@@ -328,7 +359,7 @@ bool LaserOdom::runOptimization(ceres::Problem &problem) {
 void LaserOdom::extendFeatureTracks(const Eigen::MatrixXi &idx, const Eigen::MatrixXf &dist, uint32_t feat_id) {
     uint32_t knn = 2;
     auto residualType = PointToLine;
-    //todo don't do this
+    // todo don't do this
     if (feat_id == 2) {
         knn = 3;
         residualType = PointToPlane;
@@ -428,7 +459,7 @@ void LaserOdom::extendFeatureTracks(const Eigen::MatrixXi &idx, const Eigen::Mat
 void LaserOdom::createNewFeatureTracks(const Eigen::MatrixXi &idx, const Eigen::MatrixXf &dist, uint32_t feat_id) {
     uint32_t knn = 2;
     auto residualType = PointToLine;
-    //todo don't do this
+    // todo don't do this
     if (feat_id == 2) {
         knn = 3;
         residualType = PointToPlane;
@@ -508,7 +539,7 @@ void LaserOdom::createNewFeatureTracks(const Eigen::MatrixXi &idx, const Eigen::
             }
             geometry.block<3, 1>(0, 0).normalize();
             if (geometry(2) < 0) {
-                geometry.block<3, 1>(0,0) = -geometry.block<3, 1>(0,0);
+                geometry.block<3, 1>(0, 0) = -geometry.block<3, 1>(0, 0);
             }
 
             Vec3 diff = (this->cur_feat_map.at(feat_id)->block<3, 1>(0, j).cast<double>() - geometry.block<3, 1>(3, 0));
@@ -532,8 +563,7 @@ void LaserOdom::createNewFeatureTracks(const Eigen::MatrixXi &idx, const Eigen::
                 track.mapping.emplace_back(cur_offset + new_feat_cnt, this->scan_stampsf.size() - 1);
 
                 float pt_time = this->cur_feature_candidates.at(feat_id)(3, j) + this->scan_stampsf.back();
-                auto bnd = std::upper_bound(
-                        this->trajectory_stamps.begin(), this->trajectory_stamps.end(), pt_time);
+                auto bnd = std::upper_bound(this->trajectory_stamps.begin(), this->trajectory_stamps.end(), pt_time);
                 auto traj_idx = static_cast<uint32_t>(bnd - this->trajectory_stamps.begin() - 1);
 
                 track.state_ids.emplace_back(traj_idx);
@@ -552,9 +582,9 @@ void LaserOdom::createNewFeatureTracks(const Eigen::MatrixXi &idx, const Eigen::
                 for (auto elem : matches) {
                     track.mapping.emplace_back(prev_offset + prev_new_feat_cnt, this->scan_stampsf.size() - 2);
 
-                    pt_time = this->prev_feature_candidates.at(feat_id)(3, elem) + this->scan_stampsf.at(this->scan_stampsf.size() - 2);
-                    bnd = std::upper_bound(
-                            this->trajectory_stamps.begin(), this->trajectory_stamps.end(), pt_time);
+                    pt_time = this->prev_feature_candidates.at(feat_id)(3, elem) +
+                              this->scan_stampsf.at(this->scan_stampsf.size() - 2);
+                    bnd = std::upper_bound(this->trajectory_stamps.begin(), this->trajectory_stamps.end(), pt_time);
                     traj_idx = static_cast<uint32_t>(bnd - this->trajectory_stamps.begin() - 1);
 
                     track.state_ids.emplace_back(traj_idx);
@@ -580,7 +610,8 @@ void LaserOdom::createNewFeatureTracks(const Eigen::MatrixXi &idx, const Eigen::
         cur_feat_points = stupid_eigen;
     }
 
-    Eigen::TensorMap<Eigen::Tensor<float, 2>> reduced_prev_new_feat_points(prev_new_feat_points.data(), 4, prev_new_feat_cnt);
+    Eigen::TensorMap<Eigen::Tensor<float, 2>> reduced_prev_new_feat_points(
+      prev_new_feat_points.data(), 4, prev_new_feat_cnt);
     if (prev_feat_points.dimension(1) == 0) {
         prev_feat_points = reduced_prev_new_feat_points;
     } else if (reduced_prev_new_feat_points.dimension(1) != 0) {
@@ -602,21 +633,21 @@ void LaserOdom::prepTrajectory(const TimeType &stamp) {
     float step = scan_duration / (this->param.num_trajectory_states - 1);
 
     unlong idx = this->trajectory_stamps.size() - this->param.num_trajectory_states + 1;
-    for ( ; idx < this->trajectory_stamps.size(); ++idx) {
+    for (; idx < this->trajectory_stamps.size(); ++idx) {
         this->trajectory_stamps.at(idx) = this->trajectory_stamps.at(idx - 1) + step;
 
-        this->cur_trajectory.at(idx).pose = this->cur_trajectory.at(idx - 1).pose.manifoldPlus(
-                step * this->cur_trajectory.at(idx - 1).vel);
+        this->cur_trajectory.at(idx).pose =
+          this->cur_trajectory.at(idx - 1).pose.manifoldPlus(step * this->cur_trajectory.at(idx - 1).vel);
         this->cur_trajectory.at(idx).vel = this->cur_trajectory.at(idx - 1).vel;
     }
     // as to limit floating point error
-    this->trajectory_stamps.back() = std::chrono::duration<float, std::ratio<1>>(
-            stamp - this->scan_stamps_chrono.front()).count();
+    this->trajectory_stamps.back() =
+      std::chrono::duration<float, std::ratio<1>>(stamp - this->scan_stamps_chrono.front()).count();
 
     this->prior_twist = this->cur_trajectory.back().vel;
 
     // Now previous trajectory will hold the "motion generated" trajectory
-    this->copyTrajectory();
+    this->copyTrajectory(this->cur_trajectory, this->prev_trajectory);
 }
 
 bool LaserOdom::match(const TimeType &stamp) {
@@ -642,14 +673,16 @@ bool LaserOdom::match(const TimeType &stamp) {
                                                this->prev_feature_candidatesT.at(j),
                                                this->scan_stamps_chrono.size() - 2);
             auto &cfeat = this->cur_feature_candidatesT.at(j);
-            this->cur_feat_map.at(j) = std::make_shared<Eigen::Map<MatXf>>(cfeat.data(), cfeat.dimension(0), cfeat.dimension(1));
+            this->cur_feat_map.at(j) =
+              std::make_shared<Eigen::Map<MatXf>>(cfeat.data(), cfeat.dimension(0), cfeat.dimension(1));
 
             auto &pfeat = this->prev_feature_candidatesT.at(j);
-            this->prev_feat_map.at(j) = std::make_shared<Eigen::Map<MatXf>>(pfeat.data(), pfeat.dimension(0), pfeat.dimension(1));
+            this->prev_feat_map.at(j) =
+              std::make_shared<Eigen::Map<MatXf>>(pfeat.data(), pfeat.dimension(0), pfeat.dimension(1));
 
             /// 2. Update average point position from each feature tracks
             this->ave_pts.at(j).resize(3, this->feature_tracks.at(j).size());
-//#pragma omp parallel for
+#pragma omp parallel for
             for (uint32_t t_idx = 0; t_idx < this->feature_tracks.at(j).size(); t_idx++) {
                 const auto &track = this->feature_tracks.at(j).at(t_idx);
                 this->ave_pts.at(j).block<3, 1>(0, t_idx) = track.geometry.block<3, 1>(3, 0).cast<float>();
@@ -668,7 +701,8 @@ bool LaserOdom::match(const TimeType &stamp) {
                     /// 4. Find correspondences for existing feature tracks in current scan
                     nn_idx.resize(knn, this->ave_pts.at(j).cols());
                     nn_dist.resize(knn, this->ave_pts.at(j).cols());
-                    this->cur_kd_idx.at(j)->knn(this->ave_pts.at(j), nn_idx, nn_dist, 5, 0.1, Nabo::NNSearchF::SORT_RESULTS);
+                    this->cur_kd_idx.at(j)->knn(
+                      this->ave_pts.at(j), nn_idx, nn_dist, 5, 0.1, Nabo::NNSearchF::SORT_RESULTS);
                     if (op == 0) {
                         this->cur_feat_idx.at(j).resize(static_cast<unsigned long>(this->cur_feat_map.at(j)->size()));
                         std::fill(this->cur_feat_idx.at(j).begin(), this->cur_feat_idx.at(j).end(), -1);
@@ -681,7 +715,7 @@ bool LaserOdom::match(const TimeType &stamp) {
                     nn_idx.resize(knn, this->cur_feat_map.at(j)->cols());
                     nn_dist.resize(knn, this->cur_feat_map.at(j)->cols());
                     this->curm1_kd_idx.at(j)->knn(
-                            *(this->cur_feat_map.at(j)), nn_idx, nn_dist, 5, 0.1, Nabo::NNSearchF::SORT_RESULTS);
+                      *(this->cur_feat_map.at(j)), nn_idx, nn_dist, 5, 0.1, Nabo::NNSearchF::SORT_RESULTS);
                     this->createNewFeatureTracks(nn_idx, nn_dist, j);
                 }
             }
@@ -721,7 +755,8 @@ void LaserOdom::buildResiduals(ceres::Problem &problem) {
     for (uint32_t f_idx = 0; f_idx < this->N_FEATURES; ++f_idx) {
         for (uint32_t s_idx = 0; s_idx < this->feat_pts_T.size(); ++s_idx) {
             auto &cfeat = this->feat_pts_T.at(s_idx).at(f_idx);
-            this->feat_T_map.at(s_idx).at(f_idx) = std::make_shared<Eigen::Map<MatXf>>(cfeat.data(), cfeat.dimension(0), cfeat.dimension(1));
+            this->feat_T_map.at(s_idx).at(f_idx) =
+              std::make_shared<Eigen::Map<MatXf>>(cfeat.data(), cfeat.dimension(0), cfeat.dimension(1));
         }
         for (auto &track : this->feature_tracks.at(f_idx)) {
             // plane_cost
@@ -757,11 +792,12 @@ void LaserOdom::buildResiduals(ceres::Problem &problem) {
         problem.AddParameterBlock(state.pose.storage.data(), 12, this->local_params.back().get());
         problem.AddParameterBlock(state.vel.data(), 6);
         if (state_id > 0) {
-            //create constant velocity residuals between each state
+            // create constant velocity residuals between each state
             auto &pstate = this->cur_trajectory[state_id - 1];
             auto dT = this->trajectory_stamps.at(state_id) - this->trajectory_stamps.at(state_id - 1);
             Mat12 weight;
-            this->cv_model->calculateLinInvCovariance(weight, this->trajectory_stamps.at(state_id - 1), this->trajectory_stamps.at(state_id));
+            this->cv_model->calculateLinInvCovariance(
+              weight, this->trajectory_stamps.at(state_id - 1), this->trajectory_stamps.at(state_id));
             weight = weight.sqrt();
             this->costs.emplace_back(new ConstantVelocityPrior(weight, dT));
             problem.AddResidualBlock(this->costs.back().get(),
@@ -772,7 +808,7 @@ void LaserOdom::buildResiduals(ceres::Problem &problem) {
                                      state.vel.data());
         }
     }
-    //finally, just fix the first pose
+    // finally, just fix the first pose
     problem.SetParameterBlockConstant(this->cur_trajectory.front().pose.storage.data());
 }
 
