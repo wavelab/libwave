@@ -79,10 +79,30 @@ void PointCloudDisplay::addSquare(const pcl::PointXYZ &pt0, const pcl::PointXYZ 
                                   bool reset_camera) {
     pcl::PointCloud<pcl::PointXYZ>::VectorType contour;
     float offset = 0.5f * l1dist;
-    contour.emplace_back(pcl::PointXYZ(-offset, -offset, pt0.z));
-    contour.emplace_back(pcl::PointXYZ(-offset, offset, 0));
-    contour.emplace_back(pcl::PointXYZ(offset, offset, 0));
-    contour.emplace_back(pcl::PointXYZ(offset, -offset, 0));
+
+    // Cross product of unit z vector with p
+    Eigen::Vector2f axis;
+    axis << -dir.y, dir.x; //, 0.0;
+
+    double c = dir.z;
+
+    Eigen::Matrix3f skew = Eigen::Matrix3f::Zero();
+    skew(0, 2) = axis(1);
+    skew(1, 2) = -axis(0);
+    skew(2, 0) = -axis(1);
+    skew(2, 1) = axis(0);
+
+    Eigen::Matrix3f R = Eigen::Matrix3f::Identity() + skew + (1.0 / (1.0 + c)) * skew * skew;
+    
+    contour.emplace_back(pcl::PointXYZ(pt0.x - offset, pt0.y - offset, pt0.z));
+    contour.emplace_back(pcl::PointXYZ(pt0.x - offset, pt0.y + offset, pt0.z));
+    contour.emplace_back(pcl::PointXYZ(pt0.x + offset, pt0.y + offset, pt0.z));
+    contour.emplace_back(pcl::PointXYZ(pt0.x + offset, pt0.y - offset, pt0.z));
+    
+    for (auto &elem : contour) {
+        Eigen::Map<Eigen::Vector3f> map(elem.data);
+        map = R * map;
+    }
 
     Eigen::Vector4f coefficients;
     coefficients(0) = dir.x;
