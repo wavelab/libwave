@@ -33,6 +33,8 @@ LaserOdom::LaserOdom(const LaserOdomParams params,
     this->cur_feat_idx.resize(this->N_FEATURES);
     this->prev_feat_idx.resize(this->N_FEATURES);
     this->ptT_jacobians.resize(this->N_FEATURES);
+    this->geometry_landmarks.resize(this->N_FEATURES);
+    this->undis_features.resize(this->N_FEATURES);
 
     this->cur_scan.resize(n_ring);
     this->signals.resize(n_ring);
@@ -114,13 +116,30 @@ void LaserOdom::undistort() {
     for (uint32_t ring_id = 0; ring_id < this->counters.size(); ++ring_id) {
         Eigen::Tensor<float, 2> real_points = this->cur_scan.at(ring_id).slice(ar2{0,0}, ar2{4, this->counters.at(ring_id)});
         this->transformer.transformToStart(real_points, output, this->scan_stampsf.size() - 1);
-        for (uint32_t i = 0; i < this->counters.at(ring_id); ++i) {
+        for (int i = 0; i < this->counters.at(ring_id); ++i) {
             pcl::PointXYZI pt;
             pt.x = output(0,i);
             pt.y = output(1,i);
             pt.z = output(2,i);
             pt.intensity = 2;
             this->undistorted_cld.push_back(pt);
+        }
+    }
+    for (uint32_t feat_id = 0; feat_id < this->N_FEATURES; ++feat_id) {
+        this->geometry_landmarks.at(feat_id).clear();
+        for (const auto &track : this->feature_tracks.at(feat_id)) {
+            this->geometry_landmarks.at(feat_id).emplace_back(track.geometry.cast<float>());
+        }
+        this->undis_features.at(feat_id).clear();
+        auto n_scans = this->feat_pts_T.size();
+        for (uint32_t i = 0; i < n_scans; ++i) {
+            for (uint32_t j = 0; j < this->feat_pts_T.at(i).at(feat_id).dimension(1); ++j) {
+                pcl::PointXYZ pt;
+                pt.x = this->feat_pts_T.at(i).at(feat_id)(0,j);
+                pt.y = this->feat_pts_T.at(i).at(feat_id)(1,j);
+                pt.z = this->feat_pts_T.at(i).at(feat_id)(2,j);
+                this->undis_features.at(feat_id).push_back(pt);
+            }
         }
     }
 }
@@ -730,6 +749,9 @@ bool LaserOdom::match(const TimeType &stamp) {
                 this->transformer.transformToStart(feat, featT, i);
             }
         }
+        if (this->param.only_extract_features) {
+            break;
+        }
         /// 7. Build Feature Residuals. todo, reuse problem
         {
             ceres::Problem::Options options;
@@ -737,7 +759,7 @@ bool LaserOdom::match(const TimeType &stamp) {
             options.loss_function_ownership = ceres::DO_NOT_TAKE_OWNERSHIP;
             options.local_parameterization_ownership = ceres::DO_NOT_TAKE_OWNERSHIP;
             // live on the edge
-            options.disable_all_safety_checks = true;
+//            options.disable_all_safety_checks = true;
             ceres::Problem problem(options);
             this->buildResiduals(problem);
 

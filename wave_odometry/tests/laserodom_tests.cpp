@@ -83,6 +83,31 @@ void LoadParameters(const std::string &path, const std::string &filename, LaserO
     parser.load(path + filename);
 }
 
+void loadFeatureParams(const std::string &path, const std::string &filename, FeatureExtractorParams &params) {
+    wave::ConfigParser parser;
+
+    parser.addParam("variance_window", &(params.variance_window));
+    parser.addParam("variance_limit_rng", &(params.variance_limit_rng));
+    parser.addParam("variance_limit_int", &(params.variance_limit_int));
+    parser.addParam("angular_bins", &(params.angular_bins));
+    parser.addParam("min_intensity", &(params.min_intensity));
+    parser.addParam("max_intensity", &(params.max_intensity));
+    parser.addParam("occlusion_tol", &(params.occlusion_tol));
+    parser.addParam("occlusion_tol_2", &(params.occlusion_tol_2));
+    parser.addParam("parallel_tol", &(params.parallel_tol));
+    parser.addParam("edge_tol", &(params.edge_tol));
+    parser.addParam("flat_tol", &(params.flat_tol));
+    parser.addParam("int_edge_tol", &(params.int_edge_tol));
+    parser.addParam("int_flat_tol", &(params.int_flat_tol));
+    parser.addParam("n_edge", &(params.n_edge));
+    parser.addParam("n_flat", &(params.n_flat));
+    parser.addParam("n_int_edge", &(params.n_int_edge));
+    parser.addParam("knn", &(params.knn));
+    parser.addParam("key_radius", &(params.key_radius));
+
+    parser.load(path + filename);
+}
+
 void setupFeatureParameters(FeatureExtractorParams &param) {
     std::vector<Criteria> edge_high, edge_low, flat, edge_int_high, edge_int_low;
     edge_high.emplace_back(Criteria{Signal::RANGE, Kernel::LOAM, SelectionPolicy::HIGH_POS, &(param.edge_tol)});
@@ -134,19 +159,48 @@ TEST(Packing_test, intsintofloat) {
 
 void updateVisualizer(const LaserOdom *odom, PointCloudDisplay *display) {
     display->removeAll();
-    pcl::PointCloud<pcl::PointXYZI>::Ptr viz_cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
-    *viz_cloud = odom->undistorted_cld;
-    display->addPointcloud(viz_cloud, 0, true);
+//    pcl::PointCloud<pcl::PointXYZI>::Ptr viz_cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
+//    *viz_cloud = odom->undistorted_cld;
+//    display->addPointcloud(viz_cloud, 100000, true);
+
+    int ptcld_id = 100001;
+    for (const auto &cld : odom->undis_features) {
+        pcl::PointCloud<pcl::PointXYZ>::Ptr viz_cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+        *viz_cloud = cld;
+        display->addPointcloud(viz_cloud, ptcld_id, true);
+        ++ptcld_id;
+    }
 
     for (uint32_t i = 1; i < odom->undistort_trajectory.size(); ++i) {
         pcl::PointXYZ pt1, pt2;
         Eigen::Map<Vec3f> m1(pt1.data), m2(pt2.data);
-        m1 = odom->undistort_trajectory.at(i - 1).pose.storage.block<3, 1>(0,3);
-        m2 = odom->undistort_trajectory.at(i).pose.storage.block<3, 1>(0,3);
+        m1 = odom->undistort_trajectory.at(i - 1).pose.storage.block<3, 1>(0,3).cast<float>();
+        m2 = odom->undistort_trajectory.at(i).pose.storage.block<3, 1>(0,3).cast<float>();
         display->addLine(pt1, pt2, i - 1, i);
     }
 
+    int id = odom->undistort_trajectory.size();
 
+    for (uint32_t i = 0; i < odom->N_FEATURES; ++i) {
+        for(const auto &geometry : odom->geometry_landmarks.at(i)) {
+            if (i == 2) {
+                pcl::PointXYZ pt1, pt2;
+                Eigen::Map<Vec3f> m1(pt1.data), m2(pt2.data);
+                m1 = geometry.block<3, 1>(3, 0);
+                m2 = geometry.block<3, 1>(0,0);
+                display->addSquare(pt1, pt2, 0.5, id);
+                ++id;
+            } else {
+                pcl::PointXYZ pt1, pt2;
+                Eigen::Map<Vec3f> m1(pt1.data), m2(pt2.data);
+                m1 = geometry.block<3, 1>(3, 0) - 0.25*geometry.block<3, 1>(0,0);
+                m2 = geometry.block<3, 1>(3, 0) + 0.25*geometry.block<3, 1>(0,0);
+                display->addLine(pt1, pt2, id, id + 1);
+                id += 2;
+            }
+        }
+    }
+    cin.get();
 }
 
 // This test is for odometry for the car moving in a straight line through the garage
@@ -184,6 +238,7 @@ TEST(OdomTest, StraightLineGarage) {
     // odom setup
     LaserOdomParams params;
     FeatureExtractorParams feature_params;
+    loadFeatureParams("config/", "features.yaml", feature_params);
     setupFeatureParameters(feature_params);
 
     LoadParameters("config/", "odom.yaml",  params);

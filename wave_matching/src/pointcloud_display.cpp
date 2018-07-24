@@ -94,14 +94,15 @@ void PointCloudDisplay::addSquare(const pcl::PointXYZ &pt0, const pcl::PointXYZ 
 
     Eigen::Matrix3f R = Eigen::Matrix3f::Identity() + skew + (1.0 / (1.0 + c)) * skew * skew;
     
-    contour.emplace_back(pcl::PointXYZ(pt0.x - offset, pt0.y - offset, pt0.z));
-    contour.emplace_back(pcl::PointXYZ(pt0.x - offset, pt0.y + offset, pt0.z));
-    contour.emplace_back(pcl::PointXYZ(pt0.x + offset, pt0.y + offset, pt0.z));
-    contour.emplace_back(pcl::PointXYZ(pt0.x + offset, pt0.y - offset, pt0.z));
-    
+    contour.emplace_back(pcl::PointXYZ(- offset, - offset, 0));
+    contour.emplace_back(pcl::PointXYZ(- offset, + offset, 0));
+    contour.emplace_back(pcl::PointXYZ(offset, offset, 0));
+    contour.emplace_back(pcl::PointXYZ(offset, - offset, 0));
+
+    Eigen::Map<const Eigen::Vector3f> point(pt0.data);
     for (auto &elem : contour) {
         Eigen::Map<Eigen::Vector3f> map(elem.data);
-        map = R * map;
+        map = point + R * map;
     }
 
     Eigen::Vector4f coefficients;

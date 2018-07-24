@@ -136,7 +136,7 @@ class LaserOdom {
     std::mutex output_mutex;
     pcl::PointCloud<pcl::PointXYZI> undistorted_cld;
     VecE<pcl::PointCloud<pcl::PointXYZ>> undis_features;
-    VecE<Vec6f> geometry_landmarks;
+    Vec<VecE<Vec6f>> geometry_landmarks;
     VecE<PoseVelStamped> undistort_trajectory;
 
     const uint32_t N_SIGNALS = 2;

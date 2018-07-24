@@ -79,9 +79,17 @@ void Transformer::transformToStart(const Eigen::Tensor<float, 2> &points, Eigen:
         float time = points(3, i) + this->traj_stamps.at(this->scan_indices.at(scan_idx));
         auto idx = std::lower_bound(this->traj_stamps.begin(), this->traj_stamps.end(), time);
         auto index = static_cast<uint32_t>(idx - this->traj_stamps.begin());
+        if (index == this->traj_stamps.size()) {
+            if(time - this->traj_stamps.back() < 0.001f) {
+                index -= 2;
+            } else {
+                throw std::runtime_error("Invalid stamps in points 1");
+            }
+
+        }
         if (time < this->traj_stamps.at(index)) {
             if (index == 0) {
-                throw std::out_of_range("Invalid stamps in points");
+                throw std::runtime_error("Invalid stamps in points 2");
             }
             index--;
         }
