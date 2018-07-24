@@ -113,7 +113,7 @@ void LaserOdom::undistort() {
     this->undistorted_cld.clear();
     for (uint32_t ring_id = 0; ring_id < this->counters.size(); ++ring_id) {
         Eigen::Tensor<float, 2> real_points = this->cur_scan.at(ring_id).slice(ar2{0,0}, ar2{4, this->counters.at(ring_id)});
-        this->transformer.transformToEnd(real_points, output, this->scan_stampsf.size() - 1);
+        this->transformer.transformToStart(real_points, output, this->scan_stampsf.size() - 1);
         for (uint32_t i = 0; i < this->counters.at(ring_id); ++i) {
             pcl::PointXYZI pt;
             pt.x = output(0,i);

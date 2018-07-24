@@ -133,9 +133,20 @@ TEST(Packing_test, intsintofloat) {
 }
 
 void updateVisualizer(const LaserOdom *odom, PointCloudDisplay *display) {
+    display->removeAll();
     pcl::PointCloud<pcl::PointXYZI>::Ptr viz_cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
     *viz_cloud = odom->undistorted_cld;
     display->addPointcloud(viz_cloud, 0, true);
+
+    for (uint32_t i = 1; i < odom->undistort_trajectory.size(); ++i) {
+        pcl::PointXYZ pt1, pt2;
+        Eigen::Map<Vec3f> m1(pt1.data), m2(pt2.data);
+        m1 = odom->undistort_trajectory.at(i - 1).pose.storage.block<3, 1>(0,3);
+        m2 = odom->undistort_trajectory.at(i).pose.storage.block<3, 1>(0,3);
+        display->addLine(pt1, pt2, i - 1, i);
+    }
+
+
 }
 
 // This test is for odometry for the car moving in a straight line through the garage
@@ -196,6 +207,9 @@ TEST(OdomTest, StraightLineGarage) {
     for (int i = 0; i < length; i++) {
         std::cout << "Processing cloud " << i << " of " << length << "\n";
         for (const auto &pt : clds.at(i)) {
+            if (std::sqrt(pt.x * pt.x + pt.y * pt.y + pt.z * pt.z) < 2.5f) {
+                continue;
+            }
             PointXYZIR recovered;
             // unpackage intensity and encoder
             auto ang = (std::atan2(pt.y, pt.x) * -1.0);
