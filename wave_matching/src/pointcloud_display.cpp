@@ -53,6 +53,7 @@ void PointCloudDisplay::spin() {
                 y_max = 1.0;
             }
             this->viewer->createViewPort(x_min, y_min, x_max, y_max, viewport_id);
+            this->viewer->addText("Viewport " + std::to_string(viewport_id), 10, 10, "Vp text " + std::to_string(viewport_id), viewport_id);
             std::string unique_id = "Viewport " + std::to_string(viewport_id);
             this->viewer->addCoordinateSystem(1.0, unique_id, viewport_id);
             ++viewport_id;
@@ -147,6 +148,13 @@ void PointCloudDisplay::updateInternal() {
     if(!(this->resetLines.test_and_set(std::memory_order_relaxed))) {
         this->viewer->removeAllShapes();
         this->viewer->removeAllPointClouds();
+        int viewport_id = 1;
+        for (int x_idx = 0; x_idx < viewport_cnt_x; ++x_idx) {
+            for (int y_idx = 0; y_idx < viewport_cnt_y; ++y_idx) {
+                this->viewer->addText("Viewport " + std::to_string(viewport_id), 10, 10, "Vp text " + std::to_string(viewport_id), viewport_id);
+                ++viewport_id;
+            }
+        }
     }
     // add or update clouds in the viewer until the queue is empty
     while (!this->clouds.empty()) {

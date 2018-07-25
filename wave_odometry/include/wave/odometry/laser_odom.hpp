@@ -176,6 +176,10 @@ class LaserOdom {
 
     void extendFeatureTracks(const Eigen::MatrixXi &indices, const Eigen::MatrixXf &dist, uint32_t feat_id);
     void createNewFeatureTracks(const Eigen::MatrixXi &indices, const Eigen::MatrixXf &dist, uint32_t feat_id);
+    /**
+     * Removes any correspondences to the current scan
+     */
+    void clearVolatileTracks();
     void mergeFeatureTracks(uint32_t feat_id);
 
     void undistort();
@@ -211,8 +215,10 @@ class LaserOdom {
     VecE<Eigen::Tensor<float, 2>> cur_feature_candidatesT, prev_feature_candidatesT;
     Vec<std::shared_ptr<Eigen::Map<Eigen::MatrixXf>>> cur_feat_map, prev_feat_map;
     Vec<Vec<std::shared_ptr<Eigen::Map<MatXf>>>> feat_T_map;
-    /// stores the index of the feature track associated with each feature point. -1 if not associated with a feature track
+    /// stores the index of the feature track associated with each candidate feature point. -1 if not associated with a feature track
     Vec<Vec<int>> cur_feat_idx, prev_feat_idx;
+    /// keeps record of all tracks that have current scan points in them
+    Vec<Vec<unsigned int>> extended_tracks;
     /**
      * feat_pts and feat_pts_T are sets of indexed tensors, first by scan then feature type
      */
@@ -225,9 +231,16 @@ class LaserOdom {
 
     //storage for average feature points. 3 x N
     VecE<MatXf> ave_pts;
-    Vec<Vec<uint32_t>> track_ids;
     // indexed by feature type and then track_id
     Vec<VecE<FeatureTrack>> feature_tracks;
+
+    /** This structure holds feature tracks formed between the current and previous scan
+     * They are refound after each optimization iteration. After all iterations (or stopping criteria met)
+     * any remaining tracks are added to feature tracks.
+     */
+    Vec<VecE<FeatureTrack>> volatile_feature_tracks;
+
+    Vec<long> cm1_feat_pts_size, cur_feat_pts_size;
 };
 
 }  // namespace wave

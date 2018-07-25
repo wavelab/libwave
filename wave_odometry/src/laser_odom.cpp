@@ -37,6 +37,8 @@ LaserOdom::LaserOdom(const LaserOdomParams params,
     this->undis_features.resize(this->N_FEATURES);
     this->undis_candidates_cur.resize(this->N_FEATURES);
     this->undis_candidates_prev.resize(this->N_FEATURES);
+    this->extended_tracks.resize(this->N_FEATURES);
+    this->volatile_feature_tracks.resize(this->N_FEATURES);
 
     this->cur_scan.resize(n_ring);
     this->signals.resize(n_ring);
@@ -341,15 +343,15 @@ void LaserOdom::rollover(TimeType stamp) {
 
 bool LaserOdom::runOptimization(ceres::Problem &problem) {
     ceres::Solver::Options options;
-    options.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
+    options.linear_solver_type = ceres::DENSE_QR;
     options.max_num_iterations = this->param.max_inner_iters;
     options.max_num_consecutive_invalid_steps = 30;
-    options.function_tolerance = 1e-8;
-    options.parameter_tolerance = 1e-7;
+//    options.function_tolerance = 1e-8;
+//    options.parameter_tolerance = 1e-7;
     options.logging_type = ceres::LoggingType::SILENT;
     options.use_nonmonotonic_steps = true;
 
-    auto callback = new OdometryCallback(&(this->feat_pts),
+    ceres::EvaluationCallback *callback = new OdometryCallback(&(this->feat_pts),
                                          &(this->feat_pts_T),
                                          &(this->cur_trajectory),
                                          &(this->ptT_jacobians),
@@ -394,6 +396,7 @@ bool LaserOdom::runOptimization(ceres::Problem &problem) {
 }
 
 void LaserOdom::extendFeatureTracks(const Eigen::MatrixXi &idx, const Eigen::MatrixXf &dist, uint32_t feat_id) {
+    this->extended_tracks.at(feat_id).clear();
     uint32_t knn = 2;
     auto residualType = PointToLine;
     // todo don't do this
@@ -412,7 +415,7 @@ void LaserOdom::extendFeatureTracks(const Eigen::MatrixXi &idx, const Eigen::Mat
         bool wide_spread = false;
         /// Each row is a nearest neighbour
         for (uint32_t i = 0; i < idx.rows(); ++i) {
-            if (dist(i, j) > this->param.max_correspondence_dist) {
+            if (std::isinf(dist(i, j))) {
                 continue;
             }
             Vec3f pt = this->cur_feat_map.at(feat_id)->block<3, 1>(0, idx(i, j));
@@ -478,6 +481,7 @@ void LaserOdom::extendFeatureTracks(const Eigen::MatrixXi &idx, const Eigen::Mat
                     ++new_feat_cnt;
                 }
             }
+            this->extended_tracks.at(feat_id).emplace_back(j);
         }
     }
 
@@ -524,7 +528,7 @@ void LaserOdom::createNewFeatureTracks(const Eigen::MatrixXi &idx, const Eigen::
             if (this->prev_feat_idx.at(feat_id).at(idx(i, j)) != -1) {
                 continue;
             }
-            if (dist(i, j) > this->param.max_correspondence_dist) {
+            if (std::isinf(dist(i, j))) {
                 continue;
             }
             Vec3f pt = this->prev_feat_map.at(feat_id)->block<3, 1>(0, idx(i, j));
@@ -670,7 +674,76 @@ void LaserOdom::createNewFeatureTracks(const Eigen::MatrixXi &idx, const Eigen::
     }
 }
 
-void LaserOdom::mergeFeatureTracks(uint32_t) {}
+void LaserOdom::clearVolatileTracks() {
+    for(auto &tracks : this->volatile_feature_tracks) {
+        tracks.clear();
+    }
+    auto last_scan = this->feat_pts.size() - 1;
+    for(uint32_t feat_id = 0; feat_id < this->extended_tracks.size(); ++feat_id) {
+        for (uint32_t i = 0; i < this->extended_tracks.at(feat_id).size(); ++i) {
+            auto &track = this->feature_tracks.at(feat_id).at(this->extended_tracks.at(feat_id).at(i));
+            auto iter = track.mapping.rbegin();
+            while (iter->scan_idx == last_scan) {
+                ++iter;
+            }
+            long dist = iter - track.mapping.rbegin();
+            unsigned long new_size = track.mapping.size() - dist;
+            track.mapping.resize(new_size);
+            track.state_ids.resize(new_size);
+            track.length -= 1;
+        }
+    }
+    for (uint32_t feat_id = 0; feat_id < this->feat_pts.back().size(); ++feat_id) {
+        auto &pts_cur = this->feat_pts.back().at(feat_id);
+        pts_cur.resize(pts_cur.dimension(0), this->cur_feat_pts_size.at(feat_id));
+        auto &pts_prev = (this->feat_pts.rbegin() + 1)->at(feat_id);
+        pts_prev.resize(pts_prev.dimension(0), this->cm1_feat_pts_size.at(feat_id));
+    }
+}
+
+//todo This is a greedy approach. Could try using reciprocal correspondences
+void LaserOdom::mergeFeatureTracks(uint32_t feat_id) {
+    auto &tracks = this->feature_tracks.at(feat_id);
+    if (tracks.empty()) {
+        return;
+    }
+    auto &trk_pts = this->ave_pts.at(feat_id);
+
+    trk_pts.resize(3, tracks.size());
+#pragma omp parallel for
+    for (uint32_t t_idx = 0; t_idx < tracks.size(); t_idx++) {
+        const auto &track = tracks.at(t_idx);
+        trk_pts.block<3, 1>(0, t_idx) = track.geometry.block<3, 1>(3, 0).cast<float>();
+    }
+
+    std::vector<int32_t> addr(tracks.size());
+    std::iota(addr.begin(), addr.end(), 0);
+    Nabo::NNSearchF* kd_idx = Nabo::NNSearchF::createKDTreeLinearHeap(trk_pts);
+
+    const int knn = 10;
+    MatXf dists(knn, trk_pts.cols());
+    Eigen::MatrixXi nn_idx(knn, trk_pts.cols());
+
+    kd_idx->knn(trk_pts, nn_idx, dists, knn, 0.1);
+
+    for (uint32_t c_idx = 0; c_idx < nn_idx.cols(); ++c_idx) {
+        for (uint32_t r_idx = 0; r_idx < nn_idx.rows(); ++r_idx) {
+            //calculate similarity score to each correspondence
+            std::vector<float> score(knn);
+            if (std::isinf(dists(r_idx, c_idx))) {
+                score.at(r_idx) = std::numeric_limits<float>::infinity();
+                continue;
+            }
+            // use planar similarity score
+            if (feat_id == 2) {
+                float cur_score
+
+            } else {
+
+            }
+        }
+    }
+}
 
 void LaserOdom::prepTrajectory(const TimeType &stamp) {
     // scan stamps f holds the timestamps at the start of each scan
@@ -707,7 +780,13 @@ bool LaserOdom::match(const TimeType &stamp) {
     T_TYPE last_transform;
     auto &ref = this->cur_trajectory.back().pose;
 
+    for (uint32_t feat_id = 0; feat_id < this->feat_pts.back().size(); ++feat_id) {
+        this->cur_feat_pts_size.at(feat_id) = this->feat_pts.back().at(feat_id).dimension(1);
+        this->cm1_feat_pts_size.at(feat_id) = (this->feat_pts.rbegin() + 1)->at(feat_id).dimension(1);
+    }
+
     for (int op = 0; op < this->param.opt_iters; op++) {
+        this->clearVolatileTracks();
         if (op > 0) {
             last_transform = ref;
         }
@@ -752,7 +831,7 @@ bool LaserOdom::match(const TimeType &stamp) {
                     nn_idx.resize(knn, this->ave_pts.at(j).cols());
                     nn_dist.resize(knn, this->ave_pts.at(j).cols());
                     this->cur_kd_idx.at(j)->knn(
-                      this->ave_pts.at(j), nn_idx, nn_dist, 5, 0.1, Nabo::NNSearchF::SORT_RESULTS);
+                      this->ave_pts.at(j), nn_idx, nn_dist, 5, 0.1, Nabo::NNSearchF::SORT_RESULTS, this->param.max_correspondence_dist);
                     if (op == 0) {
                         this->cur_feat_idx.at(j).resize(static_cast<unsigned long>(this->cur_feat_map.at(j)->size()));
                         std::fill(this->cur_feat_idx.at(j).begin(), this->cur_feat_idx.at(j).end(), -1);
@@ -765,7 +844,7 @@ bool LaserOdom::match(const TimeType &stamp) {
                     nn_idx.resize(knn, this->cur_feat_map.at(j)->cols());
                     nn_dist.resize(knn, this->cur_feat_map.at(j)->cols());
                     this->curm1_kd_idx.at(j)->knn(
-                      *(this->cur_feat_map.at(j)), nn_idx, nn_dist, 5, 0.1, Nabo::NNSearchF::SORT_RESULTS);
+                      *(this->cur_feat_map.at(j)), nn_idx, nn_dist, 5, 0.1, Nabo::NNSearchF::SORT_RESULTS, this->param.max_correspondence_dist);
                     this->createNewFeatureTracks(nn_idx, nn_dist, j);
                 }
             }

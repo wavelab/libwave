@@ -64,7 +64,7 @@ void Transformer::update(const std::vector<PoseVel, Eigen::aligned_allocator<Pos
 
 void Transformer::transformToStart(const Eigen::Tensor<float, 2> &points, Eigen::Tensor<float, 2> &points_transformed, const uint32_t scan_idx) {
     if (points_transformed.dimension(0) != 3 || points_transformed.dimension(1) != points.dimension(1)) {
-        points_transformed.resize(3, points.dimensions().at(1));
+        points_transformed.resize(3, points.dimension(1));
     }
 
     Eigen::Map<const MatXf> pt(points.data(), points.dimension(0), points.dimension(1));
