@@ -158,16 +158,21 @@ TEST(Packing_test, intsintofloat) {
 }
 
 void updateVisualizer(const LaserOdom *odom, PointCloudDisplay *display) {
+    int ptcld_id = 100000;
     display->removeAll();
-//    pcl::PointCloud<pcl::PointXYZI>::Ptr viz_cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
-//    *viz_cloud = odom->undistorted_cld;
-//    display->addPointcloud(viz_cloud, 100000, true);
+    pcl::PointCloud<pcl::PointXYZI>::Ptr viz_cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
+    *viz_cloud = odom->undistorted_cld;
+    display->addPointcloud(viz_cloud, ptcld_id, false);
+    ++ptcld_id;
 
-    int ptcld_id = 100001;
-    for (const auto &cld : odom->undis_features) {
+    for (uint32_t feat_id = 0; feat_id < odom->undis_features.size(); ++feat_id) {
         pcl::PointCloud<pcl::PointXYZ>::Ptr viz_cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
-        *viz_cloud = cld;
-        display->addPointcloud(viz_cloud, ptcld_id, true);
+        *viz_cloud = odom->undis_features.at(feat_id);
+        int viewport_id = feat_id + 1;
+        if (viewport_id > 4) {
+            viewport_id = 4;
+        }
+        display->addPointcloud(viz_cloud, ptcld_id, false, viewport_id);
         ++ptcld_id;
     }
 
@@ -182,23 +187,35 @@ void updateVisualizer(const LaserOdom *odom, PointCloudDisplay *display) {
     int id = odom->undistort_trajectory.size();
 
     for (uint32_t i = 0; i < odom->N_FEATURES; ++i) {
+        int viewport_id = i + 1;
+        if (viewport_id > 4) {
+            viewport_id = 4;
+        }
         for(const auto &geometry : odom->geometry_landmarks.at(i)) {
             if (i == 2) {
                 pcl::PointXYZ pt1, pt2;
                 Eigen::Map<Vec3f> m1(pt1.data), m2(pt2.data);
                 m1 = geometry.block<3, 1>(3, 0);
                 m2 = geometry.block<3, 1>(0,0);
-                display->addSquare(pt1, pt2, 0.5, id);
+                display->addSquare(pt1, pt2, 0.5, id, false, viewport_id);
                 ++id;
             } else {
                 pcl::PointXYZ pt1, pt2;
                 Eigen::Map<Vec3f> m1(pt1.data), m2(pt2.data);
                 m1 = geometry.block<3, 1>(3, 0) - 0.25*geometry.block<3, 1>(0,0);
                 m2 = geometry.block<3, 1>(3, 0) + 0.25*geometry.block<3, 1>(0,0);
-                display->addLine(pt1, pt2, id, id + 1);
+                display->addLine(pt1, pt2, id, id + 1, false, viewport_id);
                 id += 2;
             }
         }
+        pcl::PointCloud<pcl::PointXYZ>::Ptr cloud1 = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+        pcl::PointCloud<pcl::PointXYZ>::Ptr cloud2 = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+        *cloud1 = odom->undis_candidates_cur.at(i);
+        *cloud2 = odom->undis_candidates_prev.at(i);
+        display->addPointcloud(cloud1, ptcld_id, false, viewport_id);
+        ++ptcld_id;
+        display->addPointcloud(cloud2, ptcld_id, false, viewport_id);
+        ++ptcld_id;
     }
     cin.get();
 }
@@ -211,7 +228,7 @@ TEST(OdomTest, StraightLineGarage) {
     pcl::PCLPointCloud2 temp;
     pcl::PointCloud<PointXYZIR> temp2;
     LOG_INFO("Starting to load clouds");
-    boost::filesystem::path p("/home/bapskiko/rosbags/last_ditch_bags/pcd");
+    boost::filesystem::path p("/home/ben/rosbags/last_ditch_bags/pcd");
     std::vector<boost::filesystem::path> v;
     std::copy(boost::filesystem::directory_iterator(p), boost::filesystem::directory_iterator(), std::back_inserter(v));
     std::sort(v.begin(), v.end());
@@ -251,7 +268,7 @@ TEST(OdomTest, StraightLineGarage) {
     uint16_t prev_enc = 0;
     uint16_t encoder = 0;
 
-    PointCloudDisplay display("odom");
+    PointCloudDisplay display("odom", 0.2, 2, 2);
     display.startSpin();
     std::function<void()> func = std::bind(updateVisualizer, &odom, &display);
     odom.registerOutputFunction(func);

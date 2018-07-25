@@ -35,6 +35,8 @@ LaserOdom::LaserOdom(const LaserOdomParams params,
     this->ptT_jacobians.resize(this->N_FEATURES);
     this->geometry_landmarks.resize(this->N_FEATURES);
     this->undis_features.resize(this->N_FEATURES);
+    this->undis_candidates_cur.resize(this->N_FEATURES);
+    this->undis_candidates_prev.resize(this->N_FEATURES);
 
     this->cur_scan.resize(n_ring);
     this->signals.resize(n_ring);
@@ -140,6 +142,22 @@ void LaserOdom::undistort() {
                 pt.z = this->feat_pts_T.at(i).at(feat_id)(2,j);
                 this->undis_features.at(feat_id).push_back(pt);
             }
+        }
+        this->undis_candidates_prev.at(feat_id).clear();
+        this->undis_candidates_cur.at(feat_id).clear();
+        for (uint32_t i = 0; i < this->cur_feature_candidatesT.at(feat_id).dimension(1); ++i){
+            pcl::PointXYZ pt;
+            pt.x = this->cur_feature_candidatesT.at(feat_id)(0,i);
+            pt.y = this->cur_feature_candidatesT.at(feat_id)(1,i);
+            pt.z = this->cur_feature_candidatesT.at(feat_id)(2,i);
+            this->undis_candidates_cur.at(feat_id).push_back(pt);
+        }
+        for (uint32_t i = 0; i < this->prev_feature_candidatesT.at(feat_id).dimension(1); ++i) {
+            pcl::PointXYZ pt;
+            pt.x = this->prev_feature_candidatesT.at(feat_id)(0,i);
+            pt.y = this->prev_feature_candidatesT.at(feat_id)(1,i);
+            pt.z = this->prev_feature_candidatesT.at(feat_id)(2,i);
+            this->undis_candidates_prev.at(feat_id).push_back(pt);
         }
     }
 }
@@ -498,7 +516,9 @@ void LaserOdom::createNewFeatureTracks(const Eigen::MatrixXi &idx, const Eigen::
         std::vector<uint32_t> matches;
         double min_elev = 0.0;
         double max_elev = 0.0;
+        double new_min = 0.0, new_max = 0.0;
         bool wide_spread = false;
+        bool new_spread = false;
         /// Each row is a nearest neighbour
         for (uint32_t i = 0; i < idx.rows(); ++i) {
             if (this->prev_feat_idx.at(feat_id).at(idx(i, j)) != -1) {
@@ -514,20 +534,31 @@ void LaserOdom::createNewFeatureTracks(const Eigen::MatrixXi &idx, const Eigen::
                 max_elev = min_elev;
                 continue;
             }
-            if (wide_spread || matches.size() != knn) {
-                if (!wide_spread) {
-                    double new_elev = std::atan2(pt(2), std::sqrt(pt(0) * pt(0) + pt(1) * pt(1)));
-                    if (new_elev > max_elev)
-                        max_elev = new_elev;
-                    else if (new_elev < min_elev)
-                        min_elev = new_elev;
-                    if (max_elev - min_elev > this->param.azimuth_tol)
-                        wide_spread = true;
-                }
+            if (wide_spread) {
                 matches.emplace_back(idx(i, j));
+            } else {
+                double new_elev = std::atan2(pt(2), std::sqrt(pt(0) * pt(0) + pt(1) * pt(1)));
+                if (new_elev > max_elev) {
+                    new_max = new_elev;
+                    new_min = min_elev;
+                } else if (new_elev < min_elev) {
+                    new_min = new_elev;
+                    new_max = max_elev;
+                }
+                if (new_max - new_min > this->param.azimuth_tol)
+                    new_spread = true;
+                if(new_spread) {
+                    wide_spread = true;
+                    min_elev = new_min;
+                    max_elev = new_max;
+                }
+                if (wide_spread || matches.size() + 1 < knn) {
+                    matches.emplace_back(idx(i, j));
+                }
             }
-            if (matches.size() == knn)
+            if (matches.size() == knn) {
                 break;
+            }
         }
         /// create feature track if error is low, and points are not part of another track
         if (matches.size() == knn) {

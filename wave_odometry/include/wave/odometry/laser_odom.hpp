@@ -138,6 +138,7 @@ class LaserOdom {
     VecE<pcl::PointCloud<pcl::PointXYZ>> undis_features;
     Vec<VecE<Vec6f>> geometry_landmarks;
     VecE<PoseVelStamped> undistort_trajectory;
+    VecE<pcl::PointCloud<pcl::PointXYZ>> undis_candidates_cur, undis_candidates_prev;
 
     const uint32_t N_SIGNALS = 2;
     const uint32_t N_FEATURES = 5;

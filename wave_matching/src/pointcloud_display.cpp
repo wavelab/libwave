@@ -3,7 +3,8 @@
 
 namespace wave {
 
-PointCloudDisplay::PointCloudDisplay(const std::string &name, double rad) {
+PointCloudDisplay::PointCloudDisplay(const std::string &name, double rad, int viewport_cnt_x, int viewport_cnt_y) :
+    viewport_cnt_x(viewport_cnt_x), viewport_cnt_y(viewport_cnt_y) {
     this->display_name = name;
     this->radius = rad;
 }
@@ -35,6 +36,28 @@ void PointCloudDisplay::spin() {
       std::make_shared<pcl::visualization::PCLVisualizer>(this->display_name);
     this->viewer->setBackgroundColor(0, 0, 0);
     this->viewer->addCoordinateSystem(1.0);
+    double x_increment = 1.0 / (double) this->viewport_cnt_x;
+    double y_increment = 1.0 / (double) this->viewport_cnt_y;
+
+    int viewport_id = 1;
+    for (int x_idx = 0; x_idx < viewport_cnt_x; ++x_idx) {
+        for (int y_idx = 0; y_idx < viewport_cnt_y; ++y_idx) {
+            double x_min = x_idx * x_increment;
+            double y_min = y_idx * y_increment;
+            double x_max = x_min + x_increment;
+            double y_max = y_min + y_increment;
+            if (x_idx + 1 == viewport_cnt_x) {
+                x_max = 1.0;
+            }
+            if (y_idx + 1 == viewport_cnt_y) {
+                y_max = 1.0;
+            }
+            this->viewer->createViewPort(x_min, y_min, x_max, y_max, viewport_id);
+            std::string unique_id = "Viewport " + std::to_string(viewport_id);
+            this->viewer->addCoordinateSystem(1.0, unique_id, viewport_id);
+            ++viewport_id;
+        }
+    }
     this->viewer->resetCamera();
     while (this->continueFlag.test_and_set(std::memory_order_relaxed) &&
            !(this->viewer->wasStopped())) {
@@ -52,16 +75,17 @@ void PointCloudDisplay::spin() {
 
 void PointCloudDisplay::addPointcloud(const PCLPointCloudPtr &cld,
                                       int id,
-                                      bool reset_camera) {
+                                      bool reset_camera,
+                                      int viewport) {
     this->update_mutex.lock();
-    this->clouds.emplace(Cloud{cld->makeShared(), id, reset_camera});
+    this->clouds.emplace(Cloud{cld->makeShared(), id, viewport, reset_camera});
     this->update_mutex.unlock();
 }
 
 void PointCloudDisplay::addPointcloud(
-  const pcl::PointCloud<pcl::PointXYZI>::Ptr &cld, int id, bool reset_camera) {
+  const pcl::PointCloud<pcl::PointXYZI>::Ptr &cld, int id, bool reset_camera, int viewport) {
     this->update_mutex.lock();
-    this->cloudsi.emplace(CloudI{cld->makeShared(), id, reset_camera});
+    this->cloudsi.emplace(CloudI{cld->makeShared(), id, viewport, reset_camera});
     this->update_mutex.unlock();
 }
 
@@ -69,14 +93,15 @@ void PointCloudDisplay::addLine(const pcl::PointXYZ &pt1,
                                 const pcl::PointXYZ &pt2,
                                 int id1,
                                 int id2,
-                                bool reset_camera) {
+                                bool reset_camera,
+                                int viewport) {
     this->update_mutex.lock();
-    this->lines.emplace(Line{pt1, pt2, id1, id2, reset_camera});
+    this->lines.emplace(Line{pt1, pt2, id1, id2, viewport, reset_camera});
     this->update_mutex.unlock();
 }
 
 void PointCloudDisplay::addSquare(const pcl::PointXYZ &pt0, const pcl::PointXYZ &dir, float l1dist, int id,
-                                  bool reset_camera) {
+                                  bool reset_camera, int viewport) {
     pcl::PointCloud<pcl::PointXYZ>::VectorType contour;
     float offset = 0.5f * l1dist;
 
@@ -114,7 +139,7 @@ void PointCloudDisplay::addSquare(const pcl::PointXYZ &pt0, const pcl::PointXYZ 
     pcl::PlanarPolygon<pcl::PointXYZ> square_poly(contour, coefficients);
 
     this->update_mutex.lock();
-    this->squares.emplace(Square{square_poly, id, reset_camera});
+    this->squares.emplace(Square{square_poly, id, viewport, reset_camera});
     this->update_mutex.unlock();
 }
 
@@ -141,8 +166,10 @@ void PointCloudDisplay::updateInternal() {
             this->viewer->updatePointCloud(
               cld.cloud, col_handler, std::to_string(cld.id));
         } else {
+            if (cld.viewport > this->viewport_cnt_x * this->viewport_cnt_y)
+                throw std::runtime_error("Viewport index too big");
             this->viewer->addPointCloud(
-              cld.cloud, col_handler, std::to_string(cld.id));
+              cld.cloud, col_handler, std::to_string(cld.id), cld.viewport);
         }
         if (cld.reset_camera) {
             this->viewer->resetCamera();
@@ -158,8 +185,10 @@ void PointCloudDisplay::updateInternal() {
             this->viewer->updatePointCloud(
               cld.cloud, col_handler, std::to_string(cld.id));
         } else {
+            if (cld.viewport > this->viewport_cnt_x * this->viewport_cnt_y)
+                throw std::runtime_error("Viewport index too big");
             this->viewer->addPointCloud(
-              cld.cloud, col_handler, std::to_string(cld.id));
+              cld.cloud, col_handler, std::to_string(cld.id), cld.viewport);
         }
         if (cld.reset_camera) {
             this->viewer->resetCamera();
@@ -178,7 +207,9 @@ void PointCloudDisplay::updateInternal() {
         if (this->viewer->contains(lineid)) {
             this->viewer->removeShape(lineid, 0);
         }
-        this->viewer->addLine(line.pt1, line.pt2, low, hi, low, lineid);
+        if (line.viewport > this->viewport_cnt_x * this->viewport_cnt_y)
+            throw std::runtime_error("Viewport index too big");
+        this->viewer->addLine(line.pt1, line.pt2, low, hi, low, lineid, line.viewport);
         if (line.reset_camera) {
             this->viewer->resetCamera();
         }
@@ -193,8 +224,10 @@ void PointCloudDisplay::updateInternal() {
         if (this->viewer->contains(squareid)) {
             this->viewer->removeShape(squareid, 0);
         }
+        if (square.viewport > this->viewport_cnt_x * this->viewport_cnt_y)
+            throw std::runtime_error("Viewport index too big");
         //todo decide how to use rgb
-        this->viewer->addPolygon(square.planar_poly, 1.0, 1.0, 1.0, squareid);
+        this->viewer->addPolygon(square.planar_poly, 1.0, 1.0, 1.0, squareid, square.viewport);
         if (square.reset_camera) {
             this->viewer->resetCamera();
         }
