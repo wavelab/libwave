@@ -98,6 +98,14 @@ struct LaserOdomParams {
     double azimuth_tol = 0.0174532925199433;  // Minimum azimuth difference across correspondences
     uint16_t TTL = 1;                         // Maximum life of feature in local map with no correspondences
 
+    /// parameters for feature track merging
+    float max_planar_dist_threshold = 0.2f;
+    float max_planar_ang_threshold = 0.03f;
+
+    float max_linear_dist_threshold = 0.1;
+    float max_linear_ang_threshold = 0.025;
+    float ang_scaling_param = 10;
+
     double min_eigen = 100.0;
     double max_extrapolation = 0.0;  // Increasing this number from 0 will allow a bit of extrapolation
 

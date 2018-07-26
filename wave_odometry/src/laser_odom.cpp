@@ -475,7 +475,7 @@ void LaserOdom::extendFeatureTracks(const Eigen::MatrixXi &idx, const Eigen::Mat
                       this->trajectory_stamps.begin(), this->trajectory_stamps.end(), new_feat_points(3, new_feat_cnt));
                     auto traj_idx = static_cast<uint32_t>(bnd - this->trajectory_stamps.begin() - 1);
 
-                    this->feature_tracks.at(feat_id).at(j).state_ids.emplace_back(traj_idx);
+                    this->feature_tracks.at(feat_id).at(j).mapping.back().state_id = traj_idx;
                     this->feature_tracks.at(feat_id).at(j).length += 1;
 
                     ++new_feat_cnt;
@@ -620,7 +620,7 @@ void LaserOdom::createNewFeatureTracks(const Eigen::MatrixXi &idx, const Eigen::
                 auto bnd = std::upper_bound(this->trajectory_stamps.begin(), this->trajectory_stamps.end(), pt_time);
                 auto traj_idx = static_cast<uint32_t>(bnd - this->trajectory_stamps.begin() - 1);
 
-                track.state_ids.emplace_back(traj_idx);
+                track.mapping.back().state_id = traj_idx;
 
                 Eigen::array<int, 2> offsets_new = {0, static_cast<int>(new_feat_cnt)};
                 Eigen::array<int, 2> offsets_candidate = {0, static_cast<int>(j)};
@@ -641,7 +641,7 @@ void LaserOdom::createNewFeatureTracks(const Eigen::MatrixXi &idx, const Eigen::
                     bnd = std::upper_bound(this->trajectory_stamps.begin(), this->trajectory_stamps.end(), pt_time);
                     traj_idx = static_cast<uint32_t>(bnd - this->trajectory_stamps.begin() - 1);
 
-                    track.state_ids.emplace_back(traj_idx);
+                    track.mapping.back().state_id = traj_idx;
 
                     offsets_new.at(1) = static_cast<int>(prev_new_feat_cnt);
                     offsets_candidate.at(1) = static_cast<int>(elem);
@@ -689,7 +689,6 @@ void LaserOdom::clearVolatileTracks() {
             long dist = iter - track.mapping.rbegin();
             unsigned long new_size = track.mapping.size() - dist;
             track.mapping.resize(new_size);
-            track.state_ids.resize(new_size);
             track.length -= 1;
         }
     }
@@ -724,23 +723,63 @@ void LaserOdom::mergeFeatureTracks(uint32_t feat_id) {
     MatXf dists(knn, trk_pts.cols());
     Eigen::MatrixXi nn_idx(knn, trk_pts.cols());
 
-    kd_idx->knn(trk_pts, nn_idx, dists, knn, 0.1);
+    kd_idx->knn(trk_pts, nn_idx, dists, knn, 0.1, 0, this->param.max_correspondence_dist);
 
+    std::vector<float> score(knn);
     for (uint32_t c_idx = 0; c_idx < nn_idx.cols(); ++c_idx) {
+        auto &query_track = tracks.at(addr.at(c_idx));
         for (uint32_t r_idx = 0; r_idx < nn_idx.rows(); ++r_idx) {
             //calculate similarity score to each correspondence
-            std::vector<float> score(knn);
+            std::fill(score.begin(), score.end(), std::numeric_limits<float>::infinity());
+
             if (std::isinf(dists(r_idx, c_idx))) {
-                score.at(r_idx) = std::numeric_limits<float>::infinity();
                 continue;
             }
+            float dist_cost, dir_cost;
+
+            auto &knn_track = tracks.at(addr.at(nn_idx(r_idx, c_idx)));
+            Vec3f diff = query_track.geometry.block<3,1>(3,0).cast<float>() - knn_track.geometry.block<3,1>(3,0).cast<float>();
+            dir_cost = 1.0f - (query_track.geometry.block<3,1>(0,0).transpose() * knn_track.geometry.block<3,1>(0,0))(0);
             // use planar similarity score
             if (feat_id == 2) {
-                float cur_score
-
+                dist_cost = std::abs((diff.transpose() * query_track.geometry.block<3,1>(0,0).cast<float>())) +
+                        std::abs((diff.transpose() * knn_track.geometry.block<3,1>(0,0).cast<float>()));
+                if (dist_cost > this->param.max_planar_dist_threshold || dir_cost > this->param.max_planar_ang_threshold) {
+                    continue;
+                }
             } else {
-
+                dist_cost = (diff.transpose() * knn_track.geometry.block<3,1>(0,0).cross(query_track.geometry.block<3,1>(0,0)).cast<float>()).norm() /
+                        knn_track.geometry.block<3,1>(0,0).cross(query_track.geometry.block<3,1>(0,0)).norm();
+                if (dist_cost > this->param.max_linear_dist_threshold || dir_cost > this->param.max_linear_ang_threshold) {
+                    continue;
+                }
             }
+            score.at(r_idx) = dist_cost + this->param.ang_scaling_param * dir_cost;
+        }
+        auto merge = std::min_element(score.begin(), score.end()) - score.begin();
+        if (merge == knn) {
+            continue;
+        } else {
+            //merge the two feature tracks
+            auto first_index = addr.at(c_idx);
+            auto second_index = addr.at(nn_idx(merge, c_idx));
+            if (first_index < second_index) {
+                throw std::runtime_error("Do we ever get here?");
+            }
+            auto &merged_track = tracks.at(second_index);
+            query_track.geometry = 0.5f * query_track.geometry + 0.5f * merged_track.geometry;
+            query_track.geometry.block<3,1>(0,0).normalize();
+            for (const auto &map : merged_track.mapping) {
+                query_track.mapping.emplace_back(map);
+            }
+            std::sort(query_track.mapping.begin(), query_track.mapping.end(), [](const FeatureTrack::Mapping& lhs, const FeatureTrack::Mapping& rhs) {
+                return lhs.scan_idx < rhs.scan_idx;
+            });
+            query_track.length = query_track.mapping.back().scan_idx - query_track.mapping.front().scan_idx;
+            addr.at(second_index) = first_index;
+            std::swap(tracks.at(second_index), tracks.back());
+            addr.at(tracks.size() - 1) = second_index;
+            tracks.resize(tracks.size() - 1);
         }
     }
 }
@@ -907,7 +946,7 @@ void LaserOdom::buildResiduals(ceres::Problem &problem) {
                     this->costs.emplace_back(
                       new ImplicitLineResidual<12, 6, 12, 6>(p_idx, f_idx, &track, &(this->feat_T_map)));
                 }
-                uint32_t start_offset = track.state_ids.at(p_idx);
+                uint32_t start_offset = track.mapping.at(p_idx).state_id;
                 problem.AddResidualBlock(this->costs.back().get(),
                                          this->loss_functions.back().get(),
                                          track.geometry.data(),

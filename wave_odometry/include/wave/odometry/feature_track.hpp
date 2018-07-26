@@ -13,15 +13,13 @@ struct FeatureTrack {
     struct Mapping {
         Mapping() = default;
         Mapping(uint32_t pt_idx, uint32_t scan_idx) : pt_idx(pt_idx), scan_idx(scan_idx) {}
-        uint32_t pt_idx, scan_idx;
+        uint32_t pt_idx, scan_idx, state_id;
     };
     std::vector<Mapping> mapping;
 
     // line/plane definition
     Vec6 geometry;
 
-    // state ids, indexed by point_idx, then by state number
-    std::vector<uint32_t> state_ids;
     uint32_t length;
 
     /// pointer to state jacobians updated by evaluation callback

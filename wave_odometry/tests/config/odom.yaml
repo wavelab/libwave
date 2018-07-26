@@ -56,6 +56,14 @@ iso_var: 0.005       #  Variance to use if weighing is set.
 min_eigen: 100
 max_extrapolation: 0.0 # How far to extrapolate line correspondences
 
+#Parameters controlling how planar feature tracks are merged
+max_planar_dist_threshold: 0.2
+max_planar_ang_threshold: 0.025  # 1 - cos(theta)
+#Parameters controlling how line feature tracks are merged
+max_linear_dist_threshold: 0.1
+max_linear_ang_threshold: 0.025
+ang_scaling_param: 10
+
 #  Setting flags
 visualize: false               #  Whether to run a visualization for debugging
 output_trajectory: false       #  Whether to output solutions for debugging/plotting
