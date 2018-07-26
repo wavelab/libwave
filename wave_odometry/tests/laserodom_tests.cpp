@@ -71,6 +71,12 @@ void LoadParameters(const std::string &path, const std::string &filename, LaserO
     parser.addParam("TTL", &(params.TTL));
     parser.addParam("min_eigen", &(params.min_eigen));
     parser.addParam("max_extrapolation", &(params.max_extrapolation));
+    parser.addParam("max_planar_dist_threshold", &(params.max_planar_dist_threshold));
+    parser.addParam("max_planar_ang_threshold", &(params.max_planar_ang_threshold));
+    parser.addParam("max_linear_dist_threshold", &(params.max_linear_dist_threshold));
+    parser.addParam("max_linear_ang_threshold", &(params.max_linear_ang_threshold));
+    parser.addParam("ang_scaling_param", &(params.ang_scaling_param));
+
     parser.addParam("output_trajectory", &(params.output_trajectory));
     parser.addParam("output_correspondences", &(params.output_correspondences));
     parser.addParam("only_extract_features", &(params.only_extract_features));
@@ -192,15 +198,19 @@ void updateVisualizer(const LaserOdom *odom, PointCloudDisplay *display) {
                 Eigen::Map<Vec3f> m1(pt1.data), m2(pt2.data);
                 m1 = geometry.block<3, 1>(3, 0);
                 m2 = geometry.block<3, 1>(0,0);
-                display->addSquare(pt1, pt2, 0.5, id, false, viewport_id);
+                float sidelength = 0.15 * geometry(6);
+                display->addSquare(pt1, pt2, sidelength, id, false, viewport_id);
                 ++id;
-                display->addSquare(pt1, pt2, 0.5, id, false, viewport_id + 1);
+                display->addSquare(pt1, pt2, sidelength, id, false, viewport_id + 1);
                 ++id;
             } else {
                 pcl::PointXYZ pt1, pt2;
                 Eigen::Map<Vec3f> m1(pt1.data), m2(pt2.data);
-                m1 = geometry.block<3, 1>(3, 0) - 0.25*geometry.block<3, 1>(0,0);
-                m2 = geometry.block<3, 1>(3, 0) + 0.25*geometry.block<3, 1>(0,0);
+
+                float sidelength = 0.1 * geometry(6);
+
+                m1 = geometry.block<3, 1>(3, 0) - sidelength*geometry.block<3, 1>(0,0);
+                m2 = geometry.block<3, 1>(3, 0) + sidelength*geometry.block<3, 1>(0,0);
                 display->addLine(pt1, pt2, id, id + 1, false, viewport_id);
                 id += 2;
                 display->addLine(pt1, pt2, id, id + 1, false, viewport_id + 1);

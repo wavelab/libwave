@@ -6,22 +6,23 @@
 #endif
 
 #include <vector>
-#include <array>
 #include <algorithm>
-#include <utility>
+#include <array>
+#include <atomic>
 #include <chrono>
-#include <limits>
-#include <iostream>
+#include <condition_variable>
+#include <exception>
 #include <fstream>
 #include <functional>
-#include <mutex>
-#include <condition_variable>
-#include <thread>
-#include <atomic>
-#include <type_traits>
+#include <iostream>
+#include <limits>
+#include <list>
 #include <memory>
+#include <mutex>
 #include <set>
-#include <exception>
+#include <thread>
+#include <type_traits>
+#include <utility>
 
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
@@ -144,7 +145,7 @@ class LaserOdom {
     std::mutex output_mutex;
     pcl::PointCloud<pcl::PointXYZI> undistorted_cld;
     VecE<pcl::PointCloud<pcl::PointXYZ>> undis_features;
-    Vec<VecE<Vec6f>> geometry_landmarks;
+    Vec<VecE<Eigen::Matrix<float, 7, 1>>> geometry_landmarks;
     VecE<PoseVelStamped> undistort_trajectory;
     VecE<pcl::PointCloud<pcl::PointXYZ>> undis_candidates_cur, undis_candidates_prev;
 
@@ -175,6 +176,7 @@ class LaserOdom {
     void updateFeatureCandidates();
     void prepTrajectory(const TimeType &stamp);
     bool match(const TimeType &stamp);
+    void trackResiduals(ceres::Problem &problem, uint32_t f_idx, VecE <FeatureTrack> &track_list);
     void buildResiduals(ceres::Problem &problem);
     //todo think about how to reuse residuals
     Vec<std::shared_ptr<ceres::CostFunction>> costs;
@@ -189,6 +191,7 @@ class LaserOdom {
      */
     void clearVolatileTracks();
     void mergeFeatureTracks(uint32_t feat_id);
+    void mergeFeatureTracksInternal(uint32_t feat_id, VecE <FeatureTrack> &track_list);
 
     void undistort();
 
@@ -232,8 +235,6 @@ class LaserOdom {
      */
     Vec<VecE<Eigen::Tensor<float, 2>>> feat_pts, feat_pts_T;
     Vec<Vec<VecE<Eigen::Tensor<double, 3>>>> ptT_jacobians;
-
-    Vec<Nabo::NNSearchF*> cur_kd_idx, curm1_kd_idx, ave_kd_idx;
 
     Vec<ResidualType> feature_residuals;
 
