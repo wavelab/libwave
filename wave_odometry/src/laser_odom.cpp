@@ -6,8 +6,6 @@ LaserOdom::LaserOdom(const LaserOdomParams params,
                      const FeatureExtractorParams feat_params,
                      const TransformerParams transformer_params)
     : param(params), feature_extractor(feat_params, params.n_ring), transformer(transformer_params) {
-    this->CSVFormat = new Eigen::IOFormat(Eigen::FullPrecision, Eigen::DontAlignCols, ", ", ", ");
-
     this->continue_output = true;
 
     this->cv_model =
@@ -61,10 +59,6 @@ LaserOdom::LaserOdom(const LaserOdomParams params,
         throw std::out_of_range("Window size must be at least 2");
     }
 
-    if (params.output_trajectory) {
-        long timestamp = std::chrono::system_clock::now().time_since_epoch().count();
-        this->file.open(std::to_string(timestamp) + "laser_odom_traj.txt");
-    }
 }
 
 void LaserOdom::updateParams(const LaserOdomParams new_params) {
@@ -76,16 +70,11 @@ LaserOdomParams LaserOdom::getParams() {
 }
 
 LaserOdom::~LaserOdom() {
-    if (this->param.output_trajectory) {
-        this->file.close();
-    }
     if (this->output_thread) {
         this->continue_output = false;
         this->output_condition.notify_one();
         this->output_thread->join();
     }
-
-    delete this->CSVFormat;
 }
 
 void LaserOdom::registerOutputFunction(std::function<void()> output_function) {
@@ -211,9 +200,6 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
         if (this->initialized) {
             this->match(stamp);
 
-            if (this->param.output_trajectory) {
-                this->file << this->cur_trajectory.back().pose.storage.format(*(this->CSVFormat)) << std::endl;
-            }
             if (this->output_thread) {
                 {
                     std::unique_lock<std::mutex> lk(this->output_mutex);
@@ -424,7 +410,7 @@ bool LaserOdom::runOptimization(ceres::Problem &problem) {
     } else if (!this->param.only_extract_features) {
         ceres::Solver::Summary summary;
         ceres::Solve(options, &problem, &summary);
-        if (this->param.plot_stuff) {
+        if (this->param.print_opt_sum) {
             LOG_INFO("%s", summary.BriefReport().c_str());
         }
         //                ceres::Covariance covariance(covar_options);

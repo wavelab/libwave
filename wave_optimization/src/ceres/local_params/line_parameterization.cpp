@@ -29,7 +29,11 @@ bool LineParameterization::Plus(const double *x, const double *delta, double *x_
 
     double a_mag = ceres::sqrt(Dnormal(0) * Dnormal(0) + Dnormal(1) * Dnormal(1));
 
-    normalpD = ceres::cos(a_mag) * normal + ceres::sin(a_mag) * (v / a_mag);
+    if (a_mag < 1e-5) {
+        normalpD = normal + v;
+    } else {
+        normalpD = ceres::cos(a_mag) * normal + ceres::sin(a_mag) * (v / a_mag);
+    }
 
     pt0pD = pt0 + R.block<3, 2>(0,0) * Dpt0;
 

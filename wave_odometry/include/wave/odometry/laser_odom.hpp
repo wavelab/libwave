@@ -89,8 +89,7 @@ struct LaserOdomParams {
     int min_residuals = 30;               // Problem will be reset if the number of residuals is less than this
 
     // Sensor parameters
-    float scan_period = 0.1;  // Seconds
-    int max_ticks = 36000;    // encoder ticks per revolution
+    //todo get rid of this (should be part of the feature extractor params, not here)
     unlong n_ring = 32;       // number of laser-detector pairs
 
     RangeSensorParams sensor_params;
@@ -107,22 +106,10 @@ struct LaserOdomParams {
     float max_linear_ang_threshold = 0.025;
     float ang_scaling_param = 10;
 
-    double min_eigen = 100.0;
-    double max_extrapolation = 0.0;  // Increasing this number from 0 will allow a bit of extrapolation
-
     // Setting flags
-    bool output_trajectory = false;       // Whether to output solutions for debugging/plotting
-    bool output_correspondences = false;  // Whether to output correpondences for debugging/plotting
     bool only_extract_features = false;   // If set, no transforms are calculated
     bool use_weighting = false;           // If set, pre-whiten residuals
-    bool plot_stuff = false;              // If set, plot things for debugging
-    bool motion_prior = true;             // If set, use a constant velocity prior
-    bool no_extrapolation = false;  // If set, discard any point match whose correspondences do not bound the point
-                                    /**
-                                     * If set instead of matching edge points to lines, match edge points to a plane
-                                     * defined by the original line points and the origin
-                                     */
-    bool treat_lines_as_planes = false;
+    bool print_opt_sum = false;              // If set, plot things for debugging
 };
 
 class LaserOdom {
@@ -155,10 +142,6 @@ class LaserOdom {
     const uint32_t MAX_POINTS = 2200;
 
  private:
-    // Output trajectory file
-    std::ofstream file;
-    Eigen::IOFormat *CSVFormat;
-
     // Flow control
     std::atomic_bool continue_output;
     bool fresh_output = false;

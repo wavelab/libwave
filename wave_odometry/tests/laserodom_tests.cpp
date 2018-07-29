@@ -81,7 +81,7 @@ void LoadParameters(const std::string &path, const std::string &filename, LaserO
     parser.addParam("output_correspondences", &(params.output_correspondences));
     parser.addParam("only_extract_features", &(params.only_extract_features));
     parser.addParam("use_weighting", &(params.use_weighting));
-    parser.addParam("plot_stuff", &(params.plot_stuff));
+    parser.addParam("print_opt_sum", &(params.print_opt_sum));
     parser.addParam("motion_prior", &(params.motion_prior));
     parser.addParam("no_extrapolation", &(params.no_extrapolation));
     parser.addParam("treat_lines_as_planes", &(params.treat_lines_as_planes));
