@@ -228,8 +228,6 @@ class LaserOdom {
     Vec<Vec<std::shared_ptr<Eigen::Map<MatXf>>>> feat_T_map;
     /// stores the index of the feature track associated with each candidate feature point. -1 if not associated with a feature track
     Vec<Vec<int>> cur_feat_idx, prev_feat_idx;
-    /// keeps record of all tracks that have current scan points in them
-    Vec<Vec<unsigned int>> extended_tracks;
     /**
      * feat_pts and feat_pts_T are sets of indexed tensors, first by scan then feature type
      */
@@ -249,7 +247,7 @@ class LaserOdom {
      */
     Vec<VecE<FeatureTrack>> volatile_feature_tracks;
 
-    Vec<long> cm1_feat_pts_size, cur_feat_pts_size;
+    Vec<long> cm1_feat_pts_size;
 };
 
 }  // namespace wave

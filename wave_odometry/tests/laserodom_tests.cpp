@@ -226,7 +226,7 @@ void updateVisualizer(const LaserOdom *odom, PointCloudDisplay *display) {
         display->addPointcloud(cloud2, ptcld_id, false, viewport_id + 1);
         ++ptcld_id;
     }
-    cin.get();
+//    cin.get();
 }
 
 // This test is for odometry for the car moving in a straight line through the garage
@@ -237,7 +237,7 @@ TEST(OdomTest, StraightLineGarage) {
     pcl::PCLPointCloud2 temp;
     pcl::PointCloud<PointXYZIR> temp2;
     LOG_INFO("Starting to load clouds");
-    boost::filesystem::path p("/home/bapskiko/rosbags/last_ditch_bags/pcd");
+    boost::filesystem::path p("/home/ben/rosbags/last_ditch_bags/pcd");
     std::vector<boost::filesystem::path> v;
     std::copy(boost::filesystem::directory_iterator(p), boost::filesystem::directory_iterator(), std::back_inserter(v));
     std::sort(v.begin(), v.end());
