@@ -17,13 +17,14 @@ bool ImplicitPlaneResidual<states...>::Evaluate(double const *const *parameters,
     error = diff.transpose() * plane.block<3, 1>(0, 0);
 
     if (jacobians) {
-        Eigen::Map<Eigen::Matrix<double, 1, 6, Eigen::RowMajor>> plane_jac(jacobians[0]);
+        if (jacobians[0]) {
+            Eigen::Map<Eigen::Matrix<double, 1, 6, Eigen::RowMajor>> plane_jac(jacobians[0]);
 
+            plane_jac.template block<1, 3>(0, 0) = diff.transpose();
+            plane_jac.template block<1, 3>(0, 3) = -plane.block<3, 1>(0, 0).transpose();
+        }
         Eigen::Matrix<double, 1, 3> del_e_del_diff;
         del_e_del_diff = plane.block<3, 1>(0, 0).transpose();
-
-        plane_jac.template block<1, 3>(0, 0) = diff.transpose();
-        plane_jac.template block<1, 3>(0, 3) = -plane.block<3, 1>(0, 0).transpose();
 
         assignJacobian(jacobians + 1, del_e_del_diff, &(this->track->jacs->at(s_id)), this->pt_id, 0, states...);
     }

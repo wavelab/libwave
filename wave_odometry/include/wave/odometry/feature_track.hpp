@@ -19,6 +19,7 @@ struct FeatureTrack {
 
     // line/plane definition
     Vec6 geometry;
+    bool optimize = true;
 
     uint32_t length;
 

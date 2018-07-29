@@ -132,6 +132,7 @@ class LaserOdom {
                            const TransformerParams transformer_params);
     ~LaserOdom();
     void addPoints(const std::vector<PointXYZIR> &pts, int tick, TimeType stamp);
+    void updateTracks();
     void rollover(TimeType stamp);
     void registerOutputFunction(std::function<void()> output_function);
     void updateParams(const LaserOdomParams);

@@ -23,15 +23,16 @@ bool ImplicitLineResidual<states...>::Evaluate(double const *const *parameters, 
     error = diff - dp * normal;
 
     if (jacobians) {
-        Eigen::Map<Eigen::Matrix<double, 3, 6, Eigen::RowMajor>> line_jac(jacobians[0]);
-
         Eigen::Matrix<double, 3, 3> del_e_del_diff;
         del_e_del_diff = Mat3::Identity() - normal * normal.transpose();
+        if (jacobians[0]) {
+            Eigen::Map<Eigen::Matrix<double, 3, 6, Eigen::RowMajor>> line_jac(jacobians[0]);
 
-        // jacobian wrt normal
-        line_jac.block<3, 3>(0,0) = - normal * diff.transpose() - dp * Mat3::Identity();
-        // jacobian wrt pt on line
-        line_jac.block<3, 3>(0,3) = -del_e_del_diff;
+            // jacobian wrt normal
+            line_jac.block<3, 3>(0,0) = - normal * diff.transpose() - dp * Mat3::Identity();
+            // jacobian wrt pt on line
+            line_jac.block<3, 3>(0,3) = -del_e_del_diff;
+        }
 
         assignJacobian(jacobians + 1, del_e_del_diff, &(this->track->jacs->at(s_id)), this->pt_id, 0, states...);
     }

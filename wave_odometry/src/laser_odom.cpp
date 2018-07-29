@@ -264,10 +264,45 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
     this->prv_tick = tick;
 }
 
+void LaserOdom::updateTracks() {
+    // transform all landmark states to start of current scan and decrement the scan id of each associated feature point
+    // if the new scan_id < 0, remove those feature points and freeze the landmark state
+    const auto &transform = this->cur_trajectory.at(1).pose;
+    for (auto &tracks : this->feature_tracks) {
+        VecE<FeatureTrack> updated_tracks;
+        for (auto &track : tracks) {
+            bool reduce_length = false;
+            Vec<FeatureTrack::Mapping> updated_mapping;
+            for (auto &map : track.mapping) {
+                if (map.scan_idx != 0) {
+                    --(map.scan_idx);
+                    updated_mapping.emplace_back(map);
+                } else {
+                    reduce_length = true;
+                }
+            }
+            std::swap(track.mapping, updated_mapping);
+            if(reduce_length && track.length == 1) {
+                continue;
+            }
+            if (reduce_length) {
+                --(track.length);
+                track.optimize = false;
+            }
+            track.geometry.block<3,1>(0,0) = transform.storage.block<3,3>(0,0).transpose() * track.geometry.block<3,1>(0,0);
+            auto ref = track.geometry.block<3,1>(3,0);
+            transform.inverseTransform(ref, ref);
+            updated_tracks.emplace_back(std::move(track));
+        }
+        std::swap(tracks, updated_tracks);
+    }
+}
+
 void LaserOdom::rollover(TimeType stamp) {
     // If there are n_scans worth of data, rotate
     if (this->scan_stamps_chrono.size() == this->param.n_window) {
         // Perform a left rotation
+        this->updateTracks();
         std::rotate(this->feat_pts.begin(), this->feat_pts.begin() + 1, this->feat_pts.end());
         std::rotate(this->feat_pts_T.begin(), this->feat_pts_T.begin() + 1, this->feat_pts_T.end());
         std::rotate(
@@ -390,7 +425,7 @@ bool LaserOdom::runOptimization(ceres::Problem &problem) {
         ceres::Solver::Summary summary;
         ceres::Solve(options, &problem, &summary);
         if (this->param.plot_stuff) {
-            LOG_INFO("%s", summary.FullReport().c_str());
+            LOG_INFO("%s", summary.BriefReport().c_str());
         }
         //                ceres::Covariance covariance(covar_options);
         //                if (!covariance.Compute(this->param_blocks, &problem)) {
@@ -487,14 +522,17 @@ void LaserOdom::extendFeatureTracks(const Eigen::MatrixXi &idx, const Eigen::Mat
                     new_feat_points.slice(offsets_new, extents) =
                       this->cur_feature_candidates.at(feat_id).slice(offsets_candidate, extents);
 
+                    auto new_scan_idx = this->scan_stampsf.size() - 1;
+                    if (this->feature_tracks.at(feat_id).at(j).mapping.back().scan_idx != new_scan_idx) {
+                        this->feature_tracks.at(feat_id).at(j).length += 1;
+                    }
                     this->feature_tracks.at(feat_id).at(j).mapping.emplace_back(offset + new_feat_cnt,
-                                                                                this->scan_stampsf.size() - 1);
+                                                                                new_scan_idx);
                     auto bnd = std::upper_bound(
                       this->trajectory_stamps.begin(), this->trajectory_stamps.end(), new_feat_points(3, new_feat_cnt) + this->scan_stampsf.back());
                     auto traj_idx = static_cast<uint32_t>(bnd - this->trajectory_stamps.begin() - 1);
 
                     this->feature_tracks.at(feat_id).at(j).mapping.back().state_id = traj_idx;
-                    this->feature_tracks.at(feat_id).at(j).length += 1;
 
                     ++new_feat_cnt;
                 }
@@ -1000,6 +1038,9 @@ void LaserOdom::trackResiduals(ceres::Problem &problem, uint32_t f_idx, VecE <Fe
             this->local_params.emplace_back(std::make_shared<LineParameterization>());
         }
         problem.AddParameterBlock(track.geometry.data(), 6, this->local_params.back().get());
+        if (!(track.optimize)) {
+            problem.SetParameterBlockConstant(track.geometry.data());
+        }
         for (uint32_t p_idx = 0; p_idx < track.mapping.size(); ++p_idx) {
             this->loss_functions.emplace_back(new BisquareLoss(this->param.robust_param));
             if (f_idx == 2) {
