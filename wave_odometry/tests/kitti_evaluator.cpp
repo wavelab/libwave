@@ -7,7 +7,7 @@
 //todo Figure out where these helper functions should go (they are shared with tests).
 namespace {
 
-void LoadSensorParameters(const std::string &path, const std::string &filename, RangeSensorParams &senparams) {
+void LoadSensorParameters(const std::string &path, const std::string &filename, wave::RangeSensorParams &senparams) {
     wave::ConfigParser parser;
     parser.addParam("rings", &(senparams.rings));
     parser.addParam("sigma_spherical", &(senparams.sigma_spherical));
@@ -29,8 +29,6 @@ void LoadParameters(const std::string &path, const std::string &filename, wave::
     parser.addParam("max_correspondence_dist", &(params.max_correspondence_dist));
     parser.addParam("max_residual_val", &(params.max_residual_val));
     parser.addParam("min_residuals", &(params.min_residuals));
-    parser.addParam("scan_period", &(params.scan_period));
-    parser.addParam("max_ticks", &(params.max_ticks));
     parser.addParam("n_ring", &(params.n_ring));
 
     LoadSensorParameters(path, "sensor_model.yaml", params.sensor_params);
@@ -49,7 +47,7 @@ void LoadParameters(const std::string &path, const std::string &filename, wave::
     parser.load(path + filename);
 }
 
-void loadFeatureParams(const std::string &path, const std::string &filename, FeatureExtractorParams &params) {
+void loadFeatureParams(const std::string &path, const std::string &filename, wave::FeatureExtractorParams &params) {
     wave::ConfigParser parser;
 
     parser.addParam("variance_window", &(params.variance_window));
@@ -74,43 +72,189 @@ void loadFeatureParams(const std::string &path, const std::string &filename, Fea
     parser.load(path + filename);
 }
 
-void setupFeatureParameters(FeatureExtractorParams &param) {
-    std::vector<Criteria> edge_high, edge_low, flat, edge_int_high, edge_int_low;
-    edge_high.emplace_back(Criteria{Signal::RANGE, Kernel::LOAM, SelectionPolicy::HIGH_POS, &(param.edge_tol)});
+void setupFeatureParameters(wave::FeatureExtractorParams &param) {
+    std::vector<wave::Criteria> edge_high, edge_low, flat, edge_int_high, edge_int_low;
+    edge_high.emplace_back(wave::Criteria{wave::Signal::RANGE, wave::Kernel::LOAM, wave::SelectionPolicy::HIGH_POS, &(param.edge_tol)});
 
-    edge_low.emplace_back(Criteria{Signal::RANGE, Kernel::LOAM, SelectionPolicy::HIGH_NEG, &(param.edge_tol)});
+    edge_low.emplace_back(wave::Criteria{wave::Signal::RANGE, wave::Kernel::LOAM, wave::SelectionPolicy::HIGH_NEG, &(param.edge_tol)});
 
-    flat.emplace_back(Criteria{Signal::RANGE, Kernel::LOAM, SelectionPolicy::NEAR_ZERO, &(param.flat_tol)});
+    flat.emplace_back(wave::Criteria{wave::Signal::RANGE, wave::Kernel::LOAM, wave::SelectionPolicy::NEAR_ZERO, &(param.flat_tol)});
 
     edge_int_high.emplace_back(
-            Criteria{Signal::INTENSITY, Kernel::FOG, SelectionPolicy::HIGH_POS, &(param.int_edge_tol)});
+            wave::Criteria{wave::Signal::INTENSITY, wave::Kernel::FOG, wave::SelectionPolicy::HIGH_POS, &(param.int_edge_tol)});
     edge_int_high.emplace_back(
-            Criteria{Signal::RANGE, Kernel::LOAM, SelectionPolicy::NEAR_ZERO, &(param.int_flat_tol)});
+            wave::Criteria{wave::Signal::RANGE, wave::Kernel::LOAM, wave::SelectionPolicy::NEAR_ZERO, &(param.int_flat_tol)});
     edge_int_high.emplace_back(
-            Criteria{Signal::RANGE, Kernel::RNG_VAR, SelectionPolicy::NEAR_ZERO, &(param.variance_limit_rng)});
+            wave::Criteria{wave::Signal::RANGE, wave::Kernel::RNG_VAR, wave::SelectionPolicy::NEAR_ZERO, &(param.variance_limit_rng)});
 
     edge_int_low.emplace_back(
-            Criteria{Signal::INTENSITY, Kernel::FOG, SelectionPolicy::HIGH_NEG, &(param.int_edge_tol)});
-    edge_int_low.emplace_back(Criteria{Signal::RANGE, Kernel::LOAM, SelectionPolicy::NEAR_ZERO, &(param.int_flat_tol)});
+            wave::Criteria{wave::Signal::INTENSITY, wave::Kernel::FOG, wave::SelectionPolicy::HIGH_NEG, &(param.int_edge_tol)});
+    edge_int_low.emplace_back(wave::Criteria{wave::Signal::RANGE, wave::Kernel::LOAM, wave::SelectionPolicy::NEAR_ZERO, &(param.int_flat_tol)});
     edge_int_low.emplace_back(
-            Criteria{Signal::RANGE, Kernel::RNG_VAR, SelectionPolicy::NEAR_ZERO, &(param.variance_limit_rng)});
+            wave::Criteria{wave::Signal::RANGE, wave::Kernel::RNG_VAR, wave::SelectionPolicy::NEAR_ZERO, &(param.variance_limit_rng)});
 
     param.feature_definitions.clear();
-    param.feature_definitions.emplace_back(FeatureDefinition{edge_high, &(param.n_edge)});
-    param.feature_definitions.emplace_back(FeatureDefinition{edge_low, &(param.n_edge)});
-    param.feature_definitions.emplace_back(FeatureDefinition{flat, &(param.n_flat)});
-    param.feature_definitions.emplace_back(FeatureDefinition{edge_int_high, &(param.n_int_edge)});
-    param.feature_definitions.emplace_back(FeatureDefinition{edge_int_low, &(param.n_int_edge)});
+    param.feature_definitions.emplace_back(wave::FeatureDefinition{edge_high, &(param.n_edge)});
+    param.feature_definitions.emplace_back(wave::FeatureDefinition{edge_low, &(param.n_edge)});
+    param.feature_definitions.emplace_back(wave::FeatureDefinition{flat, &(param.n_flat)});
+    param.feature_definitions.emplace_back(wave::FeatureDefinition{edge_int_high, &(param.n_int_edge)});
+    param.feature_definitions.emplace_back(wave::FeatureDefinition{edge_int_low, &(param.n_int_edge)});
+}
+
+void updateVisualizer(const wave::LaserOdom *odom, wave::PointCloudDisplay *display) {
+    int ptcld_id = 100000;
+    display->removeAll();
+//    pcl::PointCloud<pcl::PointXYZI>::Ptr viz_cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
+//    *viz_cloud = odom->undistorted_cld;
+//    display->addPointcloud(viz_cloud, ptcld_id, false);
+//    ++ptcld_id;
+
+//    for (uint32_t feat_id = 0; feat_id < 3; ++feat_id) {
+//        pcl::PointCloud<pcl::PointXYZ>::Ptr viz_cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+//        *viz_cloud = odom->undis_features.at(feat_id);
+//        int viewport_id = feat_id + 1;
+//        display->addPointcloud(viz_cloud, ptcld_id, false, viewport_id);
+//        ++ptcld_id;
+//    }
+
+    for (uint32_t i = 1; i < odom->undistort_trajectory.size(); ++i) {
+        pcl::PointXYZ pt1, pt2;
+        Eigen::Map<wave::Vec3f> m1(pt1.data), m2(pt2.data);
+        m1 = odom->undistort_trajectory.at(i - 1).pose.storage.block<3, 1>(0,3).cast<float>();
+        m2 = odom->undistort_trajectory.at(i).pose.storage.block<3, 1>(0,3).cast<float>();
+        display->addLine(pt1, pt2, i - 1, i);
+    }
+
+    int id = odom->undistort_trajectory.size();
+
+    for (uint32_t i = 0; i < 3; ++i) {
+        int viewport_id = 2*i + 1;
+
+        for(const auto &geometry : odom->geometry_landmarks.at(i)) {
+            if (i == 2) {
+                pcl::PointXYZ pt1, pt2;
+                Eigen::Map<wave::Vec3f> m1(pt1.data), m2(pt2.data);
+                m1 = geometry.block<3, 1>(3, 0);
+                m2 = geometry.block<3, 1>(0,0);
+                float sidelength = 0.15 * geometry(6);
+                display->addSquare(pt1, pt2, sidelength, id, false, viewport_id);
+                ++id;
+                display->addSquare(pt1, pt2, sidelength, id, false, viewport_id + 1);
+                ++id;
+            } else {
+                pcl::PointXYZ pt1, pt2;
+                Eigen::Map<wave::Vec3f> m1(pt1.data), m2(pt2.data);
+
+                float sidelength = 0.1 * geometry(6);
+
+                m1 = geometry.block<3, 1>(3, 0) - sidelength*geometry.block<3, 1>(0,0);
+                m2 = geometry.block<3, 1>(3, 0) + sidelength*geometry.block<3, 1>(0,0);
+                display->addLine(pt1, pt2, id, id + 1, false, viewport_id);
+                id += 2;
+                display->addLine(pt1, pt2, id, id + 1, false, viewport_id + 1);
+                id += 2;
+            }
+        }
+        pcl::PointCloud<pcl::PointXYZ>::Ptr cloud1 = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+        pcl::PointCloud<pcl::PointXYZ>::Ptr cloud2 = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+        *cloud1 = odom->undis_candidates_cur.at(i);
+        *cloud2 = odom->undis_candidates_prev.at(i);
+        display->addPointcloud(cloud1, ptcld_id, false, viewport_id);
+        ++ptcld_id;
+        display->addPointcloud(cloud2, ptcld_id, false, viewport_id + 1);
+        ++ptcld_id;
+    }
+}
+
+wave::TimeType parseTime(const std::string &date_time) {
+    std::tm tm = {};
+    unsigned long nano_seconds = std::stoi(date_time.substr(20, 9));
+    std::chrono::nanoseconds n_secs(nano_seconds);
+    std::stringstream ss(date_time);
+    ss >> std::get_time(&tm, "%Y-%m-%d %H:%M:%S");
+    std::chrono::system_clock::time_point sys_clock = std::chrono::system_clock::from_time_t(std::mktime(&tm));
+    wave::TimeType stamp;
+    stamp = stamp + sys_clock.time_since_epoch() + n_secs;
+    return stamp;
 }
 
 }
 
-namespace wave_examples {
+int main(int argc, char** argv) {
+    if (argc != 3) {
+        throw std::runtime_error("Must be run with only 2 arguments: \n 1. Full path to data \n 2. Full path to configuration files");
+    }
+    std::string data_path(argv[1]);
+    std::string config_path(argv[2]);
+    if(data_path.back() != '/') {
+        data_path = data_path + '/';
+    }
+    if(config_path.back() != '/') {
+        config_path = config_path + '/';
+    }
 
+    wave::LaserOdomParams params;
+    wave::FeatureExtractorParams feature_params;
+    loadFeatureParams(config_path, "features.yaml", feature_params);
+    setupFeatureParameters(feature_params);
+    LoadParameters(config_path, "odom.yaml",  params);
+    wave::TransformerParams transformer_params;
+    transformer_params.traj_resolution = params.num_trajectory_states;
 
+    wave::LaserOdom odom(params, feature_params, transformer_params);
+    wave::PointCloudDisplay display("Kitti Eval"); //, 0.2, 3, 2);
+    display.startSpin();
 
-}
+    auto func = [&]() {updateVisualizer(&odom, &display);};
+    odom.registerOutputFunction(func);
 
-int main() {
-    wave::LaserOdom()
+    //set up pointcloud iterators
+    boost::filesystem::path p(data_path + "velodyne_points/data");
+    std::vector<boost::filesystem::path> v;
+    std::copy(boost::filesystem::directory_iterator(p), boost::filesystem::directory_iterator(), std::back_inserter(v));
+    std::sort(v.begin(), v.end());
+
+    //timesteps
+    fstream timestamps_start(data_path + "velodyne_points/timestamps_start.txt", ios::in);
+    fstream timestamps_end(data_path + "velodyne_points/timestamps_end.txt", ios::in);
+
+    if (!timestamps_start.good() || !timestamps_end.good()) {
+        throw std::runtime_error("file structure not as expected for timestamps");
+    }
+
+    std::vector<wave::TimeType> time_start, time_end;
+    std::string cur_start_stamp, cur_end_stamp;
+    while (std::getline(timestamps_start, cur_start_stamp) && std::getline(timestamps_end, cur_end_stamp)) {
+        time_start.emplace_back(parseTime(cur_start_stamp));
+        time_end.emplace_back(parseTime(cur_end_stamp));
+    }
+
+    unsigned long counter = 0;
+    pcl::PointCloud<pcl::PointXYZI> ptcloud;
+    for (auto iter = v.begin(); iter != v.end(); ++iter) {
+        fstream binfile(iter->string(), ios::in | ios::binary);
+        const auto &start_t = time_start.at(counter);
+        const auto &end_t = time_end.at(counter);
+        auto diff = end_t - start_t;
+        ptcloud.clear();
+        while (binfile.good() && !binfile.eof()) {
+            pcl::PointXYZI pt;
+            binfile.read((char *) pt.data, 3*sizeof(float));
+            binfile.read((char *) &pt.intensity, sizeof(float));
+            ptcloud.push_back(pt);
+//            auto ang = (std::atan2(pt.y, pt.x));
+//            // need to convert to 0 to 2pi
+//            ang < 0 ? ang = ang + 2.0*M_PI : ang;
+//
+//            uint16_t encoder = (uint16_t) ((ang / (2.0*M_PI)) * 36000.0);
+
+        }
+        pcl::PointCloud<pcl::PointXYZI>::Ptr viz_cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
+        *viz_cloud = ptcloud;
+        display.addPointcloud(viz_cloud, 0);
+        std::this_thread::sleep_for(diff);
+    }
+
+    display.stopSpin();
+    return 0;
 }

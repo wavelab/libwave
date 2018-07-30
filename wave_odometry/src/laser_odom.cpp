@@ -998,7 +998,7 @@ bool LaserOdom::match(const TimeType &stamp) {
             options.cost_function_ownership = ceres::DO_NOT_TAKE_OWNERSHIP;
             options.loss_function_ownership = ceres::DO_NOT_TAKE_OWNERSHIP;
             options.local_parameterization_ownership = ceres::DO_NOT_TAKE_OWNERSHIP;
-//            options.disable_all_safety_checks = true;
+            options.disable_all_safety_checks = true;
             ceres::Problem problem(options);
             /// 7. Build Feature Residuals. todo, reuse problem
             this->buildResiduals(problem);

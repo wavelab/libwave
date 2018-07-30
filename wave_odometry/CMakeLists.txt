@@ -17,6 +17,12 @@ WAVE_ADD_MODULE(${PROJECT_NAME}
     src/feature_extractor.cpp
     src/laser_odom.cpp)
 
+ADD_EXECUTABLE(kitti_eval
+        tests/kitti_evaluator.cpp)
+TARGET_LINK_LIBRARIES(kitti_eval
+        wave::matching
+        ${PROJECT_NAME})
+
 IF(BUILD_TESTING)
     WAVE_ADD_TEST(${PROJECT_NAME}_tests
             tests/laserodom_tests.cpp)

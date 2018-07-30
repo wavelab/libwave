@@ -61,30 +61,21 @@ void LoadParameters(const std::string &path, const std::string &filename, LaserO
     parser.addParam("max_correspondence_dist", &(params.max_correspondence_dist));
     parser.addParam("max_residual_val", &(params.max_residual_val));
     parser.addParam("min_residuals", &(params.min_residuals));
-    parser.addParam("scan_period", &(params.scan_period));
-    parser.addParam("max_ticks", &(params.max_ticks));
     parser.addParam("n_ring", &(params.n_ring));
 
     LoadSensorParameters(path, "sensor_model.yaml", params.sensor_params);
 
     parser.addParam("azimuth_tol", &(params.azimuth_tol));
     parser.addParam("TTL", &(params.TTL));
-    parser.addParam("min_eigen", &(params.min_eigen));
-    parser.addParam("max_extrapolation", &(params.max_extrapolation));
     parser.addParam("max_planar_dist_threshold", &(params.max_planar_dist_threshold));
     parser.addParam("max_planar_ang_threshold", &(params.max_planar_ang_threshold));
     parser.addParam("max_linear_dist_threshold", &(params.max_linear_dist_threshold));
     parser.addParam("max_linear_ang_threshold", &(params.max_linear_ang_threshold));
     parser.addParam("ang_scaling_param", &(params.ang_scaling_param));
 
-    parser.addParam("output_trajectory", &(params.output_trajectory));
-    parser.addParam("output_correspondences", &(params.output_correspondences));
     parser.addParam("only_extract_features", &(params.only_extract_features));
     parser.addParam("use_weighting", &(params.use_weighting));
     parser.addParam("print_opt_sum", &(params.print_opt_sum));
-    parser.addParam("motion_prior", &(params.motion_prior));
-    parser.addParam("no_extrapolation", &(params.no_extrapolation));
-    parser.addParam("treat_lines_as_planes", &(params.treat_lines_as_planes));
 
     parser.load(path + filename);
 }
@@ -327,48 +318,6 @@ TEST(OdomTest, StraightLineGarage) {
     std::cout << "It took "
               << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count()
               << "ms.\n";
-}
-
-TEST(Transforms, forward_backwards) {
-    double base_rot[3] = {0.2, 0.1, -0.2};
-    double base_trans[3] = {0.2, 5, 4};
-    double pt[3] = {1, 2, -4};
-    double scale = 0.33;
-
-    // pt will be the point to change frames of
-    // pt_start = R_scaled * pt + T
-    double angle_axis[3] = {scale * base_rot[0], scale * base_rot[1], scale * base_rot[2]};
-    double pt_start[3];
-    ceres::AngleAxisRotatePoint(angle_axis, pt, pt_start);
-    pt_start[0] += scale * base_trans[0];
-    pt_start[1] += scale * base_trans[1];
-    pt_start[2] += scale * base_trans[2];
-
-    // pt_end = R_inv*pt_start - R_inv*T
-    double angle_axis_inverse[3] = {-base_rot[0], -base_rot[1], -base_rot[2]};
-    double pt_end[3], offset[3];
-    ceres::AngleAxisRotatePoint(angle_axis_inverse, pt_start, pt_end);
-    ceres::AngleAxisRotatePoint(angle_axis_inverse, base_trans, offset);
-    pt_end[0] -= offset[0];
-    pt_end[1] -= offset[1];
-    pt_end[2] -= offset[2];
-
-    // This should be a shortcut
-    // pt_end = R_inv*R_scaled*pt + R_inv*T_scaled - R_inv * T
-    // = R_(1-scaled)_inv*pt - (1 - scale)R_inv*T
-
-    double rv_scale = 1 - scale;
-    double angle_axis_scaled_inverse[3] = {
-      -(rv_scale * base_rot[0]), -(rv_scale * base_rot[1]), -(rv_scale * base_rot[2])};
-    double pt_end_simple[3];
-    ceres::AngleAxisRotatePoint(angle_axis_scaled_inverse, pt, pt_end_simple);
-    pt_end_simple[0] -= rv_scale * offset[0];
-    pt_end_simple[1] -= rv_scale * offset[1];
-    pt_end_simple[2] -= rv_scale * offset[2];
-
-    ASSERT_NEAR(pt_end[0], pt_end_simple[0], 1e-6);
-    ASSERT_NEAR(pt_end[1], pt_end_simple[1], 1e-6);
-    ASSERT_NEAR(pt_end[2], pt_end_simple[2], 1e-6);
 }
 
 }  // namespace wave

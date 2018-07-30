@@ -71,7 +71,7 @@ output_correspondences: false  #  Whether to output correpondences for debugging
 only_extract_features: false   #  If set, no transforms are calculated
 use_weighting: false           #  If set, pre-whiten residuals
 lock_first: true               #  If set, don't optimize starting pose
-plot_stuff: false              #  If set, plot stuff
+print_opt_sum: true              #  If true, output ceres summaries to console
 solution_remapping: false      #  If set, use solution remapping
 motion_prior:  true            #  Use a motion prior for smoothing
 no_extrapolation: false        #  Don't allow extrapolation
