@@ -36,15 +36,16 @@ inline BenchmarkPose interpolate(const PoseMeasurement &m1,
     auto m1inverse = inverse(m1.value.rotation);
 
     auto relative = eval(log(m2.value.rotation * m1inverse));
-    relative.value() *= w2;  // operator* not done for wave_geometry, so cheating by accessing Eigen object
+    relative.value() *= w2;  // operator* not done for wave_geometry, so
+                             // cheating by accessing Eigen object
 
     auto trans = (1 - w2) * m1.value.translation + w2 * m2.value.translation;
 
     BenchmarkPose retval;
     Eigen::Matrix3d rot;
-    rot = Eigen::AngleAxisd(relative.value()(2,0), Vec3::UnitZ()) *
-         Eigen::AngleAxisd(relative.value()(1,0), Vec3::UnitY()) *
-         Eigen::AngleAxisd(relative.value()(0,0), Vec3::UnitX());
+    rot = Eigen::AngleAxisd(relative.value()(2, 0), Vec3::UnitZ()) *
+          Eigen::AngleAxisd(relative.value()(1, 0), Vec3::UnitY()) *
+          Eigen::AngleAxisd(relative.value()(0, 0), Vec3::UnitX());
     retval.rotation = RotationMd(rot * m1.value.rotation.value());
     retval.translation = trans;
     return retval;

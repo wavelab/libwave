@@ -76,9 +76,9 @@ TEST(TrajectoryCompare, errorRotation) {
               Eigen::AngleAxisd(0.20 * i, Vec3::UnitY()) *
               Eigen::AngleAxisd(0.25 * i, Vec3::UnitX());
         traj_sample.rotation = RotationMd(rot);
-        expected_error.push_back(RotationMd(
-          truth_sample.rotation.value().transpose() *
-          traj_sample.rotation.value()));
+        expected_error.push_back(
+          RotationMd(truth_sample.rotation.value().transpose() *
+                     traj_sample.rotation.value()));
         compare.pushMeasurement(traj_sample, start_t + std::chrono::seconds(i));
     }
     compare.calculateError();

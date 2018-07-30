@@ -11,7 +11,8 @@ BenchmarkPose poseError(const MeasurementContainer<PoseMeasurement> &truth,
 
     auto error_pose = BenchmarkPose{};
     error_pose.rotation = true_rotation * measurement.value.rotation;
-    error_pose.translation = measurement.value.translation - true_pose.translation;
+    error_pose.translation =
+      measurement.value.translation - true_pose.translation;
     return error_pose;
 }
 
