@@ -1,5 +1,7 @@
 // This is to evaluate kitti sequences
 
+#include <matplotlibcpp.h>
+
 #include "wave/matching/pointcloud_display.hpp"
 #include "wave/odometry/laser_odom.hpp"
 #include "wave/utils/config.hpp"
@@ -193,6 +195,11 @@ int main(int argc, char** argv) {
         config_path = config_path + '/';
     }
 
+    wave::ConfigParser parser;
+    wave::MatX cutoff_angles;
+    parser.addParam("cutoff_angles", &cutoff_angles);
+    parser.load(config_path + "kitti_angles.yaml");
+
     wave::LaserOdomParams params;
     wave::FeatureExtractorParams feature_params;
     loadFeatureParams(config_path, "features.yaml", feature_params);
@@ -231,29 +238,114 @@ int main(int argc, char** argv) {
 
     unsigned long counter = 0;
     pcl::PointCloud<pcl::PointXYZI> ptcloud;
+    std::vector<double> bins(2000);
+    std::vector<unsigned long> bincnt(2000);
+    std::fill(bincnt.begin(), bincnt.end(), 0);
+    double start = -26.0 * (M_PI / 180.0);
+    std::generate(bins.begin(), bins.end(), [&start] () {
+        start += M_PI / 10800.0;
+        return start;
+    });
+    std::vector<std::vector<double>> azimuths(65);
+    std::vector<std::vector<double>> elevations(65);
+    std::vector<std::vector<double>> ranges(65);
+    std::vector<std::vector<double>> xydistances(65);
+    std::vector<std::vector<unsigned long>> pt_order(65);
+    bool binary_format = false;
+    unsigned long pt_idx = 0;
+    unsigned long ring_index = 0;
     for (auto iter = v.begin(); iter != v.end(); ++iter) {
-        fstream binfile(iter->string(), ios::in | ios::binary);
+        fstream cloud_file;
+        if (iter->string().substr(iter->string().find_last_of('.') + 1) == "bin") {
+            binary_format = true;
+            cloud_file.open(iter->string(), ios::in | ios::binary);
+        } else {
+            cloud_file.open(iter->string(), ios::in);
+        }
         const auto &start_t = time_start.at(counter);
         const auto &end_t = time_end.at(counter);
+        ++counter;
+        if (counter < 432)
+            continue;
         auto diff = end_t - start_t;
         ptcloud.clear();
-        while (binfile.good() && !binfile.eof()) {
+        azimuths.at(ring_index).clear();
+        elevations.at(ring_index).clear();
+        ranges.at(ring_index).clear();
+        pt_order.at(ring_index).clear();
+        pt_idx = 0;
+        ring_index = 0;
+        double prev_azimuth = 0;
+        while (cloud_file.good() && !cloud_file.eof()) {
             pcl::PointXYZI pt;
-            binfile.read((char *) pt.data, 3*sizeof(float));
-            binfile.read((char *) &pt.intensity, sizeof(float));
-            ptcloud.push_back(pt);
-//            auto ang = (std::atan2(pt.y, pt.x));
-//            // need to convert to 0 to 2pi
-//            ang < 0 ? ang = ang + 2.0*M_PI : ang;
-//
-//            uint16_t encoder = (uint16_t) ((ang / (2.0*M_PI)) * 36000.0);
+            if (binary_format) {
+                cloud_file.read((char *) pt.data, 3*sizeof(float));
+                cloud_file.read((char *) &pt.intensity, sizeof(float));
+            } else {
+                std::string line;
+                std::getline(cloud_file, line);
+                std::stringstream ss(line);
+                ss >> pt.x;
+                ss >> pt.y;
+                ss >> pt.z;
+                ss >> pt.intensity;
+            }
 
+            auto elevation = std::atan2(pt.z, std::sqrt(pt.x * pt.x + pt.y * pt.y));
+            auto range = std::sqrt(pt.x * pt.x + pt.y * pt.y + pt.z * pt.z);
+            auto xydistance = std::sqrt(pt.x * pt.x + pt.y * pt.y);
+
+            auto bnd = std::lower_bound(bins.begin(), bins.end(), elevation);
+            bincnt.at((bnd - bins.begin()) - 1) += 1;
+
+            auto ang = (std::atan2(pt.y, pt.x));
+            ang < 0 ? ang = ang + 2.0*M_PI : ang;
+
+            double from_start = ang - cutoff_angles(ring_index, 0);
+            from_start < 0 ? from_start = from_start + 2.0*M_PI : from_start;
+
+            if (prev_azimuth > ang + 0.2) {
+                ++ring_index;
+                azimuths.at(ring_index).clear();
+                elevations.at(ring_index).clear();
+                ranges.at(ring_index).clear();
+                pt_order.at(ring_index).clear();
+                xydistances.at(ring_index).clear();
+            }
+            prev_azimuth = ang;
+
+            pt.intensity = (float) (from_start) * 100.0f;
+
+//            const double ang_tol = 0;
+//            if (ang > ang_tol && ang < (2*M_PI - ang_tol)) {
+            azimuths.at(ring_index).emplace_back(ang);
+            elevations.at(ring_index).emplace_back(elevation);
+            ranges.at(ring_index).emplace_back(range);
+            xydistances.at(ring_index).emplace_back(xydistance);
+            pt_order.at(ring_index).emplace_back(pt_idx);
+            ptcloud.push_back(pt);
+//            }
+            ++pt_idx;
         }
         pcl::PointCloud<pcl::PointXYZI>::Ptr viz_cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
         *viz_cloud = ptcloud;
         display.addPointcloud(viz_cloud, 0);
         std::this_thread::sleep_for(diff);
+        for (uint32_t i = 12; i < 17; ++i) {
+            matplotlibcpp::subplot(2, 2, 1);
+            matplotlibcpp::plot(pt_order.at(i), azimuths.at(i));
+            matplotlibcpp::subplot(2,2,2);
+            matplotlibcpp::plot(pt_order.at(i), elevations.at(i));
+            matplotlibcpp::subplot(2,2,3);
+            matplotlibcpp::plot(pt_order.at(i), ranges.at(i), ".");
+            matplotlibcpp::subplot(2, 2, 4);
+            matplotlibcpp::plot(azimuths.at(i), ranges.at(i), ".");
+//            matplotlibcpp::title("Ring no. " + std::to_string(i));
+        }
+        matplotlibcpp::show(true);
     }
+    matplotlibcpp::plot(bins, bincnt);
+    matplotlibcpp::show(true);
 
     display.stopSpin();
     return 0;

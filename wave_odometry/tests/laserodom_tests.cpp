@@ -1,6 +1,7 @@
 #include <pcl/io/pcd_io.h>
 #include <chrono>
 #include <string>
+#include <matplotlibcpp.h>
 #include "wave/wave_test.hpp"
 #include "wave/utils/log.hpp"
 #include "wave/utils/config.hpp"
@@ -228,7 +229,7 @@ TEST(OdomTest, StraightLineGarage) {
     pcl::PCLPointCloud2 temp;
     pcl::PointCloud<PointXYZIR> temp2;
     LOG_INFO("Starting to load clouds");
-    boost::filesystem::path p("/home/ben/rosbags/last_ditch_bags/pcd");
+    boost::filesystem::path p("/home/bapskiko/rosbags/last_ditch_bags/pcd");
     std::vector<boost::filesystem::path> v;
     std::copy(boost::filesystem::directory_iterator(p), boost::filesystem::directory_iterator(), std::back_inserter(v));
     std::sort(v.begin(), v.end());
@@ -273,13 +274,25 @@ TEST(OdomTest, StraightLineGarage) {
     std::function<void()> func = std::bind(updateVisualizer, &odom, &display);
     odom.registerOutputFunction(func);
 
+
+    std::vector<double> azimuths;
+    std::vector<double> elevations;
+    std::vector<double> ranges;
+    std::vector<unsigned long> pt_order;
+    unsigned long pt_idx = 0;
     // Loop through pointclouds and send points grouped by encoder angle odom
     TimeType start;
     auto offset = std::chrono::microseconds(0);
     for (int i = 0; i < length; i++) {
         std::cout << "Processing cloud " << i << " of " << length << "\n";
+        azimuths.clear();
+        elevations.clear();
+        ranges.clear();
+        pt_order.clear();
+        pt_idx = 0;
         for (const auto &pt : clds.at(i)) {
-            if (std::sqrt(pt.x * pt.x + pt.y * pt.y + pt.z * pt.z) < 2.5f) {
+            double range = std::sqrt(pt.x * pt.x + pt.y * pt.y + pt.z * pt.z);
+            if (range < 2.5f) {
                 continue;
             }
             PointXYZIR recovered;
@@ -297,6 +310,14 @@ TEST(OdomTest, StraightLineGarage) {
             recovered.ring = pt.ring;
             recovered.intensity = pt.intensity;
 
+            auto elevation = std::atan2(pt.z, std::sqrt(pt.x * pt.x + pt.y * pt.y));
+
+            azimuths.emplace_back(ang);
+            elevations.emplace_back(elevation);
+            ranges.emplace_back(range);
+            pt_order.emplace_back(pt_idx);
+            ++pt_idx;
+
             if (200 + encoder < prev_enc) {
                 offset = offset + std::chrono::milliseconds(100);
             }
@@ -312,6 +333,13 @@ TEST(OdomTest, StraightLineGarage) {
             }
             vec.emplace_back(recovered);
         }
+        matplotlibcpp::subplot(2, 2, 1);
+        matplotlibcpp::plot(pt_order, azimuths);
+        matplotlibcpp::subplot(2,2,2);
+        matplotlibcpp::plot(pt_order, elevations);
+        matplotlibcpp::subplot(2,2,3);
+        matplotlibcpp::plot(elevations, ranges, "r.");
+        matplotlibcpp::show(true);
 //        std::this_thread::sleep_for(std::chrono::seconds(5));
     }
     auto end = std::chrono::steady_clock::now();
