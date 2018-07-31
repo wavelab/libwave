@@ -237,23 +237,9 @@ int main(int argc, char** argv) {
     }
 
     unsigned long counter = 0;
-    pcl::PointCloud<pcl::PointXYZI> ptcloud;
-    std::vector<double> bins(2000);
-    std::vector<unsigned long> bincnt(2000);
-    std::fill(bincnt.begin(), bincnt.end(), 0);
-    double start = -26.0 * (M_PI / 180.0);
-    std::generate(bins.begin(), bins.end(), [&start] () {
-        start += M_PI / 10800.0;
-        return start;
-    });
-    std::vector<std::vector<double>> azimuths(65);
-    std::vector<std::vector<double>> elevations(65);
-    std::vector<std::vector<double>> ranges(65);
-    std::vector<std::vector<double>> xydistances(65);
-    std::vector<std::vector<unsigned long>> pt_order(65);
+    pcl::PointCloud<wave::PointXYZIR> ptcloud;
     bool binary_format = false;
-    unsigned long pt_idx = 0;
-    unsigned long ring_index = 0;
+    uint16_t ring_index = 0;
     for (auto iter = v.begin(); iter != v.end(); ++iter) {
         fstream cloud_file;
         if (iter->string().substr(iter->string().find_last_of('.') + 1) == "bin") {
@@ -265,87 +251,59 @@ int main(int argc, char** argv) {
         const auto &start_t = time_start.at(counter);
         const auto &end_t = time_end.at(counter);
         ++counter;
-        if (counter < 432)
-            continue;
-        auto diff = end_t - start_t;
+        std::chrono::nanoseconds diff = end_t - start_t;
         ptcloud.clear();
-        azimuths.at(ring_index).clear();
-        elevations.at(ring_index).clear();
-        ranges.at(ring_index).clear();
-        pt_order.at(ring_index).clear();
-        pt_idx = 0;
         ring_index = 0;
         double prev_azimuth = 0;
+        bool first_point = true;
         while (cloud_file.good() && !cloud_file.eof()) {
-            pcl::PointXYZI pt;
+            std::vector<wave::PointXYZIR> pt_vec(1);
             if (binary_format) {
-                cloud_file.read((char *) pt.data, 3*sizeof(float));
-                cloud_file.read((char *) &pt.intensity, sizeof(float));
+                cloud_file.read((char *) pt_vec.front().data, 3*sizeof(float));
+                cloud_file.read((char *) &pt_vec.front().intensity, sizeof(float));
             } else {
                 std::string line;
                 std::getline(cloud_file, line);
                 std::stringstream ss(line);
-                ss >> pt.x;
-                ss >> pt.y;
-                ss >> pt.z;
-                ss >> pt.intensity;
+                ss >> pt_vec.front().x;
+                ss >> pt_vec.front().y;
+                ss >> pt_vec.front().z;
+                ss >> pt_vec.front().intensity;
             }
 
-            auto elevation = std::atan2(pt.z, std::sqrt(pt.x * pt.x + pt.y * pt.y));
-            auto range = std::sqrt(pt.x * pt.x + pt.y * pt.y + pt.z * pt.z);
-            auto xydistance = std::sqrt(pt.x * pt.x + pt.y * pt.y);
-
-            auto bnd = std::lower_bound(bins.begin(), bins.end(), elevation);
-            bincnt.at((bnd - bins.begin()) - 1) += 1;
-
-            auto ang = (std::atan2(pt.y, pt.x));
-            ang < 0 ? ang = ang + 2.0*M_PI : ang;
-
-            double from_start = ang - cutoff_angles(ring_index, 0);
+            auto azimuth = (std::atan2(pt_vec.front().y, pt_vec.front().x));
+            azimuth < 0 ? azimuth = (float) (azimuth + 2.0*M_PI) : azimuth;
+            double from_start = azimuth - cutoff_angles(ring_index, 0);
             from_start < 0 ? from_start = from_start + 2.0*M_PI : from_start;
 
-            if (prev_azimuth > ang + 0.2) {
+            double time_scaling = (2*M_PI - from_start) / (2*M_PI);
+
+            double nanoFP = time_scaling * diff.count();
+            std::chrono::nanoseconds scaled_diff((long) nanoFP);
+
+            wave::TimeType stamp = start_t + scaled_diff;
+
+            if (prev_azimuth > azimuth + 0.2) {
                 ++ring_index;
-                azimuths.at(ring_index).clear();
-                elevations.at(ring_index).clear();
-                ranges.at(ring_index).clear();
-                pt_order.at(ring_index).clear();
-                xydistances.at(ring_index).clear();
             }
-            prev_azimuth = ang;
+            prev_azimuth = azimuth;
 
-            pt.intensity = (float) (from_start) * 100.0f;
+            pt_vec.front().ring = ring_index;
 
-//            const double ang_tol = 0;
-//            if (ang > ang_tol && ang < (2*M_PI - ang_tol)) {
-            azimuths.at(ring_index).emplace_back(ang);
-            elevations.at(ring_index).emplace_back(elevation);
-            ranges.at(ring_index).emplace_back(range);
-            xydistances.at(ring_index).emplace_back(xydistance);
-            pt_order.at(ring_index).emplace_back(pt_idx);
-            ptcloud.push_back(pt);
-//            }
-            ++pt_idx;
+            ptcloud.push_back(pt_vec.front());
+
+            if (first_point) {
+                odom.addPoints(pt_vec, 0, stamp);
+                first_point = false;
+            } else {
+                odom.addPoints(pt_vec, 3000, stamp);
+            }
         }
         pcl::PointCloud<pcl::PointXYZI>::Ptr viz_cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
-        *viz_cloud = ptcloud;
+        pcl::copyPointCloud(ptcloud, *viz_cloud);
         display.addPointcloud(viz_cloud, 0);
         std::this_thread::sleep_for(diff);
-        for (uint32_t i = 12; i < 17; ++i) {
-            matplotlibcpp::subplot(2, 2, 1);
-            matplotlibcpp::plot(pt_order.at(i), azimuths.at(i));
-            matplotlibcpp::subplot(2,2,2);
-            matplotlibcpp::plot(pt_order.at(i), elevations.at(i));
-            matplotlibcpp::subplot(2,2,3);
-            matplotlibcpp::plot(pt_order.at(i), ranges.at(i), ".");
-            matplotlibcpp::subplot(2, 2, 4);
-            matplotlibcpp::plot(azimuths.at(i), ranges.at(i), ".");
-//            matplotlibcpp::title("Ring no. " + std::to_string(i));
-        }
-        matplotlibcpp::show(true);
     }
-    matplotlibcpp::plot(bins, bincnt);
-    matplotlibcpp::show(true);
 
     display.stopSpin();
     return 0;
