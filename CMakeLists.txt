@@ -151,7 +151,7 @@ INSTALL(FILES
 # other projects using libwave will get transient dependencies automatically
 INSTALL(DIRECTORY cmake/
     DESTINATION "${INSTALL_CMAKE_DIR}/cmake"
-    FILES_MATCHING PATTERN "Import*.cmake")
+    FILES_MATCHING PATTERN "Import*.cmake" PATTERN "Find*.cmake")
 
 IF(EXPORT_BUILD)
     # Export this build so the package can be found through CMake's registry
