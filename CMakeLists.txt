@@ -60,8 +60,11 @@ INCLUDE(cmake/ImportCeres.cmake)
 # Optionally build tests. `gtest` is included with this project
 IF(BUILD_TESTING)
     # Build gtest from source
-    ADD_SUBDIRECTORY(deps/googletest EXCLUDE_FROM_ALL)
-    INCLUDE_DIRECTORIES(${gtest_SOURCE_DIR}/include/ ${gtest_SOURCE_DIR})
+    # Unless another GTEST_ROOT is set by the user, tell the AddGTest script to
+    # first look for the bundled copy in deps/googletest
+    SET(GTEST_ROOT "${PROJECT_SOURCE_DIR}/deps/googletest"
+        CACHE PATH "Path to gtest source")
+    INCLUDE(cmake/AddGTest.cmake)
 
     # This target is used to build all tests, without running them
     ADD_CUSTOM_TARGET(tests)
