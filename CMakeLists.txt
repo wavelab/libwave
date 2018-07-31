@@ -79,6 +79,9 @@ IF(BUILD_BENCHMARKS)
             "Benchmark results might not be useful.")
     ENDIF()
 
+    # This target is used to build (but not run) benchmarks
+    ADD_CUSTOM_TARGET(benchmarks)
+
     # This target is used to run benchmarks via "make benchmark".
     # Like "make test", it does not build anything. (@todo change?)
     # It runs all tests labelled "benchmark" by WAVE_ADD_BENCHMARK helper.
@@ -95,7 +98,6 @@ INSTALL(TARGETS wave EXPORT waveTargets)
 # Add each module to the project
 # Modules with missing dependencies are not built, and circular dependencies are
 # not supported. Thus modules must be listed after their dependencies, for now.
-SET(WAVE_GEOMETRY_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/deps/wave_geometry)
 ADD_SUBDIRECTORY(wave_utils)
 ADD_SUBDIRECTORY(wave_geometry)
 ADD_SUBDIRECTORY(wave_containers)

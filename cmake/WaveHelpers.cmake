@@ -63,6 +63,9 @@ FUNCTION(WAVE_ADD_BENCHMARK NAME)
     # default tests from it). Note the target `benchmark` runs this command.
     ADD_TEST(NAME ${NAME} COMMAND ${NAME} CONFIGURATIONS benchmark)
     SET_TESTS_PROPERTIES(${NAME} PROPERTIES LABELS benchmark)
+
+    # Build this target on "make benchmarks"
+    ADD_DEPENDENCIES(benchmarks ${NAME})
 ENDFUNCTION(WAVE_ADD_BENCHMARK)
 
 # wave_include_directories: Set a module's public include paths so they are
