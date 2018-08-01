@@ -94,7 +94,7 @@ void FeatureExtractor::computeScores(const Tensorf &signals, const Vec<int> &ran
 }
 
 void FeatureExtractor::preFilter(const Tensorf &scan, const Tensorf &signals, const Vec<int> &range) {
-#pragma omp parallel for
+//#pragma omp parallel for
     for (uint32_t i = 0; i < this->n_ring; i++) {
         if (range.at(i) < 11) {
             this->valid_pts.at(i).resize(0);
@@ -109,21 +109,20 @@ void FeatureExtractor::preFilter(const Tensorf &scan, const Tensorf &signals, co
         diff_kernel.setValues({1.f, -1.f});
 
         Eigen::Tensor<float, 1> rng_diff(range.at(i) - 1);
-        rng_diff =
-          signals.at(i).slice(ar2({0, 0}), ar2({1, range.at(i)})).convolve(diff_kernel, dims).chip(0, 0);
+        rng_diff = signals.at(i).slice(ar2({0, 0}), ar2({1, range.at(i)})).convolve(diff_kernel, dims).chip(0, 0);
 
         Eigen::Tensor<bool, 1> oc_tol2_cond = rng_diff.abs() > this->param.occlusion_tol_2;
         Eigen::Tensor<bool, 1> ang_diff_cond(range.at(i) - 1);
-        ang_diff_cond =
-          signals.at(i).slice(ar2({0, 0}), ar2({1, range.at(i)})).convolve(diff_kernel, dims).chip(0, 0) <
-          this->param.occlusion_tol;
+
+        Eigen::Tensor<float, 2> normalized = scan.at(i).slice(ar2{0,0}, ar2{3,range.at(i)}) / signals.at(i).slice(ar2({0, 0}), ar2({1, range.at(i)})).broadcast(ar2{3, 1});
+        Eigen::Tensor<float, 1> costheta = (normalized.slice(ar2{0,0}, ar2{3, range.at(i) - 1}) * normalized.slice(ar2{0,1}, ar2{3, range.at(i) - 1})).sum(ar1{0});
+
+        ang_diff_cond = costheta > this->param.occlusion_tol;
 
         Eigen::Tensor<bool, 1> branch_1_cond(range.at(i) - 1);
         Eigen::Tensor<bool, 1> branch_2_cond(range.at(i) - 1);
-        branch_1_cond =
-                oc_tol2_cond && ang_diff_cond && (rng_diff > 0.0f);
-        branch_2_cond =
-                oc_tol2_cond && ang_diff_cond && (rng_diff < 0.0f);
+        branch_1_cond = oc_tol2_cond && ang_diff_cond && (rng_diff > 0.0f);
+        branch_2_cond = oc_tol2_cond && ang_diff_cond && (rng_diff < 0.0f);
 
         // This section excludes any points whose nearby surface is
         // near to parallel to the laser beam
@@ -137,12 +136,10 @@ void FeatureExtractor::preFilter(const Tensorf &scan, const Tensorf &signals, co
           scan.at(i).slice(ar2({0, 0}), ar2({3, range.at(i)})).convolve(ex_diff_K, dims2).square().sum(Earr<1>({0}));
 
         Eigen::Tensor<float, 1> sqr_rng(range.at(i) - 2);
-        sqr_rng =
-          signals.at(i).slice(ar2({0, 1}), ar2({1, range.at(i) - 2})).square().chip(0, 0);
+        sqr_rng = signals.at(i).slice(ar2({0, 1}), ar2({1, range.at(i) - 2})).square().chip(0, 0);
 
         Eigen::Tensor<bool, 1> low_side_cond(range.at(i) - 2);
-        low_side_cond =
-          delforback.slice(ar1({0}), ar1({range.at(i) - 2})) > this->param.parallel_tol * sqr_rng;
+        low_side_cond = delforback.slice(ar1({0}), ar1({range.at(i) - 2})) > this->param.parallel_tol * sqr_rng;
         Eigen::Tensor<bool, 1> high_side_cond(range.at(i) - 2);
         high_side_cond = delforback.slice(ar1({1}), ar1({range.at(i) - 2})) > this->param.parallel_tol * sqr_rng;
 
@@ -157,19 +154,22 @@ void FeatureExtractor::preFilter(const Tensorf &scan, const Tensorf &signals, co
         for (int j = 1; j + 1 < range.at(i); j++) {
             if (branch_1_cond(j)) {
                 int start;
-                (j - 5) >= 0 ? start = j - 5 : start = 0;
+                (j - this->param.occlusion_filter_length) >= 0 ? start = j - this->param.occlusion_filter_length
+                                                               : start = 0;
 
-                ar2 starts({start});
-                ar2 extents({j - start});
+                ar1 starts({start});
+                ar1 extents({j - start});
 
                 this->valid_pts.at(i).slice(starts, extents).setConstant(false);
             }
             if (branch_2_cond(j)) {
                 int end;
-                (j + 5) >= range.at(i) ? end = range.at(i) - 1 : end = j + 5;
+                (j + this->param.occlusion_filter_length - 1) >= range.at(i)
+                  ? end = range.at(i) - 1
+                  : end = j + this->param.occlusion_filter_length - 1;
 
-                ar2 starts({j});
-                ar2 extents({end - j});
+                ar1 starts({j - 1});
+                ar1 extents({end - j});
 
                 this->valid_pts.at(i).slice(starts, extents).setConstant(false);
             }
@@ -224,7 +224,8 @@ void FeatureExtractor::buildFilteredScore(const Vec<int> &range) {
             Eigen::Tensor<bool, 1> condition =
               this->valid_pts.at(i).slice(ar1({offset}), ar1({range.at(i) - 2 * offset}));
             for (uint32_t l = 0; l < def.criteria.size(); l++) {
-                condition = condition && compfuns.at(l)(this->scores.at(i).chip(k_idx.at(l), 0), *(def.criteria.at(l).threshold));
+                condition =
+                  condition && compfuns.at(l)(this->scores.at(i).chip(k_idx.at(l), 0), *(def.criteria.at(l).threshold));
             }
 
             for (int j = offset; j + offset < condition.dimension(0); j++) {
@@ -252,7 +253,7 @@ void FeatureExtractor::flagNearbyPoints(const uint32_t p_idx, Eigen::Tensor<bool
 }
 
 void FeatureExtractor::sortAndBin(const Tensorf &scan, TensorIdx &feature_indices) {
-//#pragma omp parallel for
+    //#pragma omp parallel for
     for (uint32_t i = 0; i < this->param.N_FEATURES; i++) {
         for (unlong j = 0; j < this->n_ring; j++) {
             auto &def = this->param.feature_definitions.at(i);

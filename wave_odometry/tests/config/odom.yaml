@@ -27,27 +27,6 @@ scan_period: 0.1  #  Seconds
 max_ticks: 36000    #  encoder ticks per revolution
 n_ring: 32       #  number of laser-detector pairs
 
-#  Feature extraction parameters
-variance_window: 11   # How many points should be included in the sample variance calculation
-variance_limit_rng: 1 # Threshold for conditionals on range signal
-variance_limit_int: 1 # Threshold for conditionals on intensity signal
-angular_bins: 12      # Angular bins to spread out feature sampling
-min_intensity: 10     # Hard cutoff
-max_intensity: 50     # Hard cutoff
-occlusion_tol: 0.1    #  Radians
-occlusion_tol_2: 0.1  #  m^2. Distance between points to initiate occlusion check
-parallel_tol: 0.002   #  ditto
-edge_tol: 0.1         #  Edge features must have score higher than this
-flat_tol: 0.1         #  Plane features must have score lower than this
-int_edge_tol: 2       #  Intensity edge features must have score greater than this
-int_flat_tol: 0.1     #  Intensity edges must have range score lower than this
-n_edge: 40              #  How many edge features to pick out per ring
-n_flat: 100             #  How many plane features to pick out per ring
-n_int_edge: 0           #  How many intensity edges to pick out per ring
-knn: 5               #  1/2 nearest neighbours for computing curvature
-key_radius: 5        #  minimum number of points between keypoints on the same laser ring
-edge_map_density: 0.01     #  Minimum l2squared spacing of features kept for odometry
-flat_map_density: 0.25
 #  one degree. Beam spacing is 1.33deg, so this should be sufficient
 azimuth_tol: 0.0174532925199433    #  Minimum azimuth difference across correspondences
 TTL: 1             #  Maximum life of feature in local map with no correspondences
@@ -68,7 +47,7 @@ ang_scaling_param: 10
 visualize: false               #  Whether to run a visualization for debugging
 output_trajectory: false       #  Whether to output solutions for debugging/plotting
 output_correspondences: false  #  Whether to output correpondences for debugging/plotting
-only_extract_features: false   #  If set, no transforms are calculated
+only_extract_features: true   #  If set, no transforms are calculated
 use_weighting: false           #  If set, pre-whiten residuals
 lock_first: true               #  If set, don't optimize starting pose
 print_opt_sum: true              #  If true, output ceres summaries to console

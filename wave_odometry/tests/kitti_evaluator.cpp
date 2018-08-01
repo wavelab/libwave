@@ -60,6 +60,7 @@ void loadFeatureParams(const std::string &path, const std::string &filename, wav
     parser.addParam("max_intensity", &(params.max_intensity));
     parser.addParam("occlusion_tol", &(params.occlusion_tol));
     parser.addParam("occlusion_tol_2", &(params.occlusion_tol_2));
+    parser.addParam("occlusion_filter_length", &(params.occlusion_filter_length));
     parser.addParam("parallel_tol", &(params.parallel_tol));
     parser.addParam("edge_tol", &(params.edge_tol));
     parser.addParam("flat_tol", &(params.flat_tol));
@@ -81,6 +82,7 @@ void setupFeatureParameters(wave::FeatureExtractorParams &param) {
     edge_low.emplace_back(wave::Criteria{wave::Signal::RANGE, wave::Kernel::LOAM, wave::SelectionPolicy::HIGH_NEG, &(param.edge_tol)});
 
     flat.emplace_back(wave::Criteria{wave::Signal::RANGE, wave::Kernel::LOAM, wave::SelectionPolicy::NEAR_ZERO, &(param.flat_tol)});
+    flat.emplace_back(wave::Criteria{wave::Signal::RANGE, wave::Kernel::RNG_VAR, wave::SelectionPolicy::NEAR_ZERO, &(param.variance_limit_rng)});
 
     edge_int_high.emplace_back(
             wave::Criteria{wave::Signal::INTENSITY, wave::Kernel::FOG, wave::SelectionPolicy::HIGH_POS, &(param.int_edge_tol)});
@@ -105,10 +107,10 @@ void setupFeatureParameters(wave::FeatureExtractorParams &param) {
 
 void updateVisualizer(const wave::LaserOdom *odom, wave::PointCloudDisplay *display) {
     int ptcld_id = 100000;
-    display->removeAll();
+    display->removeAllShapes();
 //    pcl::PointCloud<pcl::PointXYZI>::Ptr viz_cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
 //    *viz_cloud = odom->undistorted_cld;
-//    display->addPointcloud(viz_cloud, ptcld_id, false);
+//    display->addPointcloud(viz_cloud, ptcld_id, false, 6);
 //    ++ptcld_id;
 
 //    for (uint32_t feat_id = 0; feat_id < 3; ++feat_id) {
@@ -129,42 +131,38 @@ void updateVisualizer(const wave::LaserOdom *odom, wave::PointCloudDisplay *disp
 
     int id = odom->undistort_trajectory.size();
 
-    for (uint32_t i = 0; i < 3; ++i) {
-        int viewport_id = 2*i + 1;
+    for (uint32_t i = 0; i < 5; ++i) {
+        int viewport_id = i + 1;
 
-//        for(const auto &geometry : odom->geometry_landmarks.at(i)) {
-//            if (i == 2) {
-//                pcl::PointXYZ pt1, pt2;
-//                Eigen::Map<wave::Vec3f> m1(pt1.data), m2(pt2.data);
-//                m1 = geometry.block<3, 1>(3, 0);
-//                m2 = geometry.block<3, 1>(0,0);
-//                float sidelength = 0.15 * geometry(6);
-//                display->addSquare(pt1, pt2, sidelength, id, false, viewport_id);
-//                ++id;
-//                display->addSquare(pt1, pt2, sidelength, id, false, viewport_id + 1);
-//                ++id;
-//            } else {
-//                pcl::PointXYZ pt1, pt2;
-//                Eigen::Map<wave::Vec3f> m1(pt1.data), m2(pt2.data);
-//
-//                float sidelength = 0.1 * geometry(6);
-//
-//                m1 = geometry.block<3, 1>(3, 0) - sidelength*geometry.block<3, 1>(0,0);
-//                m2 = geometry.block<3, 1>(3, 0) + sidelength*geometry.block<3, 1>(0,0);
-//                display->addLine(pt1, pt2, id, id + 1, false, viewport_id);
-//                id += 2;
-//                display->addLine(pt1, pt2, id, id + 1, false, viewport_id + 1);
-//                id += 2;
-//            }
-//        }
+        for(const auto &geometry : odom->geometry_landmarks.at(i)) {
+            if (i == 2) {
+                pcl::PointXYZ pt1, pt2;
+                Eigen::Map<wave::Vec3f> m1(pt1.data), m2(pt2.data);
+                m1 = geometry.block<3, 1>(3, 0);
+                m2 = geometry.block<3, 1>(0,0);
+                float sidelength = 0.15 * geometry(6);
+                display->addSquare(pt1, pt2, sidelength, id, false, viewport_id);
+                ++id;
+            } else {
+                pcl::PointXYZ pt1, pt2;
+                Eigen::Map<wave::Vec3f> m1(pt1.data), m2(pt2.data);
+
+                float sidelength = 0.1 * geometry(6);
+
+                m1 = geometry.block<3, 1>(3, 0) - sidelength*geometry.block<3, 1>(0,0);
+                m2 = geometry.block<3, 1>(3, 0) + sidelength*geometry.block<3, 1>(0,0);
+                display->addLine(pt1, pt2, id, id + 1, false, viewport_id);
+                id += 2;
+            }
+        }
         pcl::PointCloud<pcl::PointXYZ>::Ptr cloud1 = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
-        pcl::PointCloud<pcl::PointXYZ>::Ptr cloud2 = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+//        pcl::PointCloud<pcl::PointXYZ>::Ptr cloud2 = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
         *cloud1 = odom->undis_candidates_cur.at(i);
-        *cloud2 = odom->undis_candidates_prev.at(i);
+//        *cloud2 = odom->undis_candidates_prev.at(i);
         display->addPointcloud(cloud1, ptcld_id, false, viewport_id);
         ++ptcld_id;
-        display->addPointcloud(cloud2, ptcld_id, false, viewport_id + 1);
-        ++ptcld_id;
+//        display->addPointcloud(cloud2, ptcld_id, false, viewport_id + 1);
+//        ++ptcld_id;
     }
 }
 
@@ -237,6 +235,10 @@ int main(int argc, char** argv) {
         time_end.emplace_back(parseTime(cur_end_stamp));
     }
 
+    std::vector<int> dummy_x;
+    std::vector<float> dummy_y;
+    int pt_index = 0;
+
     unsigned long counter = 0;
     pcl::PointCloud<wave::PointXYZIR> ptcloud;
     bool binary_format = false;
@@ -254,6 +256,7 @@ int main(int argc, char** argv) {
         ++counter;
         std::chrono::nanoseconds diff = end_t - start_t;
         ptcloud.clear();
+
         ring_index = 0;
         double prev_azimuth = 0;
         bool first_point = true;
@@ -296,15 +299,23 @@ int main(int argc, char** argv) {
             if (ring_index < 64) {
                 if (first_point) {
                     odom.addPoints(pt_vec, 0, stamp);
+                    matplotlibcpp::plot(dummy_x, dummy_y);
+                    matplotlibcpp::show(true);
+                    dummy_x.clear();
+                    dummy_y.clear();
+                    pt_index = 0;
                     first_point = false;
                 } else {
                     odom.addPoints(pt_vec, 3000, stamp);
+                    dummy_x.emplace_back(pt_index);
+                    dummy_y.emplace_back(azimuth);
+                    ++pt_index;
                 }
             }
         }
-//        pcl::PointCloud<pcl::PointXYZI>::Ptr viz_cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
-//        pcl::copyPointCloud(ptcloud, *viz_cloud);
-//        display.addPointcloud(viz_cloud, 6);
+        pcl::PointCloud<pcl::PointXYZI>::Ptr viz_cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
+        pcl::copyPointCloud(ptcloud, *viz_cloud);
+        display.addPointcloud(viz_cloud, 100100, false, 6);
         std::this_thread::sleep_for(diff);
     }
 

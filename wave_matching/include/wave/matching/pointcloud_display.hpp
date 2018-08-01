@@ -112,6 +112,10 @@ class PointCloudDisplay {
 
     void removeAll();
 
+    void removeAllClouds();
+
+    void removeAllShapes();
+
  private:
     std::string display_name;
     /**
@@ -135,7 +139,8 @@ class PointCloudDisplay {
      * Used to stop worker thread
      */
     std::atomic_flag continueFlag = ATOMIC_FLAG_INIT;
-    std::atomic_flag resetLines = ATOMIC_FLAG_INIT;
+    std::atomic_flag reset_shapes = ATOMIC_FLAG_INIT;
+    std::atomic_flag reset_clouds = ATOMIC_FLAG_INIT;
     std::mutex update_mutex;  ///< Protects buffers
     /** Struct for cloud buffer */
     struct Cloud {

@@ -10,7 +10,16 @@ PointCloudDisplay::PointCloudDisplay(const std::string &name, double rad, int vi
 }
 
 void PointCloudDisplay::removeAll() {
-    this->resetLines.clear(std::memory_order_relaxed);
+    this->reset_shapes.clear(std::memory_order_relaxed);
+    this->reset_clouds.clear(std::memory_order_relaxed);
+}
+
+void PointCloudDisplay::removeAllShapes() {
+    this->reset_shapes.clear(std::memory_order_relaxed);
+}
+
+void PointCloudDisplay::removeAllClouds() {
+    this->reset_clouds.clear(std::memory_order_relaxed);
 }
 
 void PointCloudDisplay::startSpin() {
@@ -145,9 +154,8 @@ void PointCloudDisplay::addSquare(const pcl::PointXYZ &pt0, const pcl::PointXYZ 
 }
 
 void PointCloudDisplay::updateInternal() {
-    if(!(this->resetLines.test_and_set(std::memory_order_relaxed))) {
+    if(!(this->reset_shapes.test_and_set(std::memory_order_relaxed))) {
         this->viewer->removeAllShapes();
-        this->viewer->removeAllPointClouds();
         int viewport_id = 1;
         for (int x_idx = 0; x_idx < viewport_cnt_x; ++x_idx) {
             for (int y_idx = 0; y_idx < viewport_cnt_y; ++y_idx) {
@@ -155,6 +163,9 @@ void PointCloudDisplay::updateInternal() {
                 ++viewport_id;
             }
         }
+    }
+    if (!(this->reset_clouds.test_and_set(std::memory_order_relaxed))) {
+        this->viewer->removeAllPointClouds();
     }
     // add or update clouds in the viewer until the queue is empty
     while (!this->clouds.empty()) {

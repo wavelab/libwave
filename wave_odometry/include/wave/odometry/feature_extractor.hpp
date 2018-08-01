@@ -36,6 +36,7 @@ struct FeatureExtractorParams {
     float max_intensity = 50.0;
     float occlusion_tol = 0.1;   // Radians
     float occlusion_tol_2 = 1;   // m. Distance between points to initiate occlusion check
+    int occlusion_filter_length = 10;
     float parallel_tol = 0.002;  // ditto
     float edge_tol = 0.1;       // Edge features must have score higher than this
     float flat_tol = 0.1;       // Plane features must have score lower than this
@@ -46,8 +47,6 @@ struct FeatureExtractorParams {
     int n_int_edge = 0;          // How many intensity edges to pick out per ring
     unlong knn = 5;              // 1/2 nearest neighbours for computing curvature
     unlong key_radius = 5;       // minimum number of points between keypoints on the same laser ring
-
-    int eigen_threads = 4;
 
     uint32_t N_SCORES = 5;
     uint32_t N_FEATURES = 5;

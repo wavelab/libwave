@@ -566,7 +566,7 @@ void LaserOdom::createNewFeatureTracks(const Eigen::MatrixXi &idx, const Eigen::
         bool new_spread = false;
         /// Each row is a nearest neighbour
         for (uint32_t i = 0; i < idx.rows(); ++i) {
-            if (this->prev_feat_idx.at(feat_id).at(idx(i, j)) != -1) {
+            if (idx(i,j) != -1 && this->prev_feat_idx.at(feat_id).at(idx(i, j)) != -1) {
                 continue;
             }
             if (std::isinf(dist(i, j))) {
