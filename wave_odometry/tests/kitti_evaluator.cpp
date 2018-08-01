@@ -132,31 +132,31 @@ void updateVisualizer(const wave::LaserOdom *odom, wave::PointCloudDisplay *disp
     for (uint32_t i = 0; i < 3; ++i) {
         int viewport_id = 2*i + 1;
 
-        for(const auto &geometry : odom->geometry_landmarks.at(i)) {
-            if (i == 2) {
-                pcl::PointXYZ pt1, pt2;
-                Eigen::Map<wave::Vec3f> m1(pt1.data), m2(pt2.data);
-                m1 = geometry.block<3, 1>(3, 0);
-                m2 = geometry.block<3, 1>(0,0);
-                float sidelength = 0.15 * geometry(6);
-                display->addSquare(pt1, pt2, sidelength, id, false, viewport_id);
-                ++id;
-                display->addSquare(pt1, pt2, sidelength, id, false, viewport_id + 1);
-                ++id;
-            } else {
-                pcl::PointXYZ pt1, pt2;
-                Eigen::Map<wave::Vec3f> m1(pt1.data), m2(pt2.data);
-
-                float sidelength = 0.1 * geometry(6);
-
-                m1 = geometry.block<3, 1>(3, 0) - sidelength*geometry.block<3, 1>(0,0);
-                m2 = geometry.block<3, 1>(3, 0) + sidelength*geometry.block<3, 1>(0,0);
-                display->addLine(pt1, pt2, id, id + 1, false, viewport_id);
-                id += 2;
-                display->addLine(pt1, pt2, id, id + 1, false, viewport_id + 1);
-                id += 2;
-            }
-        }
+//        for(const auto &geometry : odom->geometry_landmarks.at(i)) {
+//            if (i == 2) {
+//                pcl::PointXYZ pt1, pt2;
+//                Eigen::Map<wave::Vec3f> m1(pt1.data), m2(pt2.data);
+//                m1 = geometry.block<3, 1>(3, 0);
+//                m2 = geometry.block<3, 1>(0,0);
+//                float sidelength = 0.15 * geometry(6);
+//                display->addSquare(pt1, pt2, sidelength, id, false, viewport_id);
+//                ++id;
+//                display->addSquare(pt1, pt2, sidelength, id, false, viewport_id + 1);
+//                ++id;
+//            } else {
+//                pcl::PointXYZ pt1, pt2;
+//                Eigen::Map<wave::Vec3f> m1(pt1.data), m2(pt2.data);
+//
+//                float sidelength = 0.1 * geometry(6);
+//
+//                m1 = geometry.block<3, 1>(3, 0) - sidelength*geometry.block<3, 1>(0,0);
+//                m2 = geometry.block<3, 1>(3, 0) + sidelength*geometry.block<3, 1>(0,0);
+//                display->addLine(pt1, pt2, id, id + 1, false, viewport_id);
+//                id += 2;
+//                display->addLine(pt1, pt2, id, id + 1, false, viewport_id + 1);
+//                id += 2;
+//            }
+//        }
         pcl::PointCloud<pcl::PointXYZ>::Ptr cloud1 = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
         pcl::PointCloud<pcl::PointXYZ>::Ptr cloud2 = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
         *cloud1 = odom->undis_candidates_cur.at(i);
@@ -205,11 +205,12 @@ int main(int argc, char** argv) {
     loadFeatureParams(config_path, "features.yaml", feature_params);
     setupFeatureParameters(feature_params);
     LoadParameters(config_path, "odom.yaml",  params);
+    params.n_ring = 64;
     wave::TransformerParams transformer_params;
     transformer_params.traj_resolution = params.num_trajectory_states;
 
     wave::LaserOdom odom(params, feature_params, transformer_params);
-    wave::PointCloudDisplay display("Kitti Eval"); //, 0.2, 3, 2);
+    wave::PointCloudDisplay display("Kitti Eval", 0.2, 3, 2);
     display.startSpin();
 
     auto func = [&]() {updateVisualizer(&odom, &display);};
@@ -292,16 +293,18 @@ int main(int argc, char** argv) {
 
             ptcloud.push_back(pt_vec.front());
 
-            if (first_point) {
-                odom.addPoints(pt_vec, 0, stamp);
-                first_point = false;
-            } else {
-                odom.addPoints(pt_vec, 3000, stamp);
+            if (ring_index < 64) {
+                if (first_point) {
+                    odom.addPoints(pt_vec, 0, stamp);
+                    first_point = false;
+                } else {
+                    odom.addPoints(pt_vec, 3000, stamp);
+                }
             }
         }
-        pcl::PointCloud<pcl::PointXYZI>::Ptr viz_cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
-        pcl::copyPointCloud(ptcloud, *viz_cloud);
-        display.addPointcloud(viz_cloud, 0);
+//        pcl::PointCloud<pcl::PointXYZI>::Ptr viz_cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
+//        pcl::copyPointCloud(ptcloud, *viz_cloud);
+//        display.addPointcloud(viz_cloud, 6);
         std::this_thread::sleep_for(diff);
     }
 
