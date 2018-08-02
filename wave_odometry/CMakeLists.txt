@@ -20,6 +20,7 @@ WAVE_ADD_MODULE(${PROJECT_NAME}
 ADD_EXECUTABLE(kitti_eval
         tests/kitti_evaluator.cpp)
 TARGET_LINK_LIBRARIES(kitti_eval
+        wave::geography
         wave::matching
         ${PROJECT_NAME})
 

@@ -2,6 +2,7 @@
 
 #include <matplotlibcpp.h>
 
+#include "wave/geography/world_frame_conversions.hpp"
 #include "wave/matching/pointcloud_display.hpp"
 #include "wave/odometry/laser_odom.hpp"
 #include "wave/utils/config.hpp"
@@ -113,13 +114,13 @@ void updateVisualizer(const wave::LaserOdom *odom, wave::PointCloudDisplay *disp
 //    display->addPointcloud(viz_cloud, ptcld_id, false, 6);
 //    ++ptcld_id;
 
-//    for (uint32_t feat_id = 0; feat_id < 3; ++feat_id) {
-//        pcl::PointCloud<pcl::PointXYZ>::Ptr viz_cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
-//        *viz_cloud = odom->undis_features.at(feat_id);
-//        int viewport_id = feat_id + 1;
-//        display->addPointcloud(viz_cloud, ptcld_id, false, viewport_id);
-//        ++ptcld_id;
-//    }
+    for (uint32_t feat_id = 0; feat_id < 5; ++feat_id) {
+        pcl::PointCloud<pcl::PointXYZ>::Ptr viz_cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+        *viz_cloud = odom->undis_features.at(feat_id);
+        int viewport_id = feat_id + 1;
+        display->addPointcloud(viz_cloud, ptcld_id, false, viewport_id);
+        ++ptcld_id;
+    }
 
     for (uint32_t i = 1; i < odom->undistort_trajectory.size(); ++i) {
         pcl::PointXYZ pt1, pt2;
@@ -134,27 +135,30 @@ void updateVisualizer(const wave::LaserOdom *odom, wave::PointCloudDisplay *disp
     for (uint32_t i = 0; i < 5; ++i) {
         int viewport_id = i + 1;
 
-        for(const auto &geometry : odom->geometry_landmarks.at(i)) {
-            if (i == 2) {
-                pcl::PointXYZ pt1, pt2;
-                Eigen::Map<wave::Vec3f> m1(pt1.data), m2(pt2.data);
-                m1 = geometry.block<3, 1>(3, 0);
-                m2 = geometry.block<3, 1>(0,0);
-                float sidelength = 0.15 * geometry(6);
-                display->addSquare(pt1, pt2, sidelength, id, false, viewport_id);
-                ++id;
-            } else {
-                pcl::PointXYZ pt1, pt2;
-                Eigen::Map<wave::Vec3f> m1(pt1.data), m2(pt2.data);
+        if (i == 2) {
+            for(const auto &geometry : odom->geometry_landmarks.at(i)) {
+                if (i == 2) {
+                    pcl::PointXYZ pt1, pt2;
+                    Eigen::Map<wave::Vec3f> m1(pt1.data), m2(pt2.data);
+                    m1 = geometry.block<3, 1>(3, 0);
+                    m2 = geometry.block<3, 1>(0,0);
+                    float sidelength = 0.15 * geometry(6);
+                    display->addSquare(pt1, pt2, sidelength, id, false, viewport_id);
+                    ++id;
+                } else {
+                    pcl::PointXYZ pt1, pt2;
+                    Eigen::Map<wave::Vec3f> m1(pt1.data), m2(pt2.data);
 
-                float sidelength = 0.1 * geometry(6);
+                    float sidelength = 0.1 * geometry(6);
 
-                m1 = geometry.block<3, 1>(3, 0) - sidelength*geometry.block<3, 1>(0,0);
-                m2 = geometry.block<3, 1>(3, 0) + sidelength*geometry.block<3, 1>(0,0);
-                display->addLine(pt1, pt2, id, id + 1, false, viewport_id);
-                id += 2;
+                    m1 = geometry.block<3, 1>(3, 0) - sidelength*geometry.block<3, 1>(0,0);
+                    m2 = geometry.block<3, 1>(3, 0) + sidelength*geometry.block<3, 1>(0,0);
+                    display->addLine(pt1, pt2, id, id + 1, false, viewport_id);
+                    id += 2;
+                }
             }
         }
+
         pcl::PointCloud<pcl::PointXYZ>::Ptr cloud1 = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
 //        pcl::PointCloud<pcl::PointXYZ>::Ptr cloud2 = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
         *cloud1 = odom->undis_candidates_cur.at(i);
@@ -176,6 +180,155 @@ wave::TimeType parseTime(const std::string &date_time) {
     wave::TimeType stamp;
     stamp = stamp + sys_clock.time_since_epoch() + n_secs;
     return stamp;
+}
+
+/**
+ * Mapping between raw data and odometry sequences
+ * Nr.     Sequence name     Start   End
+---------------------------------------
+00: 2011_10_03_drive_0027 000000 004540
+01: 2011_10_03_drive_0042 000000 001100
+02: 2011_10_03_drive_0034 000000 004660
+03: 2011_09_26_drive_0067 000000 000800
+04: 2011_09_30_drive_0016 000000 000270
+05: 2011_09_30_drive_0018 000000 002760
+06: 2011_09_30_drive_0020 000000 001100
+07: 2011_09_30_drive_0027 000000 001100
+08: 2011_09_30_drive_0028 001100 005170
+09: 2011_09_30_drive_0033 000000 001590
+10: 2011_09_30_drive_0034 000000 001200
+ */
+
+/**
+ * The GPS/IMU information is given in a single small text file which is
+written for each synchronized frame. Each text file contains 30 values
+        which are:
+
+- lat:     latitude of the oxts-unit (deg)
+- lon:     longitude of the oxts-unit (deg)
+- alt:     altitude of the oxts-unit (m)
+- roll:    roll angle (rad),  0 = level, positive = left side up (-pi..pi)
+- pitch:   pitch angle (rad), 0 = level, positive = front down (-pi/2..pi/2)
+- yaw:     heading (rad),     0 = east,  positive = counter clockwise (-pi..pi)
+- vn:      velocity towards north (m/s)
+- ve:      velocity towards east (m/s)
+- vf:      forward velocity, i.e. parallel to earth-surface (m/s)
+- vl:      leftward velocity, i.e. parallel to earth-surface (m/s)
+- vu:      upward velocity, i.e. perpendicular to earth-surface (m/s)
+- ax:      acceleration in x, i.e. in direction of vehicle front (m/s^2)
+- ay:      acceleration in y, i.e. in direction of vehicle left (m/s^2)
+- az:      acceleration in z, i.e. in direction of vehicle top (m/s^2)
+- af:      forward acceleration (m/s^2)
+- al:      leftward acceleration (m/s^2)
+- au:      upward acceleration (m/s^2)
+- wx:      angular rate around x (rad/s)
+- wy:      angular rate around y (rad/s)
+- wz:      angular rate around z (rad/s)
+- wf:      angular rate around forward axis (rad/s)
+- wl:      angular rate around leftward axis (rad/s)
+- wu:      angular rate around upward axis (rad/s)
+- posacc:  velocity accuracy (north/east in m)
+- velacc:  velocity accuracy (north/east in m/s)
+- navstat: navigation status
+- numsats: number of satellites tracked by primary GPS receiver
+- posmode: position mode of primary GPS receiver
+- velmode: velocity mode of primary GPS receiver
+- orimode: orientation mode of primary GPS receiver
+ **/
+
+/*
+ * Matlab conversion code from kitti dev kit converted to c++
+ * lat and long are in degrees
+ */
+//todo: the conversion code from the dev kit uses Mercurator projection so is worthless. Need to use LLA -> ECEF to preserve distance
+
+// order is lat, long, (deg), alt, r, p, y (radians)
+wave::Mat34 poseFromGPS(const std::vector<double> &vals, const wave::Mat34 &reference) {
+    double T_ecef_enu[4][4];
+
+    wave::ecefFromENUTransformMatrix(vals.data(), T_ecef_enu);
+
+    double sr = std::sin(vals.at(3)),
+       cr = std::cos(vals.at(3)),
+       sp = std::sin(vals.at(4)),
+       cp = std::cos(vals.at(4)),
+       sy = std::sin(vals.at(5)),
+       cy = std::cos(vals.at(5));
+
+    wave::Mat3 Rx, Ry, Rz;
+    Rx << 1.0, 0.0, 0.0,
+          0.0, cr, -sr,
+          0.0, sr, cr;
+
+    Ry << cp, 0.0, sp,
+          0.0, 1.0, 0.0,
+          -sp, 0.0, cp;
+
+    Rz << cy, -sy, 0.0,
+          sy, cy, 0.0,
+          0.0, 0.0, 1.0;
+
+    wave::Mat34 T_ECEF_ENU, T_ECEF_CAR;
+
+    wave::Mat3 R_ENU_CAR;
+
+    for (uint32_t i = 0; i < 3; ++i) {
+        for (uint32_t j = 0; j < 4; ++j) {
+            T_ECEF_ENU(i, j) = T_ecef_enu[i][j];
+        }
+    }
+
+    R_ENU_CAR.noalias() = Rz * Ry * Rx;
+
+    T_ECEF_CAR.block<3,3>(0,0).noalias() = reference.block<3,3>(0,0) * (T_ECEF_ENU.block<3,3>(0,0) * R_ENU_CAR);
+    T_ECEF_CAR.block<3,1>(0,3).noalias() = reference.block<3,3>(0,0) * T_ECEF_ENU.block<3,1>(0,3) + reference.block<3,1>(0,3);
+
+    return T_ECEF_CAR;
+}
+
+void fillGroundTruth(wave::VecE<wave::PoseVelStamped> &trajectory, const std::string &data_path) {
+    std::string oxt_data_path = data_path + "oxts/data/";
+    std::string timestamp_file = data_path + "oxts/timestamps.txt";
+
+    boost::filesystem::path p(oxt_data_path);
+    std::vector<boost::filesystem::path> v;
+    std::copy(boost::filesystem::directory_iterator(p), boost::filesystem::directory_iterator(), std::back_inserter(v));
+    std::sort(v.begin(), v.end());
+
+    wave::Mat34 reference;
+    reference.block<3,3>(0,0).setIdentity();
+    reference.block<3,1>(0,3).setZero();
+    for (const auto& iter : v) {
+        fstream oxt_data;
+        oxt_data.open(iter.string(), ios::in);
+        std::string data_string;
+        std::getline(oxt_data, data_string);
+        std::stringstream ss(data_string);
+        std::vector<double> vals;
+        while (ss.rdbuf()->in_avail() > 0) {
+            double new_val;
+            ss >> new_val;
+            vals.emplace_back(new_val);
+        }
+        wave::PoseVelStamped new_measurement;
+        new_measurement.pose.storage = poseFromGPS(vals, reference);
+        new_measurement.vel << vals.at(20), vals.at(21), vals.at(22), vals.at(8), vals.at(9), vals.at(10);
+        trajectory.emplace_back(new_measurement);
+        if (trajectory.size() == 1) {
+            wave::T_TYPE temp = trajectory.front().pose;
+            trajectory.front().pose.storage = reference;
+            reference = temp.transformInverse().storage;
+        }
+        oxt_data.close();
+    }
+
+    fstream stamp_file(timestamp_file, ios::in);
+    std::string date_time;
+    for (uint32_t i = 0; i < trajectory.size(); ++i) {
+        std::getline(stamp_file, date_time);
+        trajectory.at(i).stamp = parseTime(date_time);
+    }
+    stamp_file.close();
 }
 
 }
@@ -235,8 +388,18 @@ int main(int argc, char** argv) {
         time_end.emplace_back(parseTime(cur_end_stamp));
     }
 
-    std::vector<int> dummy_x;
-    std::vector<float> dummy_y;
+    wave::VecE<wave::PoseVelStamped> oxt_trajectory;
+    fillGroundTruth(oxt_trajectory, data_path);
+
+    std::vector<double> ground_truth_x;
+    std::vector<double> ground_truth_y;
+
+    for (const auto &traj : oxt_trajectory) {
+        ground_truth_x.emplace_back(traj.pose.storage(0,3));
+        ground_truth_y.emplace_back(traj.pose.storage(1,3));
+    }
+    matplotlibcpp::plot(ground_truth_x, ground_truth_y);
+
     int pt_index = 0;
 
     unsigned long counter = 0;
@@ -299,16 +462,16 @@ int main(int argc, char** argv) {
             if (ring_index < 64) {
                 if (first_point) {
                     odom.addPoints(pt_vec, 0, stamp);
-                    matplotlibcpp::plot(dummy_x, dummy_y);
-                    matplotlibcpp::show(true);
-                    dummy_x.clear();
-                    dummy_y.clear();
+//                    matplotlibcpp::plot(dummy_x, dummy_y);
+//                    matplotlibcpp::show(true);
+//                    dummy_x.clear();
+//                    dummy_y.clear();
                     pt_index = 0;
                     first_point = false;
                 } else {
                     odom.addPoints(pt_vec, 3000, stamp);
-                    dummy_x.emplace_back(pt_index);
-                    dummy_y.emplace_back(azimuth);
+//                    dummy_x.emplace_back(pt_index);
+//                    dummy_y.emplace_back(azimuth);
                     ++pt_index;
                 }
             }
@@ -317,6 +480,7 @@ int main(int argc, char** argv) {
         pcl::copyPointCloud(ptcloud, *viz_cloud);
         display.addPointcloud(viz_cloud, 100100, false, 6);
         std::this_thread::sleep_for(diff);
+        cloud_file.close();
     }
 
     display.stopSpin();

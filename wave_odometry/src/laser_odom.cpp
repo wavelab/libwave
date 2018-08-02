@@ -436,7 +436,7 @@ bool LaserOdom::findLineCorrespondences(std::vector<uint32_t> &matches, std::vec
             continue;
         }
         if (used_points.at(index(i)) != -1) {
-            continue;
+            break;
         }
         Vec3f pt = points.template block<3, 1>(0, index(i));
         if (matches.empty()) {
@@ -486,11 +486,11 @@ bool LaserOdom::findPlaneCorrespondences(std::vector<uint32_t> &matches, Vec<int
     bool new_spread = false;
     /// Each row is a nearest neighbour
     for (uint32_t i = 0; i < index.rows(); ++i) {
-        if (index(i) != -1) {
+        if (index(i) == -1) {
             continue;
         }
         if (used_points.at(index(i)) != -1) {
-            continue;
+            break;
         }
         Vec3f pt = points.template block<3, 1>(0, index(i));
         if (matches.empty()) {
@@ -642,9 +642,9 @@ void LaserOdom::createNewFeatureTracks(const Eigen::MatrixXi &idx, uint32_t feat
 
         if (residual_type == PointToLine) {
             success = this->findLineCorrespondences(matches, this->prev_feat_idx.at(feat_id), idx.col(j),
-                                                    *(this->cur_feat_map.at(feat_id)));
+                                                    *(this->prev_feat_map.at(feat_id)));
         } else {
-            success = this->findPlaneCorrespondences(matches, this->cur_feat_idx.at(feat_id), idx.col(j),
+            success = this->findPlaneCorrespondences(matches, this->prev_feat_idx.at(feat_id), idx.col(j),
                                                      *(this->prev_feat_map.at(feat_id)));
         }
 

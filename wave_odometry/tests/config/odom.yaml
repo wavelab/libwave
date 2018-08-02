@@ -12,13 +12,13 @@ Qc:
 # How many states per revolution to optimize over, there must be at minimum two.
 num_trajectory_states: 3
 n_window: 5 # Number of scans to optimize over. Must be at least 2
-opt_iters: 5  # how many iterations of the matcher to run
-max_inner_iters: 50 # limit on iterations of ceres at each matcher iteration
+opt_iters: 500  # how many iterations of the matcher to run
+max_inner_iters: 200 # limit on iterations of ceres at each matcher iteration
 diff_tol: 1e-4 # norm of solution difference for stopping criteria
 solver_threads: 1 # number of threads the solver should use
 robust_param: 0.2 # Parameter used in tukey loss function
 max_correspondence_dist: 0.4  #  correspondences greater than this are discarded
-max_residual_val: 0.1        #  Residuals with an initial error greater than this are not used.
+max_residual_val: 0.2        #  Residuals with an initial error greater than this are not used.
 min_residuals: 30          #  Problem will be reset if the number of residuals is less than this
 local_map_range: 10000  #  Maximum range of features to keep. square metres
 
@@ -47,7 +47,7 @@ ang_scaling_param: 10
 visualize: false               #  Whether to run a visualization for debugging
 output_trajectory: false       #  Whether to output solutions for debugging/plotting
 output_correspondences: false  #  Whether to output correpondences for debugging/plotting
-only_extract_features: true   #  If set, no transforms are calculated
+only_extract_features: false   #  If set, no transforms are calculated
 use_weighting: false           #  If set, pre-whiten residuals
 lock_first: true               #  If set, don't optimize starting pose
 print_opt_sum: true              #  If true, output ceres summaries to console
