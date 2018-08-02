@@ -19,7 +19,8 @@ struct BenchmarkPose {
     RotationMd rotation;
     Vec3 translation;
 
-    BenchmarkPose() : rotation(RotationMd::Identity()), translation{0.0, 0.0, 0.0} {}
+    BenchmarkPose()
+        : rotation(RotationMd::Identity()), translation{0.0, 0.0, 0.0} {}
     BenchmarkPose(RotationMd rot, Vec3 trans)
         : rotation(rot), translation(trans) {}
 };
