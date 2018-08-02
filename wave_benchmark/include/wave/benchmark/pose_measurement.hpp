@@ -19,7 +19,7 @@ struct BenchmarkPose {
     RotationMd rotation;
     Vec3 translation;
 
-    BenchmarkPose() : rotation(RotationMd()), translation{0.0, 0.0, 0.0} {}
+    BenchmarkPose() : rotation(RotationMd::Identity()), translation{0.0, 0.0, 0.0} {}
     BenchmarkPose(RotationMd rot, Vec3 trans)
         : rotation(rot), translation(trans) {}
 };
@@ -32,10 +32,7 @@ inline BenchmarkPose interpolate(const PoseMeasurement &m1,
                                  const PoseMeasurement &m2,
                                  const TimePoint &t) {
     auto w2 = 1.0 * (t - m1.time_point) / (m2.time_point - m1.time_point);
-
-    auto m1inverse = inverse(m1.value.rotation);
-
-    auto relative = eval(log(m2.value.rotation * m1inverse));
+    auto relative = eval(m2.value.rotation - m1.value.rotation);
     relative.value() *= w2;  // operator* not done for wave_geometry, so
                              // cheating by accessing Eigen object
 
