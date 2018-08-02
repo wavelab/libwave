@@ -236,12 +236,6 @@ written for each synchronized frame. Each text file contains 30 values
 - orimode: orientation mode of primary GPS receiver
  **/
 
-/*
- * Matlab conversion code from kitti dev kit converted to c++
- * lat and long are in degrees
- */
-//todo: the conversion code from the dev kit uses Mercurator projection so is worthless. Need to use LLA -> ECEF to preserve distance
-
 // order is lat, long, (deg), alt, r, p, y (radians)
 wave::Mat34 poseFromGPS(const std::vector<double> &vals, const wave::Mat34 &reference) {
     double T_ecef_enu[4][4];
@@ -324,9 +318,9 @@ void fillGroundTruth(wave::VecE<wave::PoseVelStamped> &trajectory, const std::st
 
     fstream stamp_file(timestamp_file, ios::in);
     std::string date_time;
-    for (uint32_t i = 0; i < trajectory.size(); ++i) {
+    for (auto &traj : trajectory) {
         std::getline(stamp_file, date_time);
-        trajectory.at(i).stamp = parseTime(date_time);
+        traj.stamp = parseTime(date_time);
     }
     stamp_file.close();
 }

@@ -10,9 +10,9 @@ Qc:
          0, 0, 0, 0, 0, 1]
 
 # How many states per revolution to optimize over, there must be at minimum two.
-num_trajectory_states: 3
+num_trajectory_states: 2
 n_window: 5 # Number of scans to optimize over. Must be at least 2
-opt_iters: 500  # how many iterations of the matcher to run
+opt_iters: 30  # how many iterations of the matcher to run
 max_inner_iters: 200 # limit on iterations of ceres at each matcher iteration
 diff_tol: 1e-4 # norm of solution difference for stopping criteria
 solver_threads: 1 # number of threads the solver should use
