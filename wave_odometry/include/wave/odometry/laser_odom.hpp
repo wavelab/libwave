@@ -168,8 +168,18 @@ class LaserOdom {
     std::vector<std::shared_ptr<ceres::LossFunction>> loss_functions;
     bool runOptimization(ceres::Problem &problem);
 
-    void extendFeatureTracks(const Eigen::MatrixXi &indices, const Eigen::MatrixXf &dist, uint32_t feat_id);
-    void createNewFeatureTracks(const Eigen::MatrixXi &indices, const Eigen::MatrixXf &dist, uint32_t feat_id);
+    template<typename Derived, typename OtherDerived>
+    bool findLineCorrespondences(std::vector<uint32_t> &matches, std::vector<int> &used_points,
+                                     const Eigen::MatrixBase<Derived> &index,
+                                     const Eigen::MatrixBase<OtherDerived> &points);
+
+    template<typename Derived, typename OtherDerived>
+    bool findPlaneCorrespondences(std::vector<uint32_t> &matches, Vec<int> &used_points,
+                                      const Eigen::MatrixBase<Derived> &index,
+                                      const Eigen::MatrixBase<OtherDerived> &points);
+
+    void extendFeatureTracks(const Eigen::MatrixXi &indices, uint32_t feat_id);
+    void createNewFeatureTracks(const Eigen::MatrixXi &indices, uint32_t feat_id);
     /**
      * Removes any correspondences to the current scan
      */

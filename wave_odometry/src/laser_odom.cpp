@@ -373,8 +373,6 @@ bool LaserOdom::runOptimization(ceres::Problem &problem) {
     options.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
     options.max_num_iterations = this->param.max_inner_iters;
     options.max_num_consecutive_invalid_steps = 30;
-//    options.function_tolerance = 1e-8;
-//    options.parameter_tolerance = 1e-7;
     options.logging_type = ceres::LoggingType::SILENT;
     options.use_nonmonotonic_steps = true;
 
@@ -422,65 +420,149 @@ bool LaserOdom::runOptimization(ceres::Problem &problem) {
     return true;
 }
 
-void LaserOdom::extendFeatureTracks(const Eigen::MatrixXi &idx, const Eigen::MatrixXf &dist, uint32_t feat_id) {
-    uint32_t knn = 2;
-    auto residualType = PointToLine;
+template<typename Derived, typename OtherDerived>
+bool LaserOdom::findLineCorrespondences(std::vector<uint32_t> &matches, std::vector<int> &used_points,
+                                        const Eigen::MatrixBase<Derived> &index,
+                                        const Eigen::MatrixBase<OtherDerived> &points) {
+    matches.clear();
+    double min_elev = 0.0;
+    double max_elev = 0.0;
+    double new_min = 0.0, new_max = 0.0;
+    bool wide_spread = false;
+    bool new_spread = false;
+    /// Each row is a nearest neighbour
+    for (uint32_t i = 0; i < index.rows(); ++i) {
+        if (index(i) == -1) {
+            continue;
+        }
+        if (used_points.at(index(i)) != -1) {
+            continue;
+        }
+        Vec3f pt = points.template block<3, 1>(0, index(i));
+        if (matches.empty()) {
+            matches.emplace_back(index(i));
+            min_elev = std::atan2(pt(2), std::sqrt(pt(0) * pt(0) + pt(1) * pt(1)));
+            max_elev = min_elev;
+            continue;
+        }
+        if (wide_spread) {
+            matches.emplace_back(index(i));
+        } else {
+            double new_elev = std::atan2(pt(2), std::sqrt(pt(0) * pt(0) + pt(1) * pt(1)));
+            if (new_elev > max_elev) {
+                new_max = new_elev;
+                new_min = min_elev;
+            } else if (new_elev < min_elev) {
+                new_min = new_elev;
+                new_max = max_elev;
+            }
+            if (new_max - new_min > this->param.azimuth_tol)
+                new_spread = true;
+            if(new_spread) {
+                wide_spread = true;
+                min_elev = new_min;
+                max_elev = new_max;
+            }
+            if (wide_spread || matches.size() + 1 < 2) {
+                matches.emplace_back(index(i));
+            }
+        }
+        if (matches.size() == 2) {
+            return true;
+        }
+    }
+    return false;
+}
+
+template<typename Derived, typename OtherDerived>
+bool LaserOdom::findPlaneCorrespondences(std::vector<uint32_t> &matches, Vec<int> &used_points,
+                                         const Eigen::MatrixBase<Derived> &index,
+                                         const Eigen::MatrixBase<OtherDerived> &points) {
+    matches.clear();
+    double min_elev = 0.0;
+    double max_elev = 0.0;
+    double new_min = 0.0, new_max = 0.0;
+    bool wide_spread = false;
+    bool new_spread = false;
+    /// Each row is a nearest neighbour
+    for (uint32_t i = 0; i < index.rows(); ++i) {
+        if (index(i) != -1) {
+            continue;
+        }
+        if (used_points.at(index(i)) != -1) {
+            continue;
+        }
+        Vec3f pt = points.template block<3, 1>(0, index(i));
+        if (matches.empty()) {
+            matches.emplace_back(index(i));
+            min_elev = std::atan2(pt(2), std::sqrt(pt(0) * pt(0) + pt(1) * pt(1)));
+            max_elev = min_elev;
+            continue;
+        }
+        // check to make sure that this point is not colinear with the other two
+        if (matches.size() + 1 == 3) {
+            auto ptA = points.template block<3, 1>(0, matches.at(0));
+            auto ptB = points.template block<3, 1>(0, matches.at(1));
+            Vec3f AmB = ptA - ptB;
+            Vec3f AmO = ptA - pt;
+            AmB.normalize();
+            AmO.normalize();
+            if (std::abs((AmB.transpose() * AmO)(0)) > 0.9) {
+                continue;
+            }
+        }
+        if (wide_spread) {
+            matches.emplace_back(index(i));
+        } else {
+            double new_elev = std::atan2(pt(2), std::sqrt(pt(0) * pt(0) + pt(1) * pt(1)));
+            if (new_elev > max_elev) {
+                new_max = new_elev;
+                new_min = min_elev;
+            } else if (new_elev < min_elev) {
+                new_min = new_elev;
+                new_max = max_elev;
+            }
+            if (new_max - new_min > this->param.azimuth_tol)
+                new_spread = true;
+            if(new_spread) {
+                wide_spread = true;
+                min_elev = new_min;
+                max_elev = new_max;
+            }
+            if (wide_spread || matches.size() + 1 < 3) {
+                matches.emplace_back(index(i));
+            }
+        }
+        if (matches.size() == 3) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void LaserOdom::extendFeatureTracks(const Eigen::MatrixXi &idx, uint32_t feat_id) {
+    auto residual_type = PointToLine;
     // todo don't do this
     if (feat_id == 2) {
-        knn = 3;
-        residualType = PointToPlane;
+        residual_type = PointToPlane;
     }
     /// Each column represents a query (feature track)
     Eigen::Tensor<float, 2> new_feat_points(4, 2000);
     auto offset = this->feat_pts.back().at(feat_id).dimension(1);
     long new_feat_cnt = 0;
+    std::vector<uint32_t> matches;
+    bool success = false;
     for (uint32_t j = 0; j < idx.cols(); ++j) {
-        std::vector<uint32_t> matches;
-        double min_elev = 0.0;
-        double max_elev = 0.0;
-        double new_min = 0.0, new_max = 0.0;
-        bool wide_spread = false;
-        bool new_spread = false;
-        /// Each row is a nearest neighbour
-        for (uint32_t i = 0; i < idx.rows(); ++i) {
-            if (std::isinf(dist(i, j))) {
-                continue;
-            }
-            Vec3f pt = this->cur_feat_map.at(feat_id)->block<3, 1>(0, idx(i, j));
-            if (matches.empty()) {
-                matches.emplace_back(idx(i, j));
-                min_elev = std::atan2(pt(2), std::sqrt(pt(0) * pt(0) + pt(1) * pt(1)));
-                max_elev = min_elev;
-                continue;
-            }
-            if (wide_spread) {
-                matches.emplace_back(idx(i, j));
-            } else {
-                double new_elev = std::atan2(pt(2), std::sqrt(pt(0) * pt(0) + pt(1) * pt(1)));
-                if (new_elev > max_elev) {
-                    new_max = new_elev;
-                    new_min = min_elev;
-                } else if (new_elev < min_elev) {
-                    new_min = new_elev;
-                    new_max = max_elev;
-                }
-                if (new_max - new_min > this->param.azimuth_tol)
-                    new_spread = true;
-                if(new_spread) {
-                    wide_spread = true;
-                    min_elev = new_min;
-                    max_elev = new_max;
-                }
-                if (wide_spread || matches.size() + 1 < knn) {
-                    matches.emplace_back(idx(i, j));
-                }
-            }
-            if (matches.size() == knn) {
-                break;
-            }
+        if (residual_type == PointToLine) {
+            success = this->findLineCorrespondences(matches, this->cur_feat_idx.at(feat_id), idx.col(j),
+                                                    *(this->cur_feat_map.at(feat_id)));
+        } else {
+            success = this->findPlaneCorrespondences(matches, this->cur_feat_idx.at(feat_id), idx.col(j),
+                                                     *(this->cur_feat_map.at(feat_id)));
         }
+
         /// add to track if error against current landmark is low
-        if (matches.size() == knn) {
+        if (success) {
             for (const auto &elem : matches) {
                 if (this->cur_feat_idx.at(feat_id).at(elem) != -1) {
                     continue;
@@ -489,7 +571,7 @@ void LaserOdom::extendFeatureTracks(const Eigen::MatrixXi &idx, const Eigen::Mat
                 const auto &pt = this->cur_feat_map.at(feat_id)->block<3, 1>(0, elem);
                 Vec3 diff = (pt.cast<double>() - geometry.block<3, 1>(3, 0));
                 Vec1 error;
-                if (residualType == PointToLine) {
+                if (residual_type == PointToLine) {
                     Vec3 err = (diff - geometry.block<3, 1>(0, 0) * (diff.transpose() * geometry.block<3, 1>(0, 0)));
                     error = err.transpose() * err;
                 } else {
@@ -538,13 +620,11 @@ void LaserOdom::extendFeatureTracks(const Eigen::MatrixXi &idx, const Eigen::Mat
 
 // queries are newest scan, searching next newer scan
 // todo reduce duplicated code
-void LaserOdom::createNewFeatureTracks(const Eigen::MatrixXi &idx, const Eigen::MatrixXf &dist, uint32_t feat_id) {
-    uint32_t knn = 2;
-    auto residualType = PointToLine;
+void LaserOdom::createNewFeatureTracks(const Eigen::MatrixXi &idx, uint32_t feat_id) {
+    auto residual_type = PointToLine;
     // todo don't do this
     if (feat_id == 2) {
-        knn = 3;
-        residualType = PointToPlane;
+        residual_type = PointToPlane;
     }
     /// Each column represents a query (feature track)
     Eigen::Tensor<float, 2> new_feat_points(4, 2000), prev_new_feat_points(4, 2000);
@@ -553,64 +633,27 @@ void LaserOdom::createNewFeatureTracks(const Eigen::MatrixXi &idx, const Eigen::
     auto &cur_feat_points = this->feat_pts.at(this->feat_pts.size() - 1).at(feat_id);
     auto prev_offset = prev_feat_points.dimension(1);
     auto cur_offset = cur_feat_points.dimension(1);
+    bool success;
+    std::vector<uint32_t> matches;
     for (uint32_t j = 0; j < idx.cols(); ++j) {
         if (this->cur_feat_idx.at(feat_id).at(j) != -1) {
             continue;
         }
 
-        std::vector<uint32_t> matches;
-        double min_elev = 0.0;
-        double max_elev = 0.0;
-        double new_min = 0.0, new_max = 0.0;
-        bool wide_spread = false;
-        bool new_spread = false;
-        /// Each row is a nearest neighbour
-        for (uint32_t i = 0; i < idx.rows(); ++i) {
-            if (idx(i,j) != -1 && this->prev_feat_idx.at(feat_id).at(idx(i, j)) != -1) {
-                continue;
-            }
-            if (std::isinf(dist(i, j))) {
-                continue;
-            }
-            Vec3f pt = this->prev_feat_map.at(feat_id)->block<3, 1>(0, idx(i, j));
-            if (matches.empty()) {
-                matches.emplace_back(idx(i, j));
-                min_elev = std::atan2(pt(2), std::sqrt(pt(0) * pt(0) + pt(1) * pt(1)));
-                max_elev = min_elev;
-                continue;
-            }
-            if (wide_spread) {
-                matches.emplace_back(idx(i, j));
-            } else {
-                double new_elev = std::atan2(pt(2), std::sqrt(pt(0) * pt(0) + pt(1) * pt(1)));
-                if (new_elev > max_elev) {
-                    new_max = new_elev;
-                    new_min = min_elev;
-                } else if (new_elev < min_elev) {
-                    new_min = new_elev;
-                    new_max = max_elev;
-                }
-                if (new_max - new_min > this->param.azimuth_tol)
-                    new_spread = true;
-                if(new_spread) {
-                    wide_spread = true;
-                    min_elev = new_min;
-                    max_elev = new_max;
-                }
-                if (wide_spread || matches.size() + 1 < knn) {
-                    matches.emplace_back(idx(i, j));
-                }
-            }
-            if (matches.size() == knn) {
-                break;
-            }
+        if (residual_type == PointToLine) {
+            success = this->findLineCorrespondences(matches, this->prev_feat_idx.at(feat_id), idx.col(j),
+                                                    *(this->cur_feat_map.at(feat_id)));
+        } else {
+            success = this->findPlaneCorrespondences(matches, this->cur_feat_idx.at(feat_id), idx.col(j),
+                                                     *(this->prev_feat_map.at(feat_id)));
         }
+
         /// create feature track if error is low, and points are not part of another track
-        if (matches.size() == knn) {
+        if (success) {
             // Depending on the type of geometry, need to initialize feature track with reasonable estimate
             Vec6 geometry = Vec6::Zero();
 
-            if (residualType == PointToLine) {
+            if (residual_type == PointToLine) {
                 geometry.block<3, 1>(3, 0) =
                   (this->prev_feat_map.at(feat_id)->block<3, 1>(0, matches.at(0)).cast<double>() +
                    this->prev_feat_map.at(feat_id)->block<3, 1>(0, matches.at(1)).cast<double>()) /
@@ -639,7 +682,7 @@ void LaserOdom::createNewFeatureTracks(const Eigen::MatrixXi &idx, const Eigen::
 
             Vec3 diff = (this->cur_feat_map.at(feat_id)->block<3, 1>(0, j).cast<double>() - geometry.block<3, 1>(3, 0));
             Vec1 error;
-            if (residualType == PointToLine) {
+            if (residual_type == PointToLine) {
                 Vec3 err = (diff - geometry.block<3, 1>(0, 0) * (diff.transpose() * geometry.block<3, 1>(0, 0)));
                 error = err.transpose() * err;
             } else {
@@ -965,7 +1008,7 @@ bool LaserOdom::match(const TimeType &stamp) {
                     cur_kd_idx->knn(
                       this->ave_pts.at(j), nn_idx, nn_dist, 5, 0, Nabo::NNSearchF::SORT_RESULTS, this->param.max_correspondence_dist);
 
-                    this->extendFeatureTracks(nn_idx, nn_dist, j);
+                    this->extendFeatureTracks(nn_idx, j);
                 }
                 this->prev_feat_idx.at(j).resize(static_cast<unsigned long>(this->prev_feat_map.at(j)->size()));
                 std::fill(this->prev_feat_idx.at(j).begin(), this->prev_feat_idx.at(j).end(), -1);
@@ -977,7 +1020,7 @@ bool LaserOdom::match(const TimeType &stamp) {
                     nn_dist.resize(knn, this->cur_feat_map.at(j)->cols());
                     curm1_kd_idx->knn(
                       *(this->cur_feat_map.at(j)), nn_idx, nn_dist, 5, 0, Nabo::NNSearchF::SORT_RESULTS, this->param.max_correspondence_dist);
-                    this->createNewFeatureTracks(nn_idx, nn_dist, j);
+                    this->createNewFeatureTracks(nn_idx, j);
                     delete curm1_kd_idx;
                 }
                 delete cur_kd_idx;
