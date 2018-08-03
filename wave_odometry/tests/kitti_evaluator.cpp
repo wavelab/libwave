@@ -10,6 +10,10 @@
 //todo Figure out where these helper functions should go (they are shared with tests).
 namespace {
 
+namespace plot = matplotlibcpp;
+
+using f64_seconds = std::chrono::duration<double>;
+
 void LoadSensorParameters(const std::string &path, const std::string &filename, wave::RangeSensorParams &senparams) {
     wave::ConfigParser parser;
     parser.addParam("rings", &(senparams.rings));
@@ -106,7 +110,57 @@ void setupFeatureParameters(wave::FeatureExtractorParams &param) {
     param.feature_definitions.emplace_back(wave::FeatureDefinition{edge_int_low, &(param.n_int_edge)});
 }
 
-void updateVisualizer(const wave::LaserOdom *odom, wave::PointCloudDisplay *display) {
+void updateVisualizer(const wave::LaserOdom *odom, wave::PointCloudDisplay *display, const wave::VecE<wave::PoseVelStamped> *ground_truth) {
+    static wave::VecE<wave::PoseVelStamped> odom_trajectory;
+    //update trajectory from odometry
+    for (const wave::PoseVelStamped &val : odom->undistort_trajectory) {
+        auto iter = std::find_if(odom_trajectory.begin(), odom_trajectory.end(), [&val](const wave::PoseVelStamped &item){
+            return item.stamp == val.stamp;
+        });
+        if (iter == odom_trajectory.end()) {
+            odom_trajectory.emplace_back(val);
+        } else {
+            odom_trajectory.at(iter - odom_trajectory.begin()) = val;
+        }
+    }
+
+    static std::vector<double> ground_truth_x, ground_truth_y, ground_truth_z, ground_truth_stamp;
+    if (ground_truth_x.empty()) {
+        auto start = ground_truth->front().stamp;
+        for (const auto &traj : *ground_truth) {
+            ground_truth_x.emplace_back(traj.pose.storage(0,3));
+            ground_truth_y.emplace_back(traj.pose.storage(1,3));
+            ground_truth_z.emplace_back(traj.pose.storage(2,3));
+            ground_truth_stamp.emplace_back(std::chrono::duration_cast<f64_seconds>(traj.stamp - start).count());
+        }
+    }
+
+    std::vector<double> odom_x, odom_y, odom_z, odom_stamp;
+    auto start = odom_trajectory.front().stamp;
+    for(const auto &traj : odom_trajectory) {
+        odom_x.emplace_back(traj.pose.storage(0,3));
+        odom_y.emplace_back(traj.pose.storage(1,3));
+        odom_z.emplace_back(traj.pose.storage(2,3));
+        odom_stamp.emplace_back(std::chrono::duration_cast<f64_seconds>(traj.stamp - start).count());
+    }
+
+    plot::clf();
+    plot::subplot(2,2,1);
+    plot::named_plot("Ground Truth", ground_truth_x, ground_truth_y);
+    plot::named_plot("Estimate", odom_x, odom_y);
+    plot::legend();
+
+    plot::subplot(2,2,2);
+    plot::named_plot("Ground Truth X(m)", ground_truth_stamp, ground_truth_x);
+    plot::named_plot("Ground Truth Y(m)", ground_truth_stamp, ground_truth_y);
+    plot::named_plot("Ground Truth Z(m)", ground_truth_stamp, ground_truth_z);
+    plot::named_plot("Odom X(m)", odom_stamp, odom_x);
+    plot::named_plot("Odom Y(m)", odom_stamp, odom_y);
+    plot::named_plot("Odom Z(m)", odom_stamp, odom_z);
+    plot::legend();
+
+    plot::pause(0.01);
+
     int ptcld_id = 100000;
     display->removeAllShapes();
 //    pcl::PointCloud<pcl::PointXYZI>::Ptr viz_cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
@@ -358,9 +412,6 @@ int main(int argc, char** argv) {
     wave::PointCloudDisplay display("Kitti Eval", 0.2, 3, 2);
     display.startSpin();
 
-    auto func = [&]() {updateVisualizer(&odom, &display);};
-    odom.registerOutputFunction(func);
-
     //set up pointcloud iterators
     boost::filesystem::path p(data_path + "velodyne_points/data");
     std::vector<boost::filesystem::path> v;
@@ -385,14 +436,8 @@ int main(int argc, char** argv) {
     wave::VecE<wave::PoseVelStamped> oxt_trajectory;
     fillGroundTruth(oxt_trajectory, data_path);
 
-    std::vector<double> ground_truth_x;
-    std::vector<double> ground_truth_y;
-
-    for (const auto &traj : oxt_trajectory) {
-        ground_truth_x.emplace_back(traj.pose.storage(0,3));
-        ground_truth_y.emplace_back(traj.pose.storage(1,3));
-    }
-    matplotlibcpp::plot(ground_truth_x, ground_truth_y);
+    auto func = [&]() {updateVisualizer(&odom, &display, &oxt_trajectory);};
+    odom.registerOutputFunction(func);
 
     int pt_index = 0;
 
@@ -456,16 +501,10 @@ int main(int argc, char** argv) {
             if (ring_index < 64) {
                 if (first_point) {
                     odom.addPoints(pt_vec, 0, stamp);
-//                    matplotlibcpp::plot(dummy_x, dummy_y);
-//                    matplotlibcpp::show(true);
-//                    dummy_x.clear();
-//                    dummy_y.clear();
                     pt_index = 0;
                     first_point = false;
                 } else {
                     odom.addPoints(pt_vec, 3000, stamp);
-//                    dummy_x.emplace_back(pt_index);
-//                    dummy_y.emplace_back(azimuth);
                     ++pt_index;
                 }
             }
