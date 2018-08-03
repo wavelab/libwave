@@ -36,7 +36,12 @@ OPTION(BUILD_BENCHMARKS
 
 
 # Find all dependencies here, and ensure they have IMPORTED targets
-LIST(APPEND CMAKE_PREFIX_PATH "/opt/wavelab")
+# The install scripts install some dependencies in /opt/wavelab
+OPTION(APPEND_OPT_WAVELAB "Append /opt/wavelab to CMAKE_PREFIX_PATH" ON)
+IF(APPEND_OPT_WAVELAB)
+    MESSAGE(STATUS "Adding /opt/wavelab to CMAKE_PREFIX_PATH")
+    LIST(APPEND CMAKE_PREFIX_PATH "/opt/wavelab")
+ENDIF()
 # Require Eigen 3.2.92, also called 3.3 beta-1, since it's in xenial
 FIND_PACKAGE(Eigen3 3.2.92 REQUIRED)
 FIND_PACKAGE(Boost 1.54.0 COMPONENTS system filesystem)
