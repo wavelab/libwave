@@ -14,7 +14,6 @@ This library contains reusable code for:
 - Boost 1.54
 - Ceres 1.13
 - Eigen 3.3.2
-- Kindr 1.0.4
 - OpenCV 3.2.0
 - PCL 1.8
 - yaml-cpp 0.5.1
@@ -42,7 +41,7 @@ The dependencies for each module are:
 | wave\_containers | <ul><li>Boost</li><li>Eigen3</li></ul> |
 | wave\_controls | <ul><li>Eigen3</li></ul> |
 | wave\_geography | <ul><li>Eigen3</li><li>GeographicLib</li></ul> |
-| wave\_geometry | <ul><li>Eigen3</li><li>Kindr</li><li>wave\_utils</li></ul> |
+| wave\_geometry | <ul>[See dependencies here](https://github.com/wavelab/wave_geometry/tree/27be85b37f25b8bb7ec4cd3fc189d3fc9fb7361d#dependencies)</ul> |
 | wave\_gtsam | <ul><li>Eigen3</li><li>gtsam</li><li>wave\_utils</li></ul> |
 | wave\_kinematics | <ul><li>Eigen3</li><li>wave\_controls</li><li>wave\_utils</li></ul> |
 | wave\_matching | <ul><li>Boost</li><li>Eigen3</li><li>PCL</li><li>wave\_utils</li></ul> |
