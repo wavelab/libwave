@@ -60,8 +60,11 @@ INCLUDE(cmake/ImportCeres.cmake)
 # Optionally build tests. `gtest` is included with this project
 IF(BUILD_TESTING)
     # Build gtest from source
-    ADD_SUBDIRECTORY(deps/googletest EXCLUDE_FROM_ALL)
-    INCLUDE_DIRECTORIES(${gtest_SOURCE_DIR}/include/ ${gtest_SOURCE_DIR})
+    # Unless another GTEST_ROOT is set by the user, tell the AddGTest script to
+    # first look for the bundled copy in deps/googletest
+    SET(GTEST_ROOT "${PROJECT_SOURCE_DIR}/deps/googletest"
+        CACHE PATH "Path to gtest source")
+    INCLUDE(cmake/AddGTest.cmake)
 
     # This target is used to build all tests, without running them
     ADD_CUSTOM_TARGET(tests)
@@ -78,6 +81,9 @@ IF(BUILD_BENCHMARKS)
             " (CMAKE_BUILD_TYPE=\"${CMAKE_BUILD_TYPE}\")\n"
             "Benchmark results might not be useful.")
     ENDIF()
+
+    # This target is used to build (but not run) benchmarks
+    ADD_CUSTOM_TARGET(benchmarks)
 
     # This target is used to run benchmarks via "make benchmark".
     # Like "make test", it does not build anything. (@todo change?)
@@ -145,7 +151,7 @@ INSTALL(FILES
 # other projects using libwave will get transient dependencies automatically
 INSTALL(DIRECTORY cmake/
     DESTINATION "${INSTALL_CMAKE_DIR}/cmake"
-    FILES_MATCHING PATTERN "Import*.cmake")
+    FILES_MATCHING PATTERN "Import*.cmake" PATTERN "Find*.cmake")
 
 IF(EXPORT_BUILD)
     # Export this build so the package can be found through CMake's registry
