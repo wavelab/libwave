@@ -7,10 +7,10 @@ BenchmarkPose poseError(const MeasurementContainer<PoseMeasurement> &truth,
     // Look up the true pose, interpolating if necessary and possible
     auto true_pose =
       truth.get(measurement.time_point, ComparisonKey::GROUND_TRUTH);
-    true_pose.rotation.invert();
+    auto true_rotation = eval(inverse(true_pose.rotation));
 
     auto error_pose = BenchmarkPose{};
-    error_pose.rotation = true_pose.rotation * measurement.value.rotation;
+    error_pose.rotation = true_rotation * measurement.value.rotation;
     error_pose.translation =
       measurement.value.translation - true_pose.translation;
     return error_pose;
@@ -54,8 +54,9 @@ void TrajectoryCompare::outputCSV(const std::string &path) {
 
     if (this->file.is_open()) {
         for (auto iter = error.begin(); iter != error.end(); iter++) {
+            auto rotation = eval(log(iter->value.rotation)).value();
             this->file << iter->value.translation << std::endl;
-            this->file << iter->value.rotation.logMap();
+            this->file << rotation;
             this->file << std::endl;
         }
     }
