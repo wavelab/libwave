@@ -36,7 +36,7 @@ min_eigen: 100
 max_extrapolation: 0.0 # How far to extrapolate line correspondences
 
 #Parameters controlling how planar feature tracks are merged
-max_planar_dist_threshold: 0.2
+max_planar_dist_threshold: 2
 max_planar_ang_threshold: 0.025  # 1 - cos(theta)
 #Parameters controlling how line feature tracks are merged
 max_linear_dist_threshold: 0.1

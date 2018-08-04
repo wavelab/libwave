@@ -113,14 +113,25 @@ void setupFeatureParameters(wave::FeatureExtractorParams &param) {
 void updateVisualizer(const wave::LaserOdom *odom, wave::PointCloudDisplay *display, const wave::VecE<wave::PoseVelStamped> *ground_truth) {
     static wave::VecE<wave::PoseVelStamped> odom_trajectory;
     //update trajectory from odometry
+    bool first_trajectory = true;
+    wave::T_TYPE T0X;
     for (const wave::PoseVelStamped &val : odom->undistort_trajectory) {
         auto iter = std::find_if(odom_trajectory.begin(), odom_trajectory.end(), [&val](const wave::PoseVelStamped &item){
             return item.stamp == val.stamp;
         });
         if (iter == odom_trajectory.end()) {
             odom_trajectory.emplace_back(val);
+            if (!first_trajectory) {
+                odom_trajectory.back().pose = T0X * odom_trajectory.back().pose;
+            }
         } else {
-            odom_trajectory.at(iter - odom_trajectory.begin()) = val;
+            if (first_trajectory) {
+                T0X = iter->pose;
+                first_trajectory = false;
+            }
+            auto index = (unsigned long) (iter - odom_trajectory.begin());
+            odom_trajectory.at(index) = val;
+            odom_trajectory.at(index).pose = T0X * odom_trajectory.at(index).pose;
         }
     }
 
@@ -158,8 +169,6 @@ void updateVisualizer(const wave::LaserOdom *odom, wave::PointCloudDisplay *disp
     plot::named_plot("Odom Y(m)", odom_stamp, odom_y);
     plot::named_plot("Odom Z(m)", odom_stamp, odom_z);
     plot::legend();
-
-    plot::pause(0.01);
 
     int ptcld_id = 100000;
     display->removeAllShapes();
@@ -222,6 +231,9 @@ void updateVisualizer(const wave::LaserOdom *odom, wave::PointCloudDisplay *disp
 //        display->addPointcloud(cloud2, ptcld_id, false, viewport_id + 1);
 //        ++ptcld_id;
     }
+
+    plot::show(true);
+
 }
 
 wave::TimeType parseTime(const std::string &date_time) {

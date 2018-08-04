@@ -299,18 +299,12 @@ void LaserOdom::rollover(TimeType stamp) {
                     this->cur_trajectory.end());
 
         // adjust timestamps and trajectory states to start of new window
-        for (uint32_t i = 1; i < this->cur_trajectory.size() - 1; ++i) {
+        for (uint32_t i = 1; i < this->cur_trajectory.size(); ++i) {
             this->cur_trajectory.at(i).pose = this->cur_trajectory.front().pose.transformInverse() *
                   this->cur_trajectory.at(i).pose;
         }
+        this->cur_trajectory.front().pose.setIdentity();
         this->scan_stamps_chrono.back() = stamp;
-
-        auto diff = this->trajectory_stamps.back() - this->trajectory_stamps.at(this->trajectory_stamps.size() - 1);
-
-        this->cur_trajectory.back().pose = this->cur_trajectory.at(this->cur_trajectory.size() - 1).pose;
-        this->cur_trajectory.back().vel = this->cur_trajectory.at(this->cur_trajectory.size() - 1).vel;
-
-        this->cur_trajectory.back().pose.manifoldPlus(diff * this->cur_trajectory.back().vel);
 
     } else {
         // grow storage
@@ -354,6 +348,15 @@ void LaserOdom::rollover(TimeType stamp) {
                 this->trajectory_stamps.at((i - 1) * mult + j) = this->trajectory_stamps.at((i - 1) * mult) + j * step;
             }
         }
+    }
+
+    // initialize states for next iteration
+    auto diff = this->trajectory_stamps.back() - this->trajectory_stamps.at(this->trajectory_stamps.size() - 1);
+    unsigned long start_index = this->cur_trajectory.size() - this->param.num_trajectory_states + 1;
+    for (uint32_t i = 0; i < this->param.num_trajectory_states - 1; ++i) {
+        auto &cur_traj = this->cur_trajectory.at(start_index + i);
+        const auto &prev_traj = this->cur_trajectory.at(start_index + i - 1);
+        cur_traj.pose.manifoldPlus(diff * prev_traj.vel);
     }
 
     std::fill(this->counters.begin(), this->counters.end(), 0);
