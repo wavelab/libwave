@@ -14,7 +14,7 @@ void Transformer::update(const std::vector<PoseVel, Eigen::aligned_allocator<Pos
     }
 
     uint32_t i = 0;
-    Mat4 hat, candle;
+    Mat2 hat, candle;
     while (i + 1 < this->traj_stamps.size()) {
         Vec6 pose_diff = this->aug_trajectories.at(i + 1).pose.manifoldMinus(this->aug_trajectories.at(i).pose);
         Vec6 vel_diff = this->aug_trajectories.at(i + 1).vel - this->aug_trajectories.at(i).vel;
@@ -93,7 +93,7 @@ void Transformer::transformToStart(const Eigen::Tensor<float, 2> &points, Eigen:
             }
             index--;
         }
-        Mat4 hat, candle;
+        Mat2 hat, candle;
         this->calculateInterpolationFactors(
           this->traj_stamps.at(index), this->traj_stamps.at(index + 1), time, candle, hat);
         Vec6f tan_vec = hat(0, 1) * this->differences.at(index).hat_multiplier.block<6, 1>(6, 0) +
@@ -128,7 +128,7 @@ void Transformer::transformToEnd(const Eigen::Tensor<float, 2> &points, Eigen::T
             }
             index--;
         }
-        Mat4 hat, candle;
+        Mat2 hat, candle;
         this->calculateInterpolationFactors(
           this->traj_stamps.at(index), this->traj_stamps.at(index + 1), time, candle, hat);
         Vec6f tan_vec = hat(0, 1) * this->differences.at(index).hat_multiplier.block<6, 1>(6, 0) +
@@ -146,7 +146,7 @@ void Transformer::transformToEnd(const Eigen::Tensor<float, 2> &points, Eigen::T
 }
 
 void Transformer::calculateInterpolationFactors(
-  const float &t1, const float &t2, const float &tau, Mat4 &candle, Mat4 &hat) {
+  const float &t1, const float &t2, const float &tau, Mat2 &candle, Mat2 &hat) {
     float T1 = tau - t1;
     float T2 = t2 - tau;
     float dT = t2 - t1;

@@ -69,6 +69,9 @@ struct LaserOdomParams {
     Mat6 Qc = Mat6::Identity();
     /// inverse stored to save repeated steps
     Mat6 inv_Qc = Mat6::Identity();
+
+    /// Information matrix for weighing first twist.
+    Mat6 prior_info = Mat6::Identity();
     // Optimizer parameters
     // How many states per revolution to optimize over
     // There must be at minimum two (start and end. Consecutive scans share a state for end-start boundary)
@@ -128,6 +131,8 @@ class LaserOdom {
     VecE<PoseVel> cur_trajectory, prev_trajectory;
 
     Vec6 prior_twist;
+    Mat6 twist_covar;
+    double prev_delta_t;
 
     // Shared memory
     std::mutex output_mutex;
@@ -168,18 +173,20 @@ class LaserOdom {
     std::vector<std::shared_ptr<ceres::LossFunction>> loss_functions;
     bool runOptimization(ceres::Problem &problem);
 
-    template<typename Derived, typename OtherDerived>
+    template<typename Derived, typename Derived1, typename Derived2>
     bool findLineCorrespondences(std::vector<uint32_t> &matches, std::vector<int> &used_points,
                                      const Eigen::MatrixBase<Derived> &index,
-                                     const Eigen::MatrixBase<OtherDerived> &points);
+                                     const Eigen::MatrixBase<Derived1> &dist,
+                                     const Eigen::MatrixBase<Derived2> &points);
 
-    template<typename Derived, typename OtherDerived>
+    template<typename Derived, typename Derived1, typename Derived2>
     bool findPlaneCorrespondences(std::vector<uint32_t> &matches, Vec<int> &used_points,
                                       const Eigen::MatrixBase<Derived> &index,
-                                      const Eigen::MatrixBase<OtherDerived> &points);
+                                      const Eigen::MatrixBase<Derived1> &dist,
+                                      const Eigen::MatrixBase<Derived2> &points);
 
-    void extendFeatureTracks(const Eigen::MatrixXi &indices, uint32_t feat_id);
-    void createNewFeatureTracks(const Eigen::MatrixXi &indices, uint32_t feat_id);
+    void extendFeatureTracks(const Eigen::MatrixXi &indices, const MatXf &distances, uint32_t feat_id);
+    void createNewFeatureTracks(const Eigen::MatrixXi &indices, const MatXf &distances, uint32_t feat_id);
     /**
      * Removes any correspondences to the current scan
      */
@@ -200,7 +207,6 @@ class LaserOdom {
     std::shared_ptr<wave_kinematics::ConstantVelocityPrior> cv_model;
     Vec<float> trajectory_stamps;
 
-    Mat6 sqrtinfo;
     Vec<TimeType> scan_stamps_chrono;
     Vec<float> scan_stampsf;
 
@@ -225,6 +231,8 @@ class LaserOdom {
     /**
      * feat_pts and feat_pts_T are sets of indexed tensors, first by scan then feature type
      */
+
+ public:
     Vec<VecE<Eigen::Tensor<float, 2>>> feat_pts, feat_pts_T;
     Vec<Vec<VecE<Eigen::Tensor<double, 3>>>> ptT_jacobians;
 
@@ -233,6 +241,9 @@ class LaserOdom {
     //storage for average feature points. 3 x N
     VecE<MatXf> ave_pts;
     // indexed by feature type and then track_id
+
+    Vec<long> cm1_feat_pts_size;
+
     Vec<VecE<FeatureTrack>> feature_tracks;
 
     /** This structure holds feature tracks formed between the current and previous scan
@@ -241,7 +252,6 @@ class LaserOdom {
      */
     Vec<VecE<FeatureTrack>> volatile_feature_tracks;
 
-    Vec<long> cm1_feat_pts_size;
 };
 
 }  // namespace wave

@@ -6,6 +6,12 @@ LaserOdom::LaserOdom(const LaserOdomParams params,
                      const FeatureExtractorParams feat_params,
                      const TransformerParams transformer_params)
     : param(params), feature_extractor(feat_params, params.n_ring), transformer(transformer_params) {
+    if (this->param.num_trajectory_states < 2) {
+        throw std::out_of_range("Number of parameter states must be at least 2");
+    }
+    if (this->param.n_window < 2) {
+        throw std::out_of_range("Window size must be at least 2");
+    }
     this->continue_output = true;
 
     this->cv_model =
@@ -52,13 +58,7 @@ LaserOdom::LaserOdom(const LaserOdomParams params,
 
     this->undis_features.resize(this->N_FEATURES);
 
-    if (this->param.num_trajectory_states < 2) {
-        throw std::out_of_range("Number of parameter states must be at least 2");
-    }
-    if (this->param.n_window < 2) {
-        throw std::out_of_range("Window size must be at least 2");
-    }
-
+    this->prior_twist.setZero();
 }
 
 void LaserOdom::updateParams(const LaserOdomParams new_params) {
@@ -287,6 +287,8 @@ void LaserOdom::updateTracks() {
 void LaserOdom::rollover(TimeType stamp) {
     // If there are n_scans worth of data, rotate
     if (this->scan_stamps_chrono.size() == this->param.n_window) {
+        this->prior_twist = this->cur_trajectory.front().vel;
+        this->prev_delta_t = (double) this->scan_stampsf.at(1);
         // Perform a left rotation
         this->updateTracks();
         std::rotate(this->feat_pts.begin(), this->feat_pts.begin() + 1, this->feat_pts.end());
@@ -416,19 +418,23 @@ bool LaserOdom::runOptimization(ceres::Problem &problem) {
         if (this->param.print_opt_sum) {
             LOG_INFO("%s", summary.BriefReport().c_str());
         }
-        //                ceres::Covariance covariance(covar_options);
-        //                if (!covariance.Compute(this->param_blocks, &problem)) {
-        //                    LOG_ERROR("covariance did not compute");
-        //                }
-        //                covariance.GetCovarianceMatrixInTangentSpace(this->param_blocks, this->covar.data());
+        ceres::Covariance covariance(covar_options);
+        std::vector<const double *> blocks;
+        blocks.emplace_back(this->cur_trajectory.front().vel.data());
+        if (!covariance.Compute(blocks, &problem)) {
+            LOG_ERROR("covariance did not compute");
+        } else {
+            covariance.GetCovarianceMatrix(blocks, this->twist_covar.data());
+        }
     }
     return true;
 }
 
-template<typename Derived, typename OtherDerived>
+template<typename Derived, typename Derived1, typename Derived2>
 bool LaserOdom::findLineCorrespondences(std::vector<uint32_t> &matches, std::vector<int> &used_points,
                                         const Eigen::MatrixBase<Derived> &index,
-                                        const Eigen::MatrixBase<OtherDerived> &points) {
+                                        const Eigen::MatrixBase<Derived1> &distances,
+                                        const Eigen::MatrixBase<Derived2> &points) {
     matches.clear();
     double min_elev = 0.0;
     double max_elev = 0.0;
@@ -437,11 +443,11 @@ bool LaserOdom::findLineCorrespondences(std::vector<uint32_t> &matches, std::vec
     bool new_spread = false;
     /// Each row is a nearest neighbour
     for (uint32_t i = 0; i < index.rows(); ++i) {
-        if (index(i) == -1) {
-            continue;
+        if (std::isinf(distances(i))) {
+            break;
         }
         if (used_points.at(index(i)) != -1) {
-            break;
+            continue;
         }
         Vec3f pt = points.template block<3, 1>(0, index(i));
         if (matches.empty()) {
@@ -479,10 +485,11 @@ bool LaserOdom::findLineCorrespondences(std::vector<uint32_t> &matches, std::vec
     return false;
 }
 
-template<typename Derived, typename OtherDerived>
+template<typename Derived, typename Derived1, typename Derived2>
 bool LaserOdom::findPlaneCorrespondences(std::vector<uint32_t> &matches, Vec<int> &used_points,
                                          const Eigen::MatrixBase<Derived> &index,
-                                         const Eigen::MatrixBase<OtherDerived> &points) {
+                                         const Eigen::MatrixBase<Derived1> &distances,
+                                         const Eigen::MatrixBase<Derived2> &points) {
     matches.clear();
     double min_elev = 0.0;
     double max_elev = 0.0;
@@ -491,11 +498,11 @@ bool LaserOdom::findPlaneCorrespondences(std::vector<uint32_t> &matches, Vec<int
     bool new_spread = false;
     /// Each row is a nearest neighbour
     for (uint32_t i = 0; i < index.rows(); ++i) {
-        if (index(i) == -1) {
-            continue;
+        if (std::isinf(distances(i))) {
+            break;
         }
         if (used_points.at(index(i)) != -1) {
-            break;
+            continue;
         }
         Vec3f pt = points.template block<3, 1>(0, index(i));
         if (matches.empty()) {
@@ -545,7 +552,7 @@ bool LaserOdom::findPlaneCorrespondences(std::vector<uint32_t> &matches, Vec<int
     return false;
 }
 
-void LaserOdom::extendFeatureTracks(const Eigen::MatrixXi &idx, uint32_t feat_id) {
+void LaserOdom::extendFeatureTracks(const Eigen::MatrixXi &idx, const MatXf &distances, uint32_t feat_id) {
     auto residual_type = PointToLine;
     // todo don't do this
     if (feat_id == 2) {
@@ -560,9 +567,11 @@ void LaserOdom::extendFeatureTracks(const Eigen::MatrixXi &idx, uint32_t feat_id
     for (uint32_t j = 0; j < idx.cols(); ++j) {
         if (residual_type == PointToLine) {
             success = this->findLineCorrespondences(matches, this->cur_feat_idx.at(feat_id), idx.col(j),
+                                                    distances.col(j),
                                                     *(this->cur_feat_map.at(feat_id)));
         } else {
             success = this->findPlaneCorrespondences(matches, this->cur_feat_idx.at(feat_id), idx.col(j),
+                                                     distances.col(j),
                                                      *(this->cur_feat_map.at(feat_id)));
         }
 
@@ -625,7 +634,7 @@ void LaserOdom::extendFeatureTracks(const Eigen::MatrixXi &idx, uint32_t feat_id
 
 // queries are newest scan, searching next newer scan
 // todo reduce duplicated code
-void LaserOdom::createNewFeatureTracks(const Eigen::MatrixXi &idx, uint32_t feat_id) {
+void LaserOdom::createNewFeatureTracks(const Eigen::MatrixXi &idx, const MatXf &distances, uint32_t feat_id) {
     auto residual_type = PointToLine;
     // todo don't do this
     if (feat_id == 2) {
@@ -647,9 +656,11 @@ void LaserOdom::createNewFeatureTracks(const Eigen::MatrixXi &idx, uint32_t feat
 
         if (residual_type == PointToLine) {
             success = this->findLineCorrespondences(matches, this->prev_feat_idx.at(feat_id), idx.col(j),
+                                                    distances.col(j),
                                                     *(this->prev_feat_map.at(feat_id)));
         } else {
             success = this->findPlaneCorrespondences(matches, this->prev_feat_idx.at(feat_id), idx.col(j),
+                                                     distances.col(j),
                                                      *(this->prev_feat_map.at(feat_id)));
         }
 
@@ -950,8 +961,6 @@ void LaserOdom::prepTrajectory(const TimeType &stamp) {
     this->trajectory_stamps.back() =
       std::chrono::duration<float, std::ratio<1>>(stamp - this->scan_stamps_chrono.front()).count();
 
-    this->prior_twist = this->cur_trajectory.back().vel;
-
     // Now previous trajectory will hold the "motion generated" trajectory
     this->copyTrajectory(this->cur_trajectory, this->prev_trajectory);
 }
@@ -1013,7 +1022,7 @@ bool LaserOdom::match(const TimeType &stamp) {
                     cur_kd_idx->knn(
                       this->ave_pts.at(j), nn_idx, nn_dist, 5, 0, Nabo::NNSearchF::SORT_RESULTS, this->param.max_correspondence_dist);
 
-                    this->extendFeatureTracks(nn_idx, j);
+                    this->extendFeatureTracks(nn_idx, nn_dist, j);
                 }
                 this->prev_feat_idx.at(j).resize(static_cast<unsigned long>(this->prev_feat_map.at(j)->size()));
                 std::fill(this->prev_feat_idx.at(j).begin(), this->prev_feat_idx.at(j).end(), -1);
@@ -1025,7 +1034,7 @@ bool LaserOdom::match(const TimeType &stamp) {
                     nn_dist.resize(knn, this->cur_feat_map.at(j)->cols());
                     curm1_kd_idx->knn(
                       *(this->cur_feat_map.at(j)), nn_idx, nn_dist, 5, 0, Nabo::NNSearchF::SORT_RESULTS, this->param.max_correspondence_dist);
-                    this->createNewFeatureTracks(nn_idx, j);
+                    this->createNewFeatureTracks(nn_idx, nn_dist, j);
                     delete curm1_kd_idx;
                 }
                 delete cur_kd_idx;
@@ -1067,8 +1076,14 @@ void LaserOdom::trackResiduals(ceres::Problem &problem, uint32_t f_idx, VecE <Fe
     for (auto &track : track_list) {
         // plane_cost
         if (f_idx == 2) {
+            if (track.mapping.size() < 5) {
+                continue;
+            }
             this->local_params.emplace_back(std::make_shared<PlaneParameterization>());
         } else {
+            if (track.mapping.size() < 4) {
+                continue;
+            }
             this->local_params.emplace_back(std::make_shared<LineParameterization>());
         }
         problem.AddParameterBlock(track.geometry.data(), 6, this->local_params.back().get());
@@ -1131,6 +1146,13 @@ void LaserOdom::buildResiduals(ceres::Problem &problem) {
                                      state.vel.data());
         }
     }
+    // add prior factor on starting velocity
+    if (this->prior_twist.sum() != 0.0) {
+        Mat6 info = (this->twist_covar + this->prev_delta_t * this->param.Qc).inverse().sqrt();
+        this->costs.emplace_back(new ceres::NormalPrior(info, this->prior_twist));
+        problem.AddResidualBlock(this->costs.back().get(), nullptr, this->cur_trajectory.front().vel.data());
+    }
+
     // finally, just fix the first pose
     problem.SetParameterBlockConstant(this->cur_trajectory.front().pose.storage.data());
 }

@@ -132,8 +132,8 @@ void Transformation<Derived, approximate>::interpolateReduced(const Transformati
                                                        const Transformation<InType, InApprox> &T_kp1,
                                                        const Vec6 &twist_k,
                                                        const Vec6 &twist_kp1,
-                                                       const Mat4 &hat,
-                                                       const Mat4 &candle,
+                                                       const Mat2 &hat,
+                                                       const Mat2 &candle,
                                                        Transformation<Other, O_approx> &T_int,
                                                        Vec6 *interpTwist) {
     Mat6 J_left;

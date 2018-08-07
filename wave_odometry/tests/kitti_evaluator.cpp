@@ -52,6 +52,8 @@ void LoadParameters(const std::string &path, const std::string &filename, wave::
     parser.addParam("print_opt_sum", &(params.print_opt_sum));
 
     parser.load(path + filename);
+
+    params.inv_Qc = params.Qc.inverse();
 }
 
 void loadFeatureParams(const std::string &path, const std::string &filename, wave::FeatureExtractorParams &params) {
@@ -110,14 +112,21 @@ void setupFeatureParameters(wave::FeatureExtractorParams &param) {
     param.feature_definitions.emplace_back(wave::FeatureDefinition{edge_int_low, &(param.n_int_edge)});
 }
 
-void updateVisualizer(const wave::LaserOdom *odom, wave::PointCloudDisplay *display, const wave::VecE<wave::PoseVelStamped> *ground_truth) {
+void updateVisualizer(const wave::LaserOdom *odom, wave::PointCloudDisplay *display, const wave::VecE<wave::PoseVelStamped> *ground_truth,
+        std::mutex *plot_mutex) {
     static wave::VecE<wave::PoseVelStamped> odom_trajectory;
     //update trajectory from odometry
     bool first_trajectory = true;
     wave::T_TYPE T0X;
     for (const wave::PoseVelStamped &val : odom->undistort_trajectory) {
         auto iter = std::find_if(odom_trajectory.begin(), odom_trajectory.end(), [&val](const wave::PoseVelStamped &item){
-            return item.stamp == val.stamp;
+            auto diff = item.stamp - val.stamp;
+            //todo figure out a way to avoid floating point time and remove this workaround
+            if (diff > std::chrono::seconds(0)) {
+                return diff < std::chrono::microseconds(10);
+            } else {
+                return diff > std::chrono::microseconds(-10);
+            }
         });
         if (iter == odom_trajectory.end()) {
             odom_trajectory.emplace_back(val);
@@ -135,47 +144,81 @@ void updateVisualizer(const wave::LaserOdom *odom, wave::PointCloudDisplay *disp
         }
     }
 
-    static std::vector<double> ground_truth_x, ground_truth_y, ground_truth_z, ground_truth_stamp;
+    static std::vector<double> ground_truth_x, ground_truth_y, ground_truth_z, ground_truth_stamp,
+            ground_truth_vx, ground_truth_vy, ground_truth_vz, ground_truth_wx, ground_truth_wy, ground_truth_wz;
     if (ground_truth_x.empty()) {
         auto start = ground_truth->front().stamp;
         for (const auto &traj : *ground_truth) {
             ground_truth_x.emplace_back(traj.pose.storage(0,3));
             ground_truth_y.emplace_back(traj.pose.storage(1,3));
             ground_truth_z.emplace_back(traj.pose.storage(2,3));
+            ground_truth_vx.emplace_back(traj.vel(3));
+            ground_truth_vy.emplace_back(traj.vel(4));
+            ground_truth_vz.emplace_back(traj.vel(5));
+            ground_truth_wx.emplace_back(traj.vel(0));
+            ground_truth_wy.emplace_back(traj.vel(1));
+            ground_truth_wz.emplace_back(traj.vel(2));
             ground_truth_stamp.emplace_back(std::chrono::duration_cast<f64_seconds>(traj.stamp - start).count());
         }
     }
 
-    std::vector<double> odom_x, odom_y, odom_z, odom_stamp;
+    std::vector<double> odom_x, odom_y, odom_z, odom_stamp, odom_vx, odom_vy, odom_vz, odom_wx, odom_wy, odom_wz;
     auto start = odom_trajectory.front().stamp;
     for(const auto &traj : odom_trajectory) {
         odom_x.emplace_back(traj.pose.storage(0,3));
         odom_y.emplace_back(traj.pose.storage(1,3));
         odom_z.emplace_back(traj.pose.storage(2,3));
+        odom_vx.emplace_back(traj.vel(3));
+        odom_vy.emplace_back(traj.vel(4));
+        odom_vz.emplace_back(traj.vel(5));
+        odom_wx.emplace_back(traj.vel(0));
+        odom_wy.emplace_back(traj.vel(1));
+        odom_wz.emplace_back(traj.vel(2));
         odom_stamp.emplace_back(std::chrono::duration_cast<f64_seconds>(traj.stamp - start).count());
     }
 
-    plot::clf();
-    plot::subplot(2,2,1);
-    plot::named_plot("Ground Truth", ground_truth_x, ground_truth_y);
-    plot::named_plot("Estimate", odom_x, odom_y);
-    plot::legend();
+    {
+        std::unique_lock<std::mutex> lk(*plot_mutex);
+        plot::clf();
+        plot::subplot(2,2,1);
+        plot::named_plot("Ground Truth", ground_truth_x, ground_truth_y);
+        plot::named_plot("Estimate", odom_x, odom_y);
+        plot::legend();
 
-    plot::subplot(2,2,2);
-    plot::named_plot("Ground Truth X(m)", ground_truth_stamp, ground_truth_x);
-    plot::named_plot("Ground Truth Y(m)", ground_truth_stamp, ground_truth_y);
-    plot::named_plot("Ground Truth Z(m)", ground_truth_stamp, ground_truth_z);
-    plot::named_plot("Odom X(m)", odom_stamp, odom_x);
-    plot::named_plot("Odom Y(m)", odom_stamp, odom_y);
-    plot::named_plot("Odom Z(m)", odom_stamp, odom_z);
-    plot::legend();
+        plot::subplot(2,2,2);
+        plot::named_plot("Ground Truth X(m)", ground_truth_stamp, ground_truth_x);
+        plot::named_plot("Ground Truth Y(m)", ground_truth_stamp, ground_truth_y);
+        plot::named_plot("Ground Truth Z(m)", ground_truth_stamp, ground_truth_z);
+        plot::named_plot("Odom X(m)", odom_stamp, odom_x);
+        plot::named_plot("Odom Y(m)", odom_stamp, odom_y);
+        plot::named_plot("Odom Z(m)", odom_stamp, odom_z);
+        plot::legend();
+
+        plot::subplot(2,2,3);
+        plot::named_plot("Ground Truth wx(rad/s)", ground_truth_stamp, ground_truth_wx);
+        plot::named_plot("Ground Truth wy(rad/s)", ground_truth_stamp, ground_truth_wy);
+        plot::named_plot("Ground Truth wz(rad/s)", ground_truth_stamp, ground_truth_wz);
+        plot::named_plot("Odom wx(rad/s)", odom_stamp, odom_wx);
+        plot::named_plot("Odom wy(rad/s)", odom_stamp, odom_wy);
+        plot::named_plot("Odom wz(rad/s)", odom_stamp, odom_wz);
+        plot::legend();
+
+        plot::subplot(2,2,4);
+        plot::named_plot("Ground Truth Vx(m/s)", ground_truth_stamp, ground_truth_vx);
+        plot::named_plot("Ground Truth Vy(m/s)", ground_truth_stamp, ground_truth_vy);
+        plot::named_plot("Ground Truth Vz(m/s)", ground_truth_stamp, ground_truth_vz);
+        plot::named_plot("Odom Vx(m/s)", odom_stamp, odom_vx);
+        plot::named_plot("Odom Vy(m/s)", odom_stamp, odom_vy);
+        plot::named_plot("Odom Vz(m/s)", odom_stamp, odom_vz);
+        plot::legend();
+    }
 
     int ptcld_id = 100000;
     display->removeAllShapes();
-//    pcl::PointCloud<pcl::PointXYZI>::Ptr viz_cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
-//    *viz_cloud = odom->undistorted_cld;
-//    display->addPointcloud(viz_cloud, ptcld_id, false, 6);
-//    ++ptcld_id;
+    pcl::PointCloud<pcl::PointXYZI>::Ptr viz_cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
+    *viz_cloud = odom->undistorted_cld;
+    display->addPointcloud(viz_cloud, ptcld_id, false, 6);
+    ++ptcld_id;
 
     for (uint32_t feat_id = 0; feat_id < 5; ++feat_id) {
         pcl::PointCloud<pcl::PointXYZ>::Ptr viz_cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
@@ -195,39 +238,87 @@ void updateVisualizer(const wave::LaserOdom *odom, wave::PointCloudDisplay *disp
 
     int id = odom->undistort_trajectory.size();
 
+    float int_id = 0;
+
     for (uint32_t i = 0; i < 5; ++i) {
         int viewport_id = i + 1;
+        int_id = 0;
 
-        if (i == 2) {
-            for(const auto &geometry : odom->geometry_landmarks.at(i)) {
-                if (i == 2) {
-                    pcl::PointXYZ pt1, pt2;
-                    Eigen::Map<wave::Vec3f> m1(pt1.data), m2(pt2.data);
-                    m1 = geometry.block<3, 1>(3, 0);
-                    m2 = geometry.block<3, 1>(0,0);
-                    float sidelength = 0.15 * geometry(6);
-                    display->addSquare(pt1, pt2, sidelength, id, false, viewport_id);
-                    ++id;
-                } else {
-                    pcl::PointXYZ pt1, pt2;
-                    Eigen::Map<wave::Vec3f> m1(pt1.data), m2(pt2.data);
+        pcl::PointCloud<pcl::PointXYZI>::Ptr display_cld = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
+        for(const auto &track : odom->feature_tracks.at(i)) {
+            for (const auto &map : track.mapping) {
+                pcl::PointXYZI new_pt;
+                new_pt.x = odom->feat_pts_T.at(map.scan_idx).at(i)(0,map.pt_idx);
+                new_pt.y = odom->feat_pts_T.at(map.scan_idx).at(i)(1,map.pt_idx);
+                new_pt.z = odom->feat_pts_T.at(map.scan_idx).at(i)(2,map.pt_idx);
+                new_pt.intensity = int_id;
+                display_cld->push_back(new_pt);
+            }
+            int_id += 1;
 
-                    float sidelength = 0.1 * geometry(6);
+            if (i == 2) {
+                pcl::PointXYZ pt1, pt2;
+                Eigen::Map<wave::Vec3f> m1(pt1.data), m2(pt2.data);
+                m1 = track.geometry.block<3, 1>(3,0).cast<float>();
+                m2 = track.geometry.block<3, 1>(0,0).cast<float>();
+                float sidelength = 0.15 * track.geometry(6);
+                display->addSquare(pt1, pt2, sidelength, id, false, viewport_id);
+                ++id;
+            } else {
+                pcl::PointXYZ pt1, pt2;
+                Eigen::Map<wave::Vec3f> m1(pt1.data), m2(pt2.data);
 
-                    m1 = geometry.block<3, 1>(3, 0) - sidelength*geometry.block<3, 1>(0,0);
-                    m2 = geometry.block<3, 1>(3, 0) + sidelength*geometry.block<3, 1>(0,0);
-                    display->addLine(pt1, pt2, id, id + 1, false, viewport_id);
-                    id += 2;
-                }
+                float sidelength = 0.1 * track.geometry(6);
+
+                m1 = (track.geometry.block<3, 1>(3, 0) - sidelength*track.geometry.block<3, 1>(0,0)).cast<float>();
+                m2 = (track.geometry.block<3, 1>(3, 0) + sidelength*track.geometry.block<3, 1>(0,0)).cast<float>();
+                display->addLine(pt1, pt2, id, id + 1, false, viewport_id);
+                id += 2;
             }
         }
-
-        pcl::PointCloud<pcl::PointXYZ>::Ptr cloud1 = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
-//        pcl::PointCloud<pcl::PointXYZ>::Ptr cloud2 = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
-        *cloud1 = odom->undis_candidates_cur.at(i);
-//        *cloud2 = odom->undis_candidates_prev.at(i);
-        display->addPointcloud(cloud1, ptcld_id, false, viewport_id);
+        display->addPointcloud(display_cld, ptcld_id, false, viewport_id);
         ++ptcld_id;
+
+        for(const auto &track : odom->volatile_feature_tracks.at(i)) {
+            for (const auto &map : track.mapping) {
+                pcl::PointXYZI new_pt;
+                new_pt.x = odom->feat_pts_T.at(map.scan_idx).at(i)(0,map.pt_idx);
+                new_pt.y = odom->feat_pts_T.at(map.scan_idx).at(i)(1,map.pt_idx);
+                new_pt.z = odom->feat_pts_T.at(map.scan_idx).at(i)(2,map.pt_idx);
+                new_pt.intensity = int_id;
+                display_cld->push_back(new_pt);
+            }
+            int_id += 1;
+
+            if (i == 2) {
+                pcl::PointXYZ pt1, pt2;
+                Eigen::Map<wave::Vec3f> m1(pt1.data), m2(pt2.data);
+                m1 = track.geometry.block<3, 1>(3,0).cast<float>();
+                m2 = track.geometry.block<3, 1>(0,0).cast<float>();
+                float sidelength = 0.15 * track.geometry(6);
+                display->addSquare(pt1, pt2, sidelength, id, false, viewport_id);
+                ++id;
+            } else {
+                pcl::PointXYZ pt1, pt2;
+                Eigen::Map<wave::Vec3f> m1(pt1.data), m2(pt2.data);
+
+                float sidelength = 0.1 * track.geometry(6);
+
+                m1 = (track.geometry.block<3, 1>(3, 0) - sidelength*track.geometry.block<3, 1>(0,0)).cast<float>();
+                m2 = (track.geometry.block<3, 1>(3, 0) + sidelength*track.geometry.block<3, 1>(0,0)).cast<float>();
+                display->addLine(pt1, pt2, id, id + 1, false, viewport_id);
+                id += 2;
+            }
+        }
+        display->addPointcloud(display_cld, ptcld_id, false, viewport_id);
+        ++ptcld_id;
+
+//        pcl::PointCloud<pcl::PointXYZ>::Ptr cloud1 = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+//        pcl::PointCloud<pcl::PointXYZ>::Ptr cloud2 = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+//        *cloud1 = odom->undis_candidates_cur.at(i);
+//        *cloud2 = odom->undis_candidates_prev.at(i);
+//        display->addPointcloud(cloud1, ptcld_id, false, viewport_id);
+//        ++ptcld_id;
 //        display->addPointcloud(cloud2, ptcld_id, false, viewport_id + 1);
 //        ++ptcld_id;
     }
@@ -391,6 +482,17 @@ void fillGroundTruth(wave::VecE<wave::PoseVelStamped> &trajectory, const std::st
     stamp_file.close();
 }
 
+void redrawFigure(std::mutex *plot_mutex, std::atomic_bool *continue_output) {
+    std::this_thread::sleep_for(std::chrono::seconds(5));
+    while (*continue_output) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        {
+            std::unique_lock<std::mutex> lk(*plot_mutex);
+            plot::draw();
+        }
+    }
+}
+
 }
 
 int main(int argc, char** argv) {
@@ -419,6 +521,9 @@ int main(int argc, char** argv) {
     params.n_ring = 64;
     wave::TransformerParams transformer_params;
     transformer_params.traj_resolution = params.num_trajectory_states;
+    transformer_params.delRTol = 100.0f;
+    transformer_params.delVTol = 100.0f;
+    transformer_params.delWTol = 100.0f;
 
     wave::LaserOdom odom(params, feature_params, transformer_params);
     wave::PointCloudDisplay display("Kitti Eval", 0.2, 3, 2);
@@ -448,8 +553,14 @@ int main(int argc, char** argv) {
     wave::VecE<wave::PoseVelStamped> oxt_trajectory;
     fillGroundTruth(oxt_trajectory, data_path);
 
-    auto func = [&]() {updateVisualizer(&odom, &display, &oxt_trajectory);};
+    std::mutex plot_mutex;
+    std::atomic_bool continue_drawing;
+    continue_drawing.store(true);
+
+    auto func = [&]() {updateVisualizer(&odom, &display, &oxt_trajectory, &plot_mutex);};
     odom.registerOutputFunction(func);
+
+//    std::thread draw_thread(redrawFigure, &plot_mutex, &continue_drawing);
 
     int pt_index = 0;
 
@@ -521,13 +632,14 @@ int main(int argc, char** argv) {
                 }
             }
         }
-        pcl::PointCloud<pcl::PointXYZI>::Ptr viz_cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
-        pcl::copyPointCloud(ptcloud, *viz_cloud);
-        display.addPointcloud(viz_cloud, 100100, false, 6);
-        std::this_thread::sleep_for(diff);
+//        pcl::PointCloud<pcl::PointXYZI>::Ptr viz_cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
+//        pcl::copyPointCloud(ptcloud, *viz_cloud);
+//        display.addPointcloud(viz_cloud, 100100, false, 6);
+//        std::this_thread::sleep_for(diff);
         cloud_file.close();
     }
-
+//    continue_drawing.store(false);
+//    draw_thread.join();
     display.stopSpin();
     return 0;
 }

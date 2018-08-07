@@ -5,19 +5,30 @@ Qc:
   data: [1, 0, 0, 0, 0, 0,
          0, 1, 0, 0, 0, 0,
          0, 0, 1, 0, 0, 0,
+         0, 0, 0, 10, 0, 0,
+         0, 0, 0, 0, 10, 0,
+         0, 0, 0, 0, 0, 10]
+
+  # The information matrix for the previous step's twist
+Prior_twist:
+  rows: 6
+  cols: 6
+  data: [1, 0, 0, 0, 0, 0,
+         0, 1, 0, 0, 0, 0,
+         0, 0, 1, 0, 0, 0,
          0, 0, 0, 1, 0, 0,
          0, 0, 0, 0, 1, 0,
          0, 0, 0, 0, 0, 1]
 
 # How many states per revolution to optimize over, there must be at minimum two.
-num_trajectory_states: 2
-n_window: 5 # Number of scans to optimize over. Must be at least 2
-opt_iters: 30  # how many iterations of the matcher to run
+num_trajectory_states: 3
+n_window: 4 # Number of scans to optimize over. Must be at least 2
+opt_iters: 10  # how many iterations of the matcher to run
 max_inner_iters: 200 # limit on iterations of ceres at each matcher iteration
 diff_tol: 1e-4 # norm of solution difference for stopping criteria
 solver_threads: 1 # number of threads the solver should use
 robust_param: 0.2 # Parameter used in tukey loss function
-max_correspondence_dist: 0.4  #  correspondences greater than this are discarded
+max_correspondence_dist: 2  #  correspondences greater than this are discarded
 max_residual_val: 0.2        #  Residuals with an initial error greater than this are not used.
 min_residuals: 30          #  Problem will be reset if the number of residuals is less than this
 local_map_range: 10000  #  Maximum range of features to keep. square metres
@@ -36,8 +47,8 @@ min_eigen: 100
 max_extrapolation: 0.0 # How far to extrapolate line correspondences
 
 #Parameters controlling how planar feature tracks are merged
-max_planar_dist_threshold: 2
-max_planar_ang_threshold: 0.025  # 1 - cos(theta)
+max_planar_dist_threshold: 10
+max_planar_ang_threshold: 0.2  # 1 - cos(theta)
 #Parameters controlling how line feature tracks are merged
 max_linear_dist_threshold: 0.1
 max_linear_ang_threshold: 0.025

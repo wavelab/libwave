@@ -76,7 +76,7 @@ class Transformer {
     std::vector<float> traj_stamps;
 
     // With approximation used, each block of the interpolation factors is a scalar multiple of identity
-    void calculateInterpolationFactors(const float &t1, const float &t2, const float &tau, Mat4 &candle, Mat4 &hat);
+    void calculateInterpolationFactors(const float &t1, const float &t2, const float &tau, Mat2 &candle, Mat2 &hat);
 };
 }
 
