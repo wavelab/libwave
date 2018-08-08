@@ -13,8 +13,8 @@ edge_tol: 1                 #  Edge features must have score higher than this
 flat_tol: 0.1                #  Plane features must have score lower than this
 int_edge_tol: 0.001          #  Intensity edge features must have score greater than this
 int_flat_tol: 200            #  Intensity edges must have range score lower than this
-n_edge: 30                  #  How many edge features to pick out per ring
-n_flat: 40                  #  How many plane features to pick out per ring
+n_edge: 0                  #  How many edge features to pick out per ring
+n_flat: 80                  #  How many plane features to pick out per ring
 n_int_edge: 0              #  How many intensity edges to pick out per ring
 knn: 5                       #  1/2 nearest neighbours for computing curvature
 key_radius: 5                #  minimum number of points between keypoints on the same laser ring

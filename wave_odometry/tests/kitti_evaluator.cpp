@@ -245,12 +245,13 @@ void updateVisualizer(const wave::LaserOdom *odom, wave::PointCloudDisplay *disp
         int_id = 0;
 
         pcl::PointCloud<pcl::PointXYZI>::Ptr display_cld = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
-        for(const auto &track : odom->feature_tracks.at(i)) {
+        for(const auto &track : odom->undis_tracks.at(i)) {
             for (const auto &map : track.mapping) {
                 pcl::PointXYZI new_pt;
-                new_pt.x = odom->feat_pts_T.at(map.scan_idx).at(i)(0,map.pt_idx);
-                new_pt.y = odom->feat_pts_T.at(map.scan_idx).at(i)(1,map.pt_idx);
-                new_pt.z = odom->feat_pts_T.at(map.scan_idx).at(i)(2,map.pt_idx);
+                new_pt.x = odom->undis_features.at(i).at(map.pt_idx).x;
+                new_pt.y = odom->undis_features.at(i).at(map.pt_idx).y;
+                new_pt.z = odom->undis_features.at(i).at(map.pt_idx).z;
+
                 new_pt.intensity = int_id;
                 display_cld->push_back(new_pt);
             }
@@ -261,14 +262,14 @@ void updateVisualizer(const wave::LaserOdom *odom, wave::PointCloudDisplay *disp
                 Eigen::Map<wave::Vec3f> m1(pt1.data), m2(pt2.data);
                 m1 = track.geometry.block<3, 1>(3,0).cast<float>();
                 m2 = track.geometry.block<3, 1>(0,0).cast<float>();
-                float sidelength = 0.15 * track.geometry(6);
+                float sidelength = 0.15 * track.mapping.size();
                 display->addSquare(pt1, pt2, sidelength, id, false, viewport_id);
                 ++id;
             } else {
                 pcl::PointXYZ pt1, pt2;
                 Eigen::Map<wave::Vec3f> m1(pt1.data), m2(pt2.data);
 
-                float sidelength = 0.1 * track.geometry(6);
+                double sidelength = 0.1 * track.mapping.size();
 
                 m1 = (track.geometry.block<3, 1>(3, 0) - sidelength*track.geometry.block<3, 1>(0,0)).cast<float>();
                 m2 = (track.geometry.block<3, 1>(3, 0) + sidelength*track.geometry.block<3, 1>(0,0)).cast<float>();
@@ -276,40 +277,7 @@ void updateVisualizer(const wave::LaserOdom *odom, wave::PointCloudDisplay *disp
                 id += 2;
             }
         }
-        display->addPointcloud(display_cld, ptcld_id, false, viewport_id);
-        ++ptcld_id;
 
-        for(const auto &track : odom->volatile_feature_tracks.at(i)) {
-            for (const auto &map : track.mapping) {
-                pcl::PointXYZI new_pt;
-                new_pt.x = odom->feat_pts_T.at(map.scan_idx).at(i)(0,map.pt_idx);
-                new_pt.y = odom->feat_pts_T.at(map.scan_idx).at(i)(1,map.pt_idx);
-                new_pt.z = odom->feat_pts_T.at(map.scan_idx).at(i)(2,map.pt_idx);
-                new_pt.intensity = int_id;
-                display_cld->push_back(new_pt);
-            }
-            int_id += 1;
-
-            if (i == 2) {
-                pcl::PointXYZ pt1, pt2;
-                Eigen::Map<wave::Vec3f> m1(pt1.data), m2(pt2.data);
-                m1 = track.geometry.block<3, 1>(3,0).cast<float>();
-                m2 = track.geometry.block<3, 1>(0,0).cast<float>();
-                float sidelength = 0.15 * track.geometry(6);
-                display->addSquare(pt1, pt2, sidelength, id, false, viewport_id);
-                ++id;
-            } else {
-                pcl::PointXYZ pt1, pt2;
-                Eigen::Map<wave::Vec3f> m1(pt1.data), m2(pt2.data);
-
-                float sidelength = 0.1 * track.geometry(6);
-
-                m1 = (track.geometry.block<3, 1>(3, 0) - sidelength*track.geometry.block<3, 1>(0,0)).cast<float>();
-                m2 = (track.geometry.block<3, 1>(3, 0) + sidelength*track.geometry.block<3, 1>(0,0)).cast<float>();
-                display->addLine(pt1, pt2, id, id + 1, false, viewport_id);
-                id += 2;
-            }
-        }
         display->addPointcloud(display_cld, ptcld_id, false, viewport_id);
         ++ptcld_id;
 

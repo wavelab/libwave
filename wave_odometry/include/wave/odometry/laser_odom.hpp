@@ -138,7 +138,7 @@ class LaserOdom {
     std::mutex output_mutex;
     pcl::PointCloud<pcl::PointXYZI> undistorted_cld;
     VecE<pcl::PointCloud<pcl::PointXYZ>> undis_features;
-    Vec<VecE<Eigen::Matrix<float, 7, 1>>> geometry_landmarks;
+    Vec<VecE<FeatureTrack>> undis_tracks;
     VecE<PoseVelStamped> undistort_trajectory;
     VecE<pcl::PointCloud<pcl::PointXYZ>> undis_candidates_cur, undis_candidates_prev;
 
@@ -171,7 +171,7 @@ class LaserOdom {
     Vec<std::shared_ptr<ceres::CostFunction>> costs;
     std::vector<std::shared_ptr<ceres::LocalParameterization>> local_params;
     std::vector<std::shared_ptr<ceres::LossFunction>> loss_functions;
-    bool runOptimization(ceres::Problem &problem);
+    bool runOptimization(ceres::Problem &problem, ceres::Solver::Summary &summary, bool calculate_covariance);
 
     template<typename Derived, typename Derived1, typename Derived2>
     bool findLineCorrespondences(std::vector<uint32_t> &matches, std::vector<int> &used_points,
@@ -186,11 +186,19 @@ class LaserOdom {
                                       const Eigen::MatrixBase<Derived2> &points);
 
     void extendFeatureTracks(const Eigen::MatrixXi &indices, const MatXf &distances, uint32_t feat_id);
-    void createNewFeatureTracks(const Eigen::MatrixXi &indices, const MatXf &distances, uint32_t feat_id);
+
+    void createNewGeometry(const Eigen::Map<Eigen::MatrixXf> &points, const Vec<uint32_t> &indices, ResidualType residual_type, Vec6 &geometry);
+
+    void createNewFeatureTracks(const Eigen::MatrixXi &indices, const MatXf &distances, uint32_t feat_id,
+                                    const Nabo::NNSearchF *cur_knn_tree);
     /**
      * Removes any correspondences to the current scan
      */
     void clearVolatileTracks();
+
+    void calculateLineSimilarity(const Vec6 &geo1, const Vec6 &geo2, float &dist_cost, float &dir_cost);
+    void calculatePlaneSimilarity(const Vec6 &geo1, const Vec6 &geo2, float &dist_cost, float &dir_cost);
+
     void mergeFeatureTracks(uint32_t feat_id);
     void mergeFeatureTracksInternal(uint32_t feat_id, VecE <FeatureTrack> &track_list);
 
@@ -232,7 +240,6 @@ class LaserOdom {
      * feat_pts and feat_pts_T are sets of indexed tensors, first by scan then feature type
      */
 
- public:
     Vec<VecE<Eigen::Tensor<float, 2>>> feat_pts, feat_pts_T;
     Vec<Vec<VecE<Eigen::Tensor<double, 3>>>> ptT_jacobians;
 
