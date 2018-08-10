@@ -11,43 +11,37 @@ This library contains reusable code for:
 
 ## Requirements
 
+`libwave` is divided into modules which can be built separately.
+Each has its own dependecies.
+
+| Module             | Dependencies |
+| ------------------ | ------------ |
+| wave\_benchmark    | wave\_containers, wave\_geometry, wave\_utils |
+| wave\_containers   | Eigen, Boost |
+| wave\_controls     | Eigen |
+| wave\_geography    | Eigen, GeographicLib |
+| wave\_geometry     | Eigen, Boost |
+| wave\_gtsam        | wave\_utils, gtsam |
+| wave\_kinematics   | wave\_utils, wave\_controls |
+| wave\_matching     | wave\_utils, Boost, PCL  |
+| wave\_optimization | wave\_utils, wave\_kinematics, wave\_vision, Ceres |
+| wave\_utils        | Eigen, yaml-cpp |
+| wave\_vision       | wave\_utils, wave\_kinematics, wave\_containers, Boost Filesystem, OpenCV (calib3d, features2d, highgui, imgproc, videoio) |
+
+
+The following versions are the minimum we test against.
+Some earlier versions may work, but are not tested.
+
 - Boost 1.54
 - Ceres 1.13
 - Eigen 3.3.2
 - OpenCV 3.2.0
 - PCL 1.8
 - yaml-cpp 0.5.1
-- CMake 2.8.3
-- GCC 5.4
 - gtsam
 - GeographicLib 1.49
 
-The above versions are the minimum we test against.
-Some earlier versions may work, but are not tested.
-For convenience, we provide a script `scripts/install/install_deps.bash`,
-which installs these dependencies (except GCC, GeographicLib, gtsam,
-and OpenCV) on Ubuntu 14.04 or Ubuntu 16.04.
-
-The following scripts are available for installing GeographicLib, gtsam, and OpenCV:
-- `scripts/install/install_geographiclib.bash`
-- `scripts/install/install_gtsam.bash`
-- `scripts/install/install_opencv.bash`
-
-The dependencies for each module are:
-
-| Module | Dependencies |
-| ------ | ------------ |
-| wave\_benchmark | <ul><li>Eigen3</li><li>wave\_containers</li><li>wave\_geometry</li><li>wave\_utils</li></ul> |
-| wave\_containers | <ul><li>Boost</li><li>Eigen3</li></ul> |
-| wave\_controls | <ul><li>Eigen3</li></ul> |
-| wave\_geography | <ul><li>Eigen3</li><li>GeographicLib</li></ul> |
-| wave\_geometry | <ul>[See dependencies here](https://github.com/wavelab/wave_geometry/tree/27be85b37f25b8bb7ec4cd3fc189d3fc9fb7361d#dependencies)</ul> |
-| wave\_gtsam | <ul><li>Eigen3</li><li>gtsam</li><li>wave\_utils</li></ul> |
-| wave\_kinematics | <ul><li>Eigen3</li><li>wave\_controls</li><li>wave\_utils</li></ul> |
-| wave\_matching | <ul><li>Boost</li><li>Eigen3</li><li>PCL</li><li>wave\_utils</li></ul> |
-| wave\_optimization | <ul><li>ceres</li><li>Eigen3</li><li>wave\_kinematics</li><li>wave\_utils</li><li>wave\_vision</li></ul> |
-| wave\_utils | <ul><li>Eigen3</li><li>yaml-cpp</li></ul> |
-| wave\_vision | <ul><li>Boost Filesystem</li><li>Eigen3</li><li>opencv\_calib3d</li><li>opencv\_core</li><li>opencv\_features2d</li><li>opencv\_highgui</li><li>opencv\_imgproc</li><li>opencv\_videoio</li><li>wave\_containers</li><li>wave\_kinematics</li><li>wave\_utils</li></ul> |
+Building libwave requires CMake 3.2 and a C++11 compiler (tested on GCC 5.4).
 
 ## Install
 
@@ -77,10 +71,11 @@ Install libwave with `make install`. Alternatively, you can enable the
 searchable by CMake without installation.
 
 
-**Note**: dependency install scripts are provided for convenience and are not
-tested on a wide variety of systems. They may be incompatible with other
-packages installed on your system. Additional scripts which install
-GeographicLib, gtsam, and OpenCV 3 are provided in `scripts/install`.
+**Note**: dependency install scripts targeting Ubuntu 16.04 are provided for
+convenience, and are not tested on a wide variety of systems. They may be
+incompatible with other packages installed on your system. Additional scripts
+which install GeographicLib, gtsam, and OpenCV 3 are provided in
+`scripts/install`.
 
 **Known issue with OpenCV**: `wave_vision` may
 [fail to build](https://github.com/wavelab/libwave/issues/267) if OpenCV 2 is
