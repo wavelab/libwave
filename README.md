@@ -51,19 +51,17 @@ The dependencies for each module are:
 
 ## Install
 
-Execute the following in the terminal where you want libwave to reside:
+To build libwave from source (and install some dependencies) run the following
+script in the terminal, in the directory you wish to contain the `libwave`
+source directory:
 
     curl -L https://git.io/vyKXR > install.bash && bash install.bash
 
-**Or** you can perform the installation manually:
+The above script performs the following tasks:
 
-    # clone repo
-    git clone https://github.com/wavelab/libwave.git
+    # clone repo with submodules
+    git clone --recursive https://github.com/wavelab/libwave.git
     cd libwave
-
-    # initialize git submodules
-    git submodule init
-    git submodule update
 
     # install dependencies
     bash scripts/install/install_deps.bash
@@ -72,17 +70,23 @@ Execute the following in the terminal where you want libwave to reside:
     mkdir -p build
     cd build
     cmake ..
-    make
-
-**Note**: GeographicLib, gtsam, and OpenCV are not automatically installed. If you want them installed, run:
-
-    bash scripts/install/install_geographiclib.bash
-    bash scripts/install/install_gtsam.bash
-    bash scripts/install/install_opencv.bash
+    make -j8
 
 Install libwave with `make install`. Alternatively, you can enable the
 `EXPORT_BUILD` option in CMake, which will make the libwave build directory 
 searchable by CMake without installation.
+
+
+**Note**: dependency install scripts are provided for convenience and are not
+tested on a wide variety of systems. They may be incompatible with other
+packages installed on your system. Additional scripts which install
+GeographicLib, gtsam, and OpenCV 3 are provided in `scripts/install`.
+
+**Known issue with OpenCV**: `wave_vision` may
+[fail to build](https://github.com/wavelab/libwave/issues/267) if OpenCV 2 is
+installed in the default system directory on Ubuntu 16.04 (and OpenCV 3 is
+installed elsewhere). The recommended solution is to remove OpenCV 2 via
+`sudo apt remove libopencv-dev`.
 
 
 ## Use with CMake
