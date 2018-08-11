@@ -173,7 +173,7 @@ static void BM_FEATURE_EXTRACTION_SORT(benchmark::State &state) {
     extractor.preFilter(scan, signals, range);
     extractor.buildFilteredScore(range);
     for (auto i : state) {
-        extractor.sortAndBin(scan, indices);
+        extractor.sortAndBin(scan, <#initializer#>, indices);
     }
 }
 BENCHMARK(BM_FEATURE_EXTRACTION_SORT);

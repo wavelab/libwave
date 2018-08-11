@@ -40,7 +40,7 @@ void LoadParameters(const std::string &path, const std::string &filename, wave::
 
     LoadSensorParameters(path, "sensor_model.yaml", params.sensor_params);
 
-    parser.addParam("azimuth_tol", &(params.azimuth_tol));
+    parser.addParam("elevation_tol", &(params.elevation_tol));
     parser.addParam("max_planar_dist_threshold", &(params.max_planar_dist_threshold));
     parser.addParam("max_planar_ang_threshold", &(params.max_planar_ang_threshold));
     parser.addParam("max_linear_dist_threshold", &(params.max_linear_dist_threshold));
@@ -280,16 +280,12 @@ void updateVisualizer(const wave::LaserOdom *odom, wave::PointCloudDisplay *disp
 
         display->addPointcloud(display_cld, ptcld_id, false, viewport_id);
         ++ptcld_id;
-
-//        pcl::PointCloud<pcl::PointXYZ>::Ptr cloud1 = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
-//        pcl::PointCloud<pcl::PointXYZ>::Ptr cloud2 = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
-//        *cloud1 = odom->undis_candidates_cur.at(i);
-//        *cloud2 = odom->undis_candidates_prev.at(i);
-//        display->addPointcloud(cloud1, ptcld_id, false, viewport_id);
-//        ++ptcld_id;
-//        display->addPointcloud(cloud2, ptcld_id, false, viewport_id + 1);
-//        ++ptcld_id;
     }
+
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud1 = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+    *cloud1 = odom->undis_candidates_cur.at(2);
+    display->addPointcloud(cloud1, ptcld_id, false, 5);
+    ++ptcld_id;
 
     plot::show(true);
 

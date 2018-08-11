@@ -22,14 +22,14 @@ Prior_twist:
 
 # How many states per revolution to optimize over, there must be at minimum two.
 num_trajectory_states: 2
-n_window: 2 # Number of scans to optimize over. Must be at least 2
+n_window: 3 # Number of scans to optimize over. Must be at least 2
 opt_iters: 2  # how many iterations of the matcher to run
 max_inner_iters: 200 # limit on iterations of ceres at each matcher iteration
 diff_tol: 1e-4 # norm of solution difference for stopping criteria
 solver_threads: 4 # number of threads the solver should use
 robust_param: 0.25 # Parameter used in tukey loss function
 max_correspondence_dist: 2  #  correspondences greater than this are discarded
-max_residual_val: 0.2        #  Residuals with an initial error greater than this are not used.
+max_residual_val: 1        #  Residuals with an initial error greater than this are not used.
 min_residuals: 30          #  Problem will be reset if the number of residuals is less than this
 local_map_range: 10000  #  Maximum range of features to keep. square metres
 
@@ -39,7 +39,7 @@ max_ticks: 36000    #  encoder ticks per revolution
 n_ring: 32       #  number of laser-detector pairs
 
 #  one degree. Beam spacing is 1.33deg, so this should be sufficient
-azimuth_tol: 0.0174532925199433    #  Minimum azimuth difference across correspondences
+elevation_tol: 0.01   #  Minimum elevation difference across correspondences at a range of 10m (inversely proportional to range)
 TTL: 1             #  Maximum life of feature in local map with no correspondences
 iso_var: 0.005       #  Variance to use if weighing is set.
 
@@ -55,17 +55,9 @@ max_linear_ang_threshold: 0.025
 ang_scaling_param: 10
 
 #  Setting flags
-visualize: false               #  Whether to run a visualization for debugging
-output_trajectory: false       #  Whether to output solutions for debugging/plotting
-output_correspondences: false  #  Whether to output correpondences for debugging/plotting
 only_extract_features: false   #  If set, no transforms are calculated
 use_weighting: false           #  If set, pre-whiten residuals
-lock_first: true               #  If set, don't optimize starting pose
 print_opt_sum: true              #  If true, output ceres summaries to console
-solution_remapping: false      #  If set, use solution remapping
-motion_prior:  true            #  Use a motion prior for smoothing
-no_extrapolation: false        #  Don't allow extrapolation
 check_gradients: false         #  If set, use Ceres gradient checker on each jacobians
-treat_lines_as_planes: false   #  If set, use point to plane cost function exclusively
 limit_rng_var: false
 limit_int_var: false

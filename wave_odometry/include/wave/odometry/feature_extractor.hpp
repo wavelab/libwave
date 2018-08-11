@@ -89,9 +89,9 @@ class FeatureExtractor {
     void computeScores(const Tensorf &signals, const Vec<int> &range);
     void preFilter(const Tensorf &scan, const Tensorf &signals, const Vec<int> &range);
     void buildFilteredScore(const Vec<int> &range);
-    void sortAndBin(const Tensorf &scan, TensorIdx &feature_indices);
+    void sortAndBin(const Tensorf &scan, const Tensorf &signals, TensorIdx &feature_indices);
 
-    void flagNearbyPoints(const uint32_t p_idx, Eigen::Tensor<bool, 1> &valid);
+    void flagNearbyPoints(const uint32_t p_idx, const float pt_range, Eigen::Tensor<bool, 1> &valid);
 
     unlong n_ring; // This is separate from params because it depends on hardware
 

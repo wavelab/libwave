@@ -98,7 +98,7 @@ struct LaserOdomParams {
     RangeSensorParams sensor_params;
 
     // one degree. Beam spacing is 1.33deg, so this should be sufficient
-    double azimuth_tol = 0.0174532925199433;  // Minimum azimuth difference across correspondences
+    double elevation_tol = 0.0174532925199433;  // Minimum azimuth difference across correspondences
     uint16_t TTL = 1;                         // Maximum life of feature in local map with no correspondences
 
     /// parameters for feature track merging

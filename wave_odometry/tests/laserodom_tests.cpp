@@ -66,7 +66,7 @@ void LoadParameters(const std::string &path, const std::string &filename, LaserO
 
     LoadSensorParameters(path, "sensor_model.yaml", params.sensor_params);
 
-    parser.addParam("azimuth_tol", &(params.azimuth_tol));
+    parser.addParam("elevation_tol", &(params.elevation_tol));
     parser.addParam("TTL", &(params.TTL));
     parser.addParam("max_planar_dist_threshold", &(params.max_planar_dist_threshold));
     parser.addParam("max_planar_ang_threshold", &(params.max_planar_ang_threshold));

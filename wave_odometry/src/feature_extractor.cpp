@@ -237,14 +237,16 @@ void FeatureExtractor::buildFilteredScore(const Vec<int> &range) {
     }
 }
 
-void FeatureExtractor::flagNearbyPoints(const uint32_t p_idx, Eigen::Tensor<bool, 1> &valid) {
-    for (uint32_t j = 0; j < this->param.key_radius; j++) {
+void FeatureExtractor::flagNearbyPoints(const uint32_t p_idx, const float pt_range, Eigen::Tensor<bool, 1> &valid) {
+    // key radius is specified to be at a range of 10 meters. That is the magic number here.
+    auto scaled_key_radius = static_cast<uint32_t>(this->param.key_radius * 10.0f / pt_range);
+    for (uint32_t j = 0; j < scaled_key_radius; j++) {
         if (p_idx + j + 1 >= valid.dimension(0)) {
             break;
         }
         valid(p_idx + j + 1) = false;
     }
-    for (uint32_t j = 0; j < this->param.key_radius; j++) {
+    for (uint32_t j = 0; j < scaled_key_radius; j++) {
         if (p_idx < j + 1) {
             break;
         }
@@ -252,7 +254,7 @@ void FeatureExtractor::flagNearbyPoints(const uint32_t p_idx, Eigen::Tensor<bool
     }
 }
 
-void FeatureExtractor::sortAndBin(const Tensorf &scan, TensorIdx &feature_indices) {
+void FeatureExtractor::sortAndBin(const Tensorf &scan, const Tensorf &signals, TensorIdx &feature_indices) {
     //#pragma omp parallel for
     for (uint32_t i = 0; i < this->param.N_FEATURES; i++) {
         for (unlong j = 0; j < this->n_ring; j++) {
@@ -297,7 +299,7 @@ void FeatureExtractor::sortAndBin(const Tensorf &scan, TensorIdx &feature_indice
                     cur_feat_idx(feat_cnt) = (int) score.first;
                     feat_cnt++;
 
-                    this->flagNearbyPoints(score.first, valid_pts_copy);
+                    this->flagNearbyPoints(score.first, signals.at(j)(0, score.first), valid_pts_copy);
                     cnt_in_bins.at(bin)++;
                 }
             }
@@ -317,6 +319,6 @@ void FeatureExtractor::getFeatures(const Tensorf &scan,
     this->computeScores(signals, range);
     this->preFilter(scan, signals, range);
     this->buildFilteredScore(range);
-    this->sortAndBin(scan, indices);
+    this->sortAndBin(scan, signals, indices);
 }
 }
