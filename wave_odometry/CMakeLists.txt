@@ -14,6 +14,7 @@ WAVE_ADD_MODULE(${PROJECT_NAME}
     src/integrals.cpp
     src/sensor_model.cpp
     src/transformer.cpp
+    src/icosahedron_binner.cpp
     src/feature_extractor.cpp
     src/laser_odom.cpp)
 
