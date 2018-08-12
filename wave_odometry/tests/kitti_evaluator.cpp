@@ -246,18 +246,10 @@ void updateVisualizer(const wave::LaserOdom *odom, wave::PointCloudDisplay *disp
 
         pcl::PointCloud<pcl::PointXYZI>::Ptr display_cld = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
         for(const auto &track : odom->undis_tracks.at(i)) {
-            for (const auto &map : track.mapping) {
-                pcl::PointXYZI new_pt;
-                new_pt.x = odom->undis_features.at(i).at(map.pt_idx).x;
-                new_pt.y = odom->undis_features.at(i).at(map.pt_idx).y;
-                new_pt.z = odom->undis_features.at(i).at(map.pt_idx).z;
-
-                new_pt.intensity = int_id;
-                display_cld->push_back(new_pt);
-            }
-            int_id += 1;
-
             if (i == 2) {
+                if (track.mapping.size() < 7) {
+                    continue;
+                }
                 pcl::PointXYZ pt1, pt2;
                 Eigen::Map<wave::Vec3f> m1(pt1.data), m2(pt2.data);
                 m1 = track.geometry.block<3, 1>(3,0).cast<float>();
@@ -266,6 +258,9 @@ void updateVisualizer(const wave::LaserOdom *odom, wave::PointCloudDisplay *disp
                 display->addSquare(pt1, pt2, sidelength, id, false, viewport_id);
                 ++id;
             } else {
+                if (track.mapping.size() < 5) {
+                    continue;
+                }
                 pcl::PointXYZ pt1, pt2;
                 Eigen::Map<wave::Vec3f> m1(pt1.data), m2(pt2.data);
 
@@ -276,15 +271,36 @@ void updateVisualizer(const wave::LaserOdom *odom, wave::PointCloudDisplay *disp
                 display->addLine(pt1, pt2, id, id + 1, false, viewport_id);
                 id += 2;
             }
+
+            for (const auto &map : track.mapping) {
+                pcl::PointXYZI new_pt;
+                new_pt.x = odom->undis_features.at(i).at(map.pt_idx).x;
+                new_pt.y = odom->undis_features.at(i).at(map.pt_idx).y;
+                new_pt.z = odom->undis_features.at(i).at(map.pt_idx).z;
+
+                new_pt.intensity = int_id;
+                display_cld->push_back(new_pt);
+            }
+            int_id += 1;
         }
 
         display->addPointcloud(display_cld, ptcld_id, false, viewport_id);
         ++ptcld_id;
     }
 
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud1 = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
-    *cloud1 = odom->undis_candidates_cur.at(2);
-    display->addPointcloud(cloud1, ptcld_id, false, 5);
+    pcl::PointCloud<pcl::PointXYZ>::Ptr flatcloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+    *flatcloud = odom->undis_candidates_cur.at(2);
+    display->addPointcloud(flatcloud, ptcld_id, false, 5);
+    ++ptcld_id;
+
+    pcl::PointCloud<pcl::PointXYZ>::Ptr edgecloud1 = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+    *edgecloud1 = odom->undis_candidates_cur.at(0);
+    display->addPointcloud(edgecloud1, ptcld_id, false, 4);
+    ++ptcld_id;
+
+    pcl::PointCloud<pcl::PointXYZ>::Ptr edgecloud2 = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+    *edgecloud2 = odom->undis_candidates_cur.at(1);
+    display->addPointcloud(edgecloud2, ptcld_id, false, 4);
     ++ptcld_id;
 
     plot::show(true);

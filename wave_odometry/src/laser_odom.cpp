@@ -1186,7 +1186,9 @@ bool LaserOdom::match(const TimeType &stamp) {
             }
         }
     }
-    this->calculateCovariance(*problem);
+//    if(!(this->param.only_extract_features)) {
+//        this->calculateCovariance(*problem);
+//    }
 
     for (uint32_t feat_id = 0; feat_id < this->N_FEATURES; ++feat_id) {
         auto &dest = this->feature_tracks.at(feat_id);
@@ -1200,14 +1202,14 @@ void LaserOdom::trackResiduals(ceres::Problem &problem, uint32_t f_idx, VecE<Fea
     for (auto &track : track_list) {
         // plane_cost
         if (f_idx == 2) {
-            //            if (track.mapping.size() < 5) {
-            //                continue;
-            //            }
+            if (track.mapping.size() < 7) {
+                continue;
+            }
             this->local_params.emplace_back(std::make_shared<PlaneParameterization>());
         } else {
-            //            if (track.mapping.size() < 4) {
-            //                continue;
-            //            }
+            if (track.mapping.size() < 5) {
+                continue;
+            }
             this->local_params.emplace_back(std::make_shared<LineParameterization>());
         }
         problem.AddParameterBlock(track.geometry.data(), 6, this->local_params.back().get());
@@ -1272,8 +1274,9 @@ void LaserOdom::buildResiduals(ceres::Problem &problem) {
     }
     // add prior factor on starting velocity
     if (this->prior_twist.sum() != 0.0) {
-        Mat6 info = (this->twist_covar + this->prev_delta_t * this->param.Qc).inverse().sqrt();
-        this->costs.emplace_back(new ceres::NormalPrior(info, this->prior_twist));
+//        Mat6 sqrt_info = (this->twist_covar + this->prev_delta_t * this->param.Qc).inverse().sqrt();
+        Mat6 sqrt_info = (this->prev_delta_t * this->param.Qc).inverse().sqrt();
+        this->costs.emplace_back(new ceres::NormalPrior(sqrt_info, this->prior_twist));
         problem.AddResidualBlock(this->costs.back().get(), nullptr, this->cur_trajectory.front().vel.data());
     }
 

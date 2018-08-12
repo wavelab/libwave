@@ -29,9 +29,6 @@ bool ImplicitPlaneResidual<states...>::Evaluate(double const *const *parameters,
         assignJacobian(jacobians + 1, del_e_del_diff, &(this->track->jacs->at(s_id)), this->pt_id, 0, states...);
     }
 
-//    if (residuals[0] > 1.0 || residuals[0] < -1.0) {
-//        int voider = 2;
-//    }
     return true;
 }
 
