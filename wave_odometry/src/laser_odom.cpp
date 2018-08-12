@@ -355,7 +355,7 @@ void LaserOdom::rollover(TimeType stamp) {
     }
 }
 
-bool LaserOdom::runOptimization(ceres::Problem &problem, ceres::Solver::Summary &summary, bool calculate_covariance) {
+bool LaserOdom::runOptimization(ceres::Problem &problem, ceres::Solver::Summary &summary) {
     ceres::Solver::Options options;
     options.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
     options.max_num_iterations = this->param.max_inner_iters;
@@ -372,18 +372,12 @@ bool LaserOdom::runOptimization(ceres::Problem &problem, ceres::Solver::Summary 
                                                                &(this->transformer));
     options.evaluation_callback = callback;
 
-    ceres::Covariance::Options covar_options;
-    covar_options.sparse_linear_algebra_library_type = ceres::SparseLinearAlgebraLibraryType::SUITE_SPARSE;
-    covar_options.algorithm_type = ceres::CovarianceAlgorithmType::SPARSE_QR;
-
     if (this->param.solver_threads < 1) {
         options.num_threads = std::thread::hardware_concurrency();
         options.num_linear_solver_threads = std::thread::hardware_concurrency();
-        covar_options.num_threads = std::thread::hardware_concurrency();
     } else {
         options.num_threads = this->param.solver_threads;
         options.num_linear_solver_threads = this->param.solver_threads;
-        covar_options.num_threads = this->param.solver_threads;
     }
 
     if (problem.NumResidualBlocks() < this->param.min_residuals) {
@@ -397,18 +391,30 @@ bool LaserOdom::runOptimization(ceres::Problem &problem, ceres::Solver::Summary 
     if (this->param.print_opt_sum) {
         LOG_INFO("%s", summary.BriefReport().c_str());
     }
-    if (calculate_covariance) {
-        ceres::Covariance covariance(covar_options);
-        std::vector<const double *> blocks;
-        blocks.emplace_back(this->cur_trajectory.front().vel.data());
-        if (!covariance.Compute(blocks, &problem)) {
-            LOG_ERROR("covariance did not compute");
-        } else {
-            covariance.GetCovarianceMatrix(blocks, this->twist_covar.data());
-        }
-    }
 
     return true;
+}
+
+void LaserOdom::calculateCovariance(ceres::Problem &problem) {
+    ceres::Covariance::Options covar_options;
+    covar_options.sparse_linear_algebra_library_type = ceres::SparseLinearAlgebraLibraryType::SUITE_SPARSE;
+    covar_options.algorithm_type = ceres::CovarianceAlgorithmType::DENSE_SVD;
+    covar_options.null_space_rank = -1;
+
+    if (this->param.solver_threads < 1) {
+        covar_options.num_threads = std::thread::hardware_concurrency();
+    } else {
+        covar_options.num_threads = this->param.solver_threads;
+    }
+
+    ceres::Covariance covariance(covar_options);
+    std::vector<const double *> blocks;
+    blocks.emplace_back(this->cur_trajectory.front().vel.data());
+    if (!covariance.Compute(blocks, &problem)) {
+        LOG_ERROR("covariance did not compute");
+    } else {
+        covariance.GetCovarianceMatrix(blocks, this->twist_covar.data());
+    }
 }
 
 template <typename Derived, typename Derived1, typename Derived2>
@@ -1060,6 +1066,8 @@ bool LaserOdom::match(const TimeType &stamp) {
     const int knn = 5;
     this->prepTrajectory(stamp);
 
+    std::unique_ptr<ceres::Problem> problem;
+
     T_TYPE last_transform;
     auto &ref = this->cur_trajectory.back().pose;
 
@@ -1122,9 +1130,6 @@ bool LaserOdom::match(const TimeType &stamp) {
 
                     this->extendFeatureTracks(nn_idx, nn_dist, j);
                 }
-                //                this->prev_feat_idx.at(j).resize(static_cast<unsigned
-                //                long>(this->prev_feat_map.at(j)->size()));
-                //                std::fill(this->prev_feat_idx.at(j).begin(), this->prev_feat_idx.at(j).end(), -1);
                 this->prev_feat_idx.at(j) = initial_prev_feat_idx.at(j);
                 if (this->prev_feat_map.at(j)->cols() > 10) {
                     MatXf tempprev = *(this->prev_feat_map.at(j));
@@ -1159,24 +1164,30 @@ bool LaserOdom::match(const TimeType &stamp) {
                     this->mergeFeatureTracks(j);
                 }
 
+                problem.reset(nullptr);
+
                 ceres::Problem::Options options;
                 options.cost_function_ownership = ceres::DO_NOT_TAKE_OWNERSHIP;
                 options.loss_function_ownership = ceres::DO_NOT_TAKE_OWNERSHIP;
                 options.local_parameterization_ownership = ceres::DO_NOT_TAKE_OWNERSHIP;
                 options.disable_all_safety_checks = false;
-                ceres::Problem problem(options);
+
+                problem = std::make_unique<ceres::Problem>(options);
+
                 /// 7. Build Feature Residuals. todo, reuse problem
-                this->buildResiduals(problem);
+                this->buildResiduals(*problem);
 
                 ceres::Solver::Summary summary;
 
-                if (!this->runOptimization(problem, summary, false))
+                if (!this->runOptimization(*problem, summary))
                     return false;
 
                 keep_merging = summary.initial_cost != summary.final_cost;
             }
         }
     }
+    this->calculateCovariance(*problem);
+
     for (uint32_t feat_id = 0; feat_id < this->N_FEATURES; ++feat_id) {
         auto &dest = this->feature_tracks.at(feat_id);
         auto &src = this->volatile_feature_tracks.at(feat_id);
@@ -1260,11 +1271,11 @@ void LaserOdom::buildResiduals(ceres::Problem &problem) {
         }
     }
     // add prior factor on starting velocity
-    //    if (this->prior_twist.sum() != 0.0) {
-    //        Mat6 info = (this->twist_covar + this->prev_delta_t * this->param.Qc).inverse().sqrt();
-    //        this->costs.emplace_back(new ceres::NormalPrior(info, this->prior_twist));
-    //        problem.AddResidualBlock(this->costs.back().get(), nullptr, this->cur_trajectory.front().vel.data());
-    //    }
+    if (this->prior_twist.sum() != 0.0) {
+        Mat6 info = (this->twist_covar + this->prev_delta_t * this->param.Qc).inverse().sqrt();
+        this->costs.emplace_back(new ceres::NormalPrior(info, this->prior_twist));
+        problem.AddResidualBlock(this->costs.back().get(), nullptr, this->cur_trajectory.front().vel.data());
+    }
 
     // finally, just fix the first pose
     problem.SetParameterBlockConstant(this->cur_trajectory.front().pose.storage.data());

@@ -171,7 +171,8 @@ class LaserOdom {
     Vec<std::shared_ptr<ceres::CostFunction>> costs;
     std::vector<std::shared_ptr<ceres::LocalParameterization>> local_params;
     std::vector<std::shared_ptr<ceres::LossFunction>> loss_functions;
-    bool runOptimization(ceres::Problem &problem, ceres::Solver::Summary &summary, bool calculate_covariance);
+    bool runOptimization(ceres::Problem &problem, ceres::Solver::Summary &summary);
+    void calculateCovariance(ceres::Problem &problem);
 
     template<typename Derived, typename Derived1, typename Derived2>
     bool findLineCorrespondences(std::vector<uint32_t> &matches, std::vector<int> &used_points,
