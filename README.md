@@ -43,44 +43,49 @@ Some earlier versions may work, but are not tested.
 
 Building libwave requires CMake 3.2 and a C++11 compiler (tested on GCC 5.4).
 
-## Install
+### Installing dependencies
+The basic set of dependencies can be installed with the Ubuntu package manager
+using the command
 
-To build libwave from source (and install some dependencies) run the following
-script in the terminal, in the directory you wish to contain the `libwave`
-source directory:
+    sudo apt-get install libboost-dev libyaml-cpp-dev libeigen3-dev \
+    build-essential cmake
 
-    curl -L https://git.io/vyKXR > install.bash && bash install.bash
+For convenience, scripts to install other dependencies on Ubuntu 16.04 are
+provided in `scripts/install`. **Note**: the scripts are not tested on a wide
+variety of systems. They may be incompatible with other packages installed on
+your system.
 
-The above script performs the following tasks:
+## Install from source
 
-    # clone repo with submodules
+Clone the repo with submodules:
+
     git clone --recursive https://github.com/wavelab/libwave.git
+
+Install the dependencies required for the modules you want to build, as
+described above. Then build using CMake:
+
     cd libwave
-
-    # install dependencies
-    bash scripts/install/install_deps.bash
-
-    # compile libwave
     mkdir -p build
     cd build
     cmake ..
     make -j8
+    
+By default, all libraries whose dependencies are found will be built. Individual
+libraries can be disabled using CMake options. For example,
 
-Install libwave with `make install`. Alternatively, you can enable the
+    cmake .. -DBUILD_wave_vision=OFF
+    
+will disable building `wave_vision`.
+
+Install libwave by running `make install`. Alternatively, you can enable the
 `EXPORT_BUILD` option in CMake, which will make the libwave build directory 
 searchable by CMake without installation.
 
 
-**Note**: dependency install scripts targeting Ubuntu 16.04 are provided for
-convenience, and are not tested on a wide variety of systems. They may be
-incompatible with other packages installed on your system. Additional scripts
-which install GeographicLib, gtsam, and OpenCV 3 are provided in
-`scripts/install`.
-
 **Known issue with OpenCV**: `wave_vision` may
 [fail to build](https://github.com/wavelab/libwave/issues/267) if OpenCV 2 is
 installed in the default system directory on Ubuntu 16.04 (and OpenCV 3 is
-installed elsewhere). The recommended solution is to remove OpenCV 2 via
+installed elsewhere). A workaround is to remove OpenCV 2 via
 `sudo apt remove libopencv-dev`.
 
 
