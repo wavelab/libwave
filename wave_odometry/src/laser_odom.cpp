@@ -38,7 +38,7 @@ LaserOdom::LaserOdom(const LaserOdomParams params,
     this->undis_features.resize(this->N_FEATURES);
     this->undis_candidates_cur.resize(this->N_FEATURES);
     this->undis_candidates_prev.resize(this->N_FEATURES);
-    this->volatile_feature_tracks.resize(this->N_FEATURES);
+//    this->volatile_feature_tracks.resize(this->N_FEATURES);
     this->cm1_feat_pts_size.resize(this->N_FEATURES);
 
     this->cur_scan.resize(n_ring);
@@ -208,7 +208,25 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
                 this->output_condition.notify_one();
             }
         }
+        for (uint32_t feat_id = 0; feat_id < this->feature_tracks.size(); ++feat_id) {
+            for (const auto &track : this->feature_tracks.at(feat_id)) {
+                for (const auto &map : track.mapping) {
+                    if (map.pt_idx >= this->feat_pts.at(map.scan_idx).at(feat_id).size()) {
+                        throw std::runtime_error("A track somehow has an invalid feature id");
+                    }
+                }
+            }
+        }
         this->rollover(stamp);
+        for (uint32_t feat_id = 0; feat_id < this->feature_tracks.size(); ++feat_id) {
+            for (const auto &track : this->feature_tracks.at(feat_id)) {
+                for (const auto &map : track.mapping) {
+                    if (map.pt_idx >= this->feat_pts.at(map.scan_idx).at(feat_id).size()) {
+                        throw std::runtime_error("A track somehow has an invalid feature id");
+                    }
+                }
+            }
+        }
         std::fill(this->counters.begin(), this->counters.end(), 0);
     }
 
@@ -256,12 +274,12 @@ void LaserOdom::updateTracks() {
                 }
             }
             std::swap(track.mapping, updated_mapping);
-            if (reduce_length && track.length == 0) {
+            if (updated_mapping.empty()) {
                 continue;
             }
             if (reduce_length) {
                 --(track.length);
-                //                track.optimize = false;
+                // track.optimize = false;
             }
             track.geometry.block<3, 1>(0, 0) =
               transform.storage.block<3, 3>(0, 0).transpose() * track.geometry.block<3, 1>(0, 0);
@@ -720,12 +738,13 @@ void LaserOdom::createNewFeatureTracks(const Eigen::MatrixXi &idx,
                 track.geometry = geometry;
                 track.length = 1;
                 track.jacs = &(this->ptT_jacobians.at(feat_id));
-                track.mapping.emplace_back(j, this->scan_stampsf.size() - 1);
 
-                // now add points from previous scan
+                // add points from previous scan
                 for (auto elem : matches) {
                     track.mapping.emplace_back(elem, this->scan_stampsf.size() - 2);
                 }
+                // add point from current scan
+                track.mapping.emplace_back(j, this->scan_stampsf.size() - 1);
             }
         }
     }
@@ -754,10 +773,10 @@ void LaserOdom::createNewFeatureTracks(const Eigen::MatrixXi &idx,
               matches, this->cur_feat_idx.at(feat_id), nn_idx.col(i), dists.col(i), *(this->cur_feat_map.at(feat_id)));
         }
         if (success) {
-            // check that one of the matches is one of the original query points.
-            if (std::find(matches.begin(), matches.end(), candidate_track.mapping.front().pt_idx) == matches.end()) {
-                continue;
-            }
+//            // check that one of the matches is one of the original query points.
+//            if (std::find(matches.begin(), matches.end(), candidate_track.mapping.front().pt_idx) == matches.end()) {
+//                continue;
+//            }
             Vec6 geometry;
             this->createNewGeometry(*(this->cur_feat_map.at(feat_id)), matches, residual_type, geometry);
             bool add_track = false;
@@ -786,8 +805,11 @@ void LaserOdom::createNewFeatureTracks(const Eigen::MatrixXi &idx,
     // For any successes, add to feature points and to feature tracks
     for (const auto &candidate_track : candidate_tracks) {
         if (candidate_track.mapping.size() > 4) {
-            this->volatile_feature_tracks.at(feat_id).emplace_back(candidate_track);
-            auto &track_ref = this->volatile_feature_tracks.at(feat_id).back();
+//            this->volatile_feature_tracks.at(feat_id).emplace_back(candidate_track);
+//            auto &track_ref = this->volatile_feature_tracks.at(feat_id).back();
+
+            this->feature_tracks.at(feat_id).emplace_back(candidate_track);
+            auto &track_ref = this->feature_tracks.at(feat_id).back();
 
             for (auto &map : track_ref.mapping) {
                 if (map.scan_idx + 1 == this->scan_stampsf.size()) {
@@ -797,8 +819,10 @@ void LaserOdom::createNewFeatureTracks(const Eigen::MatrixXi &idx,
 
                     new_feat_points.slice(offsets_new, extents) =
                       this->cur_feature_candidates.at(feat_id).slice(offsets_candidate, extents);
+//                    this->cur_feat_idx.at(feat_id).at(map.pt_idx) =
+//                      static_cast<int>(this->volatile_feature_tracks.at(feat_id).size() - 1);
                     this->cur_feat_idx.at(feat_id).at(map.pt_idx) =
-                      static_cast<int>(this->volatile_feature_tracks.at(feat_id).size() - 1);
+                            static_cast<int>(this->feature_tracks.at(feat_id).size() - 1);
                     map.pt_idx = static_cast<uint32_t>(new_feat_cnt + cur_offset);
 
                     auto bnd = std::upper_bound(this->trajectory_stamps.begin(),
@@ -815,8 +839,10 @@ void LaserOdom::createNewFeatureTracks(const Eigen::MatrixXi &idx,
 
                     prev_new_feat_points.slice(offsets_new, extents) =
                       this->prev_feature_candidates.at(feat_id).slice(offsets_candidate, extents);
+//                    this->prev_feat_idx.at(feat_id).at(map.pt_idx) =
+//                      static_cast<int>(this->volatile_feature_tracks.at(feat_id).size() - 1);
                     this->prev_feat_idx.at(feat_id).at(map.pt_idx) =
-                      static_cast<int>(this->volatile_feature_tracks.at(feat_id).size() - 1);
+                            static_cast<int>(this->feature_tracks.at(feat_id).size() - 1);
                     map.pt_idx = static_cast<uint32_t>(prev_new_feat_cnt + prev_offset);
 
                     float pttime =
@@ -850,29 +876,40 @@ void LaserOdom::createNewFeatureTracks(const Eigen::MatrixXi &idx,
 }
 
 void LaserOdom::clearVolatileTracks() {
-    for (auto &tracks : this->volatile_feature_tracks) {
-        tracks.clear();
-    }
+//    for (auto &tracks : this->volatile_feature_tracks) {
+//        tracks.clear();
+//    }
     auto last_scan = this->feat_pts.size() - 1;
     for (uint32_t feat_id = 0; feat_id < this->feature_tracks.size(); ++feat_id) {
-        for (uint32_t i = 0; i < this->feature_tracks.at(feat_id).size(); ++i) {
-            auto &track = this->feature_tracks.at(feat_id).at(i);
+        auto &tracks = this->feature_tracks.at(feat_id);
+        for (int i = 0; i < tracks.size(); ++i) {
+            auto &track = tracks.at(i);
             auto iter = track.mapping.rbegin();
             if (iter->scan_idx < last_scan) {
                 continue;
             }
-            while (iter->scan_idx == last_scan) {
+            while (iter != track.mapping.rend() && iter->scan_idx == last_scan) {
                 ++iter;
             }
+
             long dist = iter - track.mapping.rbegin();
             unsigned long new_size = track.mapping.size() - dist;
             track.mapping.resize(new_size);
             track.length -= 1;
+            // If the length is zero, remove the track
+            if (track.length == 0) {
+                if (i + 1 != tracks.size()) {
+                    std::swap(track, tracks.at(tracks.size() - 1));
+                    --i;
+                }
+                tracks.resize(tracks.size() - 1);
+            }
         }
     }
     for (uint32_t feat_id = 0; feat_id < this->feat_pts.back().size(); ++feat_id) {
         auto &pts_cur = this->feat_pts.back().at(feat_id);
         pts_cur.resize(pts_cur.dimension(0), 0);
+
         auto &pts_prev = (this->feat_pts.rbegin() + 1)->at(feat_id);
         Eigen::Tensor<float, 2> temp = pts_prev.slice(ar2{0, 0}, ar2{4, this->cm1_feat_pts_size.at(feat_id)});
         std::swap(temp, pts_prev);
@@ -904,7 +941,7 @@ void LaserOdom::calculatePlaneSimilarity(const wave::Vec6 &geo1,
 
 void LaserOdom::mergeFeatureTracks(uint32_t feat_id) {
     this->mergeFeatureTracksInternal(feat_id, this->feature_tracks.at(feat_id));
-    this->mergeFeatureTracksInternal(feat_id, this->volatile_feature_tracks.at(feat_id));
+//    this->mergeFeatureTracksInternal(feat_id, this->volatile_feature_tracks.at(feat_id));
 }
 
 // todo This is a greedy approach. Could try using reciprocal correspondences
@@ -1077,6 +1114,16 @@ bool LaserOdom::match(const TimeType &stamp) {
         initial_prev_feat_idx.at(feat_id) = this->prev_feat_idx.at(feat_id);
     }
 
+    for (uint32_t feat_id = 0; feat_id < this->feature_tracks.size(); ++feat_id) {
+        for (const auto &track : this->feature_tracks.at(feat_id)) {
+            for (const auto &map : track.mapping) {
+                if (map.pt_idx >= this->feat_pts.at(map.scan_idx).at(feat_id).size()) {
+                    throw std::runtime_error("A track somehow has an invalid feature id");
+                }
+            }
+        }
+    }
+
     for (int op = 0; op < this->param.opt_iters; op++) {
         this->clearVolatileTracks();
         if (op > 0) {
@@ -1179,6 +1226,16 @@ bool LaserOdom::match(const TimeType &stamp) {
 
                 ceres::Solver::Summary summary;
 
+                for (uint32_t feat_id = 0; feat_id < this->feature_tracks.size(); ++feat_id) {
+                    for (const auto &track : this->feature_tracks.at(feat_id)) {
+                        for (const auto &map : track.mapping) {
+                            if (map.pt_idx >= this->feat_pts.at(map.scan_idx).at(feat_id).size()) {
+                                throw std::runtime_error("A track somehow has an invalid feature id");
+                            }
+                        }
+                    }
+                }
+
                 if (!this->runOptimization(*problem, summary))
                     return false;
 
@@ -1190,11 +1247,11 @@ bool LaserOdom::match(const TimeType &stamp) {
 //        this->calculateCovariance(*problem);
 //    }
 
-    for (uint32_t feat_id = 0; feat_id < this->N_FEATURES; ++feat_id) {
-        auto &dest = this->feature_tracks.at(feat_id);
-        auto &src = this->volatile_feature_tracks.at(feat_id);
-        dest.insert(dest.end(), std::make_move_iterator(src.begin()), std::make_move_iterator(src.end()));
-    }
+//    for (uint32_t feat_id = 0; feat_id < this->N_FEATURES; ++feat_id) {
+//        auto &dest = this->feature_tracks.at(feat_id);
+//        auto &src = this->volatile_feature_tracks.at(feat_id);
+//        dest.insert(dest.end(), std::make_move_iterator(src.begin()), std::make_move_iterator(src.end()));
+//    }
     return true;
 }
 
@@ -1217,6 +1274,14 @@ void LaserOdom::trackResiduals(ceres::Problem &problem, uint32_t f_idx, VecE<Fea
             problem.SetParameterBlockConstant(track.geometry.data());
         }
         for (uint32_t p_idx = 0; p_idx < track.mapping.size(); ++p_idx) {
+            if (track.mapping.at(p_idx).pt_idx >= this->feat_pts.at(track.mapping.at(p_idx).scan_idx).at(f_idx).size()) {
+                throw std::runtime_error("point index too big for feature points");
+            }
+
+            if (track.mapping.at(p_idx).pt_idx >= this->feat_pts_T.at(track.mapping.at(p_idx).scan_idx).at(f_idx).size()) {
+                throw std::runtime_error("point index too big for feature points");
+            }
+
             this->loss_functions.emplace_back(new BisquareLoss(this->param.robust_param));
             if (f_idx == 2) {
                 this->costs.emplace_back(
@@ -1248,7 +1313,7 @@ void LaserOdom::buildResiduals(ceres::Problem &problem) {
               std::make_shared<Eigen::Map<MatXf>>(cfeat.data(), cfeat.dimension(0), cfeat.dimension(1));
         }
         this->trackResiduals(problem, f_idx, this->feature_tracks.at(f_idx));
-        this->trackResiduals(problem, f_idx, this->volatile_feature_tracks.at(f_idx));
+//        this->trackResiduals(problem, f_idx, this->volatile_feature_tracks.at(f_idx));
     }
     for (uint32_t state_id = 0; state_id < this->cur_trajectory.size(); ++state_id) {
         auto &state = this->cur_trajectory[state_id];

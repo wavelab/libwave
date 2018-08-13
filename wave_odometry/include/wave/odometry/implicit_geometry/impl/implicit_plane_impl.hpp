@@ -16,6 +16,10 @@ bool ImplicitPlaneResidual<states...>::Evaluate(double const *const *parameters,
     Vec3 diff = pt - plane.block<3, 1>(3, 0);
     error = diff.transpose() * plane.block<3, 1>(0, 0);
 
+    if (std::isnan(residuals[0])) {
+        throw std::runtime_error("nan in residual");
+    }
+
     if (jacobians) {
         if (jacobians[0]) {
             Eigen::Map<Eigen::Matrix<double, 1, 6, Eigen::RowMajor>> plane_jac(jacobians[0]);

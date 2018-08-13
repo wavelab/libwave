@@ -253,12 +253,12 @@ class LaserOdom {
     Vec<long> cm1_feat_pts_size;
 
     Vec<VecE<FeatureTrack>> feature_tracks;
-
-    /** This structure holds feature tracks formed between the current and previous scan
-     * They are refound after each optimization iteration. After all iterations (or stopping criteria met)
-     * any remaining tracks are added to feature tracks.
-     */
-    Vec<VecE<FeatureTrack>> volatile_feature_tracks;
+//
+//    /** This structure holds feature tracks formed between the current and previous scan
+//     * They are refound after each optimization iteration. After all iterations (or stopping criteria met)
+//     * any remaining tracks are added to feature tracks.
+//     */
+//    Vec<VecE<FeatureTrack>> volatile_feature_tracks;
 
 };
 

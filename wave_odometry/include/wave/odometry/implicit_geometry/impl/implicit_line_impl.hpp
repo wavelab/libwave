@@ -22,6 +22,10 @@ bool ImplicitLineResidual<states...>::Evaluate(double const *const *parameters, 
     double dp = (normal.transpose() * diff)(0);
     error = diff - dp * normal;
 
+    if (std::isnan(residuals[0])) {
+        throw std::runtime_error("nan in residual");
+    }
+
     if (jacobians) {
         Eigen::Matrix<double, 3, 3> del_e_del_diff;
         del_e_del_diff = Mat3::Identity() - normal * normal.transpose();
