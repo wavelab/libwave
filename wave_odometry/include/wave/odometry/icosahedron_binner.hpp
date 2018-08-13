@@ -16,7 +16,7 @@ class IcosahedronBinner {
  public:
     IcosahedronBinner();
 
-    /*
+    /**
      * Zeros out bin counters;
      */
     void clear();
@@ -30,6 +30,14 @@ class IcosahedronBinner {
      * Bins unit_vector if the number of elements in that bin is less than or equal to limit
      */
     bool bin(const Vec3 &unit_vector, const int limit);
+
+    const MatX& getBinVectors() {
+        return this->bin_vectors;
+    }
+
+    const std::vector<int>& getBinCounters() {
+        return this->bin_counters;
+    }
 
  private:
     unsigned long getBinIndex(const Vec3 &unit_vector);

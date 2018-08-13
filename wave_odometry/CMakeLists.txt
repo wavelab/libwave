@@ -56,6 +56,11 @@ IF(BUILD_TESTING)
     TARGET_LINK_LIBRARIES(callback_tests
             ${PROJECT_NAME})
 
+    WAVE_ADD_TEST(binner_tests
+            tests/icosahedron_binner_test.cpp)
+    TARGET_LINK_LIBRARIES(binner_tests
+            ${PROJECT_NAME})
+
     WAVE_ADD_BENCHMARK(feature_benchmark
             tests/feature_extractor/feature_extractor_benchmark.cpp)
     TARGET_LINK_LIBRARIES(feature_benchmark
