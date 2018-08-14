@@ -41,6 +41,7 @@
 #include "wave/geometry/transformation.hpp"
 #include "wave/kinematics/constant_velocity_gp_prior.hpp"
 #include "wave/odometry/feature_extractor.hpp"
+#include "wave/odometry/icosahedron_binner.hpp"
 #include "wave/odometry/PointXYZIR.hpp"
 #include "wave/odometry/PointXYZIT.hpp"
 #include "wave/odometry/odometry_types.hpp"
@@ -253,13 +254,8 @@ class LaserOdom {
     Vec<long> cm1_feat_pts_size;
 
     Vec<VecE<FeatureTrack>> feature_tracks;
-//
-//    /** This structure holds feature tracks formed between the current and previous scan
-//     * They are refound after each optimization iteration. After all iterations (or stopping criteria met)
-//     * any remaining tracks are added to feature tracks.
-//     */
-//    Vec<VecE<FeatureTrack>> volatile_feature_tracks;
 
+    IcosahedronBinner binner;
 };
 
 }  // namespace wave
