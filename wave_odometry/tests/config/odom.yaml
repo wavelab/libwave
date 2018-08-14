@@ -2,10 +2,10 @@
 Qc:
   rows: 6
   cols: 6
-  data: [0.001, 0, 0, 0, 0, 0,
-         0, 0.001, 0, 0, 0, 0,
+  data: [0.1, 0, 0, 0, 0, 0,
+         0, 0.1, 0, 0, 0, 0,
          0, 0, 1, 0, 0, 0,
-         0, 0, 0, 10, 0, 0,
+         0, 0, 0, 100, 0, 0,
          0, 0, 0, 0, 10, 0,
          0, 0, 0, 0, 0, 10]
 
@@ -53,6 +53,9 @@ max_planar_ang_threshold: 0.1  # 1 - cos(theta)
 max_linear_dist_threshold: 3
 max_linear_ang_threshold: 0.025
 ang_scaling_param: 10
+
+#When thinning out feature tracks, how many in each direction to allow
+icosahedral_bin_limit: 8
 
 #  Setting flags
 only_extract_features: false   #  If set, no transforms are calculated

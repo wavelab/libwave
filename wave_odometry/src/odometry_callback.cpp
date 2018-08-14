@@ -80,7 +80,6 @@ void OdometryCallback::evaluateJacobians() {
         this->J_logmaps.at(i) = Transformation<>::SE3ApproxInvLeftJacobian(this->pose_diff.at(i));
     }
 
-#pragma omp parallel for
     for (uint32_t scan_idx = 0; scan_idx < this->feat_pts->size(); ++scan_idx) {
         for (uint32_t feat_idx = 0; feat_idx < this->feat_pts->at(scan_idx).size(); ++feat_idx) {
             auto &intfac = this->interp_factors.at(scan_idx).at(feat_idx);
@@ -91,6 +90,7 @@ void OdometryCallback::evaluateJacobians() {
             pt_jacs.at(1) = Eigen::Tensor<double, 3>(3, 6, pts.dimension(1));
             pt_jacs.at(2) = Eigen::Tensor<double, 3>(3, 12, pts.dimension(1));
             pt_jacs.at(3) = Eigen::Tensor<double, 3>(3, 6, pts.dimension(1));
+#pragma omp parallel for
             for (uint32_t pt_cnt = 0; pt_cnt < pts.dimension(1); ++pt_cnt) {
 
                 /// need to find the state indices based on point timestamps
@@ -122,7 +122,6 @@ void OdometryCallback::evaluateJacobians() {
                         Tpts(1, pt_cnt), -Tpts(0, pt_cnt), 0, 0, 0, 1;
 
                 /// jacobian for first pose
-                MatX debug = Ad_inc_twist - intfac(1, pt_cnt) * J_inc_twist * this->J_logmaps.at(prev_idx) * Ad_twist;
                 jacobian.block<3, 6>(0, 0) = J_pt * (Ad_inc_twist - intfac(1, pt_cnt) * J_inc_twist * this->J_logmaps.at(prev_idx) * Ad_twist);
                 pt_jacs.at(0).chip(pt_cnt, 2) = t3_12map;
                 /// jacobian for first twist

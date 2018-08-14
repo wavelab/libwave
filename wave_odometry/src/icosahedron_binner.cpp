@@ -12,7 +12,7 @@ IcosahedronBinner::IcosahedronBinner() {
     this->bin_vectors.col(0) << 0.0, 0.0, 1.0;
     this->bin_vectors.col(1) = -this->bin_vectors.col(0);
 
-    this->bin_vectors.col(2) << 2.0 / std::sqrt(5), 0.0, -(2.0 /(gr2 + 1.0) - 1);
+    this->bin_vectors.col(2) << 2.0 / std::sqrt(5), 0.0, 1.0 / sqrt(5.0);
     this->bin_vectors.col(3) = -this->bin_vectors.col(2);
 
     this->bin_vectors.col(4) << 1.0 / (gr2 + 1.0), 1.0 / std::sqrt(gr_2 + 1.0), 1.0 / sqrt(5.0);
@@ -21,13 +21,14 @@ IcosahedronBinner::IcosahedronBinner() {
     this->bin_vectors.col(6) << 1.0 / (gr2 + 1.0), -1.0 / std::sqrt(gr_2 + 1.0), 1.0 / sqrt(5.0);
     this->bin_vectors.col(7) = -this->bin_vectors.col(6);
 
-    this->bin_vectors.col(8) << -1.0 / std::sqrt(gr_2 + 1.0), -1.0 / (gr2 + 1.0), 1.0 / sqrt(5.0);
+    this->bin_vectors.col(8) << -1.0 / (gr_2 + 1.0), -1.0 / std::sqrt(gr2 + 1.0), 1.0 / sqrt(5.0);
     this->bin_vectors.col(9) = -this->bin_vectors.col(8);
 
-    this->bin_vectors.col(10) << -1.0 / std::sqrt(gr_2 + 1.0), 1.0 / (gr2 + 1.0), 1.0 / sqrt(5.0);
+    this->bin_vectors.col(10) << -1.0 / (gr_2 + 1.0), 1.0 / std::sqrt(gr2 + 1.0), 1.0 / sqrt(5.0);
     this->bin_vectors.col(11) = -this->bin_vectors.col(10);
 
-    this->nn_search = Nabo::NNSearchD::createKDTreeLinearHeap(this->bin_vectors);
+    Nabo::Parameters additional_parameters("bucketSize", unsigned(2));
+    this->nn_search = Nabo::NNSearchD::createKDTreeLinearHeap(this->bin_vectors, 3, 0, additional_parameters);
 
     this->bin_counters.resize(static_cast<unsigned long>(this->bin_vectors.cols()));
     this->clear();

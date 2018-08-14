@@ -110,6 +110,8 @@ struct LaserOdomParams {
     float max_linear_ang_threshold = 0.025;
     float ang_scaling_param = 10;
 
+    int icosahedral_bin_limit = 5;
+
     // Setting flags
     bool only_extract_features = false;   // If set, no transforms are calculated
     bool use_weighting = false;           // If set, pre-whiten residuals
@@ -202,7 +204,13 @@ class LaserOdom {
     void calculatePlaneSimilarity(const Vec6 &geo1, const Vec6 &geo2, float &dist_cost, float &dir_cost);
 
     void mergeFeatureTracks(uint32_t feat_id);
-    void mergeFeatureTracksInternal(uint32_t feat_id, VecE <FeatureTrack> &track_list);
+
+    /**
+     * Removes a portion of feature tracks by preferring tracks with more points,
+     * and limiting amount of redundant tracks
+     * @param feat_id
+     */
+    void thinFeatureTracks(uint32_t feat_id);
 
     void undistort();
 

@@ -46,6 +46,7 @@ void LoadParameters(const std::string &path, const std::string &filename, wave::
     parser.addParam("max_linear_dist_threshold", &(params.max_linear_dist_threshold));
     parser.addParam("max_linear_ang_threshold", &(params.max_linear_ang_threshold));
     parser.addParam("ang_scaling_param", &(params.ang_scaling_param));
+    parser.addParam("icosahedral_bin_limit", &(params.icosahedral_bin_limit));
 
     parser.addParam("only_extract_features", &(params.only_extract_features));
     parser.addParam("use_weighting", &(params.use_weighting));
@@ -112,14 +113,12 @@ void setupFeatureParameters(wave::FeatureExtractorParams &param) {
     param.feature_definitions.emplace_back(wave::FeatureDefinition{edge_int_low, &(param.n_int_edge)});
 }
 
-void updateVisualizer(const wave::LaserOdom *odom, wave::PointCloudDisplay *display, const wave::VecE<wave::PoseVelStamped> *ground_truth,
-        std::mutex *plot_mutex) {
-    static wave::VecE<wave::PoseVelStamped> odom_trajectory;
-    //update trajectory from odometry
+void updateVisualizer(const wave::LaserOdom *odom, wave::PointCloudDisplay *display, wave::VecE<wave::PoseVelStamped> *odom_trajectory) {
+
     bool first_trajectory = true;
     wave::T_TYPE T0X;
     for (const wave::PoseVelStamped &val : odom->undistort_trajectory) {
-        auto iter = std::find_if(odom_trajectory.begin(), odom_trajectory.end(), [&val](const wave::PoseVelStamped &item){
+        auto iter = std::find_if(odom_trajectory->begin(), odom_trajectory->end(), [&val](const wave::PoseVelStamped &item){
             auto diff = item.stamp - val.stamp;
             //todo figure out a way to avoid floating point time and remove this workaround
             if (diff > std::chrono::seconds(0)) {
@@ -128,89 +127,20 @@ void updateVisualizer(const wave::LaserOdom *odom, wave::PointCloudDisplay *disp
                 return diff > std::chrono::microseconds(-10);
             }
         });
-        if (iter == odom_trajectory.end()) {
-            odom_trajectory.emplace_back(val);
+        if (iter == odom_trajectory->end()) {
+            odom_trajectory->emplace_back(val);
             if (!first_trajectory) {
-                odom_trajectory.back().pose = T0X * odom_trajectory.back().pose;
+                odom_trajectory->back().pose = T0X * odom_trajectory->back().pose;
             }
         } else {
             if (first_trajectory) {
                 T0X = iter->pose;
                 first_trajectory = false;
             }
-            auto index = (unsigned long) (iter - odom_trajectory.begin());
-            odom_trajectory.at(index) = val;
-            odom_trajectory.at(index).pose = T0X * odom_trajectory.at(index).pose;
+            auto index = (unsigned long) (iter - odom_trajectory->begin());
+            odom_trajectory->at(index) = val;
+            odom_trajectory->at(index).pose = T0X * odom_trajectory->at(index).pose;
         }
-    }
-
-    static std::vector<double> ground_truth_x, ground_truth_y, ground_truth_z, ground_truth_stamp,
-            ground_truth_vx, ground_truth_vy, ground_truth_vz, ground_truth_wx, ground_truth_wy, ground_truth_wz;
-    if (ground_truth_x.empty()) {
-        auto start = ground_truth->front().stamp;
-        for (const auto &traj : *ground_truth) {
-            ground_truth_x.emplace_back(traj.pose.storage(0,3));
-            ground_truth_y.emplace_back(traj.pose.storage(1,3));
-            ground_truth_z.emplace_back(traj.pose.storage(2,3));
-            ground_truth_vx.emplace_back(traj.vel(3));
-            ground_truth_vy.emplace_back(traj.vel(4));
-            ground_truth_vz.emplace_back(traj.vel(5));
-            ground_truth_wx.emplace_back(traj.vel(0));
-            ground_truth_wy.emplace_back(traj.vel(1));
-            ground_truth_wz.emplace_back(traj.vel(2));
-            ground_truth_stamp.emplace_back(std::chrono::duration_cast<f64_seconds>(traj.stamp - start).count());
-        }
-    }
-
-    std::vector<double> odom_x, odom_y, odom_z, odom_stamp, odom_vx, odom_vy, odom_vz, odom_wx, odom_wy, odom_wz;
-    auto start = odom_trajectory.front().stamp;
-    for(const auto &traj : odom_trajectory) {
-        odom_x.emplace_back(traj.pose.storage(0,3));
-        odom_y.emplace_back(traj.pose.storage(1,3));
-        odom_z.emplace_back(traj.pose.storage(2,3));
-        odom_vx.emplace_back(traj.vel(3));
-        odom_vy.emplace_back(traj.vel(4));
-        odom_vz.emplace_back(traj.vel(5));
-        odom_wx.emplace_back(traj.vel(0));
-        odom_wy.emplace_back(traj.vel(1));
-        odom_wz.emplace_back(traj.vel(2));
-        odom_stamp.emplace_back(std::chrono::duration_cast<f64_seconds>(traj.stamp - start).count());
-    }
-
-    {
-        std::unique_lock<std::mutex> lk(*plot_mutex);
-        plot::clf();
-        plot::subplot(2,2,1);
-        plot::named_plot("Ground Truth", ground_truth_x, ground_truth_y);
-        plot::named_plot("Estimate", odom_x, odom_y);
-        plot::legend();
-
-        plot::subplot(2,2,2);
-        plot::named_plot("Ground Truth X(m)", ground_truth_stamp, ground_truth_x);
-        plot::named_plot("Ground Truth Y(m)", ground_truth_stamp, ground_truth_y);
-        plot::named_plot("Ground Truth Z(m)", ground_truth_stamp, ground_truth_z);
-        plot::named_plot("Odom X(m)", odom_stamp, odom_x);
-        plot::named_plot("Odom Y(m)", odom_stamp, odom_y);
-        plot::named_plot("Odom Z(m)", odom_stamp, odom_z);
-        plot::legend();
-
-        plot::subplot(2,2,3);
-        plot::named_plot("Ground Truth wx(rad/s)", ground_truth_stamp, ground_truth_wx);
-        plot::named_plot("Ground Truth wy(rad/s)", ground_truth_stamp, ground_truth_wy);
-        plot::named_plot("Ground Truth wz(rad/s)", ground_truth_stamp, ground_truth_wz);
-        plot::named_plot("Odom wx(rad/s)", odom_stamp, odom_wx);
-        plot::named_plot("Odom wy(rad/s)", odom_stamp, odom_wy);
-        plot::named_plot("Odom wz(rad/s)", odom_stamp, odom_wz);
-        plot::legend();
-
-        plot::subplot(2,2,4);
-        plot::named_plot("Ground Truth Vx(m/s)", ground_truth_stamp, ground_truth_vx);
-        plot::named_plot("Ground Truth Vy(m/s)", ground_truth_stamp, ground_truth_vy);
-        plot::named_plot("Ground Truth Vz(m/s)", ground_truth_stamp, ground_truth_vz);
-        plot::named_plot("Odom Vx(m/s)", odom_stamp, odom_vx);
-        plot::named_plot("Odom Vy(m/s)", odom_stamp, odom_vy);
-        plot::named_plot("Odom Vz(m/s)", odom_stamp, odom_vz);
-        plot::legend();
     }
 
     int ptcld_id = 100000;
@@ -247,9 +177,6 @@ void updateVisualizer(const wave::LaserOdom *odom, wave::PointCloudDisplay *disp
         pcl::PointCloud<pcl::PointXYZI>::Ptr display_cld = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
         for(const auto &track : odom->undis_tracks.at(i)) {
             if (i == 2) {
-                if (track.mapping.size() < 7) {
-                    continue;
-                }
                 pcl::PointXYZ pt1, pt2;
                 Eigen::Map<wave::Vec3f> m1(pt1.data), m2(pt2.data);
                 m1 = track.geometry.block<3, 1>(3,0).cast<float>();
@@ -258,9 +185,6 @@ void updateVisualizer(const wave::LaserOdom *odom, wave::PointCloudDisplay *disp
                 display->addSquare(pt1, pt2, sidelength, id, false, viewport_id);
                 ++id;
             } else {
-                if (track.mapping.size() < 5) {
-                    continue;
-                }
                 pcl::PointXYZ pt1, pt2;
                 Eigen::Map<wave::Vec3f> m1(pt1.data), m2(pt2.data);
 
@@ -302,9 +226,76 @@ void updateVisualizer(const wave::LaserOdom *odom, wave::PointCloudDisplay *disp
     *edgecloud2 = odom->undis_candidates_cur.at(1);
     display->addPointcloud(edgecloud2, ptcld_id, false, 4);
     ++ptcld_id;
+}
+
+void plotResults(const wave::VecE<wave::PoseVelStamped> &ground_truth, const wave::VecE<wave::PoseVelStamped> &odom_trajectory) {
+    std::vector<double> ground_truth_x, ground_truth_y, ground_truth_z, ground_truth_stamp,
+            ground_truth_vx, ground_truth_vy, ground_truth_vz, ground_truth_wx, ground_truth_wy, ground_truth_wz;
+    if (ground_truth_x.empty()) {
+        auto start = ground_truth.front().stamp;
+        for (const auto &traj : ground_truth) {
+            ground_truth_x.emplace_back(traj.pose.storage(0,3));
+            ground_truth_y.emplace_back(traj.pose.storage(1,3));
+            ground_truth_z.emplace_back(traj.pose.storage(2,3));
+            ground_truth_vx.emplace_back(traj.vel(3));
+            ground_truth_vy.emplace_back(traj.vel(4));
+            ground_truth_vz.emplace_back(traj.vel(5));
+            ground_truth_wx.emplace_back(traj.vel(0));
+            ground_truth_wy.emplace_back(traj.vel(1));
+            ground_truth_wz.emplace_back(traj.vel(2));
+            ground_truth_stamp.emplace_back(std::chrono::duration_cast<f64_seconds>(traj.stamp - start).count());
+        }
+    }
+
+    std::vector<double> odom_x, odom_y, odom_z, odom_stamp, odom_vx, odom_vy, odom_vz, odom_wx, odom_wy, odom_wz;
+    auto start = odom_trajectory.front().stamp;
+    for(const auto &traj : odom_trajectory) {
+        odom_x.emplace_back(traj.pose.storage(0,3));
+        odom_y.emplace_back(traj.pose.storage(1,3));
+        odom_z.emplace_back(traj.pose.storage(2,3));
+        odom_vx.emplace_back(traj.vel(3));
+        odom_vy.emplace_back(traj.vel(4));
+        odom_vz.emplace_back(traj.vel(5));
+        odom_wx.emplace_back(traj.vel(0));
+        odom_wy.emplace_back(traj.vel(1));
+        odom_wz.emplace_back(traj.vel(2));
+        odom_stamp.emplace_back(std::chrono::duration_cast<f64_seconds>(traj.stamp - start).count());
+    }
+
+    plot::clf();
+    plot::subplot(2,2,1);
+    plot::named_plot("Ground Truth", ground_truth_x, ground_truth_y);
+    plot::named_plot("Estimate", odom_x, odom_y);
+    plot::legend();
+
+    plot::subplot(2,2,2);
+    plot::named_plot("Ground Truth X(m)", ground_truth_stamp, ground_truth_x);
+    plot::named_plot("Ground Truth Y(m)", ground_truth_stamp, ground_truth_y);
+    plot::named_plot("Ground Truth Z(m)", ground_truth_stamp, ground_truth_z);
+    plot::named_plot("Odom X(m)", odom_stamp, odom_x);
+    plot::named_plot("Odom Y(m)", odom_stamp, odom_y);
+    plot::named_plot("Odom Z(m)", odom_stamp, odom_z);
+    plot::legend();
+
+    plot::subplot(2,2,3);
+    plot::named_plot("Ground Truth wx(rad/s)", ground_truth_stamp, ground_truth_wx);
+    plot::named_plot("Ground Truth wy(rad/s)", ground_truth_stamp, ground_truth_wy);
+    plot::named_plot("Ground Truth wz(rad/s)", ground_truth_stamp, ground_truth_wz);
+    plot::named_plot("Odom wx(rad/s)", odom_stamp, odom_wx);
+    plot::named_plot("Odom wy(rad/s)", odom_stamp, odom_wy);
+    plot::named_plot("Odom wz(rad/s)", odom_stamp, odom_wz);
+    plot::legend();
+
+    plot::subplot(2,2,4);
+    plot::named_plot("Ground Truth Vx(m/s)", ground_truth_stamp, ground_truth_vx);
+    plot::named_plot("Ground Truth Vy(m/s)", ground_truth_stamp, ground_truth_vy);
+    plot::named_plot("Ground Truth Vz(m/s)", ground_truth_stamp, ground_truth_vz);
+    plot::named_plot("Odom Vx(m/s)", odom_stamp, odom_vx);
+    plot::named_plot("Odom Vy(m/s)", odom_stamp, odom_vy);
+    plot::named_plot("Odom Vz(m/s)", odom_stamp, odom_vz);
+    plot::legend();
 
     plot::show(true);
-
 }
 
 wave::TimeType parseTime(const std::string &date_time) {
@@ -462,17 +453,6 @@ void fillGroundTruth(wave::VecE<wave::PoseVelStamped> &trajectory, const std::st
     stamp_file.close();
 }
 
-void redrawFigure(std::mutex *plot_mutex, std::atomic_bool *continue_output) {
-    std::this_thread::sleep_for(std::chrono::seconds(5));
-    while (*continue_output) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        {
-            std::unique_lock<std::mutex> lk(*plot_mutex);
-            plot::draw();
-        }
-    }
-}
-
 }
 
 int main(int argc, char** argv) {
@@ -530,17 +510,11 @@ int main(int argc, char** argv) {
         time_end.emplace_back(parseTime(cur_end_stamp));
     }
 
-    wave::VecE<wave::PoseVelStamped> oxt_trajectory;
+    wave::VecE<wave::PoseVelStamped> oxt_trajectory, odom_trajectory;
     fillGroundTruth(oxt_trajectory, data_path);
 
-    std::mutex plot_mutex;
-    std::atomic_bool continue_drawing;
-    continue_drawing.store(true);
-
-    auto func = [&]() {updateVisualizer(&odom, &display, &oxt_trajectory, &plot_mutex);};
+    auto func = [&]() {updateVisualizer(&odom, &display, &odom_trajectory);};
     odom.registerOutputFunction(func);
-
-//    std::thread draw_thread(redrawFigure, &plot_mutex, &continue_drawing);
 
     int pt_index = 0;
 
@@ -548,6 +522,8 @@ int main(int argc, char** argv) {
     pcl::PointCloud<wave::PointXYZIR> ptcloud;
     bool binary_format = false;
     uint16_t ring_index = 0;
+
+    uint32_t scan_count = 0;
     for (auto iter = v.begin(); iter != v.end(); ++iter) {
         fstream cloud_file;
         if (iter->string().substr(iter->string().find_last_of('.') + 1) == "bin") {
@@ -612,14 +588,13 @@ int main(int argc, char** argv) {
                 }
             }
         }
-//        pcl::PointCloud<pcl::PointXYZI>::Ptr viz_cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
-//        pcl::copyPointCloud(ptcloud, *viz_cloud);
-//        display.addPointcloud(viz_cloud, 100100, false, 6);
-//        std::this_thread::sleep_for(diff);
         cloud_file.close();
+        if (++scan_count == 175) {
+            break;
+        }
     }
-//    continue_drawing.store(false);
-//    draw_thread.join();
+    plotResults(oxt_trajectory, odom_trajectory);
+
     display.stopSpin();
     return 0;
 }

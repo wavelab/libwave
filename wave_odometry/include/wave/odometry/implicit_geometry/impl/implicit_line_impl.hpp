@@ -23,7 +23,7 @@ bool ImplicitLineResidual<states...>::Evaluate(double const *const *parameters, 
     error = diff - dp * normal;
 
     if (std::isnan(residuals[0])) {
-        throw std::runtime_error("nan in residual");
+        throw std::runtime_error("nan in line residual, probably due to incorrect point index");
     }
 
     if (jacobians) {

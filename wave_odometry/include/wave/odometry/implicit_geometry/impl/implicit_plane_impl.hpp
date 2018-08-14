@@ -17,7 +17,7 @@ bool ImplicitPlaneResidual<states...>::Evaluate(double const *const *parameters,
     error = diff.transpose() * plane.block<3, 1>(0, 0);
 
     if (std::isnan(residuals[0])) {
-        throw std::runtime_error("nan in residual");
+        throw std::runtime_error("nan in plane residual, probably due to incorrect point index");
     }
 
     if (jacobians) {

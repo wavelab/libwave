@@ -6,7 +6,7 @@ void Transformer::update(const std::vector<PoseVel, Eigen::aligned_allocator<Pos
                          const std::vector<float> &stamps) {
     this->aug_trajectories = trajectory;
     this->traj_stamps = stamps;
-    this->scan_indices.resize((this->traj_stamps.size() - 1)/(this->params.traj_resolution - 1));
+    this->scan_indices.resize((this->traj_stamps.size() - 1) / (this->params.traj_resolution - 1));
     uint32_t n = 0;
     for (auto &val : this->scan_indices) {
         val = n;
@@ -27,13 +27,13 @@ void Transformer::update(const std::vector<PoseVel, Eigen::aligned_allocator<Pos
 
             PoseVel interp;
             T_TYPE::interpolateReduced(this->aug_trajectories.at(i).pose,
-                                this->aug_trajectories.at(i + 1).pose,
-                                this->aug_trajectories.at(i).vel,
-                                this->aug_trajectories.at(i + 1).vel,
-                                hat,
-                                candle,
-                                interp.pose,
-                                &(interp.vel));
+                                       this->aug_trajectories.at(i + 1).pose,
+                                       this->aug_trajectories.at(i).vel,
+                                       this->aug_trajectories.at(i + 1).vel,
+                                       hat,
+                                       candle,
+                                       interp.pose,
+                                       &(interp.vel));
 
             for (auto &idx : this->scan_indices) {
                 if (this->traj_stamps.at(idx) > new_stamp) {
@@ -59,10 +59,11 @@ void Transformer::update(const std::vector<PoseVel, Eigen::aligned_allocator<Pos
           this->aug_trajectories.at(i + 1).vel.cast<float>();
         ++i;
     }
-
 }
 
-void Transformer::transformToStart(const Eigen::Tensor<float, 2> &points, Eigen::Tensor<float, 2> &points_transformed, const uint32_t scan_idx) {
+void Transformer::transformToStart(const Eigen::Tensor<float, 2> &points,
+                                   Eigen::Tensor<float, 2> &points_transformed,
+                                   const uint32_t scan_idx) {
     if (points_transformed.dimension(0) != 3 || points_transformed.dimension(1) != points.dimension(1)) {
         points_transformed.resize(3, points.dimension(1));
     }
@@ -70,7 +71,7 @@ void Transformer::transformToStart(const Eigen::Tensor<float, 2> &points, Eigen:
     Eigen::Map<const MatXf> pt(points.data(), points.dimension(0), points.dimension(1));
     Eigen::Map<MatXf> ptT(points_transformed.data(), points_transformed.dimension(0), points_transformed.dimension(1));
 
-//#pragma omp parallel for
+#pragma omp parallel for
     for (long i = 0; i < points.dimension(1); i++) {
         float pttime = points(3, i);
         if (pttime < 0) {
@@ -80,12 +81,11 @@ void Transformer::transformToStart(const Eigen::Tensor<float, 2> &points, Eigen:
         auto idx = std::lower_bound(this->traj_stamps.begin(), this->traj_stamps.end(), time);
         auto index = static_cast<uint32_t>(idx - this->traj_stamps.begin());
         if (index == this->traj_stamps.size()) {
-            if(time - this->traj_stamps.back() < 0.001f) {
+            if (time - this->traj_stamps.back() < 0.001f) {
                 index -= 2;
             } else {
                 throw std::runtime_error("Invalid stamps in points 1");
             }
-
         }
         if (time < this->traj_stamps.at(index)) {
             if (index == 0) {
@@ -109,7 +109,9 @@ void Transformer::transformToStart(const Eigen::Tensor<float, 2> &points, Eigen:
     }
 }
 
-void Transformer::transformToEnd(const Eigen::Tensor<float, 2> &points, Eigen::Tensor<float, 2> &points_transformed, const uint32_t scan_idx) {
+void Transformer::transformToEnd(const Eigen::Tensor<float, 2> &points,
+                                 Eigen::Tensor<float, 2> &points_transformed,
+                                 const uint32_t scan_idx) {
     if (points_transformed.dimension(0) != 3 || points_transformed.dimension(1) != points.dimension(1)) {
         points_transformed.resize(3, points.dimensions().at(1));
     }
@@ -117,7 +119,7 @@ void Transformer::transformToEnd(const Eigen::Tensor<float, 2> &points, Eigen::T
     Eigen::Map<const MatXf> pt(points.data(), points.dimension(0), points.dimension(1));
     Eigen::Map<MatXf> ptT(points_transformed.data(), points_transformed.dimension(0), points_transformed.dimension(1));
 
-//#pragma omp parallel for
+#pragma omp parallel for
     for (long i = 0; i < points.dimension(1); i++) {
         float time = points(3, i) + this->traj_stamps.at(this->scan_indices.at(scan_idx));
         auto idx = std::lower_bound(this->traj_stamps.begin(), this->traj_stamps.end(), time);
@@ -137,11 +139,12 @@ void Transformer::transformToEnd(const Eigen::Tensor<float, 2> &points, Eigen::T
         Mat34f trans;
         T_TYPE::expMap1st(tan_vec, trans);
         auto &ref = this->aug_trajectories.at(index).pose.storage;
-        auto &final = this->aug_trajectories.back().pose.storage;
+        auto & final = this->aug_trajectories.back().pose.storage;
         ptT.block<3, 1>(0, i).noalias() =
           final.block<3, 3>(0, 0).transpose().cast<float>() *
-          (trans.block<3, 3>(0, 0) * (ref.block<3, 3>(0,0).cast<float>() * pt.block<3, 1>(0, i) + ref.block<3, 1>(0, 3).cast<float>()) +
-           trans.block<3, 1>(0, 3) - final.block<3, 1>(0,3).cast<float>());
+          (trans.block<3, 3>(0, 0) *
+             (ref.block<3, 3>(0, 0).cast<float>() * pt.block<3, 1>(0, i) + ref.block<3, 1>(0, 3).cast<float>()) +
+           trans.block<3, 1>(0, 3) - final.block<3, 1>(0, 3).cast<float>());
     }
 }
 
@@ -163,16 +166,21 @@ void Transformer::calculateInterpolationFactors(
     hat(1, 1) = 1.0f - dT * candle(1, 0) - candle(1, 1);
 }
 
-void
-Transformer::constantTransform(const uint32_t &fromScan, const uint32_t &toScan, const Eigen::Tensor<float, 2> &input,
-                               Eigen::Tensor<float, 2> &output) {
+void Transformer::constantTransform(const uint32_t &fromScan,
+                                    const uint32_t &toScan,
+                                    const Eigen::Tensor<float, 2> &input,
+                                    Eigen::Tensor<float, 2> &output) {
     output.resize(3, input.dimension(1));
 
-    const Mat3f RtT = this->aug_trajectories.at(this->scan_indices.at(toScan)).pose.storage.block<3, 3>(0,0).transpose().cast<float>();
-    const Mat3f Rf = this->aug_trajectories.at(this->scan_indices.at(fromScan)).pose.storage.block<3, 3>(0,0).cast<float>();
+    const Mat3f RtT =
+      this->aug_trajectories.at(this->scan_indices.at(toScan)).pose.storage.block<3, 3>(0, 0).transpose().cast<float>();
+    const Mat3f Rf =
+      this->aug_trajectories.at(this->scan_indices.at(fromScan)).pose.storage.block<3, 3>(0, 0).cast<float>();
 
-    const Vec3f Tt = this->aug_trajectories.at(this->scan_indices.at(toScan)).pose.storage.block<3, 1>(0,3).cast<float>();
-    const Vec3f Tf = this->aug_trajectories.at(this->scan_indices.at(fromScan)).pose.storage.block<3, 1>(0,3).cast<float>();
+    const Vec3f Tt =
+      this->aug_trajectories.at(this->scan_indices.at(toScan)).pose.storage.block<3, 1>(0, 3).cast<float>();
+    const Vec3f Tf =
+      this->aug_trajectories.at(this->scan_indices.at(fromScan)).pose.storage.block<3, 1>(0, 3).cast<float>();
 
     const Eigen::Matrix<float, 3, 3, Eigen::RowMajor> R = RtT * Rf;
     const Vec3f T = RtT * (Tf - Tt);
@@ -185,6 +193,8 @@ Transformer::constantTransform(const uint32_t &fromScan, const uint32_t &toScan,
     Eigen::array<ptrdiff_t, 1> dims({0});
     Eigen::array<long, 2> bcast({1, input.dimension(1)});
 
-    output = input.convolve(R1, dims).concatenate(input.convolve(R2, dims), 0).concatenate(input.convolve(R3, dims), 0) + TT.broadcast(bcast);
+    output =
+      input.convolve(R1, dims).concatenate(input.convolve(R2, dims), 0).concatenate(input.convolve(R3, dims), 0) +
+      TT.broadcast(bcast);
 }
 }
