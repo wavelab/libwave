@@ -53,7 +53,9 @@ class CallbackFixture : public testing::Test {
                         ++traj_time;
                     }
                 }
-                feat_ptsT.at(i).at(j) = feat_pts.at(i).at(j);
+                auto &ref = feat_pts.at(i).at(j);
+                Eigen::Map<MatXf> map(ref.data(), ref.dimension(0), ref.dimension(1));
+                feat_ptsT.at(i).at(j) = map.block(0, 0, 3, map.cols());
                 ptT_jacobians.at(j).at(i).resize(n_states);
             }
         }
@@ -74,7 +76,7 @@ class CallbackFixture : public testing::Test {
 
     std::vector<unsigned long> crossover;
     Vec<VecE<Eigen::Tensor<float, 2>>> feat_pts;
-    Vec<VecE<Eigen::Tensor<float, 2>>> feat_ptsT;
+    Vec<VecE<MatXf>> feat_ptsT;
     VecE<PoseVel> traj;
     Vec<Vec<VecE<Eigen::Tensor<double, 3>>>> ptT_jacobians;
     Vec<float> traj_stamps, scan_stamps;
@@ -133,11 +135,17 @@ TEST_F(CallbackFixture, JacobianTest) {
 
                     Eigen::array<int, 2> offsets = {0, 0};
                     Eigen::array<int, 2> extents = {3, static_cast<int>(this->feat_pts.at(i).at(j).dimension(1))};
-                    coljac = (this->feat_ptsT.at(i).at(j) - this->feat_pts.at(i).at(j).slice(offsets, extents))
-                               .cast<double>() /
-                             step;
 
-                    ptT_jacobians_num.at(i).at(j).at(2 * k).chip(dim_idx, 1) = coljac;
+                    {
+                        auto &ref = this->feat_ptsT.at(i).at(j);
+                        Eigen::TensorMap<Eigen::Tensor<float, 2>> tmap(ref.data(), ref.rows(), ref.cols());
+
+                        coljac = (tmap - this->feat_pts.at(i).at(j).slice(offsets, extents))
+                                         .cast<double>() /
+                                 step;
+
+                        ptT_jacobians_num.at(i).at(j).at(2 * k).chip(dim_idx, 1) = coljac;
+                    }
 
                     // now do velocity portion
                     this->traj.at(k).pose.setIdentity();
@@ -146,11 +154,16 @@ TEST_F(CallbackFixture, JacobianTest) {
                     this->transformer->update(this->traj, this->traj_stamps);
                     this->transformer->transformToStart(this->feat_pts.at(i).at(j), this->feat_ptsT.at(i).at(j), i);
 
-                    coljac = (this->feat_ptsT.at(i).at(j) - this->feat_pts.at(i).at(j).slice(offsets, extents))
-                               .cast<double>() /
-                             step;
+                    {
+                        auto &ref = this->feat_ptsT.at(i).at(j);
+                        Eigen::TensorMap<Eigen::Tensor<float, 2>> tmap(ref.data(), ref.rows(), ref.cols());
 
-                    ptT_jacobians_num.at(i).at(j).at(2 * k + 1).chip(dim_idx, 1) = coljac;
+                        coljac = (tmap - this->feat_pts.at(i).at(j).slice(offsets, extents))
+                                         .cast<double>() /
+                                 step;
+
+                        ptT_jacobians_num.at(i).at(j).at(2 * k + 1).chip(dim_idx, 1) = coljac;
+                    }
 
                     this->traj.at(k).vel.setZero();
                 }

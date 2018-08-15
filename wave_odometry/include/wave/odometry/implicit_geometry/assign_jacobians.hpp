@@ -10,20 +10,21 @@
 
 #include <Eigen/Eigen>
 #include "wave/odometry/feature_track.hpp"
+#include "wave/utils/types.hpp"
 
 namespace wave {
 
 // Base case
 template<typename Derived>
 inline void assignJacobian(double **jacobian,
-                    const Eigen::MatrixBase<Derived> &del_e_del_diff,
-                    const VecE<Eigen::Tensor<double, 3>> *jacs,
-                    int pt_id,
+                    const Eigen::MatrixBase<Derived> &del_e_del_T,
+                    const Vec<VecE<MatX>> &jacs,
+                    float pt_time,
                     int state_idx,
                     int state_dim) {
     if (jacobian[state_idx]) {
         Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>>
-                jac(jacobian[state_idx], del_e_del_diff.rows(), state_dim);
+                jac(jacobian[state_idx], del_e_del_T.rows(), state_dim);
 
         int offset = pt_id * jacs->at(state_idx).dimension(0) * jacs->at(state_idx).dimension(1);
         Eigen::Map<const MatX> precalc(jacs->at(state_idx).data() + offset, del_e_del_diff.cols(), state_dim);
@@ -35,9 +36,9 @@ inline void assignJacobian(double **jacobian,
 // Recurse through parameter pack
 template<typename Derived, typename... States>
 inline void assignJacobian(double **jacobian,
-                    const Eigen::MatrixBase<Derived> &del_e_del_diff,
-                    const VecE<Eigen::Tensor<double, 3>> *jacs,
-                    int pt_id,
+                    const Eigen::MatrixBase<Derived> &del_e_del_T,
+                    const Vec<VecE<MatX>> &jacs,
+                    float pt_time,
                     int state_idx,
                     int state_dim,
                     States... states) {

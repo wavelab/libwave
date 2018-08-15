@@ -191,7 +191,7 @@ class LaserOdom {
 
     void extendFeatureTracks(const Eigen::MatrixXi &indices, const MatXf &distances, uint32_t feat_id);
 
-    void createNewGeometry(const Eigen::Map<Eigen::MatrixXf> &points, const Vec<uint32_t> &indices, ResidualType residual_type, Vec6 &geometry);
+    void createNewGeometry(const MatXf &points, const Vec<uint32_t> &indices, ResidualType residual_type, Vec6 &geometry);
 
     void createNewFeatureTracks(const Eigen::MatrixXi &indices, const MatXf &distances, uint32_t feat_id,
                                     const Nabo::NNSearchF *cur_knn_tree);
@@ -241,17 +241,17 @@ class LaserOdom {
 
     /// This stores candidate feature points before they are put into feat_pts container.
     VecE<Eigen::Tensor<float, 2>> cur_feature_candidates, prev_feature_candidates;
-    VecE<Eigen::Tensor<float, 2>> cur_feature_candidatesT, prev_feature_candidatesT;
-    Vec<std::shared_ptr<Eigen::Map<Eigen::MatrixXf>>> cur_feat_map, prev_feat_map;
-    Vec<Vec<std::shared_ptr<Eigen::Map<MatXf>>>> feat_T_map;
+    VecE<MatXf> cur_feature_candidatesT, prev_feature_candidatesT;
     /// stores the index of the feature track associated with each candidate feature point. -1 if not associated with a feature track
     Vec<Vec<int>> cur_feat_idx, prev_feat_idx;
     /**
      * feat_pts and feat_pts_T are sets of indexed tensors, first by scan then feature type
      */
 
-    Vec<VecE<Eigen::Tensor<float, 2>>> feat_pts, feat_pts_T;
-    Vec<Vec<VecE<Eigen::Tensor<double, 3>>>> ptT_jacobians;
+    Vec<VecE<Eigen::Tensor<float, 2>>> feat_pts;
+    Vec<VecE<MatXf>> feat_pts_T;
+
+    Vec<Vec<VecE<MatX>>> ptT_jacobians;
 
     Vec<ResidualType> feature_residuals;
 

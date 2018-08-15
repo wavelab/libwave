@@ -78,7 +78,7 @@ static void BM_TRANSFORM_N(benchmark::State &state) {
     params.n_scans = 4;
     long n_pts = state.range(0) / params.n_scans;
     Eigen::Tensor<float, 2> scan(4, params.n_scans * n_pts);
-    Eigen::Tensor<float, 2> tscan(4, params.n_scans * n_pts);
+    wave::MatXf tscan(3, params.n_scans * n_pts);
 
     setup(trajectory, stamps, params, scan, n_pts);
 
@@ -86,7 +86,7 @@ static void BM_TRANSFORM_N(benchmark::State &state) {
     transformer.update(trajectory, stamps);
 
     for (auto _ : state) {
-        transformer.transformToStart(scan, tscan);
+        transformer.transformToStart(scan, tscan, 0);
     }
 }
 

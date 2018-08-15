@@ -24,9 +24,8 @@ struct FeatureTrack {
     uint32_t length;
 
     /// pointer to state jacobians updated by evaluation callback
-    /// dimensions of tensor should be 3 x M x n_pts
-    // Indexed by scan ID, then by state_id.
-    const Vec<VecE<Eigen::Tensor<double, 3>>> *jacs;
+    /// The jacobians are an interpolation grid
+    const Vec<Vec<VecE<MatX>>> *jacs;
 };
 }
 

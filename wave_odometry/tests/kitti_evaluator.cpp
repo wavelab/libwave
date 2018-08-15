@@ -523,7 +523,6 @@ int main(int argc, char** argv) {
     bool binary_format = false;
     uint16_t ring_index = 0;
 
-    uint32_t scan_count = 0;
     for (auto iter = v.begin(); iter != v.end(); ++iter) {
         fstream cloud_file;
         if (iter->string().substr(iter->string().find_last_of('.') + 1) == "bin") {
@@ -589,9 +588,6 @@ int main(int argc, char** argv) {
             }
         }
         cloud_file.close();
-        if (++scan_count == 175) {
-            break;
-        }
     }
     plotResults(oxt_trajectory, odom_trajectory);
 

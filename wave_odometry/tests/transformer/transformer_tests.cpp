@@ -66,7 +66,7 @@ TEST(Transformer, transformToStart) {
 
     long n_pts = 100;
     Eigen::Tensor<float, 2> scan(4, n_pts);
-    Eigen::Tensor<float, 2> tscan(4, n_pts);
+    MatXf tscan;
     for (long i = 0; i < n_pts; i++) {
         scan(0,i) = static_cast<float>(std::cos(2*M_PI * static_cast<double>(i)/100.0));
         scan(1,i) = static_cast<float>(std::sin(2*M_PI * static_cast<double>(i)/100.0));
@@ -113,10 +113,7 @@ TEST(Transformer, transformViz) {
 
     long n_pts = 100;
     Eigen::Tensor<float, 2> scan(4, params.n_scans * n_pts);
-    Eigen::Tensor<float, 2> tscan(4, params.n_scans * n_pts);
-    Eigen::Tensor<float, 2> bscan(4, params.n_scans * n_pts);
-
-    Eigen::Tensor<float, 2> btscan(4, params.n_scans * n_pts);
+    MatXf tscan, bscan;
 
     for (long j = 0; j < params.n_scans; j++) {
         for (long i = 0; i < n_pts; i++) {
@@ -155,13 +152,13 @@ TEST(Transformer, transformViz) {
 
     /// The "undistorted" scans should only be a rigid transform apart. Test with constant transform function
     // Transforming points in the frame at the start to the frame at the end
-    transformer.constantTransform(0, params.n_scans, tscan, btscan);
+    MatXf btscan;
 
-    Eigen::Tensor<float, 2> error = btscan - bscan;
+    transformer.constantTransform(0, params.n_scans - 1, tscan, btscan);
 
-    Eigen::Tensor<float, 0> max_error = error.abs().maximum();
+    MatXf error = btscan - bscan;
 
-    EXPECT_NEAR(max_error(0), 0.0f, 1e-6);
+    EXPECT_NEAR(error.cwiseAbs().maxCoeff(), 0.0f, 1e-6);
 
     PointCloudDisplay display("warped");
     display.startSpin();

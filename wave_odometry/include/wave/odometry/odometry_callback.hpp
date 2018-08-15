@@ -20,9 +20,9 @@ namespace wave {
 
 struct OdometryCallback : ceres::EvaluationCallback {
     explicit OdometryCallback(const Vec<VecE<Eigen::Tensor<float, 2>>> *feat_pts,
-                              Vec<VecE<Eigen::Tensor<float, 2>>> *feat_ptsT,
+                              Vec<VecE<MatXf>> *feat_ptsT,
                               const VecE<PoseVel> *traj,
-                              Vec<Vec<VecE<Eigen::Tensor<double, 3>>>> *ptT_jacobians,
+                              Vec<Vec<VecE<MatX>>> *ptT_jacobians,
                               const Vec<float> *traj_stamps,
                               const Vec<float> *scan_stamps,
                               Transformer *transformer);
@@ -35,15 +35,16 @@ struct OdometryCallback : ceres::EvaluationCallback {
     const Vec<VecE<Eigen::Tensor<float, 2>>> *feat_pts;
 
     /// Output data shared with residuals
-    Vec<VecE<Eigen::Tensor<float, 2>>> *feat_ptsT;
+    Vec<VecE<MatXf>> *feat_ptsT;
 
     ///State Variables, hooked to and updated by Ceres
     const VecE<PoseVel> *traj;
 
-    /// Stored jacobians for each point, indexed by feature, scan, and then state
-    /// Each element is a Nx3xK tensor, where n is the point index and k is the dimension of
-    /// the state. Shared with residuals
-    Vec<Vec<VecE<Eigen::Tensor<double, 3>>>> *ptT_jacobians;
+    /// Grid of jacobians to interpolate between. The first index is the gap between
+    /// states. The next index is which state, order is pose 1, twist 1, pose 2, twist 2.
+    /// Finally, the last index is however many grid points there are.
+    Vec<Vec<VecE<MatX>>> *jacobians;
+    Vec<Vec<float>> jac_stamps;
 
     const Vec<float> *traj_stamps;
 
@@ -53,7 +54,6 @@ struct OdometryCallback : ceres::EvaluationCallback {
 
  private:
     /// Cached intermediate variables for Jacobian calculation
-    Vec<VecE<Eigen::Tensor<float, 2>>> interp_factors;
     VecE<T_TYPE> Pose_diff;
     VecE<Vec6> pose_diff;
     VecE<Mat6> J_logmaps;

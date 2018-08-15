@@ -22,7 +22,7 @@ Prior_twist:
 
 # How many states per revolution to optimize over, there must be at minimum two.
 num_trajectory_states: 2
-n_window: 3 # Number of scans to optimize over. Must be at least 2
+n_window: 5 # Number of scans to optimize over. Must be at least 2
 opt_iters: 2  # how many iterations of the matcher to run
 max_inner_iters: 200 # limit on iterations of ceres at each matcher iteration
 diff_tol: 1e-4 # norm of solution difference for stopping criteria
@@ -50,12 +50,12 @@ max_extrapolation: 0.0 # How far to extrapolate line correspondences
 max_planar_dist_threshold: 3
 max_planar_ang_threshold: 0.1  # 1 - cos(theta)
 #Parameters controlling how line feature tracks are merged
-max_linear_dist_threshold: 3
+max_linear_dist_threshold: 0.01
 max_linear_ang_threshold: 0.025
 ang_scaling_param: 10
 
 #When thinning out feature tracks, how many in each direction to allow
-icosahedral_bin_limit: 8
+icosahedral_bin_limit: 7
 
 #  Setting flags
 only_extract_features: false   #  If set, no transforms are calculated
