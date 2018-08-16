@@ -22,10 +22,6 @@ struct FeatureTrack {
     bool optimize = true;
 
     uint32_t length;
-
-    /// pointer to state jacobians updated by evaluation callback
-    /// The jacobians are an interpolation grid
-    const Vec<Vec<VecE<MatX>>> *jacs;
 };
 }
 

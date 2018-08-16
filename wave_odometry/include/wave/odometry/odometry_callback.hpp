@@ -23,6 +23,7 @@ struct OdometryCallback : ceres::EvaluationCallback {
                               Vec<VecE<MatXf>> *feat_ptsT,
                               const VecE<PoseVel> *traj,
                               Vec<Vec<VecE<MatX>>> *ptT_jacobians,
+                              Vec<Vec<float>> *jac_stamps,
                               const Vec<float> *traj_stamps,
                               const Vec<float> *scan_stamps,
                               Transformer *transformer);
@@ -44,7 +45,7 @@ struct OdometryCallback : ceres::EvaluationCallback {
     /// states. The next index is which state, order is pose 1, twist 1, pose 2, twist 2.
     /// Finally, the last index is however many grid points there are.
     Vec<Vec<VecE<MatX>>> *jacobians;
-    Vec<Vec<float>> jac_stamps;
+    Vec<Vec<float>> *jac_stamps;
 
     const Vec<float> *traj_stamps;
 

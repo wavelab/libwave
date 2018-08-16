@@ -64,7 +64,7 @@ class CallbackFixture : public testing::Test {
         transformerParams.traj_resolution = traj_resolution;
         transformer = new Transformer(transformerParams);
 
-        cb = new OdometryCallback(&feat_pts, &feat_ptsT, &traj, &ptT_jacobians, &traj_stamps, &scan_stamps, transformer);
+        cb = new OdometryCallback(&feat_pts, &feat_ptsT, &traj, &ptT_jacobians, &jac_stamps, &traj_stamps, &scan_stamps, transformer);
     }
 
     const unsigned int n_scans = 2;
@@ -78,7 +78,8 @@ class CallbackFixture : public testing::Test {
     Vec<VecE<Eigen::Tensor<float, 2>>> feat_pts;
     Vec<VecE<MatXf>> feat_ptsT;
     VecE<PoseVel> traj;
-    Vec<Vec<VecE<Eigen::Tensor<double, 3>>>> ptT_jacobians;
+    Vec<Vec<VecE<MatX>>> ptT_jacobians;
+    Vec<Vec<float>> jac_stamps;
     Vec<float> traj_stamps, scan_stamps;
     Transformer *transformer;
 
@@ -181,29 +182,61 @@ TEST_F(CallbackFixture, JacobianTest) {
                     --state_offset;
                 }
 
-                Eigen::Tensor<double, 2> error;
                 Eigen::Tensor<int, 2> failures;
 
                 for (uint32_t stat_num = 0; stat_num < 4; ++stat_num) {
+                    MatX analytic_JT;
                     if (stat_num % 2 == 0) {
-                        error.resize(3, 12);
                         failures.resize(3, 12);
+                        analytic_JT.resize(6, 12);
+                        analytic_JT.setZero();
                     } else {
-                        error.resize(3, 6);
                         failures.resize(3, 6);
+                        analytic_JT.resize(6,6);
                     }
-                    Eigen::Tensor<double, 2> chip1, chip2;
-                    chip1 = ptT_jacobians_num.at(i).at(j).at(state_offset*2 + stat_num).chip(pt_idx, 2);
-                    chip2 = this->ptT_jacobians.at(j).at(i).at(stat_num).chip(pt_idx, 2);
+                    Eigen::Tensor<double, 2> numerical_jacobian;
+                    numerical_jacobian = ptT_jacobians_num.at(i).at(j).at(state_offset*2 + stat_num).chip(pt_idx, 2);
 
-                    error = ptT_jacobians_num.at(i).at(j).at(state_offset*2 + stat_num).chip(pt_idx, 2) -
-                                 this->ptT_jacobians.at(j).at(i).at(stat_num).chip(pt_idx, 2);
+                    auto &time_vec = this->jac_stamps.at(state_offset);
+                    auto iter = std::upper_bound(time_vec.begin(), time_vec.end(), time);
+
+                    float T1, T2;
+
+                    if (iter == time_vec.end()) {
+                        T2 = *(--iter);
+                        T1 = *(--iter);
+                    } else {
+                        T2 = *iter;
+                        T1 = *(--iter);
+                    }
+
+                    double w1 = (T2 - time) / (T2 - T1);
+                    double w2 = 1. - w1;
+
+                    auto jac_offset = static_cast<uint32_t>(iter - time_vec.begin());
+
+                    Eigen::Tensor<double, 2> numeric_jacobian = ptT_jacobians_num.at(i).at(j).at(state_offset*2 + stat_num).chip(pt_idx, 2);
+                    MatX numerical = Eigen::Map<MatX>(numeric_jacobian.data(), numeric_jacobian.dimension(0), numeric_jacobian.dimension(1));
+
+                    analytic_JT.block<6,6>(0,0) = w1 * this->ptT_jacobians.at(state_offset).at(stat_num).at(jac_offset) +
+                            w2 * this->ptT_jacobians.at(state_offset).at(stat_num).at(jac_offset + 1);
+
+                    MatX ptT_jacobian(3,6);
+                    Vec3 pt = this->feat_ptsT.at(i).at(j).block<3,1>(0,pt_idx).cast<double>();
+                    ptT_jacobian << 0, pt(2), -pt(1), 1, 0, 0,
+                                   -pt(2), 0, pt(0), 0, 1, 0,
+                                    pt(1), -pt(0), 0, 0, 0, 1;
+
+                    MatX analytic_jacobian(3, numerical.cols());
+                    analytic_jacobian.block<3,6>(0,0) = ptT_jacobian * analytic_JT.block<6,6>(0,0);
+
+                    MatX error = numerical - analytic_jacobian;
 
                     // due to single precision floating point, threshold is relatively large
-                    failures = error.operator>(1e-3).cast<int>();
-                    Eigen::Tensor<double, 0> worst = error.maximum();
-                    Eigen::Tensor<int, 0> count = failures.sum();
-                    EXPECT_EQ(count(0), 0);
+                    double max_error = error.cwiseAbs().maxCoeff();
+                    if (max_error > 1e-3) {
+                        EXPECT_EQ(max_error, 0.0);
+                    }
                 }
             }
 

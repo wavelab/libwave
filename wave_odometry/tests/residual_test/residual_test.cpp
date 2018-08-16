@@ -178,7 +178,7 @@ TEST(implicit_plane, simple) {
     options.cost_function_ownership = ceres::DO_NOT_TAKE_OWNERSHIP;
     ceres::Problem problem(options);
 
-    std::list<ImplicitPlaneResidual<3>> costs;
+    std::list<PlaneResidual<3>> costs;
     for (uint32_t i = 0; i < 4; ++i) {
         costs.emplace_back(i, 0, &track, &feat_points);
     }

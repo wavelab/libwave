@@ -49,8 +49,8 @@
 #include "wave/odometry/transformer.hpp"
 #include "wave/odometry/feature_track.hpp"
 #include "wave/odometry/feature_extractor.hpp"
-#include "wave/odometry/implicit_geometry/implicit_plane.hpp"
-#include "wave/odometry/implicit_geometry/implicit_line.hpp"
+#include "wave/odometry/geometry/plane.hpp"
+#include "wave/odometry/geometry/line.hpp"
 #include "wave/odometry/odometry_callback.hpp"
 #include "wave/optimization/ceres/odom_gp/constant_velocity.hpp"
 #include "wave/optimization/ceres/local_params/null_SE3_parameterization.hpp"
@@ -252,6 +252,7 @@ class LaserOdom {
     Vec<VecE<MatXf>> feat_pts_T;
 
     Vec<Vec<VecE<MatX>>> ptT_jacobians;
+    Vec<Vec<float>> jacobian_stamps;
 
     Vec<ResidualType> feature_residuals;
 
