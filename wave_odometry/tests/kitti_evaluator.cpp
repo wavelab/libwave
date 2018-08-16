@@ -598,10 +598,7 @@ int main(int argc, char** argv) {
             }
         }
         cloud_file.close();
-        std::cout << "Finished with scan " << std::to_string(scan_index) << "\n";
-        if (++scan_index >= 200) {
-            break;
-        }
+        std::cout << "Finished with scan " << std::to_string(++scan_index) << "\n";
     }
     plotResults(oxt_trajectory, odom_trajectory);
 

@@ -73,10 +73,6 @@ void Transformer::transformToStart(const Eigen::Tensor<float, 2> &points,
 
 #pragma omp parallel for
     for (long i = 0; i < points.dimension(1); i++) {
-        float pttime = points(3, i);
-        if (pttime < 0) {
-            throw std::out_of_range("point time not good");
-        }
         float time = points(3, i) + this->traj_stamps.at(this->scan_indices.at(scan_idx));
         auto idx = std::lower_bound(this->traj_stamps.begin(), this->traj_stamps.end(), time);
         auto index = static_cast<uint32_t>(idx - this->traj_stamps.begin());
@@ -95,7 +91,7 @@ void Transformer::transformToStart(const Eigen::Tensor<float, 2> &points,
         }
         Mat2 hat, candle;
         this->calculateInterpolationFactors(
-          this->traj_stamps.at(index), this->traj_stamps.at(index + 1), time, candle, hat);
+                this->traj_stamps.at(index), this->traj_stamps.at(index + 1), time, candle, hat);
         Vec6f tan_vec = hat(0, 1) * this->differences.at(index).hat_multiplier.block<6, 1>(6, 0) +
                         candle(0, 0) * this->differences.at(index).candle_multiplier.block<6, 1>(0, 0) +
                         candle(0, 1) * this->differences.at(index).candle_multiplier.block<6, 1>(6, 0);
@@ -103,9 +99,9 @@ void Transformer::transformToStart(const Eigen::Tensor<float, 2> &points,
         T_TYPE::expMap1st(tan_vec, trans);
         auto &ref = this->aug_trajectories.at(index).pose.storage;
         ptT.block<3, 1>(0, i).noalias() =
-          trans.block<3, 3>(0, 0) *
-            (ref.block<3, 3>(0, 0).cast<float>() * pt.block<3, 1>(0, i) + ref.block<3, 1>(0, 3).cast<float>()) +
-          trans.block<3, 1>(0, 3);
+                trans.block<3, 3>(0, 0) *
+                (ref.block<3, 3>(0, 0).cast<float>() * pt.block<3, 1>(0, i) + ref.block<3, 1>(0, 3).cast<float>()) +
+                trans.block<3, 1>(0, 3);
     }
 }
 
