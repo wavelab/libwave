@@ -26,10 +26,16 @@ class PlaneResidual : public ceres::SizedCostFunction<1, 6, states...> {
           feat_points_T(feat_points_T),
           jacs(jacs),
           jac_stamps(jac_stamps) {
-        auto iter = std::lower_bound(jac_stamps->begin(), jac_stamps->end(), pt_time);
+        auto iter = std::upper_bound(jac_stamps->begin(), jac_stamps->end(), pt_time);
 
-        auto T2 = *iter;
-        auto T1 = *(--iter);
+        float T1, T2;
+        if (iter == jac_stamps->end()) {
+            T2 = *(--iter);
+            T1 = *(--iter);
+        } else {
+            T2 = *iter;
+            T1 = *(--iter);
+        }
 
         this->w1 = (T2 - pt_time) / (T2 - T1);
         this->w2 = 1.f - this->w1;

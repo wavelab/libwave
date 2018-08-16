@@ -26,7 +26,7 @@ n_window: 5 # Number of scans to optimize over. Must be at least 2
 opt_iters: 2  # how many iterations of the matcher to run
 max_inner_iters: 200 # limit on iterations of ceres at each matcher iteration
 diff_tol: 1e-4 # norm of solution difference for stopping criteria
-solver_threads: 4 # number of threads the solver should use
+solver_threads: 8 # number of threads the solver should use
 robust_param: 0.25 # Parameter used in tukey loss function
 max_correspondence_dist: 2  #  correspondences greater than this are discarded
 max_residual_val: 1        #  Residuals with an initial error greater than this are not used.
@@ -60,7 +60,7 @@ icosahedral_bin_limit: 7
 #  Setting flags
 only_extract_features: false   #  If set, no transforms are calculated
 use_weighting: false           #  If set, pre-whiten residuals
-print_opt_sum: true              #  If true, output ceres summaries to console
+print_opt_sum: false              #  If true, output ceres summaries to console
 check_gradients: false         #  If set, use Ceres gradient checker on each jacobians
 limit_rng_var: false
 limit_int_var: false

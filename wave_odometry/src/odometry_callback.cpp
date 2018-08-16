@@ -30,6 +30,7 @@ OdometryCallback::OdometryCallback(const Vec<VecE<Eigen::Tensor<float, 2>>> *fea
         float delta_t = this->traj_stamps->at(gap_index + 1) - this->traj_stamps->at(gap_index);
         auto steps = static_cast<uint32_t>(delta_t / 0.01f);
         float step_time = delta_t / steps;
+        this->jac_stamps->at(gap_index).clear();
         this->jac_stamps->at(gap_index).emplace_back(this->traj_stamps->at(gap_index));
         for (uint32_t i = 1; i < steps; ++i) {
             this->jac_stamps->at(gap_index).emplace_back(step_time * i + this->traj_stamps->at(gap_index));

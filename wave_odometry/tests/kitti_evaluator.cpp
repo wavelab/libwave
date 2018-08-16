@@ -144,88 +144,90 @@ void updateVisualizer(const wave::LaserOdom *odom, wave::PointCloudDisplay *disp
     }
 
     int ptcld_id = 100000;
-    display->removeAllShapes();
-    pcl::PointCloud<pcl::PointXYZI>::Ptr viz_cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
-    *viz_cloud = odom->undistorted_cld;
-    display->addPointcloud(viz_cloud, ptcld_id, false, 6);
-    ++ptcld_id;
-
-    for (uint32_t feat_id = 0; feat_id < 5; ++feat_id) {
-        pcl::PointCloud<pcl::PointXYZ>::Ptr viz_cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
-        *viz_cloud = odom->undis_features.at(feat_id);
-        int viewport_id = feat_id + 1;
-        display->addPointcloud(viz_cloud, ptcld_id, false, viewport_id);
+    if (display) {
+        display->removeAllShapes();
+        pcl::PointCloud<pcl::PointXYZI>::Ptr viz_cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
+        *viz_cloud = odom->undistorted_cld;
+        display->addPointcloud(viz_cloud, ptcld_id, false, 6);
         ++ptcld_id;
-    }
 
-    for (uint32_t i = 1; i < odom->undistort_trajectory.size(); ++i) {
-        pcl::PointXYZ pt1, pt2;
-        Eigen::Map<wave::Vec3f> m1(pt1.data), m2(pt2.data);
-        m1 = odom->undistort_trajectory.at(i - 1).pose.storage.block<3, 1>(0,3).cast<float>();
-        m2 = odom->undistort_trajectory.at(i).pose.storage.block<3, 1>(0,3).cast<float>();
-        display->addLine(pt1, pt2, i - 1, i);
-    }
-
-    int id = odom->undistort_trajectory.size();
-
-    float int_id = 0;
-
-    for (uint32_t i = 0; i < 5; ++i) {
-        int viewport_id = i + 1;
-        int_id = 0;
-
-        pcl::PointCloud<pcl::PointXYZI>::Ptr display_cld = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
-        for(const auto &track : odom->undis_tracks.at(i)) {
-            if (i == 2) {
-                pcl::PointXYZ pt1, pt2;
-                Eigen::Map<wave::Vec3f> m1(pt1.data), m2(pt2.data);
-                m1 = track.geometry.block<3, 1>(3,0).cast<float>();
-                m2 = track.geometry.block<3, 1>(0,0).cast<float>();
-                float sidelength = 0.15 * track.mapping.size();
-                display->addSquare(pt1, pt2, sidelength, id, false, viewport_id);
-                ++id;
-            } else {
-                pcl::PointXYZ pt1, pt2;
-                Eigen::Map<wave::Vec3f> m1(pt1.data), m2(pt2.data);
-
-                double sidelength = 0.1 * track.mapping.size();
-
-                m1 = (track.geometry.block<3, 1>(3, 0) - sidelength*track.geometry.block<3, 1>(0,0)).cast<float>();
-                m2 = (track.geometry.block<3, 1>(3, 0) + sidelength*track.geometry.block<3, 1>(0,0)).cast<float>();
-                display->addLine(pt1, pt2, id, id + 1, false, viewport_id);
-                id += 2;
-            }
-
-            for (const auto &map : track.mapping) {
-                pcl::PointXYZI new_pt;
-                new_pt.x = odom->undis_features.at(i).at(map.pt_idx).x;
-                new_pt.y = odom->undis_features.at(i).at(map.pt_idx).y;
-                new_pt.z = odom->undis_features.at(i).at(map.pt_idx).z;
-
-                new_pt.intensity = int_id;
-                display_cld->push_back(new_pt);
-            }
-            int_id += 1;
+        for (uint32_t feat_id = 0; feat_id < 5; ++feat_id) {
+            pcl::PointCloud<pcl::PointXYZ>::Ptr viz_cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+            *viz_cloud = odom->undis_features.at(feat_id);
+            int viewport_id = feat_id + 1;
+            display->addPointcloud(viz_cloud, ptcld_id, false, viewport_id);
+            ++ptcld_id;
         }
 
-        display->addPointcloud(display_cld, ptcld_id, false, viewport_id);
+        for (uint32_t i = 1; i < odom->undistort_trajectory.size(); ++i) {
+            pcl::PointXYZ pt1, pt2;
+            Eigen::Map<wave::Vec3f> m1(pt1.data), m2(pt2.data);
+            m1 = odom->undistort_trajectory.at(i - 1).pose.storage.block<3, 1>(0,3).cast<float>();
+            m2 = odom->undistort_trajectory.at(i).pose.storage.block<3, 1>(0,3).cast<float>();
+            display->addLine(pt1, pt2, i - 1, i);
+        }
+
+        int id = odom->undistort_trajectory.size();
+
+        float int_id = 0;
+
+        for (uint32_t i = 0; i < 5; ++i) {
+            int viewport_id = i + 1;
+            int_id = 0;
+
+            pcl::PointCloud<pcl::PointXYZI>::Ptr display_cld = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
+            for(const auto &track : odom->undis_tracks.at(i)) {
+                if (i == 2) {
+                    pcl::PointXYZ pt1, pt2;
+                    Eigen::Map<wave::Vec3f> m1(pt1.data), m2(pt2.data);
+                    m1 = track.geometry.block<3, 1>(3,0).cast<float>();
+                    m2 = track.geometry.block<3, 1>(0,0).cast<float>();
+                    float sidelength = 0.15 * track.mapping.size();
+                    display->addSquare(pt1, pt2, sidelength, id, false, viewport_id);
+                    ++id;
+                } else {
+                    pcl::PointXYZ pt1, pt2;
+                    Eigen::Map<wave::Vec3f> m1(pt1.data), m2(pt2.data);
+
+                    double sidelength = 0.1 * track.mapping.size();
+
+                    m1 = (track.geometry.block<3, 1>(3, 0) - sidelength*track.geometry.block<3, 1>(0,0)).cast<float>();
+                    m2 = (track.geometry.block<3, 1>(3, 0) + sidelength*track.geometry.block<3, 1>(0,0)).cast<float>();
+                    display->addLine(pt1, pt2, id, id + 1, false, viewport_id);
+                    id += 2;
+                }
+
+                for (const auto &map : track.mapping) {
+                    pcl::PointXYZI new_pt;
+                    new_pt.x = odom->undis_features.at(i).at(map.pt_idx).x;
+                    new_pt.y = odom->undis_features.at(i).at(map.pt_idx).y;
+                    new_pt.z = odom->undis_features.at(i).at(map.pt_idx).z;
+
+                    new_pt.intensity = int_id;
+                    display_cld->push_back(new_pt);
+                }
+                int_id += 1;
+            }
+
+            display->addPointcloud(display_cld, ptcld_id, false, viewport_id);
+            ++ptcld_id;
+        }
+
+        pcl::PointCloud<pcl::PointXYZ>::Ptr flatcloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+        *flatcloud = odom->undis_candidates_cur.at(2);
+        display->addPointcloud(flatcloud, ptcld_id, false, 5);
+        ++ptcld_id;
+
+        pcl::PointCloud<pcl::PointXYZ>::Ptr edgecloud1 = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+        *edgecloud1 = odom->undis_candidates_cur.at(0);
+        display->addPointcloud(edgecloud1, ptcld_id, false, 4);
+        ++ptcld_id;
+
+        pcl::PointCloud<pcl::PointXYZ>::Ptr edgecloud2 = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+        *edgecloud2 = odom->undis_candidates_cur.at(1);
+        display->addPointcloud(edgecloud2, ptcld_id, false, 4);
         ++ptcld_id;
     }
-
-    pcl::PointCloud<pcl::PointXYZ>::Ptr flatcloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
-    *flatcloud = odom->undis_candidates_cur.at(2);
-    display->addPointcloud(flatcloud, ptcld_id, false, 5);
-    ++ptcld_id;
-
-    pcl::PointCloud<pcl::PointXYZ>::Ptr edgecloud1 = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
-    *edgecloud1 = odom->undis_candidates_cur.at(0);
-    display->addPointcloud(edgecloud1, ptcld_id, false, 4);
-    ++ptcld_id;
-
-    pcl::PointCloud<pcl::PointXYZ>::Ptr edgecloud2 = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
-    *edgecloud2 = odom->undis_candidates_cur.at(1);
-    display->addPointcloud(edgecloud2, ptcld_id, false, 4);
-    ++ptcld_id;
 }
 
 void plotResults(const wave::VecE<wave::PoseVelStamped> &ground_truth, const wave::VecE<wave::PoseVelStamped> &odom_trajectory) {
@@ -456,8 +458,8 @@ void fillGroundTruth(wave::VecE<wave::PoseVelStamped> &trajectory, const std::st
 }
 
 int main(int argc, char** argv) {
-    if (argc != 3) {
-        throw std::runtime_error("Must be run with only 2 arguments: \n 1. Full path to data \n 2. Full path to configuration files");
+    if (argc != 4) {
+        throw std::runtime_error("Must be run with only 3 arguments: \n 1. Full path to data \n 2. Full path to configuration files \n 3. 1 or 0 to indicate whether a visualizer should be run");
     }
     std::string data_path(argv[1]);
     std::string config_path(argv[2]);
@@ -486,8 +488,15 @@ int main(int argc, char** argv) {
     transformer_params.delWTol = 100.0f;
 
     wave::LaserOdom odom(params, feature_params, transformer_params);
-    wave::PointCloudDisplay display("Kitti Eval", 0.2, 3, 2);
-    display.startSpin();
+    wave::PointCloudDisplay *display;
+
+    bool run_viz = std::stoi(argv[3]) == 1;
+    if (run_viz) {
+        display = new wave::PointCloudDisplay("Kitti Eval", 0.2, 3, 2);
+        display->startSpin();
+    } else {
+        display = nullptr;
+    }
 
     //set up pointcloud iterators
     boost::filesystem::path p(data_path + "velodyne_points/data");
@@ -513,7 +522,7 @@ int main(int argc, char** argv) {
     wave::VecE<wave::PoseVelStamped> oxt_trajectory, odom_trajectory;
     fillGroundTruth(oxt_trajectory, data_path);
 
-    auto func = [&]() {updateVisualizer(&odom, &display, &odom_trajectory);};
+    auto func = [&]() {updateVisualizer(&odom, display, &odom_trajectory);};
     odom.registerOutputFunction(func);
 
     int pt_index = 0;
@@ -523,6 +532,7 @@ int main(int argc, char** argv) {
     bool binary_format = false;
     uint16_t ring_index = 0;
 
+    uint32_t scan_index = 0;
     for (auto iter = v.begin(); iter != v.end(); ++iter) {
         fstream cloud_file;
         if (iter->string().substr(iter->string().find_last_of('.') + 1) == "bin") {
@@ -588,9 +598,17 @@ int main(int argc, char** argv) {
             }
         }
         cloud_file.close();
+        std::cout << "Finished with scan " << std::to_string(scan_index) << "\n";
+        if (++scan_index >= 200) {
+            break;
+        }
     }
     plotResults(oxt_trajectory, odom_trajectory);
 
-    display.stopSpin();
+    if (run_viz) {
+        display->stopSpin();
+        delete display;
+    }
+
     return 0;
 }

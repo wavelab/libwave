@@ -365,6 +365,8 @@ bool LaserOdom::runOptimization(ceres::Problem &problem, ceres::Solver::Summary 
                                                                &(this->transformer));
     options.evaluation_callback = callback;
 
+    this->buildResiduals(problem);
+
     if (this->param.solver_threads < 1) {
         options.num_threads = std::thread::hardware_concurrency();
         options.num_linear_solver_threads = std::thread::hardware_concurrency();
@@ -1195,9 +1197,6 @@ bool LaserOdom::match(const TimeType &stamp) {
                 options.disable_all_safety_checks = false;
 
                 problem = std::make_unique<ceres::Problem>(options);
-
-                /// 7. Build Feature Residuals. todo, reuse problem
-                this->buildResiduals(*problem);
 
                 ceres::Solver::Summary summary;
 
