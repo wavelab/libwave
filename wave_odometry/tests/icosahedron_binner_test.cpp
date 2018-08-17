@@ -5,18 +5,13 @@ namespace wave {
 
 TEST(IcosahedronBinnerTests, Constructor) {
     IcosahedronBinner binner;
-    MatX vectors = binner.getBinVectors();
     std::vector<int> counts = binner.getBinCounters();
 
-    EXPECT_EQ(counts.size(), static_cast<unsigned long>(12));
+    EXPECT_EQ(counts.size(), static_cast<unsigned long>(11));
 
     for (const auto &count : counts) {
         EXPECT_TRUE(count == 0);
     }
-
-    auto sum = vectors.sum();
-
-    EXPECT_NEAR(sum, 0.0, 1e-8);
 }
 
 TEST(IcosahedronBinnerTests, clear) {
