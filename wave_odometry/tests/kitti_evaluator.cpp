@@ -7,7 +7,7 @@
 #include "wave/odometry/laser_odom.hpp"
 #include "wave/utils/config.hpp"
 
-//todo Figure out where these helper functions should go (they are shared with tests).
+// todo Figure out where these helper functions should go (they are shared with tests).
 namespace {
 
 namespace plot = matplotlibcpp;
@@ -47,6 +47,8 @@ void LoadParameters(const std::string &path, const std::string &filename, wave::
     parser.addParam("max_linear_ang_threshold", &(params.max_linear_ang_threshold));
     parser.addParam("ang_scaling_param", &(params.ang_scaling_param));
     parser.addParam("icosahedral_bin_limit", &(params.icosahedral_bin_limit));
+    parser.addParam("icosahedral_angular_sectors", &(params.icosahedral_angular_sectors));
+    parser.addParam("min_new_points", &(params.min_new_points));
 
     parser.addParam("only_extract_features", &(params.only_extract_features));
     parser.addParam("use_weighting", &(params.use_weighting));
@@ -85,25 +87,30 @@ void loadFeatureParams(const std::string &path, const std::string &filename, wav
 
 void setupFeatureParameters(wave::FeatureExtractorParams &param) {
     std::vector<wave::Criteria> edge_high, edge_low, flat, edge_int_high, edge_int_low;
-    edge_high.emplace_back(wave::Criteria{wave::Signal::RANGE, wave::Kernel::LOAM, wave::SelectionPolicy::HIGH_POS, &(param.edge_tol)});
+    edge_high.emplace_back(
+      wave::Criteria{wave::Signal::RANGE, wave::Kernel::LOAM, wave::SelectionPolicy::HIGH_POS, &(param.edge_tol)});
 
-    edge_low.emplace_back(wave::Criteria{wave::Signal::RANGE, wave::Kernel::LOAM, wave::SelectionPolicy::HIGH_NEG, &(param.edge_tol)});
+    edge_low.emplace_back(
+      wave::Criteria{wave::Signal::RANGE, wave::Kernel::LOAM, wave::SelectionPolicy::HIGH_NEG, &(param.edge_tol)});
 
-    flat.emplace_back(wave::Criteria{wave::Signal::RANGE, wave::Kernel::LOAM, wave::SelectionPolicy::NEAR_ZERO, &(param.flat_tol)});
-    flat.emplace_back(wave::Criteria{wave::Signal::RANGE, wave::Kernel::RNG_VAR, wave::SelectionPolicy::NEAR_ZERO, &(param.variance_limit_rng)});
+    flat.emplace_back(
+      wave::Criteria{wave::Signal::RANGE, wave::Kernel::LOAM, wave::SelectionPolicy::NEAR_ZERO, &(param.flat_tol)});
+    flat.emplace_back(wave::Criteria{
+      wave::Signal::RANGE, wave::Kernel::RNG_VAR, wave::SelectionPolicy::NEAR_ZERO, &(param.variance_limit_rng)});
 
+    edge_int_high.emplace_back(wave::Criteria{
+      wave::Signal::INTENSITY, wave::Kernel::FOG, wave::SelectionPolicy::HIGH_POS, &(param.int_edge_tol)});
     edge_int_high.emplace_back(
-            wave::Criteria{wave::Signal::INTENSITY, wave::Kernel::FOG, wave::SelectionPolicy::HIGH_POS, &(param.int_edge_tol)});
-    edge_int_high.emplace_back(
-            wave::Criteria{wave::Signal::RANGE, wave::Kernel::LOAM, wave::SelectionPolicy::NEAR_ZERO, &(param.int_flat_tol)});
-    edge_int_high.emplace_back(
-            wave::Criteria{wave::Signal::RANGE, wave::Kernel::RNG_VAR, wave::SelectionPolicy::NEAR_ZERO, &(param.variance_limit_rng)});
+      wave::Criteria{wave::Signal::RANGE, wave::Kernel::LOAM, wave::SelectionPolicy::NEAR_ZERO, &(param.int_flat_tol)});
+    edge_int_high.emplace_back(wave::Criteria{
+      wave::Signal::RANGE, wave::Kernel::RNG_VAR, wave::SelectionPolicy::NEAR_ZERO, &(param.variance_limit_rng)});
 
+    edge_int_low.emplace_back(wave::Criteria{
+      wave::Signal::INTENSITY, wave::Kernel::FOG, wave::SelectionPolicy::HIGH_NEG, &(param.int_edge_tol)});
     edge_int_low.emplace_back(
-            wave::Criteria{wave::Signal::INTENSITY, wave::Kernel::FOG, wave::SelectionPolicy::HIGH_NEG, &(param.int_edge_tol)});
-    edge_int_low.emplace_back(wave::Criteria{wave::Signal::RANGE, wave::Kernel::LOAM, wave::SelectionPolicy::NEAR_ZERO, &(param.int_flat_tol)});
-    edge_int_low.emplace_back(
-            wave::Criteria{wave::Signal::RANGE, wave::Kernel::RNG_VAR, wave::SelectionPolicy::NEAR_ZERO, &(param.variance_limit_rng)});
+      wave::Criteria{wave::Signal::RANGE, wave::Kernel::LOAM, wave::SelectionPolicy::NEAR_ZERO, &(param.int_flat_tol)});
+    edge_int_low.emplace_back(wave::Criteria{
+      wave::Signal::RANGE, wave::Kernel::RNG_VAR, wave::SelectionPolicy::NEAR_ZERO, &(param.variance_limit_rng)});
 
     param.feature_definitions.clear();
     param.feature_definitions.emplace_back(wave::FeatureDefinition{edge_high, &(param.n_edge)});
@@ -113,20 +120,22 @@ void setupFeatureParameters(wave::FeatureExtractorParams &param) {
     param.feature_definitions.emplace_back(wave::FeatureDefinition{edge_int_low, &(param.n_int_edge)});
 }
 
-void updateVisualizer(const wave::LaserOdom *odom, wave::PointCloudDisplay *display, wave::VecE<wave::PoseVelStamped> *odom_trajectory) {
-
+void updateVisualizer(const wave::LaserOdom *odom,
+                      wave::PointCloudDisplay *display,
+                      wave::VecE<wave::PoseVelStamped> *odom_trajectory) {
     bool first_trajectory = true;
     wave::T_TYPE T0X;
     for (const wave::PoseVelStamped &val : odom->undistort_trajectory) {
-        auto iter = std::find_if(odom_trajectory->begin(), odom_trajectory->end(), [&val](const wave::PoseVelStamped &item){
-            auto diff = item.stamp - val.stamp;
-            //todo figure out a way to avoid floating point time and remove this workaround
-            if (diff > std::chrono::seconds(0)) {
-                return diff < std::chrono::microseconds(10);
-            } else {
-                return diff > std::chrono::microseconds(-10);
-            }
-        });
+        auto iter =
+          std::find_if(odom_trajectory->begin(), odom_trajectory->end(), [&val](const wave::PoseVelStamped &item) {
+              auto diff = item.stamp - val.stamp;
+              // todo figure out a way to avoid floating point time and remove this workaround
+              if (diff > std::chrono::seconds(0)) {
+                  return diff < std::chrono::microseconds(10);
+              } else {
+                  return diff > std::chrono::microseconds(-10);
+              }
+          });
         if (iter == odom_trajectory->end()) {
             odom_trajectory->emplace_back(val);
             if (!first_trajectory) {
@@ -162,8 +171,8 @@ void updateVisualizer(const wave::LaserOdom *odom, wave::PointCloudDisplay *disp
         for (uint32_t i = 1; i < odom->undistort_trajectory.size(); ++i) {
             pcl::PointXYZ pt1, pt2;
             Eigen::Map<wave::Vec3f> m1(pt1.data), m2(pt2.data);
-            m1 = odom->undistort_trajectory.at(i - 1).pose.storage.block<3, 1>(0,3).cast<float>();
-            m2 = odom->undistort_trajectory.at(i).pose.storage.block<3, 1>(0,3).cast<float>();
+            m1 = odom->undistort_trajectory.at(i - 1).pose.storage.block<3, 1>(0, 3).cast<float>();
+            m2 = odom->undistort_trajectory.at(i).pose.storage.block<3, 1>(0, 3).cast<float>();
             display->addLine(pt1, pt2, i - 1, i);
         }
 
@@ -176,12 +185,12 @@ void updateVisualizer(const wave::LaserOdom *odom, wave::PointCloudDisplay *disp
             int_id = 0;
 
             pcl::PointCloud<pcl::PointXYZI>::Ptr display_cld = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
-            for(const auto &track : odom->undis_tracks.at(i)) {
+            for (const auto &track : odom->undis_tracks.at(i)) {
                 if (i == 2) {
                     pcl::PointXYZ pt1, pt2;
                     Eigen::Map<wave::Vec3f> m1(pt1.data), m2(pt2.data);
-                    m1 = track.geometry.block<3, 1>(3,0).cast<float>();
-                    m2 = track.geometry.block<3, 1>(0,0).cast<float>();
+                    m1 = track.geometry.block<3, 1>(3, 0).cast<float>();
+                    m2 = track.geometry.block<3, 1>(0, 0).cast<float>();
                     float sidelength = 0.15 * track.mapping.size();
                     display->addSquare(pt1, pt2, sidelength, id, false, viewport_id);
                     ++id;
@@ -191,8 +200,10 @@ void updateVisualizer(const wave::LaserOdom *odom, wave::PointCloudDisplay *disp
 
                     double sidelength = 0.1 * track.mapping.size();
 
-                    m1 = (track.geometry.block<3, 1>(3, 0) - sidelength*track.geometry.block<3, 1>(0,0)).cast<float>();
-                    m2 = (track.geometry.block<3, 1>(3, 0) + sidelength*track.geometry.block<3, 1>(0,0)).cast<float>();
+                    m1 =
+                      (track.geometry.block<3, 1>(3, 0) - sidelength * track.geometry.block<3, 1>(0, 0)).cast<float>();
+                    m2 =
+                      (track.geometry.block<3, 1>(3, 0) + sidelength * track.geometry.block<3, 1>(0, 0)).cast<float>();
                     display->addLine(pt1, pt2, id, id + 1, false, viewport_id);
                     id += 2;
                 }
@@ -230,15 +241,16 @@ void updateVisualizer(const wave::LaserOdom *odom, wave::PointCloudDisplay *disp
     }
 }
 
-void plotResults(const wave::VecE<wave::PoseVelStamped> &ground_truth, const wave::VecE<wave::PoseVelStamped> &odom_trajectory) {
-    std::vector<double> ground_truth_x, ground_truth_y, ground_truth_z, ground_truth_stamp,
-            ground_truth_vx, ground_truth_vy, ground_truth_vz, ground_truth_wx, ground_truth_wy, ground_truth_wz;
+void plotResults(const wave::VecE<wave::PoseVelStamped> &ground_truth,
+                 const wave::VecE<wave::PoseVelStamped> &odom_trajectory) {
+    std::vector<double> ground_truth_x, ground_truth_y, ground_truth_z, ground_truth_stamp, ground_truth_vx,
+      ground_truth_vy, ground_truth_vz, ground_truth_wx, ground_truth_wy, ground_truth_wz;
     if (ground_truth_x.empty()) {
         auto start = ground_truth.front().stamp;
         for (const auto &traj : ground_truth) {
-            ground_truth_x.emplace_back(traj.pose.storage(0,3));
-            ground_truth_y.emplace_back(traj.pose.storage(1,3));
-            ground_truth_z.emplace_back(traj.pose.storage(2,3));
+            ground_truth_x.emplace_back(traj.pose.storage(0, 3));
+            ground_truth_y.emplace_back(traj.pose.storage(1, 3));
+            ground_truth_z.emplace_back(traj.pose.storage(2, 3));
             ground_truth_vx.emplace_back(traj.vel(3));
             ground_truth_vy.emplace_back(traj.vel(4));
             ground_truth_vz.emplace_back(traj.vel(5));
@@ -251,10 +263,10 @@ void plotResults(const wave::VecE<wave::PoseVelStamped> &ground_truth, const wav
 
     std::vector<double> odom_x, odom_y, odom_z, odom_stamp, odom_vx, odom_vy, odom_vz, odom_wx, odom_wy, odom_wz;
     auto start = odom_trajectory.front().stamp;
-    for(const auto &traj : odom_trajectory) {
-        odom_x.emplace_back(traj.pose.storage(0,3));
-        odom_y.emplace_back(traj.pose.storage(1,3));
-        odom_z.emplace_back(traj.pose.storage(2,3));
+    for (const auto &traj : odom_trajectory) {
+        odom_x.emplace_back(traj.pose.storage(0, 3));
+        odom_y.emplace_back(traj.pose.storage(1, 3));
+        odom_z.emplace_back(traj.pose.storage(2, 3));
         odom_vx.emplace_back(traj.vel(3));
         odom_vy.emplace_back(traj.vel(4));
         odom_vz.emplace_back(traj.vel(5));
@@ -265,12 +277,12 @@ void plotResults(const wave::VecE<wave::PoseVelStamped> &ground_truth, const wav
     }
 
     plot::clf();
-    plot::subplot(2,2,1);
+    plot::subplot(2, 2, 1);
     plot::named_plot("Ground Truth", ground_truth_x, ground_truth_y);
     plot::named_plot("Estimate", odom_x, odom_y);
     plot::legend();
 
-    plot::subplot(2,2,2);
+    plot::subplot(2, 2, 2);
     plot::named_plot("Ground Truth X(m)", ground_truth_stamp, ground_truth_x);
     plot::named_plot("Ground Truth Y(m)", ground_truth_stamp, ground_truth_y);
     plot::named_plot("Ground Truth Z(m)", ground_truth_stamp, ground_truth_z);
@@ -279,7 +291,7 @@ void plotResults(const wave::VecE<wave::PoseVelStamped> &ground_truth, const wav
     plot::named_plot("Odom Z(m)", odom_stamp, odom_z);
     plot::legend();
 
-    plot::subplot(2,2,3);
+    plot::subplot(2, 2, 3);
     plot::named_plot("Ground Truth wx(rad/s)", ground_truth_stamp, ground_truth_wx);
     plot::named_plot("Ground Truth wy(rad/s)", ground_truth_stamp, ground_truth_wy);
     plot::named_plot("Ground Truth wz(rad/s)", ground_truth_stamp, ground_truth_wz);
@@ -288,7 +300,7 @@ void plotResults(const wave::VecE<wave::PoseVelStamped> &ground_truth, const wav
     plot::named_plot("Odom wz(rad/s)", odom_stamp, odom_wz);
     plot::legend();
 
-    plot::subplot(2,2,4);
+    plot::subplot(2, 2, 4);
     plot::named_plot("Ground Truth Vx(m/s)", ground_truth_stamp, ground_truth_vx);
     plot::named_plot("Ground Truth Vy(m/s)", ground_truth_stamp, ground_truth_vy);
     plot::named_plot("Ground Truth Vz(m/s)", ground_truth_stamp, ground_truth_vz);
@@ -372,25 +384,15 @@ wave::Mat34 poseFromGPS(const std::vector<double> &vals, const wave::Mat34 &refe
 
     wave::ecefFromENUTransformMatrix(vals.data(), T_ecef_enu);
 
-    double sr = std::sin(vals.at(3)),
-       cr = std::cos(vals.at(3)),
-       sp = std::sin(vals.at(4)),
-       cp = std::cos(vals.at(4)),
-       sy = std::sin(vals.at(5)),
-       cy = std::cos(vals.at(5));
+    double sr = std::sin(vals.at(3)), cr = std::cos(vals.at(3)), sp = std::sin(vals.at(4)), cp = std::cos(vals.at(4)),
+           sy = std::sin(vals.at(5)), cy = std::cos(vals.at(5));
 
     wave::Mat3 Rx, Ry, Rz;
-    Rx << 1.0, 0.0, 0.0,
-          0.0, cr, -sr,
-          0.0, sr, cr;
+    Rx << 1.0, 0.0, 0.0, 0.0, cr, -sr, 0.0, sr, cr;
 
-    Ry << cp, 0.0, sp,
-          0.0, 1.0, 0.0,
-          -sp, 0.0, cp;
+    Ry << cp, 0.0, sp, 0.0, 1.0, 0.0, -sp, 0.0, cp;
 
-    Rz << cy, -sy, 0.0,
-          sy, cy, 0.0,
-          0.0, 0.0, 1.0;
+    Rz << cy, -sy, 0.0, sy, cy, 0.0, 0.0, 0.0, 1.0;
 
     wave::Mat34 T_ECEF_ENU, T_ECEF_CAR;
 
@@ -404,8 +406,9 @@ wave::Mat34 poseFromGPS(const std::vector<double> &vals, const wave::Mat34 &refe
 
     R_ENU_CAR.noalias() = Rz * Ry * Rx;
 
-    T_ECEF_CAR.block<3,3>(0,0).noalias() = reference.block<3,3>(0,0) * (T_ECEF_ENU.block<3,3>(0,0) * R_ENU_CAR);
-    T_ECEF_CAR.block<3,1>(0,3).noalias() = reference.block<3,3>(0,0) * T_ECEF_ENU.block<3,1>(0,3) + reference.block<3,1>(0,3);
+    T_ECEF_CAR.block<3, 3>(0, 0).noalias() = reference.block<3, 3>(0, 0) * (T_ECEF_ENU.block<3, 3>(0, 0) * R_ENU_CAR);
+    T_ECEF_CAR.block<3, 1>(0, 3).noalias() =
+      reference.block<3, 3>(0, 0) * T_ECEF_ENU.block<3, 1>(0, 3) + reference.block<3, 1>(0, 3);
 
     return T_ECEF_CAR;
 }
@@ -420,9 +423,9 @@ void fillGroundTruth(wave::VecE<wave::PoseVelStamped> &trajectory, const std::st
     std::sort(v.begin(), v.end());
 
     wave::Mat34 reference;
-    reference.block<3,3>(0,0).setIdentity();
-    reference.block<3,1>(0,3).setZero();
-    for (const auto& iter : v) {
+    reference.block<3, 3>(0, 0).setIdentity();
+    reference.block<3, 1>(0, 3).setZero();
+    for (const auto &iter : v) {
         fstream oxt_data;
         oxt_data.open(iter.string(), ios::in);
         std::string data_string;
@@ -454,19 +457,20 @@ void fillGroundTruth(wave::VecE<wave::PoseVelStamped> &trajectory, const std::st
     }
     stamp_file.close();
 }
-
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv) {
     if (argc != 4) {
-        throw std::runtime_error("Must be run with only 3 arguments: \n 1. Full path to data \n 2. Full path to configuration files \n 3. 1 or 0 to indicate whether a visualizer should be run");
+        throw std::runtime_error(
+          "Must be run with only 3 arguments: \n 1. Full path to data \n 2. Full path to configuration files \n 3. 1 "
+          "or 0 to indicate whether a visualizer should be run");
     }
     std::string data_path(argv[1]);
     std::string config_path(argv[2]);
-    if(data_path.back() != '/') {
+    if (data_path.back() != '/') {
         data_path = data_path + '/';
     }
-    if(config_path.back() != '/') {
+    if (config_path.back() != '/') {
         config_path = config_path + '/';
     }
 
@@ -479,7 +483,7 @@ int main(int argc, char** argv) {
     wave::FeatureExtractorParams feature_params;
     loadFeatureParams(config_path, "features.yaml", feature_params);
     setupFeatureParameters(feature_params);
-    LoadParameters(config_path, "odom.yaml",  params);
+    LoadParameters(config_path, "odom.yaml", params);
     params.n_ring = 64;
     wave::TransformerParams transformer_params;
     transformer_params.traj_resolution = params.num_trajectory_states;
@@ -498,13 +502,13 @@ int main(int argc, char** argv) {
         display = nullptr;
     }
 
-    //set up pointcloud iterators
+    // set up pointcloud iterators
     boost::filesystem::path p(data_path + "velodyne_points/data");
     std::vector<boost::filesystem::path> v;
     std::copy(boost::filesystem::directory_iterator(p), boost::filesystem::directory_iterator(), std::back_inserter(v));
     std::sort(v.begin(), v.end());
 
-    //timesteps
+    // timesteps
     fstream timestamps_start(data_path + "velodyne_points/timestamps_start.txt", ios::in);
     fstream timestamps_end(data_path + "velodyne_points/timestamps_end.txt", ios::in);
 
@@ -522,7 +526,7 @@ int main(int argc, char** argv) {
     wave::VecE<wave::PoseVelStamped> oxt_trajectory, odom_trajectory;
     fillGroundTruth(oxt_trajectory, data_path);
 
-    auto func = [&]() {updateVisualizer(&odom, display, &odom_trajectory);};
+    auto func = [&]() { updateVisualizer(&odom, display, &odom_trajectory); };
     odom.registerOutputFunction(func);
 
     int pt_index = 0;
@@ -553,7 +557,7 @@ int main(int argc, char** argv) {
         while (cloud_file.good() && !cloud_file.eof()) {
             std::vector<wave::PointXYZIR> pt_vec(1);
             if (binary_format) {
-                cloud_file.read((char *) pt_vec.front().data, 3*sizeof(float));
+                cloud_file.read((char *) pt_vec.front().data, 3 * sizeof(float));
                 cloud_file.read((char *) &pt_vec.front().intensity, sizeof(float));
             } else {
                 std::string line;
@@ -566,11 +570,11 @@ int main(int argc, char** argv) {
             }
 
             auto azimuth = (std::atan2(pt_vec.front().y, pt_vec.front().x));
-            azimuth < 0 ? azimuth = (float) (azimuth + 2.0*M_PI) : azimuth;
+            azimuth < 0 ? azimuth = (float) (azimuth + 2.0 * M_PI) : azimuth;
             double from_start = azimuth - cutoff_angles(ring_index, 0);
-            from_start < 0 ? from_start = from_start + 2.0*M_PI : from_start;
+            from_start < 0 ? from_start = from_start + 2.0 * M_PI : from_start;
 
-            double time_scaling = (2*M_PI - from_start) / (2*M_PI);
+            double time_scaling = (2 * M_PI - from_start) / (2 * M_PI);
 
             double nanoFP = time_scaling * diff.count();
             std::chrono::nanoseconds scaled_diff((long) nanoFP);
@@ -598,7 +602,11 @@ int main(int argc, char** argv) {
             }
         }
         cloud_file.close();
-        std::cout << "Finished with scan " << std::to_string(++scan_index) << "\n";
+        ++scan_index;
+        if (scan_index % 10 == 0 || scan_index == oxt_trajectory.size()) {
+            std::cout << "\rFinished with scan " << std::to_string(scan_index) << "/"
+                      << std::to_string(oxt_trajectory.size()) << std::flush;
+        }
     }
     plotResults(oxt_trajectory, odom_trajectory);
 

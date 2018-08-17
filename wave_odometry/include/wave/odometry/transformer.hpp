@@ -58,10 +58,13 @@ class Transformer {
      *
      * @param points 2 dimensional tensor, 4 x N
      * @param points_transformed Dynamic Eigen Matrix, will be resized to 3 x N
+     * @param which scan the points are from, used to select corresponding states/times
+     * @param skip_point Whether or not to transform point. Provides speedup when not all feature points are used
      */
     void transformToStart(const Eigen::Tensor<float, 2> &points,
                           MatXf &points_transformed,
-                          const uint32_t scan_idx);
+                          const uint32_t scan_idx,
+                          const Vec<bool> * skip_point = nullptr);
     void transformToEnd(const Eigen::Tensor<float, 2> &points,
                         MatXf &points_transformed,
                         const uint32_t scan_idx);

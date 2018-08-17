@@ -9,7 +9,8 @@ OdometryCallback::OdometryCallback(const Vec<VecE<Eigen::Tensor<float, 2>>> *fea
                                    Vec<Vec<float>> *jac_stamps,
                                    const Vec<float> *traj_stamps,
                                    const Vec<float> *scan_stamps,
-                                   Transformer *transformer)
+                                   Transformer *transformer,
+                                   const Vec<Vec<Vec<bool>>> *skip_point)
     : ceres::EvaluationCallback(),
       feat_pts(feat_pts),
       feat_ptsT(feat_ptsT),
@@ -18,7 +19,8 @@ OdometryCallback::OdometryCallback(const Vec<VecE<Eigen::Tensor<float, 2>>> *fea
       jac_stamps(jac_stamps),
       traj_stamps(traj_stamps),
       scan_stamps(scan_stamps),
-      transformer(transformer) {
+      transformer(transformer),
+      skip_point(skip_point) {
     this->pose_diff.resize(traj->size() - 1);
     this->Pose_diff.resize(traj->size() - 1);
     this->J_logmaps.resize(traj->size() - 1);
@@ -48,7 +50,11 @@ void OdometryCallback::PrepareForEvaluation(bool evaluate_jacobians, bool new_ev
         this->transformer->update(*(this->traj), *(this->traj_stamps));
         for (uint32_t i = 0; i < this->feat_pts->size(); ++i) {
             for (uint32_t j = 0; j < this->feat_pts->at(i).size(); ++j) {
-                this->transformer->transformToStart(this->feat_pts->at(i)[j], this->feat_ptsT->at(i)[j], i);
+                if (this->skip_point) {
+                    this->transformer->transformToStart(this->feat_pts->at(i)[j], this->feat_ptsT->at(i)[j], i, &(this->skip_point->at(i).at(j)));
+                } else {
+                    this->transformer->transformToStart(this->feat_pts->at(i)[j], this->feat_ptsT->at(i)[j], i);
+                }
             }
         }
         this->old_jacobians = true;

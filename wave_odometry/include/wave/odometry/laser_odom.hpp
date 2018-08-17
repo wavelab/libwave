@@ -111,6 +111,8 @@ struct LaserOdomParams {
     float ang_scaling_param = 10;
 
     int icosahedral_bin_limit = 5;
+    uint32_t icosahedral_angular_sectors = 4;
+    uint32_t min_new_points = 5;
 
     // Setting flags
     bool only_extract_features = false;   // If set, no transforms are calculated
@@ -203,14 +205,9 @@ class LaserOdom {
     void calculateLineSimilarity(const Vec6 &geo1, const Vec6 &geo2, float &dist_cost, float &dir_cost);
     void calculatePlaneSimilarity(const Vec6 &geo1, const Vec6 &geo2, float &dist_cost, float &dir_cost);
 
-    void mergeFeatureTracks(uint32_t feat_id);
+    void mergeFeatureTracks(VecE <FeatureTrack> &tracks, uint32_t feat_id);
 
-    /**
-     * Removes a portion of feature tracks by preferring tracks with more points,
-     * and limiting amount of redundant tracks
-     * @param feat_id
-     */
-    void thinFeatureTracks(uint32_t feat_id);
+    void setupSkipPoint(uint32_t feat_id);
 
     void undistort();
 
@@ -250,6 +247,7 @@ class LaserOdom {
 
     Vec<VecE<Eigen::Tensor<float, 2>>> feat_pts;
     Vec<VecE<MatXf>> feat_pts_T;
+    Vec<Vec<Vec<bool>>> skip_point;
 
     Vec<Vec<VecE<MatX>>> ptT_jacobians;
     Vec<Vec<float>> jacobian_stamps;
@@ -264,7 +262,9 @@ class LaserOdom {
 
     Vec<VecE<FeatureTrack>> feature_tracks;
 
-    IcosahedronBinner binner;
+    Vec<IcosahedronBinner> binner;
+
+    void checkTrackValidity();
 };
 
 }  // namespace wave

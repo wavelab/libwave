@@ -26,8 +26,9 @@ struct OdometryCallback : ceres::EvaluationCallback {
                               Vec<Vec<float>> *jac_stamps,
                               const Vec<float> *traj_stamps,
                               const Vec<float> *scan_stamps,
-                              Transformer *transformer);
-    
+                              Transformer *transformer,
+                              const Vec<Vec<Vec<bool>>> *skip_point = nullptr);
+
     OdometryCallback() = delete;
 
     virtual void PrepareForEvaluation(bool evaluate_jacobians, bool new_evaluation_point);
@@ -38,7 +39,7 @@ struct OdometryCallback : ceres::EvaluationCallback {
     /// Output data shared with residuals
     Vec<VecE<MatXf>> *feat_ptsT;
 
-    ///State Variables, hooked to and updated by Ceres
+    /// State Variables, hooked to and updated by Ceres
     const VecE<PoseVel> *traj;
 
     /// Grid of jacobians to interpolate between. The first index is the gap between
@@ -52,6 +53,8 @@ struct OdometryCallback : ceres::EvaluationCallback {
     /// Points are stored with time relative to the start of the scan
     const Vec<float> *scan_stamps;
     Transformer *transformer;
+
+    const Vec<Vec<Vec<bool>>> *skip_point;
 
  private:
     /// Cached intermediate variables for Jacobian calculation

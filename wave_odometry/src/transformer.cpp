@@ -63,7 +63,8 @@ void Transformer::update(const std::vector<PoseVel, Eigen::aligned_allocator<Pos
 
 void Transformer::transformToStart(const Eigen::Tensor<float, 2> &points,
                                    MatXf &points_transformed,
-                                   const uint32_t scan_idx) {
+                                   const uint32_t scan_idx,
+                                   const Vec<bool> * skip_point) {
     if (points_transformed.rows() != 3 || points_transformed.cols() != points.dimension(1)) {
         points_transformed.resize(3, points.dimension(1));
     }
@@ -71,8 +72,11 @@ void Transformer::transformToStart(const Eigen::Tensor<float, 2> &points,
     Eigen::Map<const MatXf> pt(points.data(), points.dimension(0), points.dimension(1));
     auto &ptT = points_transformed;
 
-#pragma omp parallel for
+//#pragma omp parallel for
     for (long i = 0; i < points.dimension(1); i++) {
+        if (skip_point && skip_point->at(static_cast<unsigned long>(i))) {
+            continue;
+        }
         float time = points(3, i) + this->traj_stamps.at(this->scan_indices.at(scan_idx));
         auto idx = std::lower_bound(this->traj_stamps.begin(), this->traj_stamps.end(), time);
         auto index = static_cast<uint32_t>(idx - this->traj_stamps.begin());
@@ -112,7 +116,7 @@ void Transformer::transformToStart(const MatXf &pt,
         ptT.resize(3, pt.cols());
     }
 
-#pragma omp parallel for
+//#pragma omp parallel for
     for (long i = 0; i < pt.cols(); i++) {
         float pttime = pt(3, i);
         if (pttime < 0) {
@@ -160,7 +164,7 @@ void Transformer::transformToEnd(const Eigen::Tensor<float, 2> &points,
     Eigen::Map<const MatXf> pt(points.data(), points.dimension(0), points.dimension(1));
     auto &ptT = points_transformed;
 
-#pragma omp parallel for
+//#pragma omp parallel for
     for (long i = 0; i < points.dimension(1); i++) {
         float time = points(3, i) + this->traj_stamps.at(this->scan_indices.at(scan_idx));
         auto idx = std::lower_bound(this->traj_stamps.begin(), this->traj_stamps.end(), time);
@@ -196,7 +200,7 @@ void Transformer::transformToEnd(const MatXf &pt,
         ptT.resize(3, pt.cols());
     }
 
-#pragma omp parallel for
+//#pragma omp parallel for
     for (long i = 0; i < pt.cols(); i++) {
         float time = pt(3, i) + this->traj_stamps.at(this->scan_indices.at(scan_idx));
         auto idx = std::lower_bound(this->traj_stamps.begin(), this->traj_stamps.end(), time);
@@ -294,7 +298,7 @@ void Transformer::constantTransform(const uint32_t &fromScan,
     const Eigen::Matrix<float, 3, 3> R = RtT * Rf;
     const Vec3f T = RtT * (Tf - Tt);
 
-#pragma omp parallel for
+//#pragma omp parallel for
     for (uint32_t i = 0; i < input.cols(); ++i) {
         output.block<3,1>(0,i).noalias() = R * input.block<3,1>(0,i) + T;
     }

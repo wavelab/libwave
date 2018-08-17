@@ -53,7 +53,7 @@ void FeatureExtractor::computeScores(const Tensorf &signals, const Vec<int> &ran
     Eigen::array<ptrdiff_t, 1> dims({1});
     Eigen::Tensor<float, 1> sum_kernel(this->param.variance_window);
     sum_kernel.setConstant(1.0);
-#pragma omp parallel for
+//#pragma omp parallel for
     for (uint32_t i = 0; i < this->n_ring; i++) {
         auto max = (int) range.at(i);
         // resize
@@ -71,7 +71,7 @@ void FeatureExtractor::computeScores(const Tensorf &signals, const Vec<int> &ran
                 this->scores.at(i).slice(ar2({static_cast<long>(j), 0}), ar2({1, max - 10})) =
                   signals.at(i).slice(ar2({s_idx, 0}), ar2({1, max})).convolve(this->kernels.at(k_idx), dims);
                 // or if sample variance
-            } else {
+            } else if (j == 3) {
                 auto &N = this->param.variance_window;
                 Eigen::Tensor<float, 1> Ninv(1);
                 Ninv.setConstant(1.0 / (float) N);
@@ -193,7 +193,7 @@ Eigen::Tensor<bool, 1> high_neg_score(const Eigen::Tensor<float, 1> &score, floa
 }
 
 void FeatureExtractor::buildFilteredScore(const Vec<int> &range) {
-#pragma omp parallel for
+//#pragma omp parallel for
     for (uint32_t k = 0; k < this->param.N_FEATURES; k++) {
         auto &def = this->param.feature_definitions.at(k);
         // get primary score index by kernel type

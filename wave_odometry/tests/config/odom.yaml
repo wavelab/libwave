@@ -2,11 +2,11 @@
 Qc:
   rows: 6
   cols: 6
-  data: [0.1, 0, 0, 0, 0, 0,
-         0, 0.1, 0, 0, 0, 0,
-         0, 0, 1, 0, 0, 0,
+  data: [10, 0, 0, 0, 0, 0,
+         0, 10, 0, 0, 0, 0,
+         0, 0, 10, 0, 1, 0,
          0, 0, 0, 100, 0, 0,
-         0, 0, 0, 0, 10, 0,
+         0, 0, 1, 0, 10, 0,
          0, 0, 0, 0, 0, 10]
 
   # The information matrix for the previous step's twist
@@ -23,10 +23,10 @@ Prior_twist:
 # How many states per revolution to optimize over, there must be at minimum two.
 num_trajectory_states: 2
 n_window: 5 # Number of scans to optimize over. Must be at least 2
-opt_iters: 2  # how many iterations of the matcher to run
-max_inner_iters: 200 # limit on iterations of ceres at each matcher iteration
+opt_iters: 3  # how many iterations of the matcher to run
+max_inner_iters: 50 # limit on iterations of ceres at each matcher iteration
 diff_tol: 1e-4 # norm of solution difference for stopping criteria
-solver_threads: 8 # number of threads the solver should use
+solver_threads: 1 # number of threads the solver should use
 robust_param: 0.25 # Parameter used in tukey loss function
 max_correspondence_dist: 2  #  correspondences greater than this are discarded
 max_residual_val: 1        #  Residuals with an initial error greater than this are not used.
@@ -55,7 +55,11 @@ max_linear_ang_threshold: 0.025
 ang_scaling_param: 10
 
 #When thinning out feature tracks, how many in each direction to allow
-icosahedral_bin_limit: 7
+icosahedral_bin_limit: 1
+# How many different angular bins to use
+icosahedral_angular_sectors: 4
+# if less than this number of points is found for a landmark, it is marked as old and no longer optimized
+min_new_points: 5
 
 #  Setting flags
 only_extract_features: false   #  If set, no transforms are calculated
