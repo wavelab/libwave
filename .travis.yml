@@ -19,7 +19,6 @@ addons:
       - libpcl-dev
       - libopencv-dev
       - libceres-dev
-      - libkindr-dev
       - clang-format-3.8
 
 before_script:
