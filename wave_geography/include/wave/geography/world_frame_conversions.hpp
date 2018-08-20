@@ -1,3 +1,7 @@
+/** @file
+ * @ingroup geography
+ */
+
 #ifndef WAVE_GEOGRAPHY_WORLD_FRAME_CONVERSIONS_HPP
 #define WAVE_GEOGRAPHY_WORLD_FRAME_CONVERSIONS_HPP
 
@@ -7,6 +11,8 @@
 #include <GeographicLib/LocalCartesian.hpp>
 
 namespace wave {
+/** @addtogroup geography
+ *  @{ */
 
 /** Converts a point from LLH (Latitude [deg], Longitude [deg], Height[m]) to
  *  ECEF.
@@ -218,5 +224,6 @@ void llhPointFromENU(const Eigen::MatrixBase<DerivedA>& point_enu,
                      (const_cast< Eigen::MatrixBase<DerivedC>& >(point_llh))(2));
 };
 
+/** @} group geography */
 }  // namespace wave
 #endif  // WAVE_GEOGRAPHY_WORLD_FRAME_CONVERSIONS_HPP
