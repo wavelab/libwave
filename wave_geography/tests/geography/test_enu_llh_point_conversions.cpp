@@ -42,7 +42,8 @@ class enuAndLLHPointConversionTest : public ::testing::Test {
     Eigen::Vector3d enu_A_wrt_C, enu_B_wrt_C, enu_D_wrt_C;
     Eigen::Vector3d enu_A_wrt_D, enu_B_wrt_D, enu_C_wrt_D;
 
-    double calculateNormDiff(const Eigen::Vector3d input, const Eigen::Vector3d expected) {
+    double calculateNormDiff(const Eigen::Vector3d input,
+                             const Eigen::Vector3d expected) {
         Eigen::Vector3d diff = input - expected;
         return diff.norm();
     }
@@ -61,17 +62,17 @@ class enuAndLLHPointConversionTest : public ::testing::Test {
         enu_C_wrt_A << 0, -square_size, 0;
         enu_D_wrt_A << square_size, -square_size, 0;
 
-       /* enu_B_wrt_A(0) = square_size;
-        enu_B_wrt_A(1) = 0;
-        enu_B_wrt_A(2) = 0;
+        /* enu_B_wrt_A(0) = square_size;
+         enu_B_wrt_A(1) = 0;
+         enu_B_wrt_A(2) = 0;
 
-        enu_C_wrt_A(0) = 0;
-        enu_C_wrt_A(1) = -square_size;
-        enu_C_wrt_A(2) = 0;
+         enu_C_wrt_A(0) = 0;
+         enu_C_wrt_A(1) = -square_size;
+         enu_C_wrt_A(2) = 0;
 
-        enu_D_wrt_A(0) = square_size;
-        enu_D_wrt_A(1) = -square_size;
-        enu_D_wrt_A(2) = 0;*/
+         enu_D_wrt_A(0) = square_size;
+         enu_D_wrt_A(1) = -square_size;
+         enu_D_wrt_A(2) = 0;*/
 
         // Compute other LLH values from datum_A
         llhPointFromENU(enu_B_wrt_A, datum_A, llh_B, datum_is_llh);
@@ -146,15 +147,12 @@ class enuAndLLHPointConversionTest : public ::testing::Test {
         enuPointFromLLH(llh_C, datum_B, result_enu_C_from_B, datum_is_llh);
         enuPointFromLLH(llh_D, datum_B, result_enu_D_from_B, datum_is_llh);
 
-        EXPECT_NEAR(square_size,
-                    result_enu_A_from_B.norm(),
-                    cartesian_check_threshold);
-        EXPECT_NEAR(diagonal_size,
-                    result_enu_C_from_B.norm(),
-                    cartesian_check_threshold);
-        EXPECT_NEAR(square_size,
-                    result_enu_D_from_B.norm(),
-                    cartesian_check_threshold);
+        EXPECT_NEAR(
+          square_size, result_enu_A_from_B.norm(), cartesian_check_threshold);
+        EXPECT_NEAR(
+          diagonal_size, result_enu_C_from_B.norm(), cartesian_check_threshold);
+        EXPECT_NEAR(
+          square_size, result_enu_D_from_B.norm(), cartesian_check_threshold);
 
         // Check ENU signs
         EXPECT_TRUE(result_enu_A_from_B[0] < 0);
@@ -190,15 +188,12 @@ class enuAndLLHPointConversionTest : public ::testing::Test {
         enuPointFromLLH(llh_B, datum_C, result_enu_B_from_C, datum_is_llh);
         enuPointFromLLH(llh_D, datum_C, result_enu_D_from_C, datum_is_llh);
 
-        EXPECT_NEAR(square_size,
-                    result_enu_A_from_C.norm(),
-                    cartesian_check_threshold);
-        EXPECT_NEAR(diagonal_size,
-                    result_enu_B_from_C.norm(),
-                    cartesian_check_threshold);
-        EXPECT_NEAR(square_size,
-                    result_enu_D_from_C.norm(),
-                    cartesian_check_threshold);
+        EXPECT_NEAR(
+          square_size, result_enu_A_from_C.norm(), cartesian_check_threshold);
+        EXPECT_NEAR(
+          diagonal_size, result_enu_B_from_C.norm(), cartesian_check_threshold);
+        EXPECT_NEAR(
+          square_size, result_enu_D_from_C.norm(), cartesian_check_threshold);
 
         // Check ENU signs
         EXPECT_TRUE(result_enu_A_from_C[1] > 0);
@@ -234,15 +229,12 @@ class enuAndLLHPointConversionTest : public ::testing::Test {
         enuPointFromLLH(llh_B, datum_D, result_enu_B_from_D, datum_is_llh);
         enuPointFromLLH(llh_C, datum_D, result_enu_C_from_D, datum_is_llh);
 
-        EXPECT_NEAR(diagonal_size,
-                    result_enu_A_from_D.norm(),
-                    cartesian_check_threshold);
-        EXPECT_NEAR(square_size,
-                    result_enu_B_from_D.norm(),
-                    cartesian_check_threshold);
-        EXPECT_NEAR(square_size,
-                    result_enu_C_from_D.norm(),
-                    cartesian_check_threshold);
+        EXPECT_NEAR(
+          diagonal_size, result_enu_A_from_D.norm(), cartesian_check_threshold);
+        EXPECT_NEAR(
+          square_size, result_enu_B_from_D.norm(), cartesian_check_threshold);
+        EXPECT_NEAR(
+          square_size, result_enu_C_from_D.norm(), cartesian_check_threshold);
 
         // Check ENU signs
         EXPECT_TRUE(result_enu_A_from_D[0] < 0);
@@ -282,7 +274,8 @@ class enuAndLLHPointConversionTest : public ::testing::Test {
         checkENUFromD();
     }
 
-    void checkResults(const Eigen::Vector3d datum_llh, double input_square_size) {
+    void checkResults(const Eigen::Vector3d datum_llh,
+                      double input_square_size) {
         square_size = input_square_size;
 
         // Check LLH Pipeline

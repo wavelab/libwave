@@ -21,8 +21,9 @@ namespace wave {
  *  is relative to the WGS84 ellipsoid.
  *  @param[out] ecef the corresponding point in the geocentric ECEF frame.
  */
-template<typename DerivedA, typename DerivedB>
-void ecefPointFromLLH(const Eigen::MatrixBase<DerivedA>& llh, Eigen::MatrixBase<DerivedB> const & ecef){
+template <typename DerivedA, typename DerivedB>
+void ecefPointFromLLH(const Eigen::MatrixBase<DerivedA> &llh,
+                      Eigen::MatrixBase<DerivedB> const &ecef) {
     EIGEN_STATIC_ASSERT_VECTOR_SPECIFIC_SIZE(DerivedA, 3);
     EIGEN_STATIC_ASSERT_VECTOR_SPECIFIC_SIZE(DerivedB, 3);
 
@@ -33,7 +34,7 @@ void ecefPointFromLLH(const Eigen::MatrixBase<DerivedA>& llh, Eigen::MatrixBase<
     double X, Y, Z;
     earth.Forward(latitude, longitude, height, X, Y, Z);
 
-    const_cast< Eigen::MatrixBase<DerivedB>& >(ecef) << X, Y, Z;
+    const_cast<Eigen::MatrixBase<DerivedB> &>(ecef) << X, Y, Z;
 };
 
 /** Converts a point from LLH (Latitude [deg], Longitude [deg], Height[m]) to
@@ -43,8 +44,9 @@ void ecefPointFromLLH(const Eigen::MatrixBase<DerivedA>& llh, Eigen::MatrixBase<
  *  @param[out] llh the corresponding llh point as (Latitude, Longitude,
  *  Height). Height is relative to the WGS84 ellipsoid.
  */
-template<typename DerivedA, typename DerivedB>
-void llhPointFromECEF(const Eigen::MatrixBase<DerivedA>& ecef, Eigen::MatrixBase<DerivedB> const & llh){
+template <typename DerivedA, typename DerivedB>
+void llhPointFromECEF(const Eigen::MatrixBase<DerivedA> &ecef,
+                      Eigen::MatrixBase<DerivedB> const &llh) {
     EIGEN_STATIC_ASSERT_VECTOR_SPECIFIC_SIZE(DerivedA, 3);
     EIGEN_STATIC_ASSERT_VECTOR_SPECIFIC_SIZE(DerivedB, 3);
 
@@ -55,7 +57,8 @@ void llhPointFromECEF(const Eigen::MatrixBase<DerivedA>& ecef, Eigen::MatrixBase
     double latitude, longitude, height;
     earth.Reverse(X, Y, Z, latitude, longitude, height);
 
-    const_cast< Eigen::MatrixBase<DerivedB>& >(llh) << latitude, longitude, height;
+    const_cast<Eigen::MatrixBase<DerivedB> &>(llh) << latitude, longitude,
+      height;
 };
 
 /** Computes the 3D Affine transform from a local datum-defined ENU frame to
@@ -71,10 +74,10 @@ void llhPointFromECEF(const Eigen::MatrixBase<DerivedA>& ecef, Eigen::MatrixBase
  *  (default). <BR>
  *  \b false: The given datum values are ECEF
  */
-template<typename DerivedA, typename DerivedB>
-void ecefFromENUTransformMatrix(const Eigen::MatrixBase<DerivedA>& datum,
-                                Eigen::MatrixBase<DerivedB> const & T_ecef_enu,
-                                bool datum_is_llh = true){
+template <typename DerivedA, typename DerivedB>
+void ecefFromENUTransformMatrix(const Eigen::MatrixBase<DerivedA> &datum,
+                                Eigen::MatrixBase<DerivedB> const &T_ecef_enu,
+                                bool datum_is_llh = true) {
     EIGEN_STATIC_ASSERT_VECTOR_SPECIFIC_SIZE(DerivedA, 3);
     EIGEN_STATIC_ASSERT_MATRIX_SPECIFIC_SIZE(DerivedB, 4, 4);
 
@@ -88,7 +91,7 @@ void ecefFromENUTransformMatrix(const Eigen::MatrixBase<DerivedA>& datum,
         double latitude = datum(0), longitude = datum(1), height = datum(2);
 
         earth.Forward(
-                latitude, longitude, height, datum_X, datum_Y, datum_Z, R_ecef_enu);
+          latitude, longitude, height, datum_X, datum_Y, datum_Z, R_ecef_enu);
     } else {
         // Datum is already given in ECEF
         datum_X = datum(0);
@@ -97,13 +100,13 @@ void ecefFromENUTransformMatrix(const Eigen::MatrixBase<DerivedA>& datum,
 
         double latitude, longitude, height;
         earth.Reverse(
-                datum_X, datum_Y, datum_Z, latitude, longitude, height, R_ecef_enu);
+          datum_X, datum_Y, datum_Z, latitude, longitude, height, R_ecef_enu);
     }
 
-    const_cast< Eigen::MatrixBase<DerivedB>& >(T_ecef_enu) << R_ecef_enu[0], R_ecef_enu[1], R_ecef_enu[2], datum_X,
-                                                              R_ecef_enu[3], R_ecef_enu[4], R_ecef_enu[5], datum_Y,
-                                                              R_ecef_enu[6], R_ecef_enu[7], R_ecef_enu[8], datum_Z,
-                                                              0.0, 0.0, 0.0, 1.0;
+    const_cast<Eigen::MatrixBase<DerivedB> &>(T_ecef_enu) << R_ecef_enu[0],
+      R_ecef_enu[1], R_ecef_enu[2], datum_X, R_ecef_enu[3], R_ecef_enu[4],
+      R_ecef_enu[5], datum_Y, R_ecef_enu[6], R_ecef_enu[7], R_ecef_enu[8],
+      datum_Z, 0.0, 0.0, 0.0, 1.0;
 };
 
 /** Computes the 3D Affine transform from ECEF to a local datum-defined ENU
@@ -119,10 +122,10 @@ void ecefFromENUTransformMatrix(const Eigen::MatrixBase<DerivedA>& datum,
  *  (default). <BR>
  *  \b false: The given datum values are ECEF
  */
-template<typename DerivedA, typename DerivedB>
-void enuFromECEFTransformMatrix(const Eigen::MatrixBase<DerivedA>& datum,
-                                Eigen::MatrixBase<DerivedB> const & T_enu_ecef,
-                                bool datum_is_llh = true){
+template <typename DerivedA, typename DerivedB>
+void enuFromECEFTransformMatrix(const Eigen::MatrixBase<DerivedA> &datum,
+                                Eigen::MatrixBase<DerivedB> const &T_enu_ecef,
+                                bool datum_is_llh = true) {
     EIGEN_STATIC_ASSERT_VECTOR_SPECIFIC_SIZE(DerivedA, 3);
     EIGEN_STATIC_ASSERT_MATRIX_SPECIFIC_SIZE(DerivedB, 4, 4);
 
@@ -131,12 +134,16 @@ void enuFromECEFTransformMatrix(const Eigen::MatrixBase<DerivedA>& datum,
     ecefFromENUTransformMatrix(datum, T_ecef_enu, datum_is_llh);
 
     // Affine inverse: [R | t]^(-1) = [ R^T | - R^T * t]
-    (const_cast< Eigen::MatrixBase<DerivedB>& >(T_enu_ecef)).topLeftCorner(3,3) = T_ecef_enu.topLeftCorner(3,3).transpose();
+    (const_cast<Eigen::MatrixBase<DerivedB> &>(T_enu_ecef))
+      .topLeftCorner(3, 3) = T_ecef_enu.topLeftCorner(3, 3).transpose();
     // Affine inverse translation component: -R_inverse * b
     //    with b as the 4th column of T_ecef_enu
-    (const_cast< Eigen::MatrixBase<DerivedB>& >(T_enu_ecef)).topRightCorner(3,1) = - T_ecef_enu.topLeftCorner(3,3).transpose() * T_ecef_enu.topRightCorner(3,1);
-    (const_cast< Eigen::MatrixBase<DerivedB>& >(T_enu_ecef)).row(3) = Eigen::MatrixXd::Zero(1,4);
-    (const_cast< Eigen::MatrixBase<DerivedB>& >(T_enu_ecef))(3,3) = 1.0;
+    (const_cast<Eigen::MatrixBase<DerivedB> &>(T_enu_ecef))
+      .topRightCorner(3, 1) = -T_ecef_enu.topLeftCorner(3, 3).transpose() *
+                              T_ecef_enu.topRightCorner(3, 1);
+    (const_cast<Eigen::MatrixBase<DerivedB> &>(T_enu_ecef)).row(3) =
+      Eigen::MatrixXd::Zero(1, 4);
+    (const_cast<Eigen::MatrixBase<DerivedB> &>(T_enu_ecef))(3, 3) = 1.0;
 };
 
 /** Converts a source point from LLH to a target ENU point in the local
@@ -151,11 +158,11 @@ void enuFromECEFTransformMatrix(const Eigen::MatrixBase<DerivedA>& datum,
  *  (default). <BR>
  *  \b false: The given datum values are ECEF
  */
-template<typename DerivedA, typename DerivedB, typename DerivedC>
-void enuPointFromLLH(const Eigen::MatrixBase<DerivedA>& point_llh,
-                     const Eigen::MatrixBase<DerivedB>& enu_datum,
-                     Eigen::MatrixBase<DerivedC> const & point_enu,
-                     bool datum_is_llh = true){
+template <typename DerivedA, typename DerivedB, typename DerivedC>
+void enuPointFromLLH(const Eigen::MatrixBase<DerivedA> &point_llh,
+                     const Eigen::MatrixBase<DerivedB> &enu_datum,
+                     Eigen::MatrixBase<DerivedC> const &point_enu,
+                     bool datum_is_llh = true) {
     EIGEN_STATIC_ASSERT_VECTOR_SPECIFIC_SIZE(DerivedA, 3);
     EIGEN_STATIC_ASSERT_VECTOR_SPECIFIC_SIZE(DerivedB, 3);
     EIGEN_STATIC_ASSERT_VECTOR_SPECIFIC_SIZE(DerivedC, 3);
@@ -172,14 +179,14 @@ void enuPointFromLLH(const Eigen::MatrixBase<DerivedA>& point_llh,
 
     GeographicLib::Geocentric earth = GeographicLib::Geocentric::WGS84();
     GeographicLib::LocalCartesian localENU(
-            enu_datum_llh(0), enu_datum_llh(1), enu_datum_llh(2), earth);
+      enu_datum_llh(0), enu_datum_llh(1), enu_datum_llh(2), earth);
 
     localENU.Forward(point_llh(0),
                      point_llh(1),
                      point_llh(2),
-                     (const_cast< Eigen::MatrixBase<DerivedC>& >(point_enu))(0),
-                     (const_cast< Eigen::MatrixBase<DerivedC>& >(point_enu))(1),
-                     (const_cast< Eigen::MatrixBase<DerivedC>& >(point_enu))(2));
+                     (const_cast<Eigen::MatrixBase<DerivedC> &>(point_enu))(0),
+                     (const_cast<Eigen::MatrixBase<DerivedC> &>(point_enu))(1),
+                     (const_cast<Eigen::MatrixBase<DerivedC> &>(point_enu))(2));
 };
 
 /** Converts a source point from ENU in the local Cartesian ENU frame
@@ -194,11 +201,11 @@ void enuPointFromLLH(const Eigen::MatrixBase<DerivedA>& point_llh,
  *  (default). <BR>
  *  \b false: The given datum values are ECEF
  */
-template<typename DerivedA, typename DerivedB, typename DerivedC>
-void llhPointFromENU(const Eigen::MatrixBase<DerivedA>& point_enu,
-                     const Eigen::MatrixBase<DerivedB>& enu_datum,
-                     Eigen::MatrixBase<DerivedC> const & point_llh,
-                     bool datum_is_llh = true){
+template <typename DerivedA, typename DerivedB, typename DerivedC>
+void llhPointFromENU(const Eigen::MatrixBase<DerivedA> &point_enu,
+                     const Eigen::MatrixBase<DerivedB> &enu_datum,
+                     Eigen::MatrixBase<DerivedC> const &point_llh,
+                     bool datum_is_llh = true) {
     EIGEN_STATIC_ASSERT_VECTOR_SPECIFIC_SIZE(DerivedA, 3);
     EIGEN_STATIC_ASSERT_VECTOR_SPECIFIC_SIZE(DerivedB, 3);
     EIGEN_STATIC_ASSERT_VECTOR_SPECIFIC_SIZE(DerivedC, 3);
@@ -214,14 +221,14 @@ void llhPointFromENU(const Eigen::MatrixBase<DerivedA>& point_enu,
 
     GeographicLib::Geocentric earth = GeographicLib::Geocentric::WGS84();
     GeographicLib::LocalCartesian localENU(
-            enu_datum_llh(0), enu_datum_llh(1), enu_datum_llh(2), earth);
+      enu_datum_llh(0), enu_datum_llh(1), enu_datum_llh(2), earth);
 
     localENU.Reverse(point_enu(0),
                      point_enu(1),
                      point_enu(2),
-                     (const_cast< Eigen::MatrixBase<DerivedC>& >(point_llh))(0),
-                     (const_cast< Eigen::MatrixBase<DerivedC>& >(point_llh))(1),
-                     (const_cast< Eigen::MatrixBase<DerivedC>& >(point_llh))(2));
+                     (const_cast<Eigen::MatrixBase<DerivedC> &>(point_llh))(0),
+                     (const_cast<Eigen::MatrixBase<DerivedC> &>(point_llh))(1),
+                     (const_cast<Eigen::MatrixBase<DerivedC> &>(point_llh))(2));
 };
 
 /** @} group geography */
