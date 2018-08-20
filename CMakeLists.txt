@@ -121,6 +121,7 @@ ADD_SUBDIRECTORY(wave_geography)
 # Documentation
 SET(WAVE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 SET(WAVE_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR})
+SET(WAVE_MODULES utils geometry containers benchmark controls kinematics matching vision optimization gtsam geography)
 ADD_SUBDIRECTORY(docs)
 
 # This is where .cmake files will be installed (default under share/)

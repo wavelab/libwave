@@ -4,11 +4,10 @@ project(wave_docs)
 set(WAVE_DOXY_INPUT
     "${WAVE_SOURCE_DIR}/README.md ${CMAKE_CURRENT_SOURCE_DIR}/ref")
 
-foreach(dir ${LIBWAVE_MODULES})
-    include_directories(${dir}/include)
-    set(WAVE_DOXY_INPUT "${WAVE_DOXY_INPUT} ${WAVE_SOURCE_DIR}/${dir}")
+foreach(module ${WAVE_MODULES})
+    include_directories(wave_${module}/include)
+    set(WAVE_DOXY_INPUT "${WAVE_DOXY_INPUT} ${WAVE_SOURCE_DIR}/wave_${module}")
 endforeach()
-
 
 find_package(Doxygen)
 if(DOXYGEN_FOUND)
