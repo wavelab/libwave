@@ -442,6 +442,13 @@ bool LaserOdom::findLineCorrespondences(std::vector<uint32_t> &matches,
             continue;
         }
         Vec3f pt = points.template block<3, 1>(0, index(i));
+
+        //dirty hack for kitti's strange motion correction
+        double azimuth = std::atan2(pt(1), pt(0));
+        if (M_PI - std::abs(azimuth) < 0.1) {
+            continue;
+        }
+
         double xydist = std::sqrt(pt(0) * pt(0) + pt(1) * pt(1));
         double range = std::sqrt(xydist * xydist + pt(2) * pt(2));
         double scaled_elev_tol = this->param.elevation_tol * (10.0 / range);
@@ -579,6 +586,13 @@ void LaserOdom::extendFeatureTracks(const Eigen::MatrixXi &idx, const MatXf &dis
         for (int32_t k = 0; k < idx.rows(); ++k) {
             if (!std::isinf(distances(k, j))) {
                 const auto &pt = this->cur_feature_candidatesT.at(feat_id).block<3, 1>(0, idx(k, j));
+
+                //dirty hack for kitti's strange motion correction
+                double azimuth = std::atan2(pt(1), pt(0));
+                if (M_PI - std::abs(azimuth) < 0.1) {
+                    continue;
+                }
+
                 Vec3 diff = (pt.cast<double>() - geometry.block<3, 1>(3, 0));
                 Vec1 error;
                 if (residual_type == PointToLine) {

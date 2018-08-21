@@ -137,8 +137,6 @@ int main(int argc, char **argv) {
     auto func = [&]() { updateVisualizer(&odom, display, &odom_trajectory); };
     odom.registerOutputFunction(func);
 
-    int pt_index = 0;
-
     unsigned long counter = 0;
     bool binary_format = false;
     uint16_t ring_index = 0;
@@ -176,8 +174,6 @@ int main(int argc, char **argv) {
 
             auto azimuth = (std::atan2(pt_vec.front().y, pt_vec.front().x));
             azimuth < 0 ? azimuth = (float) (azimuth + 2.0 * M_PI) : azimuth;
-            double from_start = azimuth - cutoff_angles(ring_index, 0);
-            from_start < 0 ? from_start = from_start + 2.0 * M_PI : from_start;
 
             wave::TimeType stamp = time_t;
 
@@ -191,11 +187,9 @@ int main(int argc, char **argv) {
             if (ring_index < 64) {
                 if (first_point) {
                     odom.addPoints(pt_vec, 0, stamp);
-                    pt_index = 0;
                     first_point = false;
                 } else {
-                    odom.addPoints(pt_vec, 3000, stamp);
-                    ++pt_index;
+                    odom.addPoints(pt_vec, 3000, stamp);;
                 }
             }
         }
