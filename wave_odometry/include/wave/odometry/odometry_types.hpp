@@ -37,6 +37,12 @@ struct PoseVelStamped {
     TimeType stamp;
 };
 
+struct PoseStamped {
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    T_TYPE pose;
+    TimeType stamp;
+};
+
 struct PoseVelDiff {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     Vec12f hat_multiplier, candle_multiplier;

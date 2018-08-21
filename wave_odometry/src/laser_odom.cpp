@@ -561,7 +561,7 @@ void LaserOdom::extendFeatureTracks(const Eigen::MatrixXi &idx, const MatXf &dis
         max_residual_val = this->param.max_planar_residual_val;
     }
     if (large_tol) {
-        max_residual_val = 1;
+        max_residual_val = 3;
     }
     max_residual_val *= max_residual_val;
     /// Each column represents a query (feature track)
@@ -1151,6 +1151,9 @@ bool LaserOdom::match(const TimeType &stamp) {
         this->transformer.update(this->cur_trajectory, this->trajectory_stamps);
 
         for (uint32_t j = 0; j < this->N_FEATURES; j++) {
+            if (j != 2 && first_iteration) {
+                continue;  // edges have relatively poor initial convergence.
+            }
             /// 1 Transform all candidate points to the start of the window
             this->transformer.transformToStart(this->cur_feature_candidates.at(j),
                                                this->cur_feature_candidatesT.at(j),

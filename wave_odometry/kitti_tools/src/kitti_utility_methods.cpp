@@ -305,9 +305,110 @@ void plotResults(const wave::VecE<wave::PoseVelStamped> &ground_truth,
     plot::show(true);
 }
 
+void plotResults(const wave::VecE<wave::PoseStamped> &ground_truth,
+                 const wave::VecE<wave::PoseVelStamped> &odom_trajectory) {
+    std::vector<double> ground_truth_x, ground_truth_y, ground_truth_z, ground_truth_stamp, ground_truth_vx,
+            ground_truth_vy, ground_truth_vz, ground_truth_wx, ground_truth_wy, ground_truth_wz;
+    if (ground_truth_x.empty()) {
+        auto start = ground_truth.front().stamp;
+        for (const auto &traj : ground_truth) {
+            ground_truth_x.emplace_back(traj.pose.storage(0, 3));
+            ground_truth_y.emplace_back(traj.pose.storage(1, 3));
+            ground_truth_z.emplace_back(traj.pose.storage(2, 3));
+            ground_truth_stamp.emplace_back(std::chrono::duration_cast<f64_seconds>(traj.stamp - start).count());
+        }
+    }
+
+    std::vector<double> odom_x, odom_y, odom_z, odom_stamp, odom_vx, odom_vy, odom_vz, odom_wx, odom_wy, odom_wz;
+    auto start = odom_trajectory.front().stamp;
+    for (const auto &traj : odom_trajectory) {
+        odom_x.emplace_back(traj.pose.storage(0, 3));
+        odom_y.emplace_back(traj.pose.storage(1, 3));
+        odom_z.emplace_back(traj.pose.storage(2, 3));
+        odom_vx.emplace_back(traj.vel(3));
+        odom_vy.emplace_back(traj.vel(4));
+        odom_vz.emplace_back(traj.vel(5));
+        odom_wx.emplace_back(traj.vel(0));
+        odom_wy.emplace_back(traj.vel(1));
+        odom_wz.emplace_back(traj.vel(2));
+        odom_stamp.emplace_back(std::chrono::duration_cast<f64_seconds>(traj.stamp - start).count());
+    }
+
+    plot::clf();
+    plot::subplot(2, 2, 1);
+    plot::named_plot("Ground Truth", ground_truth_x, ground_truth_y);
+    plot::named_plot("Estimate", odom_x, odom_y);
+    plot::legend();
+
+    plot::subplot(2, 2, 2);
+    plot::named_plot("Ground Truth X(m)", ground_truth_stamp, ground_truth_x);
+    plot::named_plot("Ground Truth Y(m)", ground_truth_stamp, ground_truth_y);
+    plot::named_plot("Ground Truth Z(m)", ground_truth_stamp, ground_truth_z);
+    plot::named_plot("Odom X(m)", odom_stamp, odom_x);
+    plot::named_plot("Odom Y(m)", odom_stamp, odom_y);
+    plot::named_plot("Odom Z(m)", odom_stamp, odom_z);
+    plot::legend();
+
+    plot::subplot(2, 2, 3);
+    plot::named_plot("Odom wx(rad/s)", odom_stamp, odom_wx);
+    plot::named_plot("Odom wy(rad/s)", odom_stamp, odom_wy);
+    plot::named_plot("Odom wz(rad/s)", odom_stamp, odom_wz);
+    plot::legend();
+
+    plot::subplot(2, 2, 4);
+    plot::named_plot("Odom Vx(m/s)", odom_stamp, odom_vx);
+    plot::named_plot("Odom Vy(m/s)", odom_stamp, odom_vy);
+    plot::named_plot("Odom Vz(m/s)", odom_stamp, odom_vz);
+    plot::legend();
+
+    plot::show(true);
+}
+
+void plotResults(const wave::VecE<wave::PoseVelStamped> &odom_trajectory) {
+    std::vector<double> odom_x, odom_y, odom_z, odom_stamp, odom_vx, odom_vy, odom_vz, odom_wx, odom_wy, odom_wz;
+    auto start = odom_trajectory.front().stamp;
+    for (const auto &traj : odom_trajectory) {
+        odom_x.emplace_back(traj.pose.storage(0, 3));
+        odom_y.emplace_back(traj.pose.storage(1, 3));
+        odom_z.emplace_back(traj.pose.storage(2, 3));
+        odom_vx.emplace_back(traj.vel(3));
+        odom_vy.emplace_back(traj.vel(4));
+        odom_vz.emplace_back(traj.vel(5));
+        odom_wx.emplace_back(traj.vel(0));
+        odom_wy.emplace_back(traj.vel(1));
+        odom_wz.emplace_back(traj.vel(2));
+        odom_stamp.emplace_back(std::chrono::duration_cast<f64_seconds>(traj.stamp - start).count());
+    }
+
+    plot::clf();
+    plot::subplot(2, 2, 1);
+    plot::named_plot("Estimate", odom_x, odom_y);
+    plot::legend();
+
+    plot::subplot(2, 2, 2);
+    plot::named_plot("Odom X(m)", odom_stamp, odom_x);
+    plot::named_plot("Odom Y(m)", odom_stamp, odom_y);
+    plot::named_plot("Odom Z(m)", odom_stamp, odom_z);
+    plot::legend();
+
+    plot::subplot(2, 2, 3);
+    plot::named_plot("Odom wx(rad/s)", odom_stamp, odom_wx);
+    plot::named_plot("Odom wy(rad/s)", odom_stamp, odom_wy);
+    plot::named_plot("Odom wz(rad/s)", odom_stamp, odom_wz);
+    plot::legend();
+
+    plot::subplot(2, 2, 4);
+    plot::named_plot("Odom Vx(m/s)", odom_stamp, odom_vx);
+    plot::named_plot("Odom Vy(m/s)", odom_stamp, odom_vy);
+    plot::named_plot("Odom Vz(m/s)", odom_stamp, odom_vz);
+    plot::legend();
+
+    plot::show(true);
+}
+
 wave::TimeType parseTime(const std::string &date_time) {
     std::tm tm = {};
-    unsigned long nano_seconds = std::stoi(date_time.substr(20, 9));
+    auto nano_seconds = static_cast<unsigned long>(std::stoi(date_time.substr(20, 9)));
     std::chrono::nanoseconds n_secs(nano_seconds);
     std::stringstream ss(date_time);
     ss >> std::get_time(&tm, "%Y-%m-%d %H:%M:%S");

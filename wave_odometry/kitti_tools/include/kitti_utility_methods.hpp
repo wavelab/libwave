@@ -25,6 +25,11 @@ void updateVisualizer(const wave::LaserOdom *odom,
 void plotResults(const wave::VecE<wave::PoseVelStamped> &ground_truth,
                  const wave::VecE<wave::PoseVelStamped> &odom_trajectory);
 
+void plotResults(const wave::VecE<wave::PoseStamped> &ground_truth,
+                 const wave::VecE<wave::PoseVelStamped> &odom_trajectory);
+
+void plotResults(const wave::VecE<wave::PoseVelStamped> &odom_trajectory);
+
 wave::TimeType parseTime(const std::string &date_time);
 
 wave::Mat34 poseFromGPS(const std::vector<double> &vals, const wave::Mat34 &reference);

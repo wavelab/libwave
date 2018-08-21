@@ -20,7 +20,7 @@ WAVE_ADD_MODULE(${PROJECT_NAME}
 
 ADD_LIBRARY(kitti_utils
         kitti_tools/src/kitti_utility_methods.cpp)
-TARGET_LINK_LIBRARIES(kitti_tools
+TARGET_LINK_LIBRARIES(kitti_utils
         wave::geography
         wave::matching
         ${PROJECT_NAME})
@@ -28,6 +28,11 @@ TARGET_LINK_LIBRARIES(kitti_tools
 ADD_EXECUTABLE(kitti_raw_eval
         kitti_tools/src/kitti_raw_evaluator.cpp)
 TARGET_LINK_LIBRARIES(kitti_raw_eval
+        kitti_utils)
+
+ADD_EXECUTABLE(kitti_odom_eval
+        kitti_tools/src/kitti_odom_evaluator.cpp)
+TARGET_LINK_LIBRARIES(kitti_odom_eval
         kitti_utils)
 
 IF(BUILD_TESTING)
