@@ -216,7 +216,7 @@ int main(int argc, char **argv) {
     for (const auto &T_L1_Lx : odom_trajectory) {
         wave::Transformation<> T_O_CAM;
         T_O_CAM = T_O_L1 * T_L1_Lx.pose * T_CAM_LIDAR.transformInverse();
-        output_file << T_O_CAM.storage.format(Format);
+        output_file << T_O_CAM.storage.format(Format) << "\n";
     }
 
     if (run_viz) {
