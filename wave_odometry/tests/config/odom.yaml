@@ -22,14 +22,15 @@ Prior_twist:
 
 # How many states per revolution to optimize over, there must be at minimum two.
 num_trajectory_states: 2
-n_window: 5 # Number of scans to optimize over. Must be at least 2
-opt_iters: 3  # how many iterations of the matcher to run
+n_window: 10 # Number of scans to optimize over. Must be at least 2
+opt_iters: 4  # how many iterations of the matcher to run
 max_inner_iters: 50 # limit on iterations of ceres at each matcher iteration
 diff_tol: 1e-4 # norm of solution difference for stopping criteria
-solver_threads: 1 # number of threads the solver should use
+solver_threads: 4 # number of threads the solver should use
 robust_param: 0.25 # Parameter used in tukey loss function
 max_correspondence_dist: 2  #  correspondences greater than this are discarded
-max_residual_val: 1        #  Residuals with an initial error greater than this are not used.
+max_planar_residual_val: 0.25   # Planar residuals with an initial error greater than this are not created
+max_linear_residual_val: 0.1 # for linear residuals. Set lower because more sensitive.
 min_residuals: 30          #  Problem will be reset if the number of residuals is less than this
 local_map_range: 10000  #  Maximum range of features to keep. square metres
 
@@ -43,9 +44,6 @@ elevation_tol: 0.01   #  Minimum elevation difference across correspondences at 
 TTL: 1             #  Maximum life of feature in local map with no correspondences
 iso_var: 0.005       #  Variance to use if weighing is set.
 
-min_eigen: 100
-max_extrapolation: 0.0 # How far to extrapolate line correspondences
-
 #Parameters controlling how planar feature tracks are merged
 max_planar_dist_threshold: 3
 max_planar_ang_threshold: 0.1  # 1 - cos(theta)
@@ -55,11 +53,11 @@ max_linear_ang_threshold: 0.025
 ang_scaling_param: 10
 
 #When thinning out feature tracks, how many in each direction to allow
-icosahedral_bin_limit: 1
+icosahedral_bin_limit: 2
 # How many different angular bins to use
-icosahedral_angular_sectors: 4
+icosahedral_angular_sectors: 3
 # if less than this number of points is found for a landmark, it is marked as old and no longer optimized
-min_new_points: 5
+min_new_points: 2
 
 #  Setting flags
 only_extract_features: false   #  If set, no transforms are calculated

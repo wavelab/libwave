@@ -50,11 +50,12 @@ void FeatureExtractor::computeScores(const Tensorf &signals, const Vec<int> &ran
     if (!this->ready) {
         throw std::length_error("Must set feature parameters before using");
     }
-    Eigen::array<ptrdiff_t, 1> dims({1});
-    Eigen::Tensor<float, 1> sum_kernel(this->param.variance_window);
-    sum_kernel.setConstant(1.0);
 //#pragma omp parallel for
     for (uint32_t i = 0; i < this->n_ring; i++) {
+        Eigen::array<ptrdiff_t, 1> dims({1});
+        Eigen::Tensor<float, 1> sum_kernel(this->param.variance_window);
+        sum_kernel.setConstant(1.0);
+
         auto max = (int) range.at(i);
         // resize
         if (max < 11) {
@@ -255,7 +256,7 @@ void FeatureExtractor::flagNearbyPoints(const uint32_t p_idx, const float pt_ran
 }
 
 void FeatureExtractor::sortAndBin(const Tensorf &scan, const Tensorf &signals, TensorIdx &feature_indices) {
-    //#pragma omp parallel for
+//    #pragma omp parallel for
     for (uint32_t i = 0; i < this->param.N_FEATURES; i++) {
         for (unlong j = 0; j < this->n_ring; j++) {
             auto &def = this->param.feature_definitions.at(i);

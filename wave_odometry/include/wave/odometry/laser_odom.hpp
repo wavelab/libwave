@@ -89,7 +89,8 @@ struct LaserOdomParams {
     int min_features = 300;               // How many features are required
     float robust_param = 0.2;             // Hyper-parameter for bisquare (Tukey) loss function
     float max_correspondence_dist = 1;  // correspondences greater than this are discarded
-    double max_residual_val = 0.1;        // Residuals with an initial error greater than this are not used.
+    double max_planar_residual_val = 0.1;        // Residuals with an initial error greater than this are not used.
+    double max_linear_residual_val = 0.1;        // Residuals with an initial error greater than this are not used.
     int min_residuals = 30;               // Problem will be reset if the number of residuals is less than this
 
     // Sensor parameters
@@ -191,12 +192,13 @@ class LaserOdom {
                                       const Eigen::MatrixBase<Derived1> &dist,
                                       const Eigen::MatrixBase<Derived2> &points);
 
-    void extendFeatureTracks(const Eigen::MatrixXi &indices, const MatXf &distances, uint32_t feat_id);
+    void extendFeatureTracks(const Eigen::MatrixXi &indices, const MatXf &distances, uint32_t feat_id,
+                                 const bool large_tol);
 
     void createNewGeometry(const MatXf &points, const Vec<uint32_t> &indices, ResidualType residual_type, Vec6 &geometry);
 
     void createNewFeatureTracks(const Eigen::MatrixXi &indices, const MatXf &distances, uint32_t feat_id,
-                                    const Nabo::NNSearchF *cur_knn_tree);
+                                    const Nabo::NNSearchF *cur_knn_tree, const bool large_tol);
     /**
      * Removes any correspondences to the current scan
      */

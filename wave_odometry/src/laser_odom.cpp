@@ -356,7 +356,8 @@ void LaserOdom::rollover(TimeType stamp) {
 
 bool LaserOdom::runOptimization(ceres::Problem &problem, ceres::Solver::Summary &summary) {
     ceres::Solver::Options options;
-    options.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
+    options.linear_solver_type = ceres::DENSE_SCHUR;
+    options.use_explicit_schur_complement = true;
     options.max_num_iterations = this->param.max_inner_iters;
     options.max_num_consecutive_invalid_steps = 30;
     options.logging_type = ceres::LoggingType::SILENT;
@@ -550,12 +551,19 @@ bool LaserOdom::findPlaneCorrespondences(std::vector<uint32_t> &matches,
     return false;
 }
 
-void LaserOdom::extendFeatureTracks(const Eigen::MatrixXi &idx, const MatXf &distances, uint32_t feat_id) {
+void LaserOdom::extendFeatureTracks(const Eigen::MatrixXi &idx, const MatXf &distances, uint32_t feat_id,
+                                    const bool large_tol) {
     auto residual_type = PointToLine;
+    double max_residual_val = this->param.max_linear_residual_val;
     // todo don't do this
     if (feat_id == 2) {
         residual_type = PointToPlane;
+        max_residual_val = this->param.max_planar_residual_val;
     }
+    if (large_tol) {
+        max_residual_val = 1;
+    }
+    max_residual_val *= max_residual_val;
     /// Each column represents a query (feature track)
     Eigen::Tensor<float, 2> new_feat_points(4, 2000);
     auto offset = this->feat_pts.back().at(feat_id).dimension(1);
@@ -583,7 +591,7 @@ void LaserOdom::extendFeatureTracks(const Eigen::MatrixXi &idx, const MatXf &dis
 
                 // copy candidate point into the feature point set (both original and transformed) if it is not already
                 // used in another residual
-                if (error(0) < sqrt(this->param.max_residual_val)) {
+                if (error(0) < max_residual_val) {
                     this->cur_feat_idx.at(feat_id).at(idx(k, j)) = j;
 
                     Eigen::array<int, 2> offsets_new = {0, static_cast<int>(new_feat_cnt)};
@@ -653,15 +661,19 @@ void LaserOdom::createNewGeometry(const MatXf &points,
     }
 }
 // todo reduce duplicated code
-void LaserOdom::createNewFeatureTracks(const Eigen::MatrixXi &idx,
-                                       const MatXf &distances,
-                                       uint32_t feat_id,
-                                       const Nabo::NNSearchF *cur_knn_tree) {
+void LaserOdom::createNewFeatureTracks(const Eigen::MatrixXi &idx, const MatXf &distances, uint32_t feat_id,
+                                       const Nabo::NNSearchF *cur_knn_tree, const bool large_tol) {
     auto residual_type = PointToLine;
+    double max_residual_val = this->param.max_linear_residual_val;
     // todo don't do this
     if (feat_id == 2) {
         residual_type = PointToPlane;
+        max_residual_val = this->param.max_planar_residual_val;
     }
+    if (large_tol) {
+        max_residual_val = 1;
+    }
+    max_residual_val *= max_residual_val;
     /// Each column represents a query (feature track)
     Eigen::Tensor<float, 2> new_feat_points(4, 3000), prev_new_feat_points(4, 3000);
     long new_feat_cnt = 0, prev_new_feat_cnt = 0;
@@ -711,7 +723,7 @@ void LaserOdom::createNewFeatureTracks(const Eigen::MatrixXi &idx,
             }
 
             // create new residual, may need to increase tolerance a bit to find new features when initializing
-            if (error(0) < this->param.max_residual_val * this->param.max_residual_val) {
+            if (error(0) < max_residual_val) {
                 //                query.block<3, 1>(0, candidate_track_cnt) = (0.5f * geometry.block<3, 1>(3,
                 //                0).cast<float>() + 0.5f * this->cur_feat_map.at(feat_id)->block<3, 1>(0, j));
                 query.block<3, 1>(0, candidate_track_cnt) = this->cur_feature_candidatesT.at(feat_id).block<3, 1>(0, j);
@@ -1128,9 +1140,11 @@ bool LaserOdom::match(const TimeType &stamp) {
         initial_prev_feat_idx.at(feat_id) = this->prev_feat_idx.at(feat_id);
     }
 
+    bool first_iteration = true;
     for (int op = 0; op < this->param.opt_iters; op++) {
         if (op > 0) {
             last_transform = ref;
+            first_iteration = false;
         }
         this->clearVolatileTracks();
 
@@ -1174,7 +1188,7 @@ bool LaserOdom::match(const TimeType &stamp) {
                                     Nabo::NNSearchF::SORT_RESULTS,
                                     this->param.max_correspondence_dist);
 
-                    this->extendFeatureTracks(nn_idx, nn_dist, j);
+                    this->extendFeatureTracks(nn_idx, nn_dist, j, first_iteration);
                 }
                 this->prev_feat_idx.at(j) = initial_prev_feat_idx.at(j);
                 if (pfeat.cols() > 10) {
@@ -1185,7 +1199,7 @@ bool LaserOdom::match(const TimeType &stamp) {
                     nn_dist.resize(knn, cfeat.cols());
                     curm1_kd_idx->knn(
                       cfeat, nn_idx, nn_dist, knn, 0, Nabo::NNSearchF::SORT_RESULTS, this->param.max_correspondence_dist);
-                    this->createNewFeatureTracks(nn_idx, nn_dist, j, cur_kd_idx);
+                    this->createNewFeatureTracks(nn_idx, nn_dist, j, cur_kd_idx, first_iteration);
                     delete curm1_kd_idx;
                 }
                 delete cur_kd_idx;

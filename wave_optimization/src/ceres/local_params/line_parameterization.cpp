@@ -61,6 +61,10 @@ bool LineParameterization::ComputeJacobian(const double *x, double *jacobian) co
     J.block<3, 2>(0,0) = R.block<3, 2>(0,0);
     J.block<3, 2>(3,2) = R.block<3, 2>(0,0);
 
+    if (std::isnan(jacobian[0])) {
+        throw std::runtime_error("line jacobian!");
+    }
+
     return true;
 }
 

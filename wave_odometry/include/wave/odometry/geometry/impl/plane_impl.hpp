@@ -33,13 +33,8 @@ bool PlaneResidual<states...>::Evaluate(double const *const *parameters, double 
 
         Eigen::Matrix<double, 1, 6> del_e_del_T;
         del_e_del_T = plane.block<3, 1>(0, 0).transpose() * del_ptT_T;
-
-        try {
-            assignJacobian(jacobians + 1, del_e_del_T, *(this->jacs), this->w1, this->w2, this->jac_index, 0, states...);
-        } catch (...) {
-            throw std::runtime_error("put a breakpoint here");
-        }
-
+        
+        assignJacobian(jacobians + 1, del_e_del_T, *(this->jacs), this->w1, this->w2, this->jac_index, 0, states...);
     }
 
     return true;
