@@ -6,15 +6,25 @@
 #define WAVE_ICOSAHEDRON_BINNER_HPP
 
 #include "wave/utils/math.hpp"
+#include <unsupported/Eigen/CXX11/Tensor>
 
 namespace wave {
+
+struct IcosahedronBinnerParams {
+    std::vector<double> range_divisions;
+    int azimuth_divisions;
+    int xy_directions;
+    double z_cutoff;
+    int z_limit;
+    int xy_limit;
+};
 
 class IcosahedronBinner {
  public:
     IcosahedronBinner() {}
-    IcosahedronBinner(uint32_t angular_bins);
+    IcosahedronBinner(IcosahedronBinnerParams params);
 
-    void setAngularBins(uint32_t new_angular_bin);
+    void setParams(const IcosahedronBinnerParams &new_param);
 
     /**
      * Zeros out bin counters;
@@ -22,9 +32,11 @@ class IcosahedronBinner {
     void clear();
 
     /**
-     * Assigns a vector to a bin, and returns the total count of elements in that bin
+     * Assigns a vector to a bin if there is still space, and returns the total count of elements in that bin
+     * 
+     * returns true if the bin counter was increased, false if not
      */
-    int bin(const Vec6 &unit_vector);
+    bool bin(const wave::Vec6 &unit_vector, int *bin_count = nullptr);
 
     /**
      * Decrements the bin count
@@ -32,23 +44,20 @@ class IcosahedronBinner {
     int deBin(const Vec6 &unit_vector);
 
     /**
-     * Bins unit_vector if the number of elements in that bin is less than or equal to limit
-     */
-    bool bin(const Vec6 &unit_vector, int limit);
-
-    /**
      *
      * @param unit_vector
      * @return
      */
-    void getBinIndex(const Vec6 &unit_vector, uint32_t &angular_bin, uint32_t &dir_bin) const;
+    void getBinIndex(const wave::Vec6 &unit_vector, uint32_t &range_bin, uint32_t &angular_bin,
+                     uint32_t &dir_bin) const;
 
     const auto& getBinCounters() {
         return this->bin_counters;
     }
 
  private:
-    std::vector<std::vector<int>> bin_counters;
+    Eigen::Tensor<int, 3> bin_counters;
+    IcosahedronBinnerParams params;
 };
 
 }

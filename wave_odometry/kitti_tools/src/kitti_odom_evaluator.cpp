@@ -37,6 +37,8 @@ int main(int argc, char **argv) {
     transformer_params.delVTol = 100.0f;
     transformer_params.delWTol = 100.0f;
 
+    wave::loadBinnerParams(config_path, "bin_config.yaml", params.binner_params);
+
     wave::LaserOdom odom(params, feature_params, transformer_params);
     wave::PointCloudDisplay *display;
 
@@ -134,7 +136,12 @@ int main(int argc, char **argv) {
 
     wave::VecE<wave::PoseVelStamped> odom_trajectory;
 
-    auto func = [&]() { updateVisualizer(&odom, display, &odom_trajectory); };
+    std::vector<wave::TrackLengths> lengths(5);
+    for (auto &length : lengths) {
+        length.lengths.resize(params.n_window);
+    }
+
+    auto func = [&]() { updateVisualizer(&odom, display, &odom_trajectory, &lengths); };
     odom.registerOutputFunction(func);
 
     unsigned long counter = 0;
@@ -205,6 +212,8 @@ int main(int argc, char **argv) {
         plotResults(odom_trajectory);
     } else {
         plotResults(T_L1_Lx_trajectory, odom_trajectory);
+        plotError(T_L1_Lx_trajectory, odom_trajectory);
+        plotTrackLengths(lengths);
     }
 
     ofstream output_file(sequence + ".txt");

@@ -39,8 +39,6 @@ void LoadParameters(const std::string &path, const std::string &filename, wave::
     parser.addParam("max_linear_dist_threshold", &(params.max_linear_dist_threshold));
     parser.addParam("max_linear_ang_threshold", &(params.max_linear_ang_threshold));
     parser.addParam("ang_scaling_param", &(params.ang_scaling_param));
-    parser.addParam("icosahedral_bin_limit", &(params.icosahedral_bin_limit));
-    parser.addParam("icosahedral_angular_sectors", &(params.icosahedral_angular_sectors));
     parser.addParam("min_new_points", &(params.min_new_points));
 
     parser.addParam("only_extract_features", &(params.only_extract_features));
@@ -113,9 +111,23 @@ void setupFeatureParameters(wave::FeatureExtractorParams &param) {
     param.feature_definitions.emplace_back(wave::FeatureDefinition{edge_int_low, &(param.n_int_edge)});
 }
 
+void loadBinnerParams(const std::string &path, const std::string &filename, wave::IcosahedronBinnerParams &params) {
+    wave::ConfigParser parser;
+
+    parser.addParam("range_divisions", &(params.range_divisions));
+    parser.addParam("azimuth_divisions", &(params.azimuth_divisions));
+    parser.addParam("xy_directions", &(params.xy_directions));
+    parser.addParam("z_cutoff", &(params.z_cutoff));
+    parser.addParam("z_limit", &(params.z_limit));
+    parser.addParam("xy_limit", &(params.xy_limit));
+
+    parser.load(path + filename);
+}
+
 void updateVisualizer(const wave::LaserOdom *odom,
                       wave::PointCloudDisplay *display,
-                      wave::VecE<wave::PoseVelStamped> *odom_trajectory) {
+                      wave::VecE<wave::PoseVelStamped> *odom_trajectory,
+                      Vec<TrackLengths> *track_lengths) {
     bool first_trajectory = true;
     wave::T_TYPE T0X;
     for (const wave::PoseVelStamped &val : odom->undistort_trajectory) {
@@ -178,7 +190,12 @@ void updateVisualizer(const wave::LaserOdom *odom,
             int_id = 0;
 
             pcl::PointCloud<pcl::PointXYZI>::Ptr display_cld = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
+
+            std::vector<int> counts(odom->getParams().n_window);
+            std::fill(counts.begin(), counts.end(), 0);
+
             for (const auto &track : odom->undis_tracks.at(i)) {
+                counts.at(track.length)++;
                 if (i == 2) {
                     pcl::PointXYZ pt1, pt2;
                     Eigen::Map<wave::Vec3f> m1(pt1.data), m2(pt2.data);
@@ -211,6 +228,10 @@ void updateVisualizer(const wave::LaserOdom *odom,
                     display_cld->push_back(new_pt);
                 }
                 int_id += 1;
+            }
+
+            for (uint32_t j = 0; j < counts.size(); ++j) {
+                track_lengths->at(i).lengths.at(j).emplace_back(counts.at(j));
             }
 
             display->addPointcloud(display_cld, ptcld_id, false, viewport_id);
@@ -404,6 +425,85 @@ void plotResults(const wave::VecE<wave::PoseVelStamped> &odom_trajectory) {
     plot::legend();
 
     plot::show(true);
+}
+
+void plotError(const wave::VecE<wave::PoseStamped> &ground_truth, const wave::VecE<wave::PoseVelStamped> &odom_trajectory) {
+    if (ground_truth.size() != odom_trajectory.size()) {
+        LOG_ERROR("Ground truth size mismatched with estimate size!");
+    }
+    //absolute error since start
+    std::vector<double> x, y, z, rx, ry, rz;
+    //pairwise error
+    std::vector<double> px, py, pz, prx, pry, prz;
+
+    for (uint32_t frame_id = 0; frame_id < ground_truth.size(); ++frame_id) {
+        Vec6 diff = odom_trajectory.at(frame_id).pose.manifoldMinus(ground_truth.at(frame_id).pose);
+        rx.emplace_back(diff(0));
+        ry.emplace_back(diff(1));
+        rz.emplace_back(diff(2));
+        x.emplace_back(diff(3));
+        y.emplace_back(diff(4));
+        z.emplace_back(diff(5));
+        if (frame_id > 0) {
+            px.emplace_back(x.at(frame_id) - x.at(frame_id - 1));
+            py.emplace_back(y.at(frame_id) - y.at(frame_id - 1));
+            pz.emplace_back(z.at(frame_id) - z.at(frame_id - 1));
+            prx.emplace_back(rx.at(frame_id) - rx.at(frame_id - 1));
+            pry.emplace_back(ry.at(frame_id) - ry.at(frame_id - 1));
+            prz.emplace_back(rz.at(frame_id) - rz.at(frame_id - 1));
+        }
+    }
+
+    plot::clf();
+    plot::subplot(2, 2, 1);
+    plot::named_plot("Tx Error", x);
+    plot::named_plot("Ty Error", y);
+    plot::named_plot("Tz Error", z);
+    plot::legend();
+    plot::title("Translation Error");
+
+    plot::subplot(2, 2, 2);
+    plot::named_plot("Rx Error", rx);
+    plot::named_plot("Ry Error", ry);
+    plot::named_plot("Rz Error", rz);
+    plot::legend();
+    plot::title("Rotation Error");
+
+    plot::subplot(2, 2, 3);
+    plot::named_plot("Tx Error", px);
+    plot::named_plot("Ty Error", py);
+    plot::named_plot("Tz Error", pz);
+    plot::legend();
+    plot::title("Incremental Translation Error");
+
+    plot::subplot(2, 2, 4);
+    plot::named_plot("Rx Error", prx);
+    plot::named_plot("Ry Error", pry);
+    plot::named_plot("Rz Error", prz);
+    plot::legend();
+    plot::title("Incremental Rotation Error");
+
+    plot::show(true);
+}
+
+void plotTrackLengths(const Vec<TrackLengths> &track_lengths) {
+    int feat_id = 0;
+    for (const auto &lengths : track_lengths) {
+        plot::clf();
+        auto n_series = lengths.lengths.size();
+        std::vector<double> length_cnt(lengths.lengths.at(0).size());
+        std::fill(length_cnt.begin(), length_cnt.end(), 0.0);
+        for (uint32_t length_id = 0; length_id < n_series; ++length_id) {
+            for (uint32_t frame_id = 0; frame_id < length_cnt.size(); ++frame_id) {
+                length_cnt.at(frame_id) += lengths.lengths.at(length_id).at(frame_id);
+            }
+            plot::named_plot("length " + std::to_string(length_id), length_cnt);
+        }
+        plot::legend();
+        plot::title("Feature Id: " + std::to_string(feat_id));
+        plot::show(true);
+        feat_id++;
+    }
 }
 
 wave::TimeType parseTime(const std::string &date_time) {

@@ -39,7 +39,7 @@ LaserOdom::LaserOdom(const LaserOdomParams params,
     this->cm1_feat_pts_size.resize(this->N_FEATURES);
 
     for (auto &biner : this->binner) {
-        biner.setAngularBins(this->param.icosahedral_angular_sectors);
+        biner.setParams(this->param.binner_params);
     }
 
     this->cur_scan.resize(n_ring);
@@ -64,7 +64,7 @@ void LaserOdom::updateParams(const LaserOdomParams new_params) {
     this->param = new_params;
 }
 
-LaserOdomParams LaserOdom::getParams() {
+LaserOdomParams LaserOdom::getParams() const {
     return this->param;
 }
 
@@ -445,7 +445,7 @@ bool LaserOdom::findLineCorrespondences(std::vector<uint32_t> &matches,
 
         //dirty hack for kitti's strange motion correction
         double azimuth = std::atan2(pt(1), pt(0));
-        if (M_PI - std::abs(azimuth) < 0.1) {
+        if (M_PI - std::abs(azimuth) < 0.2) {
             continue;
         }
 
@@ -578,9 +578,9 @@ void LaserOdom::extendFeatureTracks(const Eigen::MatrixXi &idx, const MatXf &dis
     for (uint32_t j = 0; j < idx.cols(); ++j) {
         /// add to track if error against current landmark is low
         auto &track = this->feature_tracks.at(feat_id).at(j);
-        if (!track.optimize) {
-            continue;
-        }
+//        if (!track.optimize) {
+//            continue;
+//        }
         const auto &geometry = track.geometry;
         uint32_t new_points = 0;
         for (int32_t k = 0; k < idx.rows(); ++k) {
@@ -589,7 +589,7 @@ void LaserOdom::extendFeatureTracks(const Eigen::MatrixXi &idx, const MatXf &dis
 
                 //dirty hack for kitti's strange motion correction
                 double azimuth = std::atan2(pt(1), pt(0));
-                if (M_PI - std::abs(azimuth) < 0.1) {
+                if (M_PI - std::abs(azimuth) < 0.2) {
                     continue;
                 }
 
@@ -632,6 +632,7 @@ void LaserOdom::extendFeatureTracks(const Eigen::MatrixXi &idx, const MatXf &dis
                 }
             }
         }
+        track.optimize = false;
         if (new_points < this->param.min_new_points) {
             track.optimize = false;
             this->binner.at(feat_id).deBin(track.geometry);
@@ -829,7 +830,7 @@ void LaserOdom::createNewFeatureTracks(const Eigen::MatrixXi &idx, const MatXf &
 
     // For any successes, add to feature points and to feature tracks
     for (const auto &candidate_track : shortlist) {
-        if (this->binner.at(feat_id).bin(candidate_track.geometry, this->param.icosahedral_bin_limit)) {
+        if (this->binner.at(feat_id).bin(candidate_track.geometry, nullptr)) {
             this->feature_tracks.at(feat_id).emplace_back(candidate_track);
             auto &track_ref = this->feature_tracks.at(feat_id).back();
 
@@ -933,7 +934,7 @@ void LaserOdom::clearVolatileTracks() {
             }
 
             // If the length is zero, remove the track
-            if (track.length == 0 || track.mapping.empty() || !this->binner.at(feat_id).bin(track.geometry, this->param.icosahedral_bin_limit)) {
+            if (track.length == 0 || track.mapping.empty() || !this->binner.at(feat_id).bin(track.geometry, nullptr)) {
                 if (i + 1 != static_cast<int>(tracks.size())) {
                     std::swap(track, tracks.at(tracks.size() - 1));
                     --i;
@@ -1337,12 +1338,12 @@ void LaserOdom::buildResiduals(ceres::Problem &problem) {
         }
     }
     // add prior factor on starting velocity
-    if (this->prior_twist.sum() != 0.0) {
-        //        Mat6 sqrt_info = (this->twist_covar + this->prev_delta_t * this->param.Qc).inverse().sqrt();
-        Mat6 sqrt_info = (this->prev_delta_t * this->param.Qc).inverse().sqrt();
-        this->costs.emplace_back(new ceres::NormalPrior(sqrt_info, this->prior_twist));
-        problem.AddResidualBlock(this->costs.back().get(), nullptr, this->cur_trajectory.front().vel.data());
-    }
+//    if (this->prior_twist.sum() != 0.0) {
+//        //        Mat6 sqrt_info = (this->twist_covar + this->prev_delta_t * this->param.Qc).inverse().sqrt();
+//        Mat6 sqrt_info = (this->prev_delta_t * this->param.Qc).inverse().sqrt();
+//        this->costs.emplace_back(new ceres::NormalPrior(sqrt_info, this->prior_twist));
+//        problem.AddResidualBlock(this->costs.back().get(), nullptr, this->cur_trajectory.front().vel.data());
+//    }
 
     // finally, just fix the first pose
     problem.SetParameterBlockConstant(this->cur_trajectory.front().pose.storage.data());

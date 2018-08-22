@@ -10,17 +10,24 @@
 
 namespace wave {
 
+struct TrackLengths {
+    Vec<Vec<int>> lengths;
+};
+
 void LoadSensorParameters(const std::string &path, const std::string &filename, wave::RangeSensorParams &senparams);
 
 void LoadParameters(const std::string &path, const std::string &filename, wave::LaserOdomParams &params);
 
 void loadFeatureParams(const std::string &path, const std::string &filename, wave::FeatureExtractorParams &params);
 
+void loadBinnerParams(const std::string &path, const std::string &filename, wave::IcosahedronBinnerParams &params);
+
 void setupFeatureParameters(wave::FeatureExtractorParams &param);
 
 void updateVisualizer(const wave::LaserOdom *odom,
                       wave::PointCloudDisplay *display,
-                      wave::VecE<wave::PoseVelStamped> *odom_trajectory);
+                      wave::VecE<wave::PoseVelStamped> *odom_trajectory,
+                      Vec<TrackLengths> *track_lengths = nullptr);
 
 void plotResults(const wave::VecE<wave::PoseVelStamped> &ground_truth,
                  const wave::VecE<wave::PoseVelStamped> &odom_trajectory);
@@ -29,6 +36,10 @@ void plotResults(const wave::VecE<wave::PoseStamped> &ground_truth,
                  const wave::VecE<wave::PoseVelStamped> &odom_trajectory);
 
 void plotResults(const wave::VecE<wave::PoseVelStamped> &odom_trajectory);
+
+void plotError(const wave::VecE<wave::PoseStamped> &ground_truth, const wave::VecE<wave::PoseVelStamped> &odom_trajectory);
+
+void plotTrackLengths(const Vec<TrackLengths> &track_lengths);
 
 wave::TimeType parseTime(const std::string &date_time);
 

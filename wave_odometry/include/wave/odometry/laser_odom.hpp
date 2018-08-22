@@ -111,8 +111,8 @@ struct LaserOdomParams {
     float max_linear_ang_threshold = 0.025;
     float ang_scaling_param = 10;
 
-    int icosahedral_bin_limit = 5;
-    uint32_t icosahedral_angular_sectors = 4;
+    IcosahedronBinnerParams binner_params;
+
     uint32_t min_new_points = 5;
 
     // Setting flags
@@ -132,7 +132,7 @@ class LaserOdom {
     void rollover(TimeType stamp);
     void registerOutputFunction(std::function<void()> output_function);
     void updateParams(const LaserOdomParams);
-    LaserOdomParams getParams();
+    LaserOdomParams getParams() const;
 
     VecE<PoseVel> cur_trajectory, prev_trajectory;
 

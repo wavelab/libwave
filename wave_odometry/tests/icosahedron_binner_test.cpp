@@ -1,74 +1,98 @@
 #include "wave/wave_test.hpp"
 #include "wave/odometry/icosahedron_binner.hpp"
+#include "wave/utils/config.hpp"
+
+namespace {
+
+void loadBinnerParams(const std::string &dir, const std::string &filename, wave::IcosahedronBinnerParams &params) {
+    wave::ConfigParser parser;
+
+    parser.addParam("range_divisions", &(params.range_divisions));
+    parser.addParam("azimuth_divisions", &(params.azimuth_divisions));
+    parser.addParam("xy_directions", &(params.xy_directions));
+    parser.addParam("z_cutoff", &(params.z_cutoff));
+    parser.addParam("z_limit", &(params.z_limit));
+    parser.addParam("xy_limit", &(params.xy_limit));
+
+    parser.load(dir + filename);
+}
+
+}
 
 namespace wave {
 
-TEST(IcosahedronBinnerTests, Constructor) {
-    IcosahedronBinner binner;
-    std::vector<int> counts = binner.getBinCounters();
+// Fixture to perform setup
+class BinnerTests : public testing::Test {
+ protected:
+    BinnerTests() {}
 
-    EXPECT_EQ(counts.size(), static_cast<unsigned long>(11));
+    virtual ~BinnerTests() {}
 
-    for (const auto &count : counts) {
-        EXPECT_TRUE(count == 0);
+    virtual void SetUp() {
+        loadBinnerParams("config/", "bin_config.yaml", this->params);
     }
+
+    IcosahedronBinnerParams params;
+};
+
+TEST_F(BinnerTests, Constructor) {
+    IcosahedronBinner binner(this->params);
 }
 
-TEST(IcosahedronBinnerTests, clear) {
-    IcosahedronBinner binner;
+TEST_F(BinnerTests, clear) {
+    this->params.z_limit = 10;
+    this->params.xy_limit = 10;
+    IcosahedronBinner binner(this->params);
 
-    std::vector<Vec3, Eigen::aligned_allocator<Vec3>> normals(10);
-    for (auto &normal : normals) {
+    std::vector<Vec6, Eigen::aligned_allocator<Vec6>> vectors(10);
+    for (auto &normal : vectors) {
         normal.setRandom();
-        normal.normalize();
+        normal.block<3,1>(0,0).normalize();
         binner.bin(normal);
     }
 
-    std::vector<int> counts = binner.getBinCounters();
-    int cnt = 0;
-    for (const auto &count : counts) {
-        cnt += count;
-    }
-    EXPECT_EQ(cnt, 10);
+    auto counts = binner.getBinCounters();
+
+    Eigen::Tensor<int, 0> sum = counts.sum();
+
+    EXPECT_EQ(sum(), 10);
 
     binner.clear();
 
     counts = binner.getBinCounters();
-    cnt = 0;
-    for (const auto &count : counts) {
-        cnt += count;
-    }
-    EXPECT_EQ(cnt, 0);
+    sum = counts.sum();
+    EXPECT_EQ(sum(), 0);
 }
 
-TEST(IcosahedronBinnerTests, bin_no_limit) {
-    IcosahedronBinner binner;
-    std::vector<Vec3, Eigen::aligned_allocator<Vec3>> duplicates(10);
+TEST_F(BinnerTests, bin_no_limit) {
+    this->params.z_limit = 100;
+    IcosahedronBinner binner(this->params);
+    std::vector<Vec6, Eigen::aligned_allocator<Vec6>> duplicates(10);
 
     int cnt = 1;
+    int bin_cnt;
     for (auto &normal : duplicates) {
-        normal << 0.0, 0.0, 1.0;
-        EXPECT_EQ(binner.bin(normal), cnt);
+        normal << 0.0, 0.0, 1.0, 0.0, 0.0, 0.0;
+        binner.bin(normal, &bin_cnt);
+        EXPECT_EQ(bin_cnt, cnt);
         ++cnt;
     }
-    Vec3 other;
-    other << 1.0, 0.0, 0.0;
-
-    EXPECT_EQ(binner.bin(other), 1);
 }
 
-TEST(IcosahedronBinnerTests, bin_limit) {
-    IcosahedronBinner binner;
+TEST_F(BinnerTests, bin_limit) {
     const int limit = 4;
-    std::vector<Vec3, Eigen::aligned_allocator<Vec3>> duplicates(10);
+    this->params.z_limit = limit;
+    IcosahedronBinner binner(this->params);
+
+    std::vector<Vec6, Eigen::aligned_allocator<Vec6>> duplicates(10);
 
     int cnt = 0;
     for (auto &normal : duplicates) {
-        normal << 0.0, 0.0, 1.0;
+        normal << 0.0, 0.0, 1.0, 0.0, 0.0, 0.0;
         if (cnt < limit) {
-            EXPECT_TRUE(binner.bin(normal, limit));
+            EXPECT_TRUE(binner.bin(normal));
         } else {
-            EXPECT_FALSE(binner.bin(normal, limit));
+            EXPECT_FALSE(binner.bin(normal));
         }
         ++cnt;
     }
