@@ -5,8 +5,8 @@ set(WAVE_DOXY_INPUT
     "${WAVE_SOURCE_DIR}/README.md ${CMAKE_CURRENT_SOURCE_DIR}/ref")
 
 foreach(module ${WAVE_MODULES})
-    include_directories(wave_${module}/include)
-    set(WAVE_DOXY_INPUT "${WAVE_DOXY_INPUT} ${WAVE_SOURCE_DIR}/wave_${module}")
+    include_directories(${module}/include)
+    set(WAVE_DOXY_INPUT "${WAVE_DOXY_INPUT} ${WAVE_SOURCE_DIR}/${module}")
 endforeach()
 
 find_package(Doxygen)
