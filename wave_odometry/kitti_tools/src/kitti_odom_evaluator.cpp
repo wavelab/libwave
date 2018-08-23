@@ -228,6 +228,8 @@ int main(int argc, char **argv) {
         output_file << T_O_CAM.storage.format(Format) << "\n";
     }
 
+    odom.~LaserOdom();
+
     if (run_viz) {
         display->stopSpin();
         delete display;
