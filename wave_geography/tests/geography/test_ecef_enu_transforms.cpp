@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include "wave/geography/world_frame_conversions.hpp"
+#include "wave/wave_test.hpp"
 
 namespace wave {
 
@@ -13,13 +14,7 @@ class ECEFtoENUTest : public ::testing::Test {
     void checkT_ECEF_ENU(Eigen::Matrix4d T_ECEF_ENU,
                          Eigen::Matrix3d expected_R_ENU_ECEF) {
         // Compare R vs R^T
-        for (int i_row = 0; i_row < 3; ++i_row) {
-            for (int j_col = 0; j_col < 3; ++j_col) {
-                EXPECT_NEAR(expected_R_ENU_ECEF(i_row, j_col),
-                            T_ECEF_ENU(j_col, i_row),
-                            rotation_check_threshold);
-            }
-        }
+        EXPECT_PRED3(MatricesNearPrec, expected_R_ENU_ECEF, T_ECEF_ENU.topLeftCorner(3,3).transpose(), rotation_check_threshold);
 
         // Check translation: For ECEF from ENU the norm is used
         double R = sqrt(pow(T_ECEF_ENU(0, 3), 2) + pow(T_ECEF_ENU(1, 3), 2) +
@@ -36,13 +31,7 @@ class ECEFtoENUTest : public ::testing::Test {
     void checkT_ENU_ECEF(Eigen::Matrix4d T_ENU_ECEF,
                          Eigen::Matrix3d expected_R_ENU_ECEF) {
         // Compare R's directly
-        for (int i_row = 0; i_row < 3; ++i_row) {
-            for (int j_col = 0; j_col < 3; ++j_col) {
-                EXPECT_NEAR(expected_R_ENU_ECEF(i_row, j_col),
-                            T_ENU_ECEF(i_row, j_col),
-                            rotation_check_threshold);
-            }
-        }
+        EXPECT_PRED3(MatricesNearPrec, expected_R_ENU_ECEF, T_ENU_ECEF.topLeftCorner(3,3), rotation_check_threshold);
 
         // Check translation: E == 0, N == 0, U == -earth radius
         EXPECT_NEAR(0.0, T_ENU_ECEF(0, 3), 1e3);
@@ -58,18 +47,7 @@ class ECEFtoENUTest : public ::testing::Test {
 
     void checkTransformInverse(Eigen::Matrix4d T1, Eigen::Matrix4d T2) {
         // Multiplication should produce identity
-        for (int i_row = 0; i_row < 3; ++i_row) {
-            for (int j_col = 0; j_col < 3; ++j_col) {
-                double result_i_j = T1(i_row, 0) * T2(0, j_col) +
-                                    T1(i_row, 1) * T2(1, j_col) +
-                                    T1(i_row, 2) * T2(2, j_col);
-                if (i_row == j_col) {
-                    EXPECT_NEAR(1.0, result_i_j, 1e-6);
-                } else {
-                    EXPECT_NEAR(0.0, result_i_j, 1e-6);
-                }
-            }
-        }
+        EXPECT_PRED3(MatricesNearPrec, T1*T2, Eigen::Matrix4d::Identity(), 1e-6);
     }
 
     void checkLLHDatumPipeline(Eigen::Vector3d datum_llh,
