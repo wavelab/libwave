@@ -191,11 +191,15 @@ void updateVisualizer(const wave::LaserOdom *odom,
 
             pcl::PointCloud<pcl::PointXYZI>::Ptr display_cld = boost::make_shared<pcl::PointCloud<pcl::PointXYZI>>();
 
-            std::vector<int> counts(odom->getParams().n_window);
+            std::vector<int> counts(odom->getParams().n_window + 1);
             std::fill(counts.begin(), counts.end(), 0);
 
             for (const auto &track : odom->undis_tracks.at(i)) {
-                counts.at(track.length)++;
+                try {
+                    counts.at(track.length)++;
+                } catch (...) {
+                    throw std::runtime_error("track length longer than expected");
+                }
                 if (i == 2) {
                     pcl::PointXYZ pt1, pt2;
                     Eigen::Map<wave::Vec3f> m1(pt1.data), m2(pt2.data);

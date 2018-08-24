@@ -138,7 +138,7 @@ int main(int argc, char **argv) {
 
     std::vector<wave::TrackLengths> lengths(5);
     for (auto &length : lengths) {
-        length.lengths.resize(params.n_window);
+        length.lengths.resize(params.n_window + 1);
     }
 
     auto func = [&]() { updateVisualizer(&odom, display, &odom_trajectory, &lengths); };
@@ -182,8 +182,6 @@ int main(int argc, char **argv) {
             auto azimuth = (std::atan2(pt_vec.front().y, pt_vec.front().x));
             azimuth < 0 ? azimuth = (float) (azimuth + 2.0 * M_PI) : azimuth;
 
-            wave::TimeType stamp = time_t;
-
             if (prev_azimuth > azimuth + 0.2) {
                 ++ring_index;
             }
@@ -193,10 +191,10 @@ int main(int argc, char **argv) {
 
             if (ring_index < 64) {
                 if (first_point) {
-                    odom.addPoints(pt_vec, 0, stamp);
+                    odom.addPoints(pt_vec, 0, time_t);
                     first_point = false;
                 } else {
-                    odom.addPoints(pt_vec, 3000, stamp);;
+                    odom.addPoints(pt_vec, 3000, time_t);;
                 }
             }
         }
@@ -213,8 +211,8 @@ int main(int argc, char **argv) {
     } else {
         plotResults(T_L1_Lx_trajectory, odom_trajectory);
         plotError(T_L1_Lx_trajectory, odom_trajectory);
-        plotTrackLengths(lengths);
     }
+    plotTrackLengths(lengths);
 
     ofstream output_file(sequence + ".txt");
     wave::Transformation<> T_O_L1 = T_L1_O.transformInverse();

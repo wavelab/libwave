@@ -103,6 +103,7 @@ struct LaserOdomParams {
     double elevation_tol = 0.0174532925199433;  // Minimum azimuth difference across correspondences
     uint16_t TTL = 1;                           // Maximum life of feature in local map with no correspondences
 
+    double track_keep_range = 50.0;
     /// parameters for feature track merging
     float max_planar_dist_threshold = 0.2f;
     float max_planar_ang_threshold = 0.03f;
@@ -284,6 +285,16 @@ class LaserOdom {
     Vec<IcosahedronBinner> binner;
 
     void checkTrackValidity();
+
+    static uint32_t uniqueElements(const std::vector<FeatureTrack::Mapping> &vec) {
+        std::set<uint32_t> scan_ids;
+        for (const auto &elem : vec) {
+            if (scan_ids.find(elem.scan_idx) == scan_ids.end()) {
+                scan_ids.insert(elem.scan_idx);
+            }
+        }
+        return static_cast<uint32_t>(scan_ids.size());
+    }
 };
 
 }  // namespace wave
