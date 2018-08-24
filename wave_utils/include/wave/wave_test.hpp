@@ -29,6 +29,13 @@ inline bool MatricesNear(const MatX &m1, const MatX &m2) {
     return m1.isApprox(m2);
 }
 
+/** Predicate to check if matrices are approximately equal, with given
+ * precision.
+ * Use with EXPECT_PRED3 */
+inline bool MatricesNearPrec(const MatX &m1, const MatX &m2, double prec) {
+    return m1.isApprox(m2, prec);
+}
+
 }  // namespace wave
 
 #endif  // WAVE_TEST_HPP
