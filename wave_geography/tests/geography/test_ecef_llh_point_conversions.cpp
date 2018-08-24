@@ -14,8 +14,7 @@ TEST(ecefAndLLHPointConversionTest, everestTest) {
     Eigen::Vector3d point_ECEF(3.023e5, 5.636e6, 2.980e6);
 
     // LLH to ECEF
-    Eigen::Vector3d point_ECEF_Results;
-    ecefPointFromLLH(point_llh, point_ECEF_Results);
+    Eigen::Vector3d point_ECEF_Results = ecefPointFromLLH(point_llh);
 
     // Precisions are based on the sig-fig data above -> therefore different
     // checks have different bounds based on their order of magnitude.
@@ -24,8 +23,7 @@ TEST(ecefAndLLHPointConversionTest, everestTest) {
     ASSERT_NEAR(point_ECEF(2), point_ECEF_Results(2), 1e3);
 
     // ECEF back to LLH
-    Eigen::Vector3d point_llh_results;
-    llhPointFromECEF(point_ECEF_Results, point_llh_results);
+    Eigen::Vector3d point_llh_results = llhPointFromECEF(point_ECEF_Results);
 
     ASSERT_NEAR(point_llh(0), point_llh_results(0), 1e-2);
     ASSERT_NEAR(point_llh(1), point_llh_results(1), 1e-2);
@@ -42,8 +40,7 @@ TEST(ecefAndLLHPointConversionTest, grandCanyonTest) {
     Eigen::Vector3d point_llh(36.250278, -116.825833, -85.9536);
     Eigen::Vector3d point_ECEF(-2.323892e6, -4.595374e6, 3.750572e6);
 
-    Eigen::Vector3d point_ECEF_Results;
-    ecefPointFromLLH(point_llh, point_ECEF_Results);
+    Eigen::Vector3d point_ECEF_Results = ecefPointFromLLH(point_llh);
 
     // Higher precision inputs should have tighter check
     ASSERT_NEAR(point_ECEF(0), point_ECEF_Results(0), 1e1);
@@ -51,8 +48,7 @@ TEST(ecefAndLLHPointConversionTest, grandCanyonTest) {
     ASSERT_NEAR(point_ECEF(2), point_ECEF_Results(2), 1e1);
 
     // ECEF back to LLH
-    Eigen::Vector3d point_llh_results;
-    llhPointFromECEF(point_ECEF_Results, point_llh_results);
+    Eigen::Vector3d point_llh_results = llhPointFromECEF(point_ECEF_Results);
 
     ASSERT_NEAR(point_llh(0), point_llh_results(0), 1e-2);
     ASSERT_NEAR(point_llh(1), point_llh_results(1), 1e-2);

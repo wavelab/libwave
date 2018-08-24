@@ -74,11 +74,9 @@ class ECEFtoENUTest : public ::testing::Test {
 
     void checkLLHDatumPipeline(Eigen::Vector3d datum_llh,
                                Eigen::Matrix3d expected_R_ENU_ECEF) {
-        Eigen::Matrix4d T_ENU_ECEF;
-        Eigen::Matrix4d T_ECEF_ENU;
-
-        ecefFromENUTransformMatrix(datum_llh, T_ECEF_ENU);
-        enuFromECEFTransformMatrix(datum_llh, T_ENU_ECEF);
+        Eigen::Vector3d datum_ECEF = ecefPointFromLLH(datum_llh);
+        Eigen::Matrix4d T_ENU_ECEF = enuEcefTransformFromEcef(datum_ECEF);
+        Eigen::Matrix4d T_ECEF_ENU = ecefEnuTransformFromEcef(datum_ECEF);
 
         checkT_ENU_ECEF(T_ENU_ECEF, expected_R_ENU_ECEF);
         checkT_ECEF_ENU(T_ECEF_ENU, expected_R_ENU_ECEF);
@@ -89,11 +87,8 @@ class ECEFtoENUTest : public ::testing::Test {
 
     void checkECEFDatumPipeline(Eigen::Vector3d datum_ECEF,
                                 Eigen::Matrix3d expected_R_ENU_ECEF) {
-        Eigen::Matrix4d T_ENU_ECEF;
-        Eigen::Matrix4d T_ECEF_ENU;
-
-        ecefFromENUTransformMatrix(datum_ECEF, T_ECEF_ENU, false);
-        enuFromECEFTransformMatrix(datum_ECEF, T_ENU_ECEF, false);
+        Eigen::Matrix4d T_ENU_ECEF = enuEcefTransformFromEcef(datum_ECEF);
+        Eigen::Matrix4d T_ECEF_ENU = ecefEnuTransformFromEcef(datum_ECEF);
 
         checkT_ENU_ECEF(T_ENU_ECEF, expected_R_ENU_ECEF);
         checkT_ECEF_ENU(T_ECEF_ENU, expected_R_ENU_ECEF);
@@ -108,8 +103,7 @@ class ECEFtoENUTest : public ::testing::Test {
         checkLLHDatumPipeline(datum_llh, expected_R_ENU_ECEF);
 
         // Get ECEF datum from LLH and check ECEF version of pipeline
-        Eigen::Vector3d datum_ecef;
-        ecefPointFromLLH(datum_llh, datum_ecef);
+        Eigen::Vector3d datum_ecef = ecefPointFromLLH(datum_llh);
         checkECEFDatumPipeline(datum_ecef, expected_R_ENU_ECEF);
     }
 };

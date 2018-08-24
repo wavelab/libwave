@@ -75,21 +75,24 @@ class enuAndLLHPointConversionTest : public ::testing::Test {
          enu_D_wrt_A(2) = 0;*/
 
         // Compute other LLH values from datum_A
-        llhPointFromENU(enu_B_wrt_A, datum_A, llh_B, datum_is_llh);
-        llhPointFromENU(enu_C_wrt_A, datum_A, llh_C, datum_is_llh);
-        llhPointFromENU(enu_D_wrt_A, datum_A, llh_D, datum_is_llh);
+        if (datum_is_llh){
+            llh_A = datum_A;
+        } else {
+            llh_A = llhPointFromECEF(datum_A);
+        }
 
         // Set datum points for other 3 points, and set llh_A
+        llh_B = llhPointFromENU(enu_B_wrt_A, llh_A);
+        llh_C = llhPointFromENU(enu_C_wrt_A, llh_A);
+        llh_D = llhPointFromENU(enu_D_wrt_A, llh_A);
         if (datum_is_llh) {
-            llh_A = datum_A;
             datum_B = llh_B;
             datum_C = llh_C;
             datum_D = llh_D;
         } else {
-            llhPointFromECEF(datum_A, llh_A);
-            ecefPointFromLLH(llh_B, datum_B);
-            ecefPointFromLLH(llh_C, datum_C);
-            ecefPointFromLLH(llh_D, datum_D);
+            datum_B = ecefPointFromLLH(llh_B);
+            datum_C = ecefPointFromLLH(llh_C);
+            datum_D = ecefPointFromLLH(llh_D);
         }
     }
 
@@ -105,9 +108,16 @@ class enuAndLLHPointConversionTest : public ::testing::Test {
         Eigen::Vector3d result_enu_B_from_A, result_enu_C_from_A,
           result_enu_D_from_A;
 
-        enuPointFromLLH(llh_B, datum_A, result_enu_B_from_A, datum_is_llh);
-        enuPointFromLLH(llh_C, datum_A, result_enu_C_from_A, datum_is_llh);
-        enuPointFromLLH(llh_D, datum_A, result_enu_D_from_A, datum_is_llh);
+        Eigen::Vector3d enu_datum;
+        if (datum_is_llh){
+            enu_datum = datum_A;
+        } else {
+            enu_datum = llhPointFromECEF(datum_A);
+        }
+
+        result_enu_B_from_A = enuPointFromLLH(llh_B, enu_datum);
+        result_enu_C_from_A = enuPointFromLLH(llh_C, enu_datum);
+        result_enu_D_from_A = enuPointFromLLH(llh_D, enu_datum);
 
         EXPECT_NEAR(0.0,
                     calculateNormDiff(enu_B_wrt_A, result_enu_B_from_A),
@@ -122,12 +132,9 @@ class enuAndLLHPointConversionTest : public ::testing::Test {
         // Check that mapping back to LLH matches original 4 points
         Eigen::Vector3d result_llh_B_from_A, result_llh_C_from_A,
           result_llh_D_from_A;
-        llhPointFromENU(
-          result_enu_B_from_A, datum_A, result_llh_B_from_A, datum_is_llh);
-        llhPointFromENU(
-          result_enu_C_from_A, datum_A, result_llh_C_from_A, datum_is_llh);
-        llhPointFromENU(
-          result_enu_D_from_A, datum_A, result_llh_D_from_A, datum_is_llh);
+        result_llh_B_from_A = llhPointFromENU(result_enu_B_from_A, enu_datum);
+        result_llh_C_from_A = llhPointFromENU(result_enu_C_from_A, enu_datum);
+        result_llh_D_from_A = llhPointFromENU(result_enu_D_from_A, enu_datum);
         EXPECT_NEAR(0.0,
                     calculateNormDiff(llh_B, result_llh_B_from_A),
                     llh_check_threshold);
@@ -143,9 +150,16 @@ class enuAndLLHPointConversionTest : public ::testing::Test {
         Eigen::Vector3d result_enu_A_from_B, result_enu_C_from_B,
           result_enu_D_from_B;
 
-        enuPointFromLLH(llh_A, datum_B, result_enu_A_from_B, datum_is_llh);
-        enuPointFromLLH(llh_C, datum_B, result_enu_C_from_B, datum_is_llh);
-        enuPointFromLLH(llh_D, datum_B, result_enu_D_from_B, datum_is_llh);
+        Eigen::Vector3d enu_datum;
+        if (datum_is_llh){
+            enu_datum = datum_B;
+        } else {
+            enu_datum = llhPointFromECEF(datum_B);
+        }
+
+        result_enu_A_from_B = enuPointFromLLH(llh_A, enu_datum);
+        result_enu_C_from_B = enuPointFromLLH(llh_C, enu_datum);
+        result_enu_D_from_B = enuPointFromLLH(llh_D, enu_datum);
 
         EXPECT_NEAR(
           square_size, result_enu_A_from_B.norm(), cartesian_check_threshold);
@@ -163,12 +177,9 @@ class enuAndLLHPointConversionTest : public ::testing::Test {
         // Check that mapping back to LLH matches original 4 points
         Eigen::Vector3d result_llh_A_from_B, result_llh_C_from_B,
           result_llh_D_from_B;
-        llhPointFromENU(
-          result_enu_A_from_B, datum_B, result_llh_A_from_B, datum_is_llh);
-        llhPointFromENU(
-          result_enu_C_from_B, datum_B, result_llh_C_from_B, datum_is_llh);
-        llhPointFromENU(
-          result_enu_D_from_B, datum_B, result_llh_D_from_B, datum_is_llh);
+        result_llh_A_from_B = llhPointFromENU(result_enu_A_from_B, enu_datum);
+        result_llh_C_from_B = llhPointFromENU(result_enu_C_from_B, enu_datum);
+        result_llh_D_from_B = llhPointFromENU(result_enu_D_from_B, enu_datum);
         EXPECT_NEAR(0.0,
                     calculateNormDiff(llh_A, result_llh_A_from_B),
                     llh_check_threshold);
@@ -184,9 +195,16 @@ class enuAndLLHPointConversionTest : public ::testing::Test {
         Eigen::Vector3d result_enu_A_from_C, result_enu_B_from_C,
           result_enu_D_from_C;
 
-        enuPointFromLLH(llh_A, datum_C, result_enu_A_from_C, datum_is_llh);
-        enuPointFromLLH(llh_B, datum_C, result_enu_B_from_C, datum_is_llh);
-        enuPointFromLLH(llh_D, datum_C, result_enu_D_from_C, datum_is_llh);
+        Eigen::Vector3d enu_datum;
+        if (datum_is_llh){
+            enu_datum = datum_C;
+        } else {
+            enu_datum = llhPointFromECEF(datum_C);
+        }
+
+        result_enu_A_from_C = enuPointFromLLH(llh_A, enu_datum);
+        result_enu_B_from_C = enuPointFromLLH(llh_B, enu_datum);
+        result_enu_D_from_C = enuPointFromLLH(llh_D, enu_datum);
 
         EXPECT_NEAR(
           square_size, result_enu_A_from_C.norm(), cartesian_check_threshold);
@@ -204,12 +222,9 @@ class enuAndLLHPointConversionTest : public ::testing::Test {
         // Check that mapping back to LLH matches original 4 points
         Eigen::Vector3d result_llh_A_from_C, result_llh_B_from_C,
           result_llh_D_from_C;
-        llhPointFromENU(
-          result_enu_A_from_C, datum_C, result_llh_A_from_C, datum_is_llh);
-        llhPointFromENU(
-          result_enu_B_from_C, datum_C, result_llh_B_from_C, datum_is_llh);
-        llhPointFromENU(
-          result_enu_D_from_C, datum_C, result_llh_D_from_C, datum_is_llh);
+        result_llh_A_from_C = llhPointFromENU(result_enu_A_from_C, enu_datum);
+        result_llh_B_from_C = llhPointFromENU(result_enu_B_from_C, enu_datum);
+        result_llh_D_from_C = llhPointFromENU(result_enu_D_from_C, enu_datum);
         EXPECT_NEAR(0.0,
                     calculateNormDiff(llh_A, result_llh_A_from_C),
                     llh_check_threshold);
@@ -225,9 +240,16 @@ class enuAndLLHPointConversionTest : public ::testing::Test {
         Eigen::Vector3d result_enu_A_from_D, result_enu_B_from_D,
           result_enu_C_from_D;
 
-        enuPointFromLLH(llh_A, datum_D, result_enu_A_from_D, datum_is_llh);
-        enuPointFromLLH(llh_B, datum_D, result_enu_B_from_D, datum_is_llh);
-        enuPointFromLLH(llh_C, datum_D, result_enu_C_from_D, datum_is_llh);
+        Eigen::Vector3d enu_datum;
+        if (datum_is_llh){
+            enu_datum = datum_D;
+        } else {
+            enu_datum = llhPointFromECEF(datum_D);
+        }
+
+        result_enu_A_from_D = enuPointFromLLH(llh_A, enu_datum);
+        result_enu_B_from_D = enuPointFromLLH(llh_B, enu_datum);
+        result_enu_C_from_D = enuPointFromLLH(llh_C, enu_datum);
 
         EXPECT_NEAR(
           diagonal_size, result_enu_A_from_D.norm(), cartesian_check_threshold);
@@ -245,12 +267,9 @@ class enuAndLLHPointConversionTest : public ::testing::Test {
         // Check that mapping back to LLH matches original 4 points
         Eigen::Vector3d result_llh_A_from_D, result_llh_B_from_D,
           result_llh_C_from_D;
-        llhPointFromENU(
-          result_enu_A_from_D, datum_D, result_llh_A_from_D, datum_is_llh);
-        llhPointFromENU(
-          result_enu_B_from_D, datum_D, result_llh_B_from_D, datum_is_llh);
-        llhPointFromENU(
-          result_enu_C_from_D, datum_D, result_llh_C_from_D, datum_is_llh);
+        result_llh_A_from_D = llhPointFromENU(result_enu_A_from_D, enu_datum);
+        result_llh_B_from_D = llhPointFromENU(result_enu_B_from_D, enu_datum);
+        result_llh_C_from_D = llhPointFromENU(result_enu_C_from_D, enu_datum);
         EXPECT_NEAR(0.0,
                     calculateNormDiff(llh_A, result_llh_A_from_D),
                     llh_check_threshold);
@@ -285,7 +304,7 @@ class enuAndLLHPointConversionTest : public ::testing::Test {
 
         // Check ECEF datum pipeline
         datum_is_llh = false;
-        ecefPointFromLLH(datum_llh, datum_A);
+        datum_A = ecefPointFromLLH(datum_llh);
         checkPipeline();
     }
 };
