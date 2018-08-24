@@ -65,7 +65,8 @@ Eigen::Vector3d llhPointFromECEF(const Eigen::MatrixBase<Derived> &ecef) {
  *  ECEF.
  */
 template <typename Derived>
-Eigen::Matrix4d ecefEnuTransformFromEcef(const Eigen::MatrixBase<Derived> &datum) {
+Eigen::Matrix4d ecefEnuTransformFromEcef(
+  const Eigen::MatrixBase<Derived> &datum) {
     EIGEN_STATIC_ASSERT_VECTOR_SPECIFIC_SIZE(Derived, 3);
 
     // Both Forward() and Reverse() return the same rotation matrix from ENU
@@ -78,10 +79,9 @@ Eigen::Matrix4d ecefEnuTransformFromEcef(const Eigen::MatrixBase<Derived> &datum
       datum(0), datum(1), datum(2), latitude, longitude, height, R_ecef_enu);
 
     Eigen::Matrix4d transform;
-    transform << R_ecef_enu[0],
-      R_ecef_enu[1], R_ecef_enu[2], datum(0), R_ecef_enu[3], R_ecef_enu[4],
-      R_ecef_enu[5], datum(1), R_ecef_enu[6], R_ecef_enu[7], R_ecef_enu[8],
-      datum(2), 0.0, 0.0, 0.0, 1.0;
+    transform << R_ecef_enu[0], R_ecef_enu[1], R_ecef_enu[2], datum(0),
+      R_ecef_enu[3], R_ecef_enu[4], R_ecef_enu[5], datum(1), R_ecef_enu[6],
+      R_ecef_enu[7], R_ecef_enu[8], datum(2), 0.0, 0.0, 0.0, 1.0;
     return transform;
 };
 
@@ -94,7 +94,8 @@ Eigen::Matrix4d ecefEnuTransformFromEcef(const Eigen::MatrixBase<Derived> &datum
  *  point.
  */
 template <typename Derived>
-Eigen::Matrix4d enuEcefTransformFromEcef(const Eigen::MatrixBase<Derived> &datum) {
+Eigen::Matrix4d enuEcefTransformFromEcef(
+  const Eigen::MatrixBase<Derived> &datum) {
     EIGEN_STATIC_ASSERT_VECTOR_SPECIFIC_SIZE(Derived, 3);
 
     // Get T_ecef_enu and then invert it
@@ -105,8 +106,9 @@ Eigen::Matrix4d enuEcefTransformFromEcef(const Eigen::MatrixBase<Derived> &datum
     T_enu_ecef.topLeftCorner(3, 3) = T_ecef_enu.topLeftCorner(3, 3).transpose();
     // Affine inverse translation component: -R_inverse * b
     //    with b as the 4th column of T_ecef_enu
-    T_enu_ecef.topRightCorner(3, 1) = -T_ecef_enu.topLeftCorner(3, 3).transpose() *
-                              T_ecef_enu.topRightCorner(3, 1);
+    T_enu_ecef.topRightCorner(3, 1) =
+      -T_ecef_enu.topLeftCorner(3, 3).transpose() *
+      T_ecef_enu.topRightCorner(3, 1);
     T_enu_ecef.row(3) = Eigen::MatrixXd::Zero(1, 4);
     T_enu_ecef(3, 3) = 1.0;
 
@@ -122,7 +124,7 @@ Eigen::Matrix4d enuEcefTransformFromEcef(const Eigen::MatrixBase<Derived> &datum
  */
 template <typename DerivedA, typename DerivedB>
 Eigen::Vector3d enuPointFromLLH(const Eigen::MatrixBase<DerivedA> &point_llh,
-                     const Eigen::MatrixBase<DerivedB> &enu_datum) {
+                                const Eigen::MatrixBase<DerivedB> &enu_datum) {
     EIGEN_STATIC_ASSERT_VECTOR_SPECIFIC_SIZE(DerivedA, 3);
     EIGEN_STATIC_ASSERT_VECTOR_SPECIFIC_SIZE(DerivedB, 3);
 
@@ -130,15 +132,10 @@ Eigen::Vector3d enuPointFromLLH(const Eigen::MatrixBase<DerivedA> &point_llh,
     GeographicLib::LocalCartesian localENU(
       enu_datum(0), enu_datum(1), enu_datum(2), earth);
 
-    double A,B,C;
-    localENU.Forward(point_llh(0),
-                     point_llh(1),
-                     point_llh(2),
-                     A,
-                     B,
-                     C);
+    double A, B, C;
+    localENU.Forward(point_llh(0), point_llh(1), point_llh(2), A, B, C);
 
-    return Eigen::Vector3d(A,B,C);
+    return Eigen::Vector3d(A, B, C);
 };
 
 /** Converts a source point from ENU in the local Cartesian ENU frame
@@ -150,7 +147,7 @@ Eigen::Vector3d enuPointFromLLH(const Eigen::MatrixBase<DerivedA> &point_llh,
  */
 template <typename DerivedA, typename DerivedB>
 Eigen::Vector3d llhPointFromENU(const Eigen::MatrixBase<DerivedA> &point_enu,
-                     const Eigen::MatrixBase<DerivedB> &enu_datum) {
+                                const Eigen::MatrixBase<DerivedB> &enu_datum) {
     EIGEN_STATIC_ASSERT_VECTOR_SPECIFIC_SIZE(DerivedA, 3);
     EIGEN_STATIC_ASSERT_VECTOR_SPECIFIC_SIZE(DerivedB, 3);
 
@@ -158,15 +155,10 @@ Eigen::Vector3d llhPointFromENU(const Eigen::MatrixBase<DerivedA> &point_enu,
     GeographicLib::LocalCartesian localENU(
       enu_datum(0), enu_datum(1), enu_datum(2), earth);
 
-    double A,B,C;
-    localENU.Reverse(point_enu(0),
-                     point_enu(1),
-                     point_enu(2),
-                     A,
-                     B,
-                     C);
+    double A, B, C;
+    localENU.Reverse(point_enu(0), point_enu(1), point_enu(2), A, B, C);
 
-    return Eigen::Vector3d(A,B,C);
+    return Eigen::Vector3d(A, B, C);
 };
 
 /** @} group geography */

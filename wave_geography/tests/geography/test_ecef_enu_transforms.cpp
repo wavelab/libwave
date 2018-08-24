@@ -14,7 +14,10 @@ class ECEFtoENUTest : public ::testing::Test {
     void checkT_ECEF_ENU(Eigen::Matrix4d T_ECEF_ENU,
                          Eigen::Matrix3d expected_R_ENU_ECEF) {
         // Compare R vs R^T
-        EXPECT_PRED3(MatricesNearPrec, expected_R_ENU_ECEF, T_ECEF_ENU.topLeftCorner(3,3).transpose(), rotation_check_threshold);
+        EXPECT_PRED3(MatricesNearPrec,
+                     expected_R_ENU_ECEF,
+                     T_ECEF_ENU.topLeftCorner(3, 3).transpose(),
+                     rotation_check_threshold);
 
         // Check translation: For ECEF from ENU the norm is used
         double R = sqrt(pow(T_ECEF_ENU(0, 3), 2) + pow(T_ECEF_ENU(1, 3), 2) +
@@ -31,7 +34,10 @@ class ECEFtoENUTest : public ::testing::Test {
     void checkT_ENU_ECEF(Eigen::Matrix4d T_ENU_ECEF,
                          Eigen::Matrix3d expected_R_ENU_ECEF) {
         // Compare R's directly
-        EXPECT_PRED3(MatricesNearPrec, expected_R_ENU_ECEF, T_ENU_ECEF.topLeftCorner(3,3), rotation_check_threshold);
+        EXPECT_PRED3(MatricesNearPrec,
+                     expected_R_ENU_ECEF,
+                     T_ENU_ECEF.topLeftCorner(3, 3),
+                     rotation_check_threshold);
 
         // Check translation: E == 0, N == 0, U == -earth radius
         EXPECT_NEAR(0.0, T_ENU_ECEF(0, 3), 1e3);
@@ -47,7 +53,8 @@ class ECEFtoENUTest : public ::testing::Test {
 
     void checkTransformInverse(Eigen::Matrix4d T1, Eigen::Matrix4d T2) {
         // Multiplication should produce identity
-        EXPECT_PRED3(MatricesNearPrec, T1*T2, Eigen::Matrix4d::Identity(), 1e-6);
+        EXPECT_PRED3(
+          MatricesNearPrec, T1 * T2, Eigen::Matrix4d::Identity(), 1e-6);
     }
 
     void checkLLHDatumPipeline(Eigen::Vector3d datum_llh,

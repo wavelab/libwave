@@ -57,7 +57,7 @@ class enuAndLLHPointConversionTest : public ::testing::Test {
         enu_D_wrt_A << square_size, -square_size, 0;
 
         // Compute other LLH values from datum_A
-        if (datum_is_llh){
+        if (datum_is_llh) {
             llh_A = datum_A;
         } else {
             llh_A = llhPointFromECEF(datum_A);
@@ -91,7 +91,7 @@ class enuAndLLHPointConversionTest : public ::testing::Test {
           result_enu_D_from_A;
 
         Eigen::Vector3d enu_datum;
-        if (datum_is_llh){
+        if (datum_is_llh) {
             enu_datum = datum_A;
         } else {
             enu_datum = llhPointFromECEF(datum_A);
@@ -133,7 +133,7 @@ class enuAndLLHPointConversionTest : public ::testing::Test {
           result_enu_D_from_B;
 
         Eigen::Vector3d enu_datum;
-        if (datum_is_llh){
+        if (datum_is_llh) {
             enu_datum = datum_B;
         } else {
             enu_datum = llhPointFromECEF(datum_B);
@@ -178,7 +178,7 @@ class enuAndLLHPointConversionTest : public ::testing::Test {
           result_enu_D_from_C;
 
         Eigen::Vector3d enu_datum;
-        if (datum_is_llh){
+        if (datum_is_llh) {
             enu_datum = datum_C;
         } else {
             enu_datum = llhPointFromECEF(datum_C);
@@ -223,7 +223,7 @@ class enuAndLLHPointConversionTest : public ::testing::Test {
           result_enu_C_from_D;
 
         Eigen::Vector3d enu_datum;
-        if (datum_is_llh){
+        if (datum_is_llh) {
             enu_datum = datum_D;
         } else {
             enu_datum = llhPointFromECEF(datum_D);
