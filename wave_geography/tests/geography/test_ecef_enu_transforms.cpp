@@ -126,9 +126,6 @@ TEST_F(ECEFtoENUTest, LatNear90LongAt0) {
 
     Eigen::Matrix3d R_ENU_ECEF_result;
     R_ENU_ECEF_result << 0.0, 1.0, 0.0, -1.0, 0.0, 0.0, 0.0, 0.0, 1.0;
-    /*double R_ENU_ECEF_result[3][3] = {{0.0, 1.0, 0.0},   //
-                                      {-1.0, 0.0, 0.0},  //
-                                      {0.0, 0.0, 1.0}};*/
     checkResult(datum_llh, R_ENU_ECEF_result);
 }
 
@@ -152,9 +149,6 @@ TEST_F(ECEFtoENUTest, LatNear90LongNear180) {
 
     Eigen::Matrix3d R_ENU_ECEF_result;
     R_ENU_ECEF_result << 0.0, -1.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0;
-    /*double R_ENU_ECEF_result[3][3] = {{0.0, -1.0, 0.0},  //
-                                      {1.0, 0.0, 0.0},   //
-                                      {0.0, 0.0, 1.0}};*/
 
     checkResult(datum_llh, R_ENU_ECEF_result);
 }
@@ -178,10 +172,6 @@ TEST_F(ECEFtoENUTest, LatNear0LongNear90) {
 
     Eigen::Matrix3d R_ENU_ECEF_result;
     R_ENU_ECEF_result << -1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0;
-    /*double R_ENU_ECEF_result[3][3] = {{-1.0, 0.0, 0.0},  //
-                                      {0.0, 0.0, 1.0},   //
-                                      {0.0, 1.0, 0.0}};*/
-
 
     checkResult(datum_llh, R_ENU_ECEF_result);
 }
@@ -205,9 +195,6 @@ TEST_F(ECEFtoENUTest, LatNear0LongNearN90) {
 
     Eigen::Matrix3d R_ENU_ECEF_result;
     R_ENU_ECEF_result << 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, -1.0, 0.0;
-    /*double R_ENU_ECEF_result[3][3] = {{1.0, 0.0, 0.0},  //
-                                      {0.0, 0.0, 1.0},  //
-                                      {0.0, -1.0, 0.0}};*/
 
     checkResult(datum_llh, R_ENU_ECEF_result);
 }
@@ -231,9 +218,6 @@ TEST_F(ECEFtoENUTest, IdentityPoint) {
 
     Eigen::Matrix3d R_ENU_ECEF_result;
     R_ENU_ECEF_result << 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0;
-    /*double R_ENU_ECEF_result[3][3] = {{1.0, 0.0, 0.0},  //
-                                      {0.0, 1.0, 0.0},  //
-                                      {0.0, 0.0, 1.0}};*/
 
     checkResult(datum_llh, R_ENU_ECEF_result);
 }

@@ -48,12 +48,6 @@ class enuAndLLHPointConversionTest : public ::testing::Test {
         return diff.norm();
     }
 
-    /*double calculateNorm(const double input[3]) {
-        double result =
-          sqrt(pow(input[0], 2) + pow(input[1], 2) + pow(input[2], 2));
-        return result;
-    }*/
-
     // Set ground truth points as a square from ENU set at point A
     void problemSetup() {
         diagonal_size = sqrt(2.0) * square_size;
@@ -61,18 +55,6 @@ class enuAndLLHPointConversionTest : public ::testing::Test {
         enu_B_wrt_A << square_size, 0, 0;
         enu_C_wrt_A << 0, -square_size, 0;
         enu_D_wrt_A << square_size, -square_size, 0;
-
-        /* enu_B_wrt_A(0) = square_size;
-         enu_B_wrt_A(1) = 0;
-         enu_B_wrt_A(2) = 0;
-
-         enu_C_wrt_A(0) = 0;
-         enu_C_wrt_A(1) = -square_size;
-         enu_C_wrt_A(2) = 0;
-
-         enu_D_wrt_A(0) = square_size;
-         enu_D_wrt_A(1) = -square_size;
-         enu_D_wrt_A(2) = 0;*/
 
         // Compute other LLH values from datum_A
         if (datum_is_llh){
