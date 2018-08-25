@@ -70,7 +70,7 @@ void FeatureExtractor::computeScores(const Tensorf &signals, const Vec<int> &ran
             // todo have flexibility for different kernel sizes
             if (j < 3) {
                 this->scores.at(i).slice(ar2({static_cast<long>(j), 0}), ar2({1, max - 10})) =
-                  signals.at(i).slice(ar2({s_idx, 0}), ar2({1, max})).convolve(this->kernels.at(k_idx), dims);
+                  signals.at(i).slice(ar2({s_idx, 0}), ar2({1, max})).eval().convolve(this->kernels.at(k_idx), dims);
                 // or if sample variance
             } else if (j == 3) {
                 auto &N = this->param.variance_window;
@@ -81,10 +81,10 @@ void FeatureExtractor::computeScores(const Tensorf &signals, const Vec<int> &ran
 
                 // so called computational formula for sample variance
                 // todo. This is quite expensive, should only calculate sample variance on high/low scores
+                Eigen::Tensor<float, 2> temporary = signals.at(i).slice(ar2({s_idx, 0}), ar2({1, max}));
                 this->scores.at(i).slice(ar2({static_cast<long>(j), 0}), ar2({1, max - 10})) =
-                  (signals.at(i).slice(ar2({s_idx, 0}), ar2({1, max})).square().convolve(sum_kernel, dims) -
-                   signals.at(i)
-                     .slice(ar2({s_idx, 0}), ar2({1, max}))
+                  (temporary.square().convolve(sum_kernel, dims) -
+                          temporary
                      .convolve(sum_kernel, dims)
                      .square()
                      .convolve(Ninv, dims))
@@ -316,10 +316,10 @@ void FeatureExtractor::getFeatures(const Tensorf &scan,
     if (scan.size() != this->n_ring || signals.size() != this->n_ring) {
         throw std::length_error("mismatch between configured ring count and input scan/signals size");
     }
-
     this->computeScores(signals, range);
     this->preFilter(scan, signals, range);
     this->buildFilteredScore(range);
     this->sortAndBin(scan, signals, indices);
 }
+
 }

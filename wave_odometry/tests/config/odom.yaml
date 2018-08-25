@@ -23,7 +23,7 @@ Prior_twist:
 # How many states per revolution to optimize over, there must be at minimum two.
 num_trajectory_states: 2
 n_window: 5 # Number of scans to optimize over. Must be at least 2
-opt_iters: 5  # how many iterations of the matcher to run
+opt_iters: 3  # how many iterations of the matcher to run
 max_inner_iters: 50 # limit on iterations of ceres at each matcher iteration
 diff_tol: 1e-4 # norm of solution difference for stopping criteria
 solver_threads: 4 # number of threads the solver should use
@@ -47,8 +47,8 @@ iso_var: 0.005       #  Variance to use if weighing is set.
 max_planar_dist_threshold: 3
 max_planar_ang_threshold: 0.05  # 1 - cos(theta)
 #Parameters controlling how line feature tracks are merged
-max_linear_dist_threshold: 0.01
-max_linear_ang_threshold: 0.025
+max_linear_dist_threshold: 0.1
+max_linear_ang_threshold: 0.05
 ang_scaling_param: 10
 
 # if less than this number of points is found for a landmark, it is marked as old and no longer optimized
@@ -57,7 +57,7 @@ min_new_points: 3
 #  Setting flags
 only_extract_features: false   #  If set, no transforms are calculated
 use_weighting: false           #  If set, pre-whiten residuals
-print_opt_sum: false              #  If true, output ceres summaries to console
+print_opt_sum: true              #  If true, output ceres summaries to console
 check_gradients: false         #  If set, use Ceres gradient checker on each jacobians
 limit_rng_var: false
 limit_int_var: false

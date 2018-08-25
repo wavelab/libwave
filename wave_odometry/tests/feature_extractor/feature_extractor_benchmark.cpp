@@ -27,7 +27,6 @@ void loadParameters(const std::string &path, const std::string &filename, wave::
     parser.addParam("n_int_edge", &(params.n_int_edge));
     parser.addParam("knn", &(params.knn));
     parser.addParam("key_radius", &(params.key_radius));
-    parser.addParam("eigen_threads", &(params.eigen_threads));
 
     parser.load(path + filename);
 }
@@ -97,7 +96,7 @@ void setup(wave::FeatureExtractorParams &params,
         float ang = (float) (std::atan2(pt.y, pt.x) * -1.0);
         // need to fraction of complete rotation
         ang < 0 ? ang = ang + 2.0 * M_PI : ang;
-        ang /= 2.0 * M_PI;
+        ang /= 20.0 * M_PI;
 
         scan.at(pt.ring)(0, range.at(pt.ring)) = pt.x;
         scan.at(pt.ring)(1, range.at(pt.ring)) = pt.y;
@@ -173,7 +172,7 @@ static void BM_FEATURE_EXTRACTION_SORT(benchmark::State &state) {
     extractor.preFilter(scan, signals, range);
     extractor.buildFilteredScore(range);
     for (auto i : state) {
-        extractor.sortAndBin(scan, <#initializer#>, indices);
+        extractor.sortAndBin(scan, signals, indices);
     }
 }
 BENCHMARK(BM_FEATURE_EXTRACTION_SORT);

@@ -36,6 +36,8 @@ int main(int argc, char **argv) {
     transformer_params.delVTol = 100.0f;
     transformer_params.delWTol = 100.0f;
 
+    wave::loadBinnerParams(config_path, "bin_config.yaml", params.binner_params);
+
     wave::LaserOdom odom(params, feature_params, transformer_params);
     wave::PointCloudDisplay *display;
 
@@ -71,7 +73,12 @@ int main(int argc, char **argv) {
     wave::VecE<wave::PoseVelStamped> oxt_trajectory, odom_trajectory;
     fillGroundTruth(oxt_trajectory, data_path);
 
-    auto func = [&]() { updateVisualizer(&odom, display, &odom_trajectory); };
+    std::vector<wave::TrackLengths> lengths(5);
+    for (auto &length : lengths) {
+        length.lengths.resize(params.n_window + 1);
+    }
+
+    auto func = [&]() { updateVisualizer(&odom, display, &odom_trajectory, &lengths); };
     odom.registerOutputFunction(func);
 
     int pt_index = 0;
@@ -152,8 +159,14 @@ int main(int argc, char **argv) {
             std::cout << "\rFinished with scan " << std::to_string(scan_index) << "/"
                       << std::to_string(oxt_trajectory.size()) << std::flush;
         }
+        if (counter == 100) {
+            break;
+        }
     }
     plotResults(oxt_trajectory, odom_trajectory);
+    plotTrackLengths(lengths);
+
+    odom.~LaserOdom();
 
     if (run_viz) {
         display->stopSpin();

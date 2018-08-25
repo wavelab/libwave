@@ -115,7 +115,12 @@ void LaserOdom::undistort() {
             pt.x = output(0, i);
             pt.y = output(1, i);
             pt.z = output(2, i);
-            pt.intensity = this->signals.at(ring_id)(1, i);
+            auto score_index = i > 4 ? i - 5 : 0;
+            if (score_index >= this->feature_extractor.scores.at(ring_id).dimension(1)) {
+                score_index = this->feature_extractor.scores.at(ring_id).dimension(1) - 1;
+            }
+//            pt.intensity = this->signals.at(ring_id)(1, i);
+            pt.intensity = this->feature_extractor.scores.at(ring_id)(3, score_index);
             this->undistorted_cld.push_back(pt);
         }
     }
@@ -362,7 +367,7 @@ void LaserOdom::rollover(TimeType stamp) {
 
 bool LaserOdom::runOptimization(ceres::Problem &problem, ceres::Solver::Summary &summary) {
     ceres::Solver::Options options;
-    options.linear_solver_type = ceres::DENSE_SCHUR;
+    options.linear_solver_type = ceres::SPARSE_NORMAL_CHOLESKY;
     options.use_explicit_schur_complement = true;
     options.max_num_iterations = this->param.max_inner_iters;
     options.max_num_consecutive_invalid_steps = 30;
@@ -399,7 +404,7 @@ bool LaserOdom::runOptimization(ceres::Problem &problem, ceres::Solver::Summary 
     }
     ceres::Solve(options, &problem, &summary);
     if (this->param.print_opt_sum) {
-        LOG_INFO("%s", summary.BriefReport().c_str());
+        LOG_INFO("%s", summary.FullReport().c_str());
     }
 
     return true;
@@ -450,10 +455,10 @@ bool LaserOdom::findLineCorrespondences(std::vector<uint32_t> &matches,
         Vec3f pt = points.template block<3, 1>(0, index(i));
 
         // dirty hack for kitti's strange motion correction
-        double azimuth = std::atan2(pt(1), pt(0));
-        if (M_PI - std::abs(azimuth) < 0.2) {
-            continue;
-        }
+//        double azimuth = std::atan2(pt(1), pt(0));
+//        if (M_PI - std::abs(azimuth) < 0.2) {
+//            continue;
+//        }
 
         double xydist = std::sqrt(pt(0) * pt(0) + pt(1) * pt(1));
         double range = std::sqrt(xydist * xydist + pt(2) * pt(2));

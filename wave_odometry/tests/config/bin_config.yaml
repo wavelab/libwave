@@ -2,16 +2,15 @@
 # within each bin, the number of tracks is capped by their vector to limit redundant tracks
 
 range_divisions: [
+    10.0,
     25.0,
-    50.0,
-    75.0,
-    100.0]
+    50.0]
 
-azimuth_divisions: 4
+azimuth_divisions: 3
 
 xy_directions: 6
 
 z_cutoff: 0.5253
 
-z_limit: 2
+z_limit: 1
 xy_limit: 1
