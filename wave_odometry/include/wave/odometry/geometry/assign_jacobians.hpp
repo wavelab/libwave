@@ -18,23 +18,23 @@ namespace wave {
 template <typename Derived>
 inline void assignJacobian(double **jacobian,
                            const Eigen::MatrixBase<Derived> &del_e_del_T,
-                           const Vec<VecE<MatX>> &jacs,
+                           const VecE<const MatX*> &jacsw1,
+                           const VecE<const MatX*> &jacsw2,
                            double w1,
                            double w2,
-                           uint32_t jac_index,
-                           int state_idx,
+                           uint32_t state_idx,
                            int state_dim) {
     if (jacobian[state_idx]) {
         Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> jac(
           jacobian[state_idx], del_e_del_T.rows(), state_dim);
 
-        auto true_dim = jacs.at(state_idx).at(jac_index).cols();
+        auto true_dim = jacsw1.at(state_idx)->cols();
         if (state_dim != true_dim) {
             jac.block(0, 0, del_e_del_T.rows(), true_dim) =
-              del_e_del_T * (w1 * jacs.at(state_idx).at(jac_index) + w2 * jacs.at(state_idx).at(jac_index + 1));
+              del_e_del_T * (w1 * *(jacsw1.at(state_idx)) + w2 * *(jacsw2.at(state_idx)));
             jac.block(0, true_dim, del_e_del_T.rows(), state_dim - true_dim).setZero();
         } else {
-            jac = del_e_del_T * (w1 * jacs.at(state_idx).at(jac_index) + w2 * jacs.at(state_idx).at(jac_index + 1));
+            jac = del_e_del_T * (w1 * *(jacsw1.at(state_idx)) + w2 * *(jacsw2.at(state_idx)));
         }
     }
 }
@@ -43,28 +43,15 @@ inline void assignJacobian(double **jacobian,
 template <typename Derived, typename... States>
 inline void assignJacobian(double **jacobian,
                            const Eigen::MatrixBase<Derived> &del_e_del_T,
-                           const Vec<VecE<MatX>> &jacs,
+                           const VecE<const MatX*> &jacsw1,
+                           const VecE<const MatX*> &jacsw2,
                            double w1,
                            double w2,
-                           uint32_t jac_index,
-                           int state_idx,
+                           uint32_t state_idx,
                            int state_dim,
                            States... states) {
-    if (jacobian[state_idx]) {
-        Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> jac(
-          jacobian[state_idx], del_e_del_T.rows(), state_dim);
-
-        auto true_dim = jacs.at(state_idx).at(jac_index).cols();
-        if (state_dim != true_dim) {
-            jac.block(0, 0, del_e_del_T.rows(), true_dim) =
-              del_e_del_T * (w1 * jacs.at(state_idx).at(jac_index) + w2 * jacs.at(state_idx).at(jac_index + 1));
-            jac.block(0, true_dim, del_e_del_T.rows(), state_dim - true_dim).setZero();
-        } else {
-            jac = del_e_del_T * (w1 * jacs.at(state_idx).at(jac_index) + w2 * jacs.at(state_idx).at(jac_index + 1));
-        }
-    }
-
-    assignJacobian(jacobian, del_e_del_T, jacs, w1, w2, jac_index, state_idx + 1, states...);
+    assignJacobian(jacobian, del_e_del_T, jacsw1, jacsw2, w1, w2, state_idx, state_dim);
+    assignJacobian(jacobian, del_e_del_T, jacsw1, jacsw2, w1, w2, state_idx + 1, states...);
 };
 }
 

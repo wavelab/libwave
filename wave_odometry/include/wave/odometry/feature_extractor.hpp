@@ -1,6 +1,8 @@
 #ifndef WAVE_FEATURE_EXTRACTOR_HPP
 #define WAVE_FEATURE_EXTRACTOR_HPP
 
+#define EIGEN_USE_THREADS
+
 #include <vector>
 #include <array>
 #include <algorithm>

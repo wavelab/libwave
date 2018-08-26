@@ -11,8 +11,8 @@ occlusion_filter_length: 5  #  How close a point can be to a shadow, and still b
 parallel_tol: 0.002          #  ditto
 edge_tol: 1                 #  Edge features must have score higher than this
 flat_tol: 0.075                #  Plane features must have score lower than this
-int_edge_tol: 0.001          #  Intensity edge features must have score greater than this
-int_flat_tol: 200            #  Intensity edges must have range score lower than this
+int_edge_tol: 0.5         #  Intensity edge features must have score greater than this
+int_flat_tol: 1            #  Intensity edges must have curvature score lower than this
 n_edge: 40                  #  How many edge features to pick out per ring
 n_flat: 100                  #  How many plane features to pick out per ring
 n_int_edge: 0              #  How many intensity edges to pick out per ring

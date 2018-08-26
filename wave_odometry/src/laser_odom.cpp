@@ -255,7 +255,7 @@ void LaserOdom::updateTracks() {
         VecE<FeatureTrack> updated_tracks;
         for (auto &track : tracks) {
             double track_range = track.geometry.block<3, 1>(3, 0).norm();
-            if (track_range > this->param.track_keep_range) {
+            if (track_range > this->param.track_keep_range || track.length == 0) {
                 continue;
             }
             Vec<FeatureTrack::Mapping> updated_mapping;
@@ -1310,6 +1310,38 @@ bool LaserOdom::match(const TimeType &stamp) {
     return true;
 }
 
+namespace {
+
+void prepareJacobianPointers(const Vec<VecE<MatX>> *jacs,
+                             const Vec<float> *jac_stamps,
+                             const float pt_time,
+                             float &w1, float &w2,
+                             VecE<const MatX*> &jacsw1,
+                             VecE<const MatX*> &jacsw2) {
+    auto iter = std::upper_bound(jac_stamps->begin(), jac_stamps->end(), pt_time);
+
+    float T1, T2;
+    if (iter == jac_stamps->end()) {
+        T2 = *(--iter);
+        T1 = *(--iter);
+    } else {
+        T2 = *iter;
+        T1 = *(--iter);
+    }
+
+    w1 = (T2 - pt_time) / (T2 - T1);
+    w2 = 1.f - w1;
+
+    auto jac_index = static_cast<uint32_t>(iter - jac_stamps->begin());
+
+    for (uint32_t i = 0; i < 4; ++i) {
+        jacsw1.emplace_back(&(jacs->at(i).at(jac_index)));
+        jacsw2.emplace_back(&(jacs->at(i).at(jac_index + 1)));
+    }
+}
+
+}
+
 void LaserOdom::trackResiduals(ceres::Problem &problem, uint32_t f_idx, VecE<FeatureTrack> &track_list) {
     for (auto &track : track_list) {
         if (f_idx == 2) {
@@ -1326,22 +1358,17 @@ void LaserOdom::trackResiduals(ceres::Problem &problem, uint32_t f_idx, VecE<Fea
             this->loss_functions.emplace_back(new BisquareLoss(this->param.robust_param));
             float pt_time =
               this->scan_stampsf.at(map.scan_idx) + this->feat_pts.at(map.scan_idx).at(f_idx)(3, map.pt_idx);
+            const float *cur_point = this->feat_pts_T.at(map.scan_idx).at(f_idx).data() + 3 * map.pt_idx;
+            float w1, w2;
+            VecE<const MatX*> jacsw1, jacsw2;
+            prepareJacobianPointers(&(this->ptT_jacobians.at(map.state_id)), &(this->jacobian_stamps.at(map.state_id)),
+            pt_time, w1, w2, jacsw1, jacsw2);
             if (f_idx == 2) {
-                this->costs.emplace_back(new PlaneResidual<12, 6, 12, 6>(p_idx,
-                                                                         f_idx,
-                                                                         pt_time,
-                                                                         &track,
-                                                                         &(this->feat_pts_T),
-                                                                         &(this->ptT_jacobians.at(map.state_id)),
-                                                                         &(this->jacobian_stamps.at(map.state_id))));
+                this->costs.emplace_back(new PlaneResidual<12, 6, 12, 6>(cur_point,
+                                                                         jacsw1, jacsw2, w1, w2));
             } else {
-                this->costs.emplace_back(new LineResidual<12, 6, 12, 6>(p_idx,
-                                                                        f_idx,
-                                                                        pt_time,
-                                                                        &track,
-                                                                        &(this->feat_pts_T),
-                                                                        &(this->ptT_jacobians.at(map.state_id)),
-                                                                        &(this->jacobian_stamps.at(map.state_id))));
+                this->costs.emplace_back(new LineResidual<12, 6, 12, 6>(cur_point,
+                                                                        jacsw1, jacsw2, w1, w2));
             }
             uint32_t start_offset = track.mapping.at(p_idx).state_id;
             problem.AddResidualBlock(this->costs.back().get(),

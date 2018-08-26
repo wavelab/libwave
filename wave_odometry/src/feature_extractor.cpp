@@ -13,18 +13,19 @@ void FeatureExtractor::setup() {
     }
 
     this->kernels.at(0).setValues({1, 1, 1, 1, 1, -10, 1, 1, 1, 1, 1});
-    this->kernels.at(1).setValues({0.000232391821040,
-                                   0.001842097682135,
-                                   0.034270489647107,
-                                   0.166944943945706,
-                                   -0.009954755288609,
-                                   -0.386583206270711,
-                                   -0.009954755288609,
-                                   0.166944943945706,
-                                   0.034270489647107,
-                                   0.001842097682135,
-                                   0.000232391821040});
-    this->kernels.at(2).setValues({0, 0.003571428, -0.0380952, 0.2, -0.8, 0, 0.8, -0.2, 0.0380952, -0.003571428, 0});
+    this->kernels.at(1).setValues({0.000232391821040f,
+                                   0.001842097682135f,
+                                   0.034270489647107f,
+                                   0.166944943945706f,
+                                   -0.009954755288609f,
+                                   -0.386583206270711f,
+                                   -0.009954755288609f,
+                                   0.166944943945706f,
+                                   0.034270489647107f,
+                                   0.001842097682135f,
+                                   0.000232391821040f});
+    this->kernels.at(2).setValues({0, 0.003571428, -0.0380952f, 0.2, -0.8f, 0, 0.8, -0.2f, 0.0380952, -0.003571428f, 0});
+//    this->kernels.at(2).setValues({-1.0f, -1.0f, -1.0f, -1.0f, 0, 0, 0, 1.0, 1.0, 1.0, 1.0});
     if (this->param.N_SCORES == 5) {
         this->kernels.at(3).setConstant(1.0);
         this->kernels.at(4).setConstant(1.0);
@@ -50,7 +51,6 @@ void FeatureExtractor::computeScores(const Tensorf &signals, const Vec<int> &ran
     if (!this->ready) {
         throw std::length_error("Must set feature parameters before using");
     }
-//#pragma omp parallel for
     for (uint32_t i = 0; i < this->n_ring; i++) {
         Eigen::array<ptrdiff_t, 1> dims({1});
         Eigen::Tensor<float, 1> sum_kernel(this->param.variance_window);
@@ -95,7 +95,8 @@ void FeatureExtractor::computeScores(const Tensorf &signals, const Vec<int> &ran
 }
 
 void FeatureExtractor::preFilter(const Tensorf &scan, const Tensorf &signals, const Vec<int> &range) {
-//#pragma omp parallel for
+    Eigen::ThreadPool tp(4);
+    Eigen::ThreadPoolDevice device(&tp, 4);
     for (uint32_t i = 0; i < this->n_ring; i++) {
         if (range.at(i) < 11) {
             this->valid_pts.at(i).resize(0);
@@ -115,7 +116,8 @@ void FeatureExtractor::preFilter(const Tensorf &scan, const Tensorf &signals, co
         Eigen::Tensor<bool, 1> oc_tol2_cond = rng_diff.abs() > this->param.occlusion_tol_2;
         Eigen::Tensor<bool, 1> ang_diff_cond(range.at(i) - 1);
 
-        Eigen::Tensor<float, 2> normalized = scan.at(i).slice(ar2{0,0}, ar2{3,range.at(i)}) / signals.at(i).slice(ar2({0, 0}), ar2({1, range.at(i)})).broadcast(ar2{3, 1});
+        Eigen::Tensor<float, 2> normalized(3, range.at(i));
+        normalized.device(device) = scan.at(i).slice(ar2{0,0}, ar2{3,range.at(i)}) / signals.at(i).slice(ar2({0, 0}), ar2({1, range.at(i)})).broadcast(ar2{3, 1});
         Eigen::Tensor<float, 1> costheta = (normalized.slice(ar2{0,0}, ar2{3, range.at(i) - 1}) * normalized.slice(ar2{0,1}, ar2{3, range.at(i) - 1})).sum(ar1{0});
 
         ang_diff_cond = costheta > this->param.occlusion_tol;
@@ -134,7 +136,7 @@ void FeatureExtractor::preFilter(const Tensorf &scan, const Tensorf &signals, co
         Eigen::Tensor<float, 1> delforback(range.at(i) - 1);
 
         delforback =
-          scan.at(i).slice(ar2({0, 0}), ar2({3, range.at(i)})).convolve(ex_diff_K, dims2).square().sum(Earr<1>({0}));
+          scan.at(i).slice(ar2({0, 0}), ar2({3, range.at(i)})).convolve(ex_diff_K, dims2).eval().square().sum(Earr<1>({0}));
 
         Eigen::Tensor<float, 1> sqr_rng(range.at(i) - 2);
         sqr_rng = signals.at(i).slice(ar2({0, 1}), ar2({1, range.at(i) - 2})).square().chip(0, 0);

@@ -89,6 +89,8 @@ int main(int argc, char **argv) {
     uint16_t ring_index = 0;
 
     uint32_t scan_index = 0;
+    std::vector<int> mapping(101);
+    std::iota(mapping.begin(), mapping.end(), 0);
     for (auto iter = v.begin(); iter != v.end(); ++iter) {
         fstream cloud_file;
         if (iter->string().substr(iter->string().find_last_of('.') + 1) == "bin") {
@@ -106,11 +108,14 @@ int main(int argc, char **argv) {
         ring_index = 0;
         double prev_azimuth = 0;
         bool first_point = true;
+        std::vector<int> intensities;
+        intensities.clear();
         while (cloud_file.good() && !cloud_file.eof()) {
             std::vector<wave::PointXYZIR> pt_vec(1);
+            float raw_intensity;
             if (binary_format) {
                 cloud_file.read((char *) pt_vec.front().data, 3 * sizeof(float));
-                cloud_file.read((char *) &pt_vec.front().intensity, sizeof(float));
+                cloud_file.read((char *) &raw_intensity, sizeof(float));
             } else {
                 std::string line;
                 std::getline(cloud_file, line);
@@ -118,8 +123,12 @@ int main(int argc, char **argv) {
                 ss >> pt_vec.front().x;
                 ss >> pt_vec.front().y;
                 ss >> pt_vec.front().z;
-                ss >> pt_vec.front().intensity;
+                ss >> raw_intensity;
             }
+
+            pt_vec.front().intensity = (float) (mapping.at((int)(100 * raw_intensity))) / 100.0f;
+
+            intensities.emplace_back((int)(100 * raw_intensity));
 
             auto azimuth = (std::atan2(pt_vec.front().y, pt_vec.front().x));
             azimuth < 0 ? azimuth = (float) (azimuth + 2.0 * M_PI) : azimuth;
@@ -153,6 +162,23 @@ int main(int argc, char **argv) {
                 }
             }
         }
+
+        std::vector<int> frequencies(101);
+        std::fill(frequencies.begin(), frequencies.end(), 0);
+        for (const auto &intensity : intensities) {
+            frequencies.at(intensity)++;
+        }
+        std::vector<double> pdf(101), cdf(101);
+
+        for (uint32_t i = 0; i < frequencies.size(); ++i) {
+            pdf.at(i) = ((double) (frequencies.at(i)) / (double)(intensities.size()));
+            cdf.at(i) = pdf.at(i);
+            if(i > 0) {
+                cdf.at(i) += cdf.at(i-1);
+            }
+            mapping.at(i) = (int)(cdf.at(i) * 100);
+        }
+
         cloud_file.close();
         ++scan_index;
         if (scan_index % 10 == 0 || scan_index == oxt_trajectory.size()) {

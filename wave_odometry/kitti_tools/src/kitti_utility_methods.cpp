@@ -242,9 +242,9 @@ void updateVisualizer(const wave::LaserOdom *odom,
             ++ptcld_id;
         }
 
-        pcl::PointCloud<pcl::PointXYZ>::Ptr flatcloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
-        *flatcloud = odom->undis_candidates_cur.at(2);
-        display->addPointcloud(flatcloud, ptcld_id, false, 5);
+        pcl::PointCloud<pcl::PointXYZ>::Ptr int_edge_cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+        *int_edge_cloud = odom->undis_candidates_cur.at(4);
+        display->addPointcloud(int_edge_cloud, ptcld_id, false, 5);
         ++ptcld_id;
 
         pcl::PointCloud<pcl::PointXYZ>::Ptr edgecloud1 = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
