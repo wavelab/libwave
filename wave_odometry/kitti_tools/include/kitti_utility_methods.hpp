@@ -43,7 +43,7 @@ void plotTrackLengths(const Vec<TrackLengths> &track_lengths);
 
 wave::TimeType parseTime(const std::string &date_time);
 
-wave::Mat34 poseFromGPS(const std::vector<double> &vals, const wave::Mat34 &reference);
+wave::Mat34 poseFromGPS(const std::vector<double> &vals, const wave::Mat34 &reference, wave::Mat3 &R_ENU_CAR);
 
 void fillGroundTruth(wave::VecE<wave::PoseVelStamped> &trajectory, const std::string &data_path);
 

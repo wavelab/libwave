@@ -39,17 +39,6 @@ class LineResidual : public ceres::SizedCostFunction<3, 6, states...> {
     const VecE<const MatX*> jacsw1, jacsw2;
 
     const float w1, w2;
-//    const uint32_t pt_id, feat_idx;
-//    const FeatureTrack *track;
-//    const Vec<VecE<MatXf>> *feat_points_T;
-//
-//    /// pointer to state jacobians updated by evaluation callback
-//    /// The jacobians are an interpolation grid
-//    const Vec<VecE<MatX>> *jacs;
-//    const Vec<float> *jac_stamps;
-//
-//    float w1, w2;
-//    uint32_t jac_index;
 };
 }
 

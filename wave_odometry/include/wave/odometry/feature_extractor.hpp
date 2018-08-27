@@ -69,6 +69,15 @@ class FeatureExtractor {
     using Tensor2f = Eigen::Tensor<float, 2>;
     // type for incoming signals. Vector is ringsize long, each element is channels x points tensor
     using Tensorf = VecA<Tensor2f, Eigen::aligned_allocator<Tensor2f>>;
+
+    using SKcombo = std::pair<Kernel, Signal>;
+
+    // type for std::map of a 1 dimensional tensor
+    using KernelMap = std::map<Kernel, Eigen::Tensor<float, 1>, std::less<Kernel>, Eigen::aligned_allocator<Eigen::Tensor<float, 1>>>;
+
+    using SignalVec = Vec<std::map<Signal, Eigen::Tensor<float, 1>, std::less<Signal>, Eigen::aligned_allocator<Eigen::Tensor<float, 1>>>>;
+
+    using ScoreMap = std::map<SKcombo, Eigen::Tensor<float, 1>, std::less<SKcombo>, Eigen::aligned_allocator<Eigen::Tensor<float, 1>>>;
     // type for outgoing keypoint indices
     // Each ring and feature type combination has a variable number of feature points, so the container
     // must support both. Indexed by feature id, then ring in that order.
@@ -80,7 +89,7 @@ class FeatureExtractor {
     void setParams(FeatureExtractorParams params, unlong n_rings);
 
     // Designed as function for outside world to call
-    void getFeatures(const Tensorf &scan, const Tensorf &signals,
+    void getFeatures(const Tensorf &scan, const SignalVec &signals,
                      const std::vector<int> &range, TensorIdx &indices);
 
     FeatureExtractorParams param;
@@ -88,26 +97,31 @@ class FeatureExtractor {
     bool ready = false;
     void setup();
 
-    void computeScores(const Tensorf &signals, const Vec<int> &range);
-    void preFilter(const Tensorf &scan, const Tensorf &signals, const Vec<int> &range);
+    void computeScores(const SignalVec &signals, const Vec<int> &range);
+    void preFilter(const Tensorf &scan, const SignalVec &signals, const Vec<int> &true_size);
     void buildFilteredScore(const Vec<int> &range);
-    void sortAndBin(const Tensorf &scan, const Tensorf &signals, TensorIdx &feature_indices);
+    void sortAndBin(const Tensorf &scan, const SignalVec &signals, TensorIdx &feature_indices);
 
     void flagNearbyPoints(const uint32_t p_idx, const float pt_range, Eigen::Tensor<bool, 1> &valid);
 
     unlong n_ring; // This is separate from params because it depends on hardware
 
     // The resulting scores for each signal, grouped by kernel and ring
-    VecA<Tensor2f, Eigen::aligned_allocator<Tensor2f>> scores;
+//    VecA<Tensor2f, Eigen::aligned_allocator<Tensor2f>> scores;
+    // scores for each kernel-signal combo, indexed by ring id
+    Vec<ScoreMap> scores;
 
     // Whether points are still considered candidates. Required to avoid picking neighbouring points
     VecA<Eigen::Tensor<bool, 1>, Eigen::aligned_allocator<Eigen::Tensor<bool, 1>>> valid_pts;
 
     // Scoring kernels, indexed along 1st dimension
-    VecA<Eigen::Tensor<float, 1>, Eigen::aligned_allocator<Eigen::Tensor<float, 1>>> kernels;
+    KernelMap kernels;
+//    VecA<Eigen::Tensor<float, 1>, Eigen::aligned_allocator<Eigen::Tensor<float, 1>>> kernels;
 
     // Container to sort scores with. Each is built depending on feature specification
     Vec<Vec<Vec<std::pair<unlong, float>>>> filtered_scores;
+
+    std::vector<std::pair<Kernel, Signal>> proc_vec;
 };
 }
 

@@ -11,7 +11,7 @@ namespace wave {
 enum AssociationStatus { CORRESPONDED, UNCORRESPONDED };
 enum ResidualType { PointToLine, PointToPlane };
 enum SelectionPolicy { HIGH_POS, HIGH_NEG, NEAR_ZERO };
-enum Kernel { LOAM, LOG, FOG, RNG_VAR, INT_VAR };
+enum Kernel { LOAM, LOG, FOG, VAR };
 enum Signal { RANGE, INTENSITY };
 
 // true uses transform class with some approximations for exp map, etc

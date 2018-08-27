@@ -87,21 +87,21 @@ void setupFeatureParameters(wave::FeatureExtractorParams &param) {
     flat.emplace_back(
             wave::Criteria{wave::Signal::RANGE, wave::Kernel::LOAM, wave::SelectionPolicy::NEAR_ZERO, &(param.flat_tol)});
     flat.emplace_back(wave::Criteria{
-            wave::Signal::RANGE, wave::Kernel::RNG_VAR, wave::SelectionPolicy::NEAR_ZERO, &(param.variance_limit_rng)});
+            wave::Signal::RANGE, wave::Kernel::VAR, wave::SelectionPolicy::NEAR_ZERO, &(param.variance_limit_rng)});
 
     edge_int_high.emplace_back(wave::Criteria{
-            wave::Signal::INTENSITY, wave::Kernel::FOG, wave::SelectionPolicy::HIGH_POS, &(param.int_edge_tol)});
+            wave::Signal::INTENSITY, wave::Kernel::LOG, wave::SelectionPolicy::HIGH_POS, &(param.int_edge_tol)});
     edge_int_high.emplace_back(
             wave::Criteria{wave::Signal::RANGE, wave::Kernel::LOAM, wave::SelectionPolicy::NEAR_ZERO, &(param.int_flat_tol)});
     edge_int_high.emplace_back(wave::Criteria{
-            wave::Signal::RANGE, wave::Kernel::RNG_VAR, wave::SelectionPolicy::NEAR_ZERO, &(param.variance_limit_rng)});
+            wave::Signal::RANGE, wave::Kernel::VAR, wave::SelectionPolicy::NEAR_ZERO, &(param.variance_limit_rng)});
 
     edge_int_low.emplace_back(wave::Criteria{
-            wave::Signal::INTENSITY, wave::Kernel::FOG, wave::SelectionPolicy::HIGH_NEG, &(param.int_edge_tol)});
+            wave::Signal::INTENSITY, wave::Kernel::LOG, wave::SelectionPolicy::HIGH_NEG, &(param.int_edge_tol)});
     edge_int_low.emplace_back(
             wave::Criteria{wave::Signal::RANGE, wave::Kernel::LOAM, wave::SelectionPolicy::NEAR_ZERO, &(param.int_flat_tol)});
     edge_int_low.emplace_back(wave::Criteria{
-            wave::Signal::RANGE, wave::Kernel::RNG_VAR, wave::SelectionPolicy::NEAR_ZERO, &(param.variance_limit_rng)});
+            wave::Signal::RANGE, wave::Kernel::VAR, wave::SelectionPolicy::NEAR_ZERO, &(param.variance_limit_rng)});
 
     param.feature_definitions.clear();
     param.feature_definitions.emplace_back(wave::FeatureDefinition{edge_high, &(param.n_edge)});
@@ -577,7 +577,7 @@ written for each synchronized frame. Each text file contains 30 values
  **/
 
 // order is lat, long, (deg), alt, r, p, y (radians)
-wave::Mat34 poseFromGPS(const std::vector<double> &vals, const wave::Mat34 &reference) {
+wave::Mat34 poseFromGPS(const std::vector<double> &vals, const wave::Mat34 &reference, wave::Mat3 &R_RLOCAL_CAR) {
     double T_ecef_enu[4][4];
 
     wave::ecefFromENUTransformMatrix(vals.data(), T_ecef_enu);
@@ -594,17 +594,15 @@ wave::Mat34 poseFromGPS(const std::vector<double> &vals, const wave::Mat34 &refe
 
     wave::Mat34 T_ECEF_ENU, T_ECEF_CAR;
 
-    wave::Mat3 R_ENU_CAR;
-
     for (uint32_t i = 0; i < 3; ++i) {
         for (uint32_t j = 0; j < 4; ++j) {
             T_ECEF_ENU(i, j) = T_ecef_enu[i][j];
         }
     }
 
-    R_ENU_CAR.noalias() = Rz * Ry * Rx;
+    R_RLOCAL_CAR.noalias() = Ry * Rx;
 
-    T_ECEF_CAR.block<3, 3>(0, 0).noalias() = reference.block<3, 3>(0, 0) * (T_ECEF_ENU.block<3, 3>(0, 0) * R_ENU_CAR);
+    T_ECEF_CAR.block<3, 3>(0, 0).noalias() = reference.block<3, 3>(0, 0) * (T_ECEF_ENU.block<3, 3>(0, 0) * Rz * R_RLOCAL_CAR);
     T_ECEF_CAR.block<3, 1>(0, 3).noalias() =
             reference.block<3, 3>(0, 0) * T_ECEF_ENU.block<3, 1>(0, 3) + reference.block<3, 1>(0, 3);
 
@@ -636,8 +634,12 @@ void fillGroundTruth(wave::VecE<wave::PoseVelStamped> &trajectory, const std::st
             vals.emplace_back(new_val);
         }
         wave::PoseVelStamped new_measurement;
-        new_measurement.pose.storage = poseFromGPS(vals, reference);
-        new_measurement.vel << vals.at(20), vals.at(21), vals.at(22), vals.at(8), vals.at(9), vals.at(10);
+        Mat3 R_RLOCAL_CAR;
+        new_measurement.pose.storage = poseFromGPS(vals, reference, R_RLOCAL_CAR);
+        Vec3 RLOCAL_V_EARTH_CAR;
+        RLOCAL_V_EARTH_CAR << vals.at(8), vals.at(9), vals.at(10);
+        Vec3 CAR_V_EARTH_CAR = R_RLOCAL_CAR.transpose() * RLOCAL_V_EARTH_CAR;
+        new_measurement.vel << vals.at(20), vals.at(21), vals.at(22), CAR_V_EARTH_CAR(0), CAR_V_EARTH_CAR(1), CAR_V_EARTH_CAR(2);
         trajectory.emplace_back(new_measurement);
         if (trajectory.size() == 1) {
             wave::T_TYPE temp = trajectory.front().pose;

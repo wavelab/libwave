@@ -6,7 +6,7 @@ range_divisions: [
     25.0,
     50.0]
 
-azimuth_divisions: 3
+azimuth_divisions: 4
 
 xy_directions: 6
 
