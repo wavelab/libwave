@@ -16,6 +16,12 @@ void FeatureExtractor::setup() {
     this->valid_pts.resize(this->n_ring);
     this->scores.resize(this->n_ring);
 
+    for (uint32_t i = 0; i < this->scores.size(); ++i) {
+        for (const auto &proc_def : this->proc_vec) {
+            this->scores.at(i).emplace(proc_def, Eigen::Tensor<float, 1>());
+        }
+    }
+
     this->filtered_scores.resize(this->param.N_SCORES);
     for (uint32_t i = 0; i < this->param.N_SCORES; i++) {
         this->filtered_scores.at(i).resize(this->n_ring);
@@ -62,7 +68,7 @@ void FeatureExtractor::computeScores(const SignalVec &signals, const Vec<int> &r
         throw std::length_error("Must set feature parameters before using");
     }
     for (uint32_t i = 0; i < this->n_ring; i++) {
-        Eigen::array<ptrdiff_t, 1> dims({1});
+        Eigen::array<ptrdiff_t, 1> dims({0});
         Eigen::Tensor<float, 1> sum_kernel(this->param.variance_window);
         sum_kernel.setConstant(1.0);
 
@@ -74,13 +80,15 @@ void FeatureExtractor::computeScores(const SignalVec &signals, const Vec<int> &r
 
         for (const auto &proc_pair : this->proc_vec) {
             const auto &kernel = this->kernels.at(std::get<0>(proc_pair));
-            const auto &signal = signals.at(i).at(std::get<1>(proc_pair));
+            auto &signal = signals.at(i).at(std::get<1>(proc_pair));
             auto &score = this->scores.at(i).at(proc_pair);
             score = Eigen::Tensor<float, 1>(max - 10);
 
+            Eigen::Tensor<float, 1> cur_signal = signal.slice(ar1({0}), ar1({max}));
+
             // todo have flexibility for different kernel sizes
-            if (kernel != Kernel::VAR) {
-                score = signal.slice(ar1({0}), ar1({max})).eval().convolve(kernel, dims);
+            if (std::get<0>(proc_pair) != Kernel::VAR) {
+                score = cur_signal.convolve(kernel, dims);
                 // or if sample variance
             } else {
                 auto &N = this->param.variance_window;
@@ -91,10 +99,9 @@ void FeatureExtractor::computeScores(const SignalVec &signals, const Vec<int> &r
 
                 // so called computational formula for sample variance
                 // todo. This is quite expensive, should only calculate sample variance on high/low scores
-                Eigen::Tensor<float, 1> temporary = signal.slice(ar1({0}), ar1({max}));
                 score =
-                  (temporary.square().convolve(sum_kernel, dims) -
-                          temporary
+                  (cur_signal.square().convolve(sum_kernel, dims) -
+                          cur_signal
                      .convolve(sum_kernel, dims)
                      .square()
                      .convolve(Ninv, dims))
@@ -105,8 +112,8 @@ void FeatureExtractor::computeScores(const SignalVec &signals, const Vec<int> &r
 }
 
 void FeatureExtractor::preFilter(const Tensorf &scan, const SignalVec &signals, const Vec<int> &true_size) {
-    Eigen::ThreadPool tp(4);
-    Eigen::ThreadPoolDevice device(&tp, 4);
+//    Eigen::ThreadPool tp(4);
+//    Eigen::ThreadPoolDevice device(&tp, 4);
     for (uint32_t i = 0; i < this->n_ring; i++) {
         if (true_size.at(i) < 11) {
             this->valid_pts.at(i).resize(0);
@@ -116,20 +123,21 @@ void FeatureExtractor::preFilter(const Tensorf &scan, const SignalVec &signals, 
         // Assume all points are valid until proven otherwise
         this->valid_pts.at(i).setConstant(true);
 
-        const auto &range = signals.at(i).at(Signal::RANGE);
+        Eigen::Tensor<float, 1> range = signals.at(i).at(Signal::RANGE).slice(ar1{0}, ar1{true_size.at(i)});
+        Eigen::Tensor<float, 2> cur_scan = scan.at(i).slice(ar2{0,0}, ar2{3,true_size.at(i)});
 
         Eigen::Tensor<float, 1> diff_kernel(2);
         diff_kernel.setValues({1.f, -1.f});
 
         Eigen::Tensor<float, 1> rng_diff(true_size.at(i) - 1);
-        rng_diff = range.convolve(diff_kernel);
+        rng_diff = range.convolve(diff_kernel, ar1({0}));
 
         Eigen::Tensor<bool, 1> oc_tol2_cond = rng_diff.abs() > this->param.occlusion_tol_2;
         Eigen::Tensor<bool, 1> ang_diff_cond(true_size.at(i) - 1);
 
         Eigen::Tensor<float, 2> normalized(3, true_size.at(i));
         Eigen::array<ptrdiff_t, 2> new_dims({1, range.dimension(0)});
-        normalized.device(device) = scan.at(i).slice(ar2{0,0}, ar2{3,true_size.at(i)}) / range.reshape(new_dims).broadcast(ar2{3, 1});
+        normalized = cur_scan / range.reshape(new_dims).broadcast(ar2{3, 1});
         Eigen::Tensor<float, 1> costheta = (normalized.slice(ar2{0,0}, ar2{3, true_size.at(i) - 1}) * normalized.slice(ar2{0,1}, ar2{3, true_size.at(i) - 1})).sum(ar1{0});
 
         ang_diff_cond = costheta > this->param.occlusion_tol;
@@ -148,7 +156,7 @@ void FeatureExtractor::preFilter(const Tensorf &scan, const SignalVec &signals, 
         Eigen::Tensor<float, 1> delforback(true_size.at(i) - 1);
 
         delforback =
-          scan.at(i).slice(ar2({0, 0}), ar2({3, true_size.at(i)})).convolve(ex_diff_K, dims2).eval().square().sum(Earr<1>({0}));
+                cur_scan.convolve(ex_diff_K, dims2).eval().square().sum(Earr<1>({0}));
 
         Eigen::Tensor<float, 1> sqr_rng(true_size.at(i) - 2);
         sqr_rng = range.slice(ar1({1}), ar1({true_size.at(i) - 2})).square();
@@ -306,6 +314,7 @@ void FeatureExtractor::sortAndBin(const Tensorf &scan, const SignalVec &signals,
                           });
             }
 
+            const auto &range_signal = signals.at(j).at(Signal::RANGE);
             for (const auto &score : filt_scores) {
                 // Using data conversion to floor result
                 // todo remove magic 0.1
@@ -317,7 +326,7 @@ void FeatureExtractor::sortAndBin(const Tensorf &scan, const SignalVec &signals,
                     cur_feat_idx(feat_cnt) = (int) score.first;
                     feat_cnt++;
 
-                    this->flagNearbyPoints(score.first, signals.at(j)(0, score.first), valid_pts_copy);
+                    this->flagNearbyPoints(score.first, range_signal(score.first), valid_pts_copy);
                     cnt_in_bins.at(bin)++;
                 }
             }

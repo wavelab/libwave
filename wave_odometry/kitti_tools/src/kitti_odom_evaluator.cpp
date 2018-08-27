@@ -4,10 +4,11 @@
 #include "../include/kitti_utility_methods.hpp"
 
 int main(int argc, char **argv) {
-    if (argc != 5) {
+    if (argc != 7) {
         throw std::runtime_error(
                 "Must be run with only 3 arguments: \n 1. Full path to data \n 2. Full path to configuration files \n 3. 1 "
-                "or 0 to indicate whether a visualizer should be run \n 4. Sequence to run.");
+                "or 0 to indicate whether a visualizer should be run \n 4. Sequence to run. \n"
+                "5. Starting frame \n 6. Ending frame (or set -1 for no limit)");
     }
     std::string data_path(argv[1]);
     std::string config_path(argv[2]);
@@ -18,6 +19,12 @@ int main(int argc, char **argv) {
     }
     if (config_path.back() != '/') {
         config_path = config_path + '/';
+    }
+
+    int start_frame = std::stoi(argv[5]);
+    int end_frame = std::stoi(argv[6]);
+    if (end_frame < 0) {
+        end_frame = std::numeric_limits<int>::max();
     }
 
     wave::ConfigParser parser;
@@ -144,12 +151,24 @@ int main(int argc, char **argv) {
     auto func = [&]() { updateVisualizer(&odom, display, &odom_trajectory, &lengths); };
     odom.registerOutputFunction(func);
 
-    unsigned long counter = 0;
     bool binary_format = false;
     uint16_t ring_index = 0;
 
     uint32_t scan_index = 0;
+    std::vector<int> mapping(101);
+    std::iota(mapping.begin(), mapping.end(), 0);
+
+    bool first_time = true;
+    wave::TimeType first_stamp;
+
     for (auto iter = v.begin(); iter != v.end(); ++iter) {
+        if (scan_index < start_frame) {
+            scan_index++;
+            continue;
+        }
+        if (scan_index > end_frame) {
+            break;
+        }
         fstream cloud_file;
         if (iter->string().substr(iter->string().find_last_of('.') + 1) == "bin") {
             binary_format = true;
@@ -157,18 +176,24 @@ int main(int argc, char **argv) {
         } else {
             cloud_file.open(iter->string(), ios::in);
         }
-        const auto &time_t = times.at(counter);
+        const auto &time_t = times.at(scan_index);
 
-        ++counter;
+        if (first_time) {
+            first_time = false;
+            first_stamp = time_t;
+        }
 
         ring_index = 0;
         double prev_azimuth = 0;
         bool first_point = true;
+        std::vector<int> intensities;
+        intensities.clear();
         while (cloud_file.good() && !cloud_file.eof()) {
+            float raw_intensity;
             std::vector<wave::PointXYZIR> pt_vec(1);
             if (binary_format) {
                 cloud_file.read((char *) pt_vec.front().data, 3 * sizeof(float));
-                cloud_file.read((char *) &pt_vec.front().intensity, sizeof(float));
+                cloud_file.read((char *) &raw_intensity, sizeof(float));
             } else {
                 std::string line;
                 std::getline(cloud_file, line);
@@ -176,8 +201,12 @@ int main(int argc, char **argv) {
                 ss >> pt_vec.front().x;
                 ss >> pt_vec.front().y;
                 ss >> pt_vec.front().z;
-                ss >> pt_vec.front().intensity;
+                ss >> raw_intensity;
             }
+            float new_intensity = (float) (mapping.at((int)(100 * raw_intensity))) / 100.0f;
+            pt_vec.front().intensity = new_intensity > 0.75 ? new_intensity : 0.75;
+
+            intensities.emplace_back((int)(100 * raw_intensity));
 
             auto azimuth = (std::atan2(pt_vec.front().y, pt_vec.front().x));
             azimuth < 0 ? azimuth = (float) (azimuth + 2.0 * M_PI) : azimuth;
@@ -198,11 +227,48 @@ int main(int argc, char **argv) {
                 }
             }
         }
+
+        std::vector<int> frequencies(101);
+        std::fill(frequencies.begin(), frequencies.end(), 0);
+        for (const auto &intensity : intensities) {
+            frequencies.at(intensity)++;
+        }
+        std::vector<double> pdf(101), cdf(101);
+
+        for (uint32_t i = 0; i < frequencies.size(); ++i) {
+            pdf.at(i) = ((double) (frequencies.at(i)) / (double)(intensities.size()));
+            cdf.at(i) = pdf.at(i);
+            if(i > 0) {
+                cdf.at(i) += cdf.at(i-1);
+            }
+            mapping.at(i) = (int)(cdf.at(i) * 100);
+        }
+
         cloud_file.close();
         ++scan_index;
         if (scan_index % 10 == 0 || scan_index == times.size()) {
             std::cout << "\rFinished with scan " << std::to_string(scan_index) << "/"
                       << std::to_string(times.size()) << std::flush;
+        }
+    }
+
+    auto iter = std::find_if(T_L1_Lx_trajectory.begin(), T_L1_Lx_trajectory.end(), [&first_stamp](const wave::PoseStamped &state){
+
+       if (state.stamp >= first_stamp) {
+           if (state.stamp - first_stamp < std::chrono::milliseconds(10)) {
+               return true;
+           }
+       } else {
+           if (first_stamp - state.stamp < std::chrono::milliseconds(10)) {
+               return true;
+           }
+       }
+       return false;
+    });
+
+    if (iter != T_L1_Lx_trajectory.end()) {
+        for (auto &odom_state : odom_trajectory) {
+            odom_state.pose = iter->pose * odom_state.pose;
         }
     }
 

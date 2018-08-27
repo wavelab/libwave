@@ -47,14 +47,14 @@ void setupParameters(wave::FeatureExtractorParams &param) {
     edge_int_high.emplace_back(
       wave::Criteria{wave::Signal::RANGE, wave::Kernel::LOAM, wave::SelectionPolicy::NEAR_ZERO, &(param.int_flat_tol)});
     edge_int_high.emplace_back(wave::Criteria{
-      wave::Signal::RANGE, wave::Kernel::RNG_VAR, wave::SelectionPolicy::NEAR_ZERO, &(param.variance_limit_rng)});
+      wave::Signal::RANGE, wave::Kernel::VAR, wave::SelectionPolicy::NEAR_ZERO, &(param.variance_limit_rng)});
 
     edge_int_low.emplace_back(wave::Criteria{
       wave::Signal::INTENSITY, wave::Kernel::FOG, wave::SelectionPolicy::HIGH_NEG, &(param.int_edge_tol)});
     edge_int_low.emplace_back(
       wave::Criteria{wave::Signal::RANGE, wave::Kernel::LOAM, wave::SelectionPolicy::NEAR_ZERO, &(param.int_flat_tol)});
     edge_int_low.emplace_back(wave::Criteria{
-      wave::Signal::RANGE, wave::Kernel::RNG_VAR, wave::SelectionPolicy::NEAR_ZERO, &(param.variance_limit_rng)});
+      wave::Signal::RANGE, wave::Kernel::VAR, wave::SelectionPolicy::NEAR_ZERO, &(param.variance_limit_rng)});
 
     param.feature_definitions.clear();
     param.feature_definitions.emplace_back(wave::FeatureDefinition{edge_high, &(param.n_edge)});
@@ -67,7 +67,7 @@ void setupParameters(wave::FeatureExtractorParams &param) {
 void setup(wave::FeatureExtractorParams &params,
            wave::FeatureExtractor &extractor,
            wave::FeatureExtractor::Tensorf &scan,
-           wave::FeatureExtractor::Tensorf &signals,
+           wave::FeatureExtractor::SignalVec &signals,
            std::vector<int> &range,
            wave::FeatureExtractor::TensorIdx &indices) {
     loadParameters("config/", "features.yaml", params);
@@ -81,7 +81,8 @@ void setup(wave::FeatureExtractorParams &params,
     std::fill(range.begin(), range.end(), 0);
     for (uint32_t i = 0; i < 32; i++) {
         scan.at(i) = Eigen::Tensor<float, 2>(5, 2200);
-        signals.at(i) = Eigen::Tensor<float, 2>(2, 2200);
+        signals.at(i).emplace(std::make_pair(wave::Signal::RANGE, Eigen::Tensor<float, 1>(2200)));
+        signals.at(i).emplace(std::make_pair(wave::Signal::INTENSITY, Eigen::Tensor<float, 1>(2200)));
     }
 
     indices.resize(params.N_FEATURES);
@@ -104,8 +105,8 @@ void setup(wave::FeatureExtractorParams &params,
         scan.at(pt.ring)(3, range.at(pt.ring)) = ang;
         scan.at(pt.ring)(4, range.at(pt.ring)) = 0;
 
-        signals.at(pt.ring)(0, range.at(pt.ring)) = sqrtf(pt.x * pt.x + pt.y * pt.y + pt.z * pt.z);
-        signals.at(pt.ring)(1, range.at(pt.ring)) = pt.intensity;
+        signals.at(pt.ring).at(wave::Signal::RANGE)(range.at(pt.ring)) = sqrtf(pt.x * pt.x + pt.y * pt.y + pt.z * pt.z);
+        signals.at(pt.ring).at(wave::Signal::INTENSITY)(range.at(pt.ring)) = pt.intensity;
         range.at(pt.ring) += 1;
     }
 }
@@ -114,7 +115,8 @@ void setup(wave::FeatureExtractorParams &params,
 static void BM_FEATURE_EXTRACTION_SCORES(benchmark::State &state) {
     wave::FeatureExtractorParams params;
     wave::FeatureExtractor extractor;
-    wave::FeatureExtractor::Tensorf scan, signals;
+    wave::FeatureExtractor::Tensorf scan;
+    wave::FeatureExtractor::SignalVec signals;
     std::vector<int> range;
     wave::FeatureExtractor::TensorIdx indices;
 
@@ -129,7 +131,8 @@ BENCHMARK(BM_FEATURE_EXTRACTION_SCORES);
 static void BM_FEATURE_EXTRACTION_PREFILTER(benchmark::State &state) {
     wave::FeatureExtractorParams params;
     wave::FeatureExtractor extractor;
-    wave::FeatureExtractor::Tensorf scan, signals;
+    wave::FeatureExtractor::Tensorf scan;
+    wave::FeatureExtractor::SignalVec signals;
     std::vector<int> range;
     wave::FeatureExtractor::TensorIdx indices;
 
@@ -145,7 +148,8 @@ BENCHMARK(BM_FEATURE_EXTRACTION_PREFILTER);
 static void BM_FEATURE_EXTRACTION_FILT_SCORES(benchmark::State &state) {
     wave::FeatureExtractorParams params;
     wave::FeatureExtractor extractor;
-    wave::FeatureExtractor::Tensorf scan, signals;
+    wave::FeatureExtractor::Tensorf scan;
+    wave::FeatureExtractor::SignalVec signals;
     std::vector<int> range;
     wave::FeatureExtractor::TensorIdx indices;
 
@@ -162,7 +166,8 @@ BENCHMARK(BM_FEATURE_EXTRACTION_FILT_SCORES);
 static void BM_FEATURE_EXTRACTION_SORT(benchmark::State &state) {
     wave::FeatureExtractorParams params;
     wave::FeatureExtractor extractor;
-    wave::FeatureExtractor::Tensorf scan, signals;
+    wave::FeatureExtractor::Tensorf scan;
+    wave::FeatureExtractor::SignalVec signals;
     std::vector<int> range;
     wave::FeatureExtractor::TensorIdx indices;
 
@@ -180,7 +185,8 @@ BENCHMARK(BM_FEATURE_EXTRACTION_SORT);
 static void BM_FEATURE_EXTRACTION(benchmark::State &state) {
     wave::FeatureExtractorParams params;
     wave::FeatureExtractor extractor;
-    wave::FeatureExtractor::Tensorf scan, signals;
+    wave::FeatureExtractor::Tensorf scan;
+    wave::FeatureExtractor::SignalVec signals;
     std::vector<int> range;
     wave::FeatureExtractor::TensorIdx indices;
 

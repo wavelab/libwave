@@ -109,7 +109,7 @@ class FeatureExtractor {
     // The resulting scores for each signal, grouped by kernel and ring
 //    VecA<Tensor2f, Eigen::aligned_allocator<Tensor2f>> scores;
     // scores for each kernel-signal combo, indexed by ring id
-    Vec<ScoreMap> scores;
+    VecE<ScoreMap> scores;
 
     // Whether points are still considered candidates. Required to avoid picking neighbouring points
     VecA<Eigen::Tensor<bool, 1>, Eigen::aligned_allocator<Eigen::Tensor<bool, 1>>> valid_pts;

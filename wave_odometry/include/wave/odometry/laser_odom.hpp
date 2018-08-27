@@ -140,6 +140,7 @@ class LaserOdom {
 
     Vec6 prior_twist;
     Mat6 twist_covar;
+    uint32_t covar_age = 0;
     double prev_delta_t;
 
     // Shared memory
@@ -150,7 +151,6 @@ class LaserOdom {
     VecE<PoseVelStamped> undistort_trajectory;
     VecE<pcl::PointCloud<pcl::PointXYZ>> undis_candidates_cur, undis_candidates_prev;
 
-    const uint32_t N_SIGNALS = 2;
     const uint32_t N_FEATURES = 5;
     const uint32_t MAX_POINTS = 2200;
 
@@ -173,8 +173,9 @@ class LaserOdom {
     void updateFeatureCandidates();
     void prepTrajectory(const TimeType &stamp);
     bool match(const TimeType &stamp);
-    void trackResiduals(ceres::Problem &problem, uint32_t f_idx, VecE<FeatureTrack> &track_list);
-    void buildResiduals(ceres::Problem &problem);
+    void trackResiduals(ceres::Problem &problem, ceres::ParameterBlockOrdering &param_ordering, uint32_t f_idx,
+                            VecE <FeatureTrack> &track_list);
+    void buildResiduals(ceres::Problem &problem, ceres::ParameterBlockOrdering &param_ordering);
     // todo think about how to reuse residuals
     Vec<std::shared_ptr<ceres::CostFunction>> costs;
     std::vector<std::shared_ptr<ceres::LocalParameterization>> local_params;
@@ -250,7 +251,8 @@ class LaserOdom {
     VecE<Eigen::Tensor<float, 2>> cur_scan;
 
     // rings x (channels, points in ring)
-    VecE<Eigen::Tensor<float, 2>> signals;
+    FeatureExtractor::SignalVec signals;
+//    VecE<Eigen::Tensor<float, 2>> signals;
 
     // indices of points to use for features, indexed by feature type and ring
     Vec<VecE<Eigen::Tensor<int, 1>>> indices;

@@ -48,13 +48,13 @@ void setupParameters(FeatureExtractorParams &param) {
     edge_int_high.emplace_back(
       Criteria{Signal::RANGE, Kernel::LOAM, SelectionPolicy::NEAR_ZERO, &(param.int_flat_tol)});
     edge_int_high.emplace_back(
-      Criteria{Signal::RANGE, Kernel::RNG_VAR, SelectionPolicy::NEAR_ZERO, &(param.variance_limit_rng)});
+      Criteria{Signal::RANGE, Kernel::VAR, SelectionPolicy::NEAR_ZERO, &(param.variance_limit_rng)});
 
     edge_int_low.emplace_back(
       Criteria{Signal::INTENSITY, Kernel::FOG, SelectionPolicy::HIGH_NEG, &(param.int_edge_tol)});
     edge_int_low.emplace_back(Criteria{Signal::RANGE, Kernel::LOAM, SelectionPolicy::NEAR_ZERO, &(param.int_flat_tol)});
     edge_int_low.emplace_back(
-      Criteria{Signal::RANGE, Kernel::RNG_VAR, SelectionPolicy::NEAR_ZERO, &(param.variance_limit_rng)});
+      Criteria{Signal::RANGE, Kernel::VAR, SelectionPolicy::NEAR_ZERO, &(param.variance_limit_rng)});
 
     param.feature_definitions.clear();
     param.feature_definitions.emplace_back(FeatureDefinition{edge_high, &(param.n_edge)});
@@ -81,7 +81,8 @@ class FeatureExtractorTests : public testing::Test {
 
     FeatureExtractorParams params;
     FeatureExtractor extractor;
-    FeatureExtractor::Tensorf scan, signals;
+    FeatureExtractor::Tensorf scan;
+    FeatureExtractor::SignalVec signals;
     std::vector<int> range;
     FeatureExtractor::TensorIdx indices;
 };
@@ -97,7 +98,8 @@ TEST(Feature_Extractor, Initialization) {
 // Check that uninitialized extractor throws exception if it is used
 TEST(Feature_Extractor, DefaultConstructor) {
     FeatureExtractor extractor;
-    FeatureExtractor::Tensorf scan, signals;
+    FeatureExtractor::Tensorf scan;
+    FeatureExtractor::SignalVec signals;
     std::vector<int> range;
     FeatureExtractor::TensorIdx indices;
     EXPECT_THROW(extractor.getFeatures(scan, signals, range, indices), std::length_error);
@@ -131,7 +133,8 @@ TEST_F(FeatureExtractorTests, ProcessScan) {
     std::fill(this->range.begin(), this->range.end(), 0);
     for (uint32_t i = 0; i < 32; i++) {
         this->scan.at(i) = Eigen::Tensor<float, 2>(5, 2200);
-        this->signals.at(i) = Eigen::Tensor<float, 2>(2, 2200);
+        this->signals.at(i).emplace(Signal::RANGE, Eigen::Tensor<float, 1>(2200));
+        this->signals.at(i).emplace(Signal::INTENSITY, Eigen::Tensor<float, 1>(2200));
     }
 
     this->indices.resize(this->params.N_FEATURES);
@@ -158,8 +161,8 @@ TEST_F(FeatureExtractorTests, ProcessScan) {
         this->scan.at(pt.ring)(3, this->range.at(pt.ring)) = ang;
         this->scan.at(pt.ring)(4, this->range.at(pt.ring)) = 0;
 
-        this->signals.at(pt.ring)(0, this->range.at(pt.ring)) = sqrtf(pt.x * pt.x + pt.y * pt.y + pt.z * pt.z);
-        this->signals.at(pt.ring)(1, this->range.at(pt.ring)) = pt.intensity;
+        this->signals.at(pt.ring).at(Signal::RANGE)(this->range.at(pt.ring)) = sqrtf(pt.x * pt.x + pt.y * pt.y + pt.z * pt.z);
+        this->signals.at(pt.ring).at(Signal::INTENSITY)(this->range.at(pt.ring)) = pt.intensity;
         this->range.at(pt.ring) += 1;
     }
 
@@ -173,7 +176,8 @@ TEST_F(FeatureExtractorTests, VisualizeFeatures) {
     std::fill(this->range.begin(), this->range.end(), 0);
     for (uint32_t i = 0; i < 32; i++) {
         this->scan.at(i) = Eigen::Tensor<float, 2>(5, 2200);
-        this->signals.at(i) = Eigen::Tensor<float, 2>(2, 2200);
+        this->signals.at(i).emplace(Signal::RANGE, Eigen::Tensor<float, 1>(2200));
+        this->signals.at(i).emplace(Signal::INTENSITY, Eigen::Tensor<float, 1>(2200));
     }
 
     this->indices.resize(this->params.N_FEATURES);
@@ -207,8 +211,8 @@ TEST_F(FeatureExtractorTests, VisualizeFeatures) {
         this->scan.at(pt.ring)(3, this->range.at(pt.ring)) = ts;
         this->scan.at(pt.ring)(4, this->range.at(pt.ring)) = ang;
 
-        this->signals.at(pt.ring)(0, this->range.at(pt.ring)) = range;
-        this->signals.at(pt.ring)(1, this->range.at(pt.ring)) = pt.intensity;
+        this->signals.at(pt.ring).at(Signal::RANGE)(this->range.at(pt.ring)) = sqrtf(pt.x * pt.x + pt.y * pt.y + pt.z * pt.z);
+        this->signals.at(pt.ring).at(Signal::INTENSITY)(this->range.at(pt.ring)) = pt.intensity;
         this->range.at(pt.ring) += 1;
     }
 
