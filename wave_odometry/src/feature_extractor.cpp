@@ -217,7 +217,7 @@ Eigen::Tensor<bool, 1> high_neg_score(const Eigen::Tensor<float, 1> &score, floa
 
 void FeatureExtractor::buildFilteredScore(const Vec<int> &range) {
 //#pragma omp parallel for
-    for (uint32_t k = 0; k < this->param.N_FEATURES; k++) {
+    for (int k = this->param.N_FEATURES - 1; k >= 0; k--) {
         auto &def = this->param.feature_definitions.at(k);
         // get primary score index by kernel type
         std::vector<std::function<Eigen::Tensor<bool, 1>(const Eigen::Tensor<float, 1> &, double)>> compfuns;

@@ -1,7 +1,7 @@
 #  Feature extraction parameters
 variance_window: 11          #  How many points should be included in the sample variance calculation
 variance_limit_rng: 0.005     #  Threshold for conditionals on range signal
-variance_limit_int: 1        #  Threshold for conditionals on intensity signal
+variance_limit_int: 0.001        #  Threshold for conditionals on intensity signal
 angular_bins: 1              #  Angular bins to spread out feature sampling
 min_intensity: 10            #  Hard cutoff
 max_intensity: 50            #  Hard cutoff
@@ -11,10 +11,10 @@ occlusion_filter_length: 5  #  How close a point can be to a shadow, and still b
 parallel_tol: 0.002          #  ditto
 edge_tol: 0.5                #  Edge features must have score higher than this
 flat_tol: 0.075                #  Plane features must have score lower than this
-int_edge_tol: 0.1         #  Intensity edge features must have score greater than this
+int_edge_tol: 0.01         #  Intensity edge features must have score greater than this
 int_flat_tol: 0.075            #  Intensity edges must have curvature score lower than this
-n_edge: 60                  #  How many edge features to pick out per ring
+n_edge: 40                  #  How many edge features to pick out per ring
 n_flat: 100                  #  How many plane features to pick out per ring
-n_int_edge: 0              #  How many intensity edges to pick out per ring
+n_int_edge: 30              #  How many intensity edges to pick out per ring
 knn: 5                       #  1/2 nearest neighbours for computing curvature
 key_radius: 10                #  minimum number of points between keypoints on the same laser ring at a distance of 10m

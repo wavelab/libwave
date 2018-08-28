@@ -27,10 +27,10 @@ opt_iters: 3  # how many iterations of the matcher to run
 max_inner_iters: 50 # limit on iterations of ceres at each matcher iteration
 diff_tol: 1e-4 # norm of solution difference for stopping criteria
 solver_threads: 3 # number of threads the solver should use
-robust_param: 0.25 # Parameter used in tukey loss function
+robust_param: 0.15 # Parameter used in tukey loss function
 max_correspondence_dist: 2.5  #  correspondences greater than this are discarded
-max_planar_residual_val: 0.5   # Planar residuals with an initial error greater than this are not created
-max_linear_residual_val: 0.1 # for linear residuals
+max_planar_residual_val: 0.2   # Planar residuals with an initial error greater than this are not created
+max_linear_residual_val: 0.15 # for linear residuals
 min_residuals: 30          #  Problem will be reset if the number of residuals is less than this
 
 #  Sensor parametersjectory
@@ -57,7 +57,7 @@ min_new_points: 3
 #  Setting flags
 only_extract_features: false   #  If set, no transforms are calculated
 use_weighting: false           #  If set, pre-whiten residuals
-print_opt_sum: true              #  If true, output ceres summaries to console
+print_opt_sum: false              #  If true, output ceres summaries to console
 check_gradients: false         #  If set, use Ceres gradient checker on each jacobians
 limit_rng_var: false
 limit_int_var: false

@@ -49,14 +49,8 @@ LaserOdom::LaserOdom(const LaserOdomParams params,
     }
 
     this->indices.resize(this->N_FEATURES);
-//    auto saved_xy = this->param.binner_params.xy_limit;
     for (uint32_t i = 0; i < this->N_FEATURES; i++) {
         this->indices.at(i).resize(this->param.n_ring);
-//        if (i != 2) {
-//            this->param.binner_params.xy_limit = 0;
-//        } else {
-//            this->param.binner_params.xy_limit = saved_xy;
-//        }
         this->binner.at(i).setParams(this->param.binner_params);
     }
 
@@ -116,13 +110,13 @@ void LaserOdom::undistort() {
             pt.x = output(0, i);
             pt.y = output(1, i);
             pt.z = output(2, i);
-            auto combo = std::make_pair(Kernel::VAR, Signal::RANGE);
-            auto score_index = i > 4 ? i - 5 : 0;
-            if (score_index >= this->feature_extractor.scores.at(ring_id).at(combo).dimension(0)) {
-                score_index = this->feature_extractor.scores.at(ring_id).at(combo).dimension(0) - 1;
-            }
-//            pt.intensity = this->signals.at(ring_id).at(Signal::INTENSITY)(i);
-            pt.intensity = this->feature_extractor.scores.at(ring_id).at(combo)(score_index);
+//            auto combo = std::make_pair(Kernel::VAR, Signal::RANGE);
+//            auto score_index = i > 4 ? i - 5 : 0;
+//            if (score_index >= this->feature_extractor.scores.at(ring_id).at(combo).dimension(0)) {
+//                score_index = this->feature_extractor.scores.at(ring_id).at(combo).dimension(0) - 1;
+//            }
+            pt.intensity = this->signals.at(ring_id).at(Signal::INTENSITY)(i);
+//            pt.intensity = this->feature_extractor.scores.at(ring_id).at(combo)(score_index);
             this->undistorted_cld.push_back(pt);
         }
     }
@@ -592,7 +586,7 @@ void LaserOdom::extendFeatureTracks(const Eigen::MatrixXi &idx,
                                     uint32_t feat_id,
                                     const VecE<FeatureTrack> &candidate_tracks,
                                     const bool large_tol) {
-    /// Each column represents a query (feature track)
+    /// Each column represents a query (existing feature track)
     Eigen::Tensor<float, 2> new_feat_points(4, 2000);
     auto offset = this->feat_pts.back().at(feat_id).dimension(1);
     long new_feat_cnt = 0;
@@ -605,7 +599,6 @@ void LaserOdom::extendFeatureTracks(const Eigen::MatrixXi &idx,
                 break;
             }
             auto &existing_track = this->feature_tracks.at(feat_id).at(idx(k, j));
-
             float dist_cost, dir_cost;
             bool extend_track = false;
             if (feat_id == 2) {
@@ -1217,7 +1210,7 @@ void LaserOdom::pointToTracks(const wave::MatXf &cur_points, const wave::MatXf &
 
     /// 5. Create new feature tracks between new and old scan
     this->createNewFeatureTracks(feat_id, candidate_tracks);
-    this->checkTrackValidity();
+//    this->checkTrackValidity();
     delete curm1_kd_idx;
     delete cur_kd_idx;
 }
@@ -1310,7 +1303,7 @@ bool LaserOdom::match(const TimeType &stamp) {
 
             ceres::Solver::Summary summary;
 
-            this->checkTrackValidity();
+//            this->checkTrackValidity();
 
             if (!this->runOptimization(*problem, summary))
                 return false;

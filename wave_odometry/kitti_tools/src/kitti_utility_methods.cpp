@@ -90,18 +90,18 @@ void setupFeatureParameters(wave::FeatureExtractorParams &param) {
             wave::Signal::RANGE, wave::Kernel::VAR, wave::SelectionPolicy::NEAR_ZERO, &(param.variance_limit_rng)});
 
     edge_int_high.emplace_back(wave::Criteria{
-            wave::Signal::INTENSITY, wave::Kernel::LOG, wave::SelectionPolicy::HIGH_POS, &(param.int_edge_tol)});
+            wave::Signal::INTENSITY, wave::Kernel::FOG, wave::SelectionPolicy::HIGH_POS, &(param.int_edge_tol)});
     edge_int_high.emplace_back(
             wave::Criteria{wave::Signal::RANGE, wave::Kernel::LOAM, wave::SelectionPolicy::NEAR_ZERO, &(param.int_flat_tol)});
     edge_int_high.emplace_back(wave::Criteria{
-            wave::Signal::RANGE, wave::Kernel::VAR, wave::SelectionPolicy::NEAR_ZERO, &(param.variance_limit_rng)});
+            wave::Signal::RANGE, wave::Kernel::VAR, wave::SelectionPolicy::NEAR_ZERO, &(param.variance_limit_int)});
 
     edge_int_low.emplace_back(wave::Criteria{
-            wave::Signal::INTENSITY, wave::Kernel::LOG, wave::SelectionPolicy::HIGH_NEG, &(param.int_edge_tol)});
+            wave::Signal::INTENSITY, wave::Kernel::FOG, wave::SelectionPolicy::HIGH_NEG, &(param.int_edge_tol)});
     edge_int_low.emplace_back(
             wave::Criteria{wave::Signal::RANGE, wave::Kernel::LOAM, wave::SelectionPolicy::NEAR_ZERO, &(param.int_flat_tol)});
     edge_int_low.emplace_back(wave::Criteria{
-            wave::Signal::RANGE, wave::Kernel::VAR, wave::SelectionPolicy::NEAR_ZERO, &(param.variance_limit_rng)});
+            wave::Signal::RANGE, wave::Kernel::VAR, wave::SelectionPolicy::NEAR_ZERO, &(param.variance_limit_int)});
 
     param.feature_definitions.clear();
     param.feature_definitions.emplace_back(wave::FeatureDefinition{edge_high, &(param.n_edge)});
@@ -164,14 +164,6 @@ void updateVisualizer(const wave::LaserOdom *odom,
         *viz_cloud = odom->undistorted_cld;
         display->addPointcloud(viz_cloud, ptcld_id, false, 6);
         ++ptcld_id;
-
-        for (uint32_t feat_id = 0; feat_id < 5; ++feat_id) {
-            pcl::PointCloud<pcl::PointXYZ>::Ptr viz_cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
-            *viz_cloud = odom->undis_features.at(feat_id);
-            int viewport_id = feat_id + 1;
-            display->addPointcloud(viz_cloud, ptcld_id, false, viewport_id);
-            ++ptcld_id;
-        }
 
         for (uint32_t i = 1; i < odom->undistort_trajectory.size(); ++i) {
             pcl::PointXYZ pt1, pt2;
@@ -240,22 +232,12 @@ void updateVisualizer(const wave::LaserOdom *odom,
 
             display->addPointcloud(display_cld, ptcld_id, false, viewport_id);
             ++ptcld_id;
+
+            pcl::PointCloud<pcl::PointXYZ>::Ptr candidate_cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+            *candidate_cloud = odom->undis_candidates_cur.at(i);
+            display->addPointcloud(candidate_cloud, ptcld_id, false, viewport_id);
+            ++ptcld_id;
         }
-
-        pcl::PointCloud<pcl::PointXYZ>::Ptr flat_cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
-        *flat_cloud = odom->undis_candidates_cur.at(2);
-        display->addPointcloud(flat_cloud, ptcld_id, false, 5);
-        ++ptcld_id;
-
-        pcl::PointCloud<pcl::PointXYZ>::Ptr edgecloud1 = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
-        *edgecloud1 = odom->undis_candidates_cur.at(0);
-        display->addPointcloud(edgecloud1, ptcld_id, false, 4);
-        ++ptcld_id;
-
-        pcl::PointCloud<pcl::PointXYZ>::Ptr edgecloud2 = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
-        *edgecloud2 = odom->undis_candidates_cur.at(1);
-        display->addPointcloud(edgecloud2, ptcld_id, false, 4);
-        ++ptcld_id;
     }
 }
 

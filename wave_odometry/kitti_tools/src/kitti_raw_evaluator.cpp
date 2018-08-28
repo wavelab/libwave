@@ -127,7 +127,7 @@ int main(int argc, char **argv) {
             }
 
             float new_intensity = (float) (mapping.at((int)(100 * raw_intensity))) / 100.0f;
-            pt_vec.front().intensity = new_intensity > 0.75 ? new_intensity : 0.75;
+            pt_vec.front().intensity = new_intensity > 0.9 ? new_intensity : 0.9;
 
             intensities.emplace_back((int)(100 * raw_intensity));
 
@@ -185,9 +185,6 @@ int main(int argc, char **argv) {
         if (scan_index % 10 == 0 || scan_index == oxt_trajectory.size()) {
             std::cout << "\rFinished with scan " << std::to_string(scan_index) << "/"
                       << std::to_string(oxt_trajectory.size()) << std::flush;
-        }
-        if (counter == 100) {
-            break;
         }
     }
     plotResults(oxt_trajectory, odom_trajectory);
