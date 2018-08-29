@@ -1,7 +1,7 @@
 #  Feature extraction parameters
 variance_window: 11          #  How many points should be included in the sample variance calculation
 variance_limit_rng: 0.005     #  Threshold for conditionals on range signal
-variance_limit_int: 0.001        #  Threshold for conditionals on intensity signal
+variance_limit_int: 0.0005        #  Threshold for conditionals on intensity signal
 angular_bins: 1              #  Angular bins to spread out feature sampling
 min_intensity: 10            #  Hard cutoff
 max_intensity: 50            #  Hard cutoff

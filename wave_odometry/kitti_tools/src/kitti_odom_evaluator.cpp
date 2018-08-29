@@ -204,7 +204,7 @@ int main(int argc, char **argv) {
                 ss >> raw_intensity;
             }
             float new_intensity = (float) (mapping.at((int)(100 * raw_intensity))) / 100.0f;
-            pt_vec.front().intensity = new_intensity > 0.75 ? new_intensity : 0.75;
+            pt_vec.front().intensity = new_intensity > 0.95 ? new_intensity : 0.95;
 
             intensities.emplace_back((int)(100 * raw_intensity));
 

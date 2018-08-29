@@ -31,7 +31,8 @@ WAVE_ADD_MODULE(${PROJECT_NAME} DEPENDS
     src/ceres/loss_function/bisquare_loss.cpp
     src/ceres/loss_function/quartic_loss.cpp
     src/ceres/odom_linear/point_to_line_interpolated_transform.cpp
-    src/ceres/odom_linear/point_to_plane_interpolated_transform.cpp)
+    src/ceres/odom_linear/point_to_plane_interpolated_transform.cpp
+    src/ceres/tiny/robust_line_fit.cpp)
 
 # Unit tests
 IF(BUILD_TESTING)
@@ -70,6 +71,12 @@ IF(BUILD_TESTING)
             tests/ceres/odom_gp_twist/point_to_line_test.cpp)
     TARGET_LINK_LIBRARIES(multi_window_tests
             ${PROJECT_NAME})
+
+    WAVE_ADD_TEST(tiny_tests
+            tests/ceres/tiny/robust_line_fit_test.cpp)
+    TARGET_LINK_LIBRARIES(tiny_tests
+            ${PROJECT_NAME}
+            wave::matching)
 
     # COPY TEST DATA
     FILE(COPY tests/data DESTINATION ${PROJECT_BINARY_DIR}/tests)

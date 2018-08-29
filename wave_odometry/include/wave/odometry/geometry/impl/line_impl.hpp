@@ -31,9 +31,9 @@ bool LineResidual<states...>::Evaluate(double const *const *parameters, double *
             Eigen::Map<Eigen::Matrix<double, 3, 6, Eigen::RowMajor>> line_jac(jacobians[0]);
 
             // jacobian wrt normal
-            line_jac.block<3, 3>(0, 0) = -normal * diff.transpose() - dp * Mat3::Identity();
+            line_jac.block<3, 3>(0, 0).noalias() = -normal * diff.transpose() - dp * Mat3::Identity();
             // jacobian wrt pt on line
-            line_jac.block<3, 3>(0, 3) = -del_e_del_diff;
+            line_jac.block<3, 3>(0, 3).noalias() = -del_e_del_diff;
         }
         Eigen::Matrix<double, 3, 6> del_ptT_T;
         del_ptT_T << 0, Pt(2), -Pt(1), 1, 0, 0, -Pt(2), 0, Pt(0), 0, 1, 0, Pt(1), -Pt(0), 0, 0, 0, 1;

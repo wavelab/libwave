@@ -107,7 +107,6 @@ class FeatureExtractor {
     unlong n_ring; // This is separate from params because it depends on hardware
 
     // The resulting scores for each signal, grouped by kernel and ring
-//    VecA<Tensor2f, Eigen::aligned_allocator<Tensor2f>> scores;
     // scores for each kernel-signal combo, indexed by ring id
     VecE<ScoreMap> scores;
 
@@ -116,7 +115,6 @@ class FeatureExtractor {
 
     // Scoring kernels, indexed along 1st dimension
     KernelMap kernels;
-//    VecA<Eigen::Tensor<float, 1>, Eigen::aligned_allocator<Eigen::Tensor<float, 1>>> kernels;
 
     // Container to sort scores with. Each is built depending on feature specification
     Vec<Vec<Vec<std::pair<unlong, float>>>> filtered_scores;

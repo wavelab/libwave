@@ -30,12 +30,12 @@ bool LineParameterization::Plus(const double *x, const double *delta, double *x_
     double a_mag = ceres::sqrt(Dnormal(0) * Dnormal(0) + Dnormal(1) * Dnormal(1));
 
     if (a_mag < 1e-5) {
-        normalpD = normal + v;
+        normalpD.noalias() = normal + v;
     } else {
-        normalpD = ceres::cos(a_mag) * normal + ceres::sin(a_mag) * (v / a_mag);
+        normalpD.noalias() = ceres::cos(a_mag) * normal + ceres::sin(a_mag) * (v / a_mag);
     }
 
-    pt0pD = pt0 + R.block<3, 2>(0,0) * Dpt0;
+    pt0pD.noalias() = pt0 + R.block<3, 2>(0,0) * Dpt0;
 
     if (normalpD(2) < 0) {
         normalpD *= -1.0;
@@ -62,8 +62,8 @@ bool LineParameterization::ComputeJacobian(const double *x, double *jacobian) co
 
     Mat3 R = Mat3::Identity() + skew + (1.0 / (1.0 + c)) * skew * skew;
 
-    J.block<3, 2>(0,0) = R.block<3, 2>(0,0);
-    J.block<3, 2>(3,2) = R.block<3, 2>(0,0);
+    J.block<3, 2>(0,0).noalias() = R.block<3, 2>(0,0);
+    J.block<3, 2>(3,2).noalias() = R.block<3, 2>(0,0);
 
     if (std::isnan(jacobian[0])) {
         throw std::runtime_error("line jacobian!");
