@@ -3,8 +3,8 @@
 #include <ceres/gradient_checker.h>
 
 #include "wave/odometry/feature_track.hpp"
-#include "wave/odometry/implicit_geometry/implicit_line.hpp"
-#include "wave/odometry/implicit_geometry/implicit_plane.hpp"
+#include "wave/odometry/geometry/line.hpp"
+#include "wave/odometry/geometry/plane.hpp"
 #include "wave/optimization/ceres/local_params/line_parameterization.hpp"
 #include "wave/optimization/ceres/local_params/plane_parameterization.hpp"
 #include "wave/utils/math.hpp"
@@ -84,7 +84,7 @@ TEST(implicit_line, simple) {
 
     track.jacs = &(jacs.at(0));
 
-    std::list<ImplicitLineResidual<3>> costs;
+    std::list<LineResidual<3>> costs;
     for (uint32_t i = 0; i < 3; ++i) {
         costs.emplace_back(i, 0, &track, &feat_points);
     }

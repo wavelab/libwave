@@ -89,47 +89,15 @@ TEST_F(RobustLineFitFixture, SampleProblemNoNoise) {
 
     RobustLineFit line_fit(global_line.data(), local_delta.data(), pts, robust_param);
 
-    auto cloud =
-      boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
-    for (const auto ptr : this->pts) {
-        pcl::PointXYZ new_pt;
-        new_pt.x = ptr[0];
-        new_pt.y = ptr[1];
-        new_pt.z = ptr[2];
-        cloud->push_back(new_pt);
-    }
-
-    PointCloudDisplay display("line fit cloud");
-    display.startSpin();
-    display.addPointcloud(cloud, 0);
-
-    pcl::PointXYZ pt1, pt2;
-    Eigen::Map<wave::Vec3f> m1(pt1.data), m2(pt2.data);
-
-    m1 =
-            (this->global_line.block<3, 1>(3, 0) - 5 * this->global_line.block<3, 1>(0, 0)).cast<float>();
-    m2 =
-            (this->global_line.block<3, 1>(3, 0) + 5.0 * this->global_line.block<3, 1>(0, 0)).cast<float>();
-
-    display.addLine(pt1, pt2, 1, 2);
-
-    std::this_thread::sleep_for(std::chrono::seconds(3));
+    this->global_line.block<3,1>(0,0) = normal.cast<double>();
+    this->global_line(0) += 1.0;
+    this->global_line.block<3,1>(0,0).normalize();
 
     ceres::TinySolver<RobustLineFit> solver;
+    solver.options.max_num_iterations = 2000000;
     auto summary = solver.Solve(line_fit, &(this->local_delta));
 
-    m1 =
-            (this->global_line.block<3, 1>(3, 0) - 5 * this->global_line.block<3, 1>(0, 0)).cast<float>();
-    m2 =
-            (this->global_line.block<3, 1>(3, 0) + 5.0 * this->global_line.block<3, 1>(0, 0)).cast<float>();
-
-    display.addLine(pt1, pt2, 3, 4);
-
-    std::this_thread::sleep_for(std::chrono::seconds(3));
-
-    EXPECT_TRUE(summary.initial_cost > summary.final_cost);
-
-    display.stopSpin();
+    EXPECT_NEAR(summary.final_cost, 0.0, 1e-8);
 }
 
 }
