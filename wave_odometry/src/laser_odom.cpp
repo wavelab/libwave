@@ -1383,9 +1383,9 @@ void LaserOdom::trackResiduals(ceres::Problem &problem, ceres::ParameterBlockOrd
                                     jacsw1,
                                     jacsw2);
             if (f_idx == 2) {
-                this->costs.emplace_back(new PlaneResidual<12, 6, 12, 6>(cur_point, jacsw1, jacsw2, w1, w2));
+                this->costs.emplace_back(new PlaneResidual<float, 12, 6, 12, 6>(cur_point, jacsw1, jacsw2, w1, w2));
             } else {
-                this->costs.emplace_back(new LineResidual<12, 6, 12, 6>(cur_point, jacsw1, jacsw2, w1, w2));
+                this->costs.emplace_back(new LineResidual<float, 12, 6, 12, 6>(cur_point, jacsw1, jacsw2, w1, w2));
             }
             uint32_t start_offset = track.mapping.at(p_idx).state_id;
             problem.AddResidualBlock(this->costs.back().get(),

@@ -10,215 +10,140 @@
 #include "wave/utils/math.hpp"
 #include "wave/wave_test.hpp"
 
-struct TestEvalCallback : ceres::EvaluationCallback {
-    explicit TestEvalCallback(wave::Vec3 *state_point,
-                              std::vector<std::vector<Eigen::Map<wave::MatXf>>> *feat_points) :
-            ceres::EvaluationCallback(), state_point(state_point), feat_points(feat_points) {}
-
-    virtual void PrepareForEvaluation(bool, bool) {
-        feat_points->at(0).at(0).block<3, 1>(0, 2) = state_point->cast<float>();
-    }
-    wave::Vec3 *state_point;
-    std::vector<std::vector<Eigen::Map<wave::MatXf>>> *feat_points;
-};
-
 namespace wave {
 
-TEST(implicit_line, simple) {
-    std::vector<std::vector<Eigen::Map<MatXf>>> feat_points;
-    Vec<Vec<VecE<Eigen::Tensor<double, 3>>>> jacs;
-
-    uint32_t n_pts = 3;
-
-    // one "scan"
-    feat_points.resize(1);
-    jacs.resize(1);
-    // one "feature type"
-    MatXf feature_points;
-    feature_points.resize(3, n_pts);
-    feat_points.at(0).emplace_back(Eigen::Map<MatXf>(feature_points.data(), feature_points.rows(), feature_points.cols()));
-    jacs.at(0).resize(1);
-
-    // one "state"
-    jacs.at(0).at(0).resize(1);
-    jacs.at(0).at(0).at(0) = Eigen::Tensor<double, 3>(3, 3, n_pts);
-    jacs.at(0).at(0).at(0).setZero();
-
-    FeatureTrack track;
-    track.mapping.resize(n_pts);
-    track.mapping.resize(n_pts);
-//    track.featT_idx = 0;
-
-    track.state_ids.resize(n_pts);
-
+TEST(line_residual, jacobian) {
     Vec3 state_point;
-    for (uint32_t i = 0; i < n_pts; i++) {
-        track.mapping.at(i).pt_idx = i;
-        track.mapping.at(i).scan_idx = 0;
+    state_point.setRandom();
+    VecE<MatX> jac1, jac2;
+    double w1 = 1.0;
+    double w2 = 0.0;
+    jac1.emplace_back(MatX(6,3));
+    jac2.emplace_back(MatX(6,3));
+    jac1.front().setZero();
+    jac2.front().setZero();
+    jac1.front().block<3,3>(3,0).setIdentity();
 
-        track.state_ids.at(i).emplace_back(0);
-        if (i == 2) {
-            jacs.at(0).at(0).at(0)(0,0,i) = 1.0;
-            jacs.at(0).at(0).at(0)(1,1,i) = 1.0;
-            jacs.at(0).at(0).at(0)(2,2,i) = 1.0;
+    Vec6 line_param;
+    line_param.setRandom();
+    line_param.block<3,1>(0,0).normalize();
 
-            feat_points.at(0).at(0).block<3, 1>(0, i) = Vec3f::Random();
-        } else {
-            Vec3f temp;
-            temp << 0.0, 0.0, 2 * static_cast<float>(i);
-            feat_points.at(0).at(0).block<3, 1>(0, i) = temp;
-        }
-    }
-    state_point = feat_points.at(0).at(0).block<3, 1>(0, 2).cast<double>();
+    VecE<const MatX*> jacs1, jacs2;
+    jacs1.emplace_back(&(jac1.front()));
+    jacs2.emplace_back(&(jac2.front()));
 
-    track.geometry.block<3, 1>(0,0) = Vec3::Random();
-    if (track.geometry(2) < 0) {
-        track.geometry.block<3, 1>(0,0) *= -1.0;
-    }
-    track.geometry.block<3, 1>(0,0).normalize();
-    track.geometry.block<3, 1>(3,0).setZero();
+    LineResidual<double, 3> line_residual(state_point.data(), jacs1, jacs2, w1, w2);
 
-    ceres::Problem::Options options;
-    options.cost_function_ownership = ceres::DO_NOT_TAKE_OWNERSHIP;
-    ceres::Problem problem(options);
+    double *params[2];
+    params[0] = line_param.data();
+    params[1] = state_point.data();
 
-    track.jacs = &(jacs.at(0));
+    double residuals[1];
 
-    std::list<LineResidual<3>> costs;
+    Eigen::Matrix<double, 1, 6> line_jacobian_analytic, line_jacobian_numeric;
+    Eigen::Matrix<double, 1, 3> pt_jacobian_analytic, pt_jacobian_numeric;
+
+    double *jacobians[2];
+    jacobians[0] = line_jacobian_analytic.data();
+    jacobians[1] = pt_jacobian_analytic.data();
+
+    line_residual.Evaluate(params, residuals, jacobians);
+
+    double step = std::sqrt(std::numeric_limits<double>::epsilon());
+    Vec3 saved_point = state_point;
+    double perturbed_error;
     for (uint32_t i = 0; i < 3; ++i) {
-        costs.emplace_back(i, 0, &track, &feat_points);
+        state_point = saved_point;
+        state_point(i) += step;
+
+        line_residual.Evaluate(params, &perturbed_error, nullptr);
+
+        pt_jacobian_numeric(i) = (perturbed_error - residuals[0]) / step;
+    }
+    state_point = saved_point;
+
+    Vec6 saved_line = line_param;
+    for (uint32_t i = 0; i < 6; ++i) {
+        line_param = saved_line;
+        line_param(i) += step;
+
+        line_residual.Evaluate(params, &perturbed_error, nullptr);
+
+        line_jacobian_numeric(i) = (perturbed_error - residuals[0]) / step;
     }
 
-    for (auto &cost : costs) {
-        problem.AddResidualBlock(&cost, nullptr, track.geometry.data(), state_point.data());
-    }
+    MatX pt_error = pt_jacobian_numeric - pt_jacobian_analytic;
+    MatX line_error = line_jacobian_numeric - line_jacobian_analytic;
 
-    ceres::LocalParameterization *local_param = new LineParameterization();
-    problem.SetParameterization(track.geometry.data(), local_param);
-
-    TestEvalCallback callback(&state_point, &feat_points);
-
-    ceres::Solver::Options solve_options;
-    solve_options.evaluation_callback = &callback;
-    solve_options.use_nonmonotonic_steps = true;
-
-    ceres::Solver::Summary summary;
-    ceres::Solve(solve_options, &problem, &summary);
-
-    std::cout << "\n" << summary.FullReport() << "\n";
-
-    /// Checking that all points are on the line defined by geometry in track
-    std::vector<Vec3f, Eigen::aligned_allocator<Vec3f>> normals;
-    normals.emplace_back(feat_points.at(0).at(0).block<3, 1>(0, 0) - track.geometry.block<3, 1>(3,0).cast<float>());
-    normals.emplace_back(feat_points.at(0).at(0).block<3, 1>(0, 1) - track.geometry.block<3, 1>(3,0).cast<float>());
-    normals.emplace_back(feat_points.at(0).at(0).block<3, 1>(0, 2) - track.geometry.block<3, 1>(3,0).cast<float>());
-
-    for (auto &dir : normals) {
-        dir.normalize();
-        float dot = dir.transpose() * track.geometry.block<3, 1>(0,0).cast<float>();
-        EXPECT_NEAR(std::abs(dot), 1.0, 1.0e-6);
-    }
+    EXPECT_NEAR(pt_error.norm(), 0, 1e-6);
+    EXPECT_NEAR(line_error.norm(), 0, 1e-6);
 }
 
-TEST(implicit_plane, simple) {
-    std::vector<std::vector<Eigen::Map<MatXf>>> feat_points;
-    Vec<Vec<VecE<Eigen::Tensor<double, 3>>>> jacs;
-
-    uint32_t n_pts = 4;
-
-    // one "scan"
-    feat_points.resize(1);
-    jacs.resize(1);
-    // one "feature type"
-    MatXf feature_points;
-    feature_points.resize(3, n_pts);
-    feat_points.at(0).emplace_back(Eigen::Map<MatXf>(feature_points.data(), feature_points.rows(), feature_points.cols()));
-    jacs.at(0).resize(1);
-
-    // one state
-    jacs.at(0).at(0).resize(1);
-    jacs.at(0).at(0).at(0) = Eigen::Tensor<double, 3>(3, 3, n_pts);
-    jacs.at(0).at(0).at(0).setZero();
-
-    FeatureTrack track;
-    track.mapping.resize(n_pts);
-    track.mapping.resize(n_pts);
-//    track.featT_idx = 0;
-
-    track.state_ids.resize(n_pts);
-
+TEST(plane_residual, jacobian) {
     Vec3 state_point;
-    for (uint32_t i = 0; i < n_pts; i++) {
-        track.mapping.at(i).pt_idx = i;
-        track.mapping.at(i).scan_idx = 0;
+    state_point.setRandom();
+    VecE<MatX> jac1, jac2;
+    double w1 = 1.0;
+    double w2 = 0.0;
+    jac1.emplace_back(MatX(6,3));
+    jac2.emplace_back(MatX(6,3));
+    jac1.front().setZero();
+    jac2.front().setZero();
+    jac1.front().block<3,3>(3,0).setIdentity();
 
-        track.state_ids.at(i).emplace_back(0);
-        if (i == 2) {
-            jacs.at(0).at(0).at(0)(0,0,i) = 1.0;
-            jacs.at(0).at(0).at(0)(1,1,i) = 1.0;
-            jacs.at(0).at(0).at(0)(2,2,i) = 1.0;
-            feat_points.at(0).at(0).block<3, 1>(0, i) = Vec3f::Random();
-        } else {
-            feat_points.at(0).at(0).block<3, 1>(0, i) = Vec3f::Random();
-        }
+    Vec6 line_param;
+    line_param.setRandom();
+    line_param.block<3,1>(0,0).normalize();
+
+    VecE<const MatX*> jacs1, jacs2;
+    jacs1.emplace_back(&(jac1.front()));
+    jacs2.emplace_back(&(jac2.front()));
+
+    PlaneResidual<double, 3> plane_residual(state_point.data(), jacs1, jacs2, w1, w2);
+
+    double *params[2];
+    params[0] = line_param.data();
+    params[1] = state_point.data();
+
+    double residuals[1];
+
+    Eigen::Matrix<double, 1, 6> line_jacobian_analytic, line_jacobian_numeric;
+    Eigen::Matrix<double, 1, 3> pt_jacobian_analytic, pt_jacobian_numeric;
+
+    double *jacobians[2];
+    jacobians[0] = line_jacobian_analytic.data();
+    jacobians[1] = pt_jacobian_analytic.data();
+
+    plane_residual.Evaluate(params, residuals, jacobians);
+
+    double step = std::sqrt(std::numeric_limits<double>::epsilon());
+    Vec3 saved_point = state_point;
+    double perturbed_error;
+    for (uint32_t i = 0; i < 3; ++i) {
+        state_point = saved_point;
+        state_point(i) += step;
+
+        plane_residual.Evaluate(params, &perturbed_error, nullptr);
+
+        pt_jacobian_numeric(i) = (perturbed_error - residuals[0]) / step;
     }
-    state_point = feat_points.at(0).at(0).block<3, 1>(0, 2).cast<double>();
+    state_point = saved_point;
 
-    track.geometry.block<3, 1>(0,0) = (feat_points.at(0).at(0).block<3, 1>(0, 1) - feat_points.at(0).at(0).block<3, 1>(0, 0)).cross(
-            feat_points.at(0).at(0).block<3, 1>(0, 2) - feat_points.at(0).at(0).block<3, 1>(0, 0)).cast<double>();
-    if (track.geometry(2) < 0) {
-        track.geometry.block<3, 1>(0,0) *= -1.0;
-    }
-    track.geometry.block<3, 1>(0,0).normalize();
-    track.geometry.block<3, 1>(3,0).setZero();
+    Vec6 saved_line = line_param;
+    for (uint32_t i = 0; i < 6; ++i) {
+        line_param = saved_line;
+        line_param(i) += step;
 
-    track.jacs = &(jacs.at(0));
+        plane_residual.Evaluate(params, &perturbed_error, nullptr);
 
-    ceres::Problem::Options options;
-    options.cost_function_ownership = ceres::DO_NOT_TAKE_OWNERSHIP;
-    ceres::Problem problem(options);
-
-    std::list<PlaneResidual<3>> costs;
-    for (uint32_t i = 0; i < 4; ++i) {
-        costs.emplace_back(i, 0, &track, &feat_points);
+        line_jacobian_numeric(i) = (perturbed_error - residuals[0]) / step;
     }
 
-    for (auto &cost : costs) {
-        problem.AddResidualBlock(&cost, nullptr, track.geometry.data(), state_point.data());
-    }
+    MatX pt_error = pt_jacobian_numeric - pt_jacobian_analytic;
+    MatX line_error = line_jacobian_numeric - line_jacobian_analytic;
 
-    ceres::LocalParameterization *local_param = new PlaneParameterization();
-    problem.SetParameterization(track.geometry.data(), local_param);
-
-    TestEvalCallback callback(&state_point, &feat_points);
-
-    ceres::Solver::Options solve_options;
-    solve_options.evaluation_callback = &callback;
-    // provides roughly 1.5-2x speedup in this case. Presumably because plane is finicky
-    solve_options.use_nonmonotonic_steps = true;
-
-    ceres::Solver::Summary summary;
-    ceres::Solve(solve_options, &problem, &summary);
-
-    std::cout << "\n" << summary.FullReport() << "\n";
-
-    /// Checking that all points are on the plane
-    std::vector<Vec3f, Eigen::aligned_allocator<Vec3f>> normals;
-    normals.emplace_back(feat_points.at(0).at(0).block<3, 1>(0, 0) - track.geometry.block<3, 1>(3,0).cast<float>());
-    normals.emplace_back(feat_points.at(0).at(0).block<3, 1>(0, 1) - track.geometry.block<3, 1>(3,0).cast<float>());
-    normals.emplace_back(feat_points.at(0).at(0).block<3, 1>(0, 2) - track.geometry.block<3, 1>(3,0).cast<float>());
-    normals.emplace_back(feat_points.at(0).at(0).block<3, 1>(0, 3) - track.geometry.block<3, 1>(3,0).cast<float>());
-
-    for (auto &dir : normals) {
-        dir.normalize();
-        float dot = dir.transpose() * track.geometry.block<3, 1>(0,0).cast<float>();
-        EXPECT_NEAR(std::abs(dot), 0, 1.0e-6);
-    }
+    EXPECT_NEAR(pt_error.norm(), 0, 1e-6);
+    EXPECT_NEAR(line_error.norm(), 0, 1e-6);
 }
-
-/**
- * Normally, the analytical Jacobians would be tested with numerical differentiation, but the reliance on
- * evaluation callback to update the operating point makes that difficult.
- */
 
 }

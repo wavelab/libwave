@@ -5,14 +5,14 @@
 
 namespace wave {
 
-template <int... states>
-bool PlaneResidual<states...>::Evaluate(double const *const *parameters, double *residuals, double **jacobians) const {
+template <typename Scalar, int... states>
+bool PlaneResidual<Scalar, states...>::Evaluate(double const *const *parameters, double *residuals, double **jacobians) const {
     Eigen::Map<Eigen::Matrix<double, 1, 1>> error(residuals);
     Eigen::Map<const Vec6> plane(&parameters[0][0]);
 
     // Calculate error
-    Eigen::Map<const Vec3f> Pt(this->pt);
-    Vec3 diff = Pt.cast<double>() - plane.block<3, 1>(3, 0);
+    Eigen::Map<const Eigen::Matrix<Scalar, 3, 1>> Pt(this->pt);
+    Vec3 diff = Pt.template cast<double>() - plane.block<3, 1>(3, 0);
     error = diff.transpose() * plane.block<3, 1>(0, 0);
 
     if (std::isnan(residuals[0])) {

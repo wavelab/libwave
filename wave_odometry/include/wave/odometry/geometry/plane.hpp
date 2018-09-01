@@ -8,16 +8,16 @@
 
 namespace wave {
 
-template <int... states>
+template <typename Scalar, int... states>
 class PlaneResidual : public ceres::SizedCostFunction<1, 6, states...> {
  public:
     virtual ~PlaneResidual() {}
 
-    PlaneResidual(const float *pt,
+    PlaneResidual(const Scalar *pt,
                   VecE<const MatX*> &jacsw1,
                   VecE<const MatX*> &jacsw2,
-                  const float &w1,
-                  const float &w2)
+                  const Scalar &w1,
+                  const Scalar &w2)
             : pt(pt),
               jacsw1(std::move(jacsw1)),
               jacsw2(std::move(jacsw2)),
@@ -28,10 +28,10 @@ class PlaneResidual : public ceres::SizedCostFunction<1, 6, states...> {
 
  private:
     // updated by evaluation callback
-    const float *pt;
+    const Scalar *pt;
     const VecE<const MatX*> jacsw1, jacsw2;
 
-    const float w1, w2;
+    const Scalar w1, w2;
 };
 }
 
