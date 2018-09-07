@@ -20,7 +20,7 @@ namespace wave {
 
 struct OdometryCallback : ceres::EvaluationCallback {
     explicit OdometryCallback(const Vec<VecE<Eigen::Tensor<float, 2>>> *feat_pts,
-                              Vec<VecE<MatXf>> *feat_ptsT,
+                              Vec<VecE<MatX>> *feat_ptsT,
                               const VecE<PoseVel> *traj,
                               Vec<Vec<VecE<MatX>>> *ptT_jacobians,
                               Vec<Vec<float>> *jac_stamps,
@@ -37,7 +37,7 @@ struct OdometryCallback : ceres::EvaluationCallback {
     const Vec<VecE<Eigen::Tensor<float, 2>>> *feat_pts;
 
     /// Output data shared with residuals
-    Vec<VecE<MatXf>> *feat_ptsT;
+    Vec<VecE<MatX>> *feat_ptsT;
 
     /// State Variables, hooked to and updated by Ceres
     const VecE<PoseVel> *traj;

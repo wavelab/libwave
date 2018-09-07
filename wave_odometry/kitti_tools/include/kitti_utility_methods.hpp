@@ -14,16 +14,6 @@ struct TrackLengths {
     Vec<Vec<int>> lengths;
 };
 
-void LoadSensorParameters(const std::string &path, const std::string &filename, wave::RangeSensorParams &senparams);
-
-void LoadParameters(const std::string &path, const std::string &filename, wave::LaserOdomParams &params);
-
-void loadFeatureParams(const std::string &path, const std::string &filename, wave::FeatureExtractorParams &params);
-
-void loadBinnerParams(const std::string &path, const std::string &filename, wave::IcosahedronBinnerParams &params);
-
-void setupFeatureParameters(wave::FeatureExtractorParams &param);
-
 void updateVisualizer(const wave::LaserOdom *odom,
                       wave::PointCloudDisplay *display,
                       wave::VecE<wave::PoseVelStamped> *odom_trajectory,

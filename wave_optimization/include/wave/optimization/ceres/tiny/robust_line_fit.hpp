@@ -14,11 +14,11 @@ class RobustLineFit {
     mutable Vec6 current_line_param;
     mutable Eigen::Matrix<double, 6, 4> cur_lift_jacobian;
     const std::vector<const float *> pts;
-    const double &k;
+    const double k;
 
  public:
     RobustLineFit(double *line_param, double *opt_param, const std::vector<const float *> pts, const double &k)
-        : line_param(line_param), opt_param(opt_param), pts(std::move(pts)), k(k) {
+        : line_param(line_param), opt_param(opt_param), pts(pts), k(k) {
         if (pts.size() < 3) {
             throw std::runtime_error("Trying to robustly fit a line to two or fewer points!");
         }

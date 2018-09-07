@@ -1,6 +1,7 @@
 /**
  * Unit tests for the odometry ceres callback
  */
+#include <matplotlibcpp.h>
 
 #include "wave/odometry/odometry_callback.hpp"
 #include "wave/wave_test.hpp"
@@ -55,7 +56,7 @@ class CallbackFixture : public testing::Test {
                 }
                 auto &ref = feat_pts.at(i).at(j);
                 Eigen::Map<MatXf> map(ref.data(), ref.dimension(0), ref.dimension(1));
-                feat_ptsT.at(i).at(j) = map.block(0, 0, 3, map.cols());
+                feat_ptsT.at(i).at(j) = map.block(0, 0, 3, map.cols()).cast<double>();
                 ptT_jacobians.at(j).at(i).resize(n_states);
             }
         }
@@ -76,7 +77,7 @@ class CallbackFixture : public testing::Test {
 
     std::vector<unsigned long> crossover;
     Vec<VecE<Eigen::Tensor<float, 2>>> feat_pts;
-    Vec<VecE<MatXf>> feat_ptsT;
+    Vec<VecE<MatX>> feat_ptsT;
     VecE<PoseVel> traj;
     Vec<Vec<VecE<MatX>>> ptT_jacobians;
     Vec<Vec<float>> jac_stamps;
@@ -105,7 +106,7 @@ TEST_F(CallbackFixture, PrepareForEvaluationTT) {
 }
 
 TEST_F(CallbackFixture, JacobianTest) {
-    const double step = static_cast<double>(sqrtf(std::numeric_limits<float>::epsilon()));
+    const double step = std::sqrt(std::numeric_limits<double>::epsilon());
     // fill analytic Jacobians
     cb->PrepareForEvaluation(true, false);
 
@@ -139,10 +140,9 @@ TEST_F(CallbackFixture, JacobianTest) {
 
                     {
                         auto &ref = this->feat_ptsT.at(i).at(j);
-                        Eigen::TensorMap<Eigen::Tensor<float, 2>> tmap(ref.data(), ref.rows(), ref.cols());
+                        Eigen::TensorMap<Eigen::Tensor<double, 2>> tmap(ref.data(), ref.rows(), ref.cols());
 
-                        coljac = (tmap - this->feat_pts.at(i).at(j).slice(offsets, extents))
-                                         .cast<double>() /
+                        coljac = (tmap - this->feat_pts.at(i).at(j).cast<double>().slice(offsets, extents)) /
                                  step;
 
                         ptT_jacobians_num.at(i).at(j).at(2 * k).chip(dim_idx, 1) = coljac;
@@ -157,10 +157,9 @@ TEST_F(CallbackFixture, JacobianTest) {
 
                     {
                         auto &ref = this->feat_ptsT.at(i).at(j);
-                        Eigen::TensorMap<Eigen::Tensor<float, 2>> tmap(ref.data(), ref.rows(), ref.cols());
+                        Eigen::TensorMap<Eigen::Tensor<double, 2>> tmap(ref.data(), ref.rows(), ref.cols());
 
-                        coljac = (tmap - this->feat_pts.at(i).at(j).slice(offsets, extents))
-                                         .cast<double>() /
+                        coljac = (tmap - this->feat_pts.at(i).at(j).cast<double>().slice(offsets, extents)) /
                                  step;
 
                         ptT_jacobians_num.at(i).at(j).at(2 * k + 1).chip(dim_idx, 1) = coljac;
@@ -172,6 +171,11 @@ TEST_F(CallbackFixture, JacobianTest) {
             /// At this point the numerical jacobians of each transformed point wrt each state should be calculated.
             /// The feature index does not matter, only the scan index and crossover points
 
+            Vec<Vec<double>> max_error_vector(4);
+            for (auto &e_vec : max_error_vector) {
+                e_vec.clear();
+            }
+            int failure_counter = 0;
             for (uint32_t pt_idx = 0; pt_idx < this->n_pts; ++pt_idx) {
                 float time = (float)(i) + this->feat_pts.at(i).at(j)(3, pt_idx);
                 auto state_iter = std::lower_bound(
@@ -228,18 +232,29 @@ TEST_F(CallbackFixture, JacobianTest) {
                                     pt(1), -pt(0), 0, 0, 0, 1;
 
                     MatX analytic_jacobian(3, numerical.cols());
+                    analytic_jacobian.setZero();
                     analytic_jacobian.block<3,6>(0,0) = ptT_jacobian * analytic_JT.block<6,6>(0,0);
 
                     MatX error = numerical - analytic_jacobian;
 
                     // due to single precision floating point, threshold is relatively large
                     double max_error = error.cwiseAbs().maxCoeff();
+                    max_error_vector.at(stat_num).emplace_back(max_error);
                     if (max_error > 1e-3) {
-                        EXPECT_EQ(max_error, 0.0);
+                        failure_counter++;
                     }
                 }
             }
-
+            // This was used to check the effect of interpolating the jacobians
+//            matplotlibcpp::plot(max_error_vector.at(0));
+//            matplotlibcpp::show(true);
+//            matplotlibcpp::plot(max_error_vector.at(1));
+//            matplotlibcpp::show(true);
+//            matplotlibcpp::plot(max_error_vector.at(2));
+//            matplotlibcpp::show(true);
+//            matplotlibcpp::plot(max_error_vector.at(3));
+//            matplotlibcpp::show(true);
+            EXPECT_EQ(failure_counter, 0);
         }
     }
 }

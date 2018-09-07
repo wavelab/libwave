@@ -3,6 +3,7 @@
 
 #include "wave/odometry/laser_odom.hpp"
 #include "../include/kitti_utility_methods.hpp"
+#include "../../tests/data/include/config_utils.hpp"
 
 int main(int argc, char **argv) {
     if (argc != 4) {
@@ -26,7 +27,7 @@ int main(int argc, char **argv) {
 
     wave::LaserOdomParams params;
     wave::FeatureExtractorParams feature_params;
-    loadFeatureParams(config_path, "features.yaml", feature_params);
+    wave::loadFeatureParams(config_path, "features.yaml", feature_params);
     setupFeatureParameters(feature_params);
     LoadParameters(config_path, "odom.yaml", params);
     params.n_ring = 64;
@@ -84,7 +85,6 @@ int main(int argc, char **argv) {
     int pt_index = 0;
 
     unsigned long counter = 0;
-    pcl::PointCloud<wave::PointXYZIR> ptcloud;
     bool binary_format = false;
     uint16_t ring_index = 0;
 
@@ -103,7 +103,6 @@ int main(int argc, char **argv) {
         const auto &end_t = time_end.at(counter);
         ++counter;
         std::chrono::nanoseconds diff = end_t - start_t;
-        ptcloud.clear();
 
         ring_index = 0;
         double prev_azimuth = 0;
@@ -127,7 +126,7 @@ int main(int argc, char **argv) {
             }
 
             float new_intensity = (float) (mapping.at((int)(100 * raw_intensity))) / 100.0f;
-            pt_vec.front().intensity = new_intensity > 0.9 ? new_intensity : 0.9;
+            pt_vec.front().intensity = raw_intensity > 0.5 ? raw_intensity : 0.5;
 
             intensities.emplace_back((int)(100 * raw_intensity));
 
@@ -149,8 +148,6 @@ int main(int argc, char **argv) {
             prev_azimuth = azimuth;
 
             pt_vec.front().ring = ring_index;
-
-            ptcloud.push_back(pt_vec.front());
 
             if (ring_index < 64) {
                 if (first_point) {

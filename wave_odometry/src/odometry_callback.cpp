@@ -3,7 +3,7 @@
 namespace wave {
 
 OdometryCallback::OdometryCallback(const Vec<VecE<Eigen::Tensor<float, 2>>> *feat_pts,
-                                   Vec<VecE<MatXf>> *feat_ptsT,
+                                   Vec<VecE<MatX>> *feat_ptsT,
                                    const VecE<PoseVel> *traj,
                                    Vec<Vec<VecE<MatX>>> *jacobians,
                                    Vec<Vec<float>> *jac_stamps,
@@ -82,7 +82,7 @@ void OdometryCallback::evaluateJacobians() {
             float T2 = this->traj_stamps->at(gap_index + 1) - time;
             float invT = 1.0f / delta_t;
 
-            Vec3f interp;
+            Vec3 interp;
 
             // candle(0,0) and (0,1)
             interp(1) = (T1 * T1 * (4 * T1 - 3 * delta_t + 6 * T2)) * invT * invT * invT;

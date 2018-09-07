@@ -61,30 +61,38 @@ class Transformer {
      * @param which scan the points are from, used to select corresponding states/times
      * @param skip_point Whether or not to transform point. Provides speedup when not all feature points are used
      */
-    void transformToStart(const Eigen::Tensor<float, 2> &points,
-                          MatXf &points_transformed,
+    template<typename Scalar1, typename Scalar2>
+    void transformToStart(const Eigen::Tensor<Scalar1, 2> &points,
+                          Eigen::Matrix<Scalar2, Eigen::Dynamic, Eigen::Dynamic> &points_transformed,
                           const uint32_t scan_idx,
                           const Vec<bool> * skip_point = nullptr);
-    void transformToEnd(const Eigen::Tensor<float, 2> &points,
-                        MatXf &points_transformed,
+
+    template<typename Scalar1, typename Scalar2>
+    void transformToEnd(const Eigen::Tensor<Scalar1, 2> &points,
+                        Eigen::Matrix<Scalar2, Eigen::Dynamic, Eigen::Dynamic> &points_transformed,
                         const uint32_t scan_idx);
 
-    void transformToStart(const MatXf &points,
-                          MatXf &points_transformed,
+    template<typename Scalar1, typename Scalar2>
+    void transformToStart(const Eigen::Matrix<Scalar1, Eigen::Dynamic, Eigen::Dynamic> &points,
+                          Eigen::Matrix<Scalar2, Eigen::Dynamic, Eigen::Dynamic> &points_transformed,
                           const uint32_t scan_idx);
-    void transformToEnd(const MatXf &points,
-                        MatXf &points_transformed,
+
+    template<typename Scalar1, typename Scalar2>
+    void transformToEnd(const Eigen::Matrix<Scalar1, Eigen::Dynamic, Eigen::Dynamic> &points,
+                        Eigen::Matrix<Scalar2, Eigen::Dynamic, Eigen::Dynamic> &points_transformed,
                         const uint32_t scan_idx);
 
+    template<typename Scalar1, typename Scalar2>
     void constantTransform(const uint32_t &fromScan,
                            const uint32_t &toScan,
-                           const Eigen::Tensor<float, 2> &input,
-                           Eigen::Tensor<float, 2> &output);
+                           const Eigen::Tensor<Scalar1, 2> &input,
+                           Eigen::Tensor<Scalar2, 2> &output);
 
+    template<typename Scalar1, typename Scalar2>
     void constantTransform(const uint32_t &fromScan,
                            const uint32_t &toScan,
-                           const MatXf &input,
-                           MatXf &output);
+                           const Eigen::Matrix<Scalar1, Eigen::Dynamic, Eigen::Dynamic> &input,
+                           Eigen::Matrix<Scalar2, Eigen::Dynamic, Eigen::Dynamic> &output);
 
  private:
     /// Contains the trajectories optimized over plus any extras required to meet difference criteria
@@ -101,5 +109,7 @@ class Transformer {
     void calculateInterpolationFactors(const float &t1, const float &t2, const float &tau, Mat2 &candle, Mat2 &hat);
 };
 }
+
+#include "impl/transformer_impl.hpp"
 
 #endif  // WAVE_TRANSFORMER_HPP

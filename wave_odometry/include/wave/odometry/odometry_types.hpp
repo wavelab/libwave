@@ -45,7 +45,7 @@ struct PoseStamped {
 
 struct PoseVelDiff {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    Vec12f hat_multiplier, candle_multiplier;
+    Vec12 hat_multiplier, candle_multiplier;
 };
 
 struct Criteria {

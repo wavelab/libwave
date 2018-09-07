@@ -75,8 +75,8 @@ TEST(line_residual, jacobian) {
     MatX pt_error = pt_jacobian_numeric - pt_jacobian_analytic;
     MatX line_error = line_jacobian_numeric - line_jacobian_analytic;
 
-    EXPECT_NEAR(pt_error.norm(), 0, 1e-6);
-    EXPECT_NEAR(line_error.norm(), 0, 1e-6);
+    EXPECT_NEAR(pt_error.norm(), 0, 1e-7);
+    EXPECT_NEAR(line_error.norm(), 0, 1e-7);
 }
 
 TEST(plane_residual, jacobian) {

@@ -13,11 +13,14 @@ inline double getRotatedErrorAndJacobian(const Vec3 &error, Eigen::Matrix<double
     double norm = error.norm();
     // no need to rotate anything if there is zero error
     const double tolerance = 1e-8;
-    if (norm < tolerance) {
-        ed << 1.0, 0.0, 0.0;
-    } else {
-        ed.noalias() = error / norm;
+
+    ed.noalias() = error / norm;
+
+    if (std::isnan(ed.sum())) {
+        ed.setZero();
+        ed(0) = 1.0;
     }
+
     bool flipped = false;
     if (ed(0) < 0) {
         ed *= -1.0;
@@ -34,29 +37,37 @@ inline double getRotatedErrorAndJacobian(const Vec3 &error, Eigen::Matrix<double
 
     if (J) {
         auto &del_re_del_e = *J;
-        Mat3 del_ed_del_e;
-        if (norm < tolerance) {
-            del_ed_del_e.setZero();
-        } else {
-            del_ed_del_e = (1 / norm) * (Mat3::Identity() - ed * ed.transpose());
-        }
-        Mat3 del_R_del_ed;
-        del_R_del_ed.setZero();
-        del_R_del_ed(0,0) = (ed(1)*ed(1) + ed(2)*ed(2)) / (scaling*scaling);
-        del_R_del_ed(0,1) = -2.0 * ed(1) / scaling;
-        del_R_del_ed(0,2) = -2.0 * ed(2) / scaling;
-        del_R_del_ed(1,1) = 1.0;
-        del_R_del_ed(2,2) = 1.0;
-        Mat3 del_R_del_e;
-        if (flipped) {
-            del_R_del_e = -del_R_del_ed * del_ed_del_e;
-        } else {
-            del_R_del_e = del_R_del_ed * del_ed_del_e;
-        }
 
-        del_re_del_e(0) = rotation(0) + (del_R_del_e.col(0).transpose() * error)(0);
-        del_re_del_e(1) = rotation(1) + (del_R_del_e.col(1).transpose() * error)(0);
-        del_re_del_e(2) = rotation(2) + (del_R_del_e.col(2).transpose() * error)(0);
+        /// Technically speaking, R is dependent on the error, and therefore the state,
+        /// however this adjustment in the Jacobian tends to be quite small so excluding it
+        /// is a useful way to save time.
+//        Mat3 del_ed_del_e;
+//        if (norm < tolerance) {
+//            del_ed_del_e.setZero();
+//        } else {
+//            del_ed_del_e = (1 / norm) * (Mat3::Identity() - ed * ed.transpose());
+//        }
+//        Mat3 del_R_del_ed;
+//        del_R_del_ed.setZero();
+//        del_R_del_ed(0,0) = (ed(1)*ed(1) + ed(2)*ed(2)) / (scaling*scaling);
+//        del_R_del_ed(0,1) = -2.0 * ed(1) / scaling;
+//        del_R_del_ed(0,2) = -2.0 * ed(2) / scaling;
+//        del_R_del_ed(1,1) = 1.0;
+//        del_R_del_ed(2,2) = 1.0;
+//        Mat3 del_R_del_e;
+//        if (flipped) {
+//            del_R_del_e = -del_R_del_ed * del_ed_del_e;
+//        } else {
+//            del_R_del_e = del_R_del_ed * del_ed_del_e;
+//        }
+
+//        del_re_del_e(0) = rotation(0) + (del_R_del_e.col(0).transpose() * error)(0);
+//        del_re_del_e(1) = rotation(1) + (del_R_del_e.col(1).transpose() * error)(0);
+//        del_re_del_e(2) = rotation(2) + (del_R_del_e.col(2).transpose() * error)(0);
+
+        del_re_del_e(0) = rotation(0);
+        del_re_del_e(1) = rotation(1);
+        del_re_del_e(2) = rotation(2);
     }
 
     return (rotation * error)(0); // rotated error

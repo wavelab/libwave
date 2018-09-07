@@ -268,7 +268,7 @@ class LaserOdom {
      */
 
     Vec<VecE<Eigen::Tensor<float, 2>>> feat_pts;
-    Vec<VecE<MatXf>> feat_pts_T;
+    Vec<VecE<MatX>> feat_pts_T;
     Vec<Vec<Vec<bool>>> skip_point;
 
     Vec<Vec<VecE<MatX>>> ptT_jacobians;

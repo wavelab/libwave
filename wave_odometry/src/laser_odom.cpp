@@ -324,7 +324,7 @@ void LaserOdom::rollover(TimeType stamp) {
         this->scan_stamps_chrono.emplace_back(stamp);
         this->scan_stampsf.resize(this->scan_stamps_chrono.size());
         VecE<Eigen::Tensor<float, 2>> vec(this->N_FEATURES);
-        VecE<MatXf> vec2(this->N_FEATURES);
+        VecE<MatX> vec2(this->N_FEATURES);
 
         for (auto &elem : vec) {
             elem.resize(4, 0);
@@ -1372,7 +1372,7 @@ void LaserOdom::trackResiduals(ceres::Problem &problem, ceres::ParameterBlockOrd
             this->loss_functions.emplace_back(new BisquareLoss(this->param.robust_param));
             float pt_time =
               this->scan_stampsf.at(map.scan_idx) + this->feat_pts.at(map.scan_idx).at(f_idx)(3, map.pt_idx);
-            const float *cur_point = this->feat_pts_T.at(map.scan_idx).at(f_idx).data() + 3 * map.pt_idx;
+            const double *cur_point = this->feat_pts_T.at(map.scan_idx).at(f_idx).data() + 3 * map.pt_idx;
             float w1, w2;
             VecE<const MatX *> jacsw1, jacsw2;
             prepareJacobianPointers(&(this->ptT_jacobians.at(map.state_id)),
@@ -1383,9 +1383,9 @@ void LaserOdom::trackResiduals(ceres::Problem &problem, ceres::ParameterBlockOrd
                                     jacsw1,
                                     jacsw2);
             if (f_idx == 2) {
-                this->costs.emplace_back(new PlaneResidual<float, 12, 6, 12, 6>(cur_point, jacsw1, jacsw2, w1, w2));
+                this->costs.emplace_back(new PlaneResidual<double, 12, 6, 12, 6>(cur_point, jacsw1, jacsw2, w1, w2));
             } else {
-                this->costs.emplace_back(new LineResidual<float, 12, 6, 12, 6>(cur_point, jacsw1, jacsw2, w1, w2));
+                this->costs.emplace_back(new LineResidual<double, 12, 6, 12, 6>(cur_point, jacsw1, jacsw2, w1, w2));
             }
             uint32_t start_offset = track.mapping.at(p_idx).state_id;
             problem.AddResidualBlock(this->costs.back().get(),

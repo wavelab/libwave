@@ -99,9 +99,13 @@ inline double getRotatedErrorAndJacobian(const Vec3 &error, Eigen::Matrix<double
             del_R_del_e = del_R_del_ed * del_ed_del_e;
         }
 
-        del_re_del_e(0) = rotation(0) + (del_R_del_e.col(0).transpose() * error)(0);
-        del_re_del_e(1) = rotation(1) + (del_R_del_e.col(1).transpose() * error)(0);
-        del_re_del_e(2) = rotation(2) + (del_R_del_e.col(2).transpose() * error)(0);
+        del_re_del_e(0) = rotation(0) ;
+        del_re_del_e(1) = rotation(1);
+        del_re_del_e(2) = rotation(2) ;
+
+//        del_re_del_e(0) = rotation(0) + (del_R_del_e.col(0).transpose() * error)(0);
+//        del_re_del_e(1) = rotation(1) + (del_R_del_e.col(1).transpose() * error)(0);
+//        del_re_del_e(2) = rotation(2) + (del_R_del_e.col(2).transpose() * error)(0);
     }
 
     return (rotation * error)(0); // rotated error
@@ -181,7 +185,7 @@ bool RobustLineFit::operator()(const double *parameters, double *residuals, doub
         if (std::isnan(rotated_error)) {
             throw std::runtime_error("bad error");
         }
-        error_vec(i, 0) = scaled_error;
+        error_vec(i, 0) = rotated_error;
 
         if ((std::abs(rotated_error) - error.norm()) > 1e-6) {
             throw std::runtime_error("error disagreement");
@@ -193,7 +197,7 @@ bool RobustLineFit::operator()(const double *parameters, double *residuals, doub
             // jacobian wrt pt on line
             line_jac.block<3, 3>(0, 3).noalias() = -Mat3::Identity() + normal * normal.transpose();
 
-            jac_map.block<1, 4>(i, 0).noalias() = scaling_gradient * J_rotated_error * line_jac * this->cur_lift_jacobian;
+            jac_map.block<1, 4>(i, 0).noalias() = J_rotated_error * line_jac * this->cur_lift_jacobian;
         }
     }
 
