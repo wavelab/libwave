@@ -51,10 +51,13 @@ void mergeTracks(wave::FeatureTrack &source, wave::FeatureTrack &sink) {
 }
 
 void LineFitter::fitLines(const MatXf &candidate_points) {
-    auto nn_search_tree = Nabo::NNSearchF::createKDTreeLinearHeap(candidate_points);
+    if (candidate_points.cols() < 10) {
+        return;
+    }
+    auto nn_search_tree = Nabo::NNSearchF::createKDTreeLinearHeap(candidate_points, 3);
     this->tracks.clear();
 
-    long knn = search_knn < candidate_points.cols() ? search_knn : candidate_points.cols();
+    long knn = search_knn < candidate_points.cols() - 1 ? search_knn : candidate_points.cols() - 1;
 
     Eigen::MatrixXi indices(knn, candidate_points.cols());
     MatXf dist(knn, candidate_points.cols());

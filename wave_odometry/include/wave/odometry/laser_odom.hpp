@@ -51,6 +51,7 @@
 #include "wave/odometry/feature_extractor.hpp"
 #include "wave/odometry/geometry/plane.hpp"
 #include "wave/odometry/geometry/line.hpp"
+#include "wave/odometry/line_fitter.hpp"
 #include "wave/odometry/odometry_callback.hpp"
 #include "wave/optimization/ceres/odom_gp/constant_velocity.hpp"
 #include "wave/optimization/ceres/local_params/null_SE3_parameterization.hpp"
@@ -172,6 +173,8 @@ class LaserOdom {
 
     void updateFeatureCandidates();
     void prepTrajectory(const TimeType &stamp);
+    void edgePipeline(const uint32_t &feat_id, const Vec<Vec<bool>> &initial_prev_feat_idx);
+    void planePipeline(const uint32_t &feat_id, const Vec<Vec<bool>> &initial_prev_feat_idx);
     bool match(const TimeType &stamp);
     void trackResiduals(ceres::Problem &problem, ceres::ParameterBlockOrdering &param_ordering, uint32_t f_idx,
                             VecE <FeatureTrack> &track_list);
@@ -217,6 +220,11 @@ class LaserOdom {
                                          const bool large_tol,
                                          VecE<FeatureTrack> &candidate_tracks);
 
+    void createNewLineFeatureTrackCandidates(const Eigen::MatrixXi &indices,
+                                             const MatXf &distances,
+                                             uint32_t feat_id,
+                                             VecE<FeatureTrack> &candidate_tracks);
+
     void pointToTracks(const MatXf &cur_points, const MatXf &prev_points, const uint32_t feat_id);
     /**
      * Removes any correspondences to the current scan
@@ -252,11 +260,15 @@ class LaserOdom {
 
     // rings x (channels, points in ring)
     FeatureExtractor::SignalVec signals;
-//    VecE<Eigen::Tensor<float, 2>> signals;
 
     // indices of points to use for features, indexed by feature type and ring
     Vec<VecE<Eigen::Tensor<int, 1>>> indices;
 
+    VecE<VecE<FeatureTrack>> cur_line_candidates, prev_line_candidates;
+    VecE<VecE<FeatureTrack>> cur_line_candidatesT, prev_line_candidatesT;
+    // Matrix format is needed for kdtrees
+    VecE<MatX> cur_line_geo, prev_line_geo;
+    VecE<MatXf> cur_line_geoT, prev_line_geoT;
 
     /// This stores candidate feature points before they are put into feat_pts container.
     VecE<Eigen::Tensor<float, 2>> cur_feature_candidates, prev_feature_candidates;
@@ -296,6 +308,18 @@ class LaserOdom {
             }
         }
         return static_cast<uint32_t>(scan_ids.size());
+    }
+
+    static Vec<FeatureTrack::Mapping> uniquePointMap(const Vec<FeatureTrack::Mapping> &vec) {
+        std::set<uint32_t> pt_ids;
+        Vec<FeatureTrack::Mapping> unique_map;
+        for (const auto &elem : vec) {
+            if (pt_ids.find(elem.pt_idx) == pt_ids.end()) {
+                pt_ids.insert(elem.pt_idx);
+                unique_map.emplace_back(elem);
+            }
+        }
+        return unique_map;
     }
 };
 

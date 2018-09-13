@@ -12,7 +12,7 @@ parallel_tol: 0.002          #  ditto
 edge_tol: 0.5                #  Edge features must have score higher than this
 flat_tol: 0.075                #  Plane features must have score lower than this
 int_edge_tol: 0.01         #  Intensity edge features must have score greater than this
-int_flat_tol: 0.075            #  Intensity edges must have curvature score lower than this
+int_flat_tol: 0.025            #  Intensity edges must have curvature score lower than this
 n_edge: 40                  #  How many edge features to pick out per ring
 n_flat: 100                  #  How many plane features to pick out per ring
 n_int_edge: 30              #  How many intensity edges to pick out per ring

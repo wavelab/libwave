@@ -11,9 +11,6 @@ namespace {
 inline double getRotatedErrorAndJacobian(const Vec3 &error, Eigen::Matrix<double, 1, 3> *J) {
     Vec3 ed;
     double norm = error.norm();
-    // no need to rotate anything if there is zero error
-    const double tolerance = 1e-8;
-
     ed.noalias() = error / norm;
 
     if (std::isnan(ed.sum())) {

@@ -169,4 +169,90 @@ TEST(Transformer, transformViz) {
     std::this_thread::sleep_for(std::chrono::seconds(10));
 }
 
+// This test generates synthetic data modelling a single-beam lidar moving in pure translation in a circular
+// environment. Given the true transform, the transformer should perfectly undistort the transform
+TEST(Transformer, CircleUndistort) {
+    long n_pts = 100;
+    Eigen::Tensor<float, 2> scan(4, n_pts);
+
+    for (int i = 0; i < n_pts; ++i) {
+        float tau = (float)(i) / (float)(n_pts);
+        float px = tau;
+        float nx = std::cos(tau * 2.0 * M_PI);
+        float ny = std::sin(tau * 2.0 * M_PI);
+
+        float t = -nx * px + std::sqrt(nx * nx * px * px - px * px + 4);
+
+        scan(0,i) = t * nx;
+        scan(1,i) = t * ny;
+        scan(2,i) = 0;
+        scan(3,i) = tau;
+    }
+
+    TransformerParams params;
+    params.n_scans = 1;
+    params.traj_resolution = 3;
+    uint32_t cnt = params.n_scans * (params.traj_resolution - 1) + 1;
+
+    Vec6 vel;
+    vel << 0, 0, 0, 1, 0, 0;
+
+    std::vector<PoseVel, Eigen::aligned_allocator<PoseVel>> trajectory;
+    std::vector<float> stamps;
+
+    stamps.resize(cnt);
+    trajectory.resize(cnt);
+
+    for(uint32_t i = 0; i < cnt; i++) {
+        stamps.at(i) = static_cast<float>(i) * 0.5f;
+        if (i != 0) {
+            trajectory.at(i).pose = trajectory.at(i - 1).pose;
+            trajectory.at(i).pose.manifoldPlus(vel * 0.5);
+        } else {
+            trajectory.at(i).pose.setIdentity();
+        }
+        trajectory.at(i).vel = vel;
+    }
+    Transformer transformer(params);
+    transformer.update(trajectory, stamps);
+
+    MatXf bscan, escan;
+
+    transformer.transformToStart(scan, bscan, 0);
+    transformer.transformToEnd(scan, escan, 0);
+
+    pcl::PointCloud<pcl::PointXYZI> beginning, original, ending;
+    for (long i = 0; i < params.n_scans * n_pts; i++) {
+        pcl::PointXYZI tpt, orpt, bpt;
+        tpt.x = escan(0,i);
+        tpt.y = escan(1,i);
+        tpt.z = escan(2,i);
+        tpt.intensity = scan(3,i);
+
+        bpt.x = bscan(0,i);
+        bpt.y = bscan(1,i);
+        bpt.z = bscan(2,i);
+        bpt.intensity = scan(3,i);
+
+        orpt.x = scan(0,i);
+        orpt.y = scan(1,i);
+        orpt.z = scan(2,i);
+        orpt.intensity = scan(3,i);
+
+        beginning.push_back(bpt);
+        original.push_back(orpt);
+        ending.push_back(tpt);
+
+        EXPECT_NEAR(bscan(0,i)*bscan(0,i) + bscan(1,i) * bscan(1,i), 4.0, 1e-3);
+    }
+
+    PointCloudDisplay display("warped");
+    display.startSpin();
+    display.addPointcloud(original.makeShared(), 0);
+    display.addPointcloud(beginning.makeShared(), 1);
+    display.addPointcloud(ending.makeShared(), 2);
+
+    std::this_thread::sleep_for(std::chrono::seconds(10));
+}
+
 }

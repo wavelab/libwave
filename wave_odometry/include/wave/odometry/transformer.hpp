@@ -50,6 +50,12 @@ class Transformer {
     void update(const std::vector<PoseVel, Eigen::aligned_allocator<PoseVel>> &trajectory,
                 const std::vector<float> &stamps);
 
+    /// Transforms feature tracks to start
+    template<typename Scalar1, typename Scalar2>
+    void transformTracksToStart(const Eigen::Matrix<Scalar1, Eigen::Dynamic, Eigen::Dynamic> &tracks,
+                                Eigen::Matrix<Scalar2, Eigen::Dynamic, Eigen::Dynamic> &tracks_transformed,
+                                const uint32_t scan_idx);
+
     /** Points should be a 4xN tensor, xyz + timestamp
      * It is assumed the points are given in the sensor frame at the time that each one was observed.
      * They will be transformed to the sensor frame at the beginning of the first scan

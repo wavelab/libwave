@@ -17,7 +17,7 @@ class LineFitter {
     const double max_error;
     const int min_points;
 
-    std::vector<FeatureTrack> tracks;
+    VecE<FeatureTrack> tracks;
  public:
     LineFitter(const float search_radius, const long search_knn, const double max_error, const int min_points)
             : search_radius(search_radius), search_knn(search_knn), max_error(max_error), min_points(min_points) {}

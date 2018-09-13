@@ -6,6 +6,52 @@
 namespace wave {
 
 template<typename Scalar1, typename Scalar2>
+void Transformer::transformTracksToStart(const Eigen::Matrix<Scalar1, -1, -1> &tracks,
+                                         Eigen::Matrix<Scalar2, -1, -1> &tracks_transformed, const uint32_t scan_idx) {
+    if (tracks_transformed.rows() != 3 || tracks_transformed.cols() != tracks.cols()) {
+        tracks_transformed.resize(6, tracks.cols());
+    }
+
+    for (long i = 0; i < tracks.cols(); i++) {
+        float pttime = tracks(6, i);
+        if (pttime < 0) {
+            throw std::out_of_range("point time not good");
+        }
+        float time = pttime + this->traj_stamps.at(this->scan_indices.at(scan_idx));
+        auto idx = std::lower_bound(this->traj_stamps.begin(), this->traj_stamps.end(), time);
+        auto index = static_cast<uint32_t>(idx - this->traj_stamps.begin());
+        if (index == this->traj_stamps.size()) {
+            if (time - this->traj_stamps.back() < 0.001f) {
+                index -= 2;
+            } else {
+                throw std::runtime_error("Invalid stamps in points 1");
+            }
+        }
+        if (time < this->traj_stamps.at(index)) {
+            if (index == 0) {
+                throw std::runtime_error("Invalid stamps in points 2");
+            }
+            index--;
+        }
+        Mat2 hat, candle;
+        this->calculateInterpolationFactors(
+                this->traj_stamps.at(index), this->traj_stamps.at(index + 1), time, candle, hat);
+        Vec6 tan_vec = hat(0, 1) * this->differences.at(index).hat_multiplier.block<6, 1>(6, 0) +
+                       candle(0, 0) * this->differences.at(index).candle_multiplier.block<6, 1>(0, 0) +
+                       candle(0, 1) * this->differences.at(index).candle_multiplier.block<6, 1>(6, 0);
+        Mat34 trans;
+        T_TYPE::expMap1st(tan_vec, trans);
+        auto &ref = this->aug_trajectories.at(index).pose.storage;
+        tracks_transformed.template block<3, 1>(0, i).noalias() =
+                (trans.block<3, 3>(0, 0) *
+                 (ref.block<3, 3>(0, 0) * tracks.template block<3, 1>(0, i).template cast<double>() + ref.block<3, 1>(0, 3)) +
+                 trans.block<3, 1>(0, 3)).template cast<Scalar2>();
+        tracks_transformed.template block<3, 1>(3, i).noalias() = (trans.block<3, 3>(0, 0) *
+                                                                  (ref.block<3, 3>(0, 0) * tracks.template block<3, 1>(3, i).template cast<double>())).template cast<Scalar2>();
+    }
+}
+
+template<typename Scalar1, typename Scalar2>
 void Transformer::transformToStart(const Eigen::Tensor<Scalar1, 2> &points,
                                    Eigen::Matrix<Scalar2, Eigen::Dynamic, Eigen::Dynamic> &points_transformed,
                                    const uint32_t scan_idx,
@@ -62,7 +108,6 @@ void Transformer::transformToStart(const Eigen::Matrix<Scalar1, Eigen::Dynamic, 
         ptT.resize(3, pt.cols());
     }
 
-//#pragma omp parallel for
     for (long i = 0; i < pt.cols(); i++) {
         float pttime = pt(3, i);
         if (pttime < 0) {
