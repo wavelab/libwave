@@ -445,6 +445,7 @@ bool LaserOdom::runOptimization(ceres::Problem &problem, ceres::Solver::Summary 
     ceres::Solver::Options options;
     options.linear_solver_type = ceres::DENSE_SCHUR;
     options.use_explicit_schur_complement = true;
+//    options.preconditioner_type = ceres::SCHUR_JACOBI;
     options.max_num_iterations = this->param.max_inner_iters;
     options.max_num_consecutive_invalid_steps = 30;
     options.logging_type = ceres::LoggingType::SILENT;
@@ -1427,7 +1428,7 @@ bool LaserOdom::match(const TimeType &stamp) {
     // on the first match, initialization is poor
     static bool first_match = true;
     if (first_match) {
-        double xvel_init = 5.0;  // * diff(0);
+        double xvel_init = 0;  // * diff(0);
 
         for (auto &traj : this->cur_trajectory) {
             traj.vel(3) = xvel_init;
@@ -1447,11 +1448,7 @@ bool LaserOdom::match(const TimeType &stamp) {
         initial_prev_feat_idx.at(feat_id) = this->prev_feat_idx.at(feat_id);
     }
 
-    int op_limit = this->param.opt_iters;
-    if (first_match) {
-        op_limit *= 10;
-    }
-    for (int op = 0; op < op_limit; op++) {
+    for (int op = 0; op < this->param.opt_iters; op++) {
         if (op > 0) {
             last_transform = ref;
         }
@@ -1462,9 +1459,9 @@ bool LaserOdom::match(const TimeType &stamp) {
         this->transformer.update(this->cur_trajectory, this->trajectory_stamps);
 
         for (uint32_t j = 0; j < this->N_FEATURES; j++) {
-            if (j != 2 && first_match) {
-                continue;  // edges have relatively poor initial convergence.
-            }
+//            if (j != 2 && first_match) {
+//                continue;  // edges have relatively poor initial convergence.
+//            }
             if (j == 2) {
                 this->planePipeline(j, initial_prev_feat_idx);
             } else {
@@ -1552,7 +1549,7 @@ void LaserOdom::trackResiduals(ceres::Problem &problem, ceres::ParameterBlockOrd
         }
         problem.AddParameterBlock(track.geometry.data(), 6, this->local_params.back().get());
         param_ordering.AddElementToGroup(track.geometry.data(), 0);
-        if (track.length < 2 && track.mapping.size() < 4) {
+        if ((track.length < 2 && track.mapping.size() < 4)) { // || (track.mapping.front().scan_idx < (this->scan_stampsf.size()) - 2)) {
             problem.SetParameterBlockConstant(track.geometry.data());
         }
         for (uint32_t p_idx = 0; p_idx < track.mapping.size(); ++p_idx) {

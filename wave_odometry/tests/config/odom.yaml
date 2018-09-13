@@ -22,12 +22,12 @@ Prior_twist:
 
 # How many states per revolution to optimize over, there must be at minimum two.
 num_trajectory_states: 2
-n_window: 10 # Number of scans to optimize over. Must be at least 2
-opt_iters: 3  # how many iterations of the matcher to run
-max_inner_iters: 50 # limit on iterations of ceres at each matcher iteration
+n_window: 5 # Number of scans to optimize over. Must be at least 2
+opt_iters: 5  # how many iterations of the matcher to run
+max_inner_iters: 5000 # limit on iterations of ceres at each matcher iteration
 diff_tol: 1e-4 # norm of solution difference for stopping criteria
-solver_threads: 3 # number of threads the solver should use
-robust_param: 0.15 # Parameter used in tukey loss function
+solver_threads: 1 # number of threads the solver should use
+robust_param: 0.2 # Parameter used in tukey loss function
 max_correspondence_dist: 2.5  #  correspondences greater than this are discarded
 max_planar_residual_val: 0.2   # Planar residuals with an initial error greater than this are not created
 max_linear_residual_val: 0.15 # for linear residuals
@@ -57,7 +57,7 @@ min_new_points: 3
 #  Setting flags
 only_extract_features: false   #  If set, no transforms are calculated
 use_weighting: false           #  If set, pre-whiten residuals
-print_opt_sum: false              #  If true, output ceres summaries to console
+print_opt_sum: true              #  If true, output ceres summaries to console
 check_gradients: false         #  If set, use Ceres gradient checker on each jacobians
 limit_rng_var: false
 limit_int_var: false

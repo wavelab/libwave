@@ -14,9 +14,9 @@
 
 namespace wave {
 
-/// error is 1 dimensional, followed by states: 6 dimensional vector for line, and then all the trajectory states
+/// error is 2 dimensional, followed by states: 6 dimensional vector for line, and then all the trajectory states
 template <typename Scalar, int... states>
-class LineResidual : public ceres::SizedCostFunction<1, 6, states...> {
+class LineResidual : public ceres::SizedCostFunction<2, 6, states...> {
  public:
     virtual ~LineResidual() {}
 

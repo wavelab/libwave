@@ -2,11 +2,12 @@
 // raw scans, they come pre-corrected for motion distortion
 
 #include "../include/kitti_utility_methods.hpp"
+#include "../../tests/data/include/config_utils.hpp"
 
 int main(int argc, char **argv) {
     if (argc != 7) {
         throw std::runtime_error(
-                "Must be run with only 3 arguments: \n 1. Full path to data \n 2. Full path to configuration files \n 3. 1 "
+                "Must be run with only 6 arguments: \n 1. Full path to data \n 2. Full path to configuration files \n 3. 1 "
                 "or 0 to indicate whether a visualizer should be run \n 4. Sequence to run. \n"
                 "5. Starting frame \n 6. Ending frame (or set -1 for no limit)");
     }
