@@ -38,7 +38,7 @@ bool LineParameterization::Plus(const double *x, const double *delta, double *x_
     pt0pD.noalias() = pt0 + R.block<3, 2>(0,0) * Dpt0;
 
     if (normalpD(2) < 0) {
-        normalpD *= -1.0;
+        normalpD = -normalpD;
     }
 
     return true;

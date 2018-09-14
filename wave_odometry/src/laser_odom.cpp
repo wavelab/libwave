@@ -1562,6 +1562,12 @@ void LaserOdom::trackResiduals(ceres::Problem &problem, ceres::ParameterBlockOrd
                                VecE<FeatureTrack> &track_list) {
     uint32_t residual_count = 0;
     for (auto &track : track_list) {
+        if (track.mapping.empty()) {
+            continue;
+        }
+        if (track.geometry(2) < 0) {
+            track.geometry.block<3,1>(0,0) = -track.geometry.block<3,1>(0,0);
+        }
         if (f_idx == 2) {
             this->local_params.emplace_back(std::make_shared<PlaneParameterization>());
         } else {
