@@ -10,7 +10,7 @@ occlusion_tol_2: 0.1         #  m. Distance between points to initiate occlusion
 occlusion_filter_length: 5  #  How close a point can be to a shadow, and still be considered for a feature point
 parallel_tol: 0.002          #  ditto
 edge_tol: 0.5                #  Edge features must have score higher than this
-flat_tol: 0.075                #  Plane features must have score lower than this
+flat_tol: 0.05                #  Plane features must have score lower than this
 int_edge_tol: 0.01         #  Intensity edge features must have score greater than this
 int_flat_tol: 0.025            #  Intensity edges must have curvature score lower than this
 n_edge: 40                  #  How many edge features to pick out per ring

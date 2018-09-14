@@ -21,6 +21,7 @@ struct IcosahedronBinnerParams {
 
 class IcosahedronBinner {
  public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     IcosahedronBinner() {}
     IcosahedronBinner(IcosahedronBinnerParams params);
 

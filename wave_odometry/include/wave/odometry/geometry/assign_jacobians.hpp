@@ -31,10 +31,10 @@ inline void assignJacobian(double **jacobian,
         auto true_dim = jacsw1.at(state_idx)->cols();
         if (state_dim != true_dim) {
             jac.block(0, 0, del_e_del_T.rows(), true_dim).noalias() =
-              del_e_del_T * (w1 * *(jacsw1.at(state_idx)) + w2 * *(jacsw2.at(state_idx)));
+              del_e_del_T * (w1 * *(jacsw1.at(state_idx)) + w2 * *(jacsw2.at(state_idx))).eval();
             jac.block(0, true_dim, del_e_del_T.rows(), state_dim - true_dim).setZero();
         } else {
-            jac.noalias() = del_e_del_T * (w1 * *(jacsw1.at(state_idx)) + w2 * *(jacsw2.at(state_idx)));
+            jac.noalias() = del_e_del_T * (w1 * *(jacsw1.at(state_idx)) + w2 * *(jacsw2.at(state_idx))).eval();
         }
     }
 }

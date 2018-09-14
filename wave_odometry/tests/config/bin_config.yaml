@@ -12,5 +12,5 @@ xy_directions: 6
 
 z_cutoff: 0.5253
 
-z_limit: 1
-xy_limit: 1
+z_limit: 2
+xy_limit: 2

@@ -1227,6 +1227,9 @@ void LaserOdom::mergeFeatureTracks(VecE<FeatureTrack> &tracks, uint32_t feat_id)
             } else {
                 query_track.geometry = w1 * query_track.geometry + w2 * merged_track.geometry;
             }
+            if (query_track.geometry(2) < 0) {
+                query_track.geometry.block<3,1>(0,0) = -query_track.geometry.block<3,1>(0,0);
+            }
 
             query_track.geometry.block<3, 1>(0, 0).normalize();
             for (const auto &map : merged_track.mapping) {
@@ -1328,6 +1331,18 @@ void LaserOdom::pointToTracks(const wave::MatXf &cur_points, const wave::MatXf &
     } else {
         this->createNewLineFeatureTrackCandidates(nn_idx, nn_dist, feat_id, candidate_tracks);
     }
+    this->mergeFeatureTracks(candidate_tracks, feat_id);
+
+    if (feat_id == 2) {
+        VecE<FeatureTrack> reduced_set;
+        reduced_set.reserve(candidate_tracks.size());
+        for (const auto &track : candidate_tracks) {
+            if (track.mapping.size() > 7) {
+                reduced_set.emplace_back(track);
+            }
+        }
+        std::swap(reduced_set, candidate_tracks);
+    }
 
     MatXf c_track_query(3, candidate_tracks.size());
     for (uint32_t i = 0; i < candidate_tracks.size(); ++i) {
@@ -1428,7 +1443,7 @@ bool LaserOdom::match(const TimeType &stamp) {
     // on the first match, initialization is poor
     static bool first_match = true;
     if (first_match) {
-        double xvel_init = 0;  // * diff(0);
+        double xvel_init = -10;  // * diff(0);
 
         for (auto &traj : this->cur_trajectory) {
             traj.vel(3) = xvel_init;
@@ -1448,7 +1463,11 @@ bool LaserOdom::match(const TimeType &stamp) {
         initial_prev_feat_idx.at(feat_id) = this->prev_feat_idx.at(feat_id);
     }
 
-    for (int op = 0; op < this->param.opt_iters; op++) {
+    int limit = this->param.opt_iters;
+    if (first_match) {
+        limit *= 10;
+    }
+    for (int op = 0; op < limit; op++) {
         if (op > 0) {
             last_transform = ref;
         }
@@ -1541,6 +1560,7 @@ void prepareJacobianPointers(const Vec<VecE<MatX>> *jacs,
 
 void LaserOdom::trackResiduals(ceres::Problem &problem, ceres::ParameterBlockOrdering &param_ordering, uint32_t f_idx,
                                VecE<FeatureTrack> &track_list) {
+    uint32_t residual_count = 0;
     for (auto &track : track_list) {
         if (f_idx == 2) {
             this->local_params.emplace_back(std::make_shared<PlaneParameterization>());
@@ -1580,8 +1600,10 @@ void LaserOdom::trackResiduals(ceres::Problem &problem, ceres::ParameterBlockOrd
                                      this->cur_trajectory.at(start_offset).vel.data(),
                                      this->cur_trajectory.at(start_offset + 1).pose.storage.data(),
                                      this->cur_trajectory.at(start_offset + 1).vel.data());
+            ++residual_count;
         }
     }
+//    std::cout << "\n Residual count for feature " << f_idx << " is " << residual_count << "\n";
 }
 
 void LaserOdom::buildResiduals(ceres::Problem &problem, ceres::ParameterBlockOrdering &param_ordering) {

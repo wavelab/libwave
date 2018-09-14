@@ -75,6 +75,9 @@ void updateVisualizer(const wave::LaserOdom *odom,
                 } catch (...) {
                     throw std::runtime_error("track length longer than expected");
                 }
+                if (track.mapping.empty()) {
+                    continue;
+                }
                 if (i == 2) {
                     pcl::PointXYZ pt1, pt2;
                     Eigen::Map<wave::Vec3f> m1(pt1.data), m2(pt2.data);
@@ -116,10 +119,10 @@ void updateVisualizer(const wave::LaserOdom *odom,
             display->addPointcloud(display_cld, ptcld_id, false, viewport_id);
             ++ptcld_id;
 
-            pcl::PointCloud<pcl::PointXYZ>::Ptr candidate_cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
-            *candidate_cloud = odom->undis_candidates_cur.at(i);
-            display->addPointcloud(candidate_cloud, ptcld_id, false, viewport_id);
-            ++ptcld_id;
+//            pcl::PointCloud<pcl::PointXYZ>::Ptr candidate_cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+//            *candidate_cloud = odom->undis_candidates_cur.at(i);
+//            display->addPointcloud(candidate_cloud, ptcld_id, false, viewport_id);
+//            ++ptcld_id;
         }
     }
 }
