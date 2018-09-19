@@ -11,6 +11,8 @@ void updateVisualizer(const wave::LaserOdom *odom,
                       wave::PointCloudDisplay *display,
                       wave::VecE<wave::PoseVelStamped> *odom_trajectory,
                       Vec<TrackLengths> *track_lengths) {
+    double dis_mult = 254.0 / (double)(odom->getParams().n_window);
+
     bool first_trajectory = true;
     wave::T_TYPE T0X;
     for (const wave::PoseVelStamped &val : odom->undistort_trajectory) {
@@ -78,35 +80,36 @@ void updateVisualizer(const wave::LaserOdom *odom,
                 if (track.mapping.empty()) {
                     continue;
                 }
+                auto red_colour = static_cast<uint8_t>(dis_mult * (double) (track.length));
                 if (i == 2) {
                     pcl::PointXYZ pt1, pt2;
                     Eigen::Map<wave::Vec3f> m1(pt1.data), m2(pt2.data);
                     m1 = track.geometry.block<3, 1>(3, 0).cast<float>();
                     m2 = track.geometry.block<3, 1>(0, 0).cast<float>();
                     float sidelength = 1.5f;
-                    display->addSquare(pt1, pt2, sidelength, id, false, viewport_id);
+                    display->addSquare(pt1, pt2, sidelength, id, false, viewport_id, red_colour);
                     ++id;
                 } else {
                     pcl::PointXYZ pt1, pt2;
                     Eigen::Map<wave::Vec3f> m1(pt1.data), m2(pt2.data);
 
-                    double sidelength = 0.1 * track.mapping.size();
+                    double sidelength = 3;
 
                     m1 =
                             (track.geometry.block<3, 1>(3, 0) - sidelength * track.geometry.block<3, 1>(0, 0)).cast<float>();
                     m2 =
                             (track.geometry.block<3, 1>(3, 0) + sidelength * track.geometry.block<3, 1>(0, 0)).cast<float>();
-                    display->addLine(pt1, pt2, id, id + 1, false, viewport_id);
+                    display->addLine(pt1, pt2, id, id + 1, false, viewport_id, red_colour);
                     id += 2;
                 }
 
                 for (const auto &map : track.mapping) {
                     pcl::PointXYZI new_pt;
-                    new_pt.x = odom->undis_features.at(i).at(map.pt_idx).x;
-                    new_pt.y = odom->undis_features.at(i).at(map.pt_idx).y;
-                    new_pt.z = odom->undis_features.at(i).at(map.pt_idx).z;
+                    new_pt.x = odom->undis_features.at(map.scan_idx).at(i).at(map.pt_idx).x;
+                    new_pt.y = odom->undis_features.at(map.scan_idx).at(i).at(map.pt_idx).y;
+                    new_pt.z = odom->undis_features.at(map.scan_idx).at(i).at(map.pt_idx).z;
 
-                    new_pt.intensity = int_id;
+                    new_pt.intensity = map.scan_idx;
                     display_cld->push_back(new_pt);
                 }
                 int_id += 1;
@@ -119,10 +122,10 @@ void updateVisualizer(const wave::LaserOdom *odom,
             display->addPointcloud(display_cld, ptcld_id, false, viewport_id);
             ++ptcld_id;
 
-//            pcl::PointCloud<pcl::PointXYZ>::Ptr candidate_cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
-//            *candidate_cloud = odom->undis_candidates_cur.at(i);
-//            display->addPointcloud(candidate_cloud, ptcld_id, false, viewport_id);
-//            ++ptcld_id;
+            pcl::PointCloud<pcl::PointXYZ>::Ptr candidate_cloud = boost::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+            *candidate_cloud = odom->undis_candidates_cur.at(i);
+            display->addPointcloud(candidate_cloud, ptcld_id, false, viewport_id);
+            ++ptcld_id;
         }
     }
 }
@@ -317,12 +320,12 @@ void plotError(const wave::VecE<wave::PoseStamped> &ground_truth, const wave::Ve
         y.emplace_back(diff(4));
         z.emplace_back(diff(5));
         if (frame_id > 0) {
-            px.emplace_back(x.at(frame_id) - x.at(frame_id - 1));
-            py.emplace_back(y.at(frame_id) - y.at(frame_id - 1));
-            pz.emplace_back(z.at(frame_id) - z.at(frame_id - 1));
-            prx.emplace_back(rx.at(frame_id) - rx.at(frame_id - 1));
-            pry.emplace_back(ry.at(frame_id) - ry.at(frame_id - 1));
-            prz.emplace_back(rz.at(frame_id) - rz.at(frame_id - 1));
+            px.emplace_back(std::abs(x.at(frame_id) - x.at(frame_id - 1)));
+            py.emplace_back(std::abs(y.at(frame_id) - y.at(frame_id - 1)));
+            pz.emplace_back(std::abs(z.at(frame_id) - z.at(frame_id - 1)));
+            prx.emplace_back(std::abs(rx.at(frame_id) - rx.at(frame_id - 1)));
+            pry.emplace_back(std::abs(ry.at(frame_id) - ry.at(frame_id - 1)));
+            prz.emplace_back(std::abs(rz.at(frame_id) - rz.at(frame_id - 1)));
         }
     }
 
@@ -346,14 +349,14 @@ void plotError(const wave::VecE<wave::PoseStamped> &ground_truth, const wave::Ve
     plot::named_plot("Ty Error", py);
     plot::named_plot("Tz Error", pz);
     plot::legend();
-    plot::title("Incremental Translation Error");
+    plot::title("Absolute Incremental Translation Error");
 
     plot::subplot(2, 2, 4);
     plot::named_plot("Rx Error", prx);
     plot::named_plot("Ry Error", pry);
     plot::named_plot("Rz Error", prz);
     plot::legend();
-    plot::title("Incremental Rotation Error");
+    plot::title("Absolute Incremental Rotation Error");
 
     plot::show(true);
 }

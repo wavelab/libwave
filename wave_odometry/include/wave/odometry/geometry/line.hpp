@@ -33,10 +33,20 @@ class LineResidual : public ceres::SizedCostFunction<2, 6, states...> {
 
     virtual bool Evaluate(double const *const *parameters, double *residuals, double **jacobians) const;
 
+    template<typename Derived>
+    MatX getDerivativeWpT(const Eigen::MatrixBase<Derived> &normal) const;
+
+    template<typename Derived>
+    void setWeight(const Eigen::MatrixBase<Derived> &Weight) {
+        this->weight = Weight;
+    }
+
  private:
     // updated by evaluation callback
     const Scalar *pt;
     const VecE<const MatX*> jacsw1, jacsw2;
+
+    Mat2 weight;
 
     const Scalar w1, w2;
 };

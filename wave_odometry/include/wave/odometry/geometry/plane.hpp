@@ -26,12 +26,21 @@ class PlaneResidual : public ceres::SizedCostFunction<1, 6, states...> {
 
     virtual bool Evaluate(double const *const *parameters, double *residuals, double **jacobians) const;
 
+    template<typename Derived>
+    MatX getDerivativeWpT(const Eigen::MatrixBase<Derived> &normal) const;
+
+    template<typename Derived>
+    void setWeight(const Eigen::MatrixBase<Derived> &Weight) {
+        this->weight = Weight;
+    }
+
  private:
     // updated by evaluation callback
     const Scalar *pt;
     const VecE<const MatX*> jacsw1, jacsw2;
 
     const Scalar w1, w2;
+    Eigen::Matrix<double, 1, 1> weight = Eigen::Matrix<double, 1, 1>::Identity();
 };
 }
 

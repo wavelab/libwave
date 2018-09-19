@@ -92,7 +92,8 @@ class PointCloudDisplay {
                  int id1,
                  int id2,
                  bool reset_camera = false,
-                 int viewport = 0);
+                 int viewport = 0,
+                 uint8_t colour = 0);
 
     /**
      * Queues a square to be added to the display.
@@ -108,7 +109,8 @@ class PointCloudDisplay {
                    float l1dist,
                    int id,
                    bool reset_camera = false,
-                   int viewport = 0);
+                   int viewport = 0,
+                   uint8_t colour = 0);
 
     void removeAll();
 
@@ -162,6 +164,7 @@ class PointCloudDisplay {
         pcl::PointXYZ pt1, pt2;
         int id1, id2;
         int viewport = 0;
+        uint8_t colour = 0;
         bool reset_camera;
     };
 
@@ -170,6 +173,7 @@ class PointCloudDisplay {
         pcl::PlanarPolygon<pcl::PointXYZ> planar_poly;
         int id;
         int viewport = 0;
+        uint8_t colour = 0;
         bool reset_camera;
     };
 

@@ -12,15 +12,12 @@ namespace wave {
  */
 struct RangeSensorParams {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    unsigned int rings;
-    /// The elevation angles should be sorted in same order as feature rings. Column Vector
-    MatX elevation_angles;
 
     /** Covariance of noise in spherical coordinates
     * Noise should be in linear, angular, angular units
      * on range, elevation, azimuth in that order
     */
-    Eigen::Matrix3f sigma_spherical = Eigen::Matrix3f::Identity();
+    Mat3 sigma_spherical = Mat3::Identity();
 };
 
 /**
@@ -32,19 +29,11 @@ class RangeSensor {
     RangeSensor() = delete;
     const RangeSensorParams param;
 
-    /// Number of elevation angles is small, can precalculate
-    std::vector<float> sin_elev;
-    std::vector<float> cos_elev;
-
-    /// Hold some memory to avoid repeated allocation and deallocation
-    mutable Eigen::Matrix3f J;
-
  public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     RangeSensor(RangeSensorParams params);
 
-    void getEuclideanCovariance(const double *point, const uint16_t &ring,
-                                Eigen::Matrix3f & covar_euclid) const;
+    void getEuclideanCovariance(const double *point, Mat3& covar_euclid) const;
 };
 }
 

@@ -2,6 +2,9 @@
  * To iterate through a parameter pack, need to use recursion
  * https://stackoverflow.com/questions/7230621/how-can-i-iterate-over-a-packed-variadic-template-argument-list#7232968
  *
+ * For getting a value from a variable template parameter pack
+ * https://stackoverflow.com/questions/24710389/how-to-extract-a-value-from-a-variadic-template-parameter-pack-by-index
+ *
  * This is pretty neat, templates are recursively instantiated when compiling
  */
 
@@ -14,44 +17,48 @@
 
 namespace wave {
 
+template <size_t N, typename... Args>
+decltype(auto) magic_get(Args&&... as) noexcept {
+    return std::get<N>(std::forward_as_tuple(std::forward<Args>(as)...));
+}
+
 // Base case
-template <typename Derived>
-inline void assignJacobian(double **jacobian,
+template <int state_dim, typename Derived>
+inline void assignSpecificJacobian(double **jacobian,
                            const Eigen::MatrixBase<Derived> &del_e_del_T,
                            const VecE<const MatX*> &jacsw1,
                            const VecE<const MatX*> &jacsw2,
                            double w1,
                            double w2,
-                           uint32_t state_idx,
-                           int state_dim) {
-    if (jacobian[state_idx]) {
-        Eigen::Map<Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor>> jac(
-          jacobian[state_idx], del_e_del_T.rows(), state_dim);
+                           uint32_t state_idx) {
+    EIGEN_STATIC_ASSERT_FIXED_SIZE(Eigen::MatrixBase<Derived>)
 
-        auto true_dim = jacsw1.at(state_idx)->cols();
-        if (state_dim != true_dim) {
-            jac.block(0, 0, del_e_del_T.rows(), true_dim).noalias() =
-              del_e_del_T * (w1 * *(jacsw1.at(state_idx)) + w2 * *(jacsw2.at(state_idx))).eval();
-            jac.block(0, true_dim, del_e_del_T.rows(), state_dim - true_dim).setZero();
+    if (jacobian[state_idx]) {
+        Eigen::Map<Eigen::Matrix<double, Eigen::MatrixBase<Derived>::RowsAtCompileTime, state_dim, Eigen::RowMajor>> jac(
+          jacobian[state_idx]);
+
+        if constexpr (state_dim > 6) {
+            jac.template block<Eigen::MatrixBase<Derived>::RowsAtCompileTime, 6>(0,0).noalias() = del_e_del_T * (w1 * *(jacsw1.at(state_idx)) + w2 * *(jacsw2.at(state_idx)));
+            jac.template block<Eigen::MatrixBase<Derived>::RowsAtCompileTime, state_dim - 6>(0, 6).setZero();
         } else {
-            jac.noalias() = del_e_del_T * (w1 * *(jacsw1.at(state_idx)) + w2 * *(jacsw2.at(state_idx))).eval();
+            jac.noalias() = del_e_del_T * (w1 * *(jacsw1.at(state_idx)) + w2 * *(jacsw2.at(state_idx)));
         }
     }
 }
 
 // Recurse through parameter pack
-template <typename Derived, typename... States>
+template <int state_dim, int... state_dims, typename Derived>
 inline void assignJacobian(double **jacobian,
                            const Eigen::MatrixBase<Derived> &del_e_del_T,
                            const VecE<const MatX*> &jacsw1,
                            const VecE<const MatX*> &jacsw2,
                            double w1,
                            double w2,
-                           uint32_t state_idx,
-                           int state_dim,
-                           States... states) {
-    assignJacobian(jacobian, del_e_del_T, jacsw1, jacsw2, w1, w2, state_idx, state_dim);
-    assignJacobian(jacobian, del_e_del_T, jacsw1, jacsw2, w1, w2, state_idx + 1, states...);
+                           uint32_t state_idx) {
+    assignSpecificJacobian<state_dim>(jacobian, del_e_del_T, jacsw1, jacsw2, w1, w2, state_idx);
+    if constexpr (sizeof...(state_dims) > 0) {
+        assignJacobian<state_dims...>(jacobian, del_e_del_T, jacsw1, jacsw2, w1, w2, state_idx + 1);
+    }
 };
 }
 

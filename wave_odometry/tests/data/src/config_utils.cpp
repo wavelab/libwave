@@ -4,9 +4,7 @@ namespace wave {
 
 void LoadSensorParameters(const std::string &path, const std::string &filename, wave::RangeSensorParams &senparams) {
     wave::ConfigParser parser;
-    parser.addParam("rings", &(senparams.rings));
     parser.addParam("sigma_spherical", &(senparams.sigma_spherical));
-    parser.addParam("elevation_angles", &(senparams.elevation_angles));
 
     parser.load(path + filename);
 }

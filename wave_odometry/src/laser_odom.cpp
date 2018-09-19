@@ -120,17 +120,19 @@ void LaserOdom::undistort() {
             this->undistorted_cld.push_back(pt);
         }
     }
+    auto n_scans = this->feat_pts_T.size();
+    this->undis_features.resize(n_scans);
     for (uint32_t feat_id = 0; feat_id < this->N_FEATURES; ++feat_id) {
         this->undis_tracks.at(feat_id) = this->feature_tracks.at(feat_id);
-        this->undis_features.at(feat_id).clear();
-        auto n_scans = this->feat_pts_T.size();
         for (uint32_t i = 0; i < n_scans; ++i) {
+            this->undis_features.at(i).resize(this->N_FEATURES);
+            this->undis_features.at(i).at(feat_id).clear();
             for (uint32_t j = 0; j < this->feat_pts_T.at(i).at(feat_id).cols(); ++j) {
                 pcl::PointXYZ pt;
                 pt.x = this->feat_pts_T.at(i).at(feat_id)(0, j);
                 pt.y = this->feat_pts_T.at(i).at(feat_id)(1, j);
                 pt.z = this->feat_pts_T.at(i).at(feat_id)(2, j);
-                this->undis_features.at(feat_id).push_back(pt);
+                this->undis_features.at(i).at(feat_id).push_back(pt);
             }
         }
         this->undis_candidates_prev.at(feat_id).clear();
@@ -210,7 +212,7 @@ void LaserOdom::updateFeatureCandidates() {
                 }
             }
             temp_feature_candidates.conservativeResize(Eigen::NoChange, temp_offset);
-            LineFitter fitter(5, 10, 0.05, 5);
+            LineFitter fitter(5, 10, 0.05, 6);
             fitter.fitLines(temp_feature_candidates);
             Vec<int> pt_index(temp_offset);
             std::fill(pt_index.begin(), pt_index.end(), -1);
@@ -299,9 +301,7 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
             throw std::out_of_range("Rebuild with higher max points");
         }
         float range = sqrtf(pt.x * pt.x + pt.y * pt.y + pt.z * pt.z);
-        if (range < 3.0f) {
-            continue;
-        }
+
         this->cur_scan.at(pt.ring)(0, counters.at(pt.ring)) = pt.x;
         this->cur_scan.at(pt.ring)(1, counters.at(pt.ring)) = pt.y;
         this->cur_scan.at(pt.ring)(2, counters.at(pt.ring)) = pt.z;
@@ -445,7 +445,7 @@ bool LaserOdom::runOptimization(ceres::Problem &problem, ceres::Solver::Summary 
     ceres::Solver::Options options;
     options.linear_solver_type = ceres::DENSE_SCHUR;
     options.use_explicit_schur_complement = true;
-//    options.preconditioner_type = ceres::SCHUR_JACOBI;
+    options.preconditioner_type = ceres::SCHUR_JACOBI;
     options.max_num_iterations = this->param.max_inner_iters;
     options.max_num_consecutive_invalid_steps = 30;
     options.logging_type = ceres::LoggingType::SILENT;
@@ -615,7 +615,8 @@ bool LaserOdom::findPlaneCorrespondences(std::vector<uint32_t> &matches,
             Vec3f AmO = ptA - pt;
             AmB.normalize();
             AmO.normalize();
-            if (std::abs((AmB.transpose() * AmO)(0)) > 0.7) {
+            // calculate cos(theta) between the vectors and
+            if (std::abs((AmB.transpose() * AmO)(0)) > 0.95) {
                 continue;
             }
         }
@@ -645,6 +646,9 @@ bool LaserOdom::findPlaneCorrespondences(std::vector<uint32_t> &matches,
             return true;
         }
     }
+    if (matches.size() >= 3) {
+        return true;
+    }
     return false;
 }
 
@@ -652,8 +656,10 @@ void LaserOdom::extendFeatureTracks(const Eigen::MatrixXi &idx,
                                     const MatXf &distances,
                                     uint32_t feat_id,
                                     const VecE<FeatureTrack> &candidate_tracks,
-                                    const bool large_tol) {
+                                    const bool ) {
     /// Each column represents a query (existing feature track)
+    auto T_EO = this->cur_trajectory.back().pose.transformInverse();
+
     Eigen::Tensor<float, 2> new_feat_points(4, 2000);
     auto offset = this->feat_pts.back().at(feat_id).dimension(1);
     long new_feat_cnt = 0;
@@ -684,6 +690,9 @@ void LaserOdom::extendFeatureTracks(const Eigen::MatrixXi &idx,
 
             // copy update existing track with candidate track
             if (extend_track) {
+                Vec6 geometry_at_end;
+                geometry_at_end.block<3,1>(0,0) = T_EO.storage.block<3,3>(0,0) * existing_track.geometry.block<3,1>(0,0);
+                geometry_at_end.block<3,1>(3,0) = T_EO.transform(existing_track.geometry.block<3,1>(3,0));
                 for (const auto &map : candidate_track.mapping) {
                     if (map.scan_idx + 1 != this->scan_stampsf.size()) {
                         continue;
@@ -766,19 +775,14 @@ void LaserOdom::createNewFeatureTracks(uint32_t feat_id, const VecE<FeatureTrack
     auto prev_offset = prev_feat_points.dimension(1);
     auto cur_offset = cur_feat_points.dimension(1);
 
-    for (const auto &candidate_track : tracks) {
-//        bool skip_track = false;
+    auto T_EO = this->cur_trajectory.back().pose.transformInverse();
 
-//        for (auto &map : candidate_track.mapping) {
-//            if (this->cur_feat_idx.at(feat_id).at(map.pt_idx)) {
-//                skip_track = true;
-//                break;
-//            }
-//        }
-//        if (skip_track) {
-//            continue;
-//        }
-        if (this->binner.at(feat_id).bin(candidate_track.geometry)) {
+    for (const auto &candidate_track : tracks) {
+
+        Vec6 geometry_at_end;
+        geometry_at_end.block<3,1>(0,0) = T_EO.storage.block<3,3>(0,0) * candidate_track.geometry.block<3,1>(0,0);
+        geometry_at_end.block<3,1>(3,0) = T_EO.transform(candidate_track.geometry.block<3,1>(3,0));
+        if (this->binner.at(feat_id).bin(geometry_at_end)) {
             this->feature_tracks.at(feat_id).emplace_back(candidate_track);
             auto &track_ref = this->feature_tracks.at(feat_id).back();
 
@@ -847,13 +851,8 @@ void LaserOdom::createNewFeatureTrackCandidates(const Eigen::MatrixXi &idx,
     if (large_tol) {
         tol_multiplier = 5;
     }
-    auto residual_type = PointToLine;
-    double max_residual_val = this->param.max_linear_residual_val;
-    // todo don't do this
-    if (feat_id == 2) {
-        residual_type = PointToPlane;
-        max_residual_val = this->param.max_planar_residual_val;
-    }
+    double max_residual_val =  this->param.max_planar_residual_val;
+
     max_residual_val *= tol_multiplier;
     max_residual_val *= max_residual_val;
     /// Each column represents a query (feature track)
@@ -862,37 +861,25 @@ void LaserOdom::createNewFeatureTrackCandidates(const Eigen::MatrixXi &idx,
     bool success;
     std::vector<uint32_t> matches;
     for (uint32_t j = 0; j < idx.cols(); ++j) {
-        if (residual_type == PointToLine) {
-            success = this->findLineCorrespondences(matches,
-                                                    this->prev_feat_idx.at(feat_id),
-                                                    idx.col(j),
-                                                    distances.col(j),
-                                                    this->prev_feature_candidatesT.at(feat_id));
-        } else {
-            success = this->findPlaneCorrespondences(matches,
-                                                     this->prev_feat_idx.at(feat_id),
-                                                     idx.col(j),
-                                                     distances.col(j),
-                                                     this->prev_feature_candidatesT.at(feat_id));
-        }
+
+        success = this->findPlaneCorrespondences(matches,
+                                                 this->prev_feat_idx.at(feat_id),
+                                                 idx.col(j),
+                                                 distances.col(j),
+                                                 this->prev_feature_candidatesT.at(feat_id));
 
         /// create feature track if error is low, and points are not part of another track
         if (success) {
             // Depending on the type of geometry, need to initialize feature track with reasonable estimate
             Vec6 geometry;
-            this->createNewGeometry(this->prev_feature_candidatesT.at(feat_id), matches, residual_type, geometry);
+            this->createNewGeometry(this->prev_feature_candidatesT.at(feat_id), matches, PointToPlane, geometry);
 
             Vec3 diff =
                     (this->cur_feature_candidatesT.at(feat_id).block<3, 1>(0, j).cast<double>() -
                      geometry.block<3, 1>(3, 0));
             Vec1 error;
-            if (residual_type == PointToLine) {
-                Vec3 err = (diff - geometry.block<3, 1>(0, 0) * (diff.transpose() * geometry.block<3, 1>(0, 0)));
-                error = err.transpose() * err;
-            } else {
-                error = (diff.transpose() * geometry.block<3, 1>(0, 0));
-                error = error.transpose() * error;
-            }
+            error = (diff.transpose() * geometry.block<3, 1>(0, 0));
+            error = error.transpose() * error;
 
             // create new residual, may need to increase tolerance a bit to find new features when initializing
             if (error(0) < max_residual_val) {
@@ -930,37 +917,23 @@ void LaserOdom::createNewFeatureTrackCandidates(const Eigen::MatrixXi &idx,
 
     for (long i = 0; i < candidate_track_cnt; ++i) {
         auto &candidate_track = candidate_tracks.at(static_cast<unsigned long>(i));
-        if (residual_type == PointToLine) {
-            success = this->findLineCorrespondences(matches,
-                                                    this->cur_feat_idx.at(feat_id),
-                                                    nn_idx.col(i),
-                                                    dists.col(i),
-                                                    this->cur_feature_candidatesT.at(feat_id));
-        } else {
             success = this->findPlaneCorrespondences(matches,
                                                      this->cur_feat_idx.at(feat_id),
                                                      nn_idx.col(i),
                                                      dists.col(i),
                                                      this->cur_feature_candidatesT.at(feat_id));
-        }
+
         if (success) {
             Vec6 geometry;
-            this->createNewGeometry(this->cur_feature_candidatesT.at(feat_id), matches, residual_type, geometry);
+            this->createNewGeometry(this->cur_feature_candidatesT.at(feat_id), matches, PointToPlane, geometry);
             bool add_track = false;
             float dist_cost, dir_cost;
-            if (residual_type == PointToLine) {
-                this->calculateLineSimilarity(geometry, candidate_track.geometry, dist_cost, dir_cost);
-                if (dist_cost < this->param.max_linear_dist_threshold &&
-                    dir_cost < this->param.max_linear_ang_threshold) {
-                    add_track = true;
-                }
-            } else {
+
                 this->calculatePlaneSimilarity(geometry, candidate_track.geometry, dist_cost, dir_cost);
                 if (dist_cost < tol_multiplier * this->param.max_planar_dist_threshold &&
                     dir_cost < this->param.max_planar_ang_threshold) {
                     add_track = true;
                 }
-            }
             if (add_track) {
                 for (const auto &match : matches) {
                     candidate_track.geometry = geometry;
@@ -1051,6 +1024,7 @@ void LaserOdom::createNewLineFeatureTrackCandidates(const Eigen::MatrixXi &idx,
 
 void LaserOdom::clearVolatileTracks() {
     auto second_last_scan = this->feat_pts.size() - 2;
+//    auto T_EO = this->cur_trajectory.back().pose.transformInverse();
     for (uint32_t feat_id = 0; feat_id < this->feature_tracks.size(); ++feat_id) {
         this->binner.at(feat_id).clear();
         auto &tracks = this->feature_tracks.at(feat_id);
@@ -1063,10 +1037,10 @@ void LaserOdom::clearVolatileTracks() {
             if (track.mapping.empty()) {
                 continue;
             }
-            if (iter->scan_idx < second_last_scan) {
-                this->binner.at(feat_id).bin(track.geometry);
-                continue;
-            }
+
+//            Vec6 geometry_at_end;
+//            geometry_at_end.block<3,1>(0,0) = T_EO.storage.block<3,3>(0,0) * track.geometry.block<3,1>(0,0);
+//            geometry_at_end.block<3,1>(3,0) = T_EO.transform(track.geometry.block<3,1>(3,0));
 
             long dist = 0;
             uint32_t num_prev_points = 0;
@@ -1087,7 +1061,7 @@ void LaserOdom::clearVolatileTracks() {
             unsigned long new_size = track.mapping.size() - dist;
             track.mapping.resize(new_size);
 
-            track.length = this->uniqueElements(track.mapping);
+            track.length = uniqueElements(track.mapping);
 
             // If there are no remaining points, remove the track
             if (track.mapping.empty()) {
@@ -1096,8 +1070,6 @@ void LaserOdom::clearVolatileTracks() {
                     --i;
                 }
                 tracks.resize(tracks.size() - 1);
-            } else {
-                this->binner.at(feat_id).bin(track.geometry);
             }
         }
     }
@@ -1471,9 +1443,9 @@ bool LaserOdom::match(const TimeType &stamp) {
         if (op > 0) {
             last_transform = ref;
         }
-        this->checkTrackValidity();
+//        this->checkTrackValidity();
         this->clearVolatileTracks();
-        this->checkTrackValidity();
+//        this->checkTrackValidity();
 
         this->transformer.update(this->cur_trajectory, this->trajectory_stamps);
 
@@ -1486,9 +1458,9 @@ bool LaserOdom::match(const TimeType &stamp) {
             } else {
                 this->edgePipeline(j, initial_prev_feat_idx);
             }
-            this->checkTrackValidity();
+//            this->checkTrackValidity();
             this->mergeFeatureTracks(this->feature_tracks.at(j), j);
-            this->checkTrackValidity();
+//            this->checkTrackValidity();
         }
         if (!(this->param.only_extract_features)) {
             //            auto prev_transform = this->cur_trajectory.back().pose;
@@ -1575,12 +1547,12 @@ void LaserOdom::trackResiduals(ceres::Problem &problem, ceres::ParameterBlockOrd
         }
         problem.AddParameterBlock(track.geometry.data(), 6, this->local_params.back().get());
         param_ordering.AddElementToGroup(track.geometry.data(), 0);
-        if ((track.length < 2 && track.mapping.size() < 4)) { // || (track.mapping.front().scan_idx < (this->scan_stampsf.size()) - 2)) {
+        if ((track.length < 2 && track.mapping.size() < 4)) {
             problem.SetParameterBlockConstant(track.geometry.data());
         }
         for (uint32_t p_idx = 0; p_idx < track.mapping.size(); ++p_idx) {
             const auto &map = track.mapping.at(p_idx);
-            this->loss_functions.emplace_back(new BisquareLoss(this->param.robust_param));
+
             float pt_time =
                     this->scan_stampsf.at(map.scan_idx) + this->feat_pts.at(map.scan_idx).at(f_idx)(3, map.pt_idx);
             const double *cur_point = this->feat_pts_T.at(map.scan_idx).at(f_idx).data() + 3 * map.pt_idx;
@@ -1593,12 +1565,38 @@ void LaserOdom::trackResiduals(ceres::Problem &problem, ceres::ParameterBlockOrd
                                     w2,
                                     jacsw1,
                                     jacsw2);
+
+            Mat3 covar_p = Mat3::Identity();
+            MatX del_e_del_p, weight;
+            if (this->param.use_weighting) {
+                this->range_sensor->getEuclideanCovariance(this->feat_pts_T.at(map.scan_idx).at(f_idx).data() + 3 * map.pt_idx, covar_p);
+            }
             if (f_idx == 2) {
-                this->costs.emplace_back(new PlaneResidual<double, 12, 6, 12, 6>(cur_point, jacsw1, jacsw2, w1, w2));
+                auto residual = new PlaneResidual<double, 12, 6, 12, 6>(cur_point, jacsw1, jacsw2, w1, w2);
+                this->costs.emplace_back(residual);
+                if (this->param.use_weighting) {
+                    auto del_e_del_p = residual->getDerivativeWpT(track.geometry.block<3,1>(0,0));
+                    MatX covar_e = del_e_del_p * covar_p * del_e_del_p.transpose();
+                    weight = covar_e.inverse().sqrt();
+                    residual->setWeight(weight);
+                }
             } else {
-                this->costs.emplace_back(new LineResidual<double, 12, 6, 12, 6>(cur_point, jacsw1, jacsw2, w1, w2));
+                auto residual = new LineResidual<double, 12, 6, 12, 6>(cur_point, jacsw1, jacsw2, w1, w2);
+                this->costs.emplace_back(residual);
+                if (this->param.use_weighting) {
+                    auto del_e_del_p = residual->getDerivativeWpT(track.geometry.block<3,1>(0,0));
+                    MatX covar_e = del_e_del_p * covar_p * del_e_del_p.transpose();
+                    weight = covar_e.inverse().sqrt();
+                    residual->setWeight(weight);
+                }
             }
             uint32_t start_offset = track.mapping.at(p_idx).state_id;
+
+            double robust_param = this->param.robust_param;
+            if (this->param.use_weighting) {
+                robust_param *= weight.trace();
+            }
+            this->loss_functions.emplace_back(new BisquareLoss(robust_param));
             problem.AddResidualBlock(this->costs.back().get(),
                                      this->loss_functions.back().get(),
                                      track.geometry.data(),
@@ -1648,8 +1646,7 @@ void LaserOdom::buildResiduals(ceres::Problem &problem, ceres::ParameterBlockOrd
     // add prior factor on starting velocity
     if (this->prior_twist.sum() != 0.0) {
         //        Mat6 sqrt_info = (this->twist_covar + this->prev_delta_t * this->param.Qc).inverse().sqrt();
-        Mat6 sqrt_info = (this->twist_covar +
-                          (double) (this->covar_age + 1) * this->prev_delta_t * this->param.Qc).inverse().sqrt();
+        Mat6 sqrt_info = ((double) (this->covar_age + 1) * this->prev_delta_t * this->param.Qc).inverse().sqrt();
         this->costs.emplace_back(new ceres::NormalPrior(sqrt_info, this->prior_twist));
         problem.AddResidualBlock(this->costs.back().get(), nullptr, this->cur_trajectory.front().vel.data());
     }

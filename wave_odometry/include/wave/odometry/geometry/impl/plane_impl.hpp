@@ -13,7 +13,7 @@ bool PlaneResidual<Scalar, states...>::Evaluate(double const *const *parameters,
     // Calculate error
     Eigen::Map<const Eigen::Matrix<Scalar, 3, 1>> Pt(this->pt);
     Vec3 diff = Pt.template cast<double>() - plane.block<3, 1>(3, 0);
-    error = diff.transpose() * plane.block<3, 1>(0, 0);
+    error = this->weight * (diff.transpose() * plane.block<3, 1>(0, 0));
 
     if (std::isnan(residuals[0])) {
         throw std::runtime_error("nan in plane residual, probably due to incorrect point index");
@@ -23,20 +23,28 @@ bool PlaneResidual<Scalar, states...>::Evaluate(double const *const *parameters,
         if (jacobians[0]) {
             Eigen::Map<Eigen::Matrix<double, 1, 6, Eigen::RowMajor>> plane_jac(jacobians[0]);
 
-            plane_jac.template block<1, 3>(0, 0) = diff.transpose();
-            plane_jac.template block<1, 3>(0, 3) = -plane.block<3, 1>(0, 0).transpose();
+            plane_jac.template block<1, 3>(0, 0).noalias() = this->weight * diff.transpose();
+            plane_jac.template block<1, 3>(0, 3).noalias() = this->weight * -plane.block<3, 1>(0, 0).transpose();
         }
         Eigen::Matrix<double, 3, 6> del_ptT_T;
         del_ptT_T << 0, Pt(2), -Pt(1), 1, 0, 0, -Pt(2), 0, Pt(0), 0, 1, 0, Pt(1), -Pt(0), 0, 0, 0, 1;
 
         Eigen::Matrix<double, 1, 6> del_e_del_T;
-        del_e_del_T = plane.block<3, 1>(0, 0).transpose() * del_ptT_T;
+        del_e_del_T.noalias() = this->weight * plane.block<3, 1>(0, 0).transpose() * del_ptT_T;
         
-        assignJacobian(jacobians + 1, del_e_del_T, this->jacsw1, this->jacsw2, this->w1, this->w2, 0, states...);
+        assignJacobian<states...>(jacobians + 1, del_e_del_T, this->jacsw1, this->jacsw2, this->w1, this->w2, 0);
     }
 
     return true;
 }
+
+template<typename Scalar, int... states>
+template<typename Derived>
+MatX PlaneResidual<Scalar, states...>::getDerivativeWpT(const Eigen::MatrixBase<Derived> &normal) const {
+    EIGEN_STATIC_ASSERT_VECTOR_SPECIFIC_SIZE(Eigen::MatrixBase<Derived>, 3);
+    return normal.transpose();
+}
+
 }
 
 #endif  // WAVE_PLANE_IMPL_HPP

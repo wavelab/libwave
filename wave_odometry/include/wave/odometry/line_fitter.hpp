@@ -5,7 +5,6 @@
 #include <unsupported/Eigen/CXX11/Tensor>
 
 #include "wave/odometry/feature_track.hpp"
-#include "wave/optimization/ceres/tiny/robust_line_fit.hpp"
 
 namespace wave {
 

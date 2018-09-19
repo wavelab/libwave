@@ -64,8 +64,6 @@ void LineFitter::fitLines(const MatXf &candidate_points) {
 
     nn_search_tree->knn(candidate_points, indices, dist, knn, 0, Nabo::NNSearchF::SORT_RESULTS, this->search_radius);
 
-    ceres::TinySolver<RobustLineFit> solver;
-
     for (long j = 0; j < candidate_points.cols(); ++j) {
         VecE<FeatureTrack> prototype_lines;
         for (long i = 0; i < knn; ++i) {
@@ -124,8 +122,15 @@ void LineFitter::fitLines(const MatXf &candidate_points) {
             std::sort(prototype_lines.begin(), prototype_lines.end(), [](const FeatureTrack &lhs, const FeatureTrack &rhs) {
                 return lhs.mapping.size() < rhs.mapping.size();
             });
-            if (prototype_lines.back().mapping.size() >= static_cast<size_t>(this->min_points)) {
-                this->tracks.emplace_back(prototype_lines.back());
+            auto &ref = prototype_lines.back();
+//            Vec3 xy_dir = ref.geometry.block<3,1>(3,0);
+//            xy_dir(2) = 0;
+//            xy_dir.normalize();
+//            if ((xy_dir.transpose() * ref.geometry.block<3,1>(0,0))(0) > 0.9) {
+//                continue;
+//            }
+            if (ref.mapping.size() >= static_cast<size_t>(this->min_points)) {
+                this->tracks.emplace_back(ref);
             }
         }
     }

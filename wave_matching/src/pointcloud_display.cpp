@@ -104,14 +104,15 @@ void PointCloudDisplay::addLine(const pcl::PointXYZ &pt1,
                                 int id1,
                                 int id2,
                                 bool reset_camera,
-                                int viewport) {
+                                int viewport,
+                                uint8_t colour) {
     this->update_mutex.lock();
-    this->lines.emplace(Line{pt1, pt2, id1, id2, viewport, reset_camera});
+    this->lines.emplace(Line{pt1, pt2, id1, id2, viewport, colour, reset_camera});
     this->update_mutex.unlock();
 }
 
 void PointCloudDisplay::addSquare(const pcl::PointXYZ &pt0, const pcl::PointXYZ &dir, float l1dist, int id,
-                                  bool reset_camera, int viewport) {
+                                  bool reset_camera, int viewport, uint8_t colour) {
     pcl::PointCloud<pcl::PointXYZ>::VectorType contour;
     float offset = 0.5f * l1dist;
 
@@ -149,7 +150,7 @@ void PointCloudDisplay::addSquare(const pcl::PointXYZ &pt0, const pcl::PointXYZ 
     pcl::PlanarPolygon<pcl::PointXYZ> square_poly(contour, coefficients);
 
     this->update_mutex.lock();
-    this->squares.emplace(Square{square_poly, id, viewport, reset_camera});
+    this->squares.emplace(Square{square_poly, id, viewport, colour, reset_camera});
     this->update_mutex.unlock();
 }
 
@@ -215,9 +216,6 @@ void PointCloudDisplay::updateInternal() {
         this->cloudsi.pop();
     }
 
-    double hi = 200;
-    double low = 0;
-
     while (!this->lines.empty()) {
         const auto &line = this->lines.front();
         // Doesn't seem to be a way to update lines
@@ -228,7 +226,9 @@ void PointCloudDisplay::updateInternal() {
         }
         if (line.viewport > this->viewport_cnt_x * this->viewport_cnt_y)
             throw std::runtime_error("Viewport index too big");
-        this->viewer->addLine(line.pt1, line.pt2, low, hi, low, lineid, line.viewport);
+        double red = (double)(line.colour) / 255.0;
+        double blue = 1.0 - red;
+        this->viewer->addLine(line.pt1, line.pt2, red, 0, blue, lineid, line.viewport);
         if (line.reset_camera) {
             this->viewer->resetCamera();
         }
@@ -245,8 +245,9 @@ void PointCloudDisplay::updateInternal() {
         }
         if (square.viewport > this->viewport_cnt_x * this->viewport_cnt_y)
             throw std::runtime_error("Viewport index too big");
-        //todo decide how to use rgb
-        this->viewer->addPolygon(square.planar_poly, 1.0, 1.0, 1.0, squareid, square.viewport);
+        double red = (double)(square.colour) / 255.0;
+        double blue = 1.0 - red;
+        this->viewer->addPolygon(square.planar_poly, red, 0.0, blue, squareid, square.viewport);
         if (square.reset_camera) {
             this->viewer->resetCamera();
         }

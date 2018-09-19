@@ -76,19 +76,35 @@ bool LineResidual<Scalar, states...>::Evaluate(double const *const *parameters, 
             // jacobian wrt pt on line
             del_e_del_line.block<3, 3>(0, 3).noalias() = -del_e_del_diff;
 
-            del_re_del_line.noalias() = del_re_del_e * del_e_del_line;
+            del_re_del_line.noalias() = this->weight * del_re_del_e * del_e_del_line;
         }
         Eigen::Matrix<double, 3, 6> del_ptT_T;
         del_ptT_T << 0, Pt(2), -Pt(1), 1, 0, 0, -Pt(2), 0, Pt(0), 0, 1, 0, Pt(1), -Pt(0), 0, 0, 0, 1;
 
-        Eigen::Matrix<double, 2, 6> del_re_del_T = del_re_del_e * del_e_del_diff * del_ptT_T;
+        Eigen::Matrix<double, 2, 6> del_re_del_T = this->weight * del_re_del_e * del_e_del_diff * del_ptT_T;
 
-        assignJacobian(jacobians + 1, del_re_del_T, this->jacsw1, this->jacsw2, this->w1, this->w2, 0, states...);
+        assignJacobian<states...>(jacobians + 1, del_re_del_T, this->jacsw1, this->jacsw2, this->w1, this->w2, 0);
     } else {
         getRotatedErrorAndJacobian(error3, normal, error, nullptr);
     }
+    error = this->weight * error;
     return true;
 }
+
+template<typename Scalar, int... states>
+template<typename Derived>
+MatX LineResidual<Scalar, states...>::getDerivativeWpT(const Eigen::MatrixBase<Derived> &normal) const {
+    EIGEN_STATIC_ASSERT_VECTOR_SPECIFIC_SIZE(Eigen::MatrixBase<Derived>, 3)
+    Eigen::Matrix<double, 3, 3> del_e_del_diff;
+    del_e_del_diff.noalias() = Mat3::Identity() - normal * normal.transpose();
+    Vec3 error = Vec3::Zero();
+    Vec2 re;
+    Eigen::Matrix<double, 2, 3> del_re_del_e;
+    getRotatedErrorAndJacobian(error, normal, re, &del_re_del_e);
+
+    return del_re_del_e * del_e_del_diff;
+}
+
 }
 
 #endif  // WAVE_LINE_IMPL_HPP

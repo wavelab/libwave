@@ -123,6 +123,7 @@ void FeatureExtractor::preFilter(const Tensorf &scan, const SignalVec &signals, 
         // Assume all points are valid until proven otherwise
         this->valid_pts.at(i).setConstant(true);
 
+        // This first chunk removes points next to a shadow
         Eigen::Tensor<float, 1> range = signals.at(i).at(Signal::RANGE).slice(ar1{0}, ar1{true_size.at(i)});
         Eigen::Tensor<float, 2> cur_scan = scan.at(i).slice(ar2{0,0}, ar2{3,true_size.at(i)});
 
@@ -147,33 +148,6 @@ void FeatureExtractor::preFilter(const Tensorf &scan, const SignalVec &signals, 
         branch_1_cond = oc_tol2_cond && ang_diff_cond && (rng_diff > 0.0f);
         branch_2_cond = oc_tol2_cond && ang_diff_cond && (rng_diff < 0.0f);
 
-        // This section excludes any points whose nearby surface is
-        // near to parallel to the laser beam
-        Eigen::array<ptrdiff_t, 2> dims2({0, 1});
-        Eigen::Tensor<float, 2> ex_diff_K(1, 2);
-        ex_diff_K.setValues({{1.f, -1.f}});
-
-        Eigen::Tensor<float, 1> delforback(true_size.at(i) - 1);
-
-        delforback =
-                cur_scan.convolve(ex_diff_K, dims2).eval().square().sum(Earr<1>({0}));
-
-        Eigen::Tensor<float, 1> sqr_rng(true_size.at(i) - 2);
-        sqr_rng = range.slice(ar1({1}), ar1({true_size.at(i) - 2})).square();
-
-        Eigen::Tensor<bool, 1> low_side_cond(true_size.at(i) - 2);
-        low_side_cond = delforback.slice(ar1({0}), ar1({true_size.at(i) - 2})) > this->param.parallel_tol * sqr_rng;
-        Eigen::Tensor<bool, 1> high_side_cond(true_size.at(i) - 2);
-        high_side_cond = delforback.slice(ar1({1}), ar1({true_size.at(i) - 2})) > this->param.parallel_tol * sqr_rng;
-
-        Eigen::Tensor<bool, 1> branch_3_cond(true_size.at(i) - 2);
-        branch_3_cond = low_side_cond && high_side_cond;
-
-        Eigen::Tensor<bool, 1> false_tensor(true_size.at(i) - 2);
-        false_tensor.setConstant(false);
-        this->valid_pts.at(i).slice(ar1({1}), ar1({true_size.at(i) - 2})) =
-          branch_3_cond.select(false_tensor, this->valid_pts.at(i).slice(ar1({1}), ar1({true_size.at(i) - 2})));
-
         for (int j = 1; j + 1 < true_size.at(i); j++) {
             if (branch_1_cond(j)) {
                 int start;
@@ -181,22 +155,54 @@ void FeatureExtractor::preFilter(const Tensorf &scan, const SignalVec &signals, 
                                                                : start = 0;
 
                 ar1 starts({start});
-                ar1 extents({j - start});
+                ar1 extents({j - start + 1});
 
                 this->valid_pts.at(i).slice(starts, extents).setConstant(false);
             }
             if (branch_2_cond(j)) {
                 int end;
-                (j + this->param.occlusion_filter_length - 1) >= true_size.at(i)
+                (j + 1 + this->param.occlusion_filter_length) >= true_size.at(i)
                   ? end = true_size.at(i) - 1
-                  : end = j + this->param.occlusion_filter_length - 1;
+                  : end = j + 1 + this->param.occlusion_filter_length;
 
-                ar1 starts({j - 1});
-                ar1 extents({end - j});
+                int start = end - this->param.occlusion_filter_length;
+                if (start < 0) {
+                    start = 0;
+                }
+                ar1 starts({start});
+                ar1 extents({end - start});
 
                 this->valid_pts.at(i).slice(starts, extents).setConstant(false);
             }
         }
+
+//        // This section excludes any points whose nearby surface is
+//        // near to parallel to the laser beam
+//        Eigen::array<ptrdiff_t, 2> dims2({0, 1});
+//        Eigen::Tensor<float, 2> ex_diff_K(1, 2);
+//        ex_diff_K.setValues({{1.f, -1.f}});
+//
+//        Eigen::Tensor<float, 1> delforback(true_size.at(i) - 1);
+//
+//        // This is the squared distance from each point in the scan to its neighbour
+//        delforback =
+//                cur_scan.convolve(ex_diff_K, dims2).eval().square().sum(Earr<1>({0}));
+//
+//        Eigen::Tensor<float, 1> sqr_rng(true_size.at(i) - 2);
+//        sqr_rng = range.slice(ar1({1}), ar1({true_size.at(i) - 2})).square();
+//
+//        Eigen::Tensor<bool, 1> low_side_cond(true_size.at(i) - 2);
+//        low_side_cond = delforback.slice(ar1({0}), ar1({true_size.at(i) - 2})) > this->param.parallel_tol * sqr_rng;
+//        Eigen::Tensor<bool, 1> high_side_cond(true_size.at(i) - 2);
+//        high_side_cond = delforback.slice(ar1({1}), ar1({true_size.at(i) - 2})) > this->param.parallel_tol * sqr_rng;
+//
+//        Eigen::Tensor<bool, 1> branch_3_cond(true_size.at(i) - 2);
+//        branch_3_cond = low_side_cond && high_side_cond;
+//
+//        Eigen::Tensor<bool, 1> false_tensor(true_size.at(i) - 2);
+//        false_tensor.setConstant(false);
+//        this->valid_pts.at(i).slice(ar1({1}), ar1({true_size.at(i) - 2})) =
+//                branch_3_cond.select(false_tensor, this->valid_pts.at(i).slice(ar1({1}), ar1({true_size.at(i) - 2})));
     }
 }
 

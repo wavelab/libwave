@@ -99,15 +99,15 @@ void OdometryCallback::evaluateJacobians() {
             Ad_twist = this->Pose_diff.at(gap_index).adjointRep();
 
             /// jacobian for first pose
-            this->jacobians->at(gap_index).at(0).at(t_idx) =
+            this->jacobians->at(gap_index).at(0).at(t_idx).noalias() =
               Ad_inc_twist - interp(1) * J_inc_twist * this->J_logmaps.at(gap_index) * Ad_twist;
             /// jacobian for second pose
-            this->jacobians->at(gap_index).at(2).at(t_idx) = interp(1) * J_inc_twist * this->J_logmaps.at(gap_index);
+            this->jacobians->at(gap_index).at(2).at(t_idx).noalias() = interp(1) * J_inc_twist * this->J_logmaps.at(gap_index);
             /// jacobian for first twist
 
-            this->jacobians->at(gap_index).at(1).at(t_idx) = interp(0) * J_inc_twist;
+            this->jacobians->at(gap_index).at(1).at(t_idx).noalias() = interp(0) * J_inc_twist;
             /// jacobian for second twist
-            this->jacobians->at(gap_index).at(3).at(t_idx) = interp(2) * J_inc_twist * this->J_logmaps.at(gap_index);
+            this->jacobians->at(gap_index).at(3).at(t_idx).noalias() = interp(2) * J_inc_twist * this->J_logmaps.at(gap_index);
         }
     }
 }

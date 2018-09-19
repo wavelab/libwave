@@ -169,6 +169,76 @@ TEST_F(FeatureExtractorTests, ProcessScan) {
     EXPECT_NO_THROW(extractor.getFeatures(this->scan, this->signals, this->range, this->indices));
 }
 
+TEST_F(FeatureExtractorTests, VisualizePrefiltering) {
+    this->scan.resize(32);
+    this->signals.resize(32);
+    this->range.resize(32);
+    std::fill(this->range.begin(), this->range.end(), 0);
+    for (uint32_t i = 0; i < 32; i++) {
+        this->scan.at(i) = Eigen::Tensor<float, 2>(5, 2200);
+        this->signals.at(i).emplace(Signal::RANGE, Eigen::Tensor<float, 1>(2200));
+        this->signals.at(i).emplace(Signal::INTENSITY, Eigen::Tensor<float, 1>(2200));
+    }
+
+    this->indices.resize(this->params.N_FEATURES);
+    for (uint32_t i = 0; i < this->params.N_FEATURES; i++) {
+        this->indices.at(i).resize(32);
+    }
+
+    pcl::PointCloud<PointXYZIR> ref;
+    boost::filesystem::path p("/home/ben/rosbags/last_ditch_bags/pcd");
+    std::vector<boost::filesystem::path> v;
+    std::copy(boost::filesystem::directory_iterator(p), boost::filesystem::directory_iterator(), std::back_inserter(v));
+    std::sort(v.begin(), v.end());
+    pcl::io::loadPCDFile(v.front().string(), ref);
+
+    for (auto pt : ref) {
+        float ang = (float) (std::atan2(pt.y, pt.x) * -1.0);
+        // need to fraction of complete rotation
+        ang < 0 ? ang = ang + 2.0 * M_PI : ang;
+        ang /= 2.0 * M_PI;
+
+        this->scan.at(pt.ring)(0, this->range.at(pt.ring)) = pt.x;
+        this->scan.at(pt.ring)(1, this->range.at(pt.ring)) = pt.y;
+        this->scan.at(pt.ring)(2, this->range.at(pt.ring)) = pt.z;
+        this->scan.at(pt.ring)(3, this->range.at(pt.ring)) = ang;
+        this->scan.at(pt.ring)(4, this->range.at(pt.ring)) = 0;
+
+        this->signals.at(pt.ring).at(Signal::RANGE)(this->range.at(pt.ring)) = sqrtf(pt.x * pt.x + pt.y * pt.y + pt.z * pt.z);
+        this->signals.at(pt.ring).at(Signal::INTENSITY)(this->range.at(pt.ring)) = pt.intensity;
+        this->range.at(pt.ring) += 1;
+    }
+
+    extractor.preFilter(this->scan, this->signals, this->range);
+    pcl::PointCloud<pcl::PointXYZ> full_scan;
+    pcl::PointCloud<pcl::PointXYZI> filtered_scan;
+
+    for (uint32_t ring_id = 0; ring_id < extractor.valid_pts.size(); ++ring_id) {
+        for (uint32_t pt_idx = 0; pt_idx < range.at(ring_id); ++pt_idx) {
+            pcl::PointXYZ cur_point;
+            pcl::PointXYZI cur_point_i;
+            cur_point_i.x = cur_point.x = this->scan.at(ring_id)(0, pt_idx);
+            cur_point_i.y = cur_point.y = this->scan.at(ring_id)(1, pt_idx);
+            cur_point_i.z = cur_point.z = this->scan.at(ring_id)(2, pt_idx);
+            full_scan.push_back(cur_point);
+            if (extractor.valid_pts.at(ring_id)(pt_idx)) {
+                cur_point_i.intensity = 1;
+            } else {
+                cur_point_i.intensity = 0;
+            }
+            filtered_scan.push_back(cur_point_i);
+        }
+    }
+
+    PointCloudDisplay display("filtered_points", 0.2, 2, 1);
+
+    display.addPointcloud(full_scan.makeShared(), 0, false, 1);
+    display.addPointcloud(filtered_scan.makeShared(), 1, false, 2);
+    display.startSpin();
+    cin.get();
+    display.stopSpin();
+}
+
 TEST_F(FeatureExtractorTests, VisualizeFeatures) {
     this->scan.resize(32);
     this->signals.resize(32);

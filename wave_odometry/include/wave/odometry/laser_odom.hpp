@@ -147,7 +147,7 @@ class LaserOdom {
     // Shared memory
     std::mutex output_mutex;
     pcl::PointCloud<pcl::PointXYZI> undistorted_cld;
-    VecE<pcl::PointCloud<pcl::PointXYZ>> undis_features;
+    Vec<VecE<pcl::PointCloud<pcl::PointXYZ>>> undis_features;
     Vec<VecE<FeatureTrack>> undis_tracks;
     VecE<PoseVelStamped> undistort_trajectory;
     VecE<pcl::PointCloud<pcl::PointXYZ>> undis_candidates_cur, undis_candidates_prev;
