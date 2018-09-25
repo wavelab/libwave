@@ -97,13 +97,12 @@ void setup(wave::FeatureExtractorParams &params,
         float ang = (float) (std::atan2(pt.y, pt.x) * -1.0);
         // need to fraction of complete rotation
         ang < 0 ? ang = ang + 2.0 * M_PI : ang;
-        ang /= 20.0 * M_PI;
 
         scan.at(pt.ring)(0, range.at(pt.ring)) = pt.x;
         scan.at(pt.ring)(1, range.at(pt.ring)) = pt.y;
         scan.at(pt.ring)(2, range.at(pt.ring)) = pt.z;
-        scan.at(pt.ring)(3, range.at(pt.ring)) = ang;
-        scan.at(pt.ring)(4, range.at(pt.ring)) = 0;
+        scan.at(pt.ring)(3, range.at(pt.ring)) = ang / (20 * M_PI);
+        scan.at(pt.ring)(4, range.at(pt.ring)) = ang;
 
         signals.at(pt.ring).at(wave::Signal::RANGE)(range.at(pt.ring)) = sqrtf(pt.x * pt.x + pt.y * pt.y + pt.z * pt.z);
         signals.at(pt.ring).at(wave::Signal::INTENSITY)(range.at(pt.ring)) = pt.intensity;

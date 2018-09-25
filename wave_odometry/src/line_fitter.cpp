@@ -33,19 +33,19 @@ bool compareMap(const wave::FeatureTrack::Mapping &lhs, const wave::FeatureTrack
 }
 
 void mergeTracks(wave::FeatureTrack &source, wave::FeatureTrack &sink) {
-    std::sort(source.mapping.begin(), source.mapping.end(), compareMap);
-    std::sort(sink.mapping.begin(), sink.mapping.end(), compareMap);
-    for (uint32_t i = 0; i < source.mapping.size(); ++i) {
-        auto iter = std::lower_bound(sink.mapping.begin(), sink.mapping.end(), source.mapping.at(i), compareMap);
-        if (iter == sink.mapping.end()) {
-            sink.mapping.emplace_back(source.mapping.at(i));
-        } else if (iter->pt_idx == source.mapping.at(i).pt_idx) {
+    std::sort(source.static_mapping.begin(), source.static_mapping.end(), compareMap);
+    std::sort(sink.static_mapping.begin(), sink.static_mapping.end(), compareMap);
+    for (uint32_t i = 0; i < source.static_mapping.size(); ++i) {
+        auto iter = std::lower_bound(sink.static_mapping.begin(), sink.static_mapping.end(), source.static_mapping.at(i), compareMap);
+        if (iter == sink.static_mapping.end()) {
+            sink.static_mapping.emplace_back(source.static_mapping.at(i));
+        } else if (iter->pt_idx == source.static_mapping.at(i).pt_idx) {
             continue;
         } else {
-            sink.mapping.insert(iter, source.mapping.at(i));
+            sink.static_mapping.insert(iter, source.static_mapping.at(i));
         }
     }
-    source.mapping.clear();
+    source.static_mapping.clear();
 }
 
 }
@@ -98,9 +98,9 @@ void LineFitter::fitLines(const MatXf &candidate_points) {
                     new_track.geometry.block<3, 1>(3, 0) = 0.5 * (candidate_points.block<3, 1>(0, indices(i, j)) +
                                                                   candidate_points.block<3, 1>(0, indices(k,
                                                                                                           j))).cast<double>();
-                    new_track.mapping.emplace_back(j, 0);
-                    new_track.mapping.emplace_back(indices(i, j), 0);
-                    new_track.mapping.emplace_back(indices(k, j), 0);
+                    new_track.static_mapping.emplace_back(j, 0);
+                    new_track.static_mapping.emplace_back(indices(i, j), 0);
+                    new_track.static_mapping.emplace_back(indices(k, j), 0);
                     prototype_lines.emplace_back(new_track);
                 }
             }
@@ -120,7 +120,7 @@ void LineFitter::fitLines(const MatXf &candidate_points) {
                 }
             }
             std::sort(prototype_lines.begin(), prototype_lines.end(), [](const FeatureTrack &lhs, const FeatureTrack &rhs) {
-                return lhs.mapping.size() < rhs.mapping.size();
+                return lhs.static_mapping.size() < rhs.static_mapping.size();
             });
             auto &ref = prototype_lines.back();
 //            Vec3 xy_dir = ref.geometry.block<3,1>(3,0);
@@ -129,7 +129,7 @@ void LineFitter::fitLines(const MatXf &candidate_points) {
 //            if ((xy_dir.transpose() * ref.geometry.block<3,1>(0,0))(0) > 0.9) {
 //                continue;
 //            }
-            if (ref.mapping.size() >= static_cast<size_t>(this->min_points)) {
+            if (ref.static_mapping.size() >= static_cast<size_t>(this->min_points)) {
                 this->tracks.emplace_back(ref);
             }
         }

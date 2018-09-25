@@ -12,11 +12,11 @@ void RangeSensor::getEuclideanCovariance(const double *point,
     double xy = std::sqrt(point[0]*point[0] + point[1]*point[1]);
     double rng = std::sqrt(xy*xy + point[2]*point[2]);
     double az = std::atan2(point[1], point[0]);
+    double elev = std::atan2(point[2], xy);
     // cos and sin of azimuth
     double ca = std::cos(az);
     double sa = std::sin(az);
     // cos and sin of elevation
-    double elev = std::atan2(point[2], xy);
     double ce = std::cos(elev);
     double se = std::sin(elev);
 

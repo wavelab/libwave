@@ -62,7 +62,7 @@ void updateVisualizer(const wave::LaserOdom *odom,
 
         float int_id = 0;
 
-        for (uint32_t i = 0; i < 5; ++i) {
+        for (uint32_t i = 0; i < odom->undis_tracks.size(); ++i) {
             int viewport_id = i + 1;
             int_id = 0;
 
@@ -77,11 +77,11 @@ void updateVisualizer(const wave::LaserOdom *odom,
                 } catch (...) {
                     throw std::runtime_error("track length longer than expected");
                 }
-                if (track.mapping.empty()) {
+                if (track.static_mapping.empty() && track.fluid_mapping.empty()) {
                     continue;
                 }
                 auto red_colour = static_cast<uint8_t>(dis_mult * (double) (track.length));
-                if (i == 2) {
+                if (i == 1) {
                     pcl::PointXYZ pt1, pt2;
                     Eigen::Map<wave::Vec3f> m1(pt1.data), m2(pt2.data);
                     m1 = track.geometry.block<3, 1>(3, 0).cast<float>();
@@ -103,7 +103,16 @@ void updateVisualizer(const wave::LaserOdom *odom,
                     id += 2;
                 }
 
-                for (const auto &map : track.mapping) {
+                for (const auto &map : track.static_mapping) {
+                    pcl::PointXYZI new_pt;
+                    new_pt.x = odom->undis_features.at(map.scan_idx).at(i).at(map.pt_idx).x;
+                    new_pt.y = odom->undis_features.at(map.scan_idx).at(i).at(map.pt_idx).y;
+                    new_pt.z = odom->undis_features.at(map.scan_idx).at(i).at(map.pt_idx).z;
+
+                    new_pt.intensity = map.scan_idx;
+                    display_cld->push_back(new_pt);
+                }
+                for (const auto &map : track.fluid_mapping) {
                     pcl::PointXYZI new_pt;
                     new_pt.x = odom->undis_features.at(map.scan_idx).at(i).at(map.pt_idx).x;
                     new_pt.y = odom->undis_features.at(map.scan_idx).at(i).at(map.pt_idx).y;

@@ -4,8 +4,8 @@ Qc:
   cols: 6
   data: [10, 0, 0, 0, 0, 0,
          0, 100, 0, 0, 0, 0,
-         0, 0, 100, 0, 0, 0,
-         0, 0, 0, 100, 0, 0,
+         0, 0, 1000, 0, 0, 0,
+         0, 0, 0, 500, 0, 0,
          0, 0, 0, 0, 100, 0,
          0, 0, 0, 0, 0, 100]
 
@@ -22,15 +22,16 @@ Prior_twist:
 
 # How many states per revolution to optimize over, there must be at minimum two.
 num_trajectory_states: 2
-n_window: 5 # Number of scans to optimize over. Must be at least 2
-opt_iters: 4  # how many iterations of the matcher to run
+n_window: 10 # Number of scans to optimize over. Must be at least 2
+opt_iters: 2  # how many iterations of the matcher to run
 max_inner_iters: 100 # limit on iterations of ceres at each matcher iteration
 diff_tol: 1e-4 # norm of solution difference for stopping criteria
 solver_threads: 4 # number of threads the solver should use
-robust_param: 0.13 # Parameter used in tukey loss function
-max_correspondence_dist: 5  #  correspondences greater than this are discarded
-max_planar_residual_val: 0.3   # Planar residuals with an initial error greater than this are not created
-max_linear_residual_val: 0.13 # for linear residuals
+robust_param: 0.12 # Parameter used in tukey loss function
+#robust_param: 0.2 # Parameter used in tukey loss function
+max_correspondence_dist: 4  #  correspondences greater than this are discarded
+max_planar_residual_val: 1.0   # Planar residuals with an initial error greater than this are not created
+max_linear_residual_val: 0.2 # for linear residuals
 min_residuals: 30          #  Problem will be reset if the number of residuals is less than this
 
 #  Sensor parametersjectory
@@ -44,8 +45,8 @@ TTL: 1             #  Maximum life of feature in local map with no correspondenc
 iso_var: 0.005       #  Variance to use if weighing is set.
 
 #Parameters controlling how planar feature tracks are merged
-max_planar_dist_threshold: 0.1
-max_planar_ang_threshold: 0.05  # 1 - cos(theta)
+max_planar_dist_threshold: 0.05
+max_planar_ang_threshold: 0.1  # 1 - cos(theta)
 #Parameters controlling how line feature tracks are merged
 max_linear_dist_threshold: 0.1
 max_linear_ang_threshold: 0.02
@@ -56,8 +57,8 @@ min_new_points: 3
 
 #  Setting flags
 only_extract_features: false   #  If set, no transforms are calculated
-use_weighting: true           #  If set, pre-whiten residuals
-print_opt_sum: false              #  If true, output ceres summaries to console
+use_weighting: false           #  If set, pre-whiten residuals
+print_opt_sum: true              #  If true, output ceres summaries to console
 check_gradients: false         #  If set, use Ceres gradient checker on each jacobians
 limit_rng_var: false
 limit_int_var: false

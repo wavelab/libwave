@@ -8,6 +8,12 @@
 
 namespace wave {
 
+template <int size>
+using Earr = Eigen::array<long int, size>;
+using ar1 = Earr<1>;
+using ar2 = Earr<2>;
+using ar3 = Earr<3>;
+
 enum AssociationStatus { CORRESPONDED, UNCORRESPONDED };
 enum ResidualType { PointToLine, PointToPlane };
 enum SelectionPolicy { HIGH_POS, HIGH_NEG, NEAR_ZERO };

@@ -46,7 +46,7 @@ class LineResidual : public ceres::SizedCostFunction<2, 6, states...> {
     const Scalar *pt;
     const VecE<const MatX*> jacsw1, jacsw2;
 
-    Mat2 weight;
+    Mat2 weight = Mat2::Identity();
 
     const Scalar w1, w2;
 };

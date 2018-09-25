@@ -125,23 +125,24 @@ void FeatureExtractor::preFilter(const Tensorf &scan, const SignalVec &signals, 
 
         // This first chunk removes points next to a shadow
         Eigen::Tensor<float, 1> range = signals.at(i).at(Signal::RANGE).slice(ar1{0}, ar1{true_size.at(i)});
+        Eigen::Tensor<float, 1> azimuths = scan.at(i).slice(ar2{4,0}, ar2{1,true_size.at(i)}).chip(0,0);
         Eigen::Tensor<float, 2> cur_scan = scan.at(i).slice(ar2{0,0}, ar2{3,true_size.at(i)});
 
         Eigen::Tensor<float, 1> diff_kernel(2);
         diff_kernel.setValues({1.f, -1.f});
-
         Eigen::Tensor<float, 1> rng_diff(true_size.at(i) - 1);
         rng_diff = range.convolve(diff_kernel, ar1({0}));
-
         Eigen::Tensor<bool, 1> oc_tol2_cond = rng_diff.abs() > this->param.occlusion_tol_2;
+
         Eigen::Tensor<bool, 1> ang_diff_cond(true_size.at(i) - 1);
+        Eigen::Tensor<float, 1> delta_theta;
+        delta_theta = azimuths.slice(ar1{0}, ar1{true_size.at(i) - 1}) - azimuths.slice(ar1{1}, ar1{true_size.at(i) - 1});
 
-        Eigen::Tensor<float, 2> normalized(3, true_size.at(i));
-        Eigen::array<ptrdiff_t, 2> new_dims({1, range.dimension(0)});
-        normalized = cur_scan / range.reshape(new_dims).broadcast(ar2{3, 1});
-        Eigen::Tensor<float, 1> costheta = (normalized.slice(ar2{0,0}, ar2{3, true_size.at(i) - 1}) * normalized.slice(ar2{0,1}, ar2{3, true_size.at(i) - 1})).sum(ar1{0});
+        Eigen::Tensor<bool, 1> too_high = delta_theta > (float) M_PI;
+        Eigen::Tensor<bool, 1> too_low = delta_theta < (float) -M_PI;
+        delta_theta = too_high.select(delta_theta - (float)(2*M_PI), too_low.select(delta_theta + (float)(2*M_PI), delta_theta));
 
-        ang_diff_cond = costheta > this->param.occlusion_tol;
+        ang_diff_cond = delta_theta > this->param.occlusion_tol;
 
         Eigen::Tensor<bool, 1> branch_1_cond(true_size.at(i) - 1);
         Eigen::Tensor<bool, 1> branch_2_cond(true_size.at(i) - 1);
@@ -223,7 +224,7 @@ Eigen::Tensor<bool, 1> high_neg_score(const Eigen::Tensor<float, 1> &score, floa
 
 void FeatureExtractor::buildFilteredScore(const Vec<int> &range) {
 //#pragma omp parallel for
-    for (int k = this->param.N_FEATURES - 1; k >= 0; k--) {
+    for (int k = this->param.feature_definitions.size() - 1; k >= 0; k--) {
         auto &def = this->param.feature_definitions.at(k);
         // get primary score index by kernel type
         std::vector<std::function<Eigen::Tensor<bool, 1>(const Eigen::Tensor<float, 1> &, double)>> compfuns;
@@ -288,7 +289,7 @@ void FeatureExtractor::flagNearbyPoints(const uint32_t p_idx, const float pt_ran
 
 void FeatureExtractor::sortAndBin(const Tensorf &scan, const SignalVec &signals, TensorIdx &feature_indices) {
 //    #pragma omp parallel for
-    for (uint32_t i = 0; i < this->param.N_FEATURES; i++) {
+    for (uint32_t i = 0; i < this->param.feature_definitions.size(); i++) {
         for (unlong j = 0; j < this->n_ring; j++) {
             auto &def = this->param.feature_definitions.at(i);
             auto &pol = def.criteria.at(0).sel_pol;
@@ -323,8 +324,7 @@ void FeatureExtractor::sortAndBin(const Tensorf &scan, const SignalVec &signals,
             const auto &range_signal = signals.at(j).at(Signal::RANGE);
             for (const auto &score : filt_scores) {
                 // Using data conversion to floor result
-                // todo remove magic 0.1
-                auto bin = (unlong)((scan.at(j)(3, score.first) / 0.1) * this->param.angular_bins);
+                auto bin = (unlong)((scan.at(j)(4, score.first) / (2*M_PI)) * this->param.angular_bins);
                 if (cnt_in_bins.at(bin) >= max_bin) {
                     continue;
                 }

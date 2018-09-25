@@ -71,12 +71,9 @@ void loadFeatureParams(const std::string &path, const std::string &filename, wav
 }
 
 void setupFeatureParameters(wave::FeatureExtractorParams &param) {
-    std::vector<wave::Criteria> edge_high, edge_low, flat, edge_int_high, edge_int_low;
+    std::vector<wave::Criteria> edge_high, flat, edge_int_high, edge_int_low;
     edge_high.emplace_back(
             wave::Criteria{wave::Signal::RANGE, wave::Kernel::LOAM, wave::SelectionPolicy::HIGH_POS, &(param.edge_tol)});
-
-    edge_low.emplace_back(
-            wave::Criteria{wave::Signal::RANGE, wave::Kernel::LOAM, wave::SelectionPolicy::HIGH_NEG, &(param.edge_tol)});
 
     flat.emplace_back(
             wave::Criteria{wave::Signal::RANGE, wave::Kernel::LOAM, wave::SelectionPolicy::NEAR_ZERO, &(param.flat_tol)});
@@ -99,7 +96,6 @@ void setupFeatureParameters(wave::FeatureExtractorParams &param) {
 
     param.feature_definitions.clear();
     param.feature_definitions.emplace_back(wave::FeatureDefinition{edge_high, &(param.n_edge)});
-    param.feature_definitions.emplace_back(wave::FeatureDefinition{edge_low, &(param.n_edge)});
     param.feature_definitions.emplace_back(wave::FeatureDefinition{flat, &(param.n_flat)});
     param.feature_definitions.emplace_back(wave::FeatureDefinition{edge_int_high, &(param.n_int_edge)});
     param.feature_definitions.emplace_back(wave::FeatureDefinition{edge_int_low, &(param.n_int_edge)});

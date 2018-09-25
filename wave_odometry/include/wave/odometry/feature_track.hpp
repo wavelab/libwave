@@ -15,12 +15,16 @@ struct FeatureTrack {
         Mapping(uint32_t pt_idx, uint32_t scan_idx) : pt_idx(pt_idx), scan_idx(scan_idx) {}
         uint32_t pt_idx, scan_idx, state_id;
     };
-    std::vector<Mapping> mapping;
+    /// Book-keeping for feature points that have static data association
+    std::vector<Mapping> static_mapping;
+    /// Book-keeping for feature points whose data association may change between iteration.
+    std::vector<Mapping> fluid_mapping;
 
     // line/plane definition
     Vec6 geometry;
 
     uint32_t length;
+    uint32_t age = 0;
 };
 }
 

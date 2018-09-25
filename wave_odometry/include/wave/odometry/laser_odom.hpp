@@ -90,12 +90,13 @@ struct LaserOdomParams {
     int min_features = 300;                // How many features are required
     float robust_param = 0.2;              // Hyper-parameter for bisquare (Tukey) loss function
     float max_correspondence_dist = 1;     // correspondences greater than this are discarded
-    double max_planar_residual_val = 0.1;  // Residuals with an initial error greater than this are not used.
-    double max_linear_residual_val = 0.1;  // Residuals with an initial error greater than this are not used.
+    double max_planar_residual_val = 0.1;  // Residual error greater than this are not created when extending tracks
+    double max_linear_residual_val = 0.1;  // Residual error greater than this are not created when extending tracks
+    double max_init_planar_residual = 0.3;
+    double max_init_linear_residual = 0.3;
     int min_residuals = 30;                // Problem will be reset if the number of residuals is less than this
-
+    int knn = 4;                           // number of nearest neighbours to find
     // Sensor parameters
-    // todo get rid of this (should be part of the feature extractor params, not here)
     unlong n_ring = 32;  // number of laser-detector pairs
 
     RangeSensorParams sensor_params;
@@ -108,10 +109,15 @@ struct LaserOdomParams {
     /// parameters for feature track merging
     float max_planar_dist_threshold = 0.2f;
     float max_planar_ang_threshold = 0.03f;
-
     float max_linear_dist_threshold = 0.1;
     float max_linear_ang_threshold = 0.025;
     float ang_scaling_param = 10;
+
+    /// parameters for feature initialization
+    float init_planar_dist_threshold = 0.5f;
+    float init_planar_ang_threshold = 0.03f;
+    float init_linear_dist_threshold = 0.5f;
+    float init_linear_ang_threshold = 0.03f;
 
     IcosahedronBinnerParams binner_params;
 
@@ -152,8 +158,7 @@ class LaserOdom {
     VecE<PoseVelStamped> undistort_trajectory;
     VecE<pcl::PointCloud<pcl::PointXYZ>> undis_candidates_cur, undis_candidates_prev;
 
-    const uint32_t N_FEATURES = 5;
-    const uint32_t MAX_POINTS = 2200;
+    const uint32_t MAX_POINTS = 2800;
 
  private:
     // Flow control
@@ -173,12 +178,14 @@ class LaserOdom {
 
     void updateFeatureCandidates();
     void prepTrajectory(const TimeType &stamp);
-    void edgePipeline(const uint32_t &feat_id, const Vec<Vec<bool>> &initial_prev_feat_idx);
-    void planePipeline(const uint32_t &feat_id, const Vec<Vec<bool>> &initial_prev_feat_idx);
+    void extendSceneModel(const uint32_t &feat_id);
     bool match(const TimeType &stamp);
     void trackResiduals(ceres::Problem &problem, ceres::ParameterBlockOrdering &param_ordering, uint32_t f_idx,
                             VecE <FeatureTrack> &track_list);
     void buildResiduals(ceres::Problem &problem, ceres::ParameterBlockOrdering &param_ordering);
+    void buildResidualsFromMap(ceres::Problem &problem,
+            const Vec<FeatureTrack::Mapping> &mapping,
+            FeatureTrack &track, uint32_t f_idx);
     // todo think about how to reuse residuals
     Vec<std::shared_ptr<ceres::CostFunction>> costs;
     std::vector<std::shared_ptr<ceres::LocalParameterization>> local_params;
@@ -200,32 +207,30 @@ class LaserOdom {
                                   const Eigen::MatrixBase<Derived1> &dist,
                                   const Eigen::MatrixBase<Derived2> &points);
 
-    void extendFeatureTracks(const Eigen::MatrixXi &indices,
-                             const MatXf &distances,
-                             uint32_t feat_id,
-                             const VecE<FeatureTrack> &candidate_tracks,
-                             const bool large_tol);
+    void findCorrespondences(uint32_t feat_id);
+    void findSpecificCorrespondences(Nabo::NNSearchF* kd_tree, const MatXf &query, const Eigen::Tensor<float, 2> &queryt, Eigen::Tensor<float, 2> &feat_pts, Vec<bool> &used_idx, int scan_id, int feat_id);
 
     void createNewGeometry(const MatXf &points,
                            const Vec<uint32_t> &indices,
                            ResidualType residual_type,
                            Vec6 &geometry);
 
-    void createNewFeatureTracks(uint32_t feat_id, const VecE <FeatureTrack> &tracks);
+    void createNewPlanes(Nabo::NNSearchF* tree,
+            const MatXf& dataset,
+            const Eigen::Tensor<float, 2>& datasetT,
+            const MatXf& query,
+            const Vec<bool>& points_used,
+            VecE<FeatureTrack> &output_tracks);
 
-    void createNewFeatureTrackCandidates(const Eigen::MatrixXi &indices,
-                                         const MatXf &distances,
-                                         uint32_t feat_id,
-                                         const Nabo::NNSearchF *cur_knn_tree,
-                                         const bool large_tol,
+    void createNewPlaneFeatureTrackCandidates(uint32_t feat_id,
                                          VecE<FeatureTrack> &candidate_tracks);
 
-    void createNewLineFeatureTrackCandidates(const Eigen::MatrixXi &indices,
-                                             const MatXf &distances,
-                                             uint32_t feat_id,
+    void createNewLineFeatureTrackCandidates(uint32_t feat_id,
                                              VecE<FeatureTrack> &candidate_tracks);
 
-    void pointToTracks(const MatXf &cur_points, const MatXf &prev_points, const uint32_t feat_id);
+    void createNewFeatureTracks(uint32_t feat_id, const VecE <FeatureTrack> &tracks);
+
+    void pointToTracks(const uint32_t feat_id);
     /**
      * Removes any correspondences to the current scan
      */
@@ -235,8 +240,6 @@ class LaserOdom {
     void calculatePlaneSimilarity(const Vec6 &geo1, const Vec6 &geo2, float &dist_cost, float &dir_cost);
 
     void mergeFeatureTracks(VecE<FeatureTrack> &tracks, uint32_t feat_id);
-
-    void setupSkipPoint(uint32_t feat_id);
 
     void undistort();
 
@@ -264,15 +267,12 @@ class LaserOdom {
     // indices of points to use for features, indexed by feature type and ring
     Vec<VecE<Eigen::Tensor<int, 1>>> indices;
 
-    VecE<VecE<FeatureTrack>> cur_line_candidates, prev_line_candidates;
-    VecE<VecE<FeatureTrack>> cur_line_candidatesT, prev_line_candidatesT;
-    // Matrix format is needed for kdtrees
-    VecE<MatX> cur_line_geo, prev_line_geo;
-    VecE<MatXf> cur_line_geoT, prev_line_geoT;
-
     /// This stores candidate feature points before they are put into feat_pts container.
     VecE<Eigen::Tensor<float, 2>> cur_feature_candidates, prev_feature_candidates;
+    /// These hold fluid feature points
+    VecE<Eigen::Tensor<float, 2>> cur_feature_points, prev_feature_points;
     VecE<MatXf> cur_feature_candidatesT, prev_feature_candidatesT;
+    VecE<MatX> cur_feature_pointsT, prev_feature_pointsT;
     /// stores whether or not the candidate point is already a feature point somewhere
     Vec<Vec<bool>> cur_feat_idx, prev_feat_idx;
     /**
@@ -286,8 +286,6 @@ class LaserOdom {
     Vec<Vec<VecE<MatX>>> ptT_jacobians;
     Vec<Vec<float>> jacobian_stamps;
 
-    Vec<ResidualType> feature_residuals;
-
     // storage for average feature points. 3 x N
     VecE<MatXf> ave_pts;
     // indexed by feature type and then track_id
@@ -300,9 +298,14 @@ class LaserOdom {
 
     void checkTrackValidity();
 
-    static uint32_t uniqueElements(const std::vector<FeatureTrack::Mapping> &vec) {
+    static uint32_t uniqueElements(const FeatureTrack &track) {
         std::set<uint32_t> scan_ids;
-        for (const auto &elem : vec) {
+        for (const auto &elem : track.static_mapping) {
+            if (scan_ids.find(elem.scan_idx) == scan_ids.end()) {
+                scan_ids.insert(elem.scan_idx);
+            }
+        }
+        for (const auto &elem : track.fluid_mapping) {
             if (scan_ids.find(elem.scan_idx) == scan_ids.end()) {
                 scan_ids.insert(elem.scan_idx);
             }
@@ -321,6 +324,14 @@ class LaserOdom {
         }
         return unique_map;
     }
+
+    template<class Derived, class OtherDerived>
+    static double calculateLineError(const Eigen::MatrixBase<Derived> &geo,
+            const Eigen::MatrixBase<OtherDerived> &pt);
+
+    template<class Derived, class OtherDerived>
+    static double calculatePlaneError(const Eigen::MatrixBase<Derived> &geo,
+                                     const Eigen::MatrixBase<OtherDerived> &pt);
 };
 
 }  // namespace wave

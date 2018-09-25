@@ -8,7 +8,9 @@ WAVE_ADD_MODULE(${PROJECT_NAME}
     wave::utils
     libnabo::libnabo
     PCL::PCL
+#    CGAL::CGAL
     SOURCES
+#    src/SIR_normals.cpp
     src/weighting_functions.cpp
     src/odometry_callback.cpp
     src/integrals.cpp
@@ -44,7 +46,18 @@ TARGET_LINK_LIBRARIES(kitti_odom_eval
         kitti_utils
         config_utils)
 
+ADD_EXECUTABLE(moose_eval
+        kitti_tools/src/moose_evaluator.cpp)
+TARGET_LINK_LIBRARIES(moose_eval
+        kitti_utils
+        config_utils)
+
 IF(BUILD_TESTING)
+#    WAVE_ADD_TEST(normal_estimator_tests
+#            tests/normal_estimator/normal_estimator_tests.cpp)
+#    TARGET_LINK_LIBRARIES(normal_estimator_tests
+#            ${PROJECT_NAME})
+
     WAVE_ADD_TEST(${PROJECT_NAME}_tests
             tests/laserodom_tests.cpp)
     TARGET_LINK_LIBRARIES(

@@ -3,8 +3,10 @@
 
 range_divisions: [
     10.0,
+    20.0,
     25.0,
-    50.0]
+    30.0,
+    40.0]
 
 azimuth_divisions: 4
 

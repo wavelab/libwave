@@ -4,7 +4,8 @@ import matplotlib.pylab as plt
 
 
 if __name__ == "__main__":
-    X = np.loadtxt(open(sys.argv[1], "r"), delimiter=",")
+    file = open(sys.argv[1], "r")
+    X = np.loadtxt(file)
     X = np.matrix(X)
     print(X.shape)
 

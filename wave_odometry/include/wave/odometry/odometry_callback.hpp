@@ -20,14 +20,17 @@ namespace wave {
 
 struct OdometryCallback : ceres::EvaluationCallback {
     explicit OdometryCallback(const Vec<VecE<Eigen::Tensor<float, 2>>> *feat_pts,
+                              const VecE<Eigen::Tensor<float, 2>> *prev_feat_pts,
+                              const VecE<Eigen::Tensor<float, 2>> *cur_feat_pts,
                               Vec<VecE<MatX>> *feat_ptsT,
+                              VecE<MatX> *prev_feat_ptsT,
+                              VecE<MatX> *cur_feat_ptsT,
                               const VecE<PoseVel> *traj,
                               Vec<Vec<VecE<MatX>>> *ptT_jacobians,
                               Vec<Vec<float>> *jac_stamps,
                               const Vec<float> *traj_stamps,
                               const Vec<float> *scan_stamps,
-                              Transformer *transformer,
-                              const Vec<Vec<Vec<bool>>> *skip_point = nullptr);
+                              Transformer *transformer);
 
     OdometryCallback() = delete;
 
@@ -35,9 +38,11 @@ struct OdometryCallback : ceres::EvaluationCallback {
 
     /// Input data indexed by scan then feature type
     const Vec<VecE<Eigen::Tensor<float, 2>>> *feat_pts;
+    const VecE<Eigen::Tensor<float, 2>> *prev_feat_pts, *cur_feat_pts;
 
     /// Output data shared with residuals
     Vec<VecE<MatX>> *feat_ptsT;
+    VecE<MatX> *prev_feat_ptsT, *cur_feat_ptsT;
 
     /// State Variables, hooked to and updated by Ceres
     const VecE<PoseVel> *traj;

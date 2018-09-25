@@ -3,24 +3,38 @@
 namespace wave {
 
 OdometryCallback::OdometryCallback(const Vec<VecE<Eigen::Tensor<float, 2>>> *feat_pts,
+                                   const VecE<Eigen::Tensor<float, 2>> *prev_feat_pts,
+                                   const VecE<Eigen::Tensor<float, 2>> *cur_feat_pts,
                                    Vec<VecE<MatX>> *feat_ptsT,
+                                   VecE<MatX> *prev_feat_ptsT,
+                                   VecE<MatX> *cur_feat_ptsT,
                                    const VecE<PoseVel> *traj,
-                                   Vec<Vec<VecE<MatX>>> *jacobians,
+                                   Vec<Vec<VecE<MatX>>> *ptT_jacobians,
                                    Vec<Vec<float>> *jac_stamps,
                                    const Vec<float> *traj_stamps,
                                    const Vec<float> *scan_stamps,
-                                   Transformer *transformer,
-                                   const Vec<Vec<Vec<bool>>> *skip_point)
+                                   Transformer *transformer)
     : ceres::EvaluationCallback(),
       feat_pts(feat_pts),
+      prev_feat_pts(prev_feat_pts),
+      cur_feat_pts(cur_feat_pts),
       feat_ptsT(feat_ptsT),
+      prev_feat_ptsT(prev_feat_ptsT),
+      cur_feat_ptsT(cur_feat_ptsT),
       traj(traj),
-      jacobians(jacobians),
+      jacobians(ptT_jacobians),
       jac_stamps(jac_stamps),
       traj_stamps(traj_stamps),
       scan_stamps(scan_stamps),
-      transformer(transformer),
-      skip_point(skip_point) {
+      transformer(transformer) {
+    for (uint32_t feat_id = 0; feat_id < this->prev_feat_pts->size(); ++feat_id) {
+        this->prev_feat_ptsT->at(feat_id).resize(3, this->prev_feat_pts->at(feat_id).dimension(1));
+        this->cur_feat_ptsT->at(feat_id).resize(3, this->cur_feat_pts->at(feat_id).dimension(1));
+        for (uint32_t scan_id = 0; scan_id < this->feat_pts->size(); ++scan_id) {
+            this->feat_ptsT->at(scan_id).at(feat_id).resize(3, this->feat_pts->at(scan_id).at(feat_id).dimension(1));
+        }
+    }
+
     this->pose_diff.resize(traj->size() - 1);
     this->Pose_diff.resize(traj->size() - 1);
     this->J_logmaps.resize(traj->size() - 1);
@@ -48,15 +62,15 @@ OdometryCallback::OdometryCallback(const Vec<VecE<Eigen::Tensor<float, 2>>> *fea
 void OdometryCallback::PrepareForEvaluation(bool evaluate_jacobians, bool new_evaluation_point) {
     if (new_evaluation_point) {
         this->transformer->update(*(this->traj), *(this->traj_stamps));
-        for (uint32_t i = 0; i < this->feat_pts->size(); ++i) {
-            for (uint32_t j = 0; j < this->feat_pts->at(i).size(); ++j) {
-                if (this->skip_point) {
-                    this->transformer->transformToStart(this->feat_pts->at(i)[j], this->feat_ptsT->at(i)[j], i, &(this->skip_point->at(i).at(j)));
-                } else {
-                    this->transformer->transformToStart(this->feat_pts->at(i)[j], this->feat_ptsT->at(i)[j], i);
-                }
+        for (uint32_t j = 0; j < this->feat_pts->at(0).size(); ++j) {
+            for (uint32_t i = 0; i < this->feat_pts->size(); ++i) {
+                this->transformer->transformToStart(this->feat_pts->at(i)[j], this->feat_ptsT->at(i)[j], i);
             }
+            auto last_scan_id = this->feat_pts->size() - 1;
+            this->transformer->transformToStart(this->cur_feat_pts->at(j), this->cur_feat_ptsT->at(j), last_scan_id);
+            this->transformer->transformToStart(this->prev_feat_pts->at(j), this->prev_feat_ptsT->at(j), --last_scan_id);
         }
+
         this->old_jacobians = true;
     }
     if (evaluate_jacobians && this->old_jacobians) {
