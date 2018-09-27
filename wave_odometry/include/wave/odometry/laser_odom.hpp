@@ -137,6 +137,7 @@ class LaserOdom {
                        const TransformerParams transformer_params);
     ~LaserOdom();
     void addPoints(const std::vector<PointXYZIR> &pts, int tick, TimeType stamp);
+    void fluidToStaticUpdate();
     void updateTracks();
     void rollover(TimeType stamp);
     void registerOutputFunction(std::function<void()> output_function);
@@ -179,10 +180,12 @@ class LaserOdom {
     void updateFeatureCandidates();
     void prepTrajectory(const TimeType &stamp);
     void extendSceneModel(const uint32_t &feat_id);
+    // This function trims feature tracks that do not model the scene well.
+    void performModelMaintenance(const uint32_t &feat_id);
     bool match(const TimeType &stamp);
     void trackResiduals(ceres::Problem &problem, ceres::ParameterBlockOrdering &param_ordering, uint32_t f_idx,
-                            VecE <FeatureTrack> &track_list);
-    void buildResiduals(ceres::Problem &problem, ceres::ParameterBlockOrdering &param_ordering);
+                            VecE <FeatureTrack> &track_list, int opt_iter);
+    void buildResiduals(ceres::Problem &problem, ceres::ParameterBlockOrdering &param_ordering, int opt_iter);
     void buildResidualsFromMap(ceres::Problem &problem,
             const Vec<FeatureTrack::Mapping> &mapping,
             FeatureTrack &track, uint32_t f_idx);
@@ -190,7 +193,7 @@ class LaserOdom {
     Vec<std::shared_ptr<ceres::CostFunction>> costs;
     std::vector<std::shared_ptr<ceres::LocalParameterization>> local_params;
     std::vector<std::shared_ptr<ceres::LossFunction>> loss_functions;
-    bool runOptimization(ceres::Problem &problem, ceres::Solver::Summary &summary);
+    bool runOptimization(ceres::Problem &problem, ceres::Solver::Summary &summary, int opt_iter);
     void calculateCovariance(ceres::Problem &problem);
 
     template <typename Derived, typename Derived1, typename Derived2>
@@ -215,12 +218,9 @@ class LaserOdom {
                            ResidualType residual_type,
                            Vec6 &geometry);
 
-    void createNewPlanes(Nabo::NNSearchF* tree,
-            const MatXf& dataset,
-            const Eigen::Tensor<float, 2>& datasetT,
-            const MatXf& query,
-            const Vec<bool>& points_used,
-            VecE<FeatureTrack> &output_tracks);
+    void createNewPlanes(Nabo::NNSearchF *tree, const MatXf &dataset, const Eigen::Tensor<float, 2> &datasetT,
+                             const MatXf &query, const Vec<bool> &points_used, VecE <FeatureTrack> &output_tracks,
+                             const uint32_t &feat_id);
 
     void createNewPlaneFeatureTrackCandidates(uint32_t feat_id,
                                          VecE<FeatureTrack> &candidate_tracks);

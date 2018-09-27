@@ -40,6 +40,13 @@ class IcosahedronBinner {
     bool bin(const wave::Vec6 &unit_vector, int *bin_count = nullptr);
 
     /**
+     * Checks whether there is space to bin the given vector
+     * DOES NOT increase bin counters
+     * returns true if there is space, false if not
+     */
+    bool spaceInBin(const wave::Vec6 &unit_vector);
+
+    /**
      * Decrements the bin count
      */
     int deBin(const Vec6 &unit_vector);

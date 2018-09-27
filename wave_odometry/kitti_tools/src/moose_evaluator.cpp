@@ -27,6 +27,12 @@ int main(int argc, char **argv) {
         end_frame = std::numeric_limits<int>::max();
     }
 
+    wave::Transformation<> T_L_G, T_G_L;
+    T_L_G.storage << 0.0146392923884,0.999713733025,0.0189246695892,-1.12495691821,
+        -0.999886807886,0.0145708401517,0.00374993783733,0.0726605553018,
+        0.00347311601847,-0.0189774239023,0.999813880103,-1.25;
+    T_G_L = T_L_G.transformInverse();
+
     wave::LaserOdomParams params;
     wave::FeatureExtractorParams feature_params;
     loadFeatureParams(config_path, "features.yaml", feature_params);
@@ -80,8 +86,8 @@ int main(int argc, char **argv) {
 
     fstream ground_truth_file(gtpath, ios::in);
 
-    wave::VecE<wave::PoseStamped> T_G1_Gx_trajectory;
-    wave::Transformation<> T_G1_O;
+    wave::VecE<wave::PoseStamped> T_L1_Lx_trajectory;
+    wave::Transformation<> T_L1_O;
 
     if (!ground_truth_file.good()) {
         LOG_INFO("Ground truth not available");
@@ -93,11 +99,11 @@ int main(int argc, char **argv) {
             if (ss.rdbuf()->in_avail() < 1) {
                 break;
             }
-            wave::PoseStamped T_G1_Gx;
+            wave::PoseStamped T_L1_Lx;
             uint64_t microseconds;
             ss >> microseconds;
             wave::TimeType new_stamp;
-            T_G1_Gx.stamp = new_stamp + std::chrono::microseconds(microseconds);
+            T_L1_Lx.stamp = new_stamp + std::chrono::microseconds(microseconds);
             std::vector<double> vals;
             for (uint32_t i = 0; i < 12; ++i) {
                 double new_val;
@@ -106,12 +112,14 @@ int main(int argc, char **argv) {
             }
             Eigen::Map<Eigen::Matrix<double, 3, 4, Eigen::RowMajor>> raw_mat(vals.data());
             wave::Transformation<> T_O_Gx(raw_mat);
-            if (T_G1_Gx_trajectory.empty()) {
-                T_G1_O.storage = raw_mat;
-                T_G1_O.invert();
+
+            if (T_L1_Lx_trajectory.empty()) {
+                T_L1_O.storage = raw_mat;
+                T_L1_O.invert();
+                T_L1_O = T_L_G * T_L1_O;
             }
-            T_G1_Gx.pose = T_G1_O * T_O_Gx;
-            T_G1_Gx_trajectory.emplace_back(T_G1_Gx);
+            T_L1_Lx.pose = T_L1_O * T_O_Gx * T_G_L;
+            T_L1_Lx_trajectory.emplace_back(T_L1_Lx);
         }
     }
     wave::VecE<wave::PoseVelStamped> odom_trajectory;
@@ -188,7 +196,7 @@ int main(int argc, char **argv) {
         }
     }
 
-    auto iter = std::find_if(T_G1_Gx_trajectory.begin(), T_G1_Gx_trajectory.end(), [&first_stamp](const wave::PoseStamped &state){
+    auto iter = std::find_if(T_L1_Lx_trajectory.begin(), T_L1_Lx_trajectory.end(), [&first_stamp](const wave::PoseStamped &state){
 
         if (state.stamp >= first_stamp) {
             if (state.stamp - first_stamp < std::chrono::milliseconds(10)) {
@@ -202,17 +210,17 @@ int main(int argc, char **argv) {
         return false;
     });
 
-    if (iter != T_G1_Gx_trajectory.end()) {
+    if (iter != T_L1_Lx_trajectory.end()) {
         for (auto &odom_state : odom_trajectory) {
             odom_state.pose = iter->pose * odom_state.pose;
         }
     }
 
-    if (T_G1_Gx_trajectory.empty()) {
+    if (T_L1_Lx_trajectory.empty()) {
         plotResults(odom_trajectory);
     } else {
-        plotResults(T_G1_Gx_trajectory, odom_trajectory);
-        plotError(T_G1_Gx_trajectory, odom_trajectory);
+        plotResults(T_L1_Lx_trajectory, odom_trajectory);
+        plotError(T_L1_Lx_trajectory, odom_trajectory);
     }
     plotTrackLengths(lengths);
 

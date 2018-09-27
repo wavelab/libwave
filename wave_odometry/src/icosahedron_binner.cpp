@@ -44,6 +44,23 @@ bool IcosahedronBinner::bin(const wave::Vec6 &unit_vector, int *bin_count) {
     return retval;
 }
 
+bool IcosahedronBinner::spaceInBin(const wave::Vec6 &unit_vector) {
+    uint32_t range_bin, angular_bin, dir_bin;
+    this->getBinIndex(unit_vector, range_bin, angular_bin, dir_bin);
+
+    // separate limit for z direction
+    int n_limit;
+    if (dir_bin == 0) {
+        n_limit = this->params.z_limit;
+    } else {
+        n_limit = this->params.xy_limit;
+    }
+    if (this->bin_counters(dir_bin, angular_bin, range_bin) < n_limit) {
+        return true;
+    }
+    return false;
+}
+
 int IcosahedronBinner::deBin(const wave::Vec6 &unit_vector) {
     uint32_t range_bin, angular_bin, dir_bin = 0;
     this->getBinIndex(unit_vector, range_bin, range_bin, angular_bin);

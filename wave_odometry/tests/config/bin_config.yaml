@@ -3,16 +3,14 @@
 
 range_divisions: [
     10.0,
-    20.0,
     25.0,
-    30.0,
     40.0]
 
 azimuth_divisions: 4
 
-xy_directions: 6
+xy_directions: 4
 
 z_cutoff: 0.5253
 
-z_limit: 2
-xy_limit: 2
+z_limit: 1
+xy_limit: 1

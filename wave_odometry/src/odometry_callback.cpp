@@ -57,6 +57,7 @@ OdometryCallback::OdometryCallback(const Vec<VecE<Eigen::Tensor<float, 2>>> *fea
             jacs.resize(steps + 1);
         }
     }
+    this->PrepareForEvaluation(false, true);
 }
 
 void OdometryCallback::PrepareForEvaluation(bool evaluate_jacobians, bool new_evaluation_point) {

@@ -16,7 +16,9 @@ bool PlaneResidual<Scalar, states...>::Evaluate(double const *const *parameters,
     error = this->weight * (diff.transpose() * plane.block<3, 1>(0, 0));
 
     if (std::isnan(residuals[0])) {
-        throw std::runtime_error("nan in plane residual, probably due to incorrect point index");
+        std::stringstream ss_msg;
+        ss_msg << "Nan in plane residual. Point is " << Pt << "\n Plane is " << plane;
+        throw std::runtime_error(ss_msg.str());
     }
 
     if (jacobians) {

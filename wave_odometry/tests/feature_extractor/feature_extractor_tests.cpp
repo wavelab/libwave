@@ -252,7 +252,7 @@ TEST_F(FeatureExtractorTests, VisualizeMooseFeatures) {
     this->setupScan();
 
     fstream cloud_file;
-    cloud_file.open("/home/ben/rosbags/wat_27/lidar/0000000000.bin", ios::in | ios::binary);
+    cloud_file.open("/home/ben/rosbags/wat_27/lidar/0000000001.bin", ios::in | ios::binary);
 
     if (!cloud_file.good()) {
         throw std::runtime_error("Cannot find pointcloud file");
@@ -263,18 +263,18 @@ TEST_F(FeatureExtractorTests, VisualizeMooseFeatures) {
         pcl::PointXYZI pt;
         uint16_t ring;
         int32_t nanosec_offset;
-        float intensity;
+        float range, azimuth, elevation;
 
         cloud_file.read((char *) pt.data, 3 * sizeof(float));
-        cloud_file.read((char *) &(intensity), sizeof(float));
+        cloud_file.read((char *) &(pt.intensity), sizeof(float));
+        cloud_file.read((char *) &range, sizeof(float));
+        cloud_file.read((char *) &azimuth, sizeof(float));
+        cloud_file.read((char *) &elevation, sizeof(float));
         cloud_file.read((char *) &(ring), sizeof(uint16_t));
         cloud_file.read((char *) &nanosec_offset, sizeof(int32_t));
 
-        pt.intensity = 0;
-
         display_cloud.push_back(pt);
 
-        float range = std::sqrt(pt.x * pt.x + pt.y * pt.y + pt.z * pt.z);
         if (range < 3.0f) {
             continue;
         }
@@ -284,10 +284,6 @@ TEST_F(FeatureExtractorTests, VisualizeMooseFeatures) {
         float_seconds pt_time;
         pt_time = std::chrono::duration_cast<float_seconds>(std::chrono::duration_cast<float_nanos>(std::chrono::nanoseconds(nanosec_offset)));
 
-        float azimuth = std::atan2(pt.y, pt.x);
-        if (azimuth < 0) {
-            azimuth += 2 * M_PI;
-        }
         this->scan.at(ring)(0, this->range.at(ring)) = pt.x;
         this->scan.at(ring)(1, this->range.at(ring)) = pt.y;
         this->scan.at(ring)(2, this->range.at(ring)) = pt.z;
@@ -295,7 +291,7 @@ TEST_F(FeatureExtractorTests, VisualizeMooseFeatures) {
         this->scan.at(ring)(4, this->range.at(ring)) = azimuth;
 
         this->signals.at(ring).at(Signal::RANGE)(this->range.at(ring)) = range;
-        this->signals.at(ring).at(Signal::INTENSITY)(this->range.at(ring)) = intensity;
+        this->signals.at(ring).at(Signal::INTENSITY)(this->range.at(ring)) = pt.intensity;
         this->range.at(ring) += 1;
     }
 
@@ -306,7 +302,7 @@ TEST_F(FeatureExtractorTests, VisualizeMooseFeatures) {
     std::vector<pcl::PointCloud<pcl::PointXYZ>> feature_viz;
     feature_viz.resize(3);
 
-    display.addPointcloud(display_cloud.makeShared(), 0);
+    display.addPointcloud(display_cloud.makeShared(), 0, false, 1);
 
     for (uint32_t i = 0; i < 3; i++) {
         feature_viz.at(i).clear();
@@ -321,7 +317,7 @@ TEST_F(FeatureExtractorTests, VisualizeMooseFeatures) {
             }
         }
 
-        display.addPointcloud(feature_viz.at(i).makeShared(), i + 1, false, i + 1);
+        display.addPointcloud(feature_viz.at(i).makeShared(), i + 1, false, i + 2);
     }
 
     display.startSpin();
