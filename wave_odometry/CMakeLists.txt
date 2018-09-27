@@ -11,6 +11,7 @@ WAVE_ADD_MODULE(${PROJECT_NAME}
 #    CGAL::CGAL
     SOURCES
 #    src/SIR_normals.cpp
+    src/rigid_residual.cpp
     src/weighting_functions.cpp
     src/odometry_callback.cpp
     src/integrals.cpp

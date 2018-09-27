@@ -100,10 +100,11 @@ int main(int argc, char **argv) {
                 break;
             }
             wave::PoseStamped T_L1_Lx;
-            uint64_t microseconds;
-            ss >> microseconds;
+            int64_t nanoseconds;
+            ss >> nanoseconds;
             wave::TimeType new_stamp;
-            T_L1_Lx.stamp = new_stamp + std::chrono::microseconds(microseconds);
+            auto duration = std::chrono::nanoseconds(nanoseconds);
+            T_L1_Lx.stamp = new_stamp + duration;
             std::vector<double> vals;
             for (uint32_t i = 0; i < 12; ++i) {
                 double new_val;

@@ -87,7 +87,7 @@ void updateVisualizer(const wave::LaserOdom *odom,
                     m1 = track.geometry.block<3, 1>(3, 0).cast<float>();
                     m2 = track.geometry.block<3, 1>(0, 0).cast<float>();
                     float sidelength = 1.5f;
-                    display->addSquare(pt1, pt2, sidelength, id, false, viewport_id, red_colour);
+                    display->addSquare(pt1, pt2, sidelength, id, false, 6, red_colour);
                     ++id;
                 } else {
                     pcl::PointXYZ pt1, pt2;
@@ -99,7 +99,7 @@ void updateVisualizer(const wave::LaserOdom *odom,
                             (track.geometry.block<3, 1>(3, 0) - sidelength * track.geometry.block<3, 1>(0, 0)).cast<float>();
                     m2 =
                             (track.geometry.block<3, 1>(3, 0) + sidelength * track.geometry.block<3, 1>(0, 0)).cast<float>();
-                    display->addLine(pt1, pt2, id, id + 1, false, viewport_id, red_colour);
+                    display->addLine(pt1, pt2, id, id + 1, false, 6, red_colour);
                     id += 2;
                 }
 

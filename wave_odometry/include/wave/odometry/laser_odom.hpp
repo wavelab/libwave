@@ -119,6 +119,10 @@ struct LaserOdomParams {
     float init_linear_dist_threshold = 0.5f;
     float init_linear_ang_threshold = 0.03f;
 
+    /// Parameters for soft rigid body constraint
+    int landmark_knn = 3;
+    double rigid_scene_weight = 1;
+
     IcosahedronBinnerParams binner_params;
 
     uint32_t min_new_points = 5;

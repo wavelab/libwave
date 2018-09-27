@@ -1524,6 +1524,9 @@ void LaserOdom::trackResiduals(ceres::Problem &problem, ceres::ParameterBlockOrd
             this->local_params.emplace_back(std::make_shared<LineParameterization>());
         }
         problem.AddParameterBlock(track.geometry.data(), 6, this->local_params.back().get());
+        if (track.age > this->param.n_window) {
+            problem.SetParameterBlockConstant(track.geometry.data());
+        }
         param_ordering.AddElementToGroup(track.geometry.data(), 0);
 
         this->buildResidualsFromMap(problem, track.static_mapping, track, f_idx);
