@@ -22,6 +22,8 @@ void LoadParameters(const std::string &path, const std::string &filename, wave::
     parser.addParam("max_correspondence_dist", &(params.max_correspondence_dist));
     parser.addParam("max_planar_residual_val", &(params.max_planar_residual_val));
     parser.addParam("max_linear_residual_val", &(params.max_linear_residual_val));
+    parser.addParam("max_init_planar_residual", &(params.max_init_planar_residual));
+    parser.addParam("max_init_linear_residual", &(params.max_init_linear_residual));
     parser.addParam("min_residuals", &(params.min_residuals));
     parser.addParam("n_ring", &(params.n_ring));
 

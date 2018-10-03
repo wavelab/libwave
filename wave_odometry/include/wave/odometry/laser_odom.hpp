@@ -51,6 +51,7 @@
 #include "wave/odometry/feature_extractor.hpp"
 #include "wave/odometry/geometry/plane.hpp"
 #include "wave/odometry/geometry/line.hpp"
+#include "wave/odometry/geometry/rigid_residual.hpp"
 #include "wave/odometry/line_fitter.hpp"
 #include "wave/odometry/odometry_callback.hpp"
 #include "wave/optimization/ceres/odom_gp/constant_velocity.hpp"
@@ -123,6 +124,10 @@ struct LaserOdomParams {
     int landmark_knn = 3;
     double rigid_scene_weight = 1;
 
+    /// Parameters to control when to extend the model
+    double key_rotation_angle = 0.1;
+    double key_translation = 1;
+
     IcosahedronBinnerParams binner_params;
 
     uint32_t min_new_points = 5;
@@ -181,6 +186,8 @@ class LaserOdom {
     FeatureExtractor feature_extractor;
     Transformer transformer;
 
+    Vec6 key_distance;
+
     void updateFeatureCandidates();
     void prepTrajectory(const TimeType &stamp);
     void extendSceneModel(const uint32_t &feat_id);
@@ -189,6 +196,7 @@ class LaserOdom {
     bool match(const TimeType &stamp);
     void trackResiduals(ceres::Problem &problem, ceres::ParameterBlockOrdering &param_ordering, uint32_t f_idx,
                             VecE <FeatureTrack> &track_list, int opt_iter);
+    void rigidResiduals(ceres::Problem &problem, uint32_t f_idx);
     void buildResiduals(ceres::Problem &problem, ceres::ParameterBlockOrdering &param_ordering, int opt_iter);
     void buildResidualsFromMap(ceres::Problem &problem,
             const Vec<FeatureTrack::Mapping> &mapping,

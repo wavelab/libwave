@@ -219,6 +219,10 @@ int main(int argc, char **argv) {
 
             pt_vec.front().ring = ring_index;
 
+            if (std::abs(azimuth - M_PI) < 0.1) {
+                continue;
+            }
+
             if (ring_index < 64) {
                 if (first_point) {
                     odom.addPoints(pt_vec, 0, time_t);

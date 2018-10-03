@@ -16,13 +16,13 @@ class RigidResidual : public ceres::SizedCostFunction<3, 6, 6> {
  public:
     virtual ~RigidResidual() {}
 
-    RigidResidual(const double &weight)
-            : weight(weight) {}
+    RigidResidual(const double &weight, const Vec3& disp)
+            : weight(weight), disp(disp) {}
 
     virtual bool Evaluate(double const *const *parameters, double *residuals, double **jacobians) const;
  private:
-    // updated by evaluation callback
     const double weight;
+    const Vec3 disp;
 };
 
 }

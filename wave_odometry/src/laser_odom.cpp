@@ -62,6 +62,7 @@ LaserOdom::LaserOdom(const LaserOdomParams params,
 
     this->range_sensor = std::make_shared<RangeSensor>(param.sensor_params);
 
+    this->key_distance.setZero();
     this->prior_twist.setZero();
 }
 
@@ -225,6 +226,9 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
         this->updateFeatureCandidates();
         if (this->initialized) {
             this->match(stamp);
+            auto &last = this->cur_trajectory.back().pose;
+            auto &second_last = this->cur_trajectory.at(this->cur_trajectory.size() - 2).pose;
+            this->key_distance = this->key_distance + last.manifoldMinus(second_last);
 
             if (this->output_thread) {
                 {
@@ -671,10 +675,10 @@ void LaserOdom::findSpecificCorrespondences(Nabo::NNSearchF* kd_tree, const MatX
         /// Evaluate residual errors for any points found within max correspondence distance
         Vec<std::pair<int, double>> errors;
         for (uint32_t i = 0; i < idx.rows(); ++i) {
-            auto &track = current_tracks.at(idx(i, j));
             if (std::isinf(dist(i, j))) {
                 break;
             }
+            auto &track = current_tracks.at(idx(i, j));
 
             if (line_residual) {
                 /// Special logic for line residuals because an edge should only cross a laser ring in one place
@@ -829,6 +833,8 @@ void LaserOdom::createNewFeatureTracks(uint32_t feat_id, const VecE<FeatureTrack
         if (this->binner.at(feat_id).bin(geometry_at_end)) {
             this->feature_tracks.at(feat_id).emplace_back(candidate_track);
             auto &track_ref = this->feature_tracks.at(feat_id).back();
+            track_ref.static_mapping.clear();
+            track_ref.fluid_mapping.clear();
             track_ref.age = 0;
             track_ref.length = 2;
         }
@@ -977,73 +983,81 @@ void LaserOdom::createNewPlaneFeatureTrackCandidates(uint32_t feat_id,
 
 void LaserOdom::createNewLineFeatureTrackCandidates(uint32_t feat_id,
                                                     VecE<FeatureTrack> &candidate_tracks) {
-    LineFitter line_fitter(this->param.max_correspondence_dist, 10, this->param.max_init_linear_residual, 4);
-    line_fitter.fitLines(this->cur_feature_candidatesT.at(feat_id));
-    VecE<FeatureTrack> cur_tracks = line_fitter.getTracks();
-    line_fitter.fitLines(this->prev_feature_candidatesT.at(feat_id));
-    VecE<FeatureTrack> prev_tracks = line_fitter.getTracks();
+    auto c_cols = this->cur_feature_candidatesT.at(feat_id).cols();
+    auto p_cols = this->prev_feature_candidatesT.at(feat_id).cols();
+    auto cols = c_cols + p_cols;
+    MatXf line_candidates(3, cols);
 
-    Eigen::MatrixXf dataset(3, prev_tracks.size());
-    Eigen::MatrixXf query(3, cur_tracks.size());
+    line_candidates.block(0,0,3,c_cols) = this->cur_feature_candidatesT.at(feat_id);
+    line_candidates.block(0,c_cols, 3, p_cols) = this->prev_feature_candidatesT.at(feat_id);
+    LineFitter line_fitter(this->param.max_correspondence_dist * 3, 10, this->param.max_init_linear_residual, 6);
+//    line_fitter.fitLines(this->cur_feature_candidatesT.at(feat_id));
+    line_fitter.fitLines(line_candidates);
+    candidate_tracks = line_fitter.getTracks();
+//    line_fitter.fitLines(this->prev_feature_candidatesT.at(feat_id));
+//    VecE<FeatureTrack> prev_tracks = line_fitter.getTracks();
 
-    for (uint32_t i = 0; i < cur_tracks.size(); ++i) {
-        query.block<3,1>(0,i) = cur_tracks.at(i).geometry.block<3,1>(3,0).cast<float>();
-    }
-    for (uint32_t i = 0; i < prev_tracks.size(); ++i) {
-        dataset.block<3,1>(0,i) = prev_tracks.at(i).geometry.block<3,1>(3,0).cast<float>();
-    }
-
-    if(dataset.cols() == 0) {
-        return;
-    }
-
-    auto kd_tree = Nabo::NNSearchF::createKDTreeLinearHeap(dataset);
-
-    int knn = this->param.knn > dataset.cols() ? dataset.cols() : this->param.knn;
-
-    Eigen::MatrixXi indices(knn, query.cols());
-    MatXf dist(knn, query.cols());
-
-    kd_tree->knn(query,
-                 indices,
-                 dist,
-                 knn,
-                 0,
-                 Nabo::NNSearchF::SORT_RESULTS | Nabo::NNSearchF::ALLOW_SELF_MATCH,
-                 this->param.max_correspondence_dist);
-
-    std::vector<std::pair<uint32_t, float>> matches;
-    // idx and distances are the nearest neighbours in prev_line_p0T to cur_line_p0T
-    Vec6 cur_geo, prev_geo;
-    for (uint32_t j = 0; j < indices.cols(); ++j) {
-        cur_geo = cur_tracks.at(j).geometry;
-        matches.clear();
-        for (uint32_t i = 0; i < indices.rows(); ++i) {
-            if (std::isinf(dist(i, j))) {
-                break;
-            }
-            prev_geo = prev_tracks.at(indices(i,j)).geometry;
-            float dist_cost, dir_cost;
-            this->calculateLineSimilarity(cur_geo, prev_geo, dist_cost, dir_cost);
-            if (dist_cost < 10*this->param.init_linear_dist_threshold &&
-                dir_cost < this->param.init_linear_ang_threshold) {
-                matches.emplace_back(indices(i, j), dist_cost + this->param.ang_scaling_param * dir_cost);
-            }
-        }
-        if (!matches.empty()) {
-            std::sort(matches.begin(), matches.end(),
-                      [](const std::pair<uint32_t, float> &lhs, const std::pair<uint32_t, float> &rhs) {
-                          return std::get<1>(lhs) > std::get<1>(rhs);
-                      });
-            FeatureTrack new_track;
-            new_track.geometry = cur_geo;
-            candidate_tracks.emplace_back(new_track);
-        }
-    }
+//    Eigen::MatrixXf dataset(3, prev_tracks.size());
+//    Eigen::MatrixXf query(3, cur_tracks.size());
+//
+//    for (uint32_t i = 0; i < cur_tracks.size(); ++i) {
+//        query.block<3,1>(0,i) = cur_tracks.at(i).geometry.block<3,1>(3,0).cast<float>();
+//    }
+//    for (uint32_t i = 0; i < prev_tracks.size(); ++i) {
+//        dataset.block<3,1>(0,i) = prev_tracks.at(i).geometry.block<3,1>(3,0).cast<float>();
+//    }
+//
+//    if(dataset.cols() == 0) {
+//        return;
+//    }
+//
+//    auto kd_tree = Nabo::NNSearchF::createKDTreeLinearHeap(dataset);
+//
+//    int knn = this->param.knn > dataset.cols() ? dataset.cols() : this->param.knn;
+//
+//    Eigen::MatrixXi indices(knn, query.cols());
+//    MatXf dist(knn, query.cols());
+//
+//    kd_tree->knn(query,
+//                 indices,
+//                 dist,
+//                 knn,
+//                 0,
+//                 Nabo::NNSearchF::SORT_RESULTS | Nabo::NNSearchF::ALLOW_SELF_MATCH,
+//                 this->param.max_correspondence_dist);
+//
+//    std::vector<std::pair<uint32_t, float>> matches;
+//    // idx and distances are the nearest neighbours in prev_line_p0T to cur_line_p0T
+//    Vec6 cur_geo, prev_geo;
+//    for (uint32_t j = 0; j < indices.cols(); ++j) {
+//        cur_geo = cur_tracks.at(j).geometry;
+//        matches.clear();
+//        for (uint32_t i = 0; i < indices.rows(); ++i) {
+//            if (std::isinf(dist(i, j))) {
+//                break;
+//            }
+//            prev_geo = prev_tracks.at(indices(i,j)).geometry;
+//            float dist_cost, dir_cost;
+//            this->calculateLineSimilarity(cur_geo, prev_geo, dist_cost, dir_cost);
+//            if (dist_cost < 10*this->param.init_linear_dist_threshold &&
+//                dir_cost < this->param.init_linear_ang_threshold) {
+//                matches.emplace_back(indices(i, j), dist_cost + this->param.ang_scaling_param * dir_cost);
+//            }
+//        }
+//        if (!matches.empty()) {
+//            std::sort(matches.begin(), matches.end(),
+//                      [](const std::pair<uint32_t, float> &lhs, const std::pair<uint32_t, float> &rhs) {
+//                          return std::get<1>(lhs) > std::get<1>(rhs);
+//                      });
+//            FeatureTrack new_track;
+//            new_track.geometry = cur_geo;
+//            candidate_tracks.emplace_back(new_track);
+//        }
+//    }
 
     // merge shortlist and sort by number of measurements
     this->mergeFeatureTracks(candidate_tracks, feat_id);
-    delete kd_tree;
+//    delete kd_tree;
 }
 
 void LaserOdom::clearVolatileTracks() {
@@ -1323,9 +1337,9 @@ void LaserOdom::performModelMaintenance(const uint32_t &feat_id) {
 bool LaserOdom::match(const TimeType &stamp) {
     size_t n_features = this->feature_extractor.param.feature_definitions.size();
     // on the first match, initialization is poor
-    static bool first_match = true;
-    if (first_match) {
-        double xvel_init = 5;  // * diff(0);
+    static int initial_matches = 10;
+    if (initial_matches == 10) {
+        double xvel_init = 5;
 
         for (uint32_t t_id = 0; t_id < this->cur_trajectory.size(); ++t_id) {
             if (t_id == 0) {
@@ -1341,11 +1355,8 @@ bool LaserOdom::match(const TimeType &stamp) {
 
     std::unique_ptr<ceres::Problem> problem;
 
-    T_TYPE last_transform;
-    auto &ref = this->cur_trajectory.back().pose;
-
     int limit = this->param.opt_iters;
-    if (first_match) {
+    if (initial_matches == 10) {
         limit *= 10;
     } else if (this->scan_stampsf.size() == this->param.n_window) {
         limit = 1;
@@ -1354,12 +1365,10 @@ bool LaserOdom::match(const TimeType &stamp) {
     this->transformer.update(this->cur_trajectory, this->trajectory_stamps);
 
     for (int op = 0; op < limit; op++) {
-        if (op > 0) {
-            last_transform = ref;
-        }
-
-        for (uint32_t j = 0; j < n_features; j++) {
-            this->extendSceneModel(j);
+        if (initial_matches > 0 || this->key_distance.block<3,1>(3,0).norm() > this->param.key_translation) {
+            for (uint32_t j = 0; j < n_features; j++) {
+                this->extendSceneModel(j);
+            }
         }
         if (!(this->param.only_extract_features)) {
             for(int op2 = 0; op2 < 10; ++op2) {
@@ -1391,7 +1400,12 @@ bool LaserOdom::match(const TimeType &stamp) {
             }
         }
     }
-    first_match = false;
+    if (this->key_distance.block<3,1>(3,0).norm() > this->param.key_translation) {
+        this->key_distance.setZero();
+    }
+    if (initial_matches > 0) {
+        --initial_matches;
+    }
 //    if (!(this->param.only_extract_features)) {
 //        this->calculateCovariance(*problem);
 //    }
@@ -1537,6 +1551,44 @@ void LaserOdom::trackResiduals(ceres::Problem &problem, ceres::ParameterBlockOrd
     }
 }
 
+void LaserOdom::rigidResiduals(ceres::Problem &problem, uint32_t f_idx) {
+//    int f_count = 0;
+//    Vec<int> track_ids;
+//    MatXf dataset(3, this->feature_tracks.at(f_idx));
+//    for (uint32_t i = 0; i < this->feature_tracks.at(f_idx).size(); ++i) {
+//        const auto &track = this->feature_tracks.at(f_idx).at(i);
+//        if (!track.static_mapping.empty() || !track.fluid_mapping.empty()) {
+//            dataset.col(f_count) = this->feature_tracks.at(f_idx).at(i).geometry.block<3,1>(3,0);
+//            track_ids.emplace_back(i);
+//            ++f_count;
+//        }
+//    }
+//    dataset.conservativeResize(Eigen::NoChange, f_count);
+//
+//    int knn = this->param.landmark_knn > f_count - 1 ? f_count - 1 : this->param.landmark_knn;
+//    Eigen::MatrixXi indices(knn, f_count);
+//    MatXf dists(knn, f_count);
+//
+//    if (f_count < 2) {
+//        return;
+//    }
+//
+//    auto kd_tree = Nabo::NNSearchF::createKDTreeLinearHeap(dataset);
+//    kd_tree->knn(dataset, indices, dists, knn, 0, Nabo::NNSearchF::SORT_RESULTS);
+//
+//    std::set<std::pair<uint32_t, uint32_t>> connections;
+//    for (uint32_t j = 0; j < dists.cols(); ++j) {
+//        for(uint32_t i = 0; i < dists.rows(); ++i) {
+//            std::pair<uint32_t, uint32_t> edge;
+//            edge = j < indices(i,j) ? std::make_pair(j, indices(i,j)) : std::make_pair(indices(i,j), j);
+//            if (connections.find(edge) == connections.end()) {
+//
+//                this->costs.emplace_back(new RigidResidual(this->param.rigid_scene_weight, ));
+//            }
+//        }
+//    }
+}
+
 void LaserOdom::buildResiduals(ceres::Problem &problem, ceres::ParameterBlockOrdering &param_ordering, int opt_iter) {
     size_t n_features = this->feature_extractor.param.feature_definitions.size();
     this->costs.clear();
@@ -1544,6 +1596,7 @@ void LaserOdom::buildResiduals(ceres::Problem &problem, ceres::ParameterBlockOrd
     this->loss_functions.clear();
     for (uint32_t f_idx = 0; f_idx < n_features; ++f_idx) {
         this->trackResiduals(problem, param_ordering, f_idx, this->feature_tracks.at(f_idx), opt_iter);
+        this->rigidResiduals(problem, f_idx);
     }
     for (uint32_t state_id = 0; state_id < this->cur_trajectory.size(); ++state_id) {
         auto &state = this->cur_trajectory[state_id];

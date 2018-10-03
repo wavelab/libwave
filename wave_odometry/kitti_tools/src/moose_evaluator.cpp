@@ -67,7 +67,7 @@ int main(int argc, char **argv) {
     std::sort(v.begin(), v.end());
 
     // timesteps
-    fstream lidar_stamps(lidar_path + "times.txt", ios::in);
+    fstream lidar_stamps(data_path + "lidar_times.txt", ios::in);
 
     if (!lidar_stamps.good()) {
         throw std::runtime_error("file structure not as expected for timestamps");
@@ -145,7 +145,7 @@ int main(int argc, char **argv) {
             scan_index++;
             continue;
         }
-        if (scan_index > end_frame) {
+        if (scan_index >= end_frame) {
             break;
         }
         fstream cloud_file;
