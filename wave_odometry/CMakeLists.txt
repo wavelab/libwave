@@ -96,6 +96,11 @@ IF(BUILD_TESTING)
     TARGET_LINK_LIBRARIES(residual_tests
             ${PROJECT_NAME})
 
+    WAVE_ADD_BENCHMARK(residual_benchmark
+            tests/residual_test/residual_benchmark.cpp)
+    TARGET_LINK_LIBRARIES(residual_benchmark
+            ${PROJECT_NAME})
+
     WAVE_ADD_TEST(callback_tests
             tests/callback/odometry_callback_test.cpp)
     TARGET_LINK_LIBRARIES(callback_tests
