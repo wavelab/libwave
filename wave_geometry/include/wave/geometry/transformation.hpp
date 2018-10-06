@@ -337,6 +337,9 @@ class Transformation {
     template <typename Other, bool OtherApprox>
     Vec6 manifoldMinus(const Transformation<Other, OtherApprox> &R) const;
 
+    template <typename Other, bool OtherApprox, typename OtherDerived>
+    void manifoldMinus(const Transformation<Other, OtherApprox> &R, Eigen::MatrixBase<OtherDerived> &retval) const;
+
     /** Same as manifoldMinus, except also computes the Jacobians with respect
      * to the left and right arguments of manifoldMinus.  For manifold minus,
      * @f$ \omega = T_t \boxminus T @f$.
@@ -348,7 +351,8 @@ class Transformation {
      * @f$ T @f$, which is also the input transformation.
      * @return The result, @f$ \omega = T_t \boxminus T @f$
      */
-    Vec6 manifoldMinusAndJacobian(const Transformation &T, Mat6 &J_left, Mat6 &J_right) const;
+    template<typename otherStorage, bool otherApprox>
+    Vec6 manifoldMinusAndJacobian(const Transformation<otherStorage, otherApprox> &T, Mat6 *J_left = nullptr, Mat6 *J_right = nullptr) const;
 
     template <typename Other, typename OutT>
     void compose(const Other &T_Right, OutT &T_out) const;

@@ -312,16 +312,23 @@ void plotResults(const wave::VecE<wave::PoseVelStamped> &odom_trajectory) {
 }
 
 void plotError(const wave::VecE<wave::PoseStamped> &ground_truth, const wave::VecE<wave::PoseVelStamped> &odom_trajectory) {
-    if (ground_truth.size() != odom_trajectory.size()) {
-        LOG_ERROR("Ground truth size mismatched with estimate size!");
-    }
     //absolute error since start
     std::vector<double> x, y, z, rx, ry, rz;
     //pairwise error
     std::vector<double> px, py, pz, prx, pry, prz;
 
-    for (uint32_t frame_id = 0; frame_id < ground_truth.size(); ++frame_id) {
-        Vec6 diff = odom_trajectory.at(frame_id).pose.manifoldMinus(ground_truth.at(frame_id).pose);
+    for (uint32_t frame_id = 0; frame_id < odom_trajectory.size(); ++frame_id) {
+        auto &val = odom_trajectory.at(frame_id);
+        auto iter =
+                std::lower_bound(ground_truth.begin(), ground_truth.end(), val, [](const wave::PoseStamped &lhs, const wave::PoseVelStamped &rhs) {
+                    return lhs.stamp < rhs.stamp;
+                });
+        if (iter == ground_truth.end()) {
+            continue;
+        }
+        auto &truth_val = *iter;
+
+        Vec6 diff = val.pose.manifoldMinus(truth_val.pose);
         rx.emplace_back(diff(0));
         ry.emplace_back(diff(1));
         rz.emplace_back(diff(2));

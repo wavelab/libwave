@@ -11,12 +11,13 @@
 #include <Eigen/Core>
 #include <ceres/ceres.h>
 #include "wave/odometry/geometry/assign_jacobians.hpp"
+#include "wave/odometry/geometry/rotate_error.hpp"
 
 namespace wave {
 
-/// error is 2 dimensional, followed by states: 6 dimensional vector for line, and then all the trajectory states
+/// error is 3 dimensional, followed by states: 6 dimensional vector for line, and then all the trajectory states
 template <typename Scalar, int... states>
-class LineResidual : public ceres::SizedCostFunction<2, 6, states...> {
+class LineResidual : public ceres::SizedCostFunction<3, 6, states...> {
  public:
     virtual ~LineResidual() {}
 
@@ -46,7 +47,7 @@ class LineResidual : public ceres::SizedCostFunction<2, 6, states...> {
     const Scalar *pt;
     const VecE<const MatX*> jacsw1, jacsw2;
 
-    Mat2 weight = Mat2::Identity();
+    Mat3 weight = Mat3::Identity();
 
     const Scalar w1, w2;
 };

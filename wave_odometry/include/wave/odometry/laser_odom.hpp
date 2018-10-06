@@ -49,6 +49,8 @@
 #include "wave/odometry/transformer.hpp"
 #include "wave/odometry/feature_track.hpp"
 #include "wave/odometry/feature_extractor.hpp"
+#include "wave/odometry/geometry/fixed_line.hpp"
+#include "wave/odometry/geometry/fixed_plane.hpp"
 #include "wave/odometry/geometry/plane.hpp"
 #include "wave/odometry/geometry/line.hpp"
 #include "wave/odometry/geometry/rigid_residual.hpp"
@@ -58,6 +60,7 @@
 #include "wave/optimization/ceres/local_params/null_SE3_parameterization.hpp"
 #include "wave/optimization/ceres/local_params/line_parameterization.hpp"
 #include "wave/optimization/ceres/local_params/plane_parameterization.hpp"
+#include "wave/optimization/ceres/transform_prior.hpp"
 #include "wave/optimization/ceres/loss_function/bisquare_loss.hpp"
 #include "wave/utils/utils.hpp"
 
@@ -153,6 +156,8 @@ class LaserOdom {
     void updateParams(const LaserOdomParams &new_params);
     LaserOdomParams getParams() const;
 
+    bool T_O_L_added = false;
+    T_TYPE T_O_L;
     VecE<PoseVel> cur_trajectory, prev_trajectory;
 
     Vec6 prior_twist;
@@ -196,11 +201,9 @@ class LaserOdom {
     bool match(const TimeType &stamp);
     void trackResiduals(ceres::Problem &problem, ceres::ParameterBlockOrdering &param_ordering, uint32_t f_idx,
                             VecE <FeatureTrack> &track_list, int opt_iter);
-    void rigidResiduals(ceres::Problem &problem, uint32_t f_idx);
     void buildResiduals(ceres::Problem &problem, ceres::ParameterBlockOrdering &param_ordering, int opt_iter);
-    void buildResidualsFromMap(ceres::Problem &problem,
-            const Vec<FeatureTrack::Mapping> &mapping,
-            FeatureTrack &track, uint32_t f_idx);
+    void buildResidualsFromMap(ceres::Problem &problem, const Vec<FeatureTrack::Mapping> &mapping, FeatureTrack &track,
+                                   uint32_t f_idx, bool use_fixed);
     // todo think about how to reuse residuals
     Vec<std::shared_ptr<ceres::CostFunction>> costs;
     std::vector<std::shared_ptr<ceres::LocalParameterization>> local_params;

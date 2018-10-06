@@ -268,8 +268,6 @@ class TManifoldMinusAndJacobianJLeftFunctor {
     T_Type R_left;
     T_Type R_right;
     TManifoldMinusAndJacobianJLeftFunctor(const T_Type &R_left, const T_Type &R_right) {
-//        this->R_left.deepCopy(R_left);
-//        this->R_right.deepCopy(R_right);
         this->R_left = R_left;
         this->R_right = R_right;
     }
@@ -277,7 +275,6 @@ class TManifoldMinusAndJacobianJLeftFunctor {
     Vec6 operator()(const Vec6 &perturbation) {
         Mat6 J;
         T_Type R_perturbed;
-//        R_perturbed.deepCopy(this->R_left);
         R_perturbed = this->R_left;
         R_perturbed.manifoldPlus(perturbation);
         return R_perturbed.manifoldMinus(this->R_right);

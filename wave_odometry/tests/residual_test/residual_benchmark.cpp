@@ -5,15 +5,17 @@
 
 static void BM_LINE_ERROR_ONLY(benchmark::State &state) {
     wave::Vec3 pt;
-    wave::VecE<wave::Mat6> jacsw1, jacsw2;
-    wave::Vec<const double *> jw1, jw2;
+    wave::VecE<wave::MatX> jacsw1, jacsw2;
+    wave::VecE<const wave::MatX*> jw1, jw2;
     jacsw1.resize(4);
     jacsw2.resize(4);
     for (uint32_t i = 0; i < jacsw1.size(); ++i) {
+        jacsw1.at(i).resize(6,6);
+        jacsw2.at(i).resize(6,6);
         jacsw1.at(i).setRandom();
         jacsw2.at(i).setRandom();
-        jw1.emplace_back(jacsw1.at(i).data());
-        jw2.emplace_back(jacsw2.at(i).data());
+        jw1.emplace_back(&(jacsw1.at(i)));
+        jw2.emplace_back(&(jacsw2.at(i)));
     }
 
     double w1, w2;
@@ -26,7 +28,7 @@ static void BM_LINE_ERROR_ONLY(benchmark::State &state) {
     line.setRandom();
     line.block<3,1>(0,0).normalize();
 
-    double residuals[2];
+    double residuals[3];
     double *parameters[1];
     parameters[0] = line.data();
 
@@ -38,15 +40,17 @@ BENCHMARK(BM_LINE_ERROR_ONLY);
 
 static void BM_LINE_WITH_JACOBIAN(benchmark::State &state) {
     wave::Vec3 pt;
-    wave::VecE<wave::Mat6> jacsw1, jacsw2;
-    wave::Vec<const double *> jw1, jw2;
+    wave::VecE<wave::MatX> jacsw1, jacsw2;
+    wave::VecE<const wave::MatX*> jw1, jw2;
     jacsw1.resize(4);
     jacsw2.resize(4);
     for (uint32_t i = 0; i < jacsw1.size(); ++i) {
+        jacsw1.at(i).resize(6,6);
+        jacsw2.at(i).resize(6,6);
         jacsw1.at(i).setRandom();
         jacsw2.at(i).setRandom();
-        jw1.emplace_back(jacsw1.at(i).data());
-        jw2.emplace_back(jacsw2.at(i).data());
+        jw1.emplace_back(&(jacsw1.at(i)));
+        jw2.emplace_back(&(jacsw2.at(i)));
     }
 
     double w1, w2;
@@ -59,15 +63,15 @@ static void BM_LINE_WITH_JACOBIAN(benchmark::State &state) {
     line.setRandom();
     line.block<3,1>(0,0).normalize();
 
-    double residuals[2];
+    double residuals[3];
     double *parameters[1];
     parameters[0] = line.data();
 
-    Eigen::Matrix<double, 2, 6, Eigen::RowMajor> J_line;
-    Eigen::Matrix<double, 2, 12, Eigen::RowMajor> J_T1;
-    Eigen::Matrix<double, 2, 6, Eigen::RowMajor> J_V1;
-    Eigen::Matrix<double, 2, 12, Eigen::RowMajor> J_T2;
-    Eigen::Matrix<double, 2, 6, Eigen::RowMajor> J_V2;
+    Eigen::Matrix<double, 3, 6, Eigen::RowMajor> J_line;
+    Eigen::Matrix<double, 3, 12, Eigen::RowMajor> J_T1;
+    Eigen::Matrix<double, 3, 6, Eigen::RowMajor> J_V1;
+    Eigen::Matrix<double, 3, 12, Eigen::RowMajor> J_T2;
+    Eigen::Matrix<double, 3, 6, Eigen::RowMajor> J_V2;
 
     double *jacobians[5];
     jacobians[0] = J_line.data();
@@ -85,15 +89,17 @@ BENCHMARK(BM_LINE_WITH_JACOBIAN);
 
 static void BM_PLANE_ERROR_ONLY(benchmark::State &state) {
     wave::Vec3 pt;
-    wave::VecE<wave::Mat6> jacsw1, jacsw2;
-    wave::Vec<const double *> jw1, jw2;
+    wave::VecE<wave::MatX> jacsw1, jacsw2;
+    wave::VecE<const wave::MatX*> jw1, jw2;
     jacsw1.resize(4);
     jacsw2.resize(4);
     for (uint32_t i = 0; i < jacsw1.size(); ++i) {
+        jacsw1.at(i).resize(6,6);
+        jacsw2.at(i).resize(6,6);
         jacsw1.at(i).setRandom();
         jacsw2.at(i).setRandom();
-        jw1.emplace_back(jacsw1.at(i).data());
-        jw2.emplace_back(jacsw2.at(i).data());
+        jw1.emplace_back(&(jacsw1.at(i)));
+        jw2.emplace_back(&(jacsw2.at(i)));
     }
 
     double w1, w2;
@@ -118,15 +124,17 @@ BENCHMARK(BM_PLANE_ERROR_ONLY);
 
 static void BM_PLANE_WITH_JACOBIAN(benchmark::State &state) {
     wave::Vec3 pt;
-    wave::VecE<wave::Mat6> jacsw1, jacsw2;
-    wave::Vec<const double *> jw1, jw2;
+    wave::VecE<wave::MatX> jacsw1, jacsw2;
+    wave::VecE<const wave::MatX*> jw1, jw2;
     jacsw1.resize(4);
     jacsw2.resize(4);
     for (uint32_t i = 0; i < jacsw1.size(); ++i) {
+        jacsw1.at(i).resize(6,6);
+        jacsw2.at(i).resize(6,6);
         jacsw1.at(i).setRandom();
         jacsw2.at(i).setRandom();
-        jw1.emplace_back(jacsw1.at(i).data());
-        jw2.emplace_back(jacsw2.at(i).data());
+        jw1.emplace_back(&(jacsw1.at(i)));
+        jw2.emplace_back(&(jacsw2.at(i)));
     }
 
     double w1, w2;

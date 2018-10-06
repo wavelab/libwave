@@ -166,7 +166,7 @@ void Transformation<Derived, approximate>::interpolateAndJacobians(const Transfo
                                                                    Mat6 &J_twist_k,
                                                                    Mat6 &J_twist_kp1) {
     Mat6 J_left, J_right;
-    auto eps = T_kp1.manifoldMinusAndJacobian(T_k, J_left, J_right);
+    auto eps = T_kp1.manifoldMinusAndJacobian(T_k, &J_left, &J_right);
     Vec6 int_twist =
       hat.block<6, 6>(0, 6) * twist_k + candle.block<6, 6>(0, 0) * eps + candle.block<6, 6>(0, 6) * J_left * twist_kp1;
 
@@ -679,9 +679,17 @@ Vec6 Transformation<Derived, approximate>::manifoldMinus(const Transformation<Ot
 }
 
 template <typename Derived, bool approximate>
-Vec6 Transformation<Derived, approximate>::manifoldMinusAndJacobian(const Transformation &T,
-                                                                    Mat6 &J_left,
-                                                                    Mat6 &J_right) const {
+template <typename Other, bool OtherApprox, typename OtherDerived>
+void Transformation<Derived, approximate>::manifoldMinus(const Transformation<Other, OtherApprox> &T, Eigen::MatrixBase<OtherDerived>& retval) const {
+    EIGEN_STATIC_ASSERT_VECTOR_SPECIFIC_SIZE(Eigen::MatrixBase<OtherDerived>, 6)
+    retval = ((*this) * T.transformInverse()).logMap();
+}
+
+template <typename Derived, bool approximate>
+template <typename otherStorage, bool otherApprox>
+Vec6 Transformation<Derived, approximate>::manifoldMinusAndJacobian(const Transformation<otherStorage, otherApprox> &T,
+                                                                    Mat6 *J_left,
+                                                                    Mat6 *J_right) const {
     // logmap(T1 * inv(T2))
     Mat6 J_logm;
     Transformation<Mat34, approximate> T2inv;
@@ -691,8 +699,7 @@ Vec6 Transformation<Derived, approximate>::manifoldMinusAndJacobian(const Transf
     diff = (*this) * T2inv;
     auto manifold_difference = diff.logMap();
 
-    // todo: Change to constexpr if when switch to C++17
-    if (approximate) {
+    if constexpr (approximate) {
         J_logm = Transformation<>::SE3ApproxInvLeftJacobian(manifold_difference);
     } else {
         J_logm = Transformation<>::SE3LeftJacobian(manifold_difference).inverse();
@@ -711,8 +718,12 @@ Vec6 Transformation<Derived, approximate>::manifoldMinusAndJacobian(const Transf
                                               T.storage.template block<3, 3>(0, 0).transpose();
     J_comp_inv.template block<3, 3>(0, 3).setZero();
 
-    J_left = J_logm;
-    J_right = J_logm * J_comp_inv;
+    if (J_left) {
+        *J_left = J_logm;
+    }
+    if (J_right) {
+        *J_right = J_logm * J_comp_inv;
+    }
 
     return manifold_difference;
 }

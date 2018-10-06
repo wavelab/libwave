@@ -291,7 +291,7 @@ TEST_F(TransformationTestFixture, testManifoldMinusAndJacobian) {
     // T3 - T2 = T1 (transform_expected)
 
     Mat6 J_left_analytical, J_right_analytical;
-    Vec6 log_params = T3.manifoldMinusAndJacobian(T2, J_left_analytical, J_right_analytical);
+    Vec6 log_params = T3.manifoldMinusAndJacobian(T2, &J_left_analytical, &J_right_analytical);
     Vec6 err = log_params - this->transformation_twist_parameters;
     ASSERT_LE(err.norm(), this->comparison_threshold);
 

@@ -33,15 +33,17 @@ inline void assignSpecificJacobian(double **jacobian,
                            uint32_t state_idx) {
     EIGEN_STATIC_ASSERT_FIXED_SIZE(Eigen::MatrixBase<Derived>)
 
+    const int rows = Eigen::MatrixBase<Derived>::RowsAtCompileTime;
+
     if (jacobian[state_idx]) {
-        Eigen::Map<Eigen::Matrix<double, Eigen::MatrixBase<Derived>::RowsAtCompileTime, state_dim, Eigen::RowMajor>> jac(
-          jacobian[state_idx]);
+        Eigen::Map<Eigen::Matrix<double, state_dim, rows>> jac(
+                jacobian[state_idx]);
 
         if constexpr (state_dim > 6) {
-            jac.template block<Eigen::MatrixBase<Derived>::RowsAtCompileTime, 6>(0,0).noalias() = del_e_del_T * (w1 * *(jacsw1.at(state_idx)) + w2 * *(jacsw2.at(state_idx)));
-            jac.template block<Eigen::MatrixBase<Derived>::RowsAtCompileTime, state_dim - 6>(0, 6).setZero();
+            jac.template block<6, rows>(0,0).noalias() = (del_e_del_T * (w1 * *(jacsw1.at(state_idx)) + w2 * *(jacsw2.at(state_idx)))).transpose();
+            jac.template block<state_dim - 6, rows>(6, 0).setZero();
         } else {
-            jac.noalias() = del_e_del_T * (w1 * *(jacsw1.at(state_idx)) + w2 * *(jacsw2.at(state_idx)));
+            jac.noalias() = (del_e_del_T * (w1 * *(jacsw1.at(state_idx)) + w2 * *(jacsw2.at(state_idx)))).transpose();
         }
     }
 }

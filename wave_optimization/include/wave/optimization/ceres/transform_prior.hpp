@@ -5,7 +5,7 @@
 #include "wave/geometry/transformation.hpp"
 
 /**
- * Implements a prior residual on a transform
+ * Implements a prior residual on a transform. Use will null SE3 parameterization only
  */
 namespace wave {
 
@@ -17,24 +17,21 @@ class TransformPrior : public ceres::SizedCostFunction<6, 12> {
     const Mat6 weight_matrix;
  public:
     virtual ~TransformPrior() {}
-    TransformPrior(Mat6 weight, Transformation<Eigen::Matrix<double, 3, 4>> Prior) : prior(Prior.transformInverse()), weight_matrix(weight) {}
+    TransformPrior(Mat6 weight, Transformation<Eigen::Matrix<double, 3, 4>> prior) : prior(prior), weight_matrix(weight) {}
 
     virtual bool Evaluate(double const *const *parameters, double *residuals, double **jacobians) const {
         Eigen::Map<const Eigen::Matrix<double, 3, 4>> tk_ptr(parameters[0], 3, 4);
         Transformation<Eigen::Map<const Eigen::Matrix<double, 3, 4>>> transform(tk_ptr);
-
-        auto diff = transform * prior;
-        Eigen::Map<Eigen::Matrix<double, 6, 1>> residual(residuals, 6, 1);
-        residual = diff.logMap();
+        Eigen::Map<Vec6> residual(residuals);
         if (jacobians && jacobians[0]) {
-            Mat6 J_logmap = Transformation<>::SE3LeftJacobian(residual).inverse();
-            Eigen::Matrix<double, 12, 6> J_lift;
-            transform.J_lift(J_lift);
-            Eigen::Matrix<double, 6, 12> J_lift_pinv = (J_lift.transpose() * J_lift).inverse() * J_lift.transpose();
+            Eigen::Map<Eigen::Matrix<double, 6, 12, Eigen::RowMajor>> del_e_del_T(jacobians[0]);
+            del_e_del_T.block<6,6>(0,6).setZero();
 
-            Eigen::Matrix<double, 6, 12> temp = this->weight_matrix * J_logmap * J_lift_pinv;
-
-            Eigen::Map<Eigen::Matrix<double, 6, 12, Eigen::RowMajor>>(jacobians[0], 6, 12) = temp;
+            Mat6 J_boxminus;
+            residual = transform.manifoldMinusAndJacobian(this->prior, &J_boxminus, nullptr);
+            del_e_del_T.block<6,6>(0,0).noalias() = this->weight_matrix * J_boxminus;
+        } else {
+            transform.manifoldMinus(this->prior, residual);
         }
         residual = this->weight_matrix * residual;
 

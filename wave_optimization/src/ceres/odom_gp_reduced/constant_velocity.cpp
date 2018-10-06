@@ -16,7 +16,7 @@ bool ConstantVelocityPriorRed::Evaluate(double const *const *parameters, double 
     Eigen::Map<Eigen::Matrix<double, 6, 1>> res_map(residuals);
 
     Mat6 J_left, J_right;
-    Vec6 man_diff = Tkp1.manifoldMinusAndJacobian(Tk, J_left, J_right);
+    Vec6 man_diff = Tkp1.manifoldMinusAndJacobian(Tk, &J_left, &J_right);
     
     res_map.block<6,1>(0,0) = man_diff - this->delta_t * cur_vel;
 

@@ -4,7 +4,7 @@
 #include "wave/wave_test.hpp"
 #include "wave/geometry/transformation.hpp"
 #include "wave/optimization/ceres/transform_prior.hpp"
-#include "wave/optimization/ceres/local_params/SE3Parameterization.hpp"
+#include "wave/optimization/ceres/local_params/null_SE3_parameterization.hpp"
 
 namespace wave {
 
@@ -24,25 +24,40 @@ TEST(transform_prior, unit_weights) {
                                     0.050036777340220,
                                     0};
 
-    double **jacobian;
-    jacobian = new double *[1];
-    jacobian[0] = new double[72];
+    Transformation<> val, saved_val;
+    val.storage = Eigen::Map<const Mat34>(trans[0], 3, 4);
+    saved_val = val;
 
-    double residual[6] = {0};
+    Vec6 error;
     Transformation<> prior_val;
 
+    Eigen::Matrix<double, 6, 12, Eigen::RowMajor> analytical_jacobian, numerical_jacobian;
+    numerical_jacobian.setZero();
+
+    double *jacobian[1];
+    jacobian[0] = analytical_jacobian.data();
+
+    double *params[1];
+    params[0] = val.storage.data();
+
     ceres::CostFunction* cost_function = new TransformPrior(Mat6::Identity(), prior_val);
-    cost_function->Evaluate(trans, residual, jacobian);
+    cost_function->Evaluate(params, error.data(), jacobian);
 
-    ceres::LocalParameterization *se3_param = new SE3Parameterization;
-    std::vector<const ceres::LocalParameterization*> local_param_vec;
-    local_param_vec.emplace_back(se3_param);
+    double step = std::sqrt(std::numeric_limits<double>::epsilon());
+    Vec6 perturb;
+    Vec6 perturbed_error;
+    for (uint32_t i = 0; i < 6; ++i) {
+        perturb.setZero();
+        perturb(i) = step;
+        val = saved_val;
+        val.manifoldPlus(perturb);
 
-    ceres::NumericDiffOptions ndiff_options;
-    ceres::GradientChecker g_check(cost_function, &local_param_vec, ndiff_options);
-    ceres::GradientChecker::ProbeResults g_results;
-    EXPECT_TRUE(g_check.Probe(trans, 1.1e-6, &g_results));
-    LOG_INFO("%s", g_results.error_log.c_str());
+        cost_function->Evaluate(params, perturbed_error.data(), nullptr);
+        numerical_jacobian.col(i) = (perturbed_error - error) / step;
+    }
+
+    MatX diff = analytical_jacobian - numerical_jacobian;
+    EXPECT_NEAR(diff.norm(), 0, 1e-6);
 }
 
 TEST(transform_prior, weighted_information) {
@@ -61,12 +76,21 @@ TEST(transform_prior, weighted_information) {
                                     0.050036777340220,
                                     0};
 
-    double **jacobian;
-    jacobian = new double *[1];
-    jacobian[0] = new double[72];
+    Transformation<> val, saved_val;
+    val.storage = Eigen::Map<const Mat34>(trans[0], 3, 4);
+    saved_val = val;
 
-    double residual[6] = {0};
+    Vec6 error;
     Transformation<> prior_val;
+
+    Eigen::Matrix<double, 6, 12, Eigen::RowMajor> analytical_jacobian, numerical_jacobian;
+    numerical_jacobian.setZero();
+
+    double *jacobian[1];
+    jacobian[0] = analytical_jacobian.data();
+
+    double *params[1];
+    params[0] = val.storage.data();
 
     Mat6 covar;
     covar << 0.049608482448035, 0.000039527111973, -0.000079054223946, -0.000002281574415, 0.014183675367405, -0.026870388557460,
@@ -80,17 +104,23 @@ TEST(transform_prior, weighted_information) {
     Mat6 sqrtinfo = es.operatorSqrt();
 
     ceres::CostFunction* cost_function = new TransformPrior(sqrtinfo, prior_val);
-    cost_function->Evaluate(trans, residual, jacobian);
+    cost_function->Evaluate(params, error.data(), jacobian);
 
-    ceres::LocalParameterization *se3_param = new SE3Parameterization;
-    std::vector<const ceres::LocalParameterization*> local_param_vec;
-    local_param_vec.emplace_back(se3_param);
+    double step = std::sqrt(std::numeric_limits<double>::epsilon());
+    Vec6 perturb;
+    Vec6 perturbed_error;
+    for (uint32_t i = 0; i < 6; ++i) {
+        perturb.setZero();
+        perturb(i) = step;
+        val = saved_val;
+        val.manifoldPlus(perturb);
 
-    ceres::NumericDiffOptions ndiff_options;
-    ceres::GradientChecker g_check(cost_function, &local_param_vec, ndiff_options);
-    ceres::GradientChecker::ProbeResults g_results;
-    EXPECT_TRUE(g_check.Probe(trans, 5e-5, &g_results));
-    LOG_INFO("%s", g_results.error_log.c_str());
+        cost_function->Evaluate(params, perturbed_error.data(), nullptr);
+        numerical_jacobian.col(i) = (perturbed_error - error) / step;
+    }
+
+    MatX diff = analytical_jacobian - numerical_jacobian;
+    EXPECT_NEAR(diff.norm(), 0, 1e-6);
 }
 
 }

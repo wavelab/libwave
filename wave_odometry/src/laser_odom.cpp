@@ -301,7 +301,8 @@ void LaserOdom::fluidToStaticUpdate() {
 
 void LaserOdom::updateTracks() {
     // transform all landmark states to start of current scan and decrement the scan id of each associated feature point
-    const auto transform = this->cur_trajectory.at(this->param.num_trajectory_states - 1).pose.transformInverse();
+    const auto transform = this->cur_trajectory.at(this->param.num_trajectory_states - 1).pose.transformInverse() *
+            this->T_O_L;
     for (auto &tracks : this->feature_tracks) {
         VecE<FeatureTrack> updated_tracks;
         for (auto &track : tracks) {
@@ -336,6 +337,7 @@ void LaserOdom::updateTracks() {
         }
         std::swap(tracks, updated_tracks);
     }
+    T_O_L.setIdentity();
 }
 
 void LaserOdom::rollover(TimeType stamp) {
@@ -430,6 +432,7 @@ void LaserOdom::rollover(TimeType stamp) {
 }
 
 bool LaserOdom::runOptimization(ceres::Problem &problem, ceres::Solver::Summary &summary, int opt_iter) {
+    this->T_O_L_added = false;
     ceres::Solver::Options options;
     options.linear_solver_type = ceres::DENSE_SCHUR;
     options.use_explicit_schur_complement = true;
@@ -1445,7 +1448,8 @@ void prepareJacobianPointers(const Vec<VecE<MatX>> *jacs,
 }
 }
 
-void LaserOdom::buildResidualsFromMap(ceres::Problem &problem, const Vec<FeatureTrack::Mapping> &mapping, FeatureTrack &track, uint32_t f_idx) {
+void LaserOdom::buildResidualsFromMap(ceres::Problem &problem, const Vec <wave::FeatureTrack::Mapping> &mapping,
+                                      FeatureTrack &track, uint32_t f_idx, bool use_fixed) {
     const auto& feat_def = this->feature_extractor.param.feature_definitions.at(f_idx);
     for (const auto &map : mapping) {
         const Eigen::Tensor<float, 2>* points;
@@ -1491,34 +1495,43 @@ void LaserOdom::buildResidualsFromMap(ceres::Problem &problem, const Vec<Feature
             this->range_sensor->getEuclideanCovariance(pointsT->data() + 3 * map.pt_idx, covar_p);
         }
         if (feat_def.criteria.front().sel_pol == NEAR_ZERO) {
-            auto residual = new PlaneResidual<double, 12, 6, 12, 6>(cur_point, jacsw1, jacsw2, w1, w2);
-            this->costs.emplace_back(residual);
-            if (this->param.use_weighting) {
-                auto del_e_del_p = residual->getDerivativeWpT(track.geometry.block<3,1>(0,0));
-                MatX covar_e = del_e_del_p * covar_p * del_e_del_p.transpose();
-                weight = covar_e.inverse().sqrt();
-                residual->setWeight(weight);
+            if (use_fixed) {
+                auto residual = new FixedPlaneResidual<double, 12, 6, 12, 6>(cur_point, jacsw1, jacsw2, w1, w2, track.geometry);
+                this->costs.emplace_back(residual);
+            } else {
+                auto residual = new PlaneResidual<double, 12, 6, 12, 6>(cur_point, jacsw1, jacsw2, w1, w2);
+                this->costs.emplace_back(residual);
             }
         } else {
-            auto residual = new LineResidual<double, 12, 6, 12, 6>(cur_point, jacsw1, jacsw2, w1, w2);
-            this->costs.emplace_back(residual);
-            if (this->param.use_weighting) {
-                auto del_e_del_p = residual->getDerivativeWpT(track.geometry.block<3,1>(0,0));
-                MatX covar_e = del_e_del_p * covar_p * del_e_del_p.transpose();
-                weight = covar_e.inverse().sqrt();
-                residual->setWeight(weight);
+            if (use_fixed) {
+                auto residual = new FixedLineResidual<double, 12, 6, 12, 6>(cur_point, jacsw1, jacsw2, w1, w2, track.geometry);
+                this->costs.emplace_back(residual);
+            } else {
+                auto residual = new LineResidual<double, 12, 6, 12, 6>(cur_point, jacsw1, jacsw2, w1, w2);
+                this->costs.emplace_back(residual);
             }
         }
         uint32_t start_offset = map.state_id;
 
         this->loss_functions.emplace_back(new BisquareLoss(this->param.robust_param));
-        problem.AddResidualBlock(this->costs.back().get(),
-                                 this->loss_functions.back().get(),
-                                 track.geometry.data(),
-                                 this->cur_trajectory.at(start_offset).pose.storage.data(),
-                                 this->cur_trajectory.at(start_offset).vel.data(),
-                                 this->cur_trajectory.at(start_offset + 1).pose.storage.data(),
-                                 this->cur_trajectory.at(start_offset + 1).vel.data());
+
+        if (use_fixed) {
+            problem.AddResidualBlock(this->costs.back().get(),
+                                     this->loss_functions.back().get(),
+                                     this->T_O_L.storage.data(),
+                                     this->cur_trajectory.at(start_offset).pose.storage.data(),
+                                     this->cur_trajectory.at(start_offset).vel.data(),
+                                     this->cur_trajectory.at(start_offset + 1).pose.storage.data(),
+                                     this->cur_trajectory.at(start_offset + 1).vel.data());
+        } else {
+            problem.AddResidualBlock(this->costs.back().get(),
+                                     this->loss_functions.back().get(),
+                                     track.geometry.data(),
+                                     this->cur_trajectory.at(start_offset).pose.storage.data(),
+                                     this->cur_trajectory.at(start_offset).vel.data(),
+                                     this->cur_trajectory.at(start_offset + 1).pose.storage.data(),
+                                     this->cur_trajectory.at(start_offset + 1).vel.data());
+        }
     }
 }
 
@@ -1532,61 +1545,33 @@ void LaserOdom::trackResiduals(ceres::Problem &problem, ceres::ParameterBlockOrd
         if (track.geometry(2) < 0) {
             track.geometry.block<3,1>(0,0) = -track.geometry.block<3,1>(0,0);
         }
-        if (feat_def.criteria.front().sel_pol == NEAR_ZERO) {
-            this->local_params.emplace_back(std::make_shared<PlaneParameterization>());
-        } else {
-            this->local_params.emplace_back(std::make_shared<LineParameterization>());
-        }
-        problem.AddParameterBlock(track.geometry.data(), 6, this->local_params.back().get());
+
+        //use T_OL to decouple old landmarks from motion estimation
+        bool use_fixed = false;
         if (track.age > this->param.n_window) {
-            problem.SetParameterBlockConstant(track.geometry.data());
+            if (!this->T_O_L_added) {
+                this->local_params.emplace_back(std::make_shared<NullSE3Parameterization>());
+                problem.AddParameterBlock(this->T_O_L.storage.data(), 12, this->local_params.back().get());
+                param_ordering.AddElementToGroup(this->T_O_L.storage.data(), 1);
+                this->T_O_L_added = true;
+                problem.SetParameterBlockConstant(this->T_O_L.storage.data());
+            }
+            use_fixed = true;
+        } else {
+            if (feat_def.criteria.front().sel_pol == NEAR_ZERO) {
+                this->local_params.emplace_back(std::make_shared<PlaneParameterization>());
+            } else {
+                this->local_params.emplace_back(std::make_shared<LineParameterization>());
+            }
+            problem.AddParameterBlock(track.geometry.data(), 6, this->local_params.back().get());
+            if (opt_iter == 0) {
+                problem.SetParameterBlockConstant(track.geometry.data());
+            }
+            param_ordering.AddElementToGroup(track.geometry.data(), 0);
         }
-        param_ordering.AddElementToGroup(track.geometry.data(), 0);
-
-        this->buildResidualsFromMap(problem, track.static_mapping, track, f_idx);
-        this->buildResidualsFromMap(problem, track.fluid_mapping, track, f_idx);
-        if (opt_iter == 0) {
-            problem.SetParameterBlockConstant(track.geometry.data());
-        }
+        this->buildResidualsFromMap(problem, track.static_mapping, track, f_idx, use_fixed);
+        this->buildResidualsFromMap(problem, track.fluid_mapping, track, f_idx, use_fixed);
     }
-}
-
-void LaserOdom::rigidResiduals(ceres::Problem &problem, uint32_t f_idx) {
-//    int f_count = 0;
-//    Vec<int> track_ids;
-//    MatXf dataset(3, this->feature_tracks.at(f_idx));
-//    for (uint32_t i = 0; i < this->feature_tracks.at(f_idx).size(); ++i) {
-//        const auto &track = this->feature_tracks.at(f_idx).at(i);
-//        if (!track.static_mapping.empty() || !track.fluid_mapping.empty()) {
-//            dataset.col(f_count) = this->feature_tracks.at(f_idx).at(i).geometry.block<3,1>(3,0);
-//            track_ids.emplace_back(i);
-//            ++f_count;
-//        }
-//    }
-//    dataset.conservativeResize(Eigen::NoChange, f_count);
-//
-//    int knn = this->param.landmark_knn > f_count - 1 ? f_count - 1 : this->param.landmark_knn;
-//    Eigen::MatrixXi indices(knn, f_count);
-//    MatXf dists(knn, f_count);
-//
-//    if (f_count < 2) {
-//        return;
-//    }
-//
-//    auto kd_tree = Nabo::NNSearchF::createKDTreeLinearHeap(dataset);
-//    kd_tree->knn(dataset, indices, dists, knn, 0, Nabo::NNSearchF::SORT_RESULTS);
-//
-//    std::set<std::pair<uint32_t, uint32_t>> connections;
-//    for (uint32_t j = 0; j < dists.cols(); ++j) {
-//        for(uint32_t i = 0; i < dists.rows(); ++i) {
-//            std::pair<uint32_t, uint32_t> edge;
-//            edge = j < indices(i,j) ? std::make_pair(j, indices(i,j)) : std::make_pair(indices(i,j), j);
-//            if (connections.find(edge) == connections.end()) {
-//
-//                this->costs.emplace_back(new RigidResidual(this->param.rigid_scene_weight, ));
-//            }
-//        }
-//    }
 }
 
 void LaserOdom::buildResiduals(ceres::Problem &problem, ceres::ParameterBlockOrdering &param_ordering, int opt_iter) {
@@ -1596,7 +1581,7 @@ void LaserOdom::buildResiduals(ceres::Problem &problem, ceres::ParameterBlockOrd
     this->loss_functions.clear();
     for (uint32_t f_idx = 0; f_idx < n_features; ++f_idx) {
         this->trackResiduals(problem, param_ordering, f_idx, this->feature_tracks.at(f_idx), opt_iter);
-        this->rigidResiduals(problem, f_idx);
+//        this->rigidResiduals(problem, f_idx);
     }
     for (uint32_t state_id = 0; state_id < this->cur_trajectory.size(); ++state_id) {
         auto &state = this->cur_trajectory[state_id];
