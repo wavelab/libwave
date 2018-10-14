@@ -307,8 +307,11 @@ void LaserOdom::updateTracks() {
         VecE<FeatureTrack> updated_tracks;
         for (auto &track : tracks) {
             double track_range = track.geometry.block<3, 1>(3, 0).norm();
-            if (track_range > this->param.track_keep_range || track.length == 0) {
+            if (track_range > this->param.track_keep_range) {
                 continue;
+            }
+            if (track.length == 0) {
+                track.age = 0;
             }
             Vec<FeatureTrack::Mapping> updated_mapping;
             for (const auto &map : track.static_mapping) {
@@ -320,9 +323,9 @@ void LaserOdom::updateTracks() {
             }
 
             if (updated_mapping.size() < track.static_mapping.size()) {
-                if (track.length == 0) {
-                    throw std::runtime_error("reducing zero length");
-                }
+//                if (track.length == 0) {
+//                    throw std::runtime_error("reducing zero length");
+//                }
                 --(track.length);
             }
             std::swap(track.static_mapping, updated_mapping);
@@ -994,69 +997,8 @@ void LaserOdom::createNewLineFeatureTrackCandidates(uint32_t feat_id,
     line_candidates.block(0,0,3,c_cols) = this->cur_feature_candidatesT.at(feat_id);
     line_candidates.block(0,c_cols, 3, p_cols) = this->prev_feature_candidatesT.at(feat_id);
     LineFitter line_fitter(this->param.max_correspondence_dist * 3, 10, this->param.max_init_linear_residual, 6);
-//    line_fitter.fitLines(this->cur_feature_candidatesT.at(feat_id));
     line_fitter.fitLines(line_candidates);
     candidate_tracks = line_fitter.getTracks();
-//    line_fitter.fitLines(this->prev_feature_candidatesT.at(feat_id));
-//    VecE<FeatureTrack> prev_tracks = line_fitter.getTracks();
-
-//    Eigen::MatrixXf dataset(3, prev_tracks.size());
-//    Eigen::MatrixXf query(3, cur_tracks.size());
-//
-//    for (uint32_t i = 0; i < cur_tracks.size(); ++i) {
-//        query.block<3,1>(0,i) = cur_tracks.at(i).geometry.block<3,1>(3,0).cast<float>();
-//    }
-//    for (uint32_t i = 0; i < prev_tracks.size(); ++i) {
-//        dataset.block<3,1>(0,i) = prev_tracks.at(i).geometry.block<3,1>(3,0).cast<float>();
-//    }
-//
-//    if(dataset.cols() == 0) {
-//        return;
-//    }
-//
-//    auto kd_tree = Nabo::NNSearchF::createKDTreeLinearHeap(dataset);
-//
-//    int knn = this->param.knn > dataset.cols() ? dataset.cols() : this->param.knn;
-//
-//    Eigen::MatrixXi indices(knn, query.cols());
-//    MatXf dist(knn, query.cols());
-//
-//    kd_tree->knn(query,
-//                 indices,
-//                 dist,
-//                 knn,
-//                 0,
-//                 Nabo::NNSearchF::SORT_RESULTS | Nabo::NNSearchF::ALLOW_SELF_MATCH,
-//                 this->param.max_correspondence_dist);
-//
-//    std::vector<std::pair<uint32_t, float>> matches;
-//    // idx and distances are the nearest neighbours in prev_line_p0T to cur_line_p0T
-//    Vec6 cur_geo, prev_geo;
-//    for (uint32_t j = 0; j < indices.cols(); ++j) {
-//        cur_geo = cur_tracks.at(j).geometry;
-//        matches.clear();
-//        for (uint32_t i = 0; i < indices.rows(); ++i) {
-//            if (std::isinf(dist(i, j))) {
-//                break;
-//            }
-//            prev_geo = prev_tracks.at(indices(i,j)).geometry;
-//            float dist_cost, dir_cost;
-//            this->calculateLineSimilarity(cur_geo, prev_geo, dist_cost, dir_cost);
-//            if (dist_cost < 10*this->param.init_linear_dist_threshold &&
-//                dir_cost < this->param.init_linear_ang_threshold) {
-//                matches.emplace_back(indices(i, j), dist_cost + this->param.ang_scaling_param * dir_cost);
-//            }
-//        }
-//        if (!matches.empty()) {
-//            std::sort(matches.begin(), matches.end(),
-//                      [](const std::pair<uint32_t, float> &lhs, const std::pair<uint32_t, float> &rhs) {
-//                          return std::get<1>(lhs) > std::get<1>(rhs);
-//                      });
-//            FeatureTrack new_track;
-//            new_track.geometry = cur_geo;
-//            candidate_tracks.emplace_back(new_track);
-//        }
-//    }
 
     // merge shortlist and sort by number of measurements
     this->mergeFeatureTracks(candidate_tracks, feat_id);
@@ -1332,9 +1274,61 @@ void LaserOdom::extendSceneModel(const uint32_t &feat_id) {
 }
 
 void LaserOdom::performModelMaintenance(const uint32_t &feat_id) {
-    for (const auto &track : this->feature_tracks.at(feat_id)) {
-
+    //calculate error statistics & remove tracks that don't fit well.
+    const auto &tracks = this->feature_tracks.at(feat_id);
+    bool line = this->feature_extractor.param.feature_definitions.at(feat_id).criteria.front().sel_pol != NEAR_ZERO;
+    Vec<double> mean_error(tracks.size());
+    Vec<double> error_variance(tracks.size());
+    for (uint32_t t_id = 0; t_id < tracks.size(); ++t_id) {
+        mean_error.at(t_id) = 0;
+        Vec<double> errors;
+        for (const auto &map : tracks.at(t_id).static_mapping) {
+            Vec3 pt = this->feat_pts_T.at(map.scan_idx).at(feat_id).block<3,1>(0,map.pt_idx);
+            if (line) {
+                errors.emplace_back(calculateLineError(tracks.at(t_id).geometry, pt));
+            } else {
+                errors.emplace_back(calculatePlaneError(tracks.at(t_id).geometry, pt));
+            }
+            mean_error.at(t_id) += errors.back();
+        }
+        for (const auto &map : tracks.at(t_id).fluid_mapping) {
+            Vec3 pt;
+            if (map.scan_idx == this->feat_pts_T.size() - 1) {
+                pt = this->cur_feature_pointsT.at(feat_id).block<3,1>(0, map.pt_idx);
+            } else {
+                pt = this->prev_feature_pointsT.at(feat_id).block<3,1>(0, map.pt_idx);
+            }
+            if (line) {
+                errors.emplace_back(calculateLineError(tracks.at(t_id).geometry, pt));
+            } else {
+                errors.emplace_back(calculatePlaneError(tracks.at(t_id).geometry, pt));
+            }
+            mean_error.at(t_id) += errors.back();
+        }
+        mean_error.at(t_id) /= static_cast<double>(errors.size());
+        error_variance.at(t_id) = 0;
+        for (const auto& err : errors) {
+            double diff = err - mean_error.at(t_id);
+            error_variance.at(t_id) += diff * diff;
+        }
+        if (errors.size() == 1) {
+            error_variance.at(t_id) = 0;
+        } else {
+            error_variance.at(t_id) /= static_cast<double>(errors.size() - 1);
+        }
     }
+    VecE<FeatureTrack> good_tracks;
+    for (uint32_t t_id = 0; t_id < tracks.size(); ++t_id) {
+        if (line && error_variance.at(t_id) > 9e-3) {
+            continue;
+        } else if (error_variance.at(t_id) > 9e-3) {
+            continue;
+        }
+        good_tracks.emplace_back(tracks.at(t_id));
+    }
+    std::swap(good_tracks, this->feature_tracks.at(feat_id));
+//    matplotlibcpp::plot(mean_error, error_variance, ".");
+//    matplotlibcpp::show(true);
 }
 
 bool LaserOdom::match(const TimeType &stamp) {
@@ -1342,7 +1336,7 @@ bool LaserOdom::match(const TimeType &stamp) {
     // on the first match, initialization is poor
     static int initial_matches = 10;
     if (initial_matches == 10) {
-        double xvel_init = 5;
+        double xvel_init = 0;
 
         for (uint32_t t_id = 0; t_id < this->cur_trajectory.size(); ++t_id) {
             if (t_id == 0) {
@@ -1368,7 +1362,7 @@ bool LaserOdom::match(const TimeType &stamp) {
     this->transformer.update(this->cur_trajectory, this->trajectory_stamps);
 
     for (int op = 0; op < limit; op++) {
-        if (initial_matches > 0 || this->key_distance.block<3,1>(3,0).norm() > this->param.key_translation) {
+        if (true) {// (initial_matches > 0 || this->key_distance.block<3,1>(3,0).norm() > this->param.key_translation) {
             for (uint32_t j = 0; j < n_features; j++) {
                 this->extendSceneModel(j);
             }
@@ -1399,6 +1393,9 @@ bool LaserOdom::match(const TimeType &stamp) {
                 if ((summary.iterations.size() == 1) ||
                     ((summary.initial_cost - summary.final_cost) / summary.initial_cost < 1e-7)) {
                     break;
+                }
+                for (uint32_t j = 0; j < n_features; j++) {
+//                    this->performModelMaintenance(j);
                 }
             }
         }

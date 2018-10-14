@@ -10,12 +10,18 @@ using f64_seconds = std::chrono::duration<double>;
 void updateVisualizer(const wave::LaserOdom *odom,
                       wave::PointCloudDisplay *display,
                       wave::VecE<wave::PoseVelStamped> *odom_trajectory,
-                      Vec<TrackLengths> *track_lengths) {
+                      Vec<TrackLengths> *track_lengths,
+                      VecE<PoseVel> *prev_odom_trajectory) {
     double dis_mult = 254.0 / (double)(odom->getParams().n_window);
 
     bool first_trajectory = true;
     wave::T_TYPE T0X;
     for (const wave::PoseVelStamped &val : odom->undistort_trajectory) {
+        Mat3 R = val.pose.storage.block<3,3>(0,0);
+        if (std::abs(R.determinant() - 1) > 1e-4 ||
+                (R * R.transpose() - Mat3::Identity()).norm() > 1e-4) {
+            throw std::runtime_error("Invalid rotation");
+        }
         auto iter =
                 std::find_if(odom_trajectory->begin(), odom_trajectory->end(), [&val](const wave::PoseVelStamped &item) {
                     auto diff = item.stamp - val.stamp;
@@ -34,11 +40,19 @@ void updateVisualizer(const wave::LaserOdom *odom,
         } else {
             if (first_trajectory) {
                 T0X = iter->pose;
-                first_trajectory = false;
             }
             auto index = (unsigned long) (iter - odom_trajectory->begin());
             odom_trajectory->at(index) = val;
             odom_trajectory->at(index).pose = T0X * odom_trajectory->at(index).pose;
+            if (iter != odom_trajectory->begin() && prev_odom_trajectory && first_trajectory) {
+                auto posediff = prev_odom_trajectory->at(index).pose.manifoldMinus(odom_trajectory->at(index).pose);
+                Vec6 veldiff = prev_odom_trajectory->at(index).vel - odom_trajectory->at(index).vel;
+                if (posediff.norm() > 1e-6 || veldiff.norm() > 1e-6) {
+                    LOG_ERROR("Ensure previous data was collected under same data and settings");
+                    throw std::runtime_error("Not deterministic");
+                }
+            }
+            first_trajectory = false;
         }
     }
 

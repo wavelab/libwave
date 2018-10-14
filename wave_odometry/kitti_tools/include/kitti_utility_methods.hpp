@@ -17,7 +17,8 @@ struct TrackLengths {
 void updateVisualizer(const wave::LaserOdom *odom,
                       wave::PointCloudDisplay *display,
                       wave::VecE<wave::PoseVelStamped> *odom_trajectory,
-                      Vec<TrackLengths> *track_lengths = nullptr);
+                      Vec<TrackLengths> *track_lengths = nullptr,
+                      VecE<PoseVel> *prev_odom_trajectory = nullptr);
 
 void plotResults(const wave::VecE<wave::PoseVelStamped> &ground_truth,
                  const wave::VecE<wave::PoseVelStamped> &odom_trajectory);

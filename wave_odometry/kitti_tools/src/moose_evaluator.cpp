@@ -5,12 +5,42 @@
 #include "../../tests/data/include/config_utils.hpp"
 
 int main(int argc, char **argv) {
-    if (argc != 6) {
+    if (argc < 6) {
         throw std::runtime_error(
-                "Must be run with only 5 arguments: \n 1. Full path to data \n 2. Full path to configuration files \n 3. 1 "
+                "Must be run with at least 5 arguments: \n 1. Full path to data \n 2. Full path to configuration files \n 3. 1 "
                 "or 0 to indicate whether a visualizer should be run \n"
                 "4. Starting frame \n 5. Ending frame (or set -1 for no limit)");
     }
+    wave::VecE<wave::PoseVel> prev_odom_trajectory;
+    if (argc == 7) {
+        std::string prev_path(argv[6]);
+        LOG_INFO("%s", prev_path.c_str());
+        fstream prev_traj_file(prev_path, ios::in);
+        std::string line_string;
+        while(getline(prev_traj_file, line_string)) {
+            std::stringstream ss(line_string);
+            std::vector<double> vals;
+            for (uint32_t i = 0; i < 12; ++i) {
+                double new_val;
+                ss >> new_val;
+                vals.emplace_back(new_val);
+            }
+            Eigen::Map<Eigen::Matrix<double, 3, 4, Eigen::RowMajor>> raw_mat(vals.data());
+            wave::Transformation<> T;
+            wave::PoseVel pose_vel;
+            pose_vel.pose.storage = raw_mat;
+            vals.clear();
+            for (uint32_t i = 0; i < 6; ++i) {
+                double new_val;
+                ss >> new_val;
+                vals.emplace_back(new_val);
+            }
+            Eigen::Map<wave::Vec6> velocity(vals.data());
+            pose_vel.vel = velocity;
+            prev_odom_trajectory.emplace_back(pose_vel);
+        }
+    }
+
     std::string data_path(argv[1]);
     std::string config_path(argv[2]);
     bool run_viz = std::stoi(argv[3]) == 1;
@@ -130,7 +160,12 @@ int main(int argc, char **argv) {
         length.lengths.resize(params.n_window + 1);
     }
 
-    auto func = [&]() { updateVisualizer(&odom, display, &odom_trajectory, &lengths); };
+    std::function<void()> func;
+    if (prev_odom_trajectory.empty()) {
+        func = [&]() { updateVisualizer(&odom, display, &odom_trajectory, &lengths); };
+    } else {
+        func = [&]() { updateVisualizer(&odom, display, &odom_trajectory, &lengths, &prev_odom_trajectory); };
+    }
     odom.registerOutputFunction(func);
 
     uint32_t scan_index = 0;
@@ -211,6 +246,8 @@ int main(int argc, char **argv) {
         return false;
     });
 
+    auto original_trajectory = odom_trajectory;
+
     if (iter != T_L1_Lx_trajectory.end()) {
         for (auto &odom_state : odom_trajectory) {
             odom_state.pose = iter->pose * odom_state.pose;
@@ -230,8 +267,10 @@ int main(int argc, char **argv) {
     const static Eigen::IOFormat Format(
             Eigen::FullPrecision, Eigen::DontAlignCols, " ", " ");
 
-    for (const auto &T_L1_Lx : odom_trajectory) {
-        output_file << T_L1_Lx.pose.storage.format(Format) << "\n";
+    if (prev_odom_trajectory.empty()) {
+        for (const auto &T_L1_Lx : original_trajectory) {
+            output_file << T_L1_Lx.pose.storage.format(Format) << " " << T_L1_Lx.vel.format(Format) << "\n";
+        }
     }
 
     odom.~LaserOdom();
