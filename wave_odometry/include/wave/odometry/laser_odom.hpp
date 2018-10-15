@@ -1,10 +1,6 @@
 #ifndef WAVE_LASERODOM_HPP
 #define WAVE_LASERODOM_HPP
 
-#ifndef EIGEN_USE_THREADS
-#define EIGEN_USE_THREADS
-#endif
-
 #include <vector>
 #include <algorithm>
 #include <array>
@@ -311,6 +307,7 @@ class LaserOdom {
 
     Vec<IcosahedronBinner> binner;
 
+    void checkPosesNormalized();
     void checkTrackValidity();
 
     static uint32_t uniqueElements(const FeatureTrack &track) {

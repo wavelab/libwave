@@ -16,7 +16,6 @@ class Transformation {
     static constexpr const double tol = 1.0e-5;
     T_str storage;
 
- public:
     Transformation() {
         this->setIdentity();
     }
@@ -88,7 +87,7 @@ class Transformation {
     /** Checks if matrix determinant is within given tolerance of 1 and normalizes
      * rotation component if not
      */
-    Transformation &normalizeMaybe(double tolerance);
+    Transformation &normalize();
 
     template <typename InType, typename Other, bool InApprox, bool O_approx>
     static void interpolate(const Transformation<InType, InApprox> &T_k,

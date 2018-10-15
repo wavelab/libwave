@@ -17,7 +17,7 @@ IF(NOT CMAKE_BUILD_TYPE)
    SET_PROPERTY(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS
        "None" "Debug" "Release" "MinSizeRel" "RelWithDebInfo")
    IF(CMAKE_BUILD_TYPE MATCHES Release OR CMAKE_BUILD_TYPE MATCHES RelWithDebInfo)
-       ADD_COMPILE_OPTIONS(-Ofast -march=native)
+       ADD_COMPILE_OPTIONS(-march=native)
    ENDIF()
 ENDIF()
 

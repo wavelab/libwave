@@ -251,7 +251,9 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
                 this->output_condition.notify_one();
             }
         }
+        this->checkPosesNormalized();
         this->rollover(stamp);
+        this->checkPosesNormalized();
         std::fill(this->counters.begin(), this->counters.end(), 0);
     }
 
@@ -359,16 +361,35 @@ void LaserOdom::rollover(TimeType stamp) {
         std::rotate(
                 this->scan_stamps_chrono.begin(), this->scan_stamps_chrono.begin() + 1, this->scan_stamps_chrono.end());
 
+        this->checkPosesNormalized();
+
         std::rotate(this->cur_trajectory.begin(),
                     this->cur_trajectory.begin() + this->param.num_trajectory_states - 1,
                     this->cur_trajectory.end());
 
+        this->checkPosesNormalized();
+
+        T_TYPE T_01 = this->cur_trajectory.front().pose.transformInverse();
+
+        Mat3 R = T_01.storage.block<3,3>(0,0);
+        Mat3 RtR = this->cur_trajectory.front().pose.storage.block<3,3>(0,0) * R;
+        double Rdet = R.determinant();
+        if ((RtR - Mat3::Identity()).norm() > 1e-4 || std::abs(Rdet - 1) > 1e-4) {
+            std::cout << RtR << "\n";
+            std::cout << Rdet << "\n";
+            std::cout << this->cur_trajectory.front().pose.storage << "\n";
+            std::cout << T_01.storage << "\n";
+
+            throw std::runtime_error("Inverse transform not normalized");
+        }
+
         // adjust timestamps and trajectory states to start of new window
         for (uint32_t i = 1; i < this->cur_trajectory.size(); ++i) {
-            this->cur_trajectory.at(i).pose =
-                    this->cur_trajectory.front().pose.transformInverse() * this->cur_trajectory.at(i).pose;
+            this->cur_trajectory.at(i).pose = T_01 * this->cur_trajectory.at(i).pose;
         }
         this->cur_trajectory.front().pose.setIdentity();
+
+        this->checkPosesNormalized();
         this->scan_stamps_chrono.back() = stamp;
 
     } else {
@@ -1333,10 +1354,11 @@ void LaserOdom::performModelMaintenance(const uint32_t &feat_id) {
 
 bool LaserOdom::match(const TimeType &stamp) {
     size_t n_features = this->feature_extractor.param.feature_definitions.size();
+    this->checkPosesNormalized();
     // on the first match, initialization is poor
     static int initial_matches = 10;
     if (initial_matches == 10) {
-        double xvel_init = 0;
+        double xvel_init = 6;
 
         for (uint32_t t_id = 0; t_id < this->cur_trajectory.size(); ++t_id) {
             if (t_id == 0) {
@@ -1387,8 +1409,12 @@ bool LaserOdom::match(const TimeType &stamp) {
 
                 ceres::Solver::Summary summary;
 
+                this->checkPosesNormalized();
+
                 if (!this->runOptimization(*problem, summary, op2))
                     return false;
+
+                this->checkPosesNormalized();
 
                 if ((summary.iterations.size() == 1) ||
                     ((summary.initial_cost - summary.final_cost) / summary.initial_cost < 1e-7)) {
@@ -1635,6 +1661,16 @@ void LaserOdom::resetTrajectory() {
         tra.vel.setZero();
     }
     this->prior_twist.setZero();
+}
+
+void LaserOdom::checkPosesNormalized() {
+    for (const auto& val : this->cur_trajectory) {
+        const auto& R = val.pose.storage.block<3,3>(0,0);
+        if (std::abs(R.determinant() - 1) > 1e-4 ||
+            (R * R.transpose() - Mat3::Identity()).norm() > 1e-4) {
+            throw std::runtime_error("Invalid rotation within pose check");
+        }
+    }
 }
 
 void LaserOdom::checkTrackValidity() {
