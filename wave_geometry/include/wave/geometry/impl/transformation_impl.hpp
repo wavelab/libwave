@@ -619,7 +619,7 @@ void Transformation<Derived, approximate>::inverseTransform(const Eigen::MatrixB
 
 template <typename Derived, bool approximate>
 Transformation<Derived, approximate> &Transformation<Derived, approximate>::invert() {
-    this->storage.template block<3, 3>(0, 0).transposeInPlace();
+    this->storage.template block<3, 3>(0, 0) = this->storage.template block<3,3>(0,0).transpose();
     this->storage.template block<3, 1>(0, 3) =
       -this->storage.template block<3, 3>(0, 0) * this->storage.template block<3, 1>(0, 3);
 
@@ -629,7 +629,7 @@ Transformation<Derived, approximate> &Transformation<Derived, approximate>::inve
 template <typename Derived, bool approximate>
 template <typename T_OUT, bool approx>
 void Transformation<Derived, approximate>::transformInverse(Transformation<T_OUT, approx> &T_inv) const {
-    T_inv.storage.derived() = this->storage.derived();
+    T_inv.storage = this->storage;
     T_inv.invert();
 }
 
@@ -754,7 +754,7 @@ Transformation<T_str, approximate> Transformation<T_str, approximate>::composeAn
 }
 
 template <typename Derived, bool approximate>
-Transformation<Derived, approximate> &Transformation<Derived, approximate>::normalizeMaybe(double tolerance) {
+Transformation<Derived, approximate> &Transformation<Derived, approximate>::normalize() {
     // Check if R has strayed too far outside SO(3)
     // and if so normalize
     Mat3 R = this->storage.template block<3, 3>(0, 0);

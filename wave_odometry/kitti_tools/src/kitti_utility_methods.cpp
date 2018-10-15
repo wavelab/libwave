@@ -20,7 +20,7 @@ void updateVisualizer(const wave::LaserOdom *odom,
         Mat3 R = val.pose.storage.block<3,3>(0,0);
         if (std::abs(R.determinant() - 1) > 1e-4 ||
                 (R * R.transpose() - Mat3::Identity()).norm() > 1e-4) {
-            throw std::runtime_error("Invalid rotation");
+            throw std::runtime_error("Invalid rotation within update Visualizer");
         }
         auto iter =
                 std::find_if(odom_trajectory->begin(), odom_trajectory->end(), [&val](const wave::PoseVelStamped &item) {

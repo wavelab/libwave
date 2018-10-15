@@ -34,7 +34,7 @@ bool TrajectoryParamRemap<DIM>::Plus(const double *x, const double *delta, doubl
 
         Tpd = T;
         Tpd.manifoldPlus(remap_delta_vec.template block<6,1>(6 + 6*i, 0));
-        Tpd.normalizeMaybe(1e-5);
+        Tpd.normalize();
     }
 
     return true;

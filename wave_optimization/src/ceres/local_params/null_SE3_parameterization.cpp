@@ -30,7 +30,7 @@ bool NullSE3Parameterization::Plus(const double *x, const double *delta, double 
     xpdmap.block<3,1>(0,3).noalias() = exmp.block<3,3>(0,0) * xmap.block<3,1>(0,3) + exmp.block<3,1>(0,3);
 
     Transformation<Eigen::Map<Mat34>, true> Txpd(xpdmap);
-    Txpd.normalizeMaybe(1e-4);
+    Txpd.normalize();
 
     return true;
 }

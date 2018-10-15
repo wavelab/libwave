@@ -29,7 +29,7 @@ bool NullSE3ParameterizationRemap::Plus(const double *x, const double *delta, do
 
     Txpd = Tx;
     Txpd.manifoldPlus(this->p_mat * delta_vec);
-    Txpd.normalizeMaybe(1e-5);
+    Txpd.normalize();
 
     return true;
 }
