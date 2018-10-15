@@ -1362,7 +1362,7 @@ bool LaserOdom::match(const TimeType &stamp) {
     this->transformer.update(this->cur_trajectory, this->trajectory_stamps);
 
     for (int op = 0; op < limit; op++) {
-        if (true) {// (initial_matches > 0 || this->key_distance.block<3,1>(3,0).norm() > this->param.key_translation) {
+        if (initial_matches > 0 || this->key_distance.block<3,1>(3,0).norm() > this->param.key_translation) {
             for (uint32_t j = 0; j < n_features; j++) {
                 this->extendSceneModel(j);
             }
@@ -1395,7 +1395,7 @@ bool LaserOdom::match(const TimeType &stamp) {
                     break;
                 }
                 for (uint32_t j = 0; j < n_features; j++) {
-//                    this->performModelMaintenance(j);
+                    this->performModelMaintenance(j);
                 }
             }
         }

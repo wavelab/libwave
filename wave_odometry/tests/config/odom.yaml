@@ -4,7 +4,7 @@ Qc:
   cols: 6
   data: [10, 0, 0, 0, 0, 0,
          0, 10, 0, 0, 0, 0,
-         0, 0, 50, 5, 0, 0,
+         0, 0, 10, 5, 0, 0,
          0, 0, 5, 100, 0, 0,
          0, 0, 0, 0, 100, 0,
          0, 0, 0, 0, 0, 100]
@@ -22,7 +22,7 @@ Prior_twist:
 
 # How many states per revolution to optimize over, there must be at minimum two.
 num_trajectory_states: 2
-n_window: 8 # Number of scans to optimize over. Must be at least 2
+n_window: 5 # Number of scans to optimize over. Must be at least 2
 opt_iters: 2  # how many iterations of model extension to run when initializing
 max_inner_iters: 10 # limit on iterations of ceres at each matcher iteration
 diff_tol: 1e-4 # norm of solution difference for stopping criteria
@@ -60,7 +60,7 @@ min_new_points: 3
 #  Setting flags
 only_extract_features: false   #  If set, no transforms are calculated
 use_weighting: false           #  If set, pre-whiten residuals
-print_opt_sum: true              #  If true, output ceres summaries to console
+print_opt_sum: false              #  If true, output ceres summaries to console
 check_gradients: false         #  If set, use Ceres gradient checker on each jacobians
 limit_rng_var: false
 limit_int_var: false
