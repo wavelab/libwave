@@ -619,7 +619,7 @@ void Transformation<Derived, approximate>::inverseTransform(const Eigen::MatrixB
 
 template <typename Derived, bool approximate>
 Transformation<Derived, approximate> &Transformation<Derived, approximate>::invert() {
-    this->storage.template block<3, 3>(0, 0) = this->storage.template block<3,3>(0,0).transpose();
+    this->storage.template block<3, 3>(0, 0) = this->storage.template block<3,3>(0,0).transpose().eval();
     this->storage.template block<3, 1>(0, 3) =
       -this->storage.template block<3, 3>(0, 0) * this->storage.template block<3, 1>(0, 3);
 

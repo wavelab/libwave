@@ -251,9 +251,9 @@ void LaserOdom::addPoints(const std::vector<PointXYZIR> &pts, const int tick, Ti
                 this->output_condition.notify_one();
             }
         }
-        this->checkPosesNormalized();
+        //this->checkPosesNormalized();
         this->rollover(stamp);
-        this->checkPosesNormalized();
+        //this->checkPosesNormalized();
         std::fill(this->counters.begin(), this->counters.end(), 0);
     }
 
@@ -361,13 +361,13 @@ void LaserOdom::rollover(TimeType stamp) {
         std::rotate(
                 this->scan_stamps_chrono.begin(), this->scan_stamps_chrono.begin() + 1, this->scan_stamps_chrono.end());
 
-        this->checkPosesNormalized();
+        //this->checkPosesNormalized();
 
         std::rotate(this->cur_trajectory.begin(),
                     this->cur_trajectory.begin() + this->param.num_trajectory_states - 1,
                     this->cur_trajectory.end());
 
-        this->checkPosesNormalized();
+        //this->checkPosesNormalized();
 
         T_TYPE T_01 = this->cur_trajectory.front().pose.transformInverse();
 
@@ -389,7 +389,7 @@ void LaserOdom::rollover(TimeType stamp) {
         }
         this->cur_trajectory.front().pose.setIdentity();
 
-        this->checkPosesNormalized();
+        //this->checkPosesNormalized();
         this->scan_stamps_chrono.back() = stamp;
 
     } else {
@@ -505,6 +505,7 @@ bool LaserOdom::runOptimization(ceres::Problem &problem, ceres::Solver::Summary 
         std::string print_string = summary.BriefReport();
         print_string = print_string + " " + std::to_string(summary.total_time_in_seconds);
         LOG_INFO("%s", print_string.c_str());
+        LOG_INFO("Residual Blocks: %d", problem.NumResidualBlocks());
     }
 
     return true;
@@ -1354,7 +1355,7 @@ void LaserOdom::performModelMaintenance(const uint32_t &feat_id) {
 
 bool LaserOdom::match(const TimeType &stamp) {
     size_t n_features = this->feature_extractor.param.feature_definitions.size();
-    this->checkPosesNormalized();
+    //this->checkPosesNormalized();
     // on the first match, initialization is poor
     static int initial_matches = 10;
     if (initial_matches == 10) {
@@ -1409,12 +1410,12 @@ bool LaserOdom::match(const TimeType &stamp) {
 
                 ceres::Solver::Summary summary;
 
-                this->checkPosesNormalized();
+                //this->checkPosesNormalized();
 
-                if (!this->runOptimization(*problem, summary, op2))
+                if (!this->runOptimization(*problem, summary, 1))
                     return false;
 
-                this->checkPosesNormalized();
+                //this->checkPosesNormalized();
 
                 if ((summary.iterations.size() == 1) ||
                     ((summary.initial_cost - summary.final_cost) / summary.initial_cost < 1e-7)) {
@@ -1432,9 +1433,10 @@ bool LaserOdom::match(const TimeType &stamp) {
     if (initial_matches > 0) {
         --initial_matches;
     }
-//    if (!(this->param.only_extract_features)) {
+    if (!(this->param.only_extract_features)) {
 //        this->calculateCovariance(*problem);
-//    }
+        problem.reset(nullptr);
+    }
 
     return true;
 }
@@ -1602,10 +1604,6 @@ void LaserOdom::buildResiduals(ceres::Problem &problem, ceres::ParameterBlockOrd
     this->costs.clear();
     this->local_params.clear();
     this->loss_functions.clear();
-    for (uint32_t f_idx = 0; f_idx < n_features; ++f_idx) {
-        this->trackResiduals(problem, param_ordering, f_idx, this->feature_tracks.at(f_idx), opt_iter);
-//        this->rigidResiduals(problem, f_idx);
-    }
     for (uint32_t state_id = 0; state_id < this->cur_trajectory.size(); ++state_id) {
         auto &state = this->cur_trajectory[state_id];
         this->local_params.emplace_back(std::make_shared<NullSE3Parameterization>());
@@ -1632,6 +1630,11 @@ void LaserOdom::buildResiduals(ceres::Problem &problem, ceres::ParameterBlockOrd
                                      state.vel.data());
         }
     }
+    for (uint32_t f_idx = 0; f_idx < n_features; ++f_idx) {
+        this->trackResiduals(problem, param_ordering, f_idx, this->feature_tracks.at(f_idx), opt_iter);
+//        this->rigidResiduals(problem, f_idx);
+    }
+
     // add prior factor on starting velocity
 //    if (this->prior_twist.sum() != 0.0) {
 //        //        Mat6 sqrt_info = (this->twist_covar + this->prev_delta_t * this->param.Qc).inverse().sqrt();
