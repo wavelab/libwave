@@ -277,13 +277,15 @@ int main(int argc, char **argv) {
         }
     }
 
-    if (T_L1_Lx_trajectory.empty()) {
-        plotResults(odom_trajectory);
-    } else {
-        plotResults(T_L1_Lx_trajectory, odom_trajectory);
-        plotError(T_L1_Lx_trajectory, odom_trajectory);
+    if (run_viz) {
+        if (T_L1_Lx_trajectory.empty()) {
+            plotResults(odom_trajectory);
+        } else {
+            plotResults(T_L1_Lx_trajectory, odom_trajectory);
+            plotError(T_L1_Lx_trajectory, odom_trajectory);
+        }
+        plotTrackLengths(lengths);
     }
-    plotTrackLengths(lengths);
 
     ofstream output_file(sequence + ".txt");
     wave::Transformation<> T_O_L1 = T_L1_O.transformInverse();

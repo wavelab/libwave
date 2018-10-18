@@ -15,5 +15,7 @@ if __name__ == "__main__":
     eval_exec = sys.argv[3]
 
     for seq in sequences:
+        print("Processing sequence ", seq)
         subprocess.call([odom_exec, kitti_data, '/home/bapskiko/git/libwave/wave_odometry/tests/config', '0', seq, '0', '-1'])
-        subprocess.call([eval_exec, kitti_data + '/poses', seq])
+        print("Evaluating sequence ", seq)
+        subprocess.call([eval_exec, kitti_data + '/poses', '/home/bapskiko/git/libwave/scripts/test', seq])
