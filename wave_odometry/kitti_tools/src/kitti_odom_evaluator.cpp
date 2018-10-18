@@ -47,7 +47,6 @@ int main(int argc, char **argv) {
 
     wave::loadBinnerParams(config_path, "bin_config.yaml", params.binner_params);
 
-    wave::LaserOdom odom(params, feature_params, transformer_params);
     wave::PointCloudDisplay *display;
 
     if (run_viz) {
@@ -140,6 +139,9 @@ int main(int argc, char **argv) {
             T_L1_Lx_trajectory.at(frame_id).pose = T_L1_O * T_O_Lx;
             T_L1_Lx_trajectory.at(frame_id).stamp = times.at(frame_id);
         }
+        params.initial_velocity = T_L1_Lx_trajectory.at(1).pose.manifoldMinus(T_L1_Lx_trajectory.at(0).pose);
+        double delT = std::chrono::duration<double>(T_L1_Lx_trajectory.at(1).stamp - T_L1_Lx_trajectory.at(0).stamp).count();
+        params.initial_velocity = params.initial_velocity / delT;
     }
 
     wave::VecE<wave::PoseVelStamped> odom_trajectory;
@@ -149,6 +151,7 @@ int main(int argc, char **argv) {
         length.lengths.resize(params.n_window + 1);
     }
 
+    wave::LaserOdom odom(params, feature_params, transformer_params);
     auto func = [&]() { updateVisualizer(&odom, display, &odom_trajectory, &lengths); };
     odom.registerOutputFunction(func);
 

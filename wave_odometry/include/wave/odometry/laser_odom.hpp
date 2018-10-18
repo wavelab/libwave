@@ -32,6 +32,7 @@
 
 #include <ceres/ceres.h>
 #include <ceres/normal_prior.h>
+#include <ceres/local_parameterization.h>
 #include <ceres/rotation.h>
 
 #include "wave/geometry/transformation.hpp"
@@ -54,6 +55,7 @@
 #include "wave/odometry/odometry_callback.hpp"
 #include "wave/optimization/ceres/odom_gp/constant_velocity.hpp"
 #include "wave/optimization/ceres/local_params/null_SE3_parameterization.hpp"
+#include "wave/optimization/ceres/local_params/null_SE3_translation_only.hpp"
 #include "wave/optimization/ceres/local_params/line_parameterization.hpp"
 #include "wave/optimization/ceres/local_params/plane_parameterization.hpp"
 #include "wave/optimization/ceres/transform_prior.hpp"
@@ -66,6 +68,7 @@ using unlong = unsigned long;
 
 struct LaserOdomParams {
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    Vec6 initial_velocity = Vec6::Zero();
 
     /// The covariance matrix for noise on velocity
     Mat6 Qc = Mat6::Identity();
