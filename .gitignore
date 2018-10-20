@@ -25,3 +25,4 @@ octave-workspace
 # clion
 .idea/
 cmake-build-*/
+venv/

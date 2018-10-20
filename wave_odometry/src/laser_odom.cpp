@@ -371,17 +371,17 @@ void LaserOdom::rollover(TimeType stamp) {
 
         T_TYPE T_01 = this->cur_trajectory.front().pose.transformInverse();
 
-        Mat3 R = T_01.storage.block<3,3>(0,0);
-        Mat3 RtR = this->cur_trajectory.front().pose.storage.block<3,3>(0,0) * R;
-        double Rdet = R.determinant();
-        if ((RtR - Mat3::Identity()).norm() > 1e-4 || std::abs(Rdet - 1) > 1e-4) {
-            std::cout << RtR << "\n";
-            std::cout << Rdet << "\n";
-            std::cout << this->cur_trajectory.front().pose.storage << "\n";
-            std::cout << T_01.storage << "\n";
-
-            throw std::runtime_error("Inverse transform not normalized");
-        }
+//        Mat3 R = T_01.storage.block<3,3>(0,0);
+//        Mat3 RtR = this->cur_trajectory.front().pose.storage.block<3,3>(0,0) * R;
+//        double Rdet = R.determinant();
+//        if ((RtR - Mat3::Identity()).norm() > 1e-4 || std::abs(Rdet - 1) > 1e-4) {
+//            std::cout << RtR << "\n";
+//            std::cout << Rdet << "\n";
+//            std::cout << this->cur_trajectory.front().pose.storage << "\n";
+//            std::cout << T_01.storage << "\n";
+//
+//            throw std::runtime_error("Inverse transform not normalized");
+//        }
 
         // adjust timestamps and trajectory states to start of new window
         for (uint32_t i = 1; i < this->cur_trajectory.size(); ++i) {
@@ -1028,11 +1028,8 @@ void LaserOdom::createNewLineFeatureTrackCandidates(uint32_t feat_id,
 }
 
 void LaserOdom::clearVolatileTracks() {
-    for (uint32_t feat_id = 0; feat_id < this->feature_tracks.size(); ++feat_id) {
-        auto &tracks = this->feature_tracks.at(feat_id);
-        for (int i = 0; i < static_cast<int>(tracks.size()); ++i) {
-            auto &track = tracks.at(i);
-
+    for (auto &tracks : this->feature_tracks) {
+        for (auto &track : tracks) {
             track.fluid_mapping.clear();
             track.length = uniqueElements(track);
         }
@@ -1359,8 +1356,6 @@ bool LaserOdom::match(const TimeType &stamp) {
     // on the first match, initialization is poor
     static int initial_matches = 10;
     if (initial_matches == 10) {
-        double xvel_init = 6;
-
         for (uint32_t t_id = 0; t_id < this->cur_trajectory.size(); ++t_id) {
             if (t_id == 0) {
                 this->cur_trajectory.at(t_id).pose.setIdentity();
@@ -1368,7 +1363,7 @@ bool LaserOdom::match(const TimeType &stamp) {
                 this->cur_trajectory.at(t_id).pose = this->cur_trajectory.at(t_id - 1).pose;
                 this->cur_trajectory.at(t_id).pose.manifoldPlus(this->cur_trajectory.at(t_id - 1).vel * 0.1);
             }
-            this->cur_trajectory.at(t_id).vel(3) = xvel_init;
+            this->cur_trajectory.at(t_id).vel = this->param.initial_velocity;
         }
     }
     this->prepTrajectory(stamp);
@@ -1385,6 +1380,11 @@ bool LaserOdom::match(const TimeType &stamp) {
     this->transformer.update(this->cur_trajectory, this->trajectory_stamps);
 
     for (int op = 0; op < limit; op++) {
+        if (initial_matches == 10) {
+            for (uint32_t j = 0; j < n_features; ++j) {
+                this->feature_tracks.at(j).clear();
+            }
+        }
         if (initial_matches > 0 || this->key_distance.block<3,1>(3,0).norm() > this->param.key_translation) {
             for (uint32_t j = 0; j < n_features; j++) {
                 this->extendSceneModel(j);
@@ -1606,9 +1606,18 @@ void LaserOdom::buildResiduals(ceres::Problem &problem, ceres::ParameterBlockOrd
     this->loss_functions.clear();
     for (uint32_t state_id = 0; state_id < this->cur_trajectory.size(); ++state_id) {
         auto &state = this->cur_trajectory[state_id];
-        this->local_params.emplace_back(std::make_shared<NullSE3Parameterization>());
-        problem.AddParameterBlock(state.pose.storage.data(), 12, this->local_params.back().get());
-        problem.AddParameterBlock(state.vel.data(), 6);
+        if (false) {
+            this->local_params.emplace_back(std::make_shared<NullSE3TranslationParameterization>());
+            problem.AddParameterBlock(state.pose.storage.data(), 12, this->local_params.back().get());
+            Vec<int> constant_indices{0, 1, 2};
+            this->local_params.emplace_back(std::make_shared<ceres::SubsetParameterization>(6, constant_indices));
+            problem.AddParameterBlock(state.vel.data(), 6, this->local_params.back().get());
+        } else {
+            this->local_params.emplace_back(std::make_shared<NullSE3Parameterization>());
+            problem.AddParameterBlock(state.pose.storage.data(), 12, this->local_params.back().get());
+            problem.AddParameterBlock(state.vel.data(), 6);
+            state.vel.block<3,1>(0,0).setZero();
+        }
 
         param_ordering.AddElementToGroup(state.pose.storage.data(), 1);
         param_ordering.AddElementToGroup(state.vel.data(), 1);
@@ -1667,11 +1676,12 @@ void LaserOdom::resetTrajectory() {
 }
 
 void LaserOdom::checkPosesNormalized() {
-    for (const auto& val : this->cur_trajectory) {
+    for (auto& val : this->cur_trajectory) {
         const auto& R = val.pose.storage.block<3,3>(0,0);
         if (std::abs(R.determinant() - 1) > 1e-4 ||
             (R * R.transpose() - Mat3::Identity()).norm() > 1e-4) {
-            throw std::runtime_error("Invalid rotation within pose check");
+            LOG_ERROR("Pose not normalized, normalizing");
+            val.pose.normalize();
         }
     }
 }
