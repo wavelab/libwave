@@ -1188,6 +1188,7 @@ void LaserOdom::mergeFeatureTracks(VecE<FeatureTrack> &tracks, uint32_t feat_id)
                           return lhs.scan_idx < rhs.scan_idx;
                       });
             query_track.length = uniqueElements(query_track);
+            query_track.age = 0;
 
             // update address map
             merge_history.at(first_index).splice(merge_history.at(first_index).end(), merge_history.at(second_index));
@@ -1645,12 +1646,12 @@ void LaserOdom::buildResiduals(ceres::Problem &problem, ceres::ParameterBlockOrd
     }
 
     // add prior factor on starting velocity
-//    if (this->prior_twist.sum() != 0.0) {
-//        //        Mat6 sqrt_info = (this->twist_covar + this->prev_delta_t * this->param.Qc).inverse().sqrt();
-//        Mat6 sqrt_info = ((double) (this->covar_age + 1) * this->prev_delta_t * this->param.Qc).inverse().sqrt();
-//        this->costs.emplace_back(new ceres::NormalPrior(sqrt_info, this->prior_twist));
-//        problem.AddResidualBlock(this->costs.back().get(), nullptr, this->cur_trajectory.front().vel.data());
-//    }
+    if (this->prior_twist.sum() != 0.0) {
+        //        Mat6 sqrt_info = (this->twist_covar + this->prev_delta_t * this->param.Qc).inverse().sqrt();
+        Mat6 sqrt_info = (this->prev_delta_t * this->param.Qc).inverse().sqrt();
+        this->costs.emplace_back(new ceres::NormalPrior(sqrt_info, this->prior_twist));
+        problem.AddResidualBlock(this->costs.back().get(), nullptr, this->cur_trajectory.front().vel.data());
+    }
 
     // finally, just fix the first pose
     if (opt_iter == 0) {

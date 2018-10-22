@@ -2,12 +2,12 @@
 Qc:
   rows: 6
   cols: 6
-  data: [10, 0, 0, 0, 0, 0,
-         0, 10, 0, 0, 0, 0,
-         0, 0, 10, 5, 0, 0,
-         0, 0, 5, 100, 0, 0,
-         0, 0, 0, 0, 100, 0,
-         0, 0, 0, 0, 0, 100]
+  data: [0.1, 0, 0, 0, 0, 0,
+         0, 0.1, 0, 0, 0, 0,
+         0, 0, 10, 0, 0.02, 0,
+         0, 0, 0, 100, 0, 0,
+         0, 0, 0.02, 0, 10, 0,
+         0, 0, 0, 0, 0, 1]
 
   # The information matrix for the previous step's twist
 Prior_twist:
@@ -30,8 +30,8 @@ solver_threads: 4 # number of threads the solver should use
 robust_param: 0.5 # Parameter used in tukey loss function
 #robust_param: 0.2 # Parameter used in tukey loss function
 max_correspondence_dist: 3  #  correspondences greater than this are discarded
-max_planar_residual_val: 0.4   # Planar residuals with an initial error greater than this are not created
-max_linear_residual_val: 0.2 # for linear residuals
+max_planar_residual_val: 0.15   # Planar residuals with an initial error greater than this are not created
+max_linear_residual_val: 0.15 # for linear residuals
 max_init_planar_residual: 0.1
 max_init_linear_residual: 0.1
 min_residuals: 30          #  Problem will be reset if the number of residuals is less than this
