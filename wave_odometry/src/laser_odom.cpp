@@ -464,7 +464,7 @@ bool LaserOdom::runOptimization(ceres::Problem &problem, ceres::Solver::Summary 
     options.max_num_iterations = this->param.max_inner_iters;
     options.max_num_consecutive_invalid_steps = 30;
     options.logging_type = ceres::LoggingType::SILENT;
-    options.use_nonmonotonic_steps = true;
+//    options.use_nonmonotonic_steps = true;
 
     ceres::EvaluationCallback *callback = new OdometryCallback(&(this->feat_pts),
                                                                &(this->prev_feature_points),
@@ -1114,7 +1114,7 @@ void LaserOdom::mergeFeatureTracks(VecE<FeatureTrack> &tracks, uint32_t feat_id)
     MatXf dists(knn, trk_pts.cols());
     Eigen::MatrixXi nn_idx(knn, trk_pts.cols());
 
-    kd_idx->knn(trk_pts, nn_idx, dists, knn, 0.1, 0, this->param.max_correspondence_dist);
+    kd_idx->knn(trk_pts, nn_idx, dists, knn, 0, 0, this->param.max_correspondence_dist);
 
     std::vector<float> score(knn);
     for (uint32_t c_idx = 0; c_idx < nn_idx.cols(); ++c_idx) {
@@ -1646,26 +1646,26 @@ void LaserOdom::buildResiduals(ceres::Problem &problem, ceres::ParameterBlockOrd
     }
 
     // add prior factor on starting velocity
-    if (this->prior_twist.sum() != 0.0) {
-        //        Mat6 sqrt_info = (this->twist_covar + this->prev_delta_t * this->param.Qc).inverse().sqrt();
-        Mat6 sqrt_info = (this->prev_delta_t * this->param.Qc).inverse().sqrt();
-        this->costs.emplace_back(new ceres::NormalPrior(sqrt_info, this->prior_twist));
-        problem.AddResidualBlock(this->costs.back().get(), nullptr, this->cur_trajectory.front().vel.data());
-    }
+//    if (this->prior_twist.sum() != 0.0) {
+//        //        Mat6 sqrt_info = (this->twist_covar + this->prev_delta_t * this->param.Qc).inverse().sqrt();
+//        Mat6 sqrt_info = (this->prev_delta_t * this->param.Qc).inverse().sqrt();
+//        this->costs.emplace_back(new ceres::NormalPrior(sqrt_info, this->prior_twist));
+//        problem.AddResidualBlock(this->costs.back().get(), nullptr, this->cur_trajectory.front().vel.data());
+//    }
 
     // finally, just fix the first pose
-    if (opt_iter == 0) {
-        for (uint32_t i = 0; i < this->cur_trajectory.size(); ++i) {
-            if (i < this->cur_trajectory.size() - this->param.num_trajectory_states + 1) {
-                problem.SetParameterBlockConstant(this->cur_trajectory.at(i).pose.storage.data());
-            }
-            if (i < this->cur_trajectory.size() - 2 * (this->param.num_trajectory_states - 1)) {
-                problem.SetParameterBlockConstant(this->cur_trajectory.at(i).vel.data());
-            }
-        }
-    } else {
+//    if (opt_iter == 0) {
+//        for (uint32_t i = 0; i < this->cur_trajectory.size(); ++i) {
+//            if (i < this->cur_trajectory.size() - this->param.num_trajectory_states + 1) {
+//                problem.SetParameterBlockConstant(this->cur_trajectory.at(i).pose.storage.data());
+//            }
+//            if (i < this->cur_trajectory.size() - 2 * (this->param.num_trajectory_states - 1)) {
+//                problem.SetParameterBlockConstant(this->cur_trajectory.at(i).vel.data());
+//            }
+//        }
+//    } else {
         problem.SetParameterBlockConstant(this->cur_trajectory.front().pose.storage.data());
-    }
+//    }
 }
 
 void LaserOdom::resetTrajectory() {
