@@ -6,6 +6,7 @@ import shutil
 # It runs each training dataset in kitti, then calculates error metrics
 
 sequences = ['00', '01', '02', '03', '04', '05', '06', '07', '08', '09', '10']
+#sequences = ['00']#, '01', '02', '03', '04', '05', '06', '07', '08', '09', '10']
 
 if __name__ == "__main__":
     if len(sys.argv) != 4:

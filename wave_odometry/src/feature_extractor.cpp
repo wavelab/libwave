@@ -42,7 +42,8 @@ void FeatureExtractor::setup() {
                          0.001842097682135f,
                          0.000232391821040f});
     this->kernels.emplace(Kernel::LOG, temporary);
-    temporary.setValues({0, 0.003571428, -0.0380952f, 0.2, -0.8f, 0, 0.8, -0.2f, 0.0380952, -0.003571428f, 0});
+//    temporary.setValues({0, 0.003571428, -0.0380952f, 0.2, -0.8f, 0, 0.8, -0.2f, 0.0380952, -0.003571428f, 0});
+    temporary.setValues({-0.2f, -0.4f, -0.6f, -0.8f, -1.f, 0, 1.f, 0.8f, 0.6f, 0.4f, 0.2f});
     this->kernels.emplace(Kernel::FOG, temporary);
     temporary.setConstant(1.0);
     this->kernels.emplace(Kernel::VAR, temporary);
