@@ -33,6 +33,11 @@ int main(int argc, char **argv) {
     parser.addParam("cutoff_angles", &cutoff_angles);
     parser.load(config_path + "kitti_angles.yaml");
 
+    wave::ConfigParser int_parser;
+    wave::MatX intensity_map;
+    int_parser.addParam("intensity_map", &intensity_map);
+    int_parser.load(config_path + "kitti_intensity_map.yaml");
+
     wave::LaserOdomParams params;
     wave::FeatureExtractorParams feature_params;
     loadFeatureParams(config_path, "features.yaml", feature_params);
@@ -165,6 +170,10 @@ int main(int argc, char **argv) {
     bool first_time = true;
     wave::TimeType first_stamp;
 
+    std::vector<long int> frequencies(101);
+    std::fill(frequencies.begin(), frequencies.end(), 0);
+    long int binned_frequencies = 0;
+
     for (auto iter = v.begin(); iter != v.end(); ++iter) {
         if (scan_index < start_frame) {
             scan_index++;
@@ -207,8 +216,9 @@ int main(int argc, char **argv) {
                 ss >> pt_vec.front().z;
                 ss >> raw_intensity;
             }
-            float new_intensity = (float) (mapping.at((int)(100 * raw_intensity))) / 100.0f;
-            pt_vec.front().intensity = new_intensity > 0.95 ? new_intensity : 0.95;
+//            float new_intensity = (float) (mapping.at((int)(100 * raw_intensity))) / 100.0f;
+            float new_intensity = (float) (intensity_map((int)(100 * raw_intensity), 0)) / 100.0f;
+            pt_vec.front().intensity = new_intensity; // new_intensity > 0.9 ? new_intensity : 0.9;
 
             intensities.emplace_back((int)(100 * raw_intensity));
 
@@ -236,15 +246,14 @@ int main(int argc, char **argv) {
             }
         }
 
-        std::vector<int> frequencies(101);
-        std::fill(frequencies.begin(), frequencies.end(), 0);
         for (const auto &intensity : intensities) {
             frequencies.at(intensity)++;
+            binned_frequencies++;
         }
         std::vector<double> pdf(101), cdf(101);
 
         for (uint32_t i = 0; i < frequencies.size(); ++i) {
-            pdf.at(i) = ((double) (frequencies.at(i)) / (double)(intensities.size()));
+            pdf.at(i) = ((double) (frequencies.at(i)) / (double)(binned_frequencies));
             cdf.at(i) = pdf.at(i);
             if(i > 0) {
                 cdf.at(i) += cdf.at(i-1);
@@ -280,16 +289,24 @@ int main(int argc, char **argv) {
         }
     }
 
-    if (T_L1_Lx_trajectory.empty()) {
-        plotResults(odom_trajectory);
-    } else {
-        plotResults(T_L1_Lx_trajectory, odom_trajectory);
-        plotError(T_L1_Lx_trajectory, odom_trajectory);
+    if (run_viz) {
+        if (T_L1_Lx_trajectory.empty()) {
+            plotResults(odom_trajectory);
+        } else {
+            plotResults(T_L1_Lx_trajectory, odom_trajectory);
+            plotError(T_L1_Lx_trajectory, odom_trajectory);
+        }
+        plotTrackLengths(lengths);
     }
-    plotTrackLengths(lengths);
 
     ofstream output_file(sequence + ".txt");
     wave::Transformation<> T_O_L1 = T_L1_O.transformInverse();
+
+    ofstream map_file("mapping.txt");
+    for (const auto &map : mapping) {
+        map_file << map << "\n";
+    }
+    map_file.close();
 
     const static Eigen::IOFormat Format(
             Eigen::FullPrecision, Eigen::DontAlignCols, " ", " ");
