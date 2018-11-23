@@ -4,7 +4,7 @@ Qc:
   cols: 6
   data: [0.1, 0, 0, 0, 0, 0,
          0, 0.1, 0, 0, 0, 0,
-         0, 0, 10, 0, 0.02, 0,
+         0, 0, 1, 0, 0.02, 0,
          0, 0, 0, 100, 0, 0,
          0, 0, 0.02, 0, 10, 0,
          0, 0, 0, 0, 0, 1]
@@ -22,12 +22,12 @@ Prior_twist:
 
 # How many states per revolution to optimize over, there must be at minimum two.
 num_trajectory_states: 2
-n_window: 5 # Number of scans to optimize over. Must be at least 2
+n_window: 6 # Number of scans to optimize over. Must be at least 2
 opt_iters: 2  # how many iterations of model extension to run when initializing
-max_inner_iters: 10 # limit on iterations of ceres at each matcher iteration
+max_inner_iters: 50 # limit on iterations of ceres at each matcher iteration
 diff_tol: 1e-4 # norm of solution difference for stopping criteria
-solver_threads: 1 # number of threads the solver should use
-robust_param: 0.15 # Parameter used in tukey loss function
+solver_threads: 4 # number of threads the solver should use
+robust_param: 0.5 # Parameter used in tukey loss function
 max_correspondence_dist: 3  #  correspondences greater than this are discarded
 max_planar_residual_val: 0.4   # Planar residuals with an initial error greater than this are not created
 max_linear_residual_val: 0.2 # for linear residuals

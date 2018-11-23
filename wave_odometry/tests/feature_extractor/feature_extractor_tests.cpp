@@ -226,8 +226,9 @@ TEST_F(FeatureExtractorTests, VisualizeFeatures) {
     std::vector<pcl::PointCloud<pcl::PointXYZ>> feature_viz;
     feature_viz.resize(3);
 
-    PointCloudDisplay display("LIDAR Features");
+    PointCloudDisplay display("LIDAR Features", 1, 2, 2);
     display.startSpin();
+    display.addPointcloud(ref_cloud.makeShared(), 10, false, 4);
 
     for (uint32_t i = 0; i < 3; i++) {
         feature_viz.at(i).clear();
@@ -241,7 +242,7 @@ TEST_F(FeatureExtractorTests, VisualizeFeatures) {
                 feature_viz.at(i).push_back(pt);
             }
         }
-        display.addPointcloud(feature_viz.at(i).makeShared(), i);
+        display.addPointcloud(feature_viz.at(i).makeShared(), i, false, i+1);
     }
 
     cin.get();
@@ -252,7 +253,7 @@ TEST_F(FeatureExtractorTests, VisualizeMooseFeatures) {
     this->setupScan();
 
     fstream cloud_file;
-    cloud_file.open("/home/ben/rosbags/wat_27/lidar/0000000001.bin", ios::in | ios::binary);
+    cloud_file.open("/home/ben/rosbags/wat_27/lidar/0000002000.bin", ios::in | ios::binary);
 
     if (!cloud_file.good()) {
         throw std::runtime_error("Cannot find pointcloud file");
@@ -263,17 +264,23 @@ TEST_F(FeatureExtractorTests, VisualizeMooseFeatures) {
         pcl::PointXYZI pt;
         uint16_t ring;
         int32_t nanosec_offset;
-        float range, azimuth, elevation;
+        float range, azimuth, elevation, raw_intensity;
 
         cloud_file.read((char *) pt.data, 3 * sizeof(float));
-        cloud_file.read((char *) &(pt.intensity), sizeof(float));
+        cloud_file.read((char *) &raw_intensity, sizeof(float));
         cloud_file.read((char *) &range, sizeof(float));
         cloud_file.read((char *) &azimuth, sizeof(float));
         cloud_file.read((char *) &elevation, sizeof(float));
         cloud_file.read((char *) &(ring), sizeof(uint16_t));
         cloud_file.read((char *) &nanosec_offset, sizeof(int32_t));
 
+        pt.intensity = raw_intensity;
+
         display_cloud.push_back(pt);
+
+        if (std::isnan(pt.x)) {
+            continue;
+        }
 
         if (range < 3.0f) {
             continue;
@@ -297,12 +304,17 @@ TEST_F(FeatureExtractorTests, VisualizeMooseFeatures) {
 
     extractor.getFeatures(this->scan, this->signals, this->range, this->indices);
 
-    PointCloudDisplay display("VLP-32C", 1, 2, 2);
+    PointCloudDisplay display("VLP-32C", 1, 2, 1);
+    display.startSpin();
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
     std::vector<pcl::PointCloud<pcl::PointXYZ>> feature_viz;
     feature_viz.resize(3);
 
-    display.addPointcloud(display_cloud.makeShared(), 0, false, 1);
+    pcl::PointCloud<pcl::PointXYZ> display_viz;
+    pcl::copyPointCloud(display_cloud, display_viz);
+
+    display.addPointcloud(display_viz.makeShared(), 0, false, 1);
 
     for (uint32_t i = 0; i < 3; i++) {
         feature_viz.at(i).clear();
@@ -317,10 +329,9 @@ TEST_F(FeatureExtractorTests, VisualizeMooseFeatures) {
             }
         }
 
-        display.addPointcloud(feature_viz.at(i).makeShared(), i + 1, false, i + 2);
+        display.addPointcloud(feature_viz.at(i).makeShared(), i + 1, false, 2);
     }
 
-    display.startSpin();
     cin.get();
     display.stopSpin();
 

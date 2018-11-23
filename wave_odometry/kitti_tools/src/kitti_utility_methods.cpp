@@ -388,7 +388,11 @@ void plotError(const wave::VecE<wave::PoseStamped> &ground_truth, const wave::Ve
     plot::legend();
     plot::title("Absolute Incremental Rotation Error");
 
-    plot::show(true);
+    try {
+        plot::show(true);
+    } catch (const std::runtime_error &err) {
+        LOG_ERROR("%s", err.what());
+    }
 }
 
 void plotTrackLengths(const Vec<TrackLengths> &track_lengths) {

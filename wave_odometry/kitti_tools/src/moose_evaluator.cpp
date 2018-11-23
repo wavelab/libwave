@@ -63,6 +63,11 @@ int main(int argc, char **argv) {
         0.00347311601847,-0.0189774239023,0.999813880103,-1.25;
     T_G_L = T_L_G.transformInverse();
 
+    wave::ConfigParser int_parser;
+    wave::MatX intensity_map;
+    int_parser.addParam("intensity_map", &intensity_map);
+    int_parser.load(config_path + "moose_intensity_map.yaml");
+
     wave::LaserOdomParams params;
     wave::FeatureExtractorParams feature_params;
     loadFeatureParams(config_path, "features.yaml", feature_params);
@@ -77,7 +82,6 @@ int main(int argc, char **argv) {
 
     wave::loadBinnerParams(config_path, "bin_config.yaml", params.binner_params);
 
-    wave::LaserOdom odom(params, feature_params, transformer_params);
     wave::PointCloudDisplay *display;
 
     if (run_viz) {
@@ -152,6 +156,9 @@ int main(int argc, char **argv) {
             T_L1_Lx.pose = T_L1_O * T_O_Gx * T_G_L;
             T_L1_Lx_trajectory.emplace_back(T_L1_Lx);
         }
+        params.initial_velocity = T_L1_Lx_trajectory.at(1).pose.manifoldMinus(T_L1_Lx_trajectory.at(0).pose);
+        double delT = std::chrono::duration<double>(T_L1_Lx_trajectory.at(1).stamp - T_L1_Lx_trajectory.at(0).stamp).count();
+        params.initial_velocity = params.initial_velocity / delT;
     }
     wave::VecE<wave::PoseVelStamped> odom_trajectory;
 
@@ -159,6 +166,7 @@ int main(int argc, char **argv) {
     for (auto &length : lengths) {
         length.lengths.resize(params.n_window + 1);
     }
+    wave::LaserOdom odom(params, feature_params, transformer_params);
 
     std::function<void()> func;
     if (prev_odom_trajectory.empty()) {
@@ -169,11 +177,15 @@ int main(int argc, char **argv) {
     odom.registerOutputFunction(func);
 
     uint32_t scan_index = 0;
-    std::vector<int> mapping(101);
+    std::vector<int> mapping(256);
     std::iota(mapping.begin(), mapping.end(), 0);
 
     bool first_time = true;
     wave::TimeType first_stamp;
+
+    std::vector<long int> frequencies(256);
+    std::fill(frequencies.begin(), frequencies.end(), 0);
+    long int binned_frequencies = 0;
 
     for (auto iter = v.begin(); iter != v.end(); ++iter) {
         if (scan_index < start_frame) {
@@ -196,6 +208,8 @@ int main(int argc, char **argv) {
 
         bool first_point = true;
 
+        std::vector<int> intensities;
+        intensities.clear();
         while (cloud_file.good() && !cloud_file.eof()) {
             float raw_intensity;
             std::vector<wave::PointXYZIR> pt_vec(1);
@@ -208,11 +222,18 @@ int main(int argc, char **argv) {
             cloud_file.read((char *) &(pt_vec.front().ring), sizeof(uint16_t));
             cloud_file.read((char *) &nanosec_offset, sizeof(int32_t));
 
-            if (std::isnan(pt_vec.front().x)) {
+            if (std::isnan(pt_vec.front().x) || std::isnan(raw_intensity)) {
                 continue;
             }
 
-            pt_vec.front().intensity = raw_intensity;// > 0.6 ? raw_intensity : 0.6;
+//            pt_vec.front().intensity = raw_intensity > 40 ? raw_intensity : 40;
+            pt_vec.front().intensity = (float) (intensity_map((int)(raw_intensity), 0)) / 255.0f;
+
+            int intensity = (int)(raw_intensity);
+            if (intensity < 0 || intensity > 255) {
+                throw std::runtime_error("ahhh)");
+            }
+            intensities.emplace_back(intensity);
 
             wave::TimeType pt_time = times.at(scan_index) + std::chrono::nanoseconds(nanosec_offset);
 
@@ -224,6 +245,11 @@ int main(int argc, char **argv) {
             }
         }
 
+        for (const auto &intensity : intensities) {
+            frequencies.at(intensity)++;
+            binned_frequencies++;
+        }
+
         cloud_file.close();
         ++scan_index;
         if (scan_index % 10 == 0 || scan_index == times.size()) {
@@ -231,6 +257,22 @@ int main(int argc, char **argv) {
                       << std::to_string(times.size()) << std::flush;
         }
     }
+
+    std::vector<double> pdf(256), cdf(256);
+    for (uint32_t i = 0; i < frequencies.size(); ++i) {
+        pdf.at(i) = ((double) (frequencies.at(i)) / (double)(binned_frequencies));
+        cdf.at(i) = pdf.at(i);
+        if(i > 0) {
+            cdf.at(i) += cdf.at(i-1);
+        }
+        mapping.at(i) = (int)(cdf.at(i) * 255);
+    }
+
+    std::ofstream map_file("mapping.txt");
+    for (const auto &map : mapping) {
+        map_file << map << "\n";
+    }
+    map_file.close();
 
     auto iter = std::find_if(T_L1_Lx_trajectory.begin(), T_L1_Lx_trajectory.end(), [&first_stamp](const wave::PoseStamped &state){
 
@@ -254,22 +296,58 @@ int main(int argc, char **argv) {
         }
     }
 
+    const static Eigen::IOFormat Format(
+            Eigen::FullPrecision, Eigen::DontAlignCols, " ", " ");
+
+    // kitti error eval program expects movement in xz plane, so need to rotate
+    wave::Transformation<> T_C_L;
+    T_C_L.storage << 0, -1.0, 0, 0,
+                                  0, 0, -1.0, 0,
+                                  1, 0, 0, 0;
+
+    wave::Transformation<> T_L_C = T_C_L.transformInverse();
+
     if (T_L1_Lx_trajectory.empty()) {
         plotResults(odom_trajectory);
     } else {
         plotResults(T_L1_Lx_trajectory, odom_trajectory);
         plotError(T_L1_Lx_trajectory, odom_trajectory);
+
+        ofstream gt_file("ground_truth.txt");
+
+        for (const auto &time : times) {
+            wave::Transformation<> T_C1_Cx;
+            auto gt = std::find_if(T_L1_Lx_trajectory.begin(), T_L1_Lx_trajectory.end(), [&time](const wave::PoseStamped &state){
+
+                if (state.stamp >= time) {
+                    if (state.stamp - time < std::chrono::milliseconds(10)) {
+                        return true;
+                    }
+                } else {
+                    if (time - state.stamp < std::chrono::milliseconds(10)) {
+                        return true;
+                    }
+                }
+                return false;
+            });
+
+            if (gt == T_L1_Lx_trajectory.end()) {
+                continue;
+            }
+            auto &truth_val = *gt;
+            T_C1_Cx = T_C_L * truth_val.pose * T_L_C;
+            gt_file << T_C1_Cx.storage.format(Format) << "\n";
+        }
     }
     plotTrackLengths(lengths);
 
     ofstream output_file("lidar_traj.txt");
 
-    const static Eigen::IOFormat Format(
-            Eigen::FullPrecision, Eigen::DontAlignCols, " ", " ");
-
     if (prev_odom_trajectory.empty()) {
-        for (const auto &T_L1_Lx : original_trajectory) {
-            output_file << T_L1_Lx.pose.storage.format(Format) << " " << T_L1_Lx.vel.format(Format) << "\n";
+        wave::Transformation<> T_C1_Cx;
+        for (const auto &T_L1_Lx : odom_trajectory) {
+            T_C1_Cx = T_C_L * T_L1_Lx.pose * T_L_C;
+            output_file << T_C1_Cx.storage.format(Format) << "\n";
         }
     }
 

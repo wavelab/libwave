@@ -1654,18 +1654,18 @@ void LaserOdom::buildResiduals(ceres::Problem &problem, ceres::ParameterBlockOrd
     }
 
     // finally, just fix the first pose
-    if (opt_iter == 0) {
-        for (uint32_t i = 0; i < this->cur_trajectory.size(); ++i) {
-            if (i < this->cur_trajectory.size() - this->param.num_trajectory_states + 1) {
-                problem.SetParameterBlockConstant(this->cur_trajectory.at(i).pose.storage.data());
-            }
-            if (i < this->cur_trajectory.size() - 2 * (this->param.num_trajectory_states - 1)) {
-                problem.SetParameterBlockConstant(this->cur_trajectory.at(i).vel.data());
-            }
-        }
-    } else {
+//    if (opt_iter == 0) {
+//        for (uint32_t i = 0; i < this->cur_trajectory.size(); ++i) {
+//            if (i < this->cur_trajectory.size() - this->param.num_trajectory_states + 1) {
+//                problem.SetParameterBlockConstant(this->cur_trajectory.at(i).pose.storage.data());
+//            }
+//            if (i < this->cur_trajectory.size() - 2 * (this->param.num_trajectory_states - 1)) {
+//                problem.SetParameterBlockConstant(this->cur_trajectory.at(i).vel.data());
+//            }
+//        }
+//    } else {
         problem.SetParameterBlockConstant(this->cur_trajectory.front().pose.storage.data());
-    }
+//    }
 }
 
 void LaserOdom::resetTrajectory() {
