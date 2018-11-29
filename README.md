@@ -11,49 +11,82 @@ This library contains reusable code for:
 
 ## Requirements
 
+`libwave` is divided into modules which can be built separately.
+Each has its own dependecies.
+
+| Module             | Dependencies |
+| ------------------ | ------------ |
+| wave\_benchmark    | wave\_containers, wave\_geometry, wave\_utils |
+| wave\_containers   | Eigen, Boost |
+| wave\_controls     | Eigen |
+| wave\_geography    | Eigen, GeographicLib |
+| wave\_geometry     | Eigen, Boost |
+| wave\_gtsam        | wave\_utils, gtsam |
+| wave\_kinematics   | wave\_utils, wave\_controls |
+| wave\_matching     | wave\_utils, Boost, PCL  |
+| wave\_optimization | wave\_utils, wave\_kinematics, wave\_vision, Ceres |
+| wave\_utils        | Eigen, yaml-cpp |
+| wave\_vision       | wave\_utils, wave\_kinematics, wave\_containers, Boost Filesystem, OpenCV (calib3d, features2d, highgui, imgproc, videoio) |
+
+
+The following versions are the minimum we test against.
+Some earlier versions may work, but are not tested.
+
 - Boost 1.54
 - Ceres 1.13
 - Eigen 3.3.2
-- Kindr 1.0.4
 - OpenCV 3.2.0
 - PCL 1.8
 - yaml-cpp 0.5.1
-- CMake 2.8.3
-- GCC 5.4
+- gtsam
+- GeographicLib 1.49
 
-The above versions are the minimum we test against.
-Some earlier versions may work, but are not tested.
-For convenience, we provide a script which installs these dependencies (except 
-GCC) on Ubuntu 14.04 or Ubuntu 16.04, in `scripts/install/install_deps.bash`.
+Building libwave requires CMake 3.2 and a C++11 compiler (tested on GCC 5.4).
 
-## Install
+### Installing dependencies
+The basic set of dependencies can be installed with the Ubuntu package manager
+using the command
 
-Execute the following in the terminal where you want libwave to reside:
+    sudo apt-get install libboost-dev libyaml-cpp-dev libeigen3-dev \
+    build-essential cmake
 
-    curl -L https://git.io/vyKXR > install.bash && bash install.bash
+For convenience, scripts to install other dependencies on Ubuntu 16.04 are
+provided in `scripts/install`. **Note**: the scripts are not tested on a wide
+variety of systems. They may be incompatible with other packages installed on
+your system.
 
-**Or** you can perform the installation manually:
+## Install from source
 
-    # clone repo
-    git clone https://github.com/wavelab/libwave.git
+Clone the repo with submodules:
+
+    git clone --recursive https://github.com/wavelab/libwave.git
+
+Install the dependencies required for the modules you want to build, as
+described above. Then build using CMake:
+
     cd libwave
-
-    # initialize git submodules
-    git submodule init
-    git submodule update
-
-    # install dependencies
-    bash scripts/install/install_deps.bash
-
-    # compile libwave
     mkdir -p build
     cd build
     cmake ..
-    make
+    make -j8
+    
+By default, all libraries whose dependencies are found will be built. Individual
+libraries can be disabled using CMake options. For example,
 
-Install libwave with `make install`. Alternatively, you can enable the
+    cmake .. -DBUILD_wave_vision=OFF
+    
+will disable building `wave_vision`.
+
+Install libwave by running `make install`. Alternatively, you can enable the
 `EXPORT_BUILD` option in CMake, which will make the libwave build directory 
 searchable by CMake without installation.
+
+
+**Known issue with OpenCV**: `wave_vision` may
+[fail to build](https://github.com/wavelab/libwave/issues/267) if OpenCV 2 is
+installed in the default system directory on Ubuntu 16.04 (and OpenCV 3 is
+installed elsewhere). A workaround is to remove OpenCV 2 via
+`sudo apt remove libopencv-dev`.
 
 
 ## Use with CMake

@@ -39,9 +39,14 @@ OPTION(BUILD_BENCHMARKS
 
 
 # Find all dependencies here, and ensure they have IMPORTED targets
-
-# Require Eigen 3.3.4
-FIND_PACKAGE(Eigen3 3.3.4 REQUIRED)
+# The install scripts install some dependencies in /opt/wavelab
+OPTION(APPEND_OPT_WAVELAB "Append /opt/wavelab to CMAKE_PREFIX_PATH" ON)
+IF(APPEND_OPT_WAVELAB)
+    MESSAGE(STATUS "Adding /opt/wavelab to CMAKE_PREFIX_PATH")
+    LIST(APPEND CMAKE_PREFIX_PATH "/opt/wavelab")
+ENDIF()
+# Require Eigen 3.2.92, also called 3.3 beta-1, since it's in xenial
+FIND_PACKAGE(Eigen3 3.2.92 REQUIRED)
 FIND_PACKAGE(Boost 1.54.0 COMPONENTS system filesystem)
 FIND_PACKAGE(PCL 1.8 COMPONENTS
     common filters registration kdtree search io visualization)
@@ -75,8 +80,11 @@ INCLUDE(cmake/ImportLibnabo.cmake)
 # Optionally build tests. `gtest` is included with this project
 IF(BUILD_TESTING)
     # Build gtest from source
-    ADD_SUBDIRECTORY(deps/googletest EXCLUDE_FROM_ALL)
-    INCLUDE_DIRECTORIES(${gtest_SOURCE_DIR}/include/ ${gtest_SOURCE_DIR})
+    # Unless another GTEST_ROOT is set by the user, tell the AddGTest script to
+    # first look for the bundled copy in deps/googletest
+    SET(GTEST_ROOT "${PROJECT_SOURCE_DIR}/deps/googletest"
+        CACHE PATH "Path to gtest source")
+    INCLUDE(cmake/AddGTest.cmake)
 
     # This target is used to build all tests, without running them
     ADD_CUSTOM_TARGET(tests)
@@ -93,6 +101,9 @@ IF(BUILD_BENCHMARKS)
             " (CMAKE_BUILD_TYPE=\"${CMAKE_BUILD_TYPE}\")\n"
             "Benchmark results might not be useful.")
     ENDIF()
+
+    # This target is used to build (but not run) benchmarks
+    ADD_CUSTOM_TARGET(benchmarks)
 
     # This target is used to run benchmarks via "make benchmark".
     # Like "make test", it does not build anything. (@todo change?)
@@ -161,7 +172,7 @@ INSTALL(FILES
 # other projects using libwave will get transient dependencies automatically
 INSTALL(DIRECTORY cmake/
     DESTINATION "${INSTALL_CMAKE_DIR}/cmake"
-    FILES_MATCHING PATTERN "Import*.cmake")
+    FILES_MATCHING PATTERN "Import*.cmake" PATTERN "Find*.cmake")
 
 IF(EXPORT_BUILD)
     # Export this build so the package can be found through CMake's registry

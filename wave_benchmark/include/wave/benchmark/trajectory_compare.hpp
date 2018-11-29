@@ -10,7 +10,7 @@
 
 #include "pose_measurement.hpp"
 #include "wave/containers/measurement_container.hpp"
-#include "wave/geometry/rotation.hpp"
+#include "wave/geometry/geometry.hpp"
 #include "enum_class.hpp"
 
 namespace wave {
