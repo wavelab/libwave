@@ -34,7 +34,7 @@ inline BenchmarkPose interpolate(const PoseMeasurement &m1,
                                  const TimePoint &t) {
     auto w2 = 1.0 * (t - m1.time_point) / (m2.time_point - m1.time_point);
     auto relative = eval(m2.value.rotation - m1.value.rotation);
-    relative.value() *= w2;  // operator* not done for wave_geometry, so
+    relative.value() *= w2;  // operator* not done for wave_geometry_og, so
                              // cheating by accessing Eigen object
 
     auto trans = (1 - w2) * m1.value.translation + w2 * m2.value.translation;

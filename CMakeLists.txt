@@ -122,7 +122,7 @@ INSTALL(TARGETS wave EXPORT waveTargets)
 # Modules with missing dependencies are not built, and circular dependencies are
 # not supported. Thus modules must be listed after their dependencies, for now.
 ADD_SUBDIRECTORY(wave_utils)
-ADD_SUBDIRECTORY(wave_geometry)
+ADD_SUBDIRECTORY(wave_geometry_og)
 ADD_SUBDIRECTORY(wave_containers)
 ADD_SUBDIRECTORY(wave_benchmark)
 ADD_SUBDIRECTORY(wave_controls)
