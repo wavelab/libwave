@@ -3,7 +3,7 @@
 
 #include <Eigen/Core>
 #include <unsupported/Eigen/MatrixFunctions>
-#include "wave/geometry/transformation.hpp"
+#include "wave/geometry_og/transformation.hpp"
 #include "wave/utils/math.hpp"
 
 namespace wave_kinematics {

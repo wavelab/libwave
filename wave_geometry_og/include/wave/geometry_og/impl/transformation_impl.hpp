@@ -1,8 +1,8 @@
 #ifndef WAVE_TRANSFORMATION_IMPL_HPP
 #define WAVE_TRANSFORMATION_IMPL_HPP
 
-#include "wave/geometry/exception_helpers.hpp"
-#include "wave/geometry/transformation.hpp"
+#include "wave/geometry_og/exception_helpers.hpp"
+#include "wave/geometry_og/transformation.hpp"
 
 namespace wave {
 

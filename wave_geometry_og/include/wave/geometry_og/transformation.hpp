@@ -400,6 +400,6 @@ class Transformation {
 };
 }
 
-#include "wave/geometry/impl/transformation_impl.hpp"
+#include "wave/geometry_og/impl/transformation_impl.hpp"
 
 #endif  // WAVE_TRANSFORMATION_HPP

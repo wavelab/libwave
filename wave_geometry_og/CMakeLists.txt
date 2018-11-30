@@ -1,4 +1,4 @@
-PROJECT(wave_geometry)
+PROJECT(wave_geometry_og)
 
 WAVE_ADD_MODULE(${PROJECT_NAME}
     DEPENDS

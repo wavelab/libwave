@@ -123,10 +123,10 @@ void LineFitter::fitLines(const MatXf &candidate_points) {
                 return lhs.static_mapping.size() < rhs.static_mapping.size();
             });
             auto &ref = prototype_lines.back();
-//            Vec3 xy_dir = ref.geometry.block<3,1>(3,0);
+//            Vec3 xy_dir = ref.geometry_og.block<3,1>(3,0);
 //            xy_dir(2) = 0;
 //            xy_dir.normalize();
-//            if ((xy_dir.transpose() * ref.geometry.block<3,1>(0,0))(0) > 0.9) {
+//            if ((xy_dir.transpose() * ref.geometry_og.block<3,1>(0,0))(0) > 0.9) {
 //                continue;
 //            }
             if (ref.static_mapping.size() >= static_cast<size_t>(this->min_points)) {
