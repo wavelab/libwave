@@ -1,5 +1,5 @@
 #include "wave/optimization/ceres/local_params/InterpolatedSE3.hpp"
-#include "wave/geometry/transformation.hpp"
+#include "wave/geometry_og/transformation.hpp"
 
 namespace wave {
 

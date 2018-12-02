@@ -2,7 +2,7 @@
 #include <ceres/normal_prior.h>
 
 #include "wave/wave_test.hpp"
-#include "wave/geometry/transformation.hpp"
+#include "wave/geometry_og/transformation.hpp"
 #include "wave/optimization/ceres/local_params/solution_remapping_parameterization.hpp"
 #include "wave/optimization/ceres/local_params/trajectory_remap.hpp"
 

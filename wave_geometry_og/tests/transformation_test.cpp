@@ -3,8 +3,8 @@
 
 #include <gtest/gtest.h>
 
-#include "wave/geometry/transformation.hpp"
-#include "wave/geometry/numerical_test_functors.hpp"
+#include "wave/geometry_og/transformation.hpp"
+#include "wave/geometry_og/numerical_test_functors.hpp"
 #include "wave/utils/math.hpp"
 #include "wave/utils/utils.hpp"
 

@@ -2,7 +2,7 @@
 #include <Eigen/Eigenvalues>
 
 #include "wave/wave_test.hpp"
-#include "wave/geometry/transformation.hpp"
+#include "wave/geometry_og/transformation.hpp"
 #include "wave/optimization/ceres/transform_prior.hpp"
 #include "wave/optimization/ceres/local_params/null_SE3_parameterization.hpp"
 

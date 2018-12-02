@@ -68,11 +68,6 @@ IF(BUILD_TESTING)
     TARGET_LINK_LIBRARIES(manual_jacobian_tests
             ${PROJECT_NAME})
 
-    WAVE_ADD_TEST(multi_window_tests
-            tests/ceres/odom_gp_twist/point_to_line_test.cpp)
-    TARGET_LINK_LIBRARIES(multi_window_tests
-            ${PROJECT_NAME})
-
     WAVE_ADD_TEST(tiny_tests
             tests/ceres/tiny/robust_line_fit_test.cpp)
     TARGET_LINK_LIBRARIES(tiny_tests

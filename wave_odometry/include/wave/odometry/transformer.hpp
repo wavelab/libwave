@@ -16,7 +16,7 @@
 #include <omp.h>
 #include <unsupported/Eigen/CXX11/Tensor>
 
-#include "wave/geometry/transformation.hpp"
+#include "wave/geometry_og/transformation.hpp"
 #include "wave/odometry/odometry_types.hpp"
 #include "wave/utils/math.hpp"
 

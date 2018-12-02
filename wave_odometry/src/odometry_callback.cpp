@@ -27,11 +27,13 @@ OdometryCallback::OdometryCallback(const Vec<VecE<Eigen::Tensor<float, 2>>> *fea
       traj_stamps(traj_stamps),
       scan_stamps(scan_stamps),
       transformer(transformer) {
-    for (uint32_t feat_id = 0; feat_id < this->prev_feat_pts->size(); ++feat_id) {
-        this->prev_feat_ptsT->at(feat_id).resize(3, this->prev_feat_pts->at(feat_id).dimension(1));
-        this->cur_feat_ptsT->at(feat_id).resize(3, this->cur_feat_pts->at(feat_id).dimension(1));
-        for (uint32_t scan_id = 0; scan_id < this->feat_pts->size(); ++scan_id) {
-            this->feat_ptsT->at(scan_id).at(feat_id).resize(3, this->feat_pts->at(scan_id).at(feat_id).dimension(1));
+    if (this->prev_feat_pts && this->cur_feat_pts) {
+        for (uint32_t feat_id = 0; feat_id < this->prev_feat_pts->size(); ++feat_id) {
+            this->prev_feat_ptsT->at(feat_id).resize(3, this->prev_feat_pts->at(feat_id).dimension(1));
+            this->cur_feat_ptsT->at(feat_id).resize(3, this->cur_feat_pts->at(feat_id).dimension(1));
+            for (uint32_t scan_id = 0; scan_id < this->feat_pts->size(); ++scan_id) {
+                this->feat_ptsT->at(scan_id).at(feat_id).resize(3, this->feat_pts->at(scan_id).at(feat_id).dimension(1));
+            }
         }
     }
 
@@ -67,9 +69,11 @@ void OdometryCallback::PrepareForEvaluation(bool evaluate_jacobians, bool new_ev
             for (uint32_t i = 0; i < this->feat_pts->size(); ++i) {
                 this->transformer->transformToStart(this->feat_pts->at(i)[j], this->feat_ptsT->at(i)[j], i);
             }
-            auto last_scan_id = this->feat_pts->size() - 1;
-            this->transformer->transformToStart(this->cur_feat_pts->at(j), this->cur_feat_ptsT->at(j), last_scan_id);
-            this->transformer->transformToStart(this->prev_feat_pts->at(j), this->prev_feat_ptsT->at(j), --last_scan_id);
+            if (this->prev_feat_pts && this->cur_feat_pts) {
+                auto last_scan_id = this->feat_pts->size() - 1;
+                this->transformer->transformToStart(this->cur_feat_pts->at(j), this->cur_feat_ptsT->at(j), last_scan_id);
+                this->transformer->transformToStart(this->prev_feat_pts->at(j), this->prev_feat_ptsT->at(j), --last_scan_id);
+            }
         }
 
         this->old_jacobians = true;

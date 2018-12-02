@@ -118,7 +118,14 @@ TEST_F(LineFitterTests, FitLines) {
     int id = 10;
     for (const auto &track : tracks) {
         pcl::PointCloud<pcl::PointXYZ> feature_points;
-        for (const auto &map : track.mapping) {
+        for (const auto &map : track.static_mapping) {
+            pcl::PointXYZ new_pt;
+            new_pt.x = candidates[map.pt_idx].x;
+            new_pt.y = candidates[map.pt_idx].y;
+            new_pt.z = candidates[map.pt_idx].z;
+            feature_points.push_back(new_pt);
+        }
+        for (const auto &map : track.fluid_mapping) {
             pcl::PointXYZ new_pt;
             new_pt.x = candidates[map.pt_idx].x;
             new_pt.y = candidates[map.pt_idx].y;
@@ -128,7 +135,7 @@ TEST_F(LineFitterTests, FitLines) {
         pcl::PointXYZ pt1, pt2;
         Eigen::Map<wave::Vec3f> m1(pt1.data), m2(pt2.data);
 
-        double sidelength = 0.1 * track.mapping.size();
+        double sidelength = 0.1 * (track.fluid_mapping.size() + track.static_mapping.size());
 
         m1 =
                 (track.geometry.block<3, 1>(3, 0) - sidelength * track.geometry.block<3, 1>(0, 0)).cast<float>();
@@ -255,7 +262,14 @@ TEST_F(LineFitterTests, MooseFeatures) {
     int id = 10;
     for (const auto &track : tracks) {
         pcl::PointCloud<pcl::PointXYZ> feature_points;
-        for (const auto &map : track.mapping) {
+        for (const auto &map : track.fluid_mapping) {
+            pcl::PointXYZ new_pt;
+            new_pt.x = candidates[map.pt_idx].x;
+            new_pt.y = candidates[map.pt_idx].y;
+            new_pt.z = candidates[map.pt_idx].z;
+            feature_points.push_back(new_pt);
+        }
+        for (const auto &map : track.static_mapping) {
             pcl::PointXYZ new_pt;
             new_pt.x = candidates[map.pt_idx].x;
             new_pt.y = candidates[map.pt_idx].y;
@@ -265,7 +279,7 @@ TEST_F(LineFitterTests, MooseFeatures) {
         pcl::PointXYZ pt1, pt2;
         Eigen::Map<wave::Vec3f> m1(pt1.data), m2(pt2.data);
 
-        double sidelength = 0.1 * track.mapping.size();
+        double sidelength = 0.1 * (track.fluid_mapping.size() + track.static_mapping.size());
 
         m1 =
                 (track.geometry.block<3, 1>(3, 0) - sidelength * track.geometry.block<3, 1>(0, 0)).cast<float>();

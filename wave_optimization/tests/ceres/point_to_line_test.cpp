@@ -1,7 +1,7 @@
 #include <ceres/gradient_checker.h>
 
 #include "wave/wave_test.hpp"
-#include "wave/geometry/transformation.hpp"
+#include "wave/geometry_og/transformation.hpp"
 #include "wave/optimization/ceres/odom_linear/point_to_line_interpolated_transform.hpp"
 #include "wave/kinematics/constant_velocity_gp_prior.hpp"
 #include "wave/optimization/ceres/odom_gp_twist/point_to_line_gp.hpp"
@@ -134,7 +134,7 @@ TEST(Local_Twist_Param_Line, Jacobians) {
 
     Transformation<Mat34, false> T_interpolated;
     Transformation<Mat34, false>::interpolate(
-            T_k, T_kp1, vel_k, vel_kp1, objects.hat, objects.candle, T_interpolated);
+            T_k, T_kp1, vel_k, vel_kp1, hat, candle, T_interpolated);
 
     Eigen::Map<Vec3> mapped_point(pt, 3, 1);
     T_interpolated.transform(mapped_point, objects.T0_pt);
@@ -190,7 +190,7 @@ TEST(Local_Twist_Param, Interp_Approx) {
 
     Transformation<Mat34, false> T_interpolated_op, T_interpolated_analytical, T_interpolated_approx;
     Transformation<Mat34, false>::interpolate(
-            T_k, T_kp1, vel_k, vel_kp1, hat.block<6,12>(0,0), candle.block<6,12>(0,0), T_interpolated_op);
+            T_k, T_kp1, vel_k, vel_kp1, hat, candle, T_interpolated_op);
 
     T_interpolated_approx = T_interpolated_op;
 
@@ -206,7 +206,7 @@ TEST(Local_Twist_Param, Interp_Approx) {
     vel_kp1 = vel_kp1 + eps_vel_kp1;
 
     Transformation<Mat34, false>::interpolate(
-            T_k, T_kp1, vel_k, vel_kp1, hat.block<6,12>(0,0), candle.block<6,12>(0,0), T_interpolated_analytical);
+            T_k, T_kp1, vel_k, vel_kp1, hat, candle, T_interpolated_analytical);
 
     Vec6 manifold_difference = T_interpolated_analytical.manifoldMinus(T_interpolated_approx);
 

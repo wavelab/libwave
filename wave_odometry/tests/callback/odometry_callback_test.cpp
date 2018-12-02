@@ -65,7 +65,9 @@ class CallbackFixture : public testing::Test {
         transformerParams.traj_resolution = traj_resolution;
         transformer = new Transformer(transformerParams);
 
-        cb = new OdometryCallback(&feat_pts, &feat_ptsT, &traj, &ptT_jacobians, &jac_stamps, &traj_stamps, &scan_stamps, transformer);
+        cb = new OdometryCallback(&feat_pts, nullptr, nullptr,
+                &feat_ptsT, nullptr, nullptr,
+                &traj, &ptT_jacobians, &jac_stamps, &traj_stamps, &scan_stamps, transformer);
     }
 
     const unsigned int n_scans = 2;

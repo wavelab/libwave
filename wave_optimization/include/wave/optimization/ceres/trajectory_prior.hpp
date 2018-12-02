@@ -2,7 +2,7 @@
 #define WAVE_TRAJECTORY_PRIOR_HPP
 
 #include <ceres/ceres.h>
-#include "wave/geometry/transformation.hpp"
+#include "wave/geometry_og/transformation.hpp"
 
 /**
  * Implements a prior residual on a trajectory parameterized by a pose and

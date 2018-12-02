@@ -5,8 +5,7 @@
 #ifndef WAVE_GEOMETRY_NUMERICAL_TEST_FUNCTORS_HPP
 #define WAVE_GEOMETRY_NUMERICAL_TEST_FUNCTORS_HPP
 
-#include "wave/geometry/rotation.hpp"
-#include "wave/geometry/transformation.hpp"
+#include "wave/geometry_og/transformation.hpp"
 
 namespace wave {
 /** @addtogroup geometry
@@ -14,137 +13,6 @@ namespace wave {
 
 // The Functors are used for computing finite difference Jacobians
 // of rotation and/or translation expressions.
-
-class RotateAndJacobianJpointFunctor {
- public:
-    Rotation R;
-    Vec3 P;
-    RotateAndJacobianJpointFunctor(const Rotation &input_rotation) {
-        this->R = input_rotation;
-    }
-
-    Vec3 operator()(const Vec3 &input_point) {
-        Vec3 output_point = R.rotate(input_point);
-        return output_point;
-    }
-};
-
-
-class RotateAndJacobianJparamFunctor {
- public:
-    Rotation R;
-    Vec3 P;
-    RotateAndJacobianJparamFunctor(const Rotation &input_rotation, const Vec3 &input_point) {
-        this->R = input_rotation;
-        this->P = input_point;
-    }
-
-    Vec3 operator()(const Vec3 &input_point) {
-        Rotation Rp = this->R;
-        Rp = Rp.manifoldPlus(input_point);
-        Vec3 output_point = Rp.rotate(P);
-        return output_point;
-    }
-};
-
-class ComposeAndJacobianJLeftFunctor {
- public:
-    Rotation R_left;
-    Rotation R_right;
-    ComposeAndJacobianJLeftFunctor(const Rotation &R_left, const Rotation &R_right) {
-        this->R_left = R_left;
-        this->R_right = R_right;
-    }
-
-    Rotation operator()(const Vec3 &perturbation) {
-        Mat3 J;
-        Rotation R_perturbed = this->R_left;
-        R_perturbed = R_perturbed.manifoldPlus(perturbation);
-        return R_perturbed.composeAndJacobian(R_right, J, J);
-    }
-};
-
-class ComposeAndJacobianJRightFunctor {
- public:
-    Rotation R_left;
-    Rotation R_right;
-    ComposeAndJacobianJRightFunctor(const Rotation &R_left, const Rotation &R_right) {
-        this->R_left = R_left;
-        this->R_right = R_right;
-    }
-
-    Rotation operator()(const Vec3 &perturbation) {
-        Mat3 J;
-        Rotation R_perturbed = this->R_right;
-        R_perturbed = R_perturbed.manifoldPlus(perturbation);
-        return R_left.composeAndJacobian(R_perturbed, J, J);
-    }
-};
-
-class InverseAndJacobianFunctor {
- public:
-    Rotation R;
-    InverseAndJacobianFunctor(const Rotation &R) {
-        this->R = R;
-    }
-
-    Rotation operator()(const Vec3 &perturbation) {
-        Mat3 J;
-        Rotation R_perturbed = this->R;
-        R_perturbed = R_perturbed.manifoldPlus(perturbation);
-        return R_perturbed.inverseAndJacobian(J);
-    }
-};
-
-class LogMapAndJacobianFunctor {
- public:
-    Rotation R;
-    LogMapAndJacobianFunctor(const Rotation &R) {
-        this->R = R;
-    }
-
-    Vec3 operator()(const Vec3 &perturbation) {
-        Mat3 J;
-        Rotation R_perturbed = this->R;
-        R_perturbed = R_perturbed.manifoldPlus(perturbation);
-        return Rotation::logMapAndJacobian(R_perturbed, J);
-    }
-};
-
-
-class ManifoldMinusAndJacobianJLeftFunctor {
- public:
-    Rotation R_left;
-    Rotation R_right;
-    ManifoldMinusAndJacobianJLeftFunctor(const Rotation &R_left, const Rotation &R_right) {
-        this->R_left = R_left;
-        this->R_right = R_right;
-    }
-
-    Vec3 operator()(const Vec3 &perturbation) {
-        Mat3 J;
-        Rotation R_perturbed = this->R_left;
-        R_perturbed = R_perturbed.manifoldPlus(perturbation);
-        return R_perturbed.manifoldMinus(this->R_right);
-    }
-};
-
-class ManifoldMinusAndJacobianJRightFunctor {
- public:
-    Rotation R_left;
-    Rotation R_right;
-    ManifoldMinusAndJacobianJRightFunctor(const Rotation &R_left, const Rotation &R_right) {
-        this->R_left = R_left;
-        this->R_right = R_right;
-    }
-
-    Vec3 operator()(const Vec3 &perturbation) {
-        Mat3 J;
-        Rotation R_perturbed = this->R_right;
-        R_perturbed = R_perturbed.manifoldPlus(perturbation);
-        return this->R_left.manifoldMinus(R_perturbed);
-    }
-};
 
 namespace {
     using T_Type = Transformation<Mat34, false>;

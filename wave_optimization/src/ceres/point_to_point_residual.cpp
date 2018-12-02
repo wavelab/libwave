@@ -1,5 +1,5 @@
 #include "wave/optimization/ceres/point_to_point_residual.hpp"
-#include "wave/geometry/transformation.hpp"
+#include "wave/geometry_og/transformation.hpp"
 
 namespace wave {
 

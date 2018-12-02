@@ -6,7 +6,7 @@
 #include "wave/optimization/ceres/local_params/spherical_parameterization.hpp"
 #include "wave/wave_test.hpp"
 #include "wave/utils/math.hpp"
-#include "wave/geometry/transformation.hpp"
+#include "wave/geometry_og/transformation.hpp"
 
 namespace {
 

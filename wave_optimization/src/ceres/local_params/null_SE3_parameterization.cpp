@@ -2,7 +2,7 @@
 
 #include <unsupported/Eigen/MatrixFunctions>
 #include "wave/optimization/ceres/local_params/null_SE3_parameterization.hpp"
-#include "wave/geometry/transformation.hpp"
+#include "wave/geometry_og/transformation.hpp"
 
 namespace wave {
 

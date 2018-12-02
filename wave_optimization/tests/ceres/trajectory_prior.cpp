@@ -3,7 +3,7 @@
 #include <unsupported/Eigen/MatrixFunctions>
 
 #include "wave/wave_test.hpp"
-#include "wave/geometry/transformation.hpp"
+#include "wave/geometry_og/transformation.hpp"
 #include "wave/kinematics/constant_velocity_gp_prior.hpp"
 #include "wave/optimization/ceres/trajectory_prior.hpp"
 #include "wave/optimization/ceres/odom_gp/constant_velocity.hpp"

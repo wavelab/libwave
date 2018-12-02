@@ -4,11 +4,9 @@
 
 #include "wave/optimization/ceres/odom_gp/point_to_plane_gp.hpp"
 #include "wave/optimization/ceres/odom_gp/point_to_line_gp.hpp"
-#include "wave/optimization/ceres/odom_gp_coupled_states/point_to_line_gp.hpp"
-#include "wave/optimization/ceres/odom_gp_coupled_states/point_to_plane_gp.hpp"
 #include "wave/wave_test.hpp"
 #include "wave/utils/math.hpp"
-#include "wave/geometry/transformation.hpp"
+#include "wave/geometry_og/transformation.hpp"
 #include "wave/kinematics/constant_velocity_gp_prior.hpp"
 
 // This is a numerical check for some residuals where ceres gradient checker is not helpful
@@ -52,8 +50,8 @@ TEST(point_to_line, jacobian) {
 
     motion_prior.calculateStuff(hat, candle);
 
-    objects.hat = hat.block<6, 12>(0,0);
-    objects.candle = candle.block<6, 12>(0,0);
+    objects.hat = hat;
+    objects.candle = candle;
 
     ceres::CostFunction *cost_function = new SE3PointToLineGP(pt,
                                                               ptA,
@@ -152,129 +150,6 @@ TEST(point_to_line, jacobian) {
     }
 }
 
-TEST(point_to_line, trajectory_param) {
-    double memblock[30];
-    const double **params;
-    params = new const double *;
-    params[0] = memblock;
-
-    Eigen::Map<Vec6> vel(memblock);
-
-    Eigen::Map<Mat34> tk_map(memblock + 6, 3, 4);
-    Eigen::Map<Mat34> tkp1_map(memblock + 18, 3, 4);
-    Transformation<Eigen::Map<Mat34>, true> T_k(tk_map);
-    Transformation<Eigen::Map<Mat34>, true> T_kp1(tkp1_map);
-
-    T_k.setIdentity();
-    vel << 0.1, -0.1, 0.2, 5, 1, -1;
-    T_kp1 = (T_k);
-    const double delta_T = 0.5;
-    T_kp1.manifoldPlus(delta_T * vel);
-
-    double zero = 0;
-    double tau = 0.34;
-    Mat6 Qc = Mat6::Identity();
-    Mat6 inv_Qc = Qc.inverse();
-
-    wave_kinematics::ConstantVelocityPrior motion_prior(zero, delta_T, &tau, Qc, inv_Qc);
-
-    Eigen::Matrix<double, 12, 12> hat, candle;
-
-    motion_prior.calculateStuff(hat, candle);
-
-    double ptA[3] = {1, 1, 0};
-    double ptB[3] = {1, 3, -4};
-    double pt[3] = {1, 2, -4};
-
-    ceres::CostFunction *cost_function = new SE3PointToLineGPCoupled<30>(pt,
-                                                              ptA,
-                                                              ptB,
-                                                              hat.block<6, 12>(0, 0),
-                                                              candle.block<6, 12>(0, 0),
-                                                                     0,
-                                                              Mat3::Identity(),
-                                                              true);
-
-    double jacmem[30];
-    double **jacobian;
-    jacobian = new double *[1];
-    *jacobian = &jacmem[0];
-
-    Vec2 op_result;
-
-    cost_function->Evaluate(params, op_result.data(), jacobian);
-
-    double const step_size = 1e-9;
-    double memblock_perturb[30];
-
-    Eigen::Map<Vec6> vel_perturbed(memblock_perturb);
-    Eigen::Map<Mat34> tk_per_map(memblock_perturb + 6, 3, 4);
-    Eigen::Map<Mat34> tkp1_per_map(memblock_perturb + 18, 3, 4);
-    Transformation<Eigen::Map<Mat34>, true> Tk_perturbed(tk_per_map);
-    Transformation<Eigen::Map<Mat34>, true> Tkp1_perturbed(tkp1_per_map);
-
-    Tk_perturbed = (T_k);
-    Tkp1_perturbed = (T_kp1);
-    vel_perturbed = vel;
-
-    std::vector<Eigen::Matrix<double, 2, 6>> an_jacs, num_jacs;
-    an_jacs.resize(3);
-    num_jacs.resize(3);
-
-    Vec6 delta;
-    delta.setZero();
-
-    Vec2 result;
-    Vec2 diff;
-
-    double inv_step = 1.0 / step_size;
-
-    params[0] = memblock_perturb;
-
-    for (uint32_t i = 0; i < 6; i++) {
-        delta(i) = step_size;
-        // First parameter
-        vel_perturbed = vel_perturbed + delta;
-        cost_function->Evaluate(params, result.data(), nullptr);
-        diff = result - op_result;
-        num_jacs.at(0).block<2,1>(0,i) = inv_step * diff;
-        vel_perturbed = vel;
-
-        // Second parameter
-        Tk_perturbed.manifoldPlus(delta);
-        cost_function->Evaluate(params, result.data(), nullptr);
-        diff = result - op_result;
-        num_jacs.at(1).block<2,1>(0,i) = inv_step * diff;
-        Tk_perturbed = (T_k);
-
-        // Third parameter
-        Tkp1_perturbed.manifoldPlus(delta);
-        cost_function->Evaluate(params, result.data(), nullptr);
-        diff = result - op_result;
-        num_jacs.at(2).block<2,1>(0,i) = inv_step * diff;
-        Tkp1_perturbed = (T_kp1);
-
-        delta.setZero();
-    }
-
-    // now get the analytical jacobians
-    Eigen::Map<Eigen::Matrix<double, 2, 30, Eigen::RowMajor>> jac_map(jacobian[0], 2, 30);
-    an_jacs.at(0) = jac_map.block<2,6>(0,0);
-    an_jacs.at(1) = jac_map.block<2,6>(0,6);
-    an_jacs.at(2) = jac_map.block<2,6>(0,18);
-
-    double err = 0.0;
-    for (uint32_t i = 0; i < 3; i++) {
-        err = (num_jacs.at(i) - an_jacs.at(i)).norm();
-        if (err > 1e-10) {
-            std::cout << "Index " << i << " with error = " << err << std::endl
-                      << "Numerical: " << std::endl << num_jacs.at(i) << std::endl
-                      << "Analytical:" << std::endl << an_jacs.at(i) << std::endl << std::endl;
-        }
-        EXPECT_NEAR(err, 0.0, 1e-6);
-    }
-}
-
 TEST(point_to_plane, jacobian) {
 
     double ptA[3] = {1, 1, 0};
@@ -312,8 +187,8 @@ TEST(point_to_plane, jacobian) {
     motion_prior.calculateStuff(hat, candle);
 
     SE3PointToPlaneGPObjects objects;
-    objects.hat = hat.block<6, 12>(0,0);
-    objects.candle = candle.block<6, 12>(0,0);
+    objects.hat = hat;
+    objects.candle = candle;
 
     ceres::CostFunction *cost_function = new SE3PointToPlaneGP(pt,
                                                               ptA,
@@ -406,127 +281,6 @@ TEST(point_to_plane, jacobian) {
         std::cout << "Index " << i << " has error: " << err << std::endl
                   << "Numerical: " << std::endl << num_jacs.at(i) << std::endl
                   << "Analytical:" << std::endl << an_jacs.at(i) << std::endl << std::endl;
-        EXPECT_NEAR(err, 0.0, 1e-6);
-    }
-}
-
-TEST(point_to_plane, trajectory_param) {
-    double memblock[30];
-    const double **params;
-    params = new const double *;
-    params[0] = memblock;
-
-    Eigen::Map<Vec6> vel(memblock);
-    Eigen::Map<Mat34> tk_map(memblock + 6, 3, 4);
-    Eigen::Map<Mat34> tkp1_map(memblock + 18, 3, 4);
-    Transformation<Eigen::Map<Mat34>, true> T_k(tk_map);
-    Transformation<Eigen::Map<Mat34>, true> T_kp1(tkp1_map);
-
-    T_k.setIdentity();
-    vel << 0.1, -0.1, 0.2, 5, 1, -1;
-    T_kp1 = (T_k);
-    const double delta_T = 0.5;
-    T_kp1.manifoldPlus(delta_T * vel);
-
-    double zero = 0;
-    double tau = 0.34;
-    Mat6 Qc = Mat6::Identity();
-    Mat6 inv_Qc = Qc.inverse();
-
-    wave_kinematics::ConstantVelocityPrior motion_prior(zero, delta_T, &tau, Qc, inv_Qc);
-
-    Eigen::Matrix<double, 12, 12> hat, candle;
-
-    motion_prior.calculateStuff(hat, candle);
-
-    double ptA[3] = {1, 1, 0};
-    double ptB[3] = {1, 3, -4};
-    double ptC[3] = {4, -1, 0};
-    double pt[3] = {1, 2, -4};
-
-    ceres::CostFunction *cost_function = new SE3PointToPlaneGPCoupled<30>(pt,
-                                                                         ptA,
-                                                                         ptB,
-                                                                          ptC,
-                                                                         hat.block<6, 12>(0, 0),
-                                                                         candle.block<6, 12>(0, 0),
-                                                                         0,
-                                                                         Mat3::Identity(),
-                                                                         true);
-    double **jacobian;
-    jacobian = new double *[1];
-    jacobian[0] = new double[30];
-
-    double op_result;
-
-    cost_function->Evaluate(params, &op_result, jacobian);
-
-    double const step_size = 1e-9;
-    double memblock_perturb[30];
-
-    Eigen::Map<Vec6> vel_perturbed(memblock_perturb);
-    Eigen::Map<Mat34> tk_per_map(memblock_perturb + 6, 3, 4);
-    Eigen::Map<Mat34> tkp1_per_map(memblock_perturb + 18, 3, 4);
-    Transformation<Eigen::Map<Mat34>, true> Tk_perturbed(tk_per_map);
-    Transformation<Eigen::Map<Mat34>, true> Tkp1_perturbed(tkp1_per_map);
-
-    Tk_perturbed = (T_k);
-    Tkp1_perturbed = (T_kp1);
-    vel_perturbed = vel;
-
-    std::vector<Eigen::Matrix<double, 1, 6>> an_jacs, num_jacs;
-    an_jacs.resize(3);
-    num_jacs.resize(3);
-
-    Vec6 delta;
-    delta.setZero();
-
-    double result;
-    double diff;
-
-    double inv_step = 1.0 / step_size;
-
-    params[0] = memblock_perturb;
-
-    for (uint32_t i = 0; i < 6; i++) {
-        delta(i) = step_size;
-        // First parameter
-        vel_perturbed = vel_perturbed + delta;
-        cost_function->Evaluate(params, &result, nullptr);
-        diff = result - op_result;
-        num_jacs.at(0).coeffRef(0,i) = inv_step * diff;
-        vel_perturbed = vel;
-
-        // Second parameter
-        Tk_perturbed.manifoldPlus(delta);
-        cost_function->Evaluate(params, &result, nullptr);
-        diff = result - op_result;
-        num_jacs.at(1).coeffRef(0,i) = inv_step * diff;
-        Tk_perturbed = (T_k);
-
-        // Third parameter
-        Tkp1_perturbed.manifoldPlus(delta);
-        cost_function->Evaluate(params, &result, nullptr);
-        diff = result - op_result;
-        num_jacs.at(2).coeffRef(0,i) = inv_step * diff;
-        Tkp1_perturbed = (T_kp1);
-
-        delta.setZero();
-    }
-
-    // now get the analytical jacobians
-    Eigen::Map<Eigen::Matrix<double, 1, 30, Eigen::RowMajor>> jac_map(jacobian[0], 1, 30);
-    an_jacs.at(0) = jac_map.block<1,6>(0,0);
-    an_jacs.at(1) = jac_map.block<1,6>(0,6);
-    an_jacs.at(2) = jac_map.block<1,6>(0,18);
-
-    for (uint32_t i = 0; i < 3; i++) {
-        double err = (num_jacs.at(i) - an_jacs.at(i)).norm();
-        if (err > 1e-10) {
-            std::cout << "Index " << i << " with error = " << err << std::endl
-                      << "Numerical: " << std::endl << num_jacs.at(i) << std::endl
-                      << "Analytical:" << std::endl << an_jacs.at(i) << std::endl << std::endl;
-        }
         EXPECT_NEAR(err, 0.0, 1e-6);
     }
 }

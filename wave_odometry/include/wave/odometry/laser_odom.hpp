@@ -35,7 +35,7 @@
 #include <ceres/local_parameterization.h>
 #include <ceres/rotation.h>
 
-#include "wave/geometry/transformation.hpp"
+#include "wave/geometry_og/transformation.hpp"
 #include "wave/kinematics/constant_velocity_gp_prior.hpp"
 #include "wave/odometry/feature_extractor.hpp"
 #include "wave/odometry/icosahedron_binner.hpp"

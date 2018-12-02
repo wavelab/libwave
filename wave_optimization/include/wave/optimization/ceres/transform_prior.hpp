@@ -2,7 +2,7 @@
 #define WAVE_TRANSFORM_PRIOR_HPP
 
 #include <ceres/ceres.h>
-#include "wave/geometry/transformation.hpp"
+#include "wave/geometry_og/transformation.hpp"
 
 /**
  * Implements a prior residual on a transform. Use will null SE3 parameterization only

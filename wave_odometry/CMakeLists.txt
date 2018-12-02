@@ -8,9 +8,7 @@ WAVE_ADD_MODULE(${PROJECT_NAME}
     wave::utils
     libnabo::libnabo
     PCL::PCL
-#    CGAL::CGAL
     SOURCES
-#    src/SIR_normals.cpp
     src/rigid_residual.cpp
     src/weighting_functions.cpp
     src/odometry_callback.cpp
@@ -54,19 +52,6 @@ TARGET_LINK_LIBRARIES(moose_eval
         config_utils)
 
 IF(BUILD_TESTING)
-#    WAVE_ADD_TEST(normal_estimator_tests
-#            tests/normal_estimator/normal_estimator_tests.cpp)
-#    TARGET_LINK_LIBRARIES(normal_estimator_tests
-#            ${PROJECT_NAME})
-
-    WAVE_ADD_TEST(${PROJECT_NAME}_tests
-            tests/laserodom_tests.cpp)
-    TARGET_LINK_LIBRARIES(
-            ${PROJECT_NAME}_tests
-            wave::containers
-            wave::matching
-            ${PROJECT_NAME})
-
     WAVE_ADD_TEST(feature_extraction_tests
             tests/feature_extractor/feature_extractor_tests.cpp)
     TARGET_LINK_LIBRARIES(feature_extraction_tests
@@ -88,7 +73,8 @@ IF(BUILD_TESTING)
     WAVE_ADD_BENCHMARK(transformer_benchmark
             tests/transformer/transformer_benchmark.cpp)
     TARGET_LINK_LIBRARIES(transformer_benchmark
-            ${PROJECT_NAME})
+            ${PROJECT_NAME}
+            wave::matching)
 
 
     WAVE_ADD_TEST(residual_tests

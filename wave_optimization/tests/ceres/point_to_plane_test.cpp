@@ -1,7 +1,7 @@
 #include <ceres/gradient_checker.h>
 
 #include "wave/wave_test.hpp"
-#include "wave/geometry/transformation.hpp"
+#include "wave/geometry_og/transformation.hpp"
 #include "wave/optimization/ceres/odom_linear/point_to_plane_interpolated_transform.hpp"
 #include "wave/kinematics/constant_velocity_gp_prior.hpp"
 #include "wave/optimization/ceres/odom_gp_twist/point_to_plane_gp.hpp"
@@ -142,7 +142,7 @@ TEST(Local_Twist_Param_Plane, Jacobians) {
 
     Transformation<Mat34, false> T_interpolated;
     Transformation<Mat34, false>::interpolate(
-            T_k, T_kp1, vel_k, vel_kp1, objects.hat, objects.candle, T_interpolated);
+            T_k, T_kp1, vel_k, vel_kp1, hat, candle, T_interpolated);
 
     Eigen::Map<Vec3> mapped_point(pt, 3, 1);
     T_interpolated.transform(mapped_point, objects.T0_pt);

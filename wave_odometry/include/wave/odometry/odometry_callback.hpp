@@ -11,7 +11,7 @@
 #include <ceres/solver.h>
 
 #include "wave/utils/utils.hpp"
-#include "wave/geometry/transformation.hpp"
+#include "wave/geometry_og/transformation.hpp"
 #include "wave/odometry/feature_track.hpp"
 #include "wave/odometry/odometry_types.hpp"
 #include "wave/odometry/transformer.hpp"
