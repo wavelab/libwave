@@ -12,4 +12,7 @@
   <export>
     <build_type>cmake</build_type>
   </export>
+  <depend>libboost-dev</depend>
+  <depend>yaml-cpp</depend>
+  <depend>eigen</depend>
 </package>
