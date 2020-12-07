@@ -15,4 +15,5 @@
   <depend>libboost-dev</depend>
   <depend>yaml-cpp</depend>
   <depend>eigen</depend>
+  <depend>geographiclib</depend>
 </package>
