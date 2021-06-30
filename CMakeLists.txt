@@ -142,9 +142,12 @@ CONFIGURE_PACKAGE_CONFIG_FILE(
     INSTALL_DESTINATION "${INSTALL_CMAKE_DIR}")
 
 # Generate the Version file
+# This build is only considered compatible with the exact version requested
+# (not SameMajorVersion) for now since the API is often broken by active
+# development.
 WRITE_BASIC_PACKAGE_VERSION_FILE(waveConfigVersion.cmake
     VERSION ${WAVE_PACKAGE_VERSION}
-    COMPATIBILITY SameMajorVersion)
+    COMPATIBILITY ExactVersion)
 
 # Install the Config and ConfigVersion files
 INSTALL(FILES
