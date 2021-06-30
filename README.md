@@ -41,7 +41,7 @@ Some earlier versions may work, but are not tested.
 - gtsam
 - GeographicLib 1.49
 
-Building libwave requires CMake 3.2 and a C++11 compiler (tested on GCC 5.4).
+Building libwave requires CMake 3.2 and a C++17 compiler (tested on GCC 5.4).
 
 ### Installing dependencies
 The basic set of dependencies can be installed with the Ubuntu package manager
@@ -69,16 +69,16 @@ described above. Then build using CMake:
     cd build
     cmake ..
     make -j8
-    
+
 By default, all libraries whose dependencies are found will be built. Individual
 libraries can be disabled using CMake options. For example,
 
     cmake .. -DBUILD_wave_vision=OFF
-    
+
 will disable building `wave_vision`.
 
 Install libwave by running `make install`. Alternatively, you can enable the
-`EXPORT_BUILD` option in CMake, which will make the libwave build directory 
+`EXPORT_BUILD` option in CMake, which will make the libwave build directory
 searchable by CMake without installation.
 
 
