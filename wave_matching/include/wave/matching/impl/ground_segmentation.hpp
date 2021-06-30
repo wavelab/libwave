@@ -227,7 +227,7 @@ void GroundSegmentation<PointT>::sectorINSAC(int sector_index) {
 
         if (Vf_s.rows() == 0) {
             keep_going = false;
-            LOG_INFO("WARNING BREAKING LOOP: VF_s does not exist");
+            ROS_DEBUG_THROTTLE_NAMED(2, "Ground segmentation", "BREAKING LOOP: VF_s does not exist");
             continue;
         }
 
@@ -352,7 +352,7 @@ void GroundSegmentation<PointT>::sectorINSAC(int sector_index) {
             cur_cell.obs_mean = obs_sum / num_obs;
         }
     } else {
-        LOG_INFO("WARNING:Insufficient Model for angular slice");
+        ROS_DEBUG_THROTTLE_NAMED(2, "Ground segmentation", "Insufficient Model for angular slice");
     }
 }
 
