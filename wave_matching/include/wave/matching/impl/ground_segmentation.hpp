@@ -351,8 +351,6 @@ void GroundSegmentation<PointT>::sectorINSAC(int sector_index) {
             // @todo is this unused?
             cur_cell.obs_mean = obs_sum / num_obs;
         }
-    } else {
-        ROS_DEBUG_THROTTLE_NAMED(2, "Ground segmentation", "Insufficient Model for angular slice");
     }
 }
 
