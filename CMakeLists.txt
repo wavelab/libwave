@@ -106,17 +106,21 @@ INSTALL(TARGETS wave EXPORT waveTargets)
 # Add each module to the project
 # Modules with missing dependencies are not built, and circular dependencies are
 # not supported. Thus modules must be listed after their dependencies, for now.
-ADD_SUBDIRECTORY(wave_utils)
-ADD_SUBDIRECTORY(wave_geometry)
-ADD_SUBDIRECTORY(wave_containers)
-ADD_SUBDIRECTORY(wave_benchmark)
-ADD_SUBDIRECTORY(wave_controls)
-ADD_SUBDIRECTORY(wave_kinematics)
-ADD_SUBDIRECTORY(wave_matching)
-ADD_SUBDIRECTORY(wave_vision)
-ADD_SUBDIRECTORY(wave_optimization)
-ADD_SUBDIRECTORY(wave_gtsam)
-ADD_SUBDIRECTORY(wave_geography)
+SET(WAVE_MODULES
+        wave_utils
+        wave_geometry
+        wave_containers
+        wave_benchmark
+        wave_controls
+        wave_kinematics
+        wave_matching
+        wave_vision
+        wave_optimization
+        wave_gtsam
+        wave_geography)
+FOREACH(MODULE ${WAVE_MODULES})
+    ADD_SUBDIRECTORY(${MODULE})
+ENDFOREACH()
 
 # Documentation
 SET(WAVE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})

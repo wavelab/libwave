@@ -3,9 +3,7 @@ PROJECT(wave_geography)
 WAVE_ADD_MODULE(${PROJECT_NAME}
     DEPENDS
     Eigen3::Eigen
-    GeographicLib
-    SOURCES
-    src/world_frame_conversions.cpp)
+    GeographicLib)
 
 # Unit tests
 IF(BUILD_TESTING)
