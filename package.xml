@@ -12,4 +12,9 @@
   <export>
     <build_type>cmake</build_type>
   </export>
+  <depend>libboost-dev</depend>
+  <depend>yaml-cpp</depend>
+  <depend>eigen</depend>
+  <depend>geographiclib</depend>
+  <test_depend>rosunit</test_depend>
 </package>
