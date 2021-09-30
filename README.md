@@ -9,6 +9,9 @@ This library contains reusable code for:
 - Vision
 - and more ..
 
+libwave is in the initial development stage, meaning the API can change at any
+time without warning.
+
 ## Requirements
 
 `libwave` is divided into modules which can be built separately.
