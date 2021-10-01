@@ -59,7 +59,6 @@ INCLUDE(cmake/ImportEigen3.cmake)
 INCLUDE(cmake/ImportBoost.cmake)
 INCLUDE(cmake/ImportPCL.cmake)
 INCLUDE(cmake/ImportKindr.cmake)
-INCLUDE(cmake/ImportYaml-cpp.cmake)
 INCLUDE(cmake/ImportCeres.cmake)
 
 # Optionally build tests. `gtest` is included with this project
