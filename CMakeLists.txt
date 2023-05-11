@@ -42,10 +42,9 @@ IF(APPEND_OPT_WAVELAB)
     MESSAGE(STATUS "Adding /opt/wavelab to CMAKE_PREFIX_PATH")
     LIST(APPEND CMAKE_PREFIX_PATH "/opt/wavelab")
 ENDIF()
-# Require Eigen 3.2.92, also called 3.3 beta-1, since it's in xenial
 FIND_PACKAGE(Eigen3 3.3.7 REQUIRED)
 FIND_PACKAGE(Boost 1.71.0 COMPONENTS system filesystem)
-FIND_PACKAGE(PCL 1.12 COMPONENTS
+FIND_PACKAGE(PCL 1.10 COMPONENTS
     common filters registration kdtree search io visualization)
 FIND_PACKAGE(kindr)
 FIND_PACKAGE(OpenCV 4.2.0)
