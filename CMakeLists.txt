@@ -52,6 +52,7 @@ FIND_PACKAGE(OpenCV 4.2.0)
 FIND_PACKAGE(yaml-cpp REQUIRED)
 FIND_PACKAGE(Ceres 1.14)
 FIND_PACKAGE(GTSAM)
+set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};/usr/share/cmake/geographiclib")
 FIND_PACKAGE(GeographicLib 1.50)
 
 # Where dependencies do not provide IMPORTED targets, define them
