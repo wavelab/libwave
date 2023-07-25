@@ -5,7 +5,7 @@ PROJECT(wave)
 SET(WAVE_PACKAGE_VERSION 0.1.0)
 
 # Compiler settings for all targets
-SET(CMAKE_CXX_STANDARD 11)
+SET(CMAKE_CXX_STANDARD 17)
 SET(CMAKE_POSITION_INDEPENDENT_CODE ON)
 ADD_COMPILE_OPTIONS(-Wall -Wextra -Wno-strict-overflow)
 
@@ -42,24 +42,23 @@ IF(APPEND_OPT_WAVELAB)
     MESSAGE(STATUS "Adding /opt/wavelab to CMAKE_PREFIX_PATH")
     LIST(APPEND CMAKE_PREFIX_PATH "/opt/wavelab")
 ENDIF()
-# Require Eigen 3.2.92, also called 3.3 beta-1, since it's in xenial
-FIND_PACKAGE(Eigen3 3.2.92 REQUIRED)
-FIND_PACKAGE(Boost 1.54.0 COMPONENTS system filesystem)
-FIND_PACKAGE(PCL 1.8 COMPONENTS
+FIND_PACKAGE(Eigen3 3.3.7 REQUIRED)
+FIND_PACKAGE(Boost 1.71.0 COMPONENTS system filesystem)
+FIND_PACKAGE(PCL 1.10 COMPONENTS
     common filters registration kdtree search io visualization)
 FIND_PACKAGE(kindr)
-FIND_PACKAGE(OpenCV 3.2.0)
+FIND_PACKAGE(OpenCV 4.2.0)
 FIND_PACKAGE(yaml-cpp REQUIRED)
-FIND_PACKAGE(Ceres 1.12)
+FIND_PACKAGE(Ceres 1.14)
 FIND_PACKAGE(GTSAM)
-FIND_PACKAGE(GeographicLib 1.49)
+set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};/usr/share/cmake/geographiclib")
+FIND_PACKAGE(GeographicLib 1.50)
 
 # Where dependencies do not provide IMPORTED targets, define them
 INCLUDE(cmake/ImportEigen3.cmake)
 INCLUDE(cmake/ImportBoost.cmake)
 INCLUDE(cmake/ImportPCL.cmake)
 INCLUDE(cmake/ImportKindr.cmake)
-INCLUDE(cmake/ImportYaml-cpp.cmake)
 INCLUDE(cmake/ImportCeres.cmake)
 
 # Optionally build tests. `gtest` is included with this project
